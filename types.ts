@@ -14,11 +14,11 @@ export interface Permission {
 }
 
 export interface Role {
-    id: string;
-    name: string;
-    description: string;
-    permissions: any;
-    level: number;
+  id: string;
+  name: string;
+  description: string;
+  permissions: any;
+  level: number;
 }
 
 export interface User {
@@ -67,15 +67,15 @@ export interface Course {
 }
 
 export interface Enrollment {
-    id: string;
-    courseId: string; // Mapped from course_id
-    studentName: string; // Mapped from student_name
-    studentEmail: string; // Mapped from student_email
-    studentPhone: string; // Mapped from student_phone
-    status: 'Confirmed' | 'Pending' | 'CheckedIn';
-    amountPaid?: number; // Mapped from amount_paid
-    paymentMethod?: string; // Mapped from payment_method
-    createdAt: string; // Mapped from created_at
+  id: string;
+  courseId: string; // Mapped from course_id
+  studentName: string; // Mapped from student_name
+  studentEmail: string; // Mapped from student_email
+  studentPhone: string; // Mapped from student_phone
+  status: 'Confirmed' | 'Pending' | 'CheckedIn';
+  amountPaid?: number; // Mapped from amount_paid
+  paymentMethod?: string; // Mapped from payment_method
+  createdAt: string; // Mapped from created_at
 }
 
 export interface PostComment {
@@ -199,4 +199,10 @@ export interface Transaction {
   date: string;
   category: 'Sales' | 'Operational' | 'Marketing' | 'Payroll';
   status: 'Completed' | 'Pending';
+  payment_method?: string; // Mapped from payment_method
+  enrollment_id?: string; // Optional link to enrollment
+}
+
+export interface SystemConfig {
+  [key: string]: string | number | boolean | any;
 }

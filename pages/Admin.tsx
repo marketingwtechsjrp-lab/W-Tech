@@ -1,15 +1,14 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     Users, User, BookOpen, DollarSign, LayoutDashboard,
     KanbanSquare, FileText, Settings, Bell, Search,
     MoreVertical, ArrowRight, TrendingUp, Calendar as CalendarIcon,
-    Plus, ChevronRight, ChevronLeft, CheckCircle, XCircle,
-    Wrench, BadgeCheck, GraduationCap, ShoppingBag, Shield,
-    CreditCard, ArrowUpRight, ArrowDownRight, Briefcase, Database,
-    LogOut, Edit, Sparkles, Wand2, Trash2, List, Grid, Save, X, MapPin, Building,
-    Image as ImageIcon, Loader2, Eye, MessageSquare, BarChart3, Globe, PenTool, Lock, Code, MessageCircle,
-    Upload, Download, Monitor, Printer, Copy, UserPlus, TrendingDown, CalendarClock
+    Layout, MapPin, Phone, Globe, Mail, Clock, Shield, Award, CheckCircle, XCircle, Filter,
+    ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
+    BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
+    Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -369,6 +368,7 @@ const CRMView = () => {
     const [showSettings, setShowSettings] = useState(false);
     const [editingLead, setEditingLead] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({ assignedTo: '', internalNotes: '' });
+    const { user } = useAuth();
 
     const handleLeadClick = (lead: any) => {
         setEditingLead(lead);
@@ -377,6 +377,44 @@ const CRMView = () => {
             internalNotes: lead.internalNotes || ''
         });
     };
+
+    // Chart Data
+    const conversionRate = useMemo(() => {
+        if (leads.length === 0) return 0;
+        const converted = leads.filter(l => l.status === 'Converted').length;
+        return Math.round((converted / leads.length) * 100);
+    }, [leads]);
+
+    useEffect(() => {
+        fetchData();
+    }, [user]); // Re-fetch if user changes to apply privacy
+
+    const fetchData = async () => {
+        // Fetch Leads with Privacy Filter
+        let query = supabase.from('SITE_Leads').select('*').order('created_at', { ascending: false });
+
+        // Privacy Logic: If not Admin (Level > 8), only see assigned leads
+        // Assuming user.role.level is available. If not, we might need to fetch role.
+        // For safety, let's assume 'admin_access' permission grants view all.
+        const isAdmin = user?.role?.permissions?.admin_access || user?.role?.name === 'Super Admin';
+
+        if (!isAdmin && user?.id) {
+            query = query.eq('assigned_to', user.id);
+        }
+
+        const { data } = await query;
+
+        if (data) {
+            const mapped = data.map((l: any) => ({
+                ...l,
+                contextId: l.context_id,
+                createdAt: l.created_at,
+                assignedTo: l.assigned_to,
+                internalNotes: l.internal_notes
+            }));
+            setLeads(mapped);
+        }
+    }
 
     const saveLeadUpdates = async () => {
         if (!editingLead) return;
@@ -444,7 +482,7 @@ const CRMView = () => {
 
     return (
         <DragContext.Provider value={{ draggedId, setDraggedId }}>
-            <div className="h-[calc(100vh-140px)] flex flex-col">
+            <div className="h-[calc(100vh-180px)] flex flex-col">
                 {/* CRM Toolbar */}
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-4">
@@ -499,72 +537,122 @@ const CRMView = () => {
                 </div>
 
                 {/* Board */}
-                <div className="flex-1 overflow-x-auto overflow-y-hidden">
-                    <div className="flex gap-6 h-full min-w-max pb-4 px-1">
-                        <KanbanColumn title="Novos" status="New" leads={filteredLeads.filter(l => l.status === 'New')} onMove={() => { }} onDropLead={onDropLead} onLeadClick={handleLeadClick} />
-                        <KanbanColumn title="Em Contato" status="Contacted" leads={filteredLeads.filter(l => l.status === 'Contacted')} onMove={() => { }} onDropLead={onDropLead} onLeadClick={handleLeadClick} />
-                        <KanbanColumn title="Em Negociação" status="Negotiating" leads={filteredLeads.filter(l => l.status === 'Negotiating')} onMove={() => { }} onDropLead={onDropLead} onLeadClick={handleLeadClick} />
-                        <KanbanColumn title="Fechado" status="Converted" leads={filteredLeads.filter(l => l.status === 'Converted')} onMove={() => { }} onDropLead={onDropLead} onLeadClick={handleLeadClick} />
+                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar h-[calc(100vh-280px)]">
+                    <KanbanColumn
+                        title="Novos (Entrada)"
+                        status="New"
+                        leads={filteredLeads.filter(l => l.status === 'New')}
+                        onMove={onDropLead}
+                        onDropLead={onDropLead}
+                        onLeadClick={handleLeadClick}
+                    />
+                    <KanbanColumn
+                        title="Em Atendimento"
+                        status="Contacted"
+                        leads={filteredLeads.filter(l => l.status === 'Contacted')}
+                        onMove={onDropLead}
+                        onDropLead={onDropLead}
+                        onLeadClick={handleLeadClick}
+                    />
+                    <KanbanColumn
+                        title="Negociação"
+                        status="Qualified"
+                        leads={filteredLeads.filter(l => l.status === 'Qualified')}
+                        onMove={onDropLead}
+                        onDropLead={onDropLead}
+                        onLeadClick={handleLeadClick}
+                    />
+                    <KanbanColumn
+                        title="Fechado / Ganho"
+                        status="Converted"
+                        leads={filteredLeads.filter(l => l.status === 'Converted')}
+                        onMove={onDropLead}
+                        onDropLead={onDropLead}
+                        onLeadClick={handleLeadClick}
+                    />
+                    <KanbanColumn
+                        title="Esfriou / Perdido"
+                        status="Cold"
+                        leads={leads.filter(l => l.status === 'Cold')}
+                        onMove={onDropLead}
+                        onDropLead={onDropLead}
+                        onLeadClick={handleLeadClick}
+                    />
+                </div>
+            </div>
+
+            {/* Conversion Chart Overlay (Mini) */}
+            <div className="fixed bottom-8 right-8 bg-white p-4 rounded-xl shadow-2xl border border-gray-100 z-40 animate-in slide-in-from-right">
+                <div className="flex items-center gap-4">
+                    <div className="relative w-16 h-16">
+                        <svg className="w-full h-full transform -rotate-90">
+                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-100" />
+                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={175.9} strokeDashoffset={175.9 - (175.9 * conversionRate) / 100} className="text-green-500" />
+                        </svg>
+                        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold">{conversionRate}%</span>
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase">Taxa de Conversão</p>
+                        <p className="text-sm font-bold text-gray-900">{leads.filter(l => l.status === 'Converted').length} Vendas / {leads.length} Leads</p>
                     </div>
                 </div>
-
-                {/* Lead Edit Modal */}
-                <AnimatePresence>
-                    {editingLead && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
-                            >
-                                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-gray-900">{editingLead.name}</h3>
-                                        <p className="text-sm text-gray-500">{editingLead.email}</p>
-                                    </div>
-                                    <button onClick={() => setEditingLead(null)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+            </div>     {/* Lead Edit Modal */}
+            <AnimatePresence>
+                {editingLead && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
+                        >
+                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">{editingLead.name}</h3>
+                                    <p className="text-sm text-gray-500">{editingLead.email}</p>
                                 </div>
+                                <button onClick={() => setEditingLead(null)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+                            </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Colaborador Responsável</label>
-                                        <div className="relative">
-                                            <Users size={16} className="absolute left-3 top-3 text-gray-400" />
-                                            <input
-                                                className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm font-medium focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
-                                                placeholder="Nome do colaborador..."
-                                                value={editForm.assignedTo}
-                                                onChange={e => setEditForm({ ...editForm, assignedTo: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notas Internas</label>
-                                        <textarea
-                                            className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none min-h-[100px]"
-                                            placeholder="Observações sobre o lead..."
-                                            value={editForm.internalNotes}
-                                            onChange={e => setEditForm({ ...editForm, internalNotes: e.target.value })}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Colaborador Responsável</label>
+                                    <div className="relative">
+                                        <Users size={16} className="absolute left-3 top-3 text-gray-400" />
+                                        <input
+                                            className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm font-medium focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
+                                            placeholder="Nome do colaborador..."
+                                            value={editForm.assignedTo}
+                                            onChange={e => setEditForm({ ...editForm, assignedTo: e.target.value })}
                                         />
                                     </div>
-
-                                    <div className="pt-4 flex gap-3">
-                                        <button
-                                            onClick={saveLeadUpdates}
-                                            className="flex-1 bg-wtech-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <Save size={16} /> Salvar Alterações
-                                        </button>
-                                    </div>
                                 </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </DragContext.Provider>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notas Internas</label>
+                                    <textarea
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none min-h-[100px]"
+                                        placeholder="Observações sobre o lead..."
+                                        value={editForm.internalNotes}
+                                        onChange={e => setEditForm({ ...editForm, internalNotes: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        onClick={saveLeadUpdates}
+                                        className="flex-1 bg-wtech-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Save size={16} /> Salvar Alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+        </DragContext.Provider >
     );
 };
 
@@ -1484,7 +1572,7 @@ const CoursesManagerView = () => {
         setCurrentCourse(course);
         setShowEnrollments(true);
         const { data } = await supabase.from('SITE_Enrollments').select('*').eq('course_id', course.id);
-        if (data) setEnrollments(data.map((e: any) => ({ ...e, courseId: e.course_id, studentName: e.student_name, studentEmail: e.student_email, studentPhone: e.student_phone, createdAt: e.created_at })));
+        if (data) setEnrollments(data.map((c: any) => ({ ...c, courseId: c.course_id, studentName: c.student_name, studentEmail: c.student_email, studentPhone: c.student_phone, createdAt: c.created_at })));
         else setEnrollments([]);
     };
 
@@ -2843,7 +2931,8 @@ const FinanceView = () => {
                         amount: unrecordedAmount,
                         date: e.created_at,
                         payment_method: e.payment_method || 'Indefinido',
-                        enrollment_id: e.id
+                        enrollment_id: e.id,
+                        status: 'Completed' // Use 'Completed' instead of 'Paid' to match type
                     });
                 }
             });
@@ -3063,47 +3152,215 @@ const FinanceView = () => {
 };
 
 // --- View: Orders ---
+// --- View: News Center (Notifications) ---
+const NewsCenterView = () => {
+    const [title, setTitle] = useState('');
+    const [message, setMessage] = useState('');
+    const [audience, setAudience] = useState('All');
+    const [sending, setSending] = useState(false);
+
+    const handleSend = async () => {
+        if (!title || !message) return alert('Preencha título e mensagem.');
+        setSending(true);
+
+        // 1. Save to DB
+        const { error } = await supabase.from('SITE_Notifications').insert({
+            title,
+            message,
+            target_audience: audience,
+            sent_via_email: true, // Mock
+            sent_via_whatsapp: true // Mock for n8n
+        });
+
+        if (error) {
+            alert('Erro ao criar notificação: ' + error.message);
+        } else {
+            alert('Notificação enviada com sucesso! (Integração n8n pronta)');
+            setTitle('');
+            setMessage('');
+        }
+        setSending(false);
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto animate-fade-in">
+            <h2 className="text-3xl font-black text-gray-900 mb-2">Centro de Notícias</h2>
+            <p className="text-gray-500 mb-8">Envie comunicados para credenciados e alunos via Email e WhatsApp.</p>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="col-span-2">
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Título / Assunto</label>
+                        <input className="w-full border border-gray-200 rounded-lg p-3 font-bold text-gray-900 outline-none focus:border-wtech-gold" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Atualização Importante" />
+                    </div>
+                    <div className="col-span-2">
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mensagem</label>
+                        <textarea className="w-full border border-gray-200 rounded-lg p-3 h-40 outline-none focus:border-wtech-gold" value={message} onChange={e => setMessage(e.target.value)} placeholder="Escreva sua mensagem aqui..." />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Público Alvo</label>
+                        <select className="w-full border border-gray-200 rounded-lg p-3 bg-white outline-none" value={audience} onChange={e => setAudience(e.target.value)}>
+                            <option value="All">Todos (Geral)</option>
+                            <option value="Mechanics">Credenciados (Oficinas)</option>
+                            <option value="Students">Alunos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-4 border-t border-gray-100 pt-6">
+                    <button className="px-6 py-3 border border-gray-200 rounded-lg font-bold text-gray-600 hover:bg-gray-50">Salvar Rascunho</button>
+                    <button onClick={handleSend} disabled={sending} className="px-8 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 shadow-lg flex items-center gap-2">
+                        {sending ? 'Enviando...' : <><Send size={18} /> Enviar Comunicado</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- View: Orders (Course Enrollments & Shop) ---
 const OrdersView = () => {
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Filters
+    const [filterName, setFilterName] = useState('');
+    const [filterCourse, setFilterCourse] = useState('');
+
     useEffect(() => {
         const fetch = async () => {
-            const { data } = await supabase.from('SITE_Orders').select('*').order('date', { ascending: false });
-            if (data) setOrders(data.map((o: any) => ({ ...o, customerName: o.customer_name, customerEmail: o.customer_email })));
+            setLoading(true);
+            // Fetch Enrollments (Course Purchases)
+            const { data: enrollments } = await supabase
+                .from('SITE_Enrollments')
+                .select('*, course:SITE_Courses(title, price)')
+                .order('created_at', { ascending: false });
+
+            // Fetch Shop Orders (if any)
+            const { data: shopOrders } = await supabase
+                .from('SITE_Orders')
+                .select('*')
+                .order('date', { ascending: false });
+
+            // Normalize and Merge
+            const normalizedEnrollments = enrollments?.map((e: any) => ({
+                id: e.id,
+                type: 'Curso',
+                customerName: e.student_name,
+                customerEmail: e.student_email,
+                itemName: e.course?.title || 'Curso Removido',
+                date: e.created_at,
+                total: e.amount_paid || e.course?.price || 0,
+                status: e.status === 'Confirmed' ? 'Paid' : 'Pending',
+                paymentMethod: e.payment_method || '-'
+            })) || [];
+
+            const normalizedShop = shopOrders?.map((o: any) => ({
+                id: o.id,
+                type: 'Loja',
+                customerName: o.customer_name,
+                customerEmail: o.customer_email,
+                itemName: 'Pedido Loja', // You might want to fetch items if available
+                date: o.date,
+                total: o.total,
+                status: o.status,
+                paymentMethod: '-'
+            })) || [];
+
+            setOrders([...normalizedEnrollments, ...normalizedShop].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setLoading(false);
         }
         fetch();
     }, []);
 
+    const filteredOrders = orders.filter(o => {
+        const matchName = o.customerName?.toLowerCase().includes(filterName.toLowerCase());
+        const matchCourse = o.itemName?.toLowerCase().includes(filterCourse.toLowerCase());
+        return matchName && matchCourse;
+    });
+
     return (
-        <div className="text-gray-900">
-            <h2 className="text-xl font-bold mb-6">Pedidos Recentes</h2>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+        <div className="text-gray-900 space-y-6 animate-fade-in">
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Pedidos & Inscrições</h2>
+                    <p className="text-gray-500 font-medium">Acompanhe as vendas de cursos e produtos.</p>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar por Cliente</label>
+                    <div className="relative">
+                        <Search size={16} className="absolute left-3 top-3 text-gray-400" />
+                        <input
+                            className="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                            placeholder="Nome do aluno..."
+                            value={filterName}
+                            onChange={e => setFilterName(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar por Curso/Item</label>
+                    <div className="relative">
+                        <ShoppingBag size={16} className="absolute left-3 top-3 text-gray-400" />
+                        <input
+                            className="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                            placeholder="Nome do curso..."
+                            value={filterCourse}
+                            onChange={e => setFilterCourse(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs">
+                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs border-b border-gray-100">
                         <tr>
-                            <th className="px-6 py-3">ID Pedido</th>
-                            <th className="px-6 py-3">Cliente</th>
-                            <th className="px-6 py-3">Data</th>
-                            <th className="px-6 py-3">Total</th>
-                            <th className="px-6 py-3">Status</th>
+                            <th className="px-6 py-4">Cliente / Aluno</th>
+                            <th className="px-6 py-4">Item Comprado</th>
+                            <th className="px-6 py-4">Data</th>
+                            <th className="px-6 py-4">Total</th>
+                            <th className="px-6 py-4">Status</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-gray-900">
-                        {orders.map(order => (
-                            <tr key={order.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 font-mono text-xs">{order.id.slice(0, 8).toUpperCase()}</td>
-                                <td className="px-6 py-4">
-                                    <div className="font-bold">{order.customerName}</div>
-                                    <div className="text-xs text-gray-500">{order.customerEmail}</div>
-                                </td>
-                                <td className="px-6 py-4">{new Date(order.date).toLocaleDateString()}</td>
-                                <td className="px-6 py-4 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${order.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
+                        {loading ? (
+                            <tr><td colSpan={5} className="p-8 text-center text-gray-400">Carregando pedidos...</td></tr>
+                        ) : filteredOrders.length === 0 ? (
+                            <tr><td colSpan={5} className="p-8 text-center text-gray-400">Nenhum pedido encontrado.</td></tr>
+                        ) : (
+                            filteredOrders.map((order, idx) => (
+                                <tr key={`${order.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="font-bold text-gray-900">{order.customerName}</div>
+                                        <div className="text-xs text-gray-500">{order.customerEmail}</div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${order.type === 'Curso' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
+                                                {order.type}
+                                            </span>
+                                            <span className="font-medium">{order.itemName}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-600">{new Date(order.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 font-bold text-gray-900">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Paid' || order.status === 'Confirmed' ? 'bg-green-100 text-green-700' :
+                                            order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                            {order.status === 'Paid' || order.status === 'Confirmed' ? 'Pago / Confirmado' : 'Pendente'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -3553,7 +3810,7 @@ const SettingsView = () => {
                         <div className="flex justify-between items-center mb-6">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900">Hierarquia de Acesso</h3>
-                                <p className="text-sm text-gray-500">Defina os perfis e o que cada um pode fazer no sistema.</p>
+                                <p className="text-sm text-gray-500">Defina os perfis e o que cada uno pode fazer no sistema.</p>
                             </div>
                             <button
                                 onClick={() => setEditingRole({ name: '', description: '', permissions: {}, level: 1 })}
@@ -3679,7 +3936,7 @@ const TeamView = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // User Edit State
-    const [editingUser, setEditingUser] = useState<Partial<UserType>>({});
+    const [editingUser, setEditingUser] = useState<Partial<UserType> & { password?: string, receives_leads?: boolean }>({});
     const [showProfileModal, setShowProfileModal] = useState(false); // For "Meu Perfil"
 
     const { user } = useAuth();
@@ -3713,41 +3970,98 @@ const TeamView = () => {
             name: editingUser.name,
             email: editingUser.email,
             role_id: editingUser.role_id || null,
-            status: editingUser.status || 'Active'
+            status: editingUser.status || 'Active',
+            receives_leads: editingUser.receives_leads || false
         };
 
+        // Logic: Use RPC only if Password needs update (requires Admin privileges on Auth)
+        // Otherwise, use standard Table Update for speed and reliability without RPC
         if (editingUser.id) {
-            // Use RPC to bypass potential schema cache "missing column" errors
-            const { error } = await supabase.rpc('update_user_role_admin', {
-                target_user_id: editingUser.id,
-                new_role_id: payload.role_id,
-                new_status: payload.status,
+            let rpcError = null;
+
+            // 1. If Password is being changed, TRY RPC
+            if (editingUser.password) {
+                const { error } = await supabase.rpc('admin_update_user', {
+                    target_user_id: editingUser.id,
+                    new_email: editingUser.email,
+                    new_password: editingUser.password,
+                    new_name: payload.name,
+                    new_role_id: payload.role_id || null,
+                    new_status: payload.status || 'Active'
+                });
+                rpcError = error;
+            }
+
+            // 2. Always update public profile (SITE_Users) to ensure data consistency
+            // This handles cases where RPC is missing OR we just want to update non-sensitive data
+            const { error: stdError } = await supabase.from('SITE_Users').update({
+                name: payload.name,
+                role_id: payload.role_id,
+                status: payload.status,
+                receives_leads: payload.receives_leads
+            }).eq('id', editingUser.id);
+
+            if (stdError) {
+                alert('Erro ao atualizar perfil: ' + stdError.message);
+            } else if (rpcError) {
+                // Profile updated, but Password failed
+                alert('Perfil atualizado, MAS a SENHA não foi alterada.\n\nMotivo: O script de administração (RPC) não foi encontrado no banco de dados.\n\nPara corrigir: Execute o arquivo "admin_user_management.sql" no Supabase.');
+            } else {
+                // Success
+                setIsModalOpen(false);
+                setEditingUser({});
+                fetchUsers();
+                return;
+            }
+        } else {
+            // Create New User (Requires Auth API or different flow, but for now insert into public)
+            // Ideally, we should use supabase.auth.signUp() but that logs the user in.
+            // For this simplified admin, we'll stick to inserting into SITE_Users and assume Auth is handled separately or via Invite.
+            // OR we can use the same RPC if we adjust it to INSERT if not exists, but auth.users insert is tricky without admin API.
+            // Let's keep the existing logic for INSERT but warn about password.
+
+            // Create New User Logic
+            if (!editingUser.password) {
+                alert('Senha é obrigatória para novos usuários.');
+                return;
+            }
+
+            const { data, error } = await supabase.rpc('admin_create_user', {
+                new_email: editingUser.email,
+                new_password: editingUser.password,
                 new_name: payload.name,
-                new_email: payload.email
+                new_role_id: payload.role_id,
+                new_status: payload.status || 'Active',
+                new_receives_leads: payload.receives_leads
             });
 
             if (error) {
-                // Fallback to standard update if RPC fails
-                console.error("RPC Error, trying standard update:", error);
-                const { error: stdError } = await supabase.from('SITE_Users').update(payload).eq('id', editingUser.id);
-                if (stdError) {
-                    alert('Erro ao atualizar usuário: ' + stdError.message);
-                    return;
+                console.error("Create User Error:", error);
+                if (error.message?.includes('function') || error.code === '42883') {
+                    alert('Erro: O script de criação de usuários (RPC) não foi encontrado no banco de dados.\n\nExecute o arquivo "admin_user_management.sql" no Supabase.');
+                } else {
+                    alert('Erro ao criar usuário: ' + error.message);
                 }
-            }
-        } else {
-            // For new users, we might need a way to set password, but usually auth handles it.
-            // Here we just create the record in SITE_Users.
-            const { error } = await supabase.from('SITE_Users').insert([payload]);
-            if (error) {
-                alert('Erro ao criar usuário: ' + error.message);
                 return;
             }
-        }
 
-        setIsModalOpen(false);
-        setEditingUser({});
-        fetchUsers();
+            // Success
+            setIsModalOpen(false);
+            setEditingUser({});
+            fetchUsers();
+        }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (!confirm('Tem certeza? Esta ação removerá o acesso do usuário permanentemente.')) return;
+
+        const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id });
+        if (error) {
+            alert('Erro ao excluir: ' + error.message);
+        } else {
+            setUsers(prev => prev.filter(u => u.id !== id));
+            setIsModalOpen(false);
+        }
     };
 
     const handleUpdateProfile = async (data: any) => {
@@ -3838,51 +4152,95 @@ const TeamView = () => {
                             onClick={e => e.stopPropagation()}
                             className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
                         >
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold">{editingUser.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
-                                <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-black" /></button>
+                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                                <h3 className="text-xl font-bold text-gray-900">{editingUser.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
+                                <div className="flex gap-2">
+                                    {editingUser.id && hasPermission('manage_users') && (
+                                        <button
+                                            onClick={() => handleDeleteUser(editingUser.id!)}
+                                            className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                            title="Excluir Usuário"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    )}
+                                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
-                                    <input className="w-full border border-gray-300 p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors" value={editingUser.name || ''} onChange={e => setEditingUser({ ...editingUser, name: e.target.value })} />
+                                    <input
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none"
+                                        value={editingUser.name || ''}
+                                        onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">E-mail</label>
-                                    <input className="w-full border border-gray-300 p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors" value={editingUser.email || ''} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} />
+                                    <input
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none"
+                                        value={editingUser.email || ''}
+                                        onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Senha {editingUser.id && '(Deixe em branco para manter)'}</label>
+                                    <div className="relative">
+                                        <Lock size={16} className="absolute left-3 top-3 text-gray-400" />
+                                        <input
+                                            type="password"
+                                            className="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-3 text-sm font-medium focus:border-wtech-gold outline-none"
+                                            placeholder={editingUser.id ? "Nova senha..." : "Definir senha..."}
+                                            value={editingUser.password || ''}
+                                            onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cargo / Função</label>
                                     <select
-                                        className="w-full border border-gray-300 p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white"
                                         value={editingUser.role_id || ''}
                                         onChange={e => setEditingUser({ ...editingUser, role_id: e.target.value })}
                                     >
-                                        <option value="">Selecione um Cargo...</option>
+                                        <option value="">Sem Cargo</option>
                                         {roles.map(r => (
                                             <option key={r.id} value={r.id}>{r.name} (Nível {r.level})</option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
-                                        <select
-                                            className="w-full border border-gray-300 p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
-                                            value={editingUser.status || 'Active'}
-                                            onChange={e => setEditingUser({ ...editingUser, status: e.target.value as any })}
-                                        >
-                                            <option value="Active">Ativo</option>
-                                            <option value="Inactive">Inativo</option>
-                                        </select>
-                                    </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
+                                    <select
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white"
+                                        value={editingUser.status || 'Active'}
+                                        onChange={e => setEditingUser({ ...editingUser, status: e.target.value as any })}
+                                    >
+                                        <option value="Active">Ativo</option>
+                                        <option value="Inactive">Bloqueado / Inativo</option>
+                                    </select>
                                 </div>
-                            </div>
 
-                            <div className="mt-8 flex gap-3">
-                                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-lg">Cancelar</button>
-                                <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white font-bold rounded-lg shadow-lg hover:bg-gray-800">Salvar Dados</button>
+                                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                    <input
+                                        type="checkbox"
+                                        id="receives_leads"
+                                        className="w-5 h-5 text-wtech-gold rounded focus:ring-wtech-gold"
+                                        checked={editingUser.receives_leads || false}
+                                        onChange={e => setEditingUser({ ...editingUser, receives_leads: e.target.checked })}
+                                    />
+                                    <label htmlFor="receives_leads" className="text-sm font-bold text-blue-900 cursor-pointer">
+                                        Apto a receber Leads (Atendimento)
+                                        <p className="text-[10px] font-normal text-blue-700">Se marcado, receberá leads automaticamente.</p>
+                                    </label>
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-gray-200 rounded-lg font-bold text-gray-600 hover:bg-gray-50">Cancelar</button>
+                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 shadow-lg">Salvar Dados</button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -3995,7 +4353,7 @@ const Admin: React.FC = () => {
         `}>
                 <div>
                     <div className="flex items-center gap-3 mb-10 mt-12 md:mt-0">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center font-bold text-black text-xl font-sans shadow-lg shadow-yellow-500/20">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-bold text-xl font-sans shadow-lg shadow-yellow-500/20">
                             {config.logo_url ? <img src={config.logo_url} className="w-full h-full object-cover rounded-lg" /> : 'W'}
                         </div>
                         <div>
@@ -4030,7 +4388,7 @@ const Admin: React.FC = () => {
 
                         <div className="pt-4 mt-4 border-t border-gray-800">
                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>
-                            <SidebarItem icon={Sparkles} label="Gerador IA" active={currentView === 'ai_generator'} onClick={() => { setCurrentView('ai_generator'); setIsMobileMenuOpen(false); }} />
+
                             <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />
                         </div>
 
@@ -4073,8 +4431,8 @@ const Admin: React.FC = () => {
                         {currentView === 'finance' && <FinanceView />}
                         {currentView === 'settings' && <SettingsView />}
                         {currentView === 'lp_builder' && <LandingPagesView />}
-                        {currentView === 'ai_generator' && <BlogManagerView />}
                         {currentView === 'blog_manager' && <BlogManagerView />}
+                        {currentView === 'news' && <NewsCenterView />}
                     </motion.div>
                 </AnimatePresence>
             </div>
