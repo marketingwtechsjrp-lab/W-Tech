@@ -2,8 +2,13 @@
 import React from 'react';
 import { ArrowLeft, Mail, Phone, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '../context/SettingsContext';
 
 const Suporte = () => {
+    const { get } = useSettings();
+    const whatsapp = get('whatsapp_phone', '5511999999999');
+    const email = get('email_contato', 'contato@w-techbrasil.com.br');
+    const phone = get('phone_main', '(11) 99999-9999');
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
              <div className="bg-wtech-black text-white py-6">
@@ -21,7 +26,7 @@ const Suporte = () => {
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-6">
-                        <a href="https://wa.me/5511999999999" target="_blank" rel="noreferrer" className="flex flex-col items-center p-6 border border-gray-100 rounded-xl hover:shadow-md transition-all hover:border-green-500 group">
+                        <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex flex-col items-center p-6 border border-gray-100 rounded-xl hover:shadow-md transition-all hover:border-green-500 group">
                             <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
                                 <MessageCircle size={24}/>
                             </div>
@@ -29,7 +34,7 @@ const Suporte = () => {
                             <p className="text-sm text-gray-500 text-center">Atendimento rápido em horário comercial.</p>
                         </a>
 
-                        <a href="mailto:contato@wtechbrasil.com.br" className="flex flex-col items-center p-6 border border-gray-100 rounded-xl hover:shadow-md transition-all hover:border-blue-500 group">
+                        <a href={`mailto:${email}`} className="flex flex-col items-center p-6 border border-gray-100 rounded-xl hover:shadow-md transition-all hover:border-blue-500 group">
                             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                 <Mail size={24}/>
                             </div>
@@ -42,7 +47,7 @@ const Suporte = () => {
                                 <Phone size={24}/>
                             </div>
                             <h3 className="font-bold mb-2">Telefone</h3>
-                            <p className="text-sm text-gray-500 text-center">+55 (11) 99999-9999</p>
+                            <p className="text-sm text-gray-500 text-center">{phone}</p>
                         </div>
                     </div>
 

@@ -61,10 +61,10 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                         : course.price}
                 </span>
                 <Link 
-                    to={`/cursos/${course.id}`}
+                    to={`/lp/${course.slug || course.id}`}
                     className="flex items-center text-sm font-bold text-wtech-black hover:text-wtech-gold transition-colors"
                 >
-                    DETALHES <ArrowRight size={16} className="ml-1" />
+                    INSCREVA-SE <ArrowRight size={16} className="ml-1" />
                 </Link>
             </div>
         </div>

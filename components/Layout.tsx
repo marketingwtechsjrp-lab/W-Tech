@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingCart, User as UserIcon, LogIn } from 'lucide-react';
+import { Menu, X, ShoppingCart, User as UserIcon, LogIn, Instagram, Facebook, Youtube, MessageCircle, Mail, Phone, MapPin } from 'lucide-react';
 import { ASSETS } from '../constants';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import CartDrawer from './CartDrawer';
 import LoginModal from './LoginModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSettings } from '../context/SettingsContext';
 
 interface LayoutProps {
   children?: React.ReactNode;
 }
-
-import { useSettings } from '../context/SettingsContext';
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -21,20 +20,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, setShowLoginModal, logout } = useAuth();
   const { get } = useSettings();
 
-  const navItems = [
-    { label: 'Home', path: '/' },
-    { label: 'Cursos', path: '/cursos' },
-    { label: 'Mecânicos', path: '/mapa' },
-    { label: 'Blog', path: '/blog' },
-    { label: 'Glossário', path: '/glossario' },
-    { label: 'Contato', path: '/contato' },
-  ];
-
   const siteTitle = get('site_title', 'W-TECH');
   const logoUrl = get('logo_url', ASSETS.LOGO_URL);
   const contactEmail = get('email_contato', 'comercial@w-techbrasil.com.br');
   const contactPhone = get('phone_main', '(11) 99999-9999');
   const contactAddr = get('address', 'São Paulo, SP');
+
+  // Fetch Socials
+  const instagram = get('instagram', '');
+  const facebook = get('facebook', '');
+  const youtube = get('youtube', ''); 
+  const whatsapp = get('whatsapp_phone', '');
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800">
@@ -46,8 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto flex justify-between items-center">
           <span>Especialistas em Suspensão e Performance</span>
           <div className="flex gap-4 items-center">
-             {/* ... User Auth ... */}
-             {/* Preserved existing logic, reusing children for brevity in this replacement block if possible but I need the full return for clarity */}
+             
             {user ? (
                <div className="flex items-center gap-2">
                  <Link to="/admin" className="hover:text-wtech-gold text-wtech-gold font-bold transition-colors">
@@ -70,7 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Header - Modern Standardized */}
-      <nav className="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 transition-all duration-300">
+      <nav className="sticky top-0 w-full z-[1000] bg-white/95 backdrop-blur-xl border-b border-gray-100 transition-all duration-300">
         <div className="container mx-auto px-6 h-24 flex justify-between items-center">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 z-50">
@@ -174,9 +169,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div>
             <img src={logoUrl} alt={siteTitle} className="h-10 mb-6 brightness-0 invert opacity-80" />
-            <p className="text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed mb-6">
               Referência nacional em tecnologia de suspensão, oferecendo produtos de alta performance e educação técnica especializada.
             </p>
+            {/* Social Icons */}
+            <div className="flex gap-4">
+                {instagram && (
+                    <a href={instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                        <Instagram size={20} />
+                    </a>
+                )}
+                {facebook && (
+                    <a href={facebook} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                        <Facebook size={20} />
+                    </a>
+                )}
+                {youtube && (
+                    <a href={youtube} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                        <Youtube size={20} />
+                    </a>
+                )}
+                 {whatsapp && (
+                    <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                        <MessageCircle size={20} />
+                    </a>
+                )}
+            </div>
           </div>
           <div>
             <h3 className="text-white font-bold uppercase mb-4">Acesso Rápido</h3>
@@ -199,9 +217,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div>
             <h3 className="text-white font-bold uppercase mb-4">Contato</h3>
             <ul className="space-y-2 text-sm">
-              <li>{contactEmail}</li>
-              <li>{contactPhone}</li>
-              <li>{contactAddr}</li>
+              <li className="flex items-center gap-2"><Mail size={16} className="text-wtech-gold"/> {contactEmail}</li>
+              <li className="flex items-center gap-2"><Phone size={16} className="text-wtech-gold"/> {contactPhone}</li>
+              <li className="flex items-start gap-2"><MapPin size={16} className="text-wtech-gold shrink-0 mt-1"/> <span dangerouslySetInnerHTML={{__html: contactAddr}} /></li>
             </ul>
           </div>
         </div>

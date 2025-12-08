@@ -92,9 +92,9 @@ const MechanicsMap: React.FC = () => {
   };
 
   const filteredMechanics = mechanics.filter(m =>
-    m.workshopName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.workshopName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.state || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.specialty && m.specialty.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 

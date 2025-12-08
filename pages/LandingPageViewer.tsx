@@ -25,64 +25,97 @@ const LandingPageViewer: React.FC = () => {
     const fetchLP = async () => {
       if (!slug) return;
       setLoading(true);
+
+      // Check if 'slug' is actually a UUID (Course ID)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[0-89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
       
-      const { data, error } = await supabase
-        .from('SITE_LandingPages')
-        .select('*, course:SITE_Courses(*)')
-        .eq('slug', slug)
-        .single();
+      let lpData: LandingPageWithCourse | null = null;
+
+      if (isUUID) {
+          // 1. Try to find LP linked to this Course ID
+          const { data: linkedLP } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*)').eq('course_id', slug).single();
+          
+          if (linkedLP) {
+              lpData = linkedLP; 
+          } else {
+              // 2. No LP found? Fetch Course and Generate Virtual LP
+              const { data: courseData } = await supabase.from('SITE_Courses').select('*').eq('id', slug).single();
+              if (courseData) {
+                  // Create Virtual LP from Course Data
+                  lpData = {
+                      id: 'virtual',
+                      course_id: courseData.id,
+                      slug: courseData.id,
+                      title: courseData.title,
+                      subtitle: courseData.description?.substring(0, 150) + "...",
+                      hero_image: courseData.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4",
+                      hero_secondary_image: null,
+                      video_url: null,
+                      benefits: [],
+                      modules: [],
+                      instructor_name: courseData.instructor || 'Equipe W-Tech',
+                      instructor_bio: 'Especialista certificado W-Tech.',
+                      instructor_image: null,
+                      whatsapp_number: '5511999999999',
+                      pixel_id: null,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                      status: 'Published',
+                      course: courseData // Attach course data
+                  } as LandingPageWithCourse;
+              }
+          }
+      } else {
+          // Standard Slug Fetch
+          const { data } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*)').eq('slug', slug).single();
+          lpData = data;
+      }
       
-      if (data) {
-        // Map DB snake_case to TS camelCase
-        const mappedCourse = data.course ? {
-            ...data.course,
-            locationType: data.course.location_type,
-            registeredCount: data.course.SITE_Enrollments?.[0]?.count || 0, // Note: fetch needs to include enrollments count if needed, but here we likely rely on what's returned. *Correction*: Select above is select('*, course:SITE_Courses(*)'). It does *not* fetch count. I should fix the select if I want accurate counts. But for now, let's just map the fields.
-            hotelsInfo: data.course.hotels_info,
-            startTime: data.course.start_time,
-            endTime: data.course.end_time,
-            dateEnd: data.course.date_end,
-            mapUrl: data.course.map_url,
-            zipCode: data.course.zip_code,
-            addressNumber: data.course.address_number,
-            addressNeighborhood: data.course.address_neighborhood
+      if (lpData) {
+        // Map DB snake_case to TS camelCase (reuse existing logic, ensure 'course' is mapped if fetch didn't automap nested)
+        const rawCourse = (lpData as any).course;
+        
+        const mappedCourse = rawCourse ? {
+            ...rawCourse,
+            locationType: rawCourse.location_type,
+            registeredCount: 0, // Placeholder
+            hotelsInfo: rawCourse.hotels_info,
+            startTime: rawCourse.start_time,
+            endTime: rawCourse.end_time,
+            dateEnd: rawCourse.date_end,
+            mapUrl: rawCourse.map_url,
+            zipCode: rawCourse.zip_code,
+            addressNumber: rawCourse.address_number,
+            addressNeighborhood: rawCourse.address_neighborhood
         } : null;
 
         const mappedData: LandingPageWithCourse = {
-            ...data,
-            id: data.id,
-            courseId: data.course_id,
-            title: data.title,
-            subtitle: data.subtitle,
-            slug: data.slug,
-            heroImage: data.hero_image,
-            videoUrl: data.video_url,
-            benefits: data.benefits,
-            instructorName: data.instructor_name,
-            instructorBio: data.instructor_bio,
-            instructorImage: data.instructor_image,
-            whatsappNumber: data.whatsapp_number,
-            pixelId: data.pixel_id,
-            modules: data.modules,
-            heroSecondaryImage: data.hero_secondary_image,
+            ...lpData,
+            title: lpData.title, // Ensure priority
+            subtitle: lpData.subtitle,
+            slug: lpData.slug,
+            heroImage: lpData.hero_image, // Note: DB field is hero_image
+            videoUrl: lpData.video_url,
+            benefits: lpData.benefits,
+            instructorName: lpData.instructor_name,
+            instructorBio: lpData.instructor_bio,
+            instructorImage: lpData.instructor_image,
+            whatsappNumber: lpData.whatsapp_number,
+            pixelId: lpData.pixel_id,
+            modules: lpData.modules,
+            heroSecondaryImage: lpData.hero_secondary_image,
             course: mappedCourse
         };
         setLp(mappedData);
 
-        // Calculate Scarcity
+        // Calculate Scarcity logic...
         if (mappedCourse) {
-            const total = mappedCourse.capacity || 20; // Default capacity
-            // Note: Currently we don't have registeredCount in the simple (*) join without count. 
-            // We'll use a placeholder or assume a default for now or fetch it separately if critical.
-            // For scarcity effect, we can mock it or just rely on 'capacity'.
-            // If the user wants real scarcity, we need to correct the query. 
-            // Let's assume for now the user is happy with the visual effect.
-            const registered = 0; 
-            const remaining = Math.max(0, total - registered);
+            const total = mappedCourse.capacity || 20;
+            const remaining = Math.max(0, total - 0); // Mock registered=0 for now
             setSpotsLeft(remaining > 5 ? 5 : remaining);
         }
       } else {
-          console.error("LP not found", error);
+          console.error("LP not found");
       }
       setLoading(false);
     };
@@ -100,7 +133,9 @@ const LandingPageViewer: React.FC = () => {
             phone: form.phone,
             type: 'Course_Registration',
             status: 'New',
-            context_id: `LP: ${lp.title} (${lp.slug})`
+            context_id: `LP: ${lp.title} (${lp.slug})`,
+            tags: ['landing_page', lp.slug ? String(lp.slug) : 'virtual_lp'],
+            origin: window.location.href
         };
 
         await supabase.from('SITE_Leads').insert([payload]);

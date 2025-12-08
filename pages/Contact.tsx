@@ -22,7 +22,9 @@ const Contact: React.FC = () => {
                 phone: form.phone,
                 type: 'Contact_Form',
                 status: 'New',
-                context_id: form.message.slice(0, 50) + '...'
+                context_id: form.message.slice(0, 50) + '...',
+                tags: ['contact_page'],
+                origin: window.location.href
             };
 
             // 1. Insert into CRM

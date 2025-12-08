@@ -25,7 +25,7 @@ const Blog: React.FC = () => {
         if (data) {
             setPosts(data.map((p: any) => ({
                 ...p,
-                seoScore: p.seo_score
+                seoScore: p.seo_score || 0
             })));
         }
         setLoading(false);

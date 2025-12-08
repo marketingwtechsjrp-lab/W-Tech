@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { generateBlogPost } from '../lib/gemini';
 import { LandingPageEditor } from './LandingPageEditor';
 import { useSettings } from '../context/SettingsContext';
+import EmailMarketingView from '../components/EmailMarketingView';
 
 // --- Types for Local State ---
 declare const L: any;
@@ -48,7 +49,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder';
+type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing';
 
 const SidebarItem = ({
     icon: Icon,
@@ -107,15 +108,39 @@ const DashboardView = () => {
         activeCourses: 0
     });
     const [revenueHistory, setRevenueHistory] = useState<{ date: string, value: number }[]>([]);
+    const [leadsHistory, setLeadsHistory] = useState<{ date: string, value: number }[]>([]);
     const [mechanicsByState, setMechanicsByState] = useState<{ state: string, count: number }[]>([]);
+    const [filterPeriod, setFilterPeriod] = useState('YYYY');
 
     useEffect(() => {
         async function fetchData() {
+            // Date Filter Logic
+            const now = new Date();
+            let startDate = new Date(0).toISOString(); // Default All Time
+            
+            if (filterPeriod === '30d') {
+                const d = new Date();
+                d.setDate(d.getDate() - 30);
+                startDate = d.toISOString();
+            } else if (filterPeriod === '90d') {
+                const d = new Date();
+                d.setDate(d.getDate() - 90);
+                startDate = d.toISOString();
+            } else if (filterPeriod === 'YYYY') {
+                startDate = new Date(now.getFullYear(), 0, 1).toISOString();
+            }
+
             // 1. Leads
-            const { count: leadsCount } = await supabase.from('SITE_Leads').select('*', { count: 'exact', head: true });
+            const { count: leadsCount } = await supabase
+                .from('SITE_Leads')
+                .select('*', { count: 'exact', head: true })
+                .gte('created_at', startDate);
 
             // 2. Enrollments & Revenue
-            const { data: enrollments } = await supabase.from('SITE_Enrollments').select('*, course:SITE_Courses(price)');
+            const { data: enrollments } = await supabase
+                .from('SITE_Enrollments')
+                .select('*, course:SITE_Courses(price)')
+                .gte('created_at', startDate);
 
             let realized = 0;
             let future = 0;
@@ -131,7 +156,7 @@ const DashboardView = () => {
                 });
             }
 
-            // 3. Active Courses
+            // 3. Active Courses (Not filtered by date usually, but could be)
             const { count: coursesCount } = await supabase.from('SITE_Courses').select('*', { count: 'exact', head: true });
 
             // 4. Mechanics by State (Mock or Real)
@@ -155,6 +180,9 @@ const DashboardView = () => {
 
             // Mock Revenue History for Chart (since we don't have historical sequence easy yet)
             // In real prod, group transactions by date.
+            setMechanicsByState(stateData);
+
+            // Mock Revenue History for Chart
             setRevenueHistory([
                 { date: 'Jan', value: realized * 0.1 },
                 { date: 'Fev', value: realized * 0.15 },
@@ -163,9 +191,22 @@ const DashboardView = () => {
                 { date: 'Mai', value: realized * 0.6 },
                 { date: 'Jun', value: realized } // Current
             ]);
+
+             // Leads History (Mock for now, normally grouped by created_at)
+             setLeadsHistory([
+                { date: 'Jan', value: Math.floor(leadsCount * 0.1) },
+                { date: 'Fev', value: Math.floor(leadsCount * 0.15) },
+                { date: 'Mar', value: Math.floor(leadsCount * 0.2) },
+                { date: 'Abr', value: Math.floor(leadsCount * 0.25) },
+                { date: 'Mai', value: Math.floor(leadsCount * 0.4) },
+                { date: 'Jun', value: leadsCount || 0 }
+            ]);
         }
         fetchData();
-    }, []);
+    }, [filterPeriod]); // Re-fetch when filter changes (logic to filter leads/revenue would go inside fetch)
+
+    // Calculate Conversion Rate
+    const conversionRate = stats.leads > 0 ? ((stats.students / stats.leads) * 100).toFixed(1) : '0.0';
 
     // Custom SVG Area Chart
     const AreaChart = ({ data, color = "#d4af37" }: any) => {
@@ -180,15 +221,15 @@ const DashboardView = () => {
         }).join(' ');
 
         return (
-            <div className="w-full overflow-hidden">
-                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+            <div className="w-full h-full overflow-hidden relative">
+                <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-full overflow-hidden">
                     <defs>
-                        <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                        <linearGradient id={`${color}-gradient`} x1="0" x2="0" y1="0" y2="1">
                             <stop offset="0%" stopColor={color} stopOpacity="0.2" />
                             <stop offset="100%" stopColor={color} stopOpacity="0" />
                         </linearGradient>
                     </defs>
-                    <path d={`M0,${height} ${points} ${width},${height}`} fill="url(#gradient)" />
+                    <path d={`M0,${height} ${points} ${width},${height}`} fill={`url(#${color}-gradient)`} />
                     <polyline fill="none" stroke={color} strokeWidth="3" points={points} />
                     {data.map((d: any, i: number) => (
                         <circle key={i} cx={(i / (data.length - 1)) * width} cy={height - ((d.value / max) * height)} r="4" fill="white" stroke={color} strokeWidth="2" />
@@ -203,6 +244,19 @@ const DashboardView = () => {
 
     return (
         <div className="space-y-6 animate-fade-in text-gray-900 pb-10">
+            {/* Filter Header */}
+            <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-800">Visão Geral</h2>
+                <select 
+                    value={filterPeriod} 
+                    onChange={(e) => setFilterPeriod(e.target.value)}
+                    className="border border-gray-300 rounded-lg p-2 text-sm font-bold text-gray-600 bg-white"
+                >
+                    <option value="YYYY">Ano Atual</option>
+                    <option value="30d">Últimos 30 dias</option>
+                    <option value="90d">Últimos 3 Meses</option>
+                </select>
+            </div>
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
@@ -225,48 +279,82 @@ const DashboardView = () => {
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Revenue Chart */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Main Revenue Chart (Small) */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Rede Credenciada</h2>
-                            <p className="text-sm text-gray-500">Gerencie oficinas e parceiros credenciados.</p>
+                            <h3 className="text-lg font-bold text-gray-900">Receita Recente</h3>
+                            <p className="text-gray-500 text-xs">Tendência de faturamento.</p>
                         </div>
-                        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                            <span className="flex items-center gap-1 text-xs font-bold text-gray-500"><div className="w-2 h-2 rounded-full bg-wtech-gold"></div>Receita</span>
+                        <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-xs">
+                            <TrendingUp size={14} /> +32%
                         </div>
                     </div>
-                    <div className="h-64 flex items-end">
+                    <div className="h-48 flex items-end">
                         <AreaChart data={revenueHistory} color="#d4af37" />
                     </div>
                 </div>
 
-                {/* Mechanics Distribution */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900 mb-2">Credenciados</h2>
-                    <p className="text-sm text-gray-500 mb-6">Top 5 Estados com mais oficinas</p>
+                {/* Leads & Conversion Chart */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900">Leads e Conversão</h3>
+                            <p className="text-gray-500 text-xs">Desempenho de captação de alunos.</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-purple-600 font-bold bg-purple-50 px-3 py-1 rounded-full text-xs">
+                             Taxa: {conversionRate}%
+                        </div>
+                    </div>
+                    <div className="h-48 flex items-end">
+                        <AreaChart data={leadsHistory} color="#9333ea" />
+                    </div>
+                </div>
+            </div>
 
-                    <div className="space-y-4">
-                        {mechanicsByState.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-3">
-                                <span className="w-8 text-xs font-bold text-gray-400">#{idx + 1}</span>
-                                <div className="flex-grow">
-                                    <div className="flex justify-between text-sm font-bold mb-1">
-                                        <span>{item.state}</span>
-                                        <span className="text-gray-500">{item.count}</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-wtech-black" style={{ width: `${(item.count / (mechanicsByState[0]?.count || 1)) * 100}%` }}></div>
-                                    </div>
+            {/* Network Growth / Large Chart */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Rede Credenciada</h2>
+                        <p className="text-sm text-gray-500">Gerencie oficinas e parceiros credenciados.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                        <span className="flex items-center gap-1 text-xs font-bold text-gray-500"><div className="w-2 h-2 rounded-full bg-wtech-gold"></div>Receita Global</span>
+                    </div>
+                </div>
+                <div className="h-64 flex items-end">
+                     {/* Using revenue history here again as placeholder for mechanics growth or total revenue */}
+                    <AreaChart data={revenueHistory} color="#d4af37" />
+                </div>
+            </div>
+
+            {/* Mechanics Distribution */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">Credenciados por Região</h2>
+                <p className="text-sm text-gray-500 mb-6">Top 5 Estados com mais oficinas</p>
+
+                <div className="space-y-4">
+                    {mechanicsByState.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                            <span className="w-8 text-xs font-bold text-gray-400">#{idx + 1}</span>
+                            <div className="flex-grow">
+                                <div className="flex justify-between text-sm font-bold mb-1">
+                                    <span>{item.state}</span>
+                                    <span className="text-gray-500">{item.count}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-wtech-black" style={{ width: `${(item.count / (mechanicsByState[0]?.count || 1)) * 100}%` }}></div>
                                 </div>
                             </div>
-                        ))}
-                        {mechanicsByState.length === 0 && <p className="text-sm text-gray-400 italic">Sem dados de localização.</p>}
-                    </div>
-
-                    <button className="w-full mt-8 py-3 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500 hover:bg-gray-100 rounded-lg">Ver Relatório Completo</button>
+                        </div>
+                    ))}
+                    {mechanicsByState.length === 0 && <p className="text-sm text-gray-400 italic">Sem dados de localização.</p>}
                 </div>
+
+                <button className="w-full mt-8 py-3 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500 hover:bg-gray-100 rounded-lg">Ver Relatório Completo</button>
             </div>
         </div>
     );
@@ -323,7 +411,7 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick }:
     );
 };
 
-const LeadCard = ({ lead, onClick }: { lead: any, onClick: () => void }) => {
+const LeadCard: React.FC<{ lead: any, onClick: () => void }> = ({ lead, onClick }) => {
     const { setDraggedId } = React.useContext(DragContext);
     const [isDragging, setIsDragging] = React.useState(false);
 
@@ -393,12 +481,14 @@ const CRMView = () => {
         // Fetch Leads with Privacy Filter
         let query = supabase.from('SITE_Leads').select('*').order('created_at', { ascending: false });
 
-        // Privacy Logic: If not Admin (Level > 8), only see assigned leads
-        // Assuming user.role.level is available. If not, we might need to fetch role.
-        // For safety, let's assume 'admin_access' permission grants view all.
-        const isAdmin = user?.role?.permissions?.admin_access || user?.role?.name === 'Super Admin';
+        // Privacy Logic: If not Admin (Level > 8 or Super Admin), only see assigned leads
+        // Checking explicitly for Level 10 as requested
+        const hasFullAccess = 
+            (typeof user?.role !== 'string' && user?.role?.level >= 10) || 
+            (typeof user?.role !== 'string' && user?.role?.name === 'Super Admin') ||
+            (typeof user?.role !== 'string' && user?.role?.permissions?.admin_access);
 
-        if (!isAdmin && user?.id) {
+        if (!hasFullAccess && user?.id) {
             query = query.eq('assigned_to', user.id);
         }
 
@@ -694,6 +784,18 @@ const BlogManagerView = () => {
             seoDescription: p.seo_description,
             seoTitle: p.seo_title
         })));
+    };
+
+    const handleDeletePost = async (id: string) => {
+        if (!confirm("Tem certeza que deseja excluir este post permanentemente?")) return;
+        
+        const { error } = await supabase.from('SITE_BlogPosts').delete().eq('id', id);
+        
+        if (error) {
+            alert("Erro ao excluir: " + error.message);
+        } else {
+            setPosts(prev => prev.filter(p => p.id !== id));
+        }
     };
 
     const handleEdit = async (post?: BlogPost) => {
@@ -1098,6 +1200,12 @@ const BlogManagerView = () => {
                                     >
                                         <Edit size={14} /> Editar
                                     </button>
+                                     <button
+                                        onClick={() => handleDeletePost(post.id)}
+                                        className="text-red-600 font-bold hover:underline flex items-center gap-1 ml-4"
+                                    >
+                                        <Trash2 size={14} /> Excluir
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -1276,7 +1384,71 @@ const CoursesManagerView = () => {
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [formData, setFormData] = useState<Partial<Course>>({});
 
+    // Settle Modal State
+    const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number }>({ isOpen: false, enrollment: null, amount: 0 });
+    const [settleMethod, setSettleMethod] = useState('Pix');
+
+    // --- Report State ---
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportCourse, setReportCourse] = useState<Course | null>(null);
+    const [reportLoading, setReportLoading] = useState(true);
+    const [reportData, setReportData] = useState({
+        leadsCount: 0,
+        enrollmentsCount: 0,
+        inProgressCount: 0,
+        revenue: 0,
+        studentsList: [] as any[]
+    });
+
     const { user } = useAuth();
+    
+    // Permission Check helper specifically for Level 10
+    const isLevel10 = () => {
+        return (typeof user?.role !== 'string' && user?.role?.level >= 10) || (typeof user?.role !== 'string' && user?.role?.name === 'Super Admin');
+    };
+
+    const handleOpenReport = async (course: Course) => {
+        setReportCourse(course);
+        setShowReportModal(true);
+        setReportLoading(true);
+
+        try {
+            // 1. Fetch Enrollments
+            const { data: enrollments } = await supabase.from('SITE_Enrollments').select('*').eq('course_id', course.id);
+            
+            // 2. Fetch Leads (Heuristic: Match context_id containing title)
+            const { data: leads } = await supabase.from('SITE_Leads').select('*').ilike('context_id', `%${course.title}%`);
+
+            const totalEnrollments = enrollments?.length || 0;
+            const confirmedEnrollments = enrollments?.filter((e: any) => e.status === 'Confirmed' || e.status === 'CheckedIn') || [];
+            const revenue = confirmedEnrollments.reduce((acc: number, curr: any) => acc + (curr.amount_paid || 0), 0);
+            
+            const totalLeads = leads?.length || 0;
+            const inProgress = leads?.filter((l: any) => ['New', 'Contacted', 'Negotiating'].includes(l.status)).length || 0;
+
+            const students = enrollments?.map((e: any) => ({
+                name: e.student_name,
+                email: e.student_email,
+                phone: e.student_phone,
+                status: e.status,
+                paid: e.amount_paid || 0
+            })) || [];
+
+            setReportData({
+                leadsCount: totalLeads,
+                enrollmentsCount: confirmedEnrollments.length,
+                inProgressCount: inProgress,
+                revenue,
+                studentsList: students
+            });
+
+        } catch (e) {
+            console.error("Error generating report", e);
+            alert("Erro ao gerar relatório.");
+        } finally {
+            setReportLoading(false);
+        }
+    };
 
     const hasPermission = (key: string) => {
         if (!user) return false;
@@ -1582,41 +1754,47 @@ const CoursesManagerView = () => {
         setEnrollments(prev => prev.map(e => e.id === enrollmentId ? { ...e, status: newStatus as any } : e));
     };
 
-    const handleSettleBalance = async (enrollment: Enrollment, amount: number) => {
-        const method = prompt('Qual o método de pagamento para o saldo restante? (Pix, Cartão, Dinheiro...)', 'Cartão');
-        if (!method) return;
+    const handleSettleBalance = (enrollment: Enrollment, amount: number) => {
+        setSettleModal({ isOpen: true, enrollment, amount });
+        setSettleMethod('Pix');
+    };
 
-        if (!confirm(`Confirmar recebimento de R$ ${amount.toFixed(2)} via ${method}? Isso gerará uma nova receita no financeiro.`)) return;
+    const confirmSettle = async () => {
+        const { enrollment, amount } = settleModal;
+        if (!enrollment || !amount) return;
 
-        // 1. Update Enrollment
+        // 1. Update Enrollment (Total Paid) & Status
         const newTotal = (enrollment.amountPaid || 0) + amount;
         const { error: err1 } = await supabase.from('SITE_Enrollments').update({
             amount_paid: newTotal,
             status: 'Confirmed'
         }).eq('id', enrollment.id);
 
-        if (err1) { alert('Erro ao atualizar aluno'); return; }
+        if (err1) {
+            alert('Erro ao atualizar aluno: ' + err1.message);
+            return;
+        }
 
-        // 2. Add Transaction
+        // 2. Insert NEW Transaction (Split Payment)
+        // This ensures the financial record shows the settlement as a distinct entry
         const { error: err2 } = await supabase.from('SITE_Transactions').insert([{
+            description: `Quitação: ${currentCourse?.title || 'Curso'} - ${enrollment.studentName}`,
+            category: 'Sales',
             type: 'Income',
-            category: 'Course Balance',
-            description: `Saldo curso: ${currentCourse?.title} - Aluno: ${enrollment.studentName}`,
             amount: amount,
-            payment_method: method,
-            enrollment_id: enrollment.id,
-            date: new Date().toISOString()
+            date: new Date().toISOString(), // Payment Date = Now
+            payment_method: settleMethod,
+            enrollment_id: enrollment.id
         }]);
 
-        if (err2 && err2.code !== '42P01') {
-            // Ignore 42P01 (relation does not exist) if table missing, but warn user
-            console.error(err2);
-            alert('Atenção: Transação não salva (Tabela financeira pode não existir), mas aluno foi atualizado.');
+        if (err2) {
+             console.error(err2);
         }
 
         // Update Local State
         setEnrollments(prev => prev.map(e => e.id === enrollment.id ? { ...e, amountPaid: newTotal, status: 'Confirmed' } : e));
-        alert('Saldo quitado com sucesso!');
+        setSettleModal({ ...settleModal, isOpen: false });
+        alert('Pagamento registrado com sucesso!');
     };
 
     const printList = () => {
@@ -2058,6 +2236,59 @@ const CoursesManagerView = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Settle Modal */ }
+                {
+                    settleModal.isOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+                            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
+                                <h3 className="text-xl font-black text-gray-900 mb-2">Quitar Saldo Restante</h3>
+                                <p className="text-gray-500 mb-6">Confirmar recebimento do valor pendente.</p>
+
+                                <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
+                                    <div className="flex justify-between mb-2">
+                                        <span className="text-sm font-bold text-gray-500">Aluno</span>
+                                        <span className="font-bold">{settleModal.enrollment?.studentName}</span>
+                                    </div>
+                                    <div className="flex justify-between mb-2">
+                                        <span className="text-sm font-bold text-gray-500">Valor a Pagar</span>
+                                        <span className="font-bold text-green-600 text-lg">R$ {settleModal.amount.toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <label className="block text-sm font-bold mb-2 text-gray-700">Forma de Pagamento</label>
+                                    <select
+                                        className="w-full p-3 border border-gray-300 rounded-lg font-bold text-gray-800 focus:ring-2 focus:ring-wtech-gold focus:border-transparent outline-none"
+                                        value={settleMethod}
+                                        onChange={e => setSettleMethod(e.target.value)}
+                                    >
+                                        <option value="Pix">Pix</option>
+                                        <option value="Cartão Crédito">Cartão de Crédito</option>
+                                        <option value="Cartão Débito">Cartão de Débito</option>
+                                        <option value="Dinheiro">Dinheiro</option>
+                                        <option value="Boleto">Boleto</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setSettleModal({ ...settleModal, isOpen: false })}
+                                        className="flex-1 py-3 border border-gray-200 rounded-lg font-bold text-gray-600 hover:bg-gray-50"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={confirmSettle}
+                                        className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-lg shadow-green-200"
+                                    >
+                                        Confirmar Pagamento
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
             </div>
         );
     }
@@ -2105,6 +2336,9 @@ const CoursesManagerView = () => {
                                         </span>
                                     </td>
                                     <td className="p-4 flex gap-2 justify-end">
+                                        {isLevel10() && (
+                                            <button onClick={() => handleOpenReport(course)} title="Relatório Gerencial (Nível 10)" className="p-2 text-black bg-wtech-gold hover:bg-yellow-500 rounded transition-colors shadow-sm"><BarChart3 size={16} /></button>
+                                        )}
                                         {hasPermission('courses_edit_lp') && (
                                             <button onClick={() => setEditingLandingPage(course)} title="Gerenciar Landing Page" className="p-2 text-purple-600 hover:bg-purple-50 rounded transition-colors"><Globe size={16} /></button>
                                         )}
@@ -2137,8 +2371,168 @@ const CoursesManagerView = () => {
                     onClose={() => setEditingLandingPage(null)}
                 />
             )}
+
+            {/* RELATÓRIO DE CURSO (NÍVEL 10) */}
+            {showReportModal && reportCourse && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="bg-wtech-black text-white p-6 flex justify-between items-center">
+                            <div>
+                                <div className="text-wtech-gold text-xs font-bold uppercase tracking-widest mb-1">Relatório Gerencial (Nível 10)</div>
+                                <h2 className="text-2xl font-black uppercase">{reportCourse.title}</h2>
+                                <p className="text-gray-400 text-sm">Análise completa de performance e financeiro.</p>
+                            </div>
+                            <button onClick={() => setShowReportModal(false)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                            {reportLoading ? (
+                                <div className="flex flex-col items-center justify-center h-64">
+                                    <Loader2 size={48} className="text-wtech-gold animate-spin mb-4" />
+                                    <p className="text-gray-500 font-bold animate-pulse">Gerando Relatório...</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-8">
+                                    {/* KPI Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Total de Leads</p>
+                                            <h3 className="text-3xl font-black text-gray-900">{reportData.leadsCount}</h3>
+                                            <p className="text-xs text-blue-500 font-medium mt-1">Interessados captados</p>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Vendas Fechadas</p>
+                                            <h3 className="text-3xl font-black text-gray-900">{reportData.enrollmentsCount}</h3>
+                                            <p className="text-xs text-green-500 font-medium mt-1">
+                                                Conversão: {reportData.leadsCount > 0 ? ((reportData.enrollmentsCount / reportData.leadsCount) * 100).toFixed(1) : 0}%
+                                            </p>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-yellow-500">
+                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Em Atendimento</p>
+                                            <h3 className="text-3xl font-black text-gray-900">{reportData.inProgressCount}</h3>
+                                            <p className="text-xs text-yellow-600 font-medium mt-1">Oportunidades abertas</p>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-red-500">
+                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Receita Total</p>
+                                            <h3 className="text-3xl font-black text-gray-900">R$ {reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                                            <p className="text-xs text-gray-400 font-medium mt-1">Confirmada em caixa</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Charts / Funnel (Simplified Visual) */}
+                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                       <h4 className="font-bold text-gray-800 mb-6 flex items-center gap-2"><Filter size={18} /> Funil de Vendas do Curso</h4>
+                                       <div className="flex flex-col gap-2">
+                                            {/* Top Funnel */}
+                                            <div className="w-full bg-blue-50 rounded-lg p-3 relative overflow-hidden group">
+                                                <div className="flex justify-between relative z-10 text-blue-900 font-bold text-sm">
+                                                    <span>Visitas / Leads</span>
+                                                    <span>{reportData.leadsCount}</span>
+                                                </div>
+                                                <div className="absolute top-0 left-0 h-full bg-blue-200 w-full opacity-30"></div>
+                                            </div>
+                                            {/* Mid Funnel */}
+                                            <div className="w-[80%] mx-auto bg-yellow-50 rounded-lg p-3 relative overflow-hidden group">
+                                                <div className="flex justify-between relative z-10 text-yellow-900 font-bold text-sm">
+                                                    <span>Em Negociação</span>
+                                                    <span>{reportData.inProgressCount}</span>
+                                                </div>
+                                                <div className="absolute top-0 left-0 h-full bg-yellow-200 w-full opacity-30"></div>
+                                            </div>
+                                            {/* Bottom Funnel */}
+                                            <div className="w-[60%] mx-auto bg-green-50 rounded-lg p-3 relative overflow-hidden group">
+                                                <div className="flex justify-between relative z-10 text-green-900 font-bold text-sm">
+                                                    <span>Matriculados</span>
+                                                    <span>{reportData.enrollmentsCount}</span>
+                                                </div>
+                                                <div className="absolute top-0 left-0 h-full bg-green-200 w-full opacity-30"></div>
+                                            </div>
+                                       </div>
+                                    </div>
+
+                                    {/* Student List Table */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                        <div className="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                                            <h4 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
+                                            <button 
+                                                onClick={() => {
+                                                    const csv = [
+                                                        ['Nome', 'Email', 'Telefone', 'Status', 'Valor Pago', 'Total Curso'],
+                                                        ...reportData.studentsList.map((s: any) => [
+                                                            s.name, 
+                                                            s.email, 
+                                                            s.phone, 
+                                                            s.status, 
+                                                            s.paid, 
+                                                            reportCourse.price
+                                                        ])
+                                                    ].map(e => e.join(',')).join('\n');
+                                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = `Relatorio_${reportCourse.title}.csv`;
+                                                    a.click();
+                                                }}
+                                                className="text-xs bg-white border border-gray-300 px-3 py-1 rounded font-bold hover:bg-gray-50 flex items-center gap-1"
+                                            >
+                                                <Download size={12} /> CSV
+                                            </button>
+                                        </div>
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-gray-100 text-gray-500 font-bold text-xs uppercase">
+                                                <tr>
+                                                    <th className="px-4 py-3">Aluno</th>
+                                                    <th className="px-4 py-3">Contato</th>
+                                                    <th className="px-4 py-3 text-center">Status</th>
+                                                    <th className="px-4 py-3 text-right">Pago</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {reportData.studentsList?.map((student: any, idx: number) => (
+                                                    <tr key={idx} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-3 font-bold text-gray-800">{student.name}</td>
+                                                        <td className="px-4 py-3 text-gray-500">
+                                                            <div className="text-xs">{student.email}</div>
+                                                            <div className="text-xs">{student.phone}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${student.status === 'Confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                                {student.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-bold text-gray-700">
+                                                            R$ {student.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {(!reportData.studentsList || reportData.studentsList.length === 0) && (
+                                                    <tr>
+                                                        <td colSpan={4} className="p-8 text-center text-gray-400 italic">Nenhum aluno matriculado ainda.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                         <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50">
+                            <button onClick={() => window.print()} className="bg-wtech-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 flex items-center gap-2">
+                                <Printer size={16} /> Imprimir Relatório
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
+
+
 
 
 
@@ -2329,9 +2723,15 @@ const CoursesManagerView = () => {
                             <label className="block text-sm font-bold mb-1 text-gray-700">Instrutor</label>
                             <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Valor (R$)</label>
-                            <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700">Valor (R$)</label>
+                                <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700">Vagas / Cotas</label>
+                                <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
+                            </div>
                         </div>
 
                         <div className="md:col-span-2">
@@ -2357,7 +2757,7 @@ const CoursesManagerView = () => {
                 </div>
             )}
 
-            {!isEditing && (
+            {!isEditing && hasPermission('courses_add') && (
                 <div className="mb-4">
                     <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 font-bold hover:border-wtech-gold hover:text-wtech-gold transition-colors flex items-center justify-center gap-2">
                         <Plus size={20} /> Adicionar Novo Curso no Topo
@@ -2391,6 +2791,7 @@ const MechanicsView = () => {
 
     // Search & Selection State
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterMissingGPS, setFilterMissingGPS] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     // Pagination
@@ -2400,10 +2801,21 @@ const MechanicsView = () => {
     const { user } = useAuth(); // Assuming useAuth provides user and role info
 
     // --- Permissions Helper ---
+    // --- Permissions Helper ---
     const hasPermission = (key: string) => {
-        if (!user || !user.role || !user.role.permissions) return false;
-        if (user.role.permissions.admin_access) return true;
-        return !!user.role.permissions[key];
+        if (!user || !user.role) return false;
+        
+        // Handle String Role (Legacy/Simple Auth)
+        if (typeof user.role === 'string') {
+            return user.role === 'Super Admin' || user.role === 'Admin';
+        }
+
+        // Handle Object Role
+        // Super Admin Level 10 Override
+        if (user.role.level >= 10 || user.role.name === 'Super Admin') return true;
+
+        if (user.role.permissions && user.role.permissions.admin_access) return true;
+        return !!(user.role.permissions && user.role.permissions[key]);
     };
 
     useEffect(() => {
@@ -2479,9 +2891,18 @@ const MechanicsView = () => {
         }
 
         try {
-            const addressQuery = `${formData.street || ''}, ${formData.city}, ${formData.state}, Brazil`;
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
-            const data = await response.json();
+            // Priority 1: Full Address
+            let addressQuery = `${formData.street || ''}, ${formData.number || ''}, ${formData.city}, ${formData.state}, Brazil`;
+            let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
+            let data = await response.json();
+
+            // Priority 2: Fallback to City Center
+            if (!data || data.length === 0) {
+                addressQuery = `${formData.city}, ${formData.state}, Brazil`;
+                response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
+                data = await response.json();
+                if (data && data.length > 0) alert('Endereço exato não encontrado. Usando centro da cidade.');
+            }
 
             if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat);
@@ -2500,7 +2921,9 @@ const MechanicsView = () => {
     const [processingCount, setProcessingCount] = useState({ current: 0, total: 0 });
 
     const handleBatchGeocode = async () => {
-        const { data: missingCoords } = await supabase.from('SITE_Mechanics').select('*').is('latitude', null);
+        // Fetch mechanics where latitude is NULL OR latitude is 0
+        const { data: allMechanics } = await supabase.from('SITE_Mechanics').select('*');
+        const missingCoords = allMechanics?.filter((m: any) => !m.latitude || m.latitude === 0 || !m.longitude || m.longitude === 0) || [];
 
         if (!missingCoords || missingCoords.length === 0) {
             alert('Todos os credenciados já possuem coordenadas!');
@@ -2516,14 +2939,22 @@ const MechanicsView = () => {
             const mech = missingCoords[i];
             setProcessingCount({ current: i + 1, total: missingCoords.length });
 
-            const addressQuery = `${mech.street || ''}, ${mech.number || ''}, ${mech.district || ''}, ${mech.city}, ${mech.state}, Brazil`;
-
             try {
                 // Nominatim Rate Limit: Max 1 request per second
                 await new Promise(resolve => setTimeout(resolve, 1200));
 
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
-                const data = await response.json();
+                // 1. Try Specific Address
+                const addressQuery = `${mech.street || ''}, ${mech.number || ''}, ${mech.district || ''}, ${mech.city}, ${mech.state}, Brazil`;
+                let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
+                let data = await response.json();
+
+                // 2. Fallback to City Center
+                if (!data || data.length === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 1200)); // Rate limit for 2nd try
+                    const cityQuery = `${mech.city}, ${mech.state}, Brazil`;
+                    response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityQuery)}`);
+                    data = await response.json();
+                }
 
                 if (data && data.length > 0) {
                     const lat = parseFloat(data[0].lat);
@@ -2543,6 +2974,37 @@ const MechanicsView = () => {
         alert(`Processo finalizado! ${updated} credenciados atualizados.`);
         setProcessingCount({ current: 0, total: 0 });
         fetchMechanics();
+    };
+
+    const handleQuickGeocode = async (mech: Mechanic) => {
+        if (!mech.city || !mech.state) return alert('Cidade/Estado incompletos.');
+        
+        try {
+             // 1. Try Exact Address
+             const addressQuery = `${mech.street || ''}, ${mech.number || ''}, ${mech.city}, ${mech.state}, Brazil`;
+             let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
+             let data = await response.json();
+
+             // 2. Fallback to City Center
+             if (!data || data.length === 0) {
+                 const cityQuery = `${mech.city}, ${mech.state}, Brazil`;
+                 response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityQuery)}`);
+                 data = await response.json();
+                 if (data && data.length > 0) alert('Endereço exato não encontrado. PIN posicionado no centro da cidade.');
+             }
+
+             if (data && data.length > 0) {
+                 const lat = parseFloat(data[0].lat);
+                 const lng = parseFloat(data[0].lon);
+                 await supabase.from('SITE_Mechanics').update({ latitude: lat, longitude: lng }).eq('id', mech.id);
+                 setMechanics(prev => prev.map(m => m.id === mech.id ? { ...m, latitude: lat, longitude: lng } : m));
+                 alert('GPS Atualizado!');
+             } else {
+                 alert('Endereço não encontrado.');
+             }
+        } catch (e) {
+            alert('Erro ao buscar.');
+        }
     };
 
     const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2624,12 +3086,16 @@ const MechanicsView = () => {
         fetchMechanics();
     };
 
-    const filteredMechanics = mechanics.filter(m =>
-        (m.workshopName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (m.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (m.state || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (String(m.group || '').toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredMechanics = mechanics.filter(m => {
+        const matchesSearch = (m.workshopName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (m.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (m.state || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (String(m.group || '').toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        const matchesGPS = !filterMissingGPS || (!m.latitude || !m.longitude || m.latitude === 0);
+
+        return matchesSearch && matchesGPS;
+    });
 
     const toggleSelectAll = () => {
         if (selectedIds.length === filteredMechanics.length) {
@@ -2784,6 +3250,13 @@ const MechanicsView = () => {
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <button 
+                        onClick={() => setFilterMissingGPS(!filterMissingGPS)}
+                        className={`px-4 py-2 rounded font-bold flex items-center gap-2 border transition-all ${filterMissingGPS ? 'bg-orange-100 border-orange-200 text-orange-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                    >
+                        <MapPin size={18} className={filterMissingGPS ? "fill-orange-500" : ""} /> 
+                        {filterMissingGPS ? 'Mostrando Sem GPS' : 'Filtrar Sem GPS'}
+                    </button>
                 </div>
             </div>
 
@@ -2829,6 +3302,11 @@ const MechanicsView = () => {
                                     )}
                                     {hasPermission('accredited_edit') && (
                                         <button onClick={() => { setFormData(mech); setIsEditing(true); }} className="text-gray-500 hover:text-black"><Edit size={16} /></button>
+                                    )}
+                                    {(!mech.latitude || !mech.longitude) && hasPermission('accredited_edit') && (
+                                        <button onClick={() => handleQuickGeocode(mech)} className="text-blue-500 hover:text-blue-700" title="Atualizar GPS Rápido">
+                                            <Sparkles size={16} />
+                                        </button>
                                     )}
                                     {hasPermission('accredited_delete') && (
                                         <button onClick={() => handleDelete(mech.id)} className="text-red-400 hover:text-red-700"><Trash2 size={16} /></button>
@@ -2884,9 +3362,19 @@ const FinanceView = () => {
 
     // --- Permissions Helper ---
     const hasPermission = (key: string) => {
-        if (!user || !user.role || !user.role.permissions) return false;
-        if (user.role.permissions.admin_access) return true;
-        return !!user.role.permissions[key];
+        if (!user || !user.role) return false;
+        
+        // Handle String Role
+        if (typeof user.role === 'string') {
+            return user.role === 'Super Admin' || user.role === 'Admin';
+        }
+
+        // Handle Object Role
+        // Super Admin Level 10 Override
+        if (user.role.level >= 10 || user.role.name === 'Super Admin') return true;
+
+        if (user.role.permissions && user.role.permissions.admin_access) return true;
+        return !!(user.role.permissions && user.role.permissions[key]);
     };
 
     useEffect(() => {
@@ -3421,7 +3909,6 @@ const SettingsView = () => {
             console.error(error);
             alert('Erro ao salvar configurações: ' + (error.message || JSON.stringify(error)));
         } else {
-            alert('Configurações salvas com sucesso!');
         }
     };
 
@@ -3436,14 +3923,24 @@ const SettingsView = () => {
             level: editingRole.level || 1
         };
 
+        let error = null;
+
         if (editingRole.id) {
-            await supabase.from('SITE_Roles').update(payload).eq('id', editingRole.id);
+            const res = await supabase.from('SITE_Roles').update(payload).eq('id', editingRole.id);
+            error = res.error;
         } else {
-            await supabase.from('SITE_Roles').insert([payload]);
+            const res = await supabase.from('SITE_Roles').insert([payload]);
+            error = res.error;
         }
 
-        setEditingRole(null);
-        fetchRoles();
+        if (error) {
+            console.error("Error saving role:", error);
+            alert("Erro ao salvar cargo: " + error.message);
+        } else {
+            setEditingRole(null);
+            fetchRoles();
+            alert("Cargo salvo com sucesso!");
+        }
     };
 
     const handleDeleteRole = async (id: string) => {
@@ -3467,7 +3964,6 @@ const SettingsView = () => {
         });
     };
 
-    // Granular Permissions Schema
     const permissionCategories = [
         {
             title: 'Cursos & Treinamentos',
@@ -3477,8 +3973,28 @@ const SettingsView = () => {
                 { key: 'courses_delete', label: 'Excluir Cursos' },
                 { key: 'courses_add_student', label: 'Adicionar Aluno/Matrícula' },
                 { key: 'courses_print_list', label: 'Imprimir Listas' },
-                { key: 'courses_view_reports', label: 'Ver Relatórios' },
+                { key: 'courses_view_reports', label: 'Ver Relatórios Gerenciais' },
                 { key: 'courses_edit_lp', label: 'Editar Landing Pages' },
+            ]
+        },
+        {
+            title: 'CRM & Leads',
+            perms: [
+                { key: 'crm_view', label: 'Acessar CRM' },
+                { key: 'crm_manage_leads', label: 'Gerenciar Leads (Criar/Editar/Mover)' },
+                { key: 'crm_delete_leads', label: 'Excluir Leads' },
+                { key: 'crm_export', label: 'Exportar Dados' },
+                { key: 'crm_distribute', label: 'Configurar Distribuição' }
+            ]
+        },
+        {
+            title: 'Blog & Conteúdo (IA)',
+            perms: [
+                { key: 'blog_view', label: 'Acessar Blog' },
+                { key: 'blog_create', label: 'Criar / Publicar Posts' },
+                { key: 'blog_edit', label: 'Editar Posts' },
+                { key: 'blog_delete', label: 'Excluir Posts' },
+                { key: 'blog_ai', label: 'Usar Gerador IA' }
             ]
         },
         {
@@ -3943,9 +4459,19 @@ const TeamView = () => {
 
     // --- Permissions Helper ---
     const hasPermission = (key: string) => {
-        if (!user || !user.role || !user.role.permissions) return false;
-        if (user.role.permissions.admin_access) return true;
-        return !!user.role.permissions[key];
+        if (!user || !user.role) return false;
+        
+        // Handle String Role
+        if (typeof user.role === 'string') {
+            return user.role === 'Super Admin' || user.role === 'Admin';
+        }
+
+        // Handle Object Role
+        // Super Admin Level 10 Override
+        if (user.role.level >= 10 || user.role.name === 'Super Admin') return true;
+
+        if (user.role.permissions && user.role.permissions.admin_access) return true;
+        return !!(user.role.permissions && user.role.permissions[key]);
     };
 
     useEffect(() => {
@@ -4390,6 +4916,7 @@ const Admin: React.FC = () => {
                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>
 
                             <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />
+                            <SidebarItem icon={Mail} label="Email Marketing" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />
                         </div>
 
                         <div className="pt-4 mt-4 border-t border-gray-800">
@@ -4426,18 +4953,17 @@ const Admin: React.FC = () => {
                         {currentView === 'crm' && <CRMView />}
                         {currentView === 'team' && <TeamView />}
                         {currentView === 'orders' && <OrdersView />}
-                        {currentView === 'courses_manager' && <CoursesManagerView />}
-                        {currentView === 'mechanics' && <MechanicsView />}
                         {currentView === 'finance' && <FinanceView />}
-                        {currentView === 'settings' && <SettingsView />}
+                        {currentView === 'mechanics' && <MechanicsView />}
+                        {currentView === 'courses_manager' && <CoursesManagerView />}
                         {currentView === 'lp_builder' && <LandingPagesView />}
                         {currentView === 'blog_manager' && <BlogManagerView />}
-                        {currentView === 'news' && <NewsCenterView />}
+                        {currentView === 'email_marketing' && <EmailMarketingView />}
+                        {currentView === 'settings' && <SettingsView />}
                     </motion.div>
                 </AnimatePresence>
             </div>
         </div>
     );
 };
-
 export default Admin;

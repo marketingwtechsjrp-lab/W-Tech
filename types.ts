@@ -36,6 +36,7 @@ export interface User {
 export interface Course {
   id: string;
   title: string;
+  slug?: string;
   description: string;
   instructor: string;
   date: string;
@@ -205,4 +206,58 @@ export interface Transaction {
 
 export interface SystemConfig {
   [key: string]: string | number | boolean | any;
+}
+
+export interface EmailCampaign {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  type: 'Newsletter' | 'Course_Announcement' | 'Post_Notification' | 'Custom';
+  targetAudience: 'All' | 'Students' | 'Leads' | 'Subscribers';
+  status: 'Draft' | 'Scheduled' | 'Sending' | 'Sent' | 'Failed';
+  scheduledAt?: string;
+  sentAt?: string;
+  statsSent: number;
+  statsOpened: number;
+  statsClicked: number;
+  createdAt: string;
+}
+
+export interface EmailLog {
+  id: string;
+  campaignId: string;
+  recipientEmail: string;
+  status: 'Sent' | 'Failed' | 'Opened';
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface EmailSequence {
+  id: string;
+  name: string;
+  description?: string;
+  triggerType: 'OnSignup' | 'Manual';
+  status: 'Active' | 'Draft' | 'Paused';
+  createdAt: string;
+}
+
+export interface SequenceStep {
+  id: string;
+  sequenceId: string;
+  stepOrder: number;
+  type: 'Email' | 'Delay';
+  delayValue?: number;
+  delayUnit?: 'Hours' | 'Days';
+  emailSubject?: string;
+  emailContent?: string;
+}
+
+export interface SequenceEnrollment {
+  id: string;
+  sequenceId: string;
+  userEmail: string;
+  currentStepOrder: number;
+  nextExecutionAt?: string;
+  status: 'Active' | 'Completed' | 'Cancelled';
 }

@@ -41,97 +41,89 @@ const Courses: React.FC = () => {
         return matchesSearch && matchesType;
     });
 
-    const CalendarView = () => {
+    const AnnualCalendarView = () => {
         const today = new Date();
-        const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-        const [currentYear, setCurrentYear] = useState(today.getFullYear());
+        const displayYear = today.getFullYear();
+        const months = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
 
-        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun, 1 = Mon, etc.
-
-        const eventsByDay: { [key: number]: Course[] } = {};
+        // Group courses by month (index 0-11)
+        const coursesByMonth: { [key: number]: Course[] } = {};
         courses.forEach(c => {
             const d = new Date(c.date);
-            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                const day = d.getDate();
-                if (!eventsByDay[day]) eventsByDay[day] = [];
-                eventsByDay[day].push(c);
+            if (d.getFullYear() === displayYear) {
+                const m = d.getMonth();
+                if (!coursesByMonth[m]) coursesByMonth[m] = [];
+                coursesByMonth[m].push(c);
             }
         });
 
-        const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-        const nextMonth = () => {
-            if (currentMonth === 11) {
-                setCurrentMonth(0);
-                setCurrentYear(prev => prev + 1);
-            } else {
-                setCurrentMonth(prev => prev + 1);
-            }
-        };
-
-        const prevMonth = () => {
-            if (currentMonth === 0) {
-                setCurrentMonth(11);
-                setCurrentYear(prev => prev - 1);
-            } else {
-                setCurrentMonth(prev => prev - 1);
-            }
-        };
-
         return (
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-300">
-                {/* Calendar Header */}
-                <div className="bg-wtech-black text-white p-6 flex justify-between items-center">
-                    <h2 className="text-2xl font-bold uppercase tracking-wider">{monthNames[currentMonth]} {currentYear}</h2>
-                    <div className="flex gap-2">
-                        <button onClick={prevMonth} className="p-2 hover:bg-gray-800 rounded transition-colors text-wtech-gold font-bold">Anterior</button>
-                        <button onClick={nextMonth} className="p-2 hover:bg-gray-800 rounded transition-colors text-wtech-gold font-bold">Próximo</button>
-                    </div>
+                <div className="bg-wtech-black text-white p-6">
+                    <h2 className="text-3xl font-black uppercase tracking-wider text-center">Calendário Anual - {displayYear}</h2>
                 </div>
+                
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6 bg-gray-50">
+                    {months.map((monthName, monthIndex) => {
+                        const monthEvents = coursesByMonth[monthIndex] || [];
+                        const daysInMonth = new Date(displayYear, monthIndex + 1, 0).getDate();
+                        const firstDay = new Date(displayYear, monthIndex, 1).getDay();
 
-                {/* Calendar Grid */}
-                <div className="p-6">
-                    <div className="grid grid-cols-7 gap-4 mb-4">
-                        {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map(d => (
-                            <div key={d} className="font-bold text-center text-sm text-gray-400 uppercase tracking-widest">{d}</div>
-                        ))}
-                    </div>
+                        return (
+                            <div key={monthName} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all p-4">
+                                <h3 className="text-center font-bold text-wtech-black uppercase border-b border-gray-100 pb-2 mb-3">
+                                    {monthName}
+                                </h3>
+                                {/* Simple Month Grid */}
+                                <div className="grid grid-cols-7 gap-1 text-center">
+                                    {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => (
+                                        <div key={d} className="text-[10px] text-gray-400 font-bold">{d}</div>
+                                    ))}
+                                    
+                                    {/* Empty */}
+                                    {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`}></div>)}
 
-                    <div className="grid grid-cols-7 gap-4">
-                        {/* Empty cells for days before the first day of the month */}
-                        {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                            <div key={`empty-${i}`} className="min-h-[120px]"></div>
-                        ))}
-
-                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
-                            <div key={day} className={`border border-gray-100 min-h-[120px] p-3 rounded-lg relative transition-all duration-300 ${eventsByDay[day] ? 'bg-yellow-50/50 border-yellow-200 shadow-sm' : 'hover:bg-gray-50'}`}>
-                                <span className={`text-lg font-bold absolute top-2 left-3 ${eventsByDay[day] ? 'text-wtech-gold' : 'text-gray-300'}`}>{day}</span>
-
-                                <div className="mt-8 space-y-2">
-                                    {eventsByDay[day]?.map(ev => (
-                                        <div key={ev.id} className="group relative cursor-pointer">
-                                            <div className="bg-wtech-black text-white text-[10px] p-2 rounded shadow-md border-l-2 border-wtech-gold hover:bg-gray-800 transition-colors">
-                                                <div className="font-bold truncate">{ev.title}</div>
-                                                <div className="flex items-center gap-1 mt-1 text-gray-400">
-                                                    <Clock size={10} /> {new Date(ev.date).getHours()}h
+                                    {/* Days */}
+                                    {Array.from({ length: daysInMonth }).map((_, i) => {
+                                        const day = i + 1;
+                                        // Find events for this day
+                                        const dayEvents = monthEvents.filter(e => {
+                                            const ed = new Date(e.date);
+                                            return ed.getDate() === day;
+                                        });
+                                        const hasEvent = dayEvents.length > 0;
+                                        
+                                        return (
+                                            <div key={day} className="relative aspect-square flex items-center justify-center">
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${hasEvent ? 'bg-wtech-gold text-black font-bold hover:scale-110' : 'text-gray-600 hover:bg-gray-100'}`} title={hasEvent ? dayEvents.map(e => e.title).join(', ') : ''}>
+                                                    {day}
                                                 </div>
                                             </div>
-
-                                            {/* Tooltip */}
-                                            <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-white text-black text-xs rounded-lg shadow-xl p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-gray-100">
-                                                <div className="font-bold mb-1">{ev.title}</div>
-                                                <div className="text-gray-500 mb-1">{ev.location}</div>
-                                                <div className="text-wtech-gold font-bold">{ev.locationType}</div>
-                                                {/* Triangle */}
-                                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-8 border-transparent border-t-white"></div>
-                                            </div>
-                                        </div>
+                                        );
+                                    })}
+                                </div>
+                                {/* Event List Below */}
+                                <div className="mt-4 space-y-2 min-h-[60px]">
+                                    {monthEvents.slice(0, 3).map(ev => (
+                                        <Link to={`/lp/${ev.slug || ev.id}`} key={ev.id} className="block text-xs bg-gray-50 p-2 rounded border border-gray-100 hover:bg-wtech-gold/10 hover:border-wtech-gold/30 transition-colors">
+                                            <div className="font-bold truncate text-wtech-black">{new Date(ev.date).getDate()} - {ev.title}</div>
+                                        </Link>
                                     ))}
+                                    {monthEvents.length > 3 && (
+                                        <div className="text-xs text-center text-gray-400 italic">
+                                            + {monthEvents.length - 3} eventos
+                                        </div>
+                                    )}
+                                    {monthEvents.length === 0 && (
+                                        <div className="text-center text-xs text-gray-300 py-2">Sem eventos</div>
+                                    )}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
             </div>
         );
@@ -211,7 +203,7 @@ const Courses: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            <CalendarView />
+                            <AnnualCalendarView />
                         )}
                     </>
                 ) : (

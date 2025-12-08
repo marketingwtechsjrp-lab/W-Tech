@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Mechanic } from '../types';
 
 import SEO from '../components/SEO';
+import { useSettings } from '../context/SettingsContext';
 
 const Home = () => {
     // State
@@ -15,6 +16,12 @@ const Home = () => {
     const [courses, setCourses] = useState<any[]>([]);
     const [posts, setPosts] = useState<any[]>([]);
     const navigate = useNavigate();
+    const { get } = useSettings();
+
+    const address = get('address', 'Rua da Performance, 1234<br />São Paulo, SP - Brasil');
+    const phone = get('phone_main', '(11) 99999-9999');
+    const email = get('email_contato', 'contato@w-techbrasil.com.br');
+    const hours = get('working_hours', 'Seg a Sex: 08h às 18h<br />Sáb: 08h às 12h');
 
     // Calendar Logic (Current Month)
     const today = new Date();
@@ -187,9 +194,9 @@ const Home = () => {
                             <Star size={12} className="fill-wtech-gold" /> A Maior Escola da América Latina
                         </div>
                         <h1 className="text-5xl lg:text-7xl font-black leading-[1.05] mb-8 text-white tracking-tighter">
-                            DOMINE A <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">TECNOLOGIA</span><br />
-                            AUTOMOTIVA.
+                            Cursos e Peças para<br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">Suspensões</span><br />
+                            Off-road e On road
                         </h1>
                         <p className="text-lg text-gray-400 mb-10 max-w-lg leading-relaxed font-medium">
                             A W-Tech Brasil é referência absoluta em capacitação técnica.
@@ -348,7 +355,7 @@ const Home = () => {
                         <div ref={mapRef} className="absolute inset-0 z-0"></div>
 
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none"></div>
-                        <div className="absolute bottom-12 left-12 z-[500] bg-black p-8 rounded-sm border-l-4 border-wtech-red max-w-sm shadow-2xl">
+                        <div className="absolute bottom-12 left-12 z-20 bg-black p-8 rounded-sm border-l-4 border-wtech-red max-w-sm shadow-2xl">
                             <div className="flex items-center gap-4 mb-4">
                                 <MapPin size={32} className="text-wtech-red" />
                                 <div>
@@ -357,7 +364,7 @@ const Home = () => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => navigate('/mechanics-map')}
+                                onClick={() => navigate('/mapa')}
                                 className="block w-full bg-white text-black text-center py-3 rounded-sm font-bold text-sm hover:bg-gray-200 uppercase tracking-widest"
                             >
                                 Abrir Mapa Completo
@@ -467,7 +474,7 @@ const Home = () => {
 
                                         {/* Action */}
                                         <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                            <button onClick={() => navigate('/courses')} className="w-full md:w-auto px-6 py-3 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                            <button onClick={() => navigate(`/cursos/${course.id}`)} className="w-full md:w-auto px-6 py-3 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
                                                 Mais Detalhes <ArrowRight size={16} />
                                             </button>
                                         </div>
@@ -552,7 +559,7 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-lg">Endereço</h4>
-                                        <p className="text-gray-500">Rua da Performance, 1234<br />São Paulo, SP - Brasil</p>
+                                        <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: address.replace(/\n/g, '<br/>') }} />
                                     </div>
                                 </div>
 
@@ -562,7 +569,7 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-lg">Telefone</h4>
-                                        <p className="text-gray-500">(11) 99999-9999<br />(11) 98888-8888</p>
+                                        <p className="text-gray-500">{phone}</p>
                                     </div>
                                 </div>
 
@@ -572,7 +579,7 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-lg">E-mail</h4>
-                                        <p className="text-gray-500">contato@w-techbrasil.com.br<br />comercial@w-techbrasil.com.br</p>
+                                        <p className="text-gray-500">{email}</p>
                                     </div>
                                 </div>
 
@@ -582,7 +589,7 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-lg">Horário de Atendimento</h4>
-                                        <p className="text-gray-500">Seg a Sex: 08h às 18h<br />Sáb: 08h às 12h</p>
+                                        <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: hours.replace(/\n/g, '<br/>') }} />
                                     </div>
                                 </div>
                             </div>

@@ -3,12 +3,14 @@ import { MessageCircle, X, Send } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead } from '../lib/leadDistribution';
+import { useLocation } from 'react-router-dom';
 
 export const WhatsAppInterceptor = () => {
     const [config, setConfig] = useState<any>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', phone: '' });
     const [loading, setLoading] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -22,6 +24,9 @@ export const WhatsAppInterceptor = () => {
         fetchConfig();
     }, []);
 
+    // Only show on Home Page
+    if (location.pathname !== '/') return null;
+
     if (!config || !config.whatsapp_enabled || !config.whatsapp_phone) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -32,13 +37,14 @@ export const WhatsAppInterceptor = () => {
             const assignedTo = await distributeLead();
             const payload = {
                 name: form.name,
-                email: form.email,
+                email: form.email || null, // Allow optional email
                 phone: form.phone,
                 type: 'WhatsApp_Contact',
                 status: 'New',
-                context_id: 'WhatsApp Button',
-                tags: ['WHATSAPP_CLICK'],
-                assigned_to: assignedTo
+                context_id: 'WhatsApp Home Button',
+                tags: ['home_whatsapp', 'whatsapp_click'],
+                assigned_to: assignedTo,
+                origin: window.location.href
             };
 
             await supabase.from('SITE_Leads').insert([payload]);
@@ -56,11 +62,11 @@ export const WhatsAppInterceptor = () => {
 
     return (
         <>
-            {/* Floating Button */}
+            {/* Floating Button (Left-Aligned) */}
             {!isOpen && (
                 <button 
                     onClick={() => setIsOpen(true)}
-                    className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl animate-bounce-custom flex items-center justify-center transition-all hover:scale-110"
+                    className="fixed bottom-6 left-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl animate-bounce-custom flex items-center justify-center transition-all hover:scale-110"
                 >
                     <MessageCircle size={32} fill="white" />
                 </button>
