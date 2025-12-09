@@ -425,8 +425,23 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void }> = ({ lead, onClick 
         >
             <div className="flex justify-between items-start mb-2">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{new Date(lead.createdAt).toLocaleDateString()}</span>
-                {lead.contextId === 'landing_page_b' ? <span className="bg-green-50 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold">LP B</span> : null}
+                {lead.contextId && (
+                    <span className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded font-bold max-w-[80px] truncate" title={lead.contextId}>
+                        {lead.contextId.replace('LP EUROPA:', 'Europa').replace('landing_page_', 'LP ')}
+                    </span>
+                )}
             </div>
+
+            {/* Tags Display */}
+            {lead.tags && lead.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                    {lead.tags.map((tag: string, i: number) => (
+                        <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold uppercase rounded border border-gray-200">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+            )}
 
             <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-black flex items-center justify-center text-white font-bold text-lg shadow-sm">
@@ -451,18 +466,26 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void }> = ({ lead, onClick 
 const CRMView = () => {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [draggedId, setDraggedId] = useState<string | null>(null);
+    
+    // CRM Filter State
     const [filterPeriod, setFilterPeriod] = useState(30); // Days
+    const [filterType, setFilterType] = useState<'Period' | 'Month' | 'Custom'>('Period');
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+    const [customRange, setCustomRange] = useState({ start: '', end: '' });
+
     const [distMode, setDistMode] = useState<'Manual' | 'Random'>('Manual');
     const [showSettings, setShowSettings] = useState(false);
     const [editingLead, setEditingLead] = useState<any | null>(null);
-    const [editForm, setEditForm] = useState({ assignedTo: '', internalNotes: '' });
+    const [editForm, setEditForm] = useState({ assignedTo: '', internalNotes: '', tags: [] as string[] });
+    const [tagInput, setTagInput] = useState('');
     const { user } = useAuth();
 
     const handleLeadClick = (lead: any) => {
         setEditingLead(lead);
         setEditForm({
             assignedTo: lead.assignedTo || '',
-            internalNotes: lead.internalNotes || ''
+            internalNotes: lead.internalNotes || '',
+            tags: lead.tags || []
         });
     };
 
@@ -511,12 +534,14 @@ const CRMView = () => {
 
         const { error } = await supabase.from('SITE_Leads').update({
             assigned_to: editForm.assignedTo,
-            internal_notes: editForm.internalNotes
+            internal_notes: editForm.internalNotes,
+            tags: editForm.tags
         }).eq('id', editingLead.id);
 
         if (!error) {
-            setLeads(prev => prev.map(l => l.id === editingLead.id ? { ...l, assignedTo: editForm.assignedTo, internalNotes: editForm.internalNotes } : l));
+            setLeads(prev => prev.map(l => l.id === editingLead.id ? { ...l, assignedTo: editForm.assignedTo, internalNotes: editForm.internalNotes, tags: editForm.tags } : l));
             setEditingLead(null);
+            setTagInput('');
         } else {
             alert('Erro ao salvar alterações.');
         }
@@ -564,10 +589,21 @@ const CRMView = () => {
     // Filter Logic
     const filteredLeads = leads.filter(l => {
         const d = new Date(l.createdAt);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - d.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays <= filterPeriod;
+        
+        if (filterType === 'Period') {
+            const now = new Date();
+            const diffTime = Math.abs(now.getTime() - d.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays <= filterPeriod;
+        } else if (filterType === 'Month') {
+            return l.createdAt.startsWith(selectedMonth);
+        } else if (filterType === 'Custom') {
+            if (customRange.start && d < new Date(customRange.start)) return false;
+            // Add 1 day to end date to handle "until end of day" implicitly or just compare strict
+             if (customRange.end && d > new Date(new Date(customRange.end).setHours(23,59,59,999))) return false;
+            return true;
+        }
+        return true;
     });
 
     return (
@@ -580,16 +616,42 @@ const CRMView = () => {
                             {[7, 30, 9999].map(days => (
                                 <button
                                     key={days}
-                                    onClick={() => setFilterPeriod(days)}
-                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${filterPeriod === days ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
+                                    onClick={() => { setFilterPeriod(days); setFilterType('Period'); }}
+                                    className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${filterType === 'Period' && filterPeriod === days ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
                                 >
                                     {days === 9999 ? 'Todos' : `${days} dias`}
                                 </button>
                             ))}
                         </div>
-                    </div>
+                        
+                        {/* Month & Custom Selectors */}
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="month" 
+                                value={selectedMonth}
+                                onChange={(e) => { setSelectedMonth(e.target.value); setFilterType('Month'); }}
+                                className={`border rounded-lg px-2 py-1 text-xs font-bold ${filterType === 'Month' ? 'border-wtech-gold bg-white' : 'border-gray-200 bg-gray-50'}`}
+                            />
+                            
+                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                                <input 
+                                    type="date" 
+                                    className={`px-2 py-1 text-xs bg-transparent outline-none ${filterType === 'Custom' ? 'font-bold text-black' : 'text-gray-500'}`}
+                                    value={customRange.start}
+                                    onChange={(e) => { setCustomRange(p => ({...p, start: e.target.value})); setFilterType('Custom'); }}
+                                />
+                                <span className="text-gray-300 text-[10px] uppercase font-bold px-1">Até</span>
+                                <input 
+                                    type="date" 
+                                    className={`px-2 py-1 text-xs bg-transparent outline-none ${filterType === 'Custom' ? 'font-bold text-black' : 'text-gray-500'}`}
+                                    value={customRange.end}
+                                    onChange={(e) => { setCustomRange(p => ({...p, end: e.target.value})); setFilterType('Custom'); }}
+                                />
+                            </div>
+                        </div>
+                            </div>
+                        </div>
 
-                    <div className="flex items-center gap-2">
                         <div className="relative group">
                             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold uppercase hover:bg-gray-50">
                                 <Settings size={14} /> Distribuição: <span className={distMode === 'Random' ? 'text-green-600' : 'text-orange-600'}>{distMode === 'Random' ? 'Aleatória' : 'Manual'}</span>
@@ -726,6 +788,46 @@ const CRMView = () => {
                                         value={editForm.internalNotes}
                                         onChange={e => setEditForm({ ...editForm, internalNotes: e.target.value })}
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tags / Identificação</label>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {editForm.tags?.map((tag, idx) => (
+                                            <span key={idx} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-gray-200">
+                                                {tag}
+                                                <button onClick={() => setEditForm(prev => ({ ...prev, tags: prev.tags.filter((_, i) => i !== idx) }))} className="hover:text-red-500"><X size={12} /></button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input
+                                            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                                            placeholder="Adicionar tag... (Enter)"
+                                            value={tagInput}
+                                            onChange={e => setTagInput(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    if (tagInput.trim()) {
+                                                        setEditForm(prev => ({ ...prev, tags: [...(prev.tags || []), tagInput.trim()] }));
+                                                        setTagInput('');
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        <button 
+                                            onClick={() => {
+                                                if (tagInput.trim()) {
+                                                    setEditForm(prev => ({ ...prev, tags: [...(prev.tags || []), tagInput.trim()] }));
+                                                    setTagInput('');
+                                                }
+                                            }}
+                                            className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
@@ -1167,31 +1269,6 @@ const BlogManagerView = () => {
                 </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto custom-scrollbar">
-                <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs sticky top-0">
-                        <tr>
-                            <th className="px-6 py-3">Data</th>
-                            <th className="px-6 py-3">Título</th>
-                            <th className="px-6 py-3 text-center">SEO</th>
-                            <th className="px-6 py-3">Status</th>
-                            <th className="px-6 py-3">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {posts.map(post => (
-                            <tr key={post.id} className="hover:bg-gray-50 group">
-                                <td className="px-6 py-4 text-xs font-mono text-gray-500">
-                                    {new Date(post.date).toLocaleDateString()}
-                                </td>
-                                <td className="px-6 py-4 font-medium text-gray-900 max-w-xs truncate">{post.title}</td>
-                                <td className="px-6 py-4 text-center">
-                                    <span className={`font-bold ${post.seoScore && post.seoScore > 80 ? 'text-green-600' : 'text-yellow-600'}`}>{post.seoScore || '-'}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${post.status === 'Published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                        {post.status === 'Published' ? 'Publicado' : 'Rascunho'}
-                                    </span>
                                 </td>
                                 <td className="px-6 py-4">
                                     <button
@@ -1379,6 +1456,7 @@ const LandingPagesView = () => {
 // --- View: Courses Manager (List/Calendar) ---
 const CoursesManagerView = () => {
     const [courses, setCourses] = useState<Course[]>([]);
+    const [leadsCount, setLeadsCount] = useState<Record<string, number>>({});
     const [isEditing, setIsEditing] = useState(false);
     const [editingLandingPage, setEditingLandingPage] = useState<Course | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -1436,7 +1514,8 @@ const CoursesManagerView = () => {
             const totalExpenses = expenses?.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0;
             const netResult = revenue - totalExpenses;
 
-            const totalLeads = leads?.length || 0;
+            // Updated Lead Count Logic (Consistent with main list)
+            const totalLeads = leads?.length || leadsCount[course.id] || 0;
             const inProgress = leads?.filter((l: any) => ['New', 'Contacted', 'Negotiating'].includes(l.status)).length || 0;
 
             const students = enrollments?.map((e: any) => ({
@@ -1584,6 +1663,19 @@ const CoursesManagerView = () => {
             addressNumber: c.address_number,
             addressNeighborhood: c.address_neighborhood
         })));
+
+        // Fetch Leads for Courses (Client-side estimation based on context_id)
+        const { data: leads } = await supabase.from('SITE_Leads').select('id, context_id');
+        if (leads && data) {
+            const counts: Record<string, number> = {};
+            data.forEach((c: any) => {
+                // Count leads where context_id contains course title (Legacy/Simple) or matches specific tags if we had them
+                // Improved logic: match checks
+                const count = leads.filter((l: any) => l.context_id && l.context_id.toLowerCase().includes(c.title.toLowerCase())).length;
+                counts[c.id] = count;
+            });
+            setLeadsCount(counts);
+        }
     };
 
     const handleEdit = (course?: Course) => {
@@ -3537,7 +3629,13 @@ const FinanceView = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [receivables, setReceivables] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [filterDate, setFilterDate] = useState('');
+
+    
+    // Finance Filters
+    const [filterType, setFilterType] = useState<'All' | '7d' | '30d' | 'Month' | 'Custom'>('30d');
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [customRange, setCustomRange] = useState({ start: '', end: '' });
+
     const [showAddModal, setShowAddModal] = useState(false);
     const [newTrans, setNewTrans] = useState<Partial<Transaction>>({ type: 'Income', date: new Date().toISOString().split('T')[0] });
 
@@ -3672,7 +3770,26 @@ const FinanceView = () => {
     };
 
     const filteredTransactions = transactions.filter(t => {
-        const matchesDate = !filterDate || t.date.startsWith(filterDate);
+        const tDate = new Date(t.date);
+        const now = new Date();
+        
+        let matchesDate = true;
+
+        if (filterType === '7d') {
+            const diffTime = Math.abs(now.getTime() - tDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            matchesDate = diffDays <= 7;
+        } else if (filterType === '30d') {
+            const diffTime = Math.abs(now.getTime() - tDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            matchesDate = diffDays <= 30;
+        } else if (filterType === 'Month') {
+            matchesDate = t.date.startsWith(selectedMonth);
+        } else if (filterType === 'Custom') {
+             if (customRange.start && tDate < new Date(customRange.start)) matchesDate = false;
+             if (customRange.end && tDate > new Date(customRange.end)) matchesDate = false;
+        }
+
         let matchesRef = true;
 
         if (filterReference.type === 'Course') {
@@ -3720,14 +3837,47 @@ const FinanceView = () => {
                         </optgroup>
                     </select>
 
-                    <input type="date" className="border rounded-lg px-3 py-2 text-sm bg-white" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
-                    {hasPermission('financial_export') && (
-                        <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 font-bold text-sm bg-white">
-                            <Download size={16} /> Exportar
-                        </button>
-                    )}
+                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                        {[
+                            { id: '7d', l: '7 dias' }, 
+                            { id: '30d', l: '30 dias' }, 
+                        ].map(f => (
+                            <button
+                                key={f.id}
+                                onClick={() => setFilterType(f.id as any)}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${filterType === f.id ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
+                            >
+                                {f.l}
+                            </button>
+                        ))}
+                    </div>
+
+                    <input 
+                        type="month" 
+                        value={selectedMonth}
+                        onChange={(e) => { setSelectedMonth(e.target.value); setFilterType('Month'); }}
+                        className={`border rounded-lg px-2 py-1 text-xs font-bold h-9 ${filterType === 'Month' ? 'border-wtech-gold bg-white' : 'border-gray-200 bg-gray-50'}`}
+                    />
+
+                    {/* Custom Range */}
+                    <div className={`flex items-center border rounded-lg overflow-hidden h-9 ${filterType === 'Custom' ? 'border-wtech-gold bg-white' : 'border-gray-200 bg-gray-50'}`}>
+                        <input 
+                            type="date"
+                            className="bg-transparent text-xs px-2 outline-none"
+                            value={customRange.start}
+                            onChange={e => { setCustomRange(p => ({...p, start: e.target.value})); setFilterType('Custom'); }}
+                        />
+                        <span className="text-gray-400 text-[10px]">-</span>
+                        <input 
+                            type="date"
+                            className="bg-transparent text-xs px-2 outline-none"
+                            value={customRange.end}
+                            onChange={e => { setCustomRange(p => ({...p, end: e.target.value})); setFilterType('Custom'); }}
+                        />
+                    </div>
+
                     {hasPermission('financial_add_transaction') && (
-                        <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-wtech-black text-white rounded-lg hover:bg-gray-800 font-bold text-sm shadow-lg">
+                        <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-wtech-black text-white rounded-lg hover:bg-gray-800 font-bold text-sm shadow-lg h-9">
                             <Plus size={16} /> Nova Transação
                         </button>
                     )}
@@ -3774,7 +3924,8 @@ const FinanceView = () => {
                         <ArrowRight size={16} className="text-wtech-gold" /> Últimas Movimentações
                     </h3>
                     <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                        <input type="date" className="border rounded-lg px-3 py-2 text-sm bg-white" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                        {/* Removed duplicate date filter which was here */}
                         {hasPermission('financial_export') && (
                             <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 font-bold text-sm bg-white">
                                 <Download size={16} /> Exportar

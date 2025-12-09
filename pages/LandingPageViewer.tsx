@@ -15,11 +15,20 @@ const LandingPageViewer: React.FC = () => {
   
   const [lp, setLp] = useState<LandingPageWithCourse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [systemLogo, setSystemLogo] = useState<string | null>(null);
   
   // Form State
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [submitted, setSubmitted] = useState(false);
   const [spotsLeft, setSpotsLeft] = useState<number>(5); // Default simulated scarcity
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+        const { data } = await supabase.from('SITE_SystemSettings').select('value').eq('key', 'logo_url').single();
+        if (data) setSystemLogo(data.value);
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const fetchLP = async () => {
@@ -62,7 +71,7 @@ const LandingPageViewer: React.FC = () => {
                       updated_at: new Date().toISOString(),
                       status: 'Published',
                       course: courseData // Attach course data
-                  } as LandingPageWithCourse;
+                  } as any as LandingPageWithCourse;
               }
           }
       } else {
@@ -94,16 +103,16 @@ const LandingPageViewer: React.FC = () => {
             title: lpData.title, // Ensure priority
             subtitle: lpData.subtitle,
             slug: lpData.slug,
-            heroImage: lpData.hero_image, // Note: DB field is hero_image
-            videoUrl: lpData.video_url,
+            heroImage: (lpData as any).hero_image, 
+            videoUrl: (lpData as any).video_url,
             benefits: lpData.benefits,
-            instructorName: lpData.instructor_name,
-            instructorBio: lpData.instructor_bio,
-            instructorImage: lpData.instructor_image,
-            whatsappNumber: lpData.whatsapp_number,
-            pixelId: lpData.pixel_id,
+            instructorName: (lpData as any).instructor_name,
+            instructorBio: (lpData as any).instructor_bio,
+            instructorImage: (lpData as any).instructor_image,
+            whatsappNumber: (lpData as any).whatsapp_number,
+            pixelId: (lpData as any).pixel_id,
             modules: lpData.modules,
-            heroSecondaryImage: lpData.hero_secondary_image,
+            heroSecondaryImage: (lpData as any).hero_secondary_image,
             course: mappedCourse
         };
         setLp(mappedData);
@@ -547,7 +556,9 @@ const LandingPageViewer: React.FC = () => {
 
         <footer className="py-12 bg-[#050505] text-center text-gray-700 border-t border-white/5">
             <div className="flex justify-center mb-6 opacity-30">
-                <WTechLogo />
+                 <div className="w-12 h-12 rounded-sm flex items-center justify-center overflow-hidden">
+                    {systemLogo ? <img src={systemLogo} alt="Logo" className="w-full h-full object-contain grayscale hover:grayscale-0 transition-all opacity-50 hover:opacity-100" /> : <WTechLogo />}
+                </div>
             </div>
             <p className="text-sm">&copy; {new Date().getFullYear()} W-Tech Suspensões. Todos os direitos reservados.</p>
         </footer>

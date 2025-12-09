@@ -139,6 +139,7 @@ export interface Lead {
   createdAt: string; // Mapped from created_at
   assignedTo?: string; // Mapped from assigned_to
   internalNotes?: string; // Mapped from internal_notes
+  tags?: string[];
 }
 
 export interface Mechanic {
