@@ -6,7 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { generateBlogPost } from '../../../lib/gemini';
 import type { BlogPost, PostComment } from '../../../types';
 
-const BlogManagerView = () => {
+const BlogManagerView = ({ permissions }: { permissions?: any }) => {
     const [viewMode, setViewMode] = useState<'list' | 'edit' | 'ai_batch'>('list');
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
@@ -27,6 +27,23 @@ const BlogManagerView = () => {
     const [batchGenerating, setBatchGenerating] = useState(false);
     const [batchSuccess, setBatchSuccess] = useState(false); // Can be boolean or a summary string
     const [generatedCount, setGeneratedCount] = useState(0);
+
+    const hasPermission = (key: string) => {
+        if (!user) return false;
+        
+        // 0. Live Permissions (Prop)
+        if (permissions) {
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
+
+        if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.permissions?.admin_access) return true;
+        if (typeof user.role !== 'string' && user.role?.level >= 10) return true;
+        
+        const rolePermissions = typeof user.role === 'object' ? user.role?.permissions : {};
+        const effectivePermissions = { ...rolePermissions, ...user.permissions };
+        return !!effectivePermissions[key];
+    };
 
     useEffect(() => {
         fetchPosts();
@@ -405,7 +422,6 @@ const BlogManagerView = () => {
             </div>
         );
     }
-
     return (
         <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden text-gray-900">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -414,12 +430,16 @@ const BlogManagerView = () => {
                     <p className="text-xs text-gray-500">Edite, aprove e analise a performance dos posts.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => handleEdit()} className="bg-wtech-black text-white px-4 py-2 rounded font-bold text-sm hover:opacity-80">
-                        + Novo Post
-                    </button>
-                    <button onClick={() => setViewMode('ai_batch')} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded font-bold text-sm hover:opacity-80 flex items-center gap-2">
-                        <Sparkles size={16} /> Agendador IA
-                    </button>
+                    {hasPermission('blog_create') && (
+                        <button onClick={() => handleEdit()} className="bg-wtech-black text-white px-4 py-2 rounded font-bold text-sm hover:opacity-80">
+                            + Novo Post
+                        </button>
+                    )}
+                    {hasPermission('blog_ai') && (
+                        <button onClick={() => setViewMode('ai_batch')} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded font-bold text-sm hover:opacity-80 flex items-center gap-2">
+                            <Sparkles size={16} /> Agendador IA
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -448,18 +468,22 @@ const BlogManagerView = () => {
                                     {new Date(post.date).toLocaleDateString()}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <button
-                                        onClick={() => handleEdit(post)}
-                                        className="text-wtech-gold font-bold hover:underline flex items-center gap-1"
-                                    >
-                                        <Edit size={14} /> Editar
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeletePost(post.id)}
-                                        className="text-red-600 font-bold hover:underline flex items-center gap-1 ml-4"
-                                    >
-                                        <Trash2 size={14} /> Excluir
-                                    </button>
+                                    {hasPermission('blog_edit') && (
+                                        <button
+                                            onClick={() => handleEdit(post)}
+                                            className="text-wtech-gold font-bold hover:underline flex items-center gap-1"
+                                        >
+                                            <Edit size={14} /> Editar
+                                        </button>
+                                    )}
+                                    {hasPermission('blog_delete') && (
+                                        <button
+                                            onClick={() => handleDeletePost(post.id)}
+                                            className="text-red-600 font-bold hover:underline flex items-center gap-1 ml-4"
+                                        >
+                                            <Trash2 size={14} /> Excluir
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

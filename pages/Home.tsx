@@ -176,9 +176,12 @@ const Home = () => {
                     className="absolute top-0 left-0 w-full h-[900px] z-0 pointer-events-none select-none"
                 >
                     <img
-                        src="http://w-techbrasil.com.br/wp-content/uploads/2025/09/O-PLANO-DEFINITIVO-1920-x-900-px-2000-x-590-px-768-x-432-px-1.png"
+                        src="https://w-techbrasil.com.br/wp-content/uploads/2025/09/O-PLANO-DEFINITIVO-1920-x-900-px-2000-x-590-px-768-x-432-px-1.png"
                         className="w-full h-full object-cover object-top opacity-50 grayscale"
                         alt="Background Pattern"
+                        width="1920"
+                        height="900"
+                        fetchPriority="high"
                     />
                 </motion.div>
 
@@ -216,7 +219,7 @@ const Home = () => {
                             <div className="flex -space-x-3">
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-gray-800 overflow-hidden">
-                                        <img src={`https://ui-avatars.com/api/?background=random&name=User${i}`} alt="user" />
+                                        <img src={`https://ui-avatars.com/api/?background=random&name=User${i}`} alt="user" loading="lazy" width="40" height="40" />
                                     </div>
                                 ))}
                             </div>
@@ -236,6 +239,9 @@ const Home = () => {
                                 src="https://w-techbrasil.com.br/wp-content/uploads/2023/12/EFP00005-e1701440657699-600x755.jpg"
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 alt="Treinamento com Especialista"
+                                width="600"
+                                height="755"
+                                loading="lazy"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
 
@@ -270,6 +276,9 @@ const Home = () => {
                                     src="https://w-techbrasil.com.br/wp-content/uploads/2025/01/w-tech-sobre-nos-1-768x495.jpg"
                                     className="w-full h-full object-cover"
                                     alt="Sede W-Tech Brasil"
+                                    width="768"
+                                    height="495"
+                                    loading="lazy"
                                 />
                             </div>
                             <div className="absolute -bottom-10 -left-10 bg-wtech-black text-white p-8 rounded-2xl shadow-xl max-w-sm hidden md:block">

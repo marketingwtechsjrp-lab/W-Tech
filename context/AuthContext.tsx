@@ -68,6 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         avatar: userData.avatar,
         permissions: userData.permissions || (roleData?.permissions) || {},
         status: userData.status,
+        role_id: userData.role_id, // Ensure ID is preserved
       };
 
       setUser(loggedUser);

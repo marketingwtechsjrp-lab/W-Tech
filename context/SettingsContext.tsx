@@ -22,6 +22,23 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     useEffect(() => {
         fetchSettings();
+
+        // Realtime Subscription
+        const channel = supabase
+            .channel('settings_changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'SITE_SystemSettings' },
+                () => {
+                    console.log('Settings updated via Realtime');
+                    fetchSettings();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchSettings = async () => {

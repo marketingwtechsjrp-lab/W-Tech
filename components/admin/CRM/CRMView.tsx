@@ -300,7 +300,7 @@ interface CRMViewProps {
     onConvertLead?: (lead: Lead) => void;
 }
 
-const CRMView: React.FC<CRMViewProps> = ({ onConvertLead }) => {
+const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead, permissions }) => {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [usersMap, setUsersMap] = useState<Record<string, string>>({});
@@ -324,6 +324,31 @@ const CRMView: React.FC<CRMViewProps> = ({ onConvertLead }) => {
     const [editForm, setEditForm] = useState({ assignedTo: '', internalNotes: '', tags: [] as string[] });
     const [tagInput, setTagInput] = useState('');
     const { user } = useAuth();
+    
+    // Permission Check Helper
+    const hasPermission = (key: string) => {
+        if (!user) return false;
+
+        // 1. Priority: Live Permissions (Prop)
+        if (permissions) {
+             // Super Admins in DB Role
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
+        
+        // 2. Super Admin / Admin legacy string check
+        if (typeof user.role === 'string') {
+                if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
+                return false;
+        }
+        
+        // 3. Fallback to Auth Context
+        if (user.role?.level >= 10) return true;
+        if (user.role?.name === 'Super Admin') return true;
+        
+        const rolePermissions = user.role?.permissions || {};
+        return !!rolePermissions[key];
+    };
 
     const handleLeadClick = (lead: any) => {
         setEditingLead(lead);
@@ -362,8 +387,10 @@ const CRMView: React.FC<CRMViewProps> = ({ onConvertLead }) => {
 
     // Fetch Leads (Consolidated)
     useEffect(() => {
-        fetchData();
-    }, [user, filterPeriod]); 
+        if (permissions || (user && typeof user.role === 'string')) {
+            fetchData();
+        }
+    }, [user, filterPeriod, permissions]); 
 
     const fetchData = async () => {
         setLeads([]); // Clear before fetch to show loading state if desired
@@ -374,7 +401,8 @@ const CRMView: React.FC<CRMViewProps> = ({ onConvertLead }) => {
             (typeof user?.role === 'string' && (user.role === 'ADMIN' || user.role === 'Admin' || user.role === 'Super Admin')) ||
             (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
             (typeof user?.role !== 'string' && user?.role?.name === 'Super Admin') ||
-            (typeof user?.role !== 'string' && user?.role?.permissions?.admin_access);
+            (typeof user?.role !== 'string' && user?.role?.permissions?.admin_access) ||
+            hasPermission('crm_view_all'); // NEW PERMISSION CHECK
 
         console.log("CRM Access Level:", { role: user?.role, hasFullAccess });
 
@@ -587,21 +615,23 @@ const CRMView: React.FC<CRMViewProps> = ({ onConvertLead }) => {
                             ))}
                         </div>
 
-                        {/* Distribution Switch */}
-                        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                             <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase">Distribuição</span>
-                                <span className={`text-xs font-black uppercase ${distMode === 'Random' ? 'text-green-600' : 'text-orange-600'}`}>
-                                    {distMode === 'Random' ? 'Roleta (Auto)' : 'Manual'}
-                                </span>
-                             </div>
-                             <div 
-                                onClick={() => toggleDistMode(distMode === 'Manual' ? 'Random' : 'Manual')} 
-                                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${distMode === 'Random' ? 'bg-green-500' : 'bg-gray-300'}`}
-                             >
-                                 <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform ${distMode === 'Random' ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                             </div>
-                        </div>
+                        {/* Distribution Switch - Permission Gated */}
+                        {hasPermission('crm_config_dist') && (
+                            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">Distribuição</span>
+                                    <span className={`text-xs font-black uppercase ${distMode === 'Random' ? 'text-green-600' : 'text-orange-600'}`}>
+                                        {distMode === 'Random' ? 'Roleta (Auto)' : 'Manual'}
+                                    </span>
+                                </div>
+                                <div 
+                                    onClick={() => toggleDistMode(distMode === 'Manual' ? 'Random' : 'Manual')} 
+                                    className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${distMode === 'Random' ? 'bg-green-500' : 'bg-gray-300'}`}
+                                >
+                                    <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform ${distMode === 'Random' ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* View Mode Toggle */}
                          <div className="flex bg-gray-100 p-1 rounded-lg">
@@ -894,6 +924,17 @@ const CRMView: React.FC<CRMViewProps> = ({ onConvertLead }) => {
                 )}
             </AnimatePresence>
 
+            {/* Debug Info (Only for diagnosing) */}
+            { import.meta.env.DEV && (
+                 <div className="fixed bottom-4 left-4 p-4 bg-gray-900 text-white rounded-lg shadow-xl text-xs font-mono z-50 opacity-80 hover:opacity-100 transition-opacity">
+                    <p className="font-bold border-b border-gray-700 pb-1 mb-1 text-green-400">DEBUG PERMISSÕES</p>
+                    <p>User ID: {user?.id?.substring(0,8)}...</p>
+                    <p>Role (Ctx): {typeof user?.role === 'string' ? user.role : user?.role?.name}</p>
+                    <p>Perms Loaded: {permissions ? 'YES' : 'NO'}</p>
+                    <p>View All Key: {hasPermission('crm_view_all') ? 'YES' : 'NO'}</p>
+                    <p>Is Admin: {hasPermission('admin_access') ? 'YES' : 'NO'}</p>
+                 </div>
+            )}
         </DragContext.Provider >
     );
 };

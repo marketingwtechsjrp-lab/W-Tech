@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -130,7 +130,7 @@ const RevenueChart = () => {
 // --- View: Blog Manager (List & Edit + AI) ---
 
 // --- View: Landing Page Builder (New) ---
-const LandingPagesView = () => {
+const LandingPagesView = ({ permissions }: { permissions?: any }) => {
     const [pages, setPages] = useState<LandingPage[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<Partial<LandingPage>>({});
@@ -290,7 +290,7 @@ const LandingPagesView = () => {
 
 
 // --- View: Courses Manager (List/Calendar) ---
-const CoursesManagerView = ({ initialLead, onConsumeInitialLead }: { initialLead?: Lead | null, onConsumeInitialLead?: () => void }) => {
+const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: { initialLead?: Lead | null, onConsumeInitialLead?: () => void, permissions?: any }) => {
     const [courses, setCourses] = useState<Course[]>([]);
     const [leadsCount, setLeadsCount] = useState<Record<string, number>>({});
     const [isEditing, setIsEditing] = useState(false);
@@ -465,6 +465,12 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead }: { initialLead
 
     const hasPermission = (key: string) => {
         if (!user) return false;
+
+        // 0. Live Permissions (Prop)
+        if (permissions) {
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
 
         // Super Admin Override
         const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
@@ -2096,7 +2102,7 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead }: { initialLead
     );
 };
 
-const MechanicsView = () => {
+const MechanicsView = ({ permissions }: { permissions?: any }) => {
     const [mechanics, setMechanics] = useState<Mechanic[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -2117,6 +2123,12 @@ const MechanicsView = () => {
     // --- Permissions Helper ---
     const hasPermission = (key: string) => {
         if (!user || !user.role) return false;
+
+        // 0. Live Permissions (Prop)
+        if (permissions) {
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
 
         // Handle String Role (Legacy/Simple Auth)
         if (typeof user.role === 'string') {
@@ -2663,7 +2675,7 @@ const MechanicsView = () => {
 };
 
 // --- View: Finance System ---
-const FinanceView = () => {
+const FinanceView = ({ permissions }: { permissions?: any }) => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [receivables, setReceivables] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -2681,7 +2693,13 @@ const FinanceView = () => {
 
     // --- Permissions Helper ---
     const hasPermission = (key: string) => {
-        if (!user || !user.role) return false;
+        if (!user) return false;
+
+        // 0. Live Permissions (Prop)
+        if (permissions) {
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
 
         // Handle String Role
         if (typeof user.role === 'string') {
@@ -3458,7 +3476,8 @@ const SettingsView = () => {
                 { key: 'crm_manage_leads', label: 'Gerenciar Leads (Criar/Editar/Mover)' },
                 { key: 'crm_delete_leads', label: 'Excluir Leads' },
                 { key: 'crm_export', label: 'Exportar Dados' },
-                { key: 'crm_distribute', label: 'Configurar Distribuição' }
+                { key: 'crm_distribute', label: 'Configurar Distribuição' },
+                { key: 'crm_view_all', label: 'Ver Todos os Leads (Igual Admin)' }
             ]
         },
         {
@@ -3555,7 +3574,7 @@ const SettingsView = () => {
             {/* Header / Tabs */}
             <div className="border-b border-gray-200 bg-gray-50 flex items-center justify-between px-6 pt-4">
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                    {['Geral', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais'].map(tab => (
+                    {['Geral', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -3740,6 +3759,22 @@ const SettingsView = () => {
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.enable_dev_panel === 'true' ? 'left-7' : 'left-1'}`}></div>
                                     </button>
                                 </div>
+                                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100">
+                                    <div>
+                                        <h4 className="font-bold text-sm text-gray-900">Distribuição de Leads (CRM)</h4>
+                                        <p className="text-xs text-purple-800">
+                                            {config.crm_distribution_mode === 'Random' 
+                                                ? 'MODO AUTOMÁTICO: Leads são distribuídos aleatoriamente entre a equipe.' 
+                                                : 'MODO MANUAL: Leads caem na "Fila" e devem ser pegos manualmente.'}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleChange('crm_distribution_mode', config.crm_distribution_mode === 'Random' ? 'Manual' : 'Random')}
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${config.crm_distribution_mode === 'Random' ? 'bg-purple-600' : 'bg-gray-300'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.crm_distribution_mode === 'Random' ? 'left-7' : 'left-1'}`}></div>
+                                    </button>
+                                </div>
                             </div>
 
 
@@ -3767,6 +3802,90 @@ const SettingsView = () => {
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Body End</label>
                                 <textarea className="w-full h-40 border border-gray-300 p-4 rounded-lg font-mono text-xs bg-gray-50" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Tab: Backup & Reset */}
+                {activeTab === 'Backup & Reset' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Backup Section */}
+                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                <h3 className="text-lg font-bold text-gray-900 border-b pb-4 mb-4 flex items-center gap-2">
+                                    <Save size={20} className="text-blue-600" /> Backup System
+                                </h3>
+                                <p className="text-sm text-gray-500 mb-6">
+                                    Faça o download dos dados principais do sistema em formato JSON.
+                                    Recomendamos fazer backups regulares.
+                                </p>
+                                
+                                <div className="space-y-3">
+                                    {[
+                                        { table: 'SITE_Leads', label: 'Exportar CRM / Leads' },
+                                        { table: 'SITE_Enrollments', label: 'Exportar Matrículas' },
+                                        { table: 'SITE_Courses', label: 'Exportar Cursos' },
+                                        { table: 'SITE_Transactions', label: 'Exportar Transações Financeiras' },
+                                        { table: 'SITE_Users', label: 'Exportar Usuários' },
+                                    ].map((item) => (
+                                        <button 
+                                            key={item.table}
+                                            onClick={async () => {
+                                                const { data } = await supabase.from(item.table).select('*');
+                                                if (!data || data.length === 0) return alert('Sem dados para exportar.');
+                                                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `${item.table}_backup_${new Date().toISOString().split('T')[0]}.json`;
+                                                a.click();
+                                            }}
+                                            className="w-full flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-all font-bold text-gray-700 text-xs"
+                                        >
+                                            {item.label}
+                                            <TrendingUp size={16} className="text-blue-500" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Reset / Danger Zone */}
+                            <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
+                                <h3 className="text-lg font-bold text-red-900 border-b border-red-200 pb-4 mb-4 flex items-center gap-2">
+                                    <AlertTriangle size={20} className="text-red-600" /> Danger Zone (Reset)
+                                </h3>
+                                <p className="text-sm text-red-800 mb-6">
+                                    Ações irreversíveis. Tenha certeza absoluta antes de apagar dados.
+                                </p>
+
+                                <div className="space-y-4">
+                                    {[
+                                        { table: 'SITE_Leads', label: 'APAGAR TODOS OS LEADS', desc: 'Remove todo o histórico do CRM.' },
+                                        { table: 'SITE_Notifications', label: 'LIMPAR NOTIFICAÇÕES', desc: 'Remove alertas e avisos enviados.' },
+                                        { table: 'SITE_Transactions', label: 'LIMPAR FINANCEIRO', desc: 'Apaga todas as receitas e despesas.' },
+                                    ].map((item) => (
+                                        <div key={item.table} className="bg-white p-4 rounded-xl border border-red-100 shadow-sm">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <h4 className="font-bold text-red-700 text-sm">{item.label}</h4>
+                                                <button 
+                                                    onClick={async () => {
+                                                        const confirmText = prompt(`Para confirmar, digite "CONFIRMAR" para apagar a tabela ${item.table}:`);
+                                                        if (confirmText !== 'CONFIRMAR') return alert('Ação cancelada.');
+                                                        
+                                                        const { error } = await supabase.from(item.table).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+                                                        if (error) alert('Erro: ' + error.message);
+                                                        else alert('Dados apagados com sucesso.');
+                                                    }}
+                                                    className="bg-red-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-red-700"
+                                                >
+                                                    RESETAR
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-gray-500">{item.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3946,7 +4065,7 @@ const SettingsView = () => {
 };
 
 // --- View: Team (Collaborators Only) ---
-const TeamView = () => {
+const TeamView = ({ permissions }: { permissions?: any }) => {
     const [users, setUsers] = useState<UserType[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -3960,6 +4079,12 @@ const TeamView = () => {
     // --- Permissions Helper ---
     const hasPermission = (key: string) => {
         if (!user || !user.role) return false;
+
+        // 0. Live Permissions (Prop)
+        if (permissions) {
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
 
         // Handle String Role
         if (typeof user.role === 'string') {
@@ -4347,15 +4472,58 @@ const Admin: React.FC = () => {
     const { user, loading, logout } = useAuth();
     const navigate = useNavigate();
 
+    // LIVE PERMISSIONS STATE
+    const [livePermissions, setLivePermissions] = useState<any>(null);
+
     useEffect(() => {
         if (!loading && !user) {
             navigate('/');
         }
     }, [user, loading, navigate]);
 
+    // FETCH LIVE PERMISSIONS
+    useEffect(() => {
+        const fetchLivePermissions = async () => {
+            if (!user) return;
+            try {
+                // Refresh user role_id from DB to be safe
+                const { data: userData } = await supabase.from('SITE_Users').select('role_id, role').eq('id', user.id).single();
+                
+                let roleId = userData?.role_id || user.role_id;
+                let roleName = typeof userData?.role === 'string' ? userData.role : (typeof user.role === 'string' ? user.role : null);
+
+                if (roleId) {
+                     const { data } = await supabase.from('SITE_Roles').select('permissions').eq('id', roleId).single();
+                     if (data) setLivePermissions(data.permissions);
+                } else if (roleName) {
+                     // Try exact match first
+                     let { data } = await supabase.from('SITE_Roles').select('permissions').eq('name', roleName).maybeSingle();
+                     
+                     // If no data, try case-insensitive match assuming roles might differ in case
+                     if (!data) {
+                          const { data: allRoles } = await supabase.from('SITE_Roles').select('name, permissions');
+                          const match = allRoles?.find((r: any) => r.name.toLowerCase() === roleName?.toLowerCase());
+                          if (match) data = match;
+                     }
+
+                     if (data) setLivePermissions(data.permissions);
+                }
+            } catch (err) {
+                console.error("Error fetching live permissions in Admin:", err);
+            }
+        };
+        fetchLivePermissions();
+    }, [user]);
+
     // PERMISSION CHECK HELPER
     const hasPermission = (key: string) => {
         if (!user) return false;
+
+        // 0. Live Permissions (Highest Priority)
+        if (livePermissions) {
+             if (livePermissions.admin_access) return true;
+             return !!livePermissions[key];
+        }
 
         // 1. Super Admin / Admin String Override
         const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
@@ -4567,13 +4735,13 @@ const Admin: React.FC = () => {
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead) => {
                             setPendingEnrollmentLead(lead);
                             setCurrentView('courses_manager');
-                        }} />}
-                        {currentView === 'team' && hasPermission('manage_users') && <TeamView />}
+                        }} permissions={livePermissions} />}
+                        {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} />}
                         {currentView === 'orders' && hasPermission('manage_orders') && <OrdersView />}
-                        {currentView === 'finance' && hasPermission('financial_view') && <FinanceView />}
-                        {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView />}
-                        {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} onConsumeInitialLead={() => setPendingEnrollmentLead(null)} />}
-                        {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView />}
+                        {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
+                        {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
+                        {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} onConsumeInitialLead={() => setPendingEnrollmentLead(null)} permissions={livePermissions} />}
+                        {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && hasPermission('manage_marketing') && <EmailMarketingView />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
