@@ -3462,13 +3462,20 @@ const SettingsView = () => {
             ]
         },
         {
-            title: 'Blog & Conteúdo (IA)',
+            title: 'Loja Virtual',
+            perms: [
+                { key: 'manage_orders', label: 'Gerenciar Pedidos' }
+            ]
+        },
+        {
+            title: 'Marketing (Blog & Email)',
             perms: [
                 { key: 'blog_view', label: 'Acessar Blog' },
                 { key: 'blog_create', label: 'Criar / Publicar Posts' },
                 { key: 'blog_edit', label: 'Editar Posts' },
                 { key: 'blog_delete', label: 'Excluir Posts' },
-                { key: 'blog_ai', label: 'Usar Gerador IA' }
+                { key: 'blog_ai', label: 'Usar Gerador IA' },
+                { key: 'manage_marketing', label: 'Acessar Email Marketing' }
             ]
         },
         {
@@ -3495,6 +3502,7 @@ const SettingsView = () => {
         {
             title: 'Administração Geral',
             perms: [
+                { key: 'dashboard_view', label: 'Visualizar Dashboard (Visão Geral)' },
                 { key: 'admin_access', label: 'Acesso Admin (Global)' },
                 { key: 'manage_users', label: 'Gerenciar Equipe' },
                 { key: 'manage_settings', label: 'Acesso Configurações' },
@@ -4345,6 +4353,25 @@ const Admin: React.FC = () => {
         }
     }, [user, loading, navigate]);
 
+    // PERMISSION CHECK HELPER
+    const hasPermission = (key: string) => {
+        if (!user) return false;
+
+        // 1. Super Admin / Admin String Override
+        const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
+        if (roleName === 'Super Admin' || roleName === 'ADMIN' || user.permissions?.admin_access) return true;
+
+        // 2. Level 10 Override
+        if (typeof user.role !== 'string' && user.role?.level >= 10) return true;
+
+        // 3. Granular Check
+        const rolePermissions = typeof user.role === 'object' ? user.role?.permissions : {};
+        const effectivePermissions = { ...rolePermissions, ...user.permissions };
+
+        // Handle specific "manage_orders" legacy case if necessary, or just use key
+        return !!effectivePermissions[key];
+    };
+
     const handleLogout = () => {
         logout();
         navigate('/');
@@ -4354,8 +4381,6 @@ const Admin: React.FC = () => {
 
     return (
         <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
-
-
 
             {/* Sidebar (Desktop Only) */}
             <div className={`
@@ -4371,7 +4396,7 @@ const Admin: React.FC = () => {
                             {!isSidebarCollapsed && (
                                 <div className="overflow-hidden whitespace-nowrap">
                                     <h1 className="font-black text-xl tracking-tighter text-white leading-none">{config.site_title || 'W-TECH'}</h1>
-                                    <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Admin</p>
+                                    <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">Admin</p>
                                 </div>
                             )}
                         </div>
@@ -4401,24 +4426,54 @@ const Admin: React.FC = () => {
                     </div>
 
                     <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar">
-                        <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                        <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        {hasPermission('dashboard_view') && (
+                            <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {hasPermission('crm_view') && (
+                            <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {hasPermission('manage_users') && (
+                            <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {hasPermission('manage_orders') && (
+                            <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {hasPermission('courses_view') && (
+                            <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {hasPermission('accredited_view') && (
+                            <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {hasPermission('financial_view') && (
+                            <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+                        
+                        {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && (
+                            <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
 
                         <div className={`pt-4 mt-4 border-t border-gray-800 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
                              {!isSidebarCollapsed && <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>}
 
-                            <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
-                            <SidebarItem icon={Mail} label="Email Marketing" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            {hasPermission('blog_view') && (
+                                <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            )}
+                            
+                            {(hasPermission('manage_marketing')) && (
+                                <SidebarItem icon={Mail} label="Email Marketing" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            )}
                         </div>
 
                         <div className="pt-4 mt-4 border-t border-gray-800">
-                            <SidebarItem icon={Settings} label="Configurações" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            {hasPermission('manage_settings') && (
+                                <SidebarItem icon={Settings} label="Configurações" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -4465,17 +4520,19 @@ const Admin: React.FC = () => {
                             <div className="w-12 h-1.5 bg-white/30 rounded-full mx-auto mb-8"></div>
                             
                             <div className="grid grid-cols-3 gap-6 mb-auto overflow-y-auto">
-                                <MobileMenuItem icon={LayoutDashboard} label="Visão Geral" onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={KanbanSquare} label="Leads & CRM" onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={Users} label="Equipe" onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={GraduationCap} label="Cursos" onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={Wrench} label="Oficinas" onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={DollarSign} label="Financeiro" onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={Mail} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />
-                                <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
+                                {hasPermission('dashboard_view') && <MobileMenuItem icon={LayoutDashboard} label="Visão Geral" onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />}
+                                
+                                {hasPermission('crm_view') && <MobileMenuItem icon={KanbanSquare} label="Leads & CRM" onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manage_users') && <MobileMenuItem icon={Users} label="Equipe" onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manage_orders') && <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('courses_view') && <MobileMenuItem icon={GraduationCap} label="Cursos" onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('accredited_view') && <MobileMenuItem icon={Wrench} label="Oficinas" onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('financial_view') && <MobileMenuItem icon={DollarSign} label="Financeiro" onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} />}
+                                {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('blog_view') && <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manage_marketing') && <MobileMenuItem icon={Mail} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
+                                
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
                                     <div className="w-16 h-16 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 shadow-lg group-active:scale-95 transition-transform">
                                         <LogOut size={28} />
@@ -4506,20 +4563,20 @@ const Admin: React.FC = () => {
                         transition={{ duration: 0.2 }}
                         className="p-4 md:p-6 w-full min-h-full"
                     >
-                        {currentView === 'dashboard' && <DashboardView />}
-                        {currentView === 'crm' && <CRMView onConvertLead={(lead) => {
+                        {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView />}
+                        {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead) => {
                             setPendingEnrollmentLead(lead);
                             setCurrentView('courses_manager');
                         }} />}
-                        {currentView === 'team' && <TeamView />}
-                        {currentView === 'orders' && <OrdersView />}
-                        {currentView === 'finance' && <FinanceView />}
-                        {currentView === 'mechanics' && <MechanicsView />}
-                        {currentView === 'courses_manager' && <CoursesManagerView initialLead={pendingEnrollmentLead} onConsumeInitialLead={() => setPendingEnrollmentLead(null)} />}
-                        {currentView === 'lp_builder' && <LandingPagesView />}
-                        {currentView === 'blog_manager' && <BlogManagerView />}
-                        {currentView === 'email_marketing' && <EmailMarketingView />}
-                        {currentView === 'settings' && <SettingsView />}
+                        {currentView === 'team' && hasPermission('manage_users') && <TeamView />}
+                        {currentView === 'orders' && hasPermission('manage_orders') && <OrdersView />}
+                        {currentView === 'finance' && hasPermission('financial_view') && <FinanceView />}
+                        {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView />}
+                        {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} onConsumeInitialLead={() => setPendingEnrollmentLead(null)} />}
+                        {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView />}
+                        {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
+                        {currentView === 'email_marketing' && hasPermission('manage_marketing') && <EmailMarketingView />}
+                        {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
                     </motion.div>
                 </AnimatePresence>
             </div>
