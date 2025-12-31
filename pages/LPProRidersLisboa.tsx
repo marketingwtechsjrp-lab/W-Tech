@@ -18,7 +18,8 @@ import {
   Smartphone,
   Mail,
   User,
-  AlertOctagon
+  AlertOctagon,
+  Instagram
 } from 'lucide-react';
 
 const LPProRidersLisboa: React.FC = () => {
@@ -83,7 +84,7 @@ const LPProRidersLisboa: React.FC = () => {
             
             {/* TOP BAR */}
             <div className="bg-wtech-red text-white text-[10px] md:text-xs font-black uppercase tracking-widest text-center py-2 px-4">
-                🇵🇹 Lisboa 2026: Formação Presencial Definitiva para Mecânicos e Oficinas
+                🇵🇹 Lisboa 2026: Formação Presencial Definitiva em Manutenção BMW GS
             </div>
 
             {/* NAVIGATION / LOGOS */}
@@ -134,7 +135,7 @@ const LPProRidersLisboa: React.FC = () => {
                         className="max-w-4xl mx-auto space-y-4 mb-12"
                     >
                         <p className="text-xl md:text-3xl text-gray-200 font-bold leading-tight">
-                            Torne-se Especialista em Motores, Eletrônica e Suspensões Premium.
+                            Domine Motores, Eletrônica e Suspensões Premium da sua BMW GS.
                         </p>
                         <p className="text-gray-400 font-medium tracking-wide uppercase text-sm md:text-base">
                             Certificação Oficial ProRiders + W-Tech
@@ -195,28 +196,28 @@ const LPProRidersLisboa: React.FC = () => {
             <section className="py-24 bg-black relative">
                  <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
                     <div>
-                        <span className="text-wtech-red font-black uppercase tracking-[0.2em] text-xs">Alerta Profissional</span>
+                        <span className="text-wtech-red font-black uppercase tracking-[0.2em] text-xs">Para Exigentes</span>
                         <h2 className="text-3xl md:text-5xl font-black uppercase mt-4 mb-8">
-                            Este curso <span className="text-wtech-red">não é para iniciantes</span>
+                            Este curso <span className="text-wtech-red">não exige experiência prévia</span>
                         </h2>
                         <div className="space-y-6 text-gray-400 text-lg leading-relaxed">
                             <p>
-                                A linha <strong className="text-white">BMW GS</strong> não admite erro. Quem trabalha sem método e diagnóstico correto perde tempo, gera retrabalho, compromete a reputação e deixa de faturar alto.
+                                A linha <strong className="text-white">BMW GS</strong> é complexa, mas o nosso método torna o aprendizado acessível. Seja você um mecânico buscando especialização ou um proprietário que deseja cuidar da própria moto.
                             </p>
                             <p>
-                                Este curso foi criado para profissionais que querem dominar BMW GS em nível avançado, com segurança, precisão e padrão premium.
+                                Este curso foi desenhado para quem não aceita o básico. Você vai aprender a diagnosticar, manter e entender sua máquina em nível de engenharia, mas com linguagem prática.
                             </p>
                         </div>
                          
                          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                              {[
-                                 "Perde tempo e dinheiro",
-                                 "Gera Retrabalho",
-                                 "Compromete Reputação",
-                                 "Deixa de Faturar Alto"
+                                 "Economize em Manutenções",
+                                 "Evite Diagnósticos Errados",
+                                 "Viaje com Autonomia",
+                                 "Domine sua Máquina"
                              ].map((item, i) => (
-                                 <div key={i} className="flex items-center gap-3 text-red-500 font-bold uppercase text-xs tracking-wide">
-                                     <AlertOctagon size={16} /> {item}
+                                 <div key={i} className="flex items-center gap-3 text-wtech-red font-bold uppercase text-xs tracking-wide">
+                                     <CheckCircle size={16} /> {item}
                                  </div>
                              ))}
                          </div>
@@ -228,7 +229,7 @@ const LPProRidersLisboa: React.FC = () => {
                             className="relative w-full rounded-sm border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-700" 
                         />
                          <div className="absolute bottom-6 right-6 bg-wtech-red text-white p-4 font-black uppercase text-xs tracking-widest shadow-lg">
-                            Profissionais Apenas
+                            Mecânicos & Entusiastas
                         </div>
                     </div>
                  </div>
@@ -241,15 +242,15 @@ const LPProRidersLisboa: React.FC = () => {
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="text-center mb-20">
                          <h2 className="text-3xl md:text-5xl font-black uppercase mb-4">Para quem é esta <span className="text-wtech-red">Formação</span></h2>
-                         <p className="text-gray-500 uppercase tracking-widest text-sm">Foco em Profissionais e Oficinas</p>
+                         <p className="text-gray-500 uppercase tracking-widest text-sm">Profissionais, Entusiastas e Proprietários</p>
                     </div>
 
                     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
                         <div className="space-y-4">
                             {[
-                                "Mecânicos profissionais",
-                                "Oficinas especializadas ou em evolução",
-                                "Técnicos que já atendem ou querem atender BMW GS"
+                                "Mecânicos que buscam especialização",
+                                "Proprietários que querem cuidar da sua moto",
+                                "Viajantes que precisam de autonomia mecânica"
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-4 bg-zinc-900 p-6 rounded-lg border-l-4 border-wtech-red hover:bg-zinc-800 transition-colors">
                                     <CheckCircle className="text-wtech-red shrink-0" size={24} />
@@ -259,9 +260,9 @@ const LPProRidersLisboa: React.FC = () => {
                         </div>
                         <div className="space-y-4">
                              {[
-                                "Quem quer se diferenciar no mercado europeu",
-                                "Quem busca autoridade técnica real, não teoria genérica",
-                                "Quem quer faturar mais com serviços premium"
+                                "Entusiastas apaixonados por mecânica",
+                                "Quem busca conhecimento técnico real e validado",
+                                "Quem não aceita manutenção superficial"
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-4 bg-zinc-900 p-6 rounded-lg border-l-4 border-wtech-gold hover:bg-zinc-800 transition-colors">
                                     <CheckCircle className="text-wtech-gold shrink-0" size={24} />
@@ -285,13 +286,13 @@ const LPProRidersLisboa: React.FC = () => {
                         {[
                             {
                                 icon: <Award size={32} className="text-wtech-gold" />,
-                                title: "Diferenciação Profissional",
-                                desc: "Você passa a ser visto como especialista BMW GS, podendo cobrar mais e fidelizar clientes exigentes."
+                                title: "Domínio Técnico Real",
+                                desc: "Você passa a entender profundamente o funcionamento da sua moto, seja para consertar ou pilotar melhor."
                             },
                              {
                                 icon: <Settings size={32} className="text-blue-500" />,
                                 title: "Acesso a Condições Exclusivas",
-                                desc: "Descontos especiais em ferramentas, peças e soluções técnicas, elevando produtividade e margem de lucro."
+                                desc: "Acesso a ferramentas e conhecimentos que antes eram restritos a concessionárias e equipes de corrida."
                             },
                              {
                                 icon: <Users size={32} className="text-green-500" />,
@@ -306,7 +307,7 @@ const LPProRidersLisboa: React.FC = () => {
                              {
                                 icon: <Smartphone size={32} className="text-purple-500" />,
                                 title: "Aprendizado Prático",
-                                desc: "Nada de teoria desnecessária. Você aprende, aplica e já melhora seus resultados na oficina."
+                                desc: "Nada de teoria desnecessária. Você aprende, coloca a mão na graxa e entende como tudo funciona."
                             },
                              {
                                 icon: <ShieldCheck size={32} className="text-wtech-red" />,
@@ -341,7 +342,7 @@ const LPProRidersLisboa: React.FC = () => {
                         viewport={{ once: true }}
                     >
                         <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-20 mx-auto mb-10 bg-white p-4 rounded shadow-[0_0_30px_rgba(255,255,255,0.2)]" />
-                        <h2 className="text-3xl font-black uppercase mb-12 tracking-wide">Sede Oficial <span className="text-blue-500">Liqui Moly</span> Portugal</h2>
+                        <h2 className="text-3xl font-black uppercase mb-12 tracking-wide">Liqui Moly Iberia <span className="text-blue-500">Experience Center</span></h2>
                     </motion.div>
                     
                     <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
@@ -355,7 +356,10 @@ const LPProRidersLisboa: React.FC = () => {
                                 <MapPin className="text-blue-500 shrink-0 mt-1" size={32} />
                                 <div>
                                     <h3 className="text-xl font-bold uppercase text-white mb-2">Endereço Exclusivo</h3>
-                                    <p className="text-gray-400 text-sm">Sintra Business Park, Zona Industrial da Abrunheira, Edifício 5, Armazém D, 2710-089 Sintra – Portugal</p>
+                                    <p className="text-gray-400 text-sm mb-2">Sintra Business Park, Zona Industrial da Abrunheira, Edifício 5, Armazém D, 2710-089 Sintra – Portugal</p>
+                                    <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
+                                        <Instagram size={16} /> @liquimolyiberia
+                                    </a>
                                 </div>
                              </div>
                              
@@ -432,8 +436,8 @@ const LPProRidersLisboa: React.FC = () => {
                             "Ajustes para estrada, off-road e uso misto",
                             "Uso correto de ferramentas e scanners profissionais",
                             "Correção de problemas crônicos da linha BMW GS",
-                            "Processos de oficina que aumentam faturamento",
-                            "Como se posicionar como especialista no mercado europeu"
+                            "Processos de manutenção de alto nível",
+                            "Domínio total da tecnologia BMW"
                         ].map((item, i) => (
                             <div key={i} className="flex items-center gap-4 p-6 border border-white/10 bg-zinc-900/30 hover:border-wtech-red transition-all group">
                                 <div className="w-8 h-8 flex items-center justify-center bg-wtech-red text-white font-bold rounded shadow-lg group-hover:scale-110 transition-transform">

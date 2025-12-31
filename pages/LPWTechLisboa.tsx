@@ -18,7 +18,8 @@ import {
   Smartphone,
   Mail,
   User,
-  AlertOctagon
+  AlertOctagon,
+  Instagram
 } from 'lucide-react';
 
 const LPWTechLisboa: React.FC = () => {
@@ -239,7 +240,7 @@ const LPWTechLisboa: React.FC = () => {
                         viewport={{ once: true }}
                     >
                         <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-20 mx-auto mb-10 bg-white p-4 rounded shadow-[0_0_30px_rgba(255,255,255,0.2)]" />
-                        <h2 className="text-3xl font-black uppercase mb-12 tracking-wide">Sede Oficial <span className="text-blue-500">Liqui Moly</span> Portugal</h2>
+                        <h2 className="text-3xl font-black uppercase mb-12 tracking-wide">Liqui Moly Iberia <span className="text-blue-500">Experience Center</span></h2>
                     </motion.div>
                     
                     <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
@@ -261,7 +262,11 @@ const LPWTechLisboa: React.FC = () => {
                                 <strong className="block text-white text-xl uppercase tracking-wider mb-2">Sintra Business Park</strong>
                                 <span className="block">Zona Industrial da Abrunheira</span>
                                 <span className="block">Edifício 5, Armazém D</span>
-                                <span className="block text-blue-400 font-bold">2710-089 Sintra – Portugal</span>
+                                <span className="block text-blue-400 font-bold mb-4">2710-089 Sintra – Portugal</span>
+                                
+                                <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
+                                    <Instagram size={16} /> @liquimolyiberia
+                                </a>
                              </address>
                         </motion.div>
 
