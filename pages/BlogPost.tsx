@@ -16,7 +16,8 @@ const BlogPostReader: React.FC = () => {
 
   // TTS State
   const [isPlaying, setIsPlaying] = useState(false);
-  const [utterance, setUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const isPlayingRef = useRef(false);
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
 
   // Scroll Progress
   const { scrollYProgress } = useScroll();
@@ -31,6 +32,7 @@ const BlogPostReader: React.FC = () => {
     return () => {
       // Cleanup TTS on unmount
       window.speechSynthesis.cancel();
+      isPlayingRef.current = false;
     };
   }, [slug]);
 
@@ -38,7 +40,6 @@ const BlogPostReader: React.FC = () => {
     if (!slug) return;
     setLoading(true);
     try {
-      // Try finding by slug first, then by ID as fallback
       let { data, error } = await supabase
         .from('SITE_BlogPosts')
         .select('*')
@@ -48,7 +49,6 @@ const BlogPostReader: React.FC = () => {
       if (error) console.error("Error fetching by slug:", error);
 
       if (!data) {
-        // Fallback to ID only if slug is a valid UUID to avoid PG errors
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
         if (isUUID) {
           const { data: dataId, error: errorId } = await supabase
@@ -57,23 +57,16 @@ const BlogPostReader: React.FC = () => {
             .eq('id', slug)
             .maybeSingle();
           if (dataId) data = dataId;
-          if (errorId) console.error("Error fetching by ID:", errorId);
         }
       }
 
       if (data) {
         setPost(data);
-        // Increment View Count (Non-blocking)
         supabase.rpc('increment_post_view', { post_id: data.id }).then(({ error }) => {
           if (error) {
-            // Fallback if RPC fails or doesn't exist
-            supabase.from('SITE_BlogPosts').update({ views: (data.views || 0) + 1 }).eq('id', data.id);
+             supabase.from('SITE_BlogPosts').update({ views: (data.views || 0) + 1 }).eq('id', data.id);
           }
         });
-
-        if (data.content) prepareTTS(data.content);
-      } else {
-        console.warn("Post not found for slug:", slug);
       }
     } catch (err) {
       console.error("Unexpected error in fetchPost:", err);
@@ -88,37 +81,53 @@ const BlogPostReader: React.FC = () => {
     return Math.ceil(words / 200);
   };
 
-  // Prepare Text-to-Speech
-  const prepareTTS = (htmlContent: string) => {
-    // Simply clear previous to avoid conflicts
-    window.speechSynthesis.cancel();
-  };
+  const speakText = (text: string, startIndex = 0) => {
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    
+    let index = startIndex;
 
-  const speakText = (text: string) => {
-    // Split by sentence to avoid browser limits (Chrome stops at ~200-300 chars often)
-    // This is a naive implementation but works better than full text
-    const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
-
-    let index = 0;
     const speakNext = () => {
-      if (index < sentences.length && isPlaying) {
-        const u = new SpeechSynthesisUtterance(sentences[index]);
-        u.lang = 'pt-BR';
-        u.rate = 1.1;
-        u.onend = () => {
+      if (!isPlayingRef.current) return;
+
+      if (index < sentences.length) {
+        const utterance = new SpeechSynthesisUtterance(sentences[index].trim());
+        
+        // Find a Portuguese voice (prioritize Google or high quality ones)
+        let voices = window.speechSynthesis.getVoices();
+        let ptVoice = voices.find(v => v.lang === 'pt-BR' && v.name.includes('Google')) || 
+                      voices.find(v => v.lang === 'pt-BR') ||
+                      voices.find(v => v.lang.startsWith('pt'));
+
+        if (ptVoice) utterance.voice = ptVoice;
+        
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        utterance.onstart = () => {
+          console.log("Speaking sentence", index);
+        };
+
+        utterance.onend = () => {
           index++;
+          setCurrentSentenceIndex(index);
           speakNext();
         };
-        u.onerror = (e) => {
-          console.error("TTS Error", e);
+
+        utterance.onerror = (event) => {
+          console.error('SpeechSynthesisUtterance error', event);
           setIsPlaying(false);
+          isPlayingRef.current = false;
         };
-        setUtterance(u); // Keep ref to current
-        window.speechSynthesis.speak(u);
+
+        window.speechSynthesis.speak(utterance);
       } else {
         setIsPlaying(false);
+        isPlayingRef.current = false;
+        setCurrentSentenceIndex(0);
       }
     };
+
     speakNext();
   };
 
@@ -126,11 +135,19 @@ const BlogPostReader: React.FC = () => {
     if (isPlaying) {
       window.speechSynthesis.cancel();
       setIsPlaying(false);
+      isPlayingRef.current = false;
     } else {
       if (!post?.content) return;
+      
+      const cleanText = post.title + ". " + post.content
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
       setIsPlaying(true);
-      const text = post.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      speakText(text);
+      isPlayingRef.current = true;
+      speakText(cleanText, currentSentenceIndex);
     }
   };
 

@@ -3358,6 +3358,7 @@ const SettingsView = () => {
 
     // Webhooks State
     const [webhooks, setWebhooks] = useState<{ url: string, topic: string, secret: string }[]>([]);
+    const [partnerBrands, setPartnerBrands] = useState<{ name: string, logo: string }[]>([]);
 
     useEffect(() => {
         fetchConfig();
@@ -3376,6 +3377,9 @@ const SettingsView = () => {
             if (configObj.system_webhooks) {
                 try { setWebhooks(JSON.parse(configObj.system_webhooks)); } catch (e) { }
             }
+            if (configObj.partner_brands) {
+                try { setPartnerBrands(JSON.parse(configObj.partner_brands)); } catch (e) { }
+            }
         }
     };
 
@@ -3390,7 +3394,11 @@ const SettingsView = () => {
 
     const handleSaveConfig = async () => {
         // Save webhooks to config
-        const finalConfig = { ...config, system_webhooks: JSON.stringify(webhooks) };
+        const finalConfig = { 
+            ...config, 
+            system_webhooks: JSON.stringify(webhooks), 
+            partner_brands: JSON.stringify(partnerBrands) 
+        };
         const updates = Object.entries(finalConfig).map(([key, value]) => ({
             key,
             value: typeof value === 'string' ? value : String(value || '')
@@ -3768,12 +3776,133 @@ const SettingsView = () => {
                                                 : 'MODO MANUAL: Leads caem na "Fila" e devem ser pegos manualmente.'}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => handleChange('crm_distribution_mode', config.crm_distribution_mode === 'Random' ? 'Manual' : 'Random')}
-                                        className={`w-12 h-6 rounded-full transition-colors relative ${config.crm_distribution_mode === 'Random' ? 'bg-purple-600' : 'bg-gray-300'}`}
-                                    >
-                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.crm_distribution_mode === 'Random' ? 'left-7' : 'left-1'}`}></div>
-                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Hero & Parceiros */}
+                            <div className="space-y-6 col-span-1 md:col-span-2 lg:col-span-3 border-t pt-8 mt-4">
+                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><Sparkles size={18} /> Página Inicial (Hero & Parceiros)</h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Headline do Hero</label>
+                                            <input
+                                                className="w-full border border-gray-300 p-3 rounded-lg"
+                                                value={config.hero_headline || ''}
+                                                onChange={(e) => handleChange('hero_headline', e.target.value)}
+                                                placeholder="A Elite da Tecnologia Automotiva"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Subheadline do Hero</label>
+                                            <textarea
+                                                className="w-full border border-gray-300 p-3 rounded-lg"
+                                                rows={3}
+                                                value={config.hero_subheadline || ''}
+                                                onChange={(e) => handleChange('hero_subheadline', e.target.value)}
+                                                placeholder="..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">URL do Vídeo (Fundo)</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    className="flex-1 border border-gray-300 p-3 rounded-lg font-mono text-xs"
+                                                    value={config.hero_video_url || ''}
+                                                    onChange={(e) => handleChange('hero_video_url', e.target.value)}
+                                                    placeholder="https://..."
+                                                />
+                                                <label className="cursor-pointer bg-gray-100 border border-gray-300 p-3 rounded-lg hover:bg-gray-200">
+                                                    <Upload size={18} className="text-gray-600" />
+                                                    <input type="file" className="hidden" accept="video/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'hero_video_url')} />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase">Marcas Parceiras</label>
+                                            <button 
+                                                onClick={() => setPartnerBrands([...partnerBrands, { name: '', logo: '' }])}
+                                                className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded hover:bg-gray-800 flex items-center gap-1 uppercase"
+                                            >
+                                                <Plus size={12} /> Adicionar Marca
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {partnerBrands.length === 0 && (
+                                                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 text-gray-400 text-xs">
+                                                    Nenhuma marca cadastrada. Use os padrões do sistema.
+                                                </div>
+                                            )}
+                                            {partnerBrands.map((brand, idx) => (
+                                                <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex flex-col gap-3 group">
+                                                    <div className="flex gap-2">
+                                                        <input 
+                                                            className="flex-1 border bg-white p-2 rounded text-xs px-2"
+                                                            placeholder="Nome da Marca"
+                                                            value={brand.name}
+                                                            onChange={e => {
+                                                                const newBrands = [...partnerBrands];
+                                                                newBrands[idx].name = e.target.value;
+                                                                setPartnerBrands(newBrands);
+                                                            }}
+                                                        />
+                                                        <button 
+                                                            onClick={() => setPartnerBrands(partnerBrands.filter((_, i) => i !== idx))}
+                                                            className="text-red-500 hover:bg-red-50 p-2 rounded"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <div className="w-10 h-10 bg-white border rounded shrink-0 flex items-center justify-center p-1">
+                                                            {brand.logo ? <img src={brand.logo} className="max-h-full max-w-full object-contain" /> : <ImageIcon size={14} className="text-gray-300" />}
+                                                        </div>
+                                                        <input 
+                                                            className="flex-1 border bg-white p-2 rounded text-[10px] px-2 font-mono"
+                                                            placeholder="Logo URL"
+                                                            value={brand.logo}
+                                                            onChange={e => {
+                                                                const newBrands = [...partnerBrands];
+                                                                newBrands[idx].logo = e.target.value;
+                                                                setPartnerBrands(newBrands);
+                                                            }}
+                                                        />
+                                                        <label className="cursor-pointer bg-white border border-gray-300 p-2 rounded hover:bg-gray-50">
+                                                            <Upload size={14} className="text-gray-600" />
+                                                            <input 
+                                                                type="file" 
+                                                                className="hidden" 
+                                                                accept="image/*" 
+                                                                onChange={async (e) => {
+                                                                    if (e.target.files?.[0]) {
+                                                                        const file = e.target.files[0];
+                                                                        const fileExt = file.name.split('.').pop();
+                                                                        const fileName = `partner-${idx}-${Date.now()}.${fileExt}`;
+                                                                        const filePath = `partners/${fileName}`;
+
+                                                                        const { error: uploadError } = await supabase.storage
+                                                                            .from('site-assets')
+                                                                            .upload(filePath, file);
+
+                                                                        if (!uploadError) {
+                                                                            const { data } = supabase.storage.from('site-assets').getPublicUrl(filePath);
+                                                                            const newBrands = [...partnerBrands];
+                                                                            newBrands[idx].logo = data.publicUrl;
+                                                                            setPartnerBrands(newBrands);
+                                                                        }
+                                                                    }
+                                                                }} 
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

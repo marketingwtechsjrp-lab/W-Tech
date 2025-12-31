@@ -9,6 +9,8 @@ import { Mechanic } from '../types';
 
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
+import { HeroSection } from '../components/ui/hero-section-5';
+import ScrollExpandMedia from '../components/ui/scroll-expansion-hero';
 
 const Home = () => {
     // State
@@ -167,103 +169,7 @@ const Home = () => {
                     }
                 }}
             />
-            {/* HERO SECTION */}
-            <header id="home" className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-black">
-                {/* Background Image with stronger fade */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.3 }}
-                    className="absolute top-0 left-0 w-full h-[900px] z-0 pointer-events-none select-none"
-                >
-                    <img
-                        src="https://w-techbrasil.com.br/wp-content/uploads/2025/09/O-PLANO-DEFINITIVO-1920-x-900-px-2000-x-590-px-768-x-432-px-1.png"
-                        className="w-full h-full object-cover object-top opacity-50 grayscale"
-                        alt="Background Pattern"
-                        width="1920"
-                        height="900"
-                        fetchPriority="high"
-                    />
-                </motion.div>
-
-                {/* Smoked Black Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/95 to-transparent/50 pointer-events-none z-0"></div>
-
-                <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-                    <motion.div
-                        initial={{ opacity: 0, x: -50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-wtech-gold/20 text-wtech-gold rounded-full text-xs font-bold mb-6 border border-wtech-gold/30 uppercase tracking-wider backdrop-blur-sm">
-                            <Star size={12} className="fill-wtech-gold" /> A Maior Escola da América Latina
-                        </div>
-                        <h1 className="text-5xl lg:text-7xl font-black leading-[1.05] mb-8 text-white tracking-tighter">
-                            Cursos e Peças para<br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">Suspensões</span><br />
-                            Off-road e On road
-                        </h1>
-                        <p className="text-lg text-gray-400 mb-10 max-w-lg leading-relaxed font-medium">
-                            A W-Tech Brasil é referência absoluta em capacitação técnica.
-                            Formamos uma elite de especialistas prontos para o futuro da reparação.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <a href="#courses" className="px-8 py-4 bg-wtech-gold text-black text-base font-bold rounded-xl shadow-xl shadow-yellow-500/20 hover:bg-yellow-400 hover:scale-105 transition-all flex items-center justify-center gap-2 uppercase">
-                                <Calendar size={20} /> Próximas Turmas
-                            </a>
-                            <button className="px-8 py-4 bg-white/10 text-white border border-white/20 text-base font-bold rounded-xl hover:bg-white hover:text-black hover:border-white transition-all flex items-center justify-center gap-2 group uppercase backdrop-blur-sm">
-                                <Play size={20} className="fill-white group-hover:fill-black transition-transform group-hover:scale-110" /> Nossa Metodologia
-                            </button>
-                        </div>
-
-                        <div className="mt-12 flex items-center gap-4 text-sm font-semibold text-gray-500">
-                            <div className="flex -space-x-3">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-gray-800 overflow-hidden">
-                                        <img src={`https://ui-avatars.com/api/?background=random&name=User${i}`} alt="user" loading="lazy" width="40" height="40" />
-                                    </div>
-                                ))}
-                            </div>
-                            <p>+2.500 Alunos Certificados</p>
-                        </div>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="relative hidden lg:block"
-                    >
-                        <div className="relative z-10 w-full h-[600px] rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/10 rotate-1 hover:rotate-0 transition-all duration-500 group">
-                            {/* HERO IMAGE: ALEX TEACHING */}
-                            <img
-                                src="https://w-techbrasil.com.br/wp-content/uploads/2023/12/EFP00005-e1701440657699-600x755.jpg"
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                alt="Treinamento com Especialista"
-                                width="600"
-                                height="755"
-                                loading="lazy"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
-
-                            {/* Floating Card */}
-                            <div className="absolute bottom-8 right-8 bg-black/80 backdrop-blur-md p-6 rounded-2xl shadow-lg max-w-xs border border-white/10 text-left">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-wtech-gold flex items-center justify-center text-black">
-                                        <Award size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-white text-lg">Alex Crepaldi</p>
-                                        <p className="text-xs text-wtech-gold font-bold uppercase tracking-wide">Diretor Técnico & Instrutor</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="absolute top-10 -left-10 w-72 h-72 bg-wtech-gold/10 rounded-full blur-[100px] -z-10 animate-pulse"></div>
-                        <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-blue-500/5 rounded-full blur-[100px] -z-10"></div>
-                    </motion.div>
-                </div>
-            </header>
+            <HeroSection />
 
 
             {/* ABOUT & HQ SECTION ... (Keep as is) */}
@@ -515,6 +421,39 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+
+            {/* IMMERSIVE VIDEO SECTION */}
+            <ScrollExpandMedia
+                mediaType="video"
+                mediaSrc="https://www.youtube.com/watch?v=RePclscnxDM"
+                bgImageSrc="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1920&auto=format&fit=crop"
+                title="EXPERIÊNCIA IMERSIVA"
+                date="W-TECH BRASIL"
+                scrollToExpand="SCROLLE PARA EXPANDIR"
+                textBlend
+            >
+                <div className="max-w-4xl mx-auto text-center md:text-left py-12">
+                    <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tighter">O Próximo Nível da Suspensão</h2>
+                    <p className="text-xl text-gray-400 mb-8 font-medium">
+                        Mais do que um treinamento, uma imersão completa no mundo da alta performance. 
+                        Na W-Tech, combinamos tecnologia de ponta com a experiência prática dos melhores especialistas do mercado.
+                    </p>
+                    <div className="grid md:grid-cols-3 gap-8 pt-8 border-t border-white/10">
+                        <div>
+                            <p className="text-wtech-gold font-black text-3xl mb-1">100%</p>
+                            <p className="text-xs uppercase font-bold tracking-widest text-gray-500">Prático</p>
+                        </div>
+                        <div>
+                            <p className="text-wtech-gold font-black text-3xl mb-1">+5.000</p>
+                            <p className="text-xs uppercase font-bold tracking-widest text-gray-500">Alunos Formados</p>
+                        </div>
+                        <div>
+                            <p className="text-wtech-gold font-black text-3xl mb-1">24/7</p>
+                            <p className="text-xs uppercase font-bold tracking-widest text-gray-500">Suporte Técnico</p>
+                        </div>
+                    </div>
+                </div>
+            </ScrollExpandMedia>
 
             {/* BLOG SECTION */}
             <section id="blog" className="py-20 bg-white">
