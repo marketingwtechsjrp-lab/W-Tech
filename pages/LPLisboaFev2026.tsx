@@ -406,13 +406,16 @@ const LPLisboaFev2026: React.FC = () => {
                 <div className="container mx-auto px-6">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div>
-                             <img src="https://artonwheelsgarage.pt/wp-content/uploads/2024/03/logo-art-on-wheels.png" alt="Art On Wheels" className="h-20 mb-10" />
+                             <img src="https://artonwheelsgarage.pt/wp-content/uploads/2024/03/logo-art-on-wheels.png" alt="Art On Wheels" className="h-28 md:h-32 mb-10 object-contain" />
                              <h2 className="text-3xl font-black uppercase text-white mb-6">📍 Local do Evento</h2>
-                             <div className="space-y-4 mb-8">
-                                 <p className="text-2xl font-black text-wtech-red">Art On Wheels Garage</p>
+                             <div className="space-y-4 mb-6">
+                                 <p className="text-2xl font-black text-wtech-red uppercase">Art On Wheels Garage</p>
                                  <p className="text-gray-400 text-sm uppercase tracking-widest font-bold leading-relaxed">
                                     Rua da Tapada Nova, Centro Empresarial II, Armz. B <br/>
                                     Linhó, 2710-297 Sintra
+                                 </p>
+                                 <p className="text-gray-500 text-sm leading-relaxed max-w-lg">
+                                    Com entrada no mercado em 2014 a Art on Wheels Garage tem conquistado o seu espaço junto dos apaixonados pelas duas rodas. A nossa presença online já atinge mais de 25.000 seguidores ativos. Dispomos de conhecimento e soluções fruto da nossa experiência e mecânicos especializados sendo a BMW a nossa referência.
                                  </p>
                              </div>
                              <div className="flex flex-wrap gap-6 items-center">
@@ -426,7 +429,7 @@ const LPLisboaFev2026: React.FC = () => {
                         </div>
                         <div className="h-[400px] bg-black border border-white/10 relative group">
                             <iframe 
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3112.5866!2d-9.37012!3d38.75034!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd1ed1737f000001%3A0xe677579998df896c!2sArt%20on%20Wheels%20Garage!5e0!3m2!1spt-PT!2spt!4v1710000000000!5m2!1spt-PT!2spt" 
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d777.6358368824147!2d-9.378984930378137!3d38.75629505707823!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd1ed1006509e51b%3A0x7d65377045b64c1c!2sArt%20on%20Wheels%20Garage!5e0!3m2!1spt-PT!2spt!4v1709665432123!5m2!1spt-PT!2spt" 
                                 className="w-full h-full grayscale group-hover:grayscale-0 transition-all duration-1000 border-none"
                                 title="Map"
                                 allowFullScreen={true}
