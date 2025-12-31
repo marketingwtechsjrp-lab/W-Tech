@@ -95,10 +95,10 @@ const LPLisboaFev2026: React.FC = () => {
             <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden pt-20">
                 {/* Background Video/Image Overlay */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-zinc-950 z-10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-zinc-950 z-10"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(230,0,0,0.1)_0%,transparent_70%)] z-10"></div>
                     <iframe 
-                        src="https://www.youtube.com/embed/yWofinvE0Xg?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=yWofinvE0Xg" 
+                        src="https://www.youtube.com/embed/3LqrvfmuUME?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=3LqrvfmuUME&start=9" 
                         className="absolute top-1/2 left-1/2 w-[600%] h-[600%] md:w-full md:h-full md:scale-150 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -112,7 +112,7 @@ const LPLisboaFev2026: React.FC = () => {
                         className="inline-flex items-center gap-2 border border-white/10 bg-white/5 backdrop-blur-xl px-4 py-2 rounded-full mb-8"
                     >
                         <span className="w-2 h-2 rounded-full bg-wtech-red animate-pulse"></span>
-                        <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-gray-300">Evento 100% Gratuito em Lisboa</span>
+                        <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-gray-300">Palestra Gratuita • Art On Wheels</span>
                     </motion.div>
                     
                     <motion.h1 
@@ -131,7 +131,7 @@ const LPLisboaFev2026: React.FC = () => {
                         transition={{ delay: 0.4 }}
                         className="max-w-3xl mx-auto text-lg md:text-2xl text-gray-400 font-medium leading-relaxed mb-12"
                     >
-                        Descubra o que decide a vida da sua <span className="text-white">mota</span> e por que é que a maioria dos problemas graves começa em silêncio.
+                        Descubra o que decide a vida da sua <span className="text-white">mota</span> na icónica <span className="text-wtech-red font-bold">Art On Wheels Garage</span>. Uma masterclass técnica exclusiva e <span className="text-white font-bold underline decoration-wtech-red underline-offset-4">100% gratuita</span>.
                     </motion.p>
 
                     <motion.div 
