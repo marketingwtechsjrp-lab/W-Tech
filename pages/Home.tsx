@@ -435,6 +435,8 @@ const Home = () => {
                         src="https://media.jornaldooeste.com.br/2022/03/79b31d1f-bissinhozavatti_hondaracing_rallyminasbrasil2022_creditoricardoleizer_mundopress_4028-scaled-1.jpg" 
                         alt="Piloto de Rally Bissinho Zavatti representando a parceria técnica da W-Tech" 
                         className="w-full h-full object-cover opacity-40" 
+                        width="1920"
+                        height="1280"
                         loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-black via-black/20 to-black"></div>
@@ -660,7 +662,7 @@ const Home = () => {
                             posts.map(post => (
                                 <div key={post.id} className="min-w-[350px] md:min-w-[400px] snap-center group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100">
                                     <div className="overflow-hidden rounded-t-2xl h-60">
-                                        <img src={post.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                        <img src={post.image} alt={post.title} width="400" height="240" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                     </div>
                                     <div className="p-6">
                                         <div className="flex gap-4 items-center mb-3">

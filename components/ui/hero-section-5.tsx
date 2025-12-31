@@ -54,9 +54,6 @@ export function HeroSection() {
                     <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                         <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-3xl lg:text-left">
                             <motion.h1 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8 }}
                                 className="mt-8 max-w-2xl text-balance text-5xl font-black md:text-6xl lg:mt-16 xl:text-7xl text-white tracking-tighter"
                             >
                                 {heroHeadline}
@@ -109,6 +106,7 @@ export function HeroSection() {
                     {youtubeId ? (
                         <div className="absolute inset-0 size-full pointer-events-none">
                             <iframe
+                                title="Hero Background Video"
                                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[115vw] h-[115vh] min-w-[177.77vh] min-h-[56.25vw] object-cover opacity-60 grayscale"
                                 src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&enablejsapi=1`}
                                 allow="autoplay; fullscreen"
@@ -142,7 +140,7 @@ export function HeroSection() {
                                 {displayPartners.map((brand, i) => (
                                     <div key={i} className="flex items-center grayscale hover:grayscale-0 transition-all opacity-40 hover:opacity-100">
                                         <img
-                                            className="mx-auto h-8 w-auto"
+                                            className="mx-auto h-8 w-[120px] object-contain"
                                             src={brand.logo}
                                             alt={`Logo Parceiro: ${brand.name}`}
                                             height="32"

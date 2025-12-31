@@ -72,22 +72,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Social Icons */}
             <div className="flex gap-4">
                 {instagram && (
-                    <a href={instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                    <a href={instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
                         <Instagram size={20} />
                     </a>
                 )}
                 {facebook && (
-                    <a href={facebook} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                    <a href={facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
                         <Facebook size={20} />
                     </a>
                 )}
                 {youtube && (
-                    <a href={youtube} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                    <a href={youtube} target="_blank" rel="noreferrer" aria-label="YouTube" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
                         <Youtube size={20} />
                     </a>
                 )}
                  {whatsapp && (
-                    <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
+                    <a href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center hover:bg-wtech-gold hover:text-black transition-all">
                         <MessageCircle size={20} />
                     </a>
                 )}

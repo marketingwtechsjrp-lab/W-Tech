@@ -66,6 +66,7 @@ export const WhatsAppInterceptor = () => {
             {!isOpen && (
                 <button 
                     onClick={() => setIsOpen(true)}
+                    aria-label="Falar no WhatsApp"
                     className="fixed bottom-6 left-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl animate-bounce-custom flex items-center justify-center transition-all hover:scale-110"
                 >
                     <MessageCircle size={32} fill="white" />
