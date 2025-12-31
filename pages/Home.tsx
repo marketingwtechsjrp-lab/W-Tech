@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Calendar, ArrowRight, Star, CheckCircle, Search, Play, Instagram, Award, Menu, X, Phone, Mail, Clock } from 'lucide-react';
+import { MapPin, Calendar as CalendarIcon, ArrowRight, Star, CheckCircle, Search, Play, Instagram, Award, Menu, X, Phone, Mail, Clock, Volume2, VolumeX, Send } from 'lucide-react';
+import { Calendar as BentoCalendar } from '../components/ui/calendar';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 import { triggerWebhook } from '../lib/webhooks';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -10,7 +14,8 @@ import { Mechanic } from '../types';
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
 import { HeroSection } from '../components/ui/hero-section-5';
-import ScrollExpandMedia from '../components/ui/scroll-expansion-hero';
+import { ContainerAnimated, ContainerInset, ContainerScroll, ContainerStagger } from '../components/ui/hero-video';
+
 
 const Home = () => {
     // State
@@ -18,13 +23,37 @@ const Home = () => {
     const [mechanics, setMechanics] = useState<Mechanic[]>([]);
     const [courses, setCourses] = useState<any[]>([]);
     const [posts, setPosts] = useState<any[]>([]);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const navigate = useNavigate();
-    const { get } = useSettings();
 
-    const address = get('address', 'Rua da Performance, 1234<br />São Paulo, SP - Brasil');
-    const phone = get('phone_main', '(11) 99999-9999');
+    const { get } = useSettings();
+    const [isMuted, setIsMuted] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
+    const videoIframeRef = useRef<HTMLIFrameElement>(null);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const toggleMute = () => {
+        if (videoIframeRef.current && videoIframeRef.current.contentWindow) {
+            const command = isMuted ? 'unMute' : 'mute';
+            videoIframeRef.current.contentWindow.postMessage(
+                JSON.stringify({ event: 'command', func: command, args: [] }),
+                '*'
+            );
+            setIsMuted(!isMuted);
+        }
+    };
+
+
+    const address = get('address', 'R. Zumbi dos Palmares, 410 - Jd. Paulista CEP: 15060-190 - São José do Rio Preto - SP - Brasil');
+    const phone = get('phone_main', '17 3231-2858');
     const email = get('email_contato', 'contato@w-techbrasil.com.br');
-    const hours = get('working_hours', 'Seg a Sex: 08h às 18h<br />Sáb: 08h às 12h');
+    const hours = get('working_hours', 'Seg a Sex: 08h às 18h');
 
     // Calendar Logic (Current Month)
     const today = new Date();
@@ -147,25 +176,133 @@ const Home = () => {
         }
     }, [mechanics]);
 
+    const downloadCourseList = async () => {
+        if (!courses.length) return;
+        
+        try {
+            const doc = new jsPDF();
+            const siteTitle = get('site_title', 'W-TECH BRASIL');
+            const logoUrl = get('logo_url', '');
+            const address = "R. Zumbi dos Palmares, 410 - Jd. Paulista - São José do Rio Preto - SP";
+            const phone = "17 3231-2858";
+
+            // Add Logo
+            if (logoUrl) {
+                try {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.src = logoUrl;
+                    await new Promise((resolve) => {
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                    });
+                    if (img.complete && img.naturalWidth > 0) {
+                        doc.addImage(img, 'PNG', 15, 10, 35, 0);
+                    }
+                } catch (e) {
+                    console.error("Logo PDF Error:", e);
+                }
+            }
+
+            // Header Info (Right aligned)
+            doc.setFontSize(18);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.text(siteTitle, 195, 20, { align: 'right' });
+            
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text(address, 195, 26, { align: 'right' });
+            doc.text(`Telefone: ${phone}`, 195, 31, { align: 'right' });
+            doc.text(`E-mail: contato@w-techbrasil.com.br`, 195, 36, { align: 'right' });
+
+            // Accent Line
+            doc.setDrawColor(212, 175, 55); // Gold
+            doc.setLineWidth(0.5);
+            doc.line(15, 45, 195, 45);
+
+            // Title
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`AGENDA OFICIAL DE TREINAMENTOS - ${new Date().getFullYear()}`, 15, 55);
+
+            const tableData = courses.map(c => [
+                new Date(c.date).toLocaleDateString('pt-BR'),
+                c.title,
+                c.location,
+                c.instructor || 'Especialista W-Tech',
+                c.locationType || 'Presencial'
+            ]);
+
+            autoTable(doc, {
+                startY: 65,
+                head: [['Data', 'Curso', 'Local', 'Instrutor', 'Tipo']],
+                body: tableData,
+                headStyles: { 
+                    fillColor: [0, 0, 0], 
+                    textColor: [255, 255, 255], 
+                    fontStyle: 'bold',
+                    fontSize: 10
+                },
+                bodyStyles: {
+                    fontSize: 9
+                },
+                alternateRowStyles: { 
+                    fillColor: [250, 250, 250] 
+                },
+                margin: { left: 15, right: 15 },
+                theme: 'striped'
+            });
+
+            // Footer
+            const pageCount = (doc as any).internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} - Página ${i} de ${pageCount}`, 105, 285, { align: 'center' });
+            }
+
+            doc.save(`agenda_wtech_${new Date().getFullYear()}.pdf`);
+        } catch (error) {
+            console.error("PDF Generation failed:", error);
+            alert("Não foi possível gerar o PDF. Tente novamente.");
+        }
+    };
+
     return (
         <div className="bg-wtech-light min-h-screen font-sans text-gray-900 selection:bg-wtech-gold selection:text-white overflow-x-hidden">
             <SEO
-                title="Início"
+                title="W-TECH Brasil | Escola de Tecnologia Automotiva"
                 description="A W-Tech Brasil é a maior escola de tecnologia automotiva da América Latina. Cursos presenciais e online, rede de oficinas credenciadas e suporte técnico especializado."
                 schema={{
                     "@context": "https://schema.org",
-                    "@type": "Organization",
+                    "@type": "EducationalOrganization",
                     "name": "W-TECH Brasil",
+                    "alternateName": "W-Tech Treinamentos",
                     "url": "https://w-techbrasil.com.br",
-                    "logo": "https://w-techbrasil.com.br/logo.png",
+                    "logo": get('logo_url', 'https://w-techbrasil.com.br/logo.png'),
+                    "address": {
+                        "@type": "PostalAddress",
+                        "streetAddress": "R. Zumbi dos Palmares, 410 - Jd. Paulista",
+                        "addressLocality": "São José do Rio Preto",
+                        "addressRegion": "SP",
+                        "postalCode": "15060-190",
+                        "addressCountry": "BR"
+                    },
                     "sameAs": [
                         "https://www.instagram.com/wtechbrasil",
-                        "https://www.facebook.com/wtechbrasil"
+                        "https://www.facebook.com/wtechbrasil",
+                        "https://www.youtube.com/@wtechbrasil"
                     ],
                     "contactPoint": {
                         "@type": "ContactPoint",
-                        "telephone": "+55-11-99999-9999",
-                        "contactType": "customer service"
+                        "telephone": "+55-17-3231-2858",
+                        "contactType": "Sales and Support",
+                        "areaServed": "BR",
+                        "availableLanguage": "Portuguese"
                     }
                 }}
             />
@@ -181,7 +318,7 @@ const Home = () => {
                                 <img
                                     src="https://w-techbrasil.com.br/wp-content/uploads/2025/01/w-tech-sobre-nos-1-768x495.jpg"
                                     className="w-full h-full object-cover"
-                                    alt="Sede W-Tech Brasil"
+                                    alt="Sede da W-Tech Brasil em São José do Rio Preto - Estrutura Técnica de 1.200m²"
                                     width="768"
                                     height="495"
                                     loading="lazy"
@@ -291,106 +428,87 @@ const Home = () => {
             </section>
 
             {/* AGENDA / CALENDAR SECTION - REDESIGNED */}
-            <section id="agenda" className="py-24 bg-gray-50 relative selection:bg-wtech-red selection:text-white">
+            <section id="agenda" className="py-24 bg-black relative selection:bg-wtech-red selection:text-white overflow-hidden">
+                {/* Background Image with Overlay */}
+                <div className="absolute inset-0 z-0">
+                    <img 
+                        src="https://media.jornaldooeste.com.br/2022/03/79b31d1f-bissinhozavatti_hondaracing_rallyminasbrasil2022_creditoricardoleizer_mundopress_4028-scaled-1.jpg" 
+                        alt="Piloto de Rally Bissinho Zavatti representando a parceria técnica da W-Tech" 
+                        className="w-full h-full object-cover opacity-40" 
+                        loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black via-black/20 to-black"></div>
+                </div>
+
                 <div id="courses" className="absolute top-0 left-0"></div>
-                <div className="container mx-auto px-6">
+                <div className="container mx-auto px-6 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-16 px-4">
                         <div>
-                            <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4 tracking-tight">AGENDA <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">OFICIAL</span></h2>
-                            <p className="text-gray-500 font-medium text-lg max-w-xl">
+                            <h2 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight uppercase">AGENDA <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">OFICIAL</span></h2>
+                            <p className="text-gray-400 font-medium text-lg max-w-xl">
                                 Planeje sua especialização. Confira o calendário completo de treinamentos presenciais e online da W-Tech Brasil.
                             </p>
                         </div>
                         <div className="hidden md:block">
-                            <button className="px-6 py-3 bg-white border border-gray-200 text-gray-900 font-bold rounded-lg hover:bg-black hover:text-white transition-all shadow-sm flex items-center gap-2 uppercase text-sm">
-                                <Calendar size={18} /> Baixar PDF 2024
+                            <button 
+                                onClick={downloadCourseList}
+                                className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/10 text-white font-bold rounded-lg hover:bg-wtech-gold hover:text-black transition-all shadow-sm flex items-center gap-2 uppercase text-sm"
+                            >
+                                <CalendarIcon size={18} /> Baixar Lista {new Date().getFullYear()}
                             </button>
                         </div>
                     </div>
 
                     <div className="grid lg:grid-cols-12 gap-8">
                         {/* LEFT: VISUAL CALENDAR WIDGET */}
-                        <div className="lg:col-span-4">
-                            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 sticky top-32">
-                                <div className="bg-wtech-black p-6 text-white flex justify-between items-center">
-                                    <span className="font-bold text-lg uppercase tracking-widest">{monthNames[currentMonth]} {currentYear}</span>
-                                    <div className="flex gap-2 opacity-50 cursor-not-allowed">
-                                        <button disabled className="p-1"><ArrowRight className="rotate-180" size={16} /></button>
-                                        <button disabled className="p-1"><ArrowRight size={16} /></button>
-                                    </div>
+                        {/* LEFT: VISUAL CALENDAR WIDGET - NEW BENTO MODEL */}
+                        <div className="lg:col-span-4 lg:sticky lg:top-32 h-fit">
+                             <BentoCalendar events={courses.map(c => c.date)} />
+                             
+                             {/* Simple Legend below the bento card */}
+                             <div className="mt-6 flex flex-wrap gap-6 px-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-wtech-gold shadow-[0_0_10px_rgba(212,175,55,0.4)]"></div>
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none">Cursos Presenciais</span>
                                 </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-7 mb-4 text-center">
-                                        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => (
-                                            <span key={i} className="text-xs font-bold text-gray-400">{d}</span>
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center text-sm font-medium text-gray-600">
-                                        {/* Empty cells */}
-                                        {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                                            <div key={`empty-${i}`}></div>
-                                        ))}
-
-                                        {/* Days */}
-                                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-                                            // Check if any course is on this day
-                                            const hasEvent = courses.some(c => {
-                                                const d = new Date(c.date);
-                                                return d.getDate() === day && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-                                            });
-
-                                            return (
-                                                <div key={day} className={`w-8 h-8 flex items-center justify-center rounded-full mx-auto transition-all ${hasEvent ? 'bg-wtech-gold text-black font-bold shadow-md scale-110' : 'text-gray-400 hover:bg-gray-100'}`}>
-                                                    {day}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="mt-8 pt-6 border-t border-gray-100">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-3 h-3 rounded-full bg-wtech-gold"></div>
-                                            <span className="text-xs text-gray-500 font-semibold uppercase">Curso Presencial</span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                            <span className="text-xs text-gray-500 font-semibold uppercase">Curso Online</span>
-                                        </div>
-                                    </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]"></div>
+                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none">Eventos Online</span>
                                 </div>
-                            </div>
+                             </div>
                         </div>
 
                         {/* RIGHT: EVENT LIST */}
                         <div className="lg:col-span-8 space-y-4">
                             {courses.length > 0 ? (
                                 courses.map((course) => (
-                                    <div key={course.id} className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-wtech-gold transition-all hover:shadow-lg flex flex-col md:flex-row items-start md:items-center gap-6">
+                                    <div key={course.id} className="group bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-wtech-gold transition-all hover:shadow-2xl flex flex-col md:flex-row items-start md:items-center gap-6">
 
                                         {/* Date Badge */}
-                                        <div className="flex-shrink-0 bg-gray-50 rounded-xl p-4 text-center min-w-[90px] group-hover:bg-wtech-gold group-hover:text-black transition-colors">
-                                            <span className="block text-2xl font-black leading-none">{new Date(course.date).getDate()}</span>
-                                            <span className="block text-xs font-bold uppercase mt-1">{new Date(course.date).toLocaleString('default', { month: 'short' })}</span>
+                                        <div className="flex-shrink-0 bg-white/5 rounded-xl p-4 text-center min-w-[90px] group-hover:bg-wtech-gold group-hover:text-black transition-all duration-300">
+                                            <span className="block text-3xl font-black text-white group-hover:text-black leading-none">{new Date(course.date).getDate()}</span>
+                                            <span className="block text-[10px] font-black text-gray-400 group-hover:text-black uppercase mt-1 tracking-widest">{new Date(course.date).toLocaleString('default', { month: 'short' })}</span>
                                         </div>
 
                                         {/* Content */}
                                         <div className="flex-grow">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${course.locationType === 'Online' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-green-50 text-green-700 border-green-200'}`}>
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${course.locationType === 'Online' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}`}>
                                                     {course.locationType || 'Presencial'}
                                                 </span>
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500 border border-gray-200 flex items-center gap-1">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-white/5 text-gray-400 border border-white/10 flex items-center gap-1">
                                                     <MapPin size={10} /> {course.location}
                                                 </span>
                                             </div>
-                                            <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-wtech-gold transition-colors">{course.title}</h3>
-                                            <p className="text-sm text-gray-500">
+                                            <h3 className="text-xl font-bold text-white mb-1 group-hover:text-wtech-gold transition-colors">{course.title}</h3>
+                                            <p className="text-sm text-gray-400 font-medium">
                                                 Instrutor: {course.instructor || 'Especialista W-Tech'}
                                             </p>
                                         </div>
 
                                         {/* Action */}
                                         <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                            <button onClick={() => navigate(`/cursos/${course.id}`)} className="w-full md:w-auto px-6 py-3 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                            <button onClick={() => navigate(`/lp/${course.id}`)} className="w-full md:w-auto px-6 py-3 bg-white text-black text-sm font-bold rounded-lg hover:bg-wtech-gold transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]">
                                                 Mais Detalhes <ArrowRight size={16} />
                                             </button>
                                         </div>
@@ -398,7 +516,7 @@ const Home = () => {
                                 ))
                             ) : (
                                 <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 border-dashed">
-                                    <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
+                                    <CalendarIcon size={48} className="mx-auto text-gray-300 mb-4" />
                                     <p className="text-gray-500 font-medium">Nenhum evento agendado para breve.</p>
                                 </div>
                             )}
@@ -410,8 +528,11 @@ const Home = () => {
                                     <p className="text-gray-400">Acesse nossa plataforma EAD e estude de onde estiver.</p>
                                 </div>
                                 <div className="relative z-10">
-                                    <button className="px-6 py-3 bg-wtech-gold text-black font-bold rounded-lg hover:scale-105 transition-transform">
-                                        Acessar Cursos Online
+                                    <button 
+                                        onClick={() => navigate('/cursos')}
+                                        className="px-8 py-4 bg-wtech-gold text-black font-bold rounded-lg hover:scale-105 transition-transform uppercase tracking-widest text-xs"
+                                    >
+                                        Ver Todos os Cursos
                                     </button>
                                 </div>
                                 {/* Decor */}
@@ -422,38 +543,109 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* IMMERSIVE VIDEO SECTION */}
-            <ScrollExpandMedia
-                mediaType="video"
-                mediaSrc="https://www.youtube.com/watch?v=RePclscnxDM"
-                bgImageSrc="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1920&auto=format&fit=crop"
-                title="EXPERIÊNCIA IMERSIVA"
-                date="W-TECH BRASIL"
-                scrollToExpand="SCROLLE PARA EXPANDIR"
-                textBlend
-            >
-                <div className="max-w-4xl mx-auto text-center md:text-left py-12">
-                    <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tighter">O Próximo Nível da Suspensão</h2>
-                    <p className="text-xl text-gray-400 mb-8 font-medium">
-                        Mais do que um treinamento, uma imersão completa no mundo da alta performance. 
-                        Na W-Tech, combinamos tecnologia de ponta com a experiência prática dos melhores especialistas do mercado.
-                    </p>
-                    <div className="grid md:grid-cols-3 gap-8 pt-8 border-t border-white/10">
-                        <div>
-                            <p className="text-wtech-gold font-black text-3xl mb-1">100%</p>
-                            <p className="text-xs uppercase font-bold tracking-widest text-gray-500">Prático</p>
-                        </div>
-                        <div>
-                            <p className="text-wtech-gold font-black text-3xl mb-1">+5.000</p>
-                            <p className="text-xs uppercase font-bold tracking-widest text-gray-500">Alunos Formados</p>
-                        </div>
-                        <div>
-                            <p className="text-wtech-gold font-black text-3xl mb-1">24/7</p>
-                            <p className="text-xs uppercase font-bold tracking-widest text-gray-500">Suporte Técnico</p>
+            {/* IMMERSIVE VIDEO SECTION - NEW MODEL */}
+            <ContainerScroll className="bg-[#0a0a0a] text-center text-white">
+                <ContainerStagger viewport={{ once: false }} className="pt-20 pb-4">
+                    <ContainerAnimated animation="top" className="mb-2">
+                        <span className="text-wtech-gold font-bold tracking-[0.3em] uppercase text-xs">W-TECH BRASIL</span>
+                    </ContainerAnimated>
+                    
+                    <ContainerAnimated animation="blur">
+                        <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white uppercase tracking-tighter leading-none">
+                            EXPERIÊNCIA
+                        </h2>
+                    </ContainerAnimated>
+                    
+                    <ContainerAnimated animation="blur" transition={{ delay: 0.1 }}>
+                        <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white uppercase tracking-tighter leading-none -mt-2 md:-mt-6">
+                            IMERSIVA
+                        </h2>
+                    </ContainerAnimated>
+
+                    <ContainerAnimated animation="bottom" className="mt-8">
+                        <p className="text-white/40 font-medium text-center uppercase tracking-[0.3em] text-[10px] animate-pulse">
+                             ↓ SCROLLE PARA EXPANDIR
+                        </p>
+                    </ContainerAnimated>
+                </ContainerStagger>
+
+                <ContainerInset 
+                    insetXRange={[isMobile ? 20 : 35, 0]} 
+                    insetYRange={[isMobile ? 15 : 25, 0]} 
+                    progressRange={[0, isMobile ? 0.25 : 0.45]}
+                    translateYRange={["0%", "2%"]}
+                    className="mx-4 md:mx-8 shadow-2xl"
+                >
+                    <div className="relative w-full aspect-video md:h-[80vh] overflow-hidden rounded-2xl bg-black group/video">
+                        <iframe
+                            ref={videoIframeRef}
+                            width='100%'
+                            height='100%'
+                            src={`https://www.youtube.com/embed/RePclscnxDM?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&playlist=RePclscnxDM&enablejsapi=1`}
+                            className='w-full h-full object-cover scale-110'
+                            frameBorder='0'
+                            title="Experiência W-Tech Brasil - Vídeo Institucional"
+                            allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen'
+                            allowFullScreen
+                            loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+                        
+                        {/* Audio Controls */}
+                        <div className="absolute bottom-8 right-8 z-50">
+                            <button
+                                onClick={toggleMute}
+                                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 rounded-full text-white transition-all hover:scale-110 group-hover/video:opacity-100 opacity-60 flex items-center gap-3 font-bold text-xs uppercase tracking-widest"
+                            >
+                                {isMuted ? (
+                                    <>
+                                        <VolumeX size={18} /> Ligar Som
+                                    </>
+                                ) : (
+                                    <>
+                                        <Volume2 size={18} /> Silenciar
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
+                </ContainerInset>
+
+                {/* Content below expanded video */}
+                <div className="max-w-4xl mx-auto text-left px-8 py-10">
+                    <ContainerStagger viewport={{ once: false }}>
+                        <ContainerAnimated animation="left">
+                            <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tighter">O Próximo Nível da Suspensão</h2>
+                        </ContainerAnimated>
+                        
+                        <ContainerAnimated animation="left" transition={{ delay: 0.2 }}>
+                            <p className="text-xl text-gray-400 mb-10 font-medium leading-relaxed">
+                                Mais do que um treinamento, uma imersão completa no mundo da alta performance. 
+                                Na W-Tech, combinamos tecnologia de ponta com a experiência prática dos melhores especialistas do mercado para entregar um conhecimento que não existe em livros.
+                            </p>
+                        </ContainerAnimated>
+
+                        <ContainerAnimated animation="bottom" transition={{ delay: 0.4 }}>
+                            <div className="grid md:grid-cols-3 gap-8 pt-10 border-t border-white/10">
+                                <div>
+                                    <p className="text-wtech-gold font-black text-4xl mb-1">100%</p>
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">Metodologia Prática</p>
+                                </div>
+                                <div>
+                                    <p className="text-wtech-gold font-black text-4xl mb-1">+5.000</p>
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">Alunos Certificados</p>
+                                </div>
+                                <div>
+                                    <p className="text-wtech-gold font-black text-4xl mb-1">VITALÍCIO</p>
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">Suporte Técnico</p>
+                                </div>
+                            </div>
+                        </ContainerAnimated>
+                    </ContainerStagger>
                 </div>
-            </ScrollExpandMedia>
+            </ContainerScroll>
+
+
 
             {/* BLOG SECTION */}
             <section id="blog" className="py-20 bg-white">
@@ -545,74 +737,122 @@ const Home = () => {
                         </div>
 
                         {/* Form Side */}
-                        <div className="lg:col-span-8">
-                            <div className="bg-gray-50 p-8 lg:p-12 rounded-[2rem]">
-                                <h3 className="text-2xl font-bold text-gray-900 mb-8">Envie uma mensagem</h3>
-                                <form onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    const formEl = e.target as HTMLFormElement;
-                                    const btn = formEl.querySelector('button');
-                                    if(btn) btn.disabled = true;
-                                    
-                                    const formData = new FormData(formEl);
-                                    const payload = {
-                                        name: formData.get('name'),
-                                        email: formData.get('email'),
-                                        phone: formData.get('phone'),
-                                        type: 'Contact_Home',
-                                        status: 'New',
-                                        context_id: `Assunto: ${formData.get('subject')} | Msg: ${formData.get('message')}`,
-                                        tags: ['home_contact', 'website'],
-                                        origin: window.location.href,
-                                        assigned_to: null 
-                                    };
+                        <div className="lg:col-span-8 group/form [perspective:2000px]">
+                            <motion.div 
+                                className="relative w-full h-full [transform-style:preserve-3d]"
+                                animate={{ rotateY: isSubmitted ? 180 : 0 }}
+                                transition={{ duration: 0.8, ease: "circOut" }}
+                            >
+                                {/* Glowing Background Blur */}
+                                <div className="absolute -inset-1 bg-gradient-to-r from-wtech-gold to-yellow-600 rounded-[2.5rem] blur opacity-25 group-hover/form:opacity-50 transition duration-1000"></div>
+                                
+                                {/* FRONT SIDE: THE FORM */}
+                                <div className="relative bg-[#0a0a0a] backdrop-blur-2xl p-8 lg:p-12 rounded-[2.5rem] border border-white/10 shadow-2xl [backface-visibility:hidden]">
+                                    <div className="absolute top-0 right-0 p-8">
+                                        <div className="w-12 h-12 rounded-full bg-wtech-gold/10 flex items-center justify-center text-wtech-gold animate-pulse">
+                                            <Send size={20} />
+                                        </div>
+                                    </div>
 
-                                    try {
-                                        await supabase.from('SITE_Leads').insert([payload]);
-                                        try { await triggerWebhook('webhook_lead', payload); } catch(e) {}
-                                        alert('Mensagem enviada com sucesso!');
-                                        formEl.reset();
-                                    } catch (err) {
-                                        console.error(err);
-                                        alert('Erro ao enviar mensagem.');
-                                    } finally {
-                                        if(btn) btn.disabled = false;
-                                    }
-                                }} className="space-y-6">
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nome Completo</label>
-                                            <input name="name" required type="text" className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-wtech-gold transition-colors" placeholder="Seu nome" />
+                                    <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tight">Envie uma mensagem</h3>
+                                    <p className="text-gray-400 mb-10 font-medium">Preencha o formulário e nossa equipe técnica entrará em contato.</p>
+                                    
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        const formEl = e.target as HTMLFormElement;
+                                        const btn = formEl.querySelector('button');
+                                        if(btn) btn.disabled = true;
+                                        
+                                        const formData = new FormData(formEl);
+                                        const payload = {
+                                            name: formData.get('name'),
+                                            email: formData.get('email'),
+                                            phone: formData.get('phone'),
+                                            type: 'Contact_Home',
+                                            status: 'New',
+                                            context_id: `Assunto: ${formData.get('subject')} | Msg: ${formData.get('message')}`,
+                                            tags: ['home_contact', 'website'],
+                                            origin: window.location.href,
+                                            assigned_to: null 
+                                        };
+
+                                        try {
+                                            await supabase.from('SITE_Leads').insert([payload]);
+                                            try { await triggerWebhook('webhook_lead', payload); } catch(e) {}
+                                            setIsSubmitted(true);
+                                            formEl.reset();
+                                        } catch (err) {
+                                            console.error(err);
+                                            alert('Erro ao enviar mensagem.');
+                                        } finally {
+                                            if(btn) btn.disabled = false;
+                                        }
+                                    }} className="space-y-6">
+                                        <div className="grid md:grid-cols-2 gap-8">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em] mb-3">Nome Completo</label>
+                                                <input name="name" required type="text" className="w-full px-5 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-wtech-gold focus:bg-white/10 transition-all placeholder:text-gray-600" placeholder="Seu nome completo" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em] mb-3">Seu E-mail Profissional</label>
+                                                <input name="email" required type="email" className="w-full px-5 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-wtech-gold focus:bg-white/10 transition-all placeholder:text-gray-600" placeholder="contato@empresa.com" />
+                                            </div>
+                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-8">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em] mb-3">WhatsApp / Celular</label>
+                                                <input name="phone" required type="tel" className="w-full px-5 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-wtech-gold focus:bg-white/10 transition-all placeholder:text-gray-600" placeholder="(17) 00000-0000" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em] mb-3">Assunto do Contato</label>
+                                                <select name="subject" className="w-full px-5 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-wtech-gold focus:bg-white/10 transition-all appearance-none cursor-pointer">
+                                                    <option className="bg-black text-white">Cursos Presenciais</option>
+                                                    <option className="bg-black text-white">Treinamentos Online</option>
+                                                    <option className="bg-black text-white">Suporte Técnico</option>
+                                                    <option className="bg-black text-white">Seja um Parceiro</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Seu E-mail</label>
-                                            <input name="email" required type="email" className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-wtech-gold transition-colors" placeholder="exemplo@email.com" />
+                                            <label className="block text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em] mb-3">Como podemos ajudar?</label>
+                                            <textarea name="message" required rows={4} className="w-full px-5 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-wtech-gold focus:bg-white/10 transition-all placeholder:text-gray-600 resize-none" placeholder="Descreva brevemente sua dúvida ou necessidade..."></textarea>
                                         </div>
+
+                                        <button 
+                                            type="submit"
+                                            className="w-full md:w-auto px-12 py-5 bg-wtech-gold text-black font-black uppercase tracking-widest text-xs rounded-xl hover:bg-white transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+                                        >
+                                            Enviar Mensagem Agora
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {/* BACK SIDE: SUCCESS MESSAGE */}
+                                <div 
+                                    className="absolute inset-0 bg-[#0a0a0a] backdrop-blur-2xl p-8 lg:p-12 rounded-[2.5rem] border border-wtech-gold/30 shadow-2xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center text-center"
+                                >
+                                    <div className="mb-6 px-4 py-1 bg-wtech-gold/10 border border-wtech-gold/20 rounded-full">
+                                        <span className="text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em]">Cadastro Concluído</span>
                                     </div>
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Telefone / WhatsApp</label>
-                                            <input name="phone" required type="tel" className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-wtech-gold transition-colors" placeholder="(00) 00000-0000" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Assunto</label>
-                                            <select name="subject" className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-wtech-gold transition-colors">
-                                                <option>Cursos Presenciais</option>
-                                                <option>Cursos Online</option>
-                                                <option>Suporte Técnico</option>
-                                                <option>Outros</option>
-                                            </select>
-                                        </div>
+                                    
+                                    <div className="w-24 h-24 rounded-full bg-wtech-gold/20 flex items-center justify-center text-wtech-gold mb-8 shadow-[0_0_50px_rgba(212,175,55,0.3)]">
+                                        <CheckCircle size={52} className="animate-in zoom-in duration-500" />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sua Mensagem</label>
-                                        <textarea name="message" required rows={5} className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-wtech-gold transition-colors" placeholder="Como podemos ajudar?"></textarea>
-                                    </div>
-                                    <button type="submit" className="w-full md:w-auto px-10 py-4 bg-black text-white font-bold rounded-lg hover:bg-wtech-gold hover:text-black transition-colors uppercase tracking-wide shadow-lg disabled:opacity-50">
-                                        Enviar Mensagem
+                                    
+                                    <h3 className="text-4xl font-black text-white mb-4 uppercase tracking-tighter">SOLICITAÇÃO <br/> ENVIADA!</h3>
+                                    <p className="text-gray-400 text-lg max-w-sm leading-relaxed font-medium">
+                                        Sua mensagem foi recebida pela nossa central técnica em São José do Rio Preto. <br/>
+                                        <span className="text-white">Retornaremos em breve.</span>
+                                    </p>
+                                    
+                                    <button 
+                                        onClick={() => setIsSubmitted(false)}
+                                        className="mt-12 px-8 py-3 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest"
+                                    >
+                                        ← Novo Contato
                                     </button>
-                                </form>
-                            </div>
+                                </div>
+                            </motion.div>
                         </div>
                     </div>
                 </div>

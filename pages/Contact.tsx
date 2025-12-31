@@ -44,8 +44,8 @@ const Contact: React.FC = () => {
         }
     };
 
-    const address = get('address', 'Rua da Performance, 1234<br/>São Paulo, SP - Brasil');
-    const phone = get('phone_main', '(11) 99999-9999');
+    const address = get('address', 'R. Zumbi dos Palmares, 410 - Jd. Paulista CEP: 15060-190 - São José do Rio Preto - SP - Brasil');
+    const phone = get('phone_main', '17 3231-2858');
     const email = get('email_contato', 'contato@w-techbrasil.com.br');
     const hours = get('working_hours', 'Seg a Sex: 08h às 18h');
 
@@ -62,7 +62,7 @@ const Contact: React.FC = () => {
                         "name": "W-TECH Brasil",
                         "contactPoint": {
                             "@type": "ContactPoint",
-                            "telephone": "+55-11-99999-9999",
+                            "telephone": "+55-17-3231-2858",
                             "contactType": "customer service",
                             "areaServed": "BR",
                             "availableLanguage": "Portuguese"
@@ -122,7 +122,7 @@ const Contact: React.FC = () => {
                             scrolling="no"
                             marginHeight={0}
                             marginWidth={0}
-                            src="https://maps.google.com/maps?q=Autodromo+de+Interlagos&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                            src="https://maps.google.com/maps?q=R.%20Zumbi%20dos%20Palmares,%20410%20-%20Jd.%20Paulista,%20S%C3%A3o%20Jos%C3%A9%20do%20Rio%20Preto%20-%20SP&t=&z=16&ie=UTF8&iwloc=&output=embed"
                         ></iframe>
                     </div>
                 </div>

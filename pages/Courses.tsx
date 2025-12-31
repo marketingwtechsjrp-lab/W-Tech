@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CourseCard from '../components/CourseCard';
-import { Search, Calendar as CalendarIcon, List, MapPin, Clock } from 'lucide-react';
+import { Search, Calendar as CalendarIcon, List, MapPin, Clock, ArrowRight } from 'lucide-react';
+
 import { supabase } from '../lib/supabaseClient';
 import { Course } from '../types';
 import { Link } from 'react-router-dom';
@@ -12,6 +13,8 @@ const Courses: React.FC = () => {
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+    const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -43,8 +46,9 @@ const Courses: React.FC = () => {
 
     const AnnualCalendarView = () => {
         const today = new Date();
-        const displayYear = today.getFullYear();
+        const displayYear = calendarYear;
         const months = [
+
             "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
             "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
         ];
@@ -62,11 +66,28 @@ const Courses: React.FC = () => {
 
         return (
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-300">
-                <div className="bg-wtech-black text-white p-6">
-                    <h2 className="text-3xl font-black uppercase tracking-wider text-center">Calendário Anual - {displayYear}</h2>
+                <div className="bg-wtech-black text-white p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <h2 className="text-2xl font-black uppercase tracking-wider">Calendário Anual</h2>
+                    
+                    <div className="flex items-center bg-white/10 p-1 rounded-lg backdrop-blur-sm">
+                        <button 
+                            onClick={() => setCalendarYear(prev => prev - 1)}
+                            className="p-2 hover:bg-white/10 rounded-md transition-colors"
+                        >
+                            <ArrowRight size={20} className="rotate-180" />
+                        </button>
+                        <span className="px-6 font-black text-xl min-w-[100px] text-center">{calendarYear}</span>
+                        <button 
+                            onClick={() => setCalendarYear(prev => prev + 1)}
+                            className="p-2 hover:bg-white/10 rounded-md transition-colors"
+                        >
+                            <ArrowRight size={20} />
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6 bg-gray-50">
+
                     {months.map((monthName, monthIndex) => {
                         const monthEvents = coursesByMonth[monthIndex] || [];
                         const daysInMonth = new Date(displayYear, monthIndex + 1, 0).getDate();
@@ -98,9 +119,19 @@ const Courses: React.FC = () => {
                                         
                                         return (
                                             <div key={day} className="relative aspect-square flex items-center justify-center">
-                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${hasEvent ? 'bg-wtech-gold text-black font-bold hover:scale-110' : 'text-gray-600 hover:bg-gray-100'}`} title={hasEvent ? dayEvents.map(e => e.title).join(', ') : ''}>
-                                                    {day}
-                                                </div>
+                                                {hasEvent ? (
+                                                    <Link 
+                                                        to={`/lp/${dayEvents[0].slug || dayEvents[0].id}`}
+                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors bg-wtech-gold text-black font-bold hover:scale-110`}
+                                                        title={dayEvents.map(e => e.title).join(', ')}
+                                                    >
+                                                        {day}
+                                                    </Link>
+                                                ) : (
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors`}>
+                                                        {day}
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -137,7 +168,8 @@ const Courses: React.FC = () => {
             />
             {/* Hero Section */}
             <div className="bg-wtech-black text-white pt-40 pb-20 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center"></div>
+                <div className="absolute inset-0 opacity-40 bg-[url('https://media.jornaldooeste.com.br/2022/03/79b31d1f-bissinhozavatti_hondaracing_rallyminasbrasil2022_creditoricardoleizer_mundopress_4028-scaled-1.jpg')] bg-cover bg-center"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/20"></div>
                 <div className="container mx-auto px-4 relative z-10 text-center">
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">Agenda Oficial</h1>
                     <p className="text-xl text-gray-400 max-w-2xl mx-auto">Confira os próximos treinamentos, workshops e eventos técnicos da Rede W-Tech.</p>

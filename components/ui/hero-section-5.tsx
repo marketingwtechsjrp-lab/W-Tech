@@ -142,11 +142,12 @@ export function HeroSection() {
                                 {displayPartners.map((brand, i) => (
                                     <div key={i} className="flex items-center grayscale hover:grayscale-0 transition-all opacity-40 hover:opacity-100">
                                         <img
-                                            className="mx-auto h-8 w-fit"
+                                            className="mx-auto h-8 w-auto"
                                             src={brand.logo}
-                                            alt={brand.name}
+                                            alt={`Logo Parceiro: ${brand.name}`}
                                             height="32"
-                                            width="auto"
+                                            width="120"
+                                            loading="lazy"
                                         />
                                     </div>
                                 ))}

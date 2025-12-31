@@ -54,17 +54,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                 <span className="truncate">{course.location}</span>
             </div>
             
-            <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-lg font-bold text-wtech-black">
-                    {typeof course.price === 'number' 
-                        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(course.price)
-                        : course.price}
-                </span>
+            <div className="pt-4 border-t border-gray-100 mt-4">
                 <Link 
                     to={`/lp/${course.slug || course.id}`}
-                    className="flex items-center text-sm font-bold text-wtech-black hover:text-wtech-gold transition-colors"
+                    className="w-full bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95"
                 >
-                    INSCREVA-SE <ArrowRight size={16} className="ml-1" />
+                    CONHECER CURSO <ArrowRight size={16} className="ml-2 animate-pulse" />
                 </Link>
             </div>
         </div>

@@ -6,32 +6,27 @@ import { CheckCircle, ShieldCheck, ArrowRight, Star, Play, MapPin, Calendar, Clo
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead } from '../lib/leadDistribution';
 import { QualificationQuiz } from '../components/QualificationQuiz';
+import { useSettings } from '../context/SettingsContext';
 
 const LandingPageViewer: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+    const { slug } = useParams<{ slug: string }>();
+    const { get } = useSettings();
+    const systemLogo = get('logo_url');
+    const siteTitle = get('site_title', 'W-TECH');
   
-  interface LandingPageWithCourse extends LandingPage {
-      course: Course;
-  }
+    interface LandingPageWithCourse extends LandingPage {
+        course: Course;
+    }
   
-  const [lp, setLp] = useState<LandingPageWithCourse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [systemLogo, setSystemLogo] = useState<string | null>(null);
+    const [lp, setLp] = useState<LandingPageWithCourse | null>(null);
+    const [loading, setLoading] = useState(true);
   
-  // Form State
-  const [form, setForm] = useState({ name: '', email: '', phone: '' });
-  const [submitted, setSubmitted] = useState(false);
-  const [spotsLeft, setSpotsLeft] = useState<number>(5); // Default simulated scarcity
+    // Form State
+    const [form, setForm] = useState({ name: '', email: '', phone: '' });
+    const [submitted, setSubmitted] = useState(false);
+    const [spotsLeft, setSpotsLeft] = useState<number>(5); // Default simulated scarcity
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-        const { data } = await supabase.from('SITE_SystemSettings').select('value').eq('key', 'logo_url').single();
-        if (data) setSystemLogo(data.value);
-    };
-    fetchSettings();
-  }, []);
-
-  useEffect(() => {
+    useEffect(() => {
     const fetchLP = async () => {
       if (!slug) return;
       setLoading(true);
@@ -184,13 +179,13 @@ const LandingPageViewer: React.FC = () => {
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     {systemLogo ? (
-                        <img src={systemLogo} alt="Logo" className="h-10 object-contain" />
+                        <img src={systemLogo} alt={siteTitle} className="h-10 object-contain" />
                     ) : (
                         <div className="w-8 h-8 bg-wtech-gold rounded-sm transform rotate-45 flex items-center justify-center">
                             <span className="transform -rotate-45 font-bold text-black text-xs">W</span>
                         </div>
                     )}
-                    <span className="font-bold text-lg tracking-wider">W-TECH <span className="text-wtech-gold">ACADEMY</span></span>
+                    {!systemLogo && <span className="font-bold text-lg tracking-wider">W-TECH <span className="text-wtech-gold">ACADEMY</span></span>}
                 </div>
                 <button onClick={scrollToForm} className="hidden md:flex bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-2.5 rounded-lg font-bold uppercase text-xs tracking-widest hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all">
                     Garantir Vaga
@@ -577,7 +572,7 @@ const LandingPageViewer: React.FC = () => {
         <footer className="py-12 bg-[#050505] text-center text-gray-700 border-t border-white/5">
             <div className="flex justify-center mb-6 opacity-30">
                  <div className="w-12 h-12 rounded-sm flex items-center justify-center overflow-hidden">
-                    {systemLogo ? <img src={systemLogo} alt="Logo" className="w-full h-full object-contain grayscale hover:grayscale-0 transition-all opacity-50 hover:opacity-100" /> : <WTechLogo />}
+                    {systemLogo ? <img src={systemLogo} alt={siteTitle} className="w-full h-full object-contain grayscale hover:grayscale-0 transition-all opacity-50 hover:opacity-100" /> : <WTechLogo />}
                 </div>
             </div>
             <p className="text-sm">&copy; {new Date().getFullYear()} W-Tech Suspensões. Todos os direitos reservados.</p>

@@ -26,6 +26,8 @@ const Termos = lazy(() => import('./pages/Termos'));
 const Privacidade = lazy(() => import('./pages/Privacidade'));
 const Cancelamento = lazy(() => import('./pages/Cancelamento'));
 const Suporte = lazy(() => import('./pages/Suporte'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+
 
 // Loading Fallback
 const PageLoader = () => (
@@ -77,7 +79,8 @@ const App = () => {
                             <Route path="/cancelamento" element={<Cancelamento />} />
                             <Route path="/suporte" element={<Suporte />} />
 
-                            <Route path="*" element={<Navigate to="/" replace />} />
+                            <Route path="*" element={<NotFound />} />
+
                         </Routes>
                     </Suspense>
                 </div>

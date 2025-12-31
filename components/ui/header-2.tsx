@@ -71,7 +71,7 @@ export function Header() {
 							alt={siteTitle} 
 							className={cn(
 								"h-10 w-auto object-contain transition-all",
-								(!headerActive) ? "brightness-0 invert h-12" : "brightness-0 invert h-8"
+								(!headerActive) ? "h-12" : "h-8"
 							)} 
 						/>
 					) : (

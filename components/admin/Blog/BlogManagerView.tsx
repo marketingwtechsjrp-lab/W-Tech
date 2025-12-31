@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Loader2, Save, Edit, Trash2, CalendarClock } from 'lucide-react';
+import { ArrowRight, Sparkles, Loader2, Save, Edit, Trash2, CalendarClock, Globe, Download } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { generateBlogPost } from '../../../lib/gemini';
 import type { BlogPost, PostComment } from '../../../types';
 
 const BlogManagerView = ({ permissions }: { permissions?: any }) => {
-    const [viewMode, setViewMode] = useState<'list' | 'edit' | 'ai_batch'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'edit' | 'ai_batch' | 'wp_import'>('list');
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
     const [comments, setComments] = useState<PostComment[]>([]);
     const [newComment, setNewComment] = useState('');
+    const [wpImporting, setWpImporting] = useState(false);
+    const [wpUrl, setWpUrl] = useState('');
     const { user } = useAuth();
     const [formData, setFormData] = useState<Partial<BlogPost>>({});
 
@@ -228,6 +230,148 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
         }
     };
 
+    const handleImportWordPress = async () => {
+        if (!wpUrl) return alert("Digite a URL do site WordPress.");
+        
+        let baseUrl = wpUrl;
+        if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+        baseUrl = baseUrl.replace(/\/$/, '') + '/wp-json/wp/v2/posts';
+
+        setWpImporting(true);
+        let totalImported = 0;
+        let page = 1;
+        let hasMore = true;
+
+        try {
+            while (hasMore) {
+                const targetUrl = `${baseUrl}?_embed&per_page=50&page=${page}`;
+                const resp = await fetch(targetUrl);
+                
+                if (!resp.ok) {
+                    if (resp.status === 400) {
+                        hasMore = false; // End of pagination
+                        break;
+                    }
+                    throw new Error(`Erro API WP: ${resp.statusText}`);
+                }
+                
+                const wpPosts = await resp.json();
+                if (!wpPosts || wpPosts.length === 0) {
+                    hasMore = false;
+                    break;
+                }
+
+                for (const wp of wpPosts) {
+                    const title = wp.title.rendered;
+                    const excerpt = wp.excerpt.rendered.replace(/<[^>]*>?/gm, '').substring(0, 160);
+                    const date = wp.date;
+                    const slug = wp.slug;
+                    
+                    let featuredImage = '';
+                    if (wp._embedded && wp._embedded['wp:featuredmedia'] && wp._embedded['wp:featuredmedia'][0]) {
+                        featuredImage = wp._embedded['wp:featuredmedia'][0].source_url;
+                    }
+
+                    const { data: existing } = await supabase.from('SITE_BlogPosts').select('id').eq('slug', slug).maybeSingle();
+                    if (existing) continue;
+
+                    await supabase.from('SITE_BlogPosts').insert([{
+                        title,
+                        content: wp.content.rendered,
+                        excerpt,
+                        slug,
+                        date: new Date(date).toISOString(),
+                        status: 'Published',
+                        author: 'Importado WP',
+                        category: 'WordPress',
+                        image: featuredImage || `https://image.pollinations.ai/prompt/${encodeURIComponent(title)}?width=800&height=400`,
+                        seo_score: 70
+                    }]);
+                    totalImported++;
+                }
+
+                page++;
+                if (page > 100) break; // Safety break
+            }
+            
+            alert(`${totalImported} posts novos importados com sucesso!`);
+            setViewMode('list');
+            fetchPosts();
+        } catch (e: any) {
+            alert("Erro na importação: " + e.message);
+        } finally {
+            setWpImporting(false);
+        }
+    };
+
+    const handleGenerateSitemap = async () => {
+        const baseUrl = "https://w-techbrasil.com.br";
+        const staticPages = ['', 'courses', 'mechanics-map', 'blog', 'contact', 'about', 'glossary'];
+        
+        // Helper to escape XML special characters
+        const escapeXml = (unsafe: string) => {
+            return unsafe.replace(/[<>&'"]/g, (c) => {
+                switch (c) {
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '&': return '&amp;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                    default: return c;
+                }
+            });
+        };
+
+        const { data: lpData } = await supabase.from('SITE_LandingPages').select('slug');
+        const { data: courseData } = await supabase.from('SITE_Courses').select('id, slug').eq('status', 'Published');
+        const { data: blogData } = await supabase.from('SITE_BlogPosts').select('slug').eq('status', 'Published');
+
+        let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        
+        // Static Pages
+        staticPages.forEach(p => {
+            sitemap += `  <url>\n    <loc>${baseUrl}/#/${p}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${p === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
+        });
+
+        // Landing Pages
+        lpData?.forEach(lp => {
+            if (lp.slug) {
+                sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(lp.slug)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
+            }
+        });
+
+        // Courses (Priority for Slugs)
+        courseData?.forEach(c => {
+            const identifier = c.slug || c.id;
+            sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(identifier)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
+        });
+
+        // Blog Posts
+        blogData?.forEach(b => {
+            if (b.slug) {
+                sitemap += `  <url>\n    <loc>${baseUrl}/#/blog/${escapeXml(b.slug)}</loc>\n    <priority>0.6</priority>\n  </url>\n`;
+            }
+        });
+
+        sitemap += `</urlset>`;
+
+        try {
+            const blob = new Blob([sitemap], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sitemap.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert("Sitemap gerado! O arquivo 'sitemap.xml' foi baixado. \n\nPara que ele funcione no Google, coloque este arquivo na pasta 'public' do seu projeto e faça o deploy.");
+        } catch (err) {
+            console.error("Erro ao gerar sitemap:", err);
+            alert("Ocorreu um erro ao gerar o arquivo.");
+        }
+    };
+
     const currentScore = calculateSeoScore(formData);
 
     if (viewMode === 'edit') {
@@ -422,6 +566,48 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
             </div>
         );
     }
+
+    if (viewMode === 'wp_import') {
+        return (
+            <div className="flex h-full gap-6 text-gray-900 justify-center items-start pt-10">
+                <div className="max-w-2xl w-full bg-white p-8 rounded-xl shadow-sm border border-gray-100 relative">
+                    <button onClick={() => setViewMode('list')} className="absolute top-4 left-4 p-2 hover:bg-gray-100 rounded-full text-gray-500">
+                        <ArrowRight className="rotate-180" size={24} />
+                    </button>
+
+                    <div className="flex items-center gap-3 mb-6 ml-10">
+                        <div className="bg-wtech-black p-2 rounded text-wtech-gold"><Globe size={24} /></div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">Importador WordPress</h2>
+                            <p className="text-xs text-gray-500">Traga seus artigos do WordPress para a plataforma W-Tech.</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">URL do Site WordPress</label>
+                            <input 
+                                className="w-full border border-gray-300 p-3 rounded text-gray-900 focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
+                                value={wpUrl}
+                                onChange={e => setWpUrl(e.target.value)}
+                                placeholder="https://meusite.com.br" 
+                            />
+                            <p className="text-[10px] text-gray-400 mt-2">Certifique-se de que o WP REST API esteja habilitado no site de origem.</p>
+                        </div>
+
+                        <button
+                            onClick={handleImportWordPress}
+                            disabled={wpImporting}
+                            className="w-full bg-wtech-black text-white font-bold py-4 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
+                        >
+                            {wpImporting ? <Loader2 className="animate-spin" /> : 'INICIAR IMPORTAÇÃO'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="h-full flex flex-col bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden text-gray-900">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -440,6 +626,12 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
                             <Sparkles size={16} /> Agendador IA
                         </button>
                     )}
+                    <button onClick={() => setViewMode('wp_import')} className="bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm hover:opacity-80 flex items-center gap-2">
+                        <Globe size={16} /> Importar WP
+                    </button>
+                    <button onClick={handleGenerateSitemap} className="bg-gray-100 text-gray-700 px-4 py-2 rounded font-bold text-sm hover:bg-gray-200 flex items-center gap-2">
+                        <Download size={16} /> Sitemap
+                    </button>
                 </div>
             </div>
 

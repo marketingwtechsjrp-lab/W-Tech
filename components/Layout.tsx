@@ -24,8 +24,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const siteTitle = get('site_title', 'W-TECH');
   const logoUrl = get('logo_url', ASSETS.LOGO_URL);
   const contactEmail = get('email_contato', 'comercial@w-techbrasil.com.br');
-  const contactPhone = get('phone_main', '(11) 99999-9999');
-  const contactAddr = get('address', 'São Paulo, SP');
+  const contactPhone = get('phone_main', '17 3231-2858');
+  const contactAddr = get('address', 'São José do Rio Preto, SP');
 
   // Fetch Socials
   const instagram = get('instagram', '');
@@ -65,7 +65,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <footer className="bg-wtech-black text-gray-400 py-12 border-t-4 border-wtech-gold">
         <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div>
-            <img src={logoUrl} alt={siteTitle} className="h-10 mb-6 brightness-0 invert opacity-80" />
+            <img src={logoUrl} alt={siteTitle} className="h-10 mb-6 opacity-90" />
             <p className="text-sm leading-relaxed mb-6">
               Referência nacional em tecnologia de suspensão, oferecendo produtos de alta performance e educação técnica especializada.
             </p>

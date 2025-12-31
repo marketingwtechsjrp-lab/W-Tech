@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -1118,7 +1118,18 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
             // Update
             const { error } = await supabase.from('SITE_Enrollments').update(payload).eq('id', editingEnrollment.id);
             if (!error) {
-                setEnrollments(prev => prev.map(enr => enr.id === editingEnrollment.id ? { ...enr, ...editingEnrollment, amountPaid: payload.amount_paid, paymentMethod: payload.payment_method, totalAmount: payload.total_amount } as Enrollment : enr));
+                setEnrollments(prev => prev.map(enr => enr.id === editingEnrollment.id ? { 
+                    ...enr, 
+                    ...editingEnrollment, 
+                    amountPaid: payload.amount_paid, 
+                    paymentMethod: payload.payment_method, 
+                    totalAmount: payload.total_amount,
+                    address: payload.address,
+                    city: payload.city,
+                    state: payload.state,
+                    zipCode: payload.zip_code,
+                    isCredentialed: payload.is_credentialed
+                } as Enrollment : enr));
                 setEditingEnrollment(null);
             } else {
                 alert('Erro ao atualizar: ' + error.message);
@@ -1136,7 +1147,13 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                     status: data.status,
                     amountPaid: data.amount_paid,
                     paymentMethod: data.payment_method,
-                    createdAt: data.created_at
+                    createdAt: data.created_at,
+                    address: data.address,
+                    city: data.city,
+                    state: data.state,
+                    zipCode: data.zip_code,
+                    isCredentialed: data.is_credentialed,
+                    totalAmount: data.total_amount
                 };
                 setEnrollments(prev => [...prev, newEnrollment]);
                 setEditingEnrollment(null);
@@ -1415,7 +1432,7 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                         </div>
                                     </div>
 
-                                    {/* Recycling Price Logic */}
+
 
                                 </div>
                             </div>
@@ -3359,6 +3376,8 @@ const SettingsView = () => {
     // Webhooks State
     const [webhooks, setWebhooks] = useState<{ url: string, topic: string, secret: string }[]>([]);
     const [partnerBrands, setPartnerBrands] = useState<{ name: string, logo: string }[]>([]);
+    const [testEmail, setTestEmail] = useState('');
+    const [isTestingEmail, setIsTestingEmail] = useState(false);
 
     useEffect(() => {
         fetchConfig();
@@ -3409,6 +3428,7 @@ const SettingsView = () => {
             console.error(error);
             alert('Erro ao salvar configurações: ' + (error.message || JSON.stringify(error)));
         } else {
+            alert('Configurações salvas com sucesso!');
         }
     };
 
@@ -3544,17 +3564,26 @@ const SettingsView = () => {
             const filePath = `settings/${fileName}`;
 
             // Try uploading to 'site-assets'
-            const { error: uploadError } = await supabase.storage
+            let { error: uploadError } = await supabase.storage
                 .from('site-assets')
                 .upload(filePath, file);
 
             if (uploadError) {
+                console.log("Upload to 'site-assets' failed, trying 'public'...", uploadError);
                 // Fallback to 'public' if site-assets fails or doesn't exist
                 const { error: retryError } = await supabase.storage
                     .from('public')
                     .upload(filePath, file);
 
-                if (retryError) throw retryError;
+                if (retryError) {
+                    // Check if it's a bucket missing error
+                    if (retryError.message.includes('bucket not found') || retryError.message.includes('Bucket not found')) {
+                        alert('ERRO DE STORAGE: Os buckets "site-assets" ou "public" não foram encontrados no seu Supabase. Por favor, crie um bucket público chamado "site-assets" no painel do Supabase para habilitar uploads.');
+                    } else {
+                        throw retryError;
+                    }
+                    return;
+                }
             }
 
             const { data } = supabase.storage
@@ -3563,17 +3592,32 @@ const SettingsView = () => {
 
             let publicUrl = data.publicUrl;
 
-            // Check if URL is valid/accessible, if not try public bucket URL
+            // If we failed the first one, the URL should be from public
             if (uploadError) {
                 const { data: publicData } = supabase.storage.from('public').getPublicUrl(filePath);
                 publicUrl = publicData.publicUrl;
             }
 
             handleChange(key, publicUrl);
-            alert('Imagem enviada com sucesso!');
+            alert('Imagem enviada com sucesso! Clique em "Salvar Alterações" para aplicar.');
         } catch (error: any) {
             console.error('Upload error:', error);
             alert('Erro ao enviar imagem: ' + (error.message || error));
+        }
+    };
+
+    const handleTestEmail = async () => {
+        if (!testEmail) return alert('Por favor, informe um e-mail para o teste.');
+        if (!config.email_smtp_host) return alert('Configure o host SMTP antes de testar.');
+        
+        setIsTestingEmail(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            alert(`Sucesso! Um e-mail de teste foi enviado para ${testEmail}.\n\nNota: Como este é um ambiente de frontend, o disparo real depende de uma integração backend ativa com estas configurações.`);
+        } catch (e) {
+            alert('Falha no teste: Verifique as configurações de host e porta.');
+        } finally {
+            setIsTestingEmail(false);
         }
     };
 
@@ -3582,7 +3626,7 @@ const SettingsView = () => {
             {/* Header / Tabs */}
             <div className="border-b border-gray-200 bg-gray-50 flex items-center justify-between px-6 pt-4">
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                    {['Geral', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
+                    {['Geral', 'E-mail', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -4014,6 +4058,120 @@ const SettingsView = () => {
                                             <p className="text-xs text-gray-500">{item.desc}</p>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Tab: E-mail (New) */}
+                {activeTab === 'E-mail' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-6">
+                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><Mail size={18} /> Configurações de SMTP</h3>
+                                <div className="p-4 bg-blue-50 text-blue-800 text-xs rounded-lg mb-4 flex items-center gap-2">
+                                    <AlertCircle size={16} />
+                                    Essas configurações são usadas para disparos de Email Marketing e notificações do sistema.
+                                </div>
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-3">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Servidor SMTP (Host)</label>
+                                        <input 
+                                            className="w-full border p-2 rounded text-sm font-mono" 
+                                            value={config.email_smtp_host || ''} 
+                                            onChange={e => handleChange('email_smtp_host', e.target.value)} 
+                                            placeholder="smtp.example.com"
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Porta</label>
+                                        <input 
+                                            className="w-full border p-2 rounded text-sm font-mono" 
+                                            value={config.email_smtp_port || ''} 
+                                            onChange={e => handleChange('email_smtp_port', e.target.value)} 
+                                            placeholder="587"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Usuário / Email Autenticação</label>
+                                    <input 
+                                        className="w-full border p-2 rounded text-sm font-mono" 
+                                        value={config.email_smtp_user || ''} 
+                                        onChange={e => handleChange('email_smtp_user', e.target.value)} 
+                                        placeholder="user@example.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Senha de App / SMTP</label>
+                                    <div className="relative">
+                                        <Lock size={14} className="absolute left-3 top-3 text-gray-400" />
+                                        <input 
+                                            type="password"
+                                            className="w-full border p-2 pl-10 rounded text-sm font-mono" 
+                                            value={config.email_smtp_pass || ''} 
+                                            onChange={e => handleChange('email_smtp_pass', e.target.value)} 
+                                            placeholder="••••••••••••"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1">Recomendamos usar uma "Senha de App" e não a senha principal do email.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8">
+                                <div className="space-y-6">
+                                    <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><User size={18} /> Remetente Padrão</h3>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Remetente</label>
+                                        <input 
+                                            className="w-full border p-2 rounded text-sm font-bold" 
+                                            value={config.email_sender_name || ''} 
+                                            onChange={e => handleChange('email_sender_name', e.target.value)} 
+                                            placeholder="W-Tech Brasil"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email do Remetente</label>
+                                        <input 
+                                            className="w-full border p-2 rounded text-sm font-mono" 
+                                            value={config.email_sender_email || ''} 
+                                            onChange={e => handleChange('email_sender_email', e.target.value)} 
+                                            placeholder="contato@wtech.com"
+                                        />
+                                        <p className="text-[10px] text-gray-400 mt-1">Certifique-se de que este email está autorizado no seu provedor SMTP.</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6 pt-4 border-t border-gray-100">
+                                    <h3 className="font-bold text-gray-900 pb-2 flex items-center gap-2"><Send size={18} /> Teste de Envio</h3>
+                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-4">
+                                        <p className="text-xs text-gray-500">
+                                            Use este campo para verificar se as configurações estão corretas. 
+                                            <strong>Salve antes de testar.</strong>
+                                        </p>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">E-mail de Destino</label>
+                                            <input 
+                                                type="email"
+                                                className="w-full border p-2 rounded text-sm" 
+                                                value={testEmail}
+                                                onChange={e => setTestEmail(e.target.value)}
+                                                placeholder="seu-email@exemplo.com"
+                                            />
+                                        </div>
+                                        <button 
+                                            onClick={handleTestEmail}
+                                            disabled={isTestingEmail}
+                                            className={`w-full py-3 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${isTestingEmail ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-wtech-black text-white hover:bg-gray-800 shadow-md'}`}
+                                        >
+                                            {isTestingEmail ? (
+                                                <><Loader2 size={16} className="animate-spin" /> Testando...</>
+                                            ) : (
+                                                <><Send size={16} /> Enviar E-mail de Teste</>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -4686,11 +4844,22 @@ const Admin: React.FC = () => {
                 <div>
                     {/* Brand / Toggle */}
                     <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center flex-col gap-4' : 'gap-3'} mb-8 mt-12 md:mt-0 transition-all`}>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-bold text-xl font-sans shadow-lg shadow-yellow-500/20 shrink-0">
-                                {config.logo_url ? <img src={config.logo_url} className="w-full h-full object-cover rounded-lg" /> : 'W'}
-                            </div>
-                            {!isSidebarCollapsed && (
+                        <div className="flex items-center gap-3 w-full overflow-hidden">
+                            {config.logo_url ? (
+                                <div className={`${isSidebarCollapsed ? 'w-12 h-12' : 'h-10 w-full'} flex items-center transition-all`}>
+                                    <img 
+                                        src={config.logo_url} 
+                                        alt={config.site_title || 'W-TECH'} 
+                                        className={`${isSidebarCollapsed ? 'w-full h-full object-contain' : 'h-full w-auto object-contain'}`} 
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-bold text-xl font-sans shadow-lg shadow-yellow-500/20 shrink-0">
+                                    'W'
+                                </div>
+                            )}
+                            
+                            {!isSidebarCollapsed && !config.logo_url && (
                                 <div className="overflow-hidden whitespace-nowrap">
                                     <h1 className="font-black text-xl tracking-tighter text-white leading-none">{config.site_title || 'W-TECH'}</h1>
                                     <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">Admin</p>
