@@ -266,6 +266,15 @@ export interface EmailLog {
   createdAt: string;
 }
 
+export interface EmailLogEntry {
+  id: string;
+  campaignId: string;
+  recipientEmail: string;
+  status: 'Sent' | 'Failed' | 'Opened';
+  errorMessage?: string;
+  createdAt: string;
+}
+
 export interface EmailSequence {
   id: string;
   name: string;
@@ -339,4 +348,82 @@ export interface MessageTemplate {
     content: string;
     createdBy?: string;
     createdAt: string;
+}
+
+// --- NEW: Stock & Logistics ---
+
+export interface Product {
+    id: string;
+    sku: string;
+    name: string;
+    description?: string;
+    category?: string;
+    type: 'product' | 'raw_material' | 'service';
+    unit: string;
+    averageCost: number;
+    salePrice: number;
+    minStock: number;
+    currentStock: number;
+    productionTime?: number;
+    imageUrl?: string;
+    weight?: number;
+    length?: number;
+    width?: number;
+    height?: number;
+    createdAt: string;
+}
+
+export interface StockMovement {
+    id: string;
+    productId: string;
+    type: 'IN' | 'OUT' | 'RESERVED' | 'ADJUST';
+    quantity: number;
+    origin?: string;
+    referenceId?: string;
+    userId?: string;
+    notes?: string;
+    createdAt: string;
+}
+
+export interface ProductBOM {
+    id: string;
+    parentProductId: string;
+    componentId: string;
+    quantity: number;
+}
+
+export interface Sale {
+    id: string;
+    clientId?: string;
+    clientName?: string;
+    clientEmail?: string;
+    clientPhone?: string;
+    channel: 'Store' | 'Admin' | 'Course' | 'Workshop';
+    status: 'pending' | 'paid' | 'producing' | 'shipped' | 'delivered' | 'cancelled';
+    totalValue: number;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    shippingStatus?: string;
+    notes?: string;
+    createdAt: string;
+}
+
+export interface SaleItem {
+    id: string;
+    saleId: string;
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    costSnapshot?: number;
+}
+
+export interface Shipment {
+    id: string;
+    saleId: string;
+    carrier?: string;
+    trackingCode?: string;
+    shippingCost?: number;
+    shippedAt?: string;
+    deliveredAt?: string;
+    status: string;
 }

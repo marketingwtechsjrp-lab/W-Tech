@@ -100,14 +100,14 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
             const fileName = `${user?.id || 'anon'}_${Date.now()}.${fileExt}`;
             const filePath = `whatsapp_tasks/${fileName}`;
 
-            const { error: uploadError } = await supabase.storage.from('site-assets').upload(filePath, file);
+            const { error: uploadError } = await supabase.storage.from('public').upload(filePath, file);
 
             if (uploadError) {
                 alert('Erro no upload: ' + uploadError.message);
                 return;
             }
 
-            const { data } = supabase.storage.from('site-assets').getPublicUrl(filePath);
+            const { data } = supabase.storage.from('public').getPublicUrl(filePath);
             setNewTask(prev => ({ ...prev, whatsappMediaUrl: data.publicUrl }));
         } catch (err: any) {
             alert('Erro: ' + err.message);

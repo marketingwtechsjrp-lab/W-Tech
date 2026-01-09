@@ -4,7 +4,7 @@ import {
     Users, User, BookOpen, DollarSign, LayoutDashboard,
     KanbanSquare, FileText, Settings, Bell, Search,
     MoreVertical, ArrowRight, TrendingUp, Calendar as CalendarIcon,
-    Layout, MapPin, Phone, Globe, Mail, Clock, Shield, Award, CheckCircle, XCircle, Filter,
+    Layout, MapPin, Phone, Globe, Mail, Clock, Shield, Award, CheckCircle, XCircle, Filter, Package,
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
@@ -24,8 +24,12 @@ import EmailMarketingView from '../components/EmailMarketingView';
 import DashboardView from '../components/admin/Dashboard/DashboardView';
 import CRMView from '../components/admin/CRM/CRMView';
 import BlogManagerView from '../components/admin/Blog/BlogManagerView';
+import CatalogManagerView from '../components/admin/Catalog/CatalogManagerView';
+import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
 import DevUserSwitcher from '../components/admin/DevUserSwitcher';
 import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
+import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
+import InvoicesManagerView from '../components/admin/Financial/InvoicesManagerView';
 import { SplashedPushNotifications, SplashedPushNotificationsHandle } from '@/components/ui/splashed-push-notifications';
 import AdminIntegrations from '../components/admin/AdminIntegrations';
 import { TaskCategoryList } from '../components/admin/TaskCategoryList';
@@ -63,7 +67,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks';
+type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices';
 
 const SidebarItem = ({
     icon: Icon,
@@ -5554,6 +5558,18 @@ const Admin: React.FC = () => {
                         {hasPermission('manage_orders') && (
                             <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                         )}
+
+                        {hasPermission('manage_orders') && (
+                            <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+
+                        {hasPermission('manage_orders') && (
+                            <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
+
+                        {hasPermission('financial_view') && (
+                            <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        )}
                         
                         {hasPermission('courses_view') && (
                             <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
@@ -5638,6 +5654,7 @@ const Admin: React.FC = () => {
                                 {hasPermission('crm_view') && <MobileMenuItem icon={KanbanSquare} label="Leads & CRM" onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_users') && <MobileMenuItem icon={Users} label="Equipe" onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_orders') && <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manage_orders') && <MobileMenuItem icon={Plus} label="Catálogo" onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('courses_view') && <MobileMenuItem icon={GraduationCap} label="Cursos" onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('accredited_view') && <MobileMenuItem icon={Wrench} label="Oficinas" onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('financial_view') && <MobileMenuItem icon={DollarSign} label="Financeiro" onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} />}
@@ -5683,7 +5700,8 @@ const Admin: React.FC = () => {
                             setCurrentView('courses_manager');
                         }} permissions={livePermissions} />}
                         {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} onOpenProfile={() => setIsProfileModalOpen(true)} />}
-                        {currentView === 'orders' && hasPermission('manage_orders') && <OrdersView />}
+                        {currentView === 'orders' && hasPermission('manage_orders') && <SalesManagerView />}
+                        {currentView === 'catalog_manager' && hasPermission('manage_orders') && <CatalogManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
                         {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} onConsumeInitialLead={() => setPendingEnrollmentLead(null)} permissions={livePermissions} />}
@@ -5692,6 +5710,8 @@ const Admin: React.FC = () => {
                         {currentView === 'email_marketing' && hasPermission('manage_marketing') && <EmailMarketingView />}
                         {currentView === 'tasks' && <TaskManagerView />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
+                        {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView />}
+                        {currentView === 'invoices' && hasPermission('financial_view') && <InvoicesManagerView />}
                     </motion.div>
                 </AnimatePresence>
             </div>

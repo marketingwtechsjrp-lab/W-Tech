@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { sendWhatsAppMessage } from '../../../lib/whatsapp';
 import { useAuth } from '../../../context/AuthContext';
 import { Task, TaskCategory } from '../../../types';
-import { Plus, Clock, CheckCircle, AlertTriangle, Trash2, User, Search, Filter, X, Calendar, Flag, LayoutGrid, List, Edit, Tag, Image as ImageIcon, Upload } from 'lucide-react';
+import { Plus, Clock, CheckCircle, AlertTriangle, Trash2, User, Search, Filter, X, Calendar, Flag, LayoutGrid, List, Edit, Tag, Image as ImageIcon, Upload, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -41,23 +41,44 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, usersMap, onDelete, onEdit, i
                 <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
                         {task.status === 'DONE' ? (
-                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded uppercase tracking-wider">Concluído</span>
+                            <Badge variant="success" size="xs" className="uppercase font-bold tracking-wider">Concluído</Badge>
                         ) : (
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-1
-                                ${task.priority === 'URGENT' ? 'bg-red-50 text-red-600' : ''}
-                                ${task.priority === 'HIGH' ? 'bg-orange-50 text-orange-600' : ''}
-                                ${task.priority === 'MEDIUM' ? 'bg-blue-50 text-blue-600' : ''}
-                                ${task.priority === 'LOW' ? 'bg-gray-50 text-gray-500' : ''}
-                            `}>
-                                {task.priority === 'URGENT' && <AlertTriangle size={8} />}
+                            <Badge 
+                                variant={
+                                    task.priority === 'URGENT' ? 'destructive' :
+                                    task.priority === 'HIGH' ? 'warning' :
+                                    task.priority === 'MEDIUM' ? 'primary' : 'secondary'
+                                }
+                                size="xs"
+                                className="uppercase font-bold tracking-wider"
+                            >
+                                {task.priority === 'URGENT' && <AlertTriangle size={8} className="mr-1" />}
                                 {task.priority}
-                            </span>
+                            </Badge>
                         )}
 
                         {task.category && (
-                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-black/5 bg-white/50 text-gray-700 uppercase tracking-wide flex items-center gap-1">
+                            <Badge 
+                                variant="mono" 
+                                appearance="outline" 
+                                size="xs"
+                                style={task.category.color ? { borderColor: task.category.color, color: task.category.color } : {}}
+                                className="uppercase font-bold tracking-wide"
+                            >
                                 {task.category.name}
-                            </span>
+                            </Badge>
+                        )}
+                        
+                        {(task as any).isWhatsappSchedule && (
+                             <Badge 
+                                variant="success" 
+                                appearance="light" 
+                                size="xs" 
+                                className="animate-pulse"
+                                title="Automação WhatsApp Ativa"
+                            >
+                                <Bot size={10} className="mr-1" /> AUTO
+                            </Badge>
                         )}
                         
                         {task.leadName && (
@@ -142,15 +163,23 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
                 ) : <span className="text-gray-300 text-xs">-</span>}
             </td>
             <td className="p-3">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase inline-flex items-center gap-1
-                    ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700 border-red-200' : ''}
-                    ${task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700 border-orange-200' : ''}
-                    ${task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700 border-blue-200' : ''}
-                    ${task.priority === 'LOW' ? 'bg-gray-100 text-gray-700 border-gray-200' : ''}
-                `}>
-                    {task.priority === 'URGENT' && <AlertTriangle size={8} />}
+                <Badge 
+                    variant={
+                        task.priority === 'URGENT' ? 'destructive' :
+                        task.priority === 'HIGH' ? 'warning' :
+                        task.priority === 'MEDIUM' ? 'primary' : 'secondary'
+                    }
+                    size="xs"
+                    className="uppercase font-bold tracking-wider"
+                >
+                    {task.priority === 'URGENT' && <AlertTriangle size={8} className="mr-1" />}
                     {task.priority}
-                </span>
+                </Badge>
+                {(task as any).isWhatsappSchedule && (
+                    <Badge variant="success" appearance="light" size="xs" className="ml-2 animate-pulse" title="Automação WhatsApp Ativa">
+                        <Bot size={10} className="mr-1" />
+                    </Badge>
+                )}
             </td>
             <td className="p-3 text-xs text-gray-500 font-medium">
                  {task.dueDate ? (
@@ -337,7 +366,8 @@ const TaskManagerView: React.FC = () => {
                 tags: t.tags,
                 categoryId: t.category_id,
                 category: t.SITE_TaskCategories,
-                whatsappMediaUrl: t.whatsapp_media_url 
+                whatsappMediaUrl: t.whatsapp_media_url,
+                isWhatsappSchedule: t.is_whatsapp_schedule
             })));
         }
         setLoading(false);
