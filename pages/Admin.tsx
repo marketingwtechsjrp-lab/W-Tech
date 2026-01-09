@@ -3971,7 +3971,7 @@ const SettingsView = () => {
             {/* Header / Tabs */}
             <div className="border-b border-gray-200 bg-gray-50 flex items-center justify-between px-6 pt-4">
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                    {['Geral', 'E-mail', 'WhatsApp API', 'Modelos Msg', 'Categorias', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
+                    {['Geral', 'E-mail', 'WhatsApp API', 'Marketplace & ERP', 'Modelos Msg', 'Categorias', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -4527,6 +4527,234 @@ const SettingsView = () => {
                 {activeTab === 'WhatsApp API' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <AdminIntegrations />
+                    </div>
+                )}
+
+                {/* Tab: Marketplace & ERP (New) */}
+                {activeTab === 'Marketplace & ERP' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* ERP / Bling */}
+                            <div className="space-y-6">
+                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Package size={18} /> ERP & Faturamento
+                                </h3>
+                                
+                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600 font-bold text-xs border border-green-100">
+                                                BLING
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-sm text-gray-900">Integração Bling ERP</h4>
+                                                <p className="text-xs text-gray-500">Sincroniza pedidos e emite notas fiscais.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleChange('bling_enabled', config.bling_enabled === 'true' ? 'false' : 'true')}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.bling_enabled === 'true' ? 'bg-green-500' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.bling_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    {config.bling_enabled === 'true' && (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">API Key (Personal Token)</label>
+                                                <div className="relative">
+                                                    <Lock size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                                                    <input 
+                                                        type="password"
+                                                        className="w-full border border-gray-200 p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none" 
+                                                        value={config.bling_api_key || ''} 
+                                                        onChange={e => handleChange('bling_api_key', e.target.value)} 
+                                                        placeholder="••••••••••••••••••••••••"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 text-xs text-gray-400 items-center">
+                                                <AlertCircle size={12} />
+                                                <span>Acesse Preferências {'>'} Sistema {'>'} Usuários e Tokens no Bling.</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Marketplaces */}
+                            <div className="space-y-6">
+                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                    <Globe size={18} /> Marketplaces
+                                </h3>
+
+                                {/* Mercado Livre */}
+                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600 font-bold text-xs border border-yellow-100">
+                                                MELI
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-sm text-gray-900">Mercado Livre</h4>
+                                                <p className="text-xs text-gray-500">Sincroniza anúncios e vendas.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleChange('meli_enabled', config.meli_enabled === 'true' ? 'false' : 'true')}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.meli_enabled === 'true' ? 'bg-yellow-400' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.meli_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    {config.meli_enabled === 'true' && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">App ID</label>
+                                                <input 
+                                                    className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono outline-none" 
+                                                    value={config.meli_app_id || ''} 
+                                                    onChange={e => handleChange('meli_app_id', e.target.value)} 
+                                                    placeholder="12345678"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Client Secret</label>
+                                                <input 
+                                                    type="password"
+                                                    className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono outline-none" 
+                                                    value={config.meli_secret || ''} 
+                                                    onChange={e => handleChange('meli_secret', e.target.value)} 
+                                                    placeholder="••••••••"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Shopee */}
+                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-orange-600 font-bold text-xs border border-orange-100">
+                                                SHP
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-sm text-gray-900">Shopee</h4>
+                                                <p className="text-xs text-gray-500">Integração oficial Shopee Open Platform.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleChange('shopee_enabled', config.shopee_enabled === 'true' ? 'false' : 'true')}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.shopee_enabled === 'true' ? 'bg-orange-500' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.shopee_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    {config.shopee_enabled === 'true' && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Partner ID</label>
+                                                    <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.shopee_partner_id || ''} onChange={e => handleChange('shopee_partner_id', e.target.value)} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Shop ID</label>
+                                                    <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.shopee_shop_id || ''} onChange={e => handleChange('shopee_shop_id', e.target.value)} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Partner Key (Secret)</label>
+                                                <input type="password" className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.shopee_key || ''} onChange={e => handleChange('shopee_key', e.target.value)} placeholder="••••••••" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Amazon */}
+                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-800 font-bold text-xs border border-gray-200">
+                                                AMZ
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-sm text-gray-900">Amazon Seller</h4>
+                                                <p className="text-xs text-gray-500">SP-API Integration.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleChange('amazon_enabled', config.amazon_enabled === 'true' ? 'false' : 'true')}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.amazon_enabled === 'true' ? 'bg-black' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.amazon_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    {config.amazon_enabled === 'true' && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Partner ID</label>
+                                                <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.amazon_seller_id || ''} onChange={e => handleChange('amazon_seller_id', e.target.value)} placeholder="A2..." />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">AWS Access Key ID</label>
+                                                <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.amazon_access_key || ''} onChange={e => handleChange('amazon_access_key', e.target.value)} placeholder="AKIA..." />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">AWS Secret Key</label>
+                                                <input type="password" className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.amazon_secret || ''} onChange={e => handleChange('amazon_secret', e.target.value)} placeholder="••••••••" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* WooCommerce (WordPress) */}
+                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs border border-purple-100">
+                                                WOO
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-sm text-gray-900">WooCommerce (WordPress)</h4>
+                                                <p className="text-xs text-gray-500">Sincroniza estoques, pedidos, etiquetas e notas.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleChange('woocommerce_enabled', config.woocommerce_enabled === 'true' ? 'false' : 'true')}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.woocommerce_enabled === 'true' ? 'bg-purple-500' : 'bg-gray-300'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.woocommerce_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    {config.woocommerce_enabled === 'true' && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">URL da Loja</label>
+                                                <div className="relative">
+                                                    <Globe size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                                                    <input className="w-full border border-gray-200 p-2 pl-9 rounded-lg text-sm font-mono" value={config.woocommerce_url || ''} onChange={e => handleChange('woocommerce_url', e.target.value)} placeholder="https://sua-loja.com" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Consumer Key (CK)</label>
+                                                <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.woocommerce_key || ''} onChange={e => handleChange('woocommerce_key', e.target.value)} placeholder="ck_..." />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Consumer Secret (CS)</label>
+                                                <input type="password" className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.woocommerce_secret || ''} onChange={e => handleChange('woocommerce_secret', e.target.value)} placeholder="cs_..." />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
+                        </div>
                     </div>
                 )}
 
