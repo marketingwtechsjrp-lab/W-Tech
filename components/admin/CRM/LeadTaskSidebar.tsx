@@ -172,7 +172,14 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
         }
     };
 
+    const [processingTaskIds, setProcessingTaskIds] = useState<Set<string>>(new Set());
+
     const toggleTaskStatus = async (task: Task) => {
+        if (processingTaskIds.has(task.id)) return; // Prevent double click
+
+        // Lock
+        setProcessingTaskIds(prev => new Set(prev).add(task.id));
+
         const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
         try {
             const { error } = await supabase.from('SITE_Tasks').update({ status: newStatus }).eq('id', task.id);
@@ -181,13 +188,20 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
             // Automation: Send WhatsApp if completed
             if (newStatus === 'DONE' && lead.phone) {
                  const message = `Olá ${lead.name.split(' ')[0]}! Informamos que a atividade "${task.title}" foi concluída com sucesso! ✅`;
-                 sendWhatsAppMessage(lead.phone, message);
+                 await sendWhatsAppMessage(lead.phone, message);
             }
 
             // Refresh local state
             setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
         } catch (e) {
             console.error(e);
+        } finally {
+            // Unlock
+            setProcessingTaskIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(task.id);
+                return newSet;
+            });
         }
     };
 
