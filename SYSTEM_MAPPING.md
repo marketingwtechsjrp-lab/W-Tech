@@ -40,6 +40,10 @@ Este documento serve como mapeamento técnico e funcional de toda a plataforma W
     - Impressão de listas de presença e relatórios de alunos.
     - Geocodificação de endereços para o mapa de mecânicos.
 - **Tabela**: `SITE_Courses`, `SITE_Enrollments`.
+- **Sistema de Lembretes Automatizados**:
+    - Disparo automático de WhatsApp para alunos inscritos.
+    - Configurável por curso: X dias antes (padrão 5) e Y dias antes (padrão 1).
+    - Conteúdo dinâmico: Nome do aluno, cronograma, endereço com link do mapa e "o que levar".
 
 ### 4. Blog & Marketing
 - **Funcionalidades**:
@@ -91,5 +95,6 @@ Atualmente, o sistema utiliza a Evolution API v2 com o seguinte fluxo técnico:
 - **Upload de Mídia**: Adicionada funcionalidade de upload direto de imagens para disparos de WhatsApp em todos os módulos (CRM, Gerenciador de Tarefas e Perfil).
 - **Evolution API v2 Support**: Implementada conformidade com os novos requisitos da API (mediatype/fileName).
 - **Gestão de Perfil**: Usuários agora podem auto-gerenciar suas instâncias de WhatsApp no perfil pessoal.
+- **Lembretes de Cursos**: Sistema automático de notificação para alunos via WhatsApp (5 dias e 1 dia antes).
 
 📅 *Última análise realizada em: 08/01/2026*

@@ -603,6 +603,11 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
             addressNumber: c.address_number,
             addressNeighborhood: c.address_neighborhood,
             recyclingPrice: c.recycling_price,
+            reminder5dEnabled: c.reminder_5d_enabled,
+            reminder1dEnabled: c.reminder_1d_enabled,
+            reminder5dDays: c.reminder_5d_days,
+            reminder1dDays: c.reminder_1d_days,
+            whatToBring: c.what_to_bring,
             type: c.type
         })));
 
@@ -708,7 +713,12 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
             city: formData.city,
             state: formData.state,
             latitude: formData.latitude,
-            longitude: formData.longitude
+            longitude: formData.longitude,
+            reminder_5d_enabled: formData.reminder5dEnabled ?? true,
+            reminder_1d_enabled: formData.reminder1dEnabled ?? true,
+            reminder_5d_days: formData.reminder5dDays ?? 5,
+            reminder_1d_days: formData.reminder1dDays ?? 1,
+            what_to_bring: formData.whatToBring || ''
         };
 
         let error;
@@ -766,6 +776,32 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
     setGenerateLP(false); // Reset
     fetchCourses();
 };
+
+    const handleTestReminderMessage = async () => {
+        const phone = prompt("Para qual número (WhatsApp) deseja enviar o teste?\nUse o formato: DD9XXXXXXXX", "");
+        if (!phone) return;
+
+        const mapsLink = formData.latitude ? `https://www.google.com/maps?q=${formData.latitude},${formData.longitude}` : (formData.mapUrl || '');
+        
+        // Texto IDÊNTICO ao oficial
+        const message = `Olá *Aluno Exemplo*! Tudo bem? 🏍️\n\n` +
+            `*Lembrete do curso: ${formData.title}*\n\n` +
+            `📅 *Data:* ${formData.date ? new Date(formData.date).toLocaleDateString('pt-BR') : '--/--/----'}\n` +
+            `⏰ *Horário:* ${formData.startTime || '08:00'} - ${formData.endTime || '18:00'}\n` +
+            `📍 *Endereço:* ${formData.address || formData.location || 'Não definido'}, ${formData.city || ''} - ${formData.state || ''}\n` +
+            (mapsLink ? `🔗 *Ver no Mapa:* ${mapsLink}\n\n` : '\n') +
+            (formData.schedule ? `📝 *Cronograma:*\n${formData.schedule}\n\n` : '') +
+            (formData.whatToBring ? `🎒 *O que levar:* \n${formData.whatToBring}\n\n` : '') +
+            `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
+
+        const result = await sendWhatsAppMessage(phone, message, user?.id);
+        if (result.success) {
+            alert('Lembrete de teste enviado com sucesso!');
+        } else {
+            alert('Erro ao enviar teste: ' + JSON.stringify(result.error));
+        }
+    };
+
     const handleDuplicate = (course: Course) => {
         const { id, registeredCount, ...rest } = course;
         const newCourse = {
@@ -1041,8 +1077,32 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
         setCurrentCourse(course);
         setShowEnrollments(true);
         const { data } = await supabase.from('SITE_Enrollments').select('*').eq('course_id', course.id);
-        if (data) setEnrollments(data.map((c: any) => ({ ...c, courseId: c.course_id, studentName: c.student_name, studentEmail: c.student_email, studentPhone: c.student_phone, createdAt: c.created_at })));
+        if (data) setEnrollments(data.map((c: any) => ({ ...c, courseId: c.course_id, studentName: c.student_name, studentEmail: c.student_email, studentPhone: c.student_phone, createdAt: c.created_at, reminder5dSent: c.reminder_5d_sent, reminder1dSent: c.reminder_1d_sent })));
         else setEnrollments([]);
+    };
+
+    const handleSendManualReminder = async (enr: Enrollment) => {
+        if (!currentCourse) return;
+        if (!confirm(`Enviar lembrete manual para ${enr.studentName}?`)) return;
+
+        const mapsLink = currentCourse.latitude ? `https://www.google.com/maps?q=${currentCourse.latitude},${currentCourse.longitude}` : (currentCourse.mapUrl || '');
+        
+        const message = `Olá *${enr.studentName}*! Tudo bem? 🏍️\n\n` +
+            `*Lembrete do curso: ${currentCourse.title}*\n\n` +
+            `📅 *Data:* ${new Date(currentCourse.date).toLocaleDateString('pt-BR')}\n` +
+            `⏰ *Horário:* ${currentCourse.startTime || '08:00'} - ${currentCourse.endTime || '18:00'}\n` +
+            `📍 *Endereço:* ${currentCourse.address || currentCourse.location}, ${currentCourse.city || ''} - ${currentCourse.state || ''}\n` +
+            (mapsLink ? `🔗 *Ver no Mapa:* ${mapsLink}\n\n` : '\n') +
+            (currentCourse.schedule ? `📝 *Cronograma:*\n${currentCourse.schedule}\n\n` : '') +
+            (currentCourse.whatToBring ? `🎒 *O que levar:* \n${currentCourse.whatToBring}\n\n` : '') +
+            `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
+
+        const result = await sendWhatsAppMessage(enr.studentPhone, message, user?.id);
+        if (result.success) {
+            alert('Lembrete enviado com sucesso!');
+        } else {
+            alert('Erro ao enviar lembrete: ' + JSON.stringify(result.error));
+        }
     };
 
     const toggleCheckIn = async (enrollmentId: string, currentStatus: string) => {
@@ -1608,6 +1668,10 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                                         </button>
                                                     )}
 
+                                                    <button onClick={() => handleSendManualReminder(enr)} title="Enviar Lembrete (WhatsApp)" className="p-1.5 text-green-500 hover:bg-green-50 rounded border border-green-100">
+                                                        <Send size={16} />
+                                                    </button>
+
                                                     <button onClick={() => setEditingEnrollment(enr)} title="Editar" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
                                                         <Edit size={16} />
                                                     </button>
@@ -1813,13 +1877,13 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                         </div>
                                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-red-500">
                                             <p className="text-gray-500 text-xs font-bold uppercase mb-1">Despesas Totais</p>
-                                            <h3 className="text-3xl font-black text-gray-900">R$ {(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                                            <h3 className="text-3xl font-black text-gray-900">R$ ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                                             <p className="text-xs text-red-500 font-medium mt-1">Custos operacionais</p>
                                         </div>
                                         <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 ${(reportData.netResult || 0) >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
                                             <p className="text-gray-500 text-xs font-bold uppercase mb-1">Resultado Líquido</p>
                                             <h3 className={`text-3xl font-black ${(reportData.netResult || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                R$ {(reportData.netResult || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                R$ ${(reportData.netResult || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                             </h3>
                                             <p className="text-xs text-gray-400 font-medium mt-1">Lucro da operação</p>
                                         </div>
@@ -2273,7 +2337,64 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                         📥 Carregar Modelo: Suspensão
                                     </button>
                                 </div>
-                                <textarea rows={15} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                                <textarea rows={8} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold mb-1 text-gray-700">O que levar / Requisitos</label>
+                                <textarea rows={4} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
+                            </div>
+
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                                <div className="bg-green-50 p-4 rounded-xl border border-green-100/50">
+                                    <h4 className="font-bold text-green-800 text-xs uppercase mb-3 flex items-center gap-2">
+                                        <Bell size={14} /> Lembrete Antecipado
+                                    </h4>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={formData.reminder5dEnabled ?? true} 
+                                                onChange={e => setFormData({...formData, reminder5dEnabled: e.target.checked})} 
+                                            />
+                                            <span className="text-sm font-bold">Ativar</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="number" 
+                                                className="w-16 p-1 border rounded text-sm font-bold text-center" 
+                                                value={formData.reminder5dDays ?? 5} 
+                                                onChange={e => setFormData({...formData, reminder5dDays: parseInt(e.target.value)})} 
+                                            />
+                                            <span className="text-xs text-gray-500">dias antes</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100/50">
+                                    <h4 className="font-bold text-blue-800 text-xs uppercase mb-3 flex items-center gap-2">
+                                        <Bell size={14} /> Lembrete Final
+                                    </h4>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={formData.reminder1dEnabled ?? true} 
+                                                onChange={e => setFormData({...formData, reminder1dEnabled: e.target.checked})} 
+                                            />
+                                            <span className="text-sm font-bold">Ativar</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="number" 
+                                                className="w-16 p-1 border rounded text-sm font-bold text-center" 
+                                                value={formData.reminder1dDays ?? 1} 
+                                                onChange={e => setFormData({...formData, reminder1dDays: parseInt(e.target.value)})} 
+                                            />
+                                            <span className="text-xs text-gray-500">dia(s) antes</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="md:col-span-2 bg-gray-50 p-4 rounded border border-gray-200">
@@ -2291,16 +2412,24 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                 </div>
                             </div>
 
-                        <div className="md:col-span-2 flex justify-end gap-2 border-t pt-6">
-                            {(formData.id && hasPermission('courses_edit')) && (
-                                <button type="button" onClick={() => handleAnnounceCourse(formData as Course)} className="px-4 py-2 bg-blue-100 text-blue-800 border border-blue-200 rounded hover:bg-blue-200 font-bold flex items-center gap-2 mr-auto">
-                                    <Send size={16} /> Anunciar p/ Base (Email)
-                                </button>
-                            )}
-                            
-                            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100">Cancelar</button>
-                            <button type="submit" className="px-6 py-2 bg-wtech-black text-white rounded hover:bg-black font-bold">Salvar {formData.type === 'Event' ? 'Evento' : 'Curso'}</button>
-                        </div>
+                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-white border border-gray-200 text-blue-600 rounded-lg font-bold hover:bg-gray-50 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
+                                        <Mail size={16} /> Anunciar p/ Base (Email)
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onClick={handleTestReminderMessage}
+                                        className="flex-1 md:flex-none py-3 px-6 bg-green-50 border border-green-200 text-green-700 rounded-lg font-bold hover:bg-green-100 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95"
+                                    >
+                                        <MessageCircle size={16} /> Testar Lembrete (WhatsApp)
+                                    </button>
+                                </div>
+                                <div className="flex gap-3 w-full md:w-auto">
+                                    <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-gray-300 rounded-lg font-bold text-gray-600 hover:bg-gray-100 transition-all">Cancelar</button>
+                                    <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 shadow-xl transition-all active:scale-95">Salvar Curso</button>
+                                </div>
+                            </div>
                     </form>
                 </div>
             )}
@@ -5163,6 +5292,89 @@ const Admin: React.FC = () => {
 
         return () => clearInterval(interval);
     }, [user]);
+
+    // BACKGROUND WORKER: Course Reminders (5d and 1d before)
+    useEffect(() => {
+        if (!user) return;
+
+        const checkCourseReminders = async () => {
+            const now = new Date();
+            
+            // 1. Fetch active courses with reminders enabled
+            const { data: courses } = await supabase
+                .from('SITE_Courses')
+                .select('*')
+                .eq('status', 'Published');
+
+            if (!courses) return;
+
+            for (const course of courses) {
+                const courseDate = new Date(course.date);
+                
+                // Helper to check and send
+                const processReminder = async (daysBeforeKey: string, sentField: string, enabledField: string) => {
+                    if (!course[enabledField]) return;
+                    
+                    const triggerDate = new Date(courseDate);
+                    const daysBefore = course[daysBeforeKey] || (sentField.includes('5d') ? 5 : 1);
+                    triggerDate.setDate(triggerDate.getDate() - daysBefore);
+                    
+                    // Only send if we are past the trigger date but NOT past the course date
+                    // And only send during daylight hours (e.g., 9:00 to 19:00) to be polite
+                    const currentHour = now.getHours();
+                    if (now >= triggerDate && now < courseDate && currentHour >= 9 && currentHour <= 20) {
+                        
+                        // Fetch enrollments for this course that haven't received this specific reminder
+                        const { data: enrollments } = await supabase
+                            .from('SITE_Enrollments')
+                            .select('*')
+                            .eq('course_id', course.id)
+                            .eq('status', 'Confirmed')
+                            .eq(sentField, false);
+
+                        if (enrollments && enrollments.length > 0) {
+                            console.log(`Sending ${sentField} reminders for course: ${course.title} to ${enrollments.length} students.`);
+                            
+                            for (const enr of enrollments) {
+                                if (!enr.student_phone) continue;
+
+                                const mapsLink = course.latitude ? `https://www.google.com/maps?q=${course.latitude},${course.longitude}` : (course.map_url || '');
+                                
+                                const message = `Olá *${enr.student_name}*! Tudo bem? 🏍️\n\n` +
+                                    `*Lembrete do curso: ${course.title}*\n\n` +
+                                    `📅 *Data:* ${new Date(course.date).toLocaleDateString('pt-BR')}\n` +
+                                    `⏰ *Horário:* ${course.start_time || '08:00'} - ${course.end_time || '18:00'}\n` +
+                                    `📍 *Endereço:* ${course.address || course.location}, ${course.city || ''} - ${course.state || ''}\n` +
+                                    (mapsLink ? `🔗 *Ver no Mapa:* ${mapsLink}\n\n` : '\n') +
+                                    (course.schedule ? `📝 *Cronograma:*\n${course.schedule}\n\n` : '') +
+                                    (course.what_to_bring ? `🎒 *O que levar:* \n${course.what_to_bring}\n\n` : '') +
+                                    `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
+
+                                const result = await sendWhatsAppMessage(enr.student_phone, message);
+                                
+                                if (result.success) {
+                                    await supabase.from('SITE_Enrollments').update({ [sentField]: true }).eq('id', enr.id);
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // Check 1st Reminder (e.g. 5 days)
+                await processReminder('reminder_5d_days', 'reminder_5d_sent', 'reminder_5d_enabled');
+                
+                // Check 2nd Reminder (e.g. 1 day)
+                await processReminder('reminder_1d_days', 'reminder_1d_sent', 'reminder_1d_enabled');
+            }
+        };
+
+        // Run every hour for reminders (to be less aggressive than the per-minute task checker)
+        const interval = setInterval(checkCourseReminders, 3600000); 
+        checkCourseReminders();
+
+        return () => clearInterval(interval);
+    }, [user]);
+
     const [currentView, setCurrentView] = useState<View>('dashboard');
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

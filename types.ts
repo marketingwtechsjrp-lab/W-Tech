@@ -68,6 +68,12 @@ export interface Course {
   recyclingPrice?: number; // Mapped from recycling_price
   type?: 'Course' | 'Event'; // Mapped from type
   imageSourceType?: 'Url' | 'Upload';
+  // Reminder Settings
+  reminder5dEnabled?: boolean;
+  reminder1dEnabled?: boolean;
+  reminder5dDays?: number;
+  reminder1dDays?: number;
+  whatToBring?: string;
 }
 
 export interface Enrollment {
@@ -89,6 +95,8 @@ export interface Enrollment {
   zipCode?: string;
   isCredentialed?: boolean; // Mapped from is_credentialed
   totalAmount?: number; // Mapped from total_amount
+  reminder5dSent?: boolean;
+  reminder1dSent?: boolean;
 }
 
 export interface PostComment {
