@@ -25,6 +25,15 @@ import DashboardView from '../components/admin/Dashboard/DashboardView';
 import CRMView from '../components/admin/CRM/CRMView';
 import BlogManagerView from '../components/admin/Blog/BlogManagerView';
 import DevUserSwitcher from '../components/admin/DevUserSwitcher';
+import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
+import { SplashedPushNotifications, SplashedPushNotificationsHandle } from '@/components/ui/splashed-push-notifications';
+import AdminIntegrations from '../components/admin/AdminIntegrations';
+import { TaskCategoryList } from '../components/admin/TaskCategoryList';
+import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
+import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
+import UserProfileModal from '../components/admin/UserProfileModal';
+import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
+import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
 
 
 // --- Types for Local State ---
@@ -54,7 +63,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing';
+type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks';
 
 const SidebarItem = ({
     icon: Icon,
@@ -289,14 +298,18 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
 };
 
 
+
 // --- View: Courses Manager (List/Calendar) ---
+
 const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: { initialLead?: Lead | null, onConsumeInitialLead?: () => void, permissions?: any }) => {
     const [courses, setCourses] = useState<Course[]>([]);
+    const { user } = useAuth();
     const [leadsCount, setLeadsCount] = useState<Record<string, number>>({});
     const [isEditing, setIsEditing] = useState(false);
     const [editingLandingPage, setEditingLandingPage] = useState<Course | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [formData, setFormData] = useState<Partial<Course>>({});
+    const [generateLP, setGenerateLP] = useState(false);
 
     // Settle Modal State
     const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number }>({ isOpen: false, enrollment: null, amount: 0 });
@@ -332,6 +345,8 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
         }
     }, [initialLead, courses]); // Dependency to run when courses are loaded
 
+// Notification logic removed from here
+
     // --- Report State ---
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportCourse, setReportCourse] = useState<Course | null>(null);
@@ -348,7 +363,7 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
         leadsByOrigin: [] as any[]
     });
 
-    const { user } = useAuth();
+    // user const removed from here
 
     // Permission Check helper specifically for Level 10
     const isLevel10 = () => {
@@ -587,7 +602,8 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
             zipCode: c.zip_code,
             addressNumber: c.address_number,
             addressNeighborhood: c.address_neighborhood,
-            recyclingPrice: c.recycling_price
+            recyclingPrice: c.recycling_price,
+            type: c.type
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
@@ -607,12 +623,60 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
     const handleEdit = (course?: Course) => {
         if (course) {
             setFormData(course);
+            setGenerateLP(false);
         } else {
             setFormData({});
+            setGenerateLP(true); // Default check for new courses
         }
         setIsEditing(true);
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `courses/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('site-assets').upload(filePath, file);
+
+        if (uploadError) {
+             alert('Erro no upload: ' + uploadError.message);
+             return;
+        }
+
+        const { data } = supabase.storage.from('site-assets').getPublicUrl(filePath);
+        setFormData(prev => ({ ...prev, image: data.publicUrl }));
+    };
+
+    const handleAnnounceCourse = async (course: Course) => {
+        if (!confirm(`Deseja criar e enviar uma campanha de email para anunciar "${course.title}"?`)) return;
+        
+        const payload = {
+            name: `Anúncio: ${course.title}`,
+            subject: `Novidade: ${course.title} - Inscrições Abertas!`,
+            content: `
+                <div style="font-family: Arial, sans-serif; color: #333;">
+                    <h1 style="color: #D4AF37;">${course.title}</h1>
+                    <p style="font-size: 16px;">${course.description || 'Confira os detalhes deste novo evento.'}</p>
+                    <p><strong>Data:</strong> ${new Date(course.date).toLocaleDateString()} às ${course.startTime}</p>
+                    <p><strong>Local:</strong> ${course.location}</p>
+                    <div style="margin-top: 20px;">
+                        <a href="https://w-techbrasil.com.br/#/lp/${course.slug || course.id}" style="background-color: #000; color: #D4AF37; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">GARANTIR VAGA</a>
+                    </div>
+                </div>
+            `,
+            type: 'Course_Announcement',
+            target_audience: 'All', // Sends to all leads/students
+            status: 'Sending',
+            sent_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase.from('SITE_EmailCampaigns').insert([payload]);
+        if (error) alert('Erro ao criar campanha: ' + error.message);
+        else alert('Campanha de email criada e fila de envio iniciada!');
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -631,6 +695,7 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
             schedule: formData.schedule,
             price: formData.price,
             recycling_price: formData.recyclingPrice, // NEW FIELD
+            type: formData.type || 'Course',
             capacity: formData.capacity,
             image: formData.image,
             hotels_info: formData.hotelsInfo,
@@ -646,15 +711,61 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
             longitude: formData.longitude
         };
 
-        if (formData.id) {
-            await supabase.from('SITE_Courses').update(payload).eq('id', formData.id);
-        } else {
-            await supabase.from('SITE_Courses').insert([payload]);
-        }
-        setIsEditing(false);
-        fetchCourses();
-    };
+        let error;
+        let savedCourseId = formData.id;
 
+    if (formData.id) {
+        const { error: updateError } = await supabase.from('SITE_Courses').update(payload).eq('id', formData.id);
+        error = updateError;
+    } else {
+        const { data, error: insertError } = await supabase.from('SITE_Courses').insert([payload]).select();
+        error = insertError;
+        if (data && data[0]) savedCourseId = data[0].id;
+    }
+
+    if (error) {
+        console.error('Error saving course:', error);
+        alert('Erro ao salvar curso: ' + error.message);
+        return;
+    }
+
+    // Auto-Generate Landing Page Logic
+    if (generateLP && savedCourseId && payload.title && payload.date) {
+        try {
+            const dateStr = new Date(payload.date).toISOString().split('T')[0];
+            const normalizedTitle = payload.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const slug = `${normalizedTitle.replace(/[^a-z0-9]+/g, '-')}-${dateStr}`.replace(/^-+|-+$/g, '');
+            
+            const lpPayload = {
+                course_id: savedCourseId,
+                title: 'Info: ' + payload.title,
+                slug: slug,
+                hero_headline: payload.title,
+                hero_subheadline: payload.description ? payload.description.substring(0, 150) : 'Participe deste evento exclusivo!',
+                hero_image: payload.image,
+                status: 'Published'
+            };
+
+            const { error: lpError } = await supabase.from('SITE_LandingPages').insert([lpPayload]);
+            
+            // ALSO Update Course Slug to ensure links work correctly
+            await supabase.from('SITE_Courses').update({ slug: slug }).eq('id', savedCourseId);
+
+            if (lpError) {
+                console.error('Error creating Auto LP:', lpError);
+                alert('Curso salvo, mas erro ao criar LP: ' + lpError.message);
+            } else {
+                alert(`Curso salvo e LP criada com sucesso!\nURL: A URL será atualizada em breve.\nLink: w-tech.com/#/lp/${slug}`);
+            }
+        } catch (err) {
+            console.error('LP Gen Error:', err);
+        }
+    }
+
+    setIsEditing(false);
+    setGenerateLP(false); // Reset
+    fetchCourses();
+};
     const handleDuplicate = (course: Course) => {
         const { id, registeredCount, ...rest } = course;
         const newCourse = {
@@ -1612,9 +1723,24 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                         </button>
                                     </td>
                                     <td className="p-4 text-center">
-                                        <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded uppercase font-bold border border-gray-200">
-                                            {course.status}
-                                        </span>
+                                        <select
+                                            value={course.status || 'Draft'}
+                                            onChange={async (e) => {
+                                                const newStatus = e.target.value;
+                                                 await supabase.from('SITE_Courses').update({ status: newStatus }).eq('id', course.id);
+                                                 // Optimistic Update
+                                                 setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: newStatus as any } : c));
+                                            }}
+                                            className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${
+                                                course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' : 
+                                                course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                'bg-gray-100 text-gray-600 border-gray-200'
+                                            }`}
+                                        >
+                                            <option value="Draft">Rascunho</option>
+                                            <option value="Published">Publicado (Ativo)</option>
+                                            <option value="Archived">Desativado</option>
+                                        </select>
                                     </td>
                                     <td className="p-4 flex gap-2 justify-end">
                                         {isLevel10() && (
@@ -1970,8 +2096,36 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                         <GraduationCap className="text-wtech-gold" /> {formData.id ? 'Editar Curso' : 'Novo Curso'}
                     </h2>
                     <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-900">
+                        
+                        {/* Type Selector */}
+                        <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4 flex items-center gap-6">
+                            <label className="font-bold text-gray-700">O que você está cadastrando?</label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input 
+                                        type="radio" 
+                                        name="courseType" 
+                                        checked={!formData.type || formData.type === 'Course'} 
+                                        onChange={() => setFormData({ ...formData, type: 'Course' })} 
+                                        className="w-5 h-5 text-wtech-gold focus:ring-wtech-gold"
+                                    />
+                                    <span className="font-bold">Curso (Com Inscrição/Preço)</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input 
+                                        type="radio" 
+                                        name="courseType" 
+                                        checked={formData.type === 'Event'} 
+                                        onChange={() => setFormData({ ...formData, type: 'Event' })} 
+                                        className="w-5 h-5 text-wtech-gold focus:ring-wtech-gold"
+                                    />
+                                    <span className="font-bold">Evento / Palestra (Apenas Agenda)</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Título do Evento</label>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Título do {formData.type === 'Event' ? 'Evento' : 'Curso'}</label>
                             <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
                         </div>
 
@@ -2044,35 +2198,63 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Tipo</label>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Modalidade</label>
                             <select className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
                                 <option value="Presencial">Presencial</option>
                                 <option value="Online">Online</option>
                             </select>
                         </div>
 
+                        {/* Event Types DON'T have instructor usually? Or maybe they do. Keeping for now. */}
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Instrutor</label>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Resposável / Instrutor</label>
                             <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Valor (R$)</label>
-                                <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+
+                        {(!formData.type || formData.type === 'Course') && (
+                            <div className="grid grid-cols-3 gap-4 md:col-span-2 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-700">Valor (R$)</label>
+                                    <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-700">Reciclagem (R$)</label>
+                                    <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-700">Vagas / Cotas</label>
+                                    <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Valor Reciclagem (R$)</label>
-                                <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Vagas / Cotas</label>
-                                <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
-                            </div>
-                        </div>
+                        )}
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Imagem de Capa (URL)</label>
-                            <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
+                             <label className="block text-sm font-bold mb-1 text-gray-700">Imagem de Capa</label>
+                             <div className="flex flex-col gap-2">
+                                <div className="flex gap-4 mb-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="imgSource" checked={formData.imageSourceType !== 'Upload'} onChange={() => setFormData({...formData, imageSourceType: 'Url'})} />
+                                        <span className="text-sm">Link Externo (URL)</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="imgSource" checked={formData.imageSourceType === 'Upload'} onChange={() => setFormData({...formData, imageSourceType: 'Upload'})} />
+                                        <span className="text-sm">Upload de Arquivo</span>
+                                    </label>
+                                </div>
+
+                                {formData.imageSourceType === 'Upload' ? (
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 p-2 rounded text-gray-900 bg-white" />
+                                ) : (
+                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
+                                )}
+                                
+                                {formData.image && (
+                                    <div className="mt-2 text-xs text-gray-500">
+                                        Preview: <br/>
+                                        <img src={formData.image} alt="Capa" className="h-20 w-auto rounded border border-gray-200 mt-1 object-cover" />
+                                    </div>
+                                )}
+                             </div>
                         </div>
 
                         <div className="md:col-span-2">
@@ -2080,14 +2262,44 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                             <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
                         </div>
 
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Cronograma / Conteúdo</label>
-                            <textarea rows={5} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
-                        </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold mb-1 text-gray-700">Cronograma / Conteúdo</label>
+                                <div className="mb-2 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, schedule: DEFAULT_COURSE_SCHEDULE })}
+                                        className="text-xs bg-yellow-100 text-yellow-800 border border-yellow-200 px-2 py-1 rounded font-bold hover:bg-yellow-200"
+                                    >
+                                        📥 Carregar Modelo: Suspensão
+                                    </button>
+                                </div>
+                                <textarea rows={15} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                            </div>
 
-                        <div className="md:col-span-2 flex justify-end gap-2">
+                            <div className="md:col-span-2 bg-gray-50 p-4 rounded border border-gray-200">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        className="w-5 h-5"
+                                        checked={generateLP} 
+                                        onChange={e => setGenerateLP(e.target.checked)} 
+                                    />
+                                    <span className="font-bold text-gray-900">Gerar Landing Page Automática?</span>
+                                </label>
+                                <div className="text-xs text-gray-500 mt-1 ml-7">
+                                    Cria uma página em <code>/lp/titulo-data</code> vinculada a este curso.
+                                </div>
+                            </div>
+
+                        <div className="md:col-span-2 flex justify-end gap-2 border-t pt-6">
+                            {(formData.id && hasPermission('courses_edit')) && (
+                                <button type="button" onClick={() => handleAnnounceCourse(formData as Course)} className="px-4 py-2 bg-blue-100 text-blue-800 border border-blue-200 rounded hover:bg-blue-200 font-bold flex items-center gap-2 mr-auto">
+                                    <Send size={16} /> Anunciar p/ Base (Email)
+                                </button>
+                            )}
+                            
                             <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100">Cancelar</button>
-                            <button type="submit" className="px-6 py-2 bg-wtech-black text-white rounded hover:bg-black font-bold">Salvar Curso</button>
+                            <button type="submit" className="px-6 py-2 bg-wtech-black text-white rounded hover:bg-black font-bold">Salvar {formData.type === 'Event' ? 'Evento' : 'Curso'}</button>
                         </div>
                     </form>
                 </div>
@@ -3626,7 +3838,7 @@ const SettingsView = () => {
             {/* Header / Tabs */}
             <div className="border-b border-gray-200 bg-gray-50 flex items-center justify-between px-6 pt-4">
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                    {['Geral', 'E-mail', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
+                    {['Geral', 'E-mail', 'WhatsApp API', 'Modelos Msg', 'Categorias', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -4178,6 +4390,73 @@ const SettingsView = () => {
                     </div>
                 )}
 
+                {/* Tab: WhatsApp API (New) */}
+                {activeTab === 'WhatsApp API' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                        <AdminIntegrations />
+                    </div>
+                )}
+
+                {activeTab === 'Modelos Msg' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                        <MessageTemplateManager />
+                    </div>
+                )}
+
+                {/* Tab: Task Categories (NEW) */}
+                {activeTab === 'Categorias' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                         <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Categorias de Tarefas</h3>
+                                <p className="text-sm text-gray-500">Gerencie as categorias usadas para organizar tarefas.</p>
+                            </div>
+                           
+                            {/* Simple Inline Create */}
+                            <div className="flex gap-2">
+                                <input 
+                                    className="border border-gray-300 p-2 rounded-lg text-sm"
+                                    placeholder="Nova Categoria..."
+                                    id="new-cat-name"
+                                />
+                                <input 
+                                    type="color" 
+                                    className="w-10 h-10 border-0 p-1 rounded cursor-pointer"
+                                    defaultValue="#e0f2fe"
+                                    id="new-cat-color"
+                                />
+                                <button 
+                                    onClick={async () => {
+                                        const nameInput = document.getElementById('new-cat-name') as HTMLInputElement;
+                                        const colorInput = document.getElementById('new-cat-color') as HTMLInputElement;
+                                        if(!nameInput.value) return alert('Nome obrigatório');
+
+                                        const { error } = await supabase.from('SITE_TaskCategories').insert({
+                                            name: nameInput.value,
+                                            color: colorInput.value
+                                        });
+
+                                        if(error) alert('Erro: ' + error.message);
+                                        else {
+                                            alert('Categoria criada!');
+                                            nameInput.value = '';
+                                            // Force re-fetch logic would act here in a real separate component, 
+                                            // for now we rely on a manual reload or we can implement a fast local update if we move state up.
+                                            // Since this is inside Admin monolithic state, we might need a refresh trigger.
+                                            // Ideally, we move this to a separate component, but I'll implement a basic list fetch below.
+                                        }
+                                    }}
+                                    className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-800"
+                                >
+                                    <Plus size={14} /> Adicionar
+                                </button>
+                            </div>
+                        </div>
+
+                        <TaskCategoryList />
+                    </div>
+                )}
+
                 {/* Tab: Webhooks (New) */}
                 {activeTab === 'Webhooks & API' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
@@ -4352,14 +4631,13 @@ const SettingsView = () => {
 };
 
 // --- View: Team (Collaborators Only) ---
-const TeamView = ({ permissions }: { permissions?: any }) => {
+const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenProfile?: () => void }) => {
     const [users, setUsers] = useState<UserType[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // User Edit State
     const [editingUser, setEditingUser] = useState<Partial<UserType> & { password?: string, receives_leads?: boolean }>({});
-    const [showProfileModal, setShowProfileModal] = useState(false); // For "Meu Perfil"
 
     const { user } = useAuth();
 
@@ -4502,21 +4780,6 @@ const TeamView = ({ permissions }: { permissions?: any }) => {
         }
     };
 
-    const handleUpdateProfile = async (data: any) => {
-        // Logic to update own profile (password would require Auth API)
-        if (data.password) {
-            await supabase.auth.updateUser({ password: data.password });
-        }
-        await supabase.from('SITE_Users').update({
-            name: data.name,
-            email: data.email,
-            phone: data.phone
-        }).eq('id', user?.id);
-
-        setShowProfileModal(false);
-        alert('Perfil atualizado com sucesso!');
-        window.location.reload();
-    };
 
     const getRoleName = (roleId?: string) => {
         const role = roles.find(r => r.id === roleId);
@@ -4532,7 +4795,7 @@ const TeamView = ({ permissions }: { permissions?: any }) => {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={() => setShowProfileModal(true)}
+                        onClick={() => onOpenProfile?.()}
                         className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-50 flex items-center gap-2 shadow-sm"
                     >
                         <User size={16} /> Meu Perfil
@@ -4551,12 +4814,12 @@ const TeamView = ({ permissions }: { permissions?: any }) => {
                     <div key={u.id} onClick={() => { setEditingUser(u); setIsModalOpen(true); }} className="bg-white group hover:shadow-xl transition-all duration-300 rounded-2xl border border-gray-100 p-6 flex flex-col items-center text-center relative overflow-hidden cursor-pointer">
                         <div className={`absolute top-0 left-0 w-full h-1 ${u.status === 'Active' ? 'bg-green-500' : 'bg-gray-300'}`} />
 
-                        {/* Avatar */}
+                            {/* Avatar */}
                         <div className="w-20 h-20 rounded-full bg-gray-50 border-2 border-white shadow-lg flex items-center justify-center text-2xl font-bold text-gray-400 mb-4 group-hover:scale-110 transition-transform bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-wtech-gold/20 group-hover:to-yellow-50">
-                            {u.name.charAt(0)}
+                            {(u.name || '?').charAt(0)}
                         </div>
 
-                        <h3 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-wtech-gold transition-colors">{u.name}</h3>
+                        <h3 className="font-bold text-lg text-gray-900 mb-1 group-hover:text-wtech-gold transition-colors">{u.name || 'Sem Nome'}</h3>
                         <p className="text-xs text-wtech-gold font-bold uppercase tracking-wider mb-4">{getRoleName(u.role_id)}</p>
 
                         <div className="w-full border-t border-gray-50 my-4"></div>
@@ -4684,66 +4947,6 @@ const TeamView = ({ permissions }: { permissions?: any }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            {/* Modal for "Meu Perfil" (Self Edit) */}
-            <AnimatePresence>
-                {showProfileModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-                        onClick={() => setShowProfileModal(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-                            onClick={e => e.stopPropagation()}
-                            className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
-                        >
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold">Meu Perfil</h3>
-                                <button onClick={() => setShowProfileModal(false)}><X size={20} className="text-gray-400 hover:text-black" /></button>
-                            </div>
-
-                            <form onSubmit={(e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                handleUpdateProfile(Object.fromEntries(formData));
-                            }} className="space-y-4">
-
-                                <div className="flex justify-center mb-6">
-                                    <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-4xl font-bold text-gray-400 border-4 border-white shadow-lg">
-                                        {user?.name?.charAt(0)}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
-                                    <input name="name" defaultValue={user?.name} className="w-full border border-gray-300 p-3 rounded-lg" required />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">E-mail</label>
-                                    <input name="email" defaultValue={user?.email} className="w-full border border-gray-300 p-3 rounded-lg text-gray-500 bg-gray-100 cursor-not-allowed" readOnly />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefone</label>
-                                    <input name="phone" defaultValue={user?.phone} className="w-full border border-gray-300 p-3 rounded-lg" placeholder="(00) 00000-0000" />
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-100 mt-4">
-                                    <h4 className="text-xs font-bold text-gray-900 uppercase mb-3">Segurança</h4>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Alterar Senha</label>
-                                        <input name="password" type="password" className="w-full border border-gray-300 p-3 rounded-lg" placeholder="Nova senha (deixe em branco para manter)" />
-                                    </div>
-                                </div>
-
-                                <button type="submit" className="w-full py-4 bg-wtech-gold text-black font-bold rounded-lg shadow-lg hover:brightness-110 mt-6 uppercase tracking-wide">
-                                    Atualizar Meu Perfil
-                                </button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
@@ -4751,13 +4954,243 @@ const TeamView = ({ permissions }: { permissions?: any }) => {
 // --- Main Admin Layout ---
 
 const Admin: React.FC = () => {
+    const { user, loading, logout } = useAuth();
+    const navigate = useNavigate();
     const { settings: config } = useSettings();
+    
+    // --- WhatsApp Scheduler Polling ---
+    useEffect(() => {
+        const checkScheduledMessages = async () => {
+            const now = new Date().toISOString();
+            
+            // 1. Find pending tasks due for WhatsApp sending
+            const { data: dueTasks } = await supabase
+                .from('SITE_Tasks')
+                .select('*, SITE_Leads(phone)')
+                .eq('is_whatsapp_schedule', true)
+                .eq('whatsapp_status', 'PENDING')
+                .lte('due_date', now);
+
+            if (dueTasks && dueTasks.length > 0) {
+                console.log(`Found ${dueTasks.length} WhatsApp messages to send.`);
+                
+                for (const task of dueTasks) {
+                    const senderUserId = task.created_by; 
+                    const targetPhone = task.SITE_Leads?.phone;
+                    const messageBody = task.whatsapp_message_body;
+
+                    if (senderUserId && targetPhone && messageBody) {
+                        try {
+                            const result = await sendWhatsAppMessage(targetPhone, messageBody, senderUserId);
+                            
+                            await supabase.from('SITE_Tasks').update({
+                                whatsapp_status: result.success ? 'SENT' : 'FAILED',
+                                status: result.success ? 'DONE' : task.status 
+                            }).eq('id', task.id);
+
+                            console.log(`Msg Task ${task.id}: ${result.success ? 'Sent' : 'Failed'}`);
+
+                        } catch (e) {
+                            console.error(`Error processing task ${task.id}`, e);
+                            await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
+                        }
+                    } else {
+                         await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
+                    }
+                }
+            }
+        };
+
+        const interval = setInterval(checkScheduledMessages, 60000); // 60s
+        checkScheduledMessages(); 
+
+        return () => clearInterval(interval);
+    }, []);
+    
+    // Alert Dismissal State
+    const [alertDismissedAt, setAlertDismissedAt] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (alertDismissedAt) {
+            const interval = setInterval(() => {
+                if (Date.now() - alertDismissedAt > 5 * 60 * 1000) { // 5 minutes
+                     setAlertDismissedAt(null); 
+                }
+            }, 5000); 
+            return () => clearInterval(interval);
+        }
+    }, [alertDismissedAt]);
+    
+    // --- Global Task Notifications ---
+    const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
+    const notifiedTaskIds = useRef<Set<string>>(new Set());
+
+    const handleCompleteTask = async (taskId: string) => {
+        const { error } = await supabase.from('SITE_Tasks').update({ status: 'DONE' }).eq('id', taskId);
+        if (!error) {
+            notificationRef.current?.createNotification('success', 'Concluído!', 'Tarefa marcada como feita.');
+        } else {
+            console.error('Falha ao concluir tarefa via notificação', error);
+        }
+    };
+
+    useEffect(() => {
+        if (!user) return;
+
+        const checkDueTasks = async () => {
+            const now = new Date();
+            // Tolerance: Notify if due in next 5 mins OR was due less than 1 hour ago (and not done)
+            const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60000); 
+            const oneHourAgo = new Date(now.getTime() - 60 * 60000); 
+
+            const { data: dueTasks } = await supabase
+                .from('SITE_Tasks')
+                .select('*, SITE_Leads(name, phone)')
+                .eq('assigned_to', user.id)
+                .neq('status', 'DONE')
+                .lte('due_date', fiveMinutesFromNow.toISOString())
+                .gte('due_date', oneHourAgo.toISOString());
+
+            if (dueTasks) {
+                dueTasks.forEach((task: any) => {
+                    // Check if we already notified this specific task ID in this session
+                    if (!notifiedTaskIds.current.has(task.id)) {
+                        
+                        // Prepare Actions
+                        const actions: { label: string; onClick: () => void; variant?: 'default' | 'outline' | 'whatsapp' }[] = [
+                            { 
+                                label: 'Concluir', 
+                                onClick: () => { void handleCompleteTask(task.id); },
+                                variant: 'default'
+                            }
+                        ];
+
+                        if (task.SITE_Leads?.phone) {
+                            actions.push({
+                                label: 'WhatsApp',
+                                onClick: () => {
+                                    const phone = task.SITE_Leads.phone.replace(/\D/g, '');
+                                    window.open(`https://wa.me/55${phone}`, '_blank');
+                                },
+                                variant: 'whatsapp'
+                            });
+                        }
+
+                        // Trigger Notification
+                        notificationRef.current?.createNotification(
+                            'warning', 
+                            'Lembrete de Tarefa', 
+                            `"${task.title}" vence ${new Date(task.due_date) < now ? 'há pouco' : 'em breve'}!`,
+                            actions
+                        );
+                        // Mark as notified
+                        notifiedTaskIds.current.add(task.id);
+                    }
+                });
+            }
+        };
+
+        const interval = setInterval(checkDueTasks, 60000); // Check every minute
+        checkDueTasks(); // Run immediately on mount
+
+        return () => clearInterval(interval);
+    }, [user]);
+
+    // BACKGROUND WORKER: Scheduled WhatsApp Messages
+    useEffect(() => {
+        if (!user) return;
+
+        const checkScheduledMessages = async () => {
+            const now = new Date().toISOString();
+            
+            // Fetch pending WhatsApp tasks that are due
+            const { data: tasksToSend, error } = await supabase
+                .from('SITE_Tasks')
+                .select('*, SITE_Leads(phone)')
+                .eq('is_whatsapp_schedule', true)
+                .eq('whatsapp_status', 'PENDING')
+                .lte('due_date', now)
+                .limit(5); // Process in small batches
+
+            if (error) {
+                console.error("Error fetching scheduled messages:", error);
+                return;
+            }
+
+            if (!tasksToSend || tasksToSend.length === 0) return;
+
+            for (const task of tasksToSend) {
+                if (!task.SITE_Leads?.phone || !task.whatsapp_message_body) {
+                    await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
+                    continue;
+                }
+
+                // Use the assigned user's ID to send the message (or the current user if not assigned)
+                const senderId = task.assigned_to || task.created_by || user.id;
+                
+                let result;
+                if (task.whatsapp_media_url) {
+                    result = await sendWhatsAppMedia(
+                        task.SITE_Leads.phone,
+                        task.whatsapp_media_url,
+                        task.whatsapp_message_body,
+                        senderId
+                    );
+                } else {
+                    result = await sendWhatsAppMessage(
+                        task.SITE_Leads.phone,
+                        task.whatsapp_message_body,
+                        senderId
+                    );
+                }
+
+                if (result.success) {
+                    await supabase.from('SITE_Tasks').update({ 
+                        whatsapp_status: 'SENT',
+                        status: 'DONE' 
+                    }).eq('id', task.id);
+                } else {
+                    console.error(`Failed to send scheduled message for task ${task.id}:`, result.error);
+                    await supabase.from('SITE_Tasks').update({ 
+                        whatsapp_status: 'FAILED' 
+                    }).eq('id', task.id);
+                }
+            }
+        };
+
+        const interval = setInterval(checkScheduledMessages, 60000); // Every minute
+        checkScheduledMessages();
+
+        return () => clearInterval(interval);
+    }, [user]);
     const [currentView, setCurrentView] = useState<View>('dashboard');
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const { user, loading, logout } = useAuth();
-    const navigate = useNavigate();
+    // useAuth and useNavigate moved to top
+
+    // Urgent Tasks State
+    const [urgentTasksCount, setUrgentTasksCount] = useState(0);
+
+    useEffect(() => {
+        if (!user) return;
+        const fetchUrgentTasks = async () => {
+             const { count, error } = await supabase
+                .from('SITE_Tasks')
+                .select('*', { count: 'exact', head: true })
+                .eq('assigned_to', user.id)
+                .neq('status', 'DONE')
+                .or(`priority.eq.URGENT,priority.eq.HIGH,due_date.lt.${new Date().toISOString()}`); // Include Overdue
+             
+             if (!error && count !== null) setUrgentTasksCount(count);
+        };
+        
+        fetchUrgentTasks();
+        const interval = setInterval(fetchUrgentTasks, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, [user]);
+
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // LIVE PERMISSIONS STATE
     const [livePermissions, setLivePermissions] = useState<any>(null);
@@ -4876,7 +5309,7 @@ const Admin: React.FC = () => {
                     </div>
 
                     {/* Sidebar User Profile */}
-                    <div onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} className={`mb-6 p-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors group ${isSidebarCollapsed ? 'justify-center' : ''}`}>
+                    <div onClick={() => { setIsProfileModalOpen(true); setIsMobileMenuOpen(false); }} className={`mb-6 p-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors group ${isSidebarCollapsed ? 'justify-center' : ''}`}>
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-wtech-gold to-yellow-700 flex items-center justify-center text-black font-bold text-sm shadow-lg shrink-0">
                             {user?.name?.charAt(0)}
                         </div>
@@ -4899,6 +5332,8 @@ const Admin: React.FC = () => {
                         {hasPermission('crm_view') && (
                             <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                         )}
+
+                        <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                         
                         {hasPermission('manage_users') && (
                             <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
@@ -4995,6 +5430,7 @@ const Admin: React.FC = () => {
                                 {hasPermission('accredited_view') && <MobileMenuItem icon={Wrench} label="Oficinas" onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('financial_view') && <MobileMenuItem icon={DollarSign} label="Financeiro" onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} />}
                                 {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />}
+                                <MobileMenuItem icon={CheckCircle} label="Tarefas" onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} />
                                 {hasPermission('blog_view') && <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_marketing') && <MobileMenuItem icon={Mail} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
@@ -5034,7 +5470,7 @@ const Admin: React.FC = () => {
                             setPendingEnrollmentLead(lead);
                             setCurrentView('courses_manager');
                         }} permissions={livePermissions} />}
-                        {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} />}
+                        {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} onOpenProfile={() => setIsProfileModalOpen(true)} />}
                         {currentView === 'orders' && hasPermission('manage_orders') && <OrdersView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
@@ -5042,10 +5478,51 @@ const Admin: React.FC = () => {
                         {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && hasPermission('manage_marketing') && <EmailMarketingView />}
+                        {currentView === 'tasks' && <TaskManagerView />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
                     </motion.div>
                 </AnimatePresence>
             </div>
+            {/* Urgent Tasks Notification Widget (Floating) */}
+            <AnimatePresence>
+                {urgentTasksCount > 0 && currentView !== 'tasks' && !alertDismissedAt && (
+                    <motion.div
+                        initial={{ y: -50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -50, opacity: 0 }}
+                        className="fixed top-6 right-6 z-50 group"
+                    >
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); setAlertDismissedAt(Date.now()); }}
+                            className="absolute -top-2 -left-2 bg-white text-gray-400 hover:text-red-500 rounded-full p-1.5 shadow-lg border border-gray-100 opacity-0 group-hover:opacity-100 transition-all z-50 hover:rotate-90"
+                            title="Ocultar por 5 min"
+                        >
+                            <X size={14} />
+                        </button>
+
+                        <div 
+                            onClick={() => setCurrentView('tasks')}
+                            className="bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 hover:scale-105 transition-transform border border-red-500 animate-pulse cursor-pointer"
+                        >
+                            <div className="relative">
+                                <AlertCircle size={32} />
+                                <span className="absolute -top-2 -right-2 bg-white text-red-600 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs border-2 border-red-600 shadow-sm">
+                                    {urgentTasksCount}
+                                </span>
+                            </div>
+                            <div className="text-left">
+                                <p className="font-black text-sm uppercase tracking-wide">Atenção Necessária</p>
+                                <p className="text-xs text-red-100 font-medium">Você tem tarefas urgentes pendentes.</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <SplashedPushNotifications ref={notificationRef} />
+
+            <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+
             {config?.enable_dev_panel === 'true' && <DevUserSwitcher />}
         </div>
     );

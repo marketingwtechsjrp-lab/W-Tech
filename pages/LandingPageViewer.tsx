@@ -52,7 +52,7 @@ const LandingPageViewer: React.FC = () => {
                       course_id: courseData.id,
                       slug: courseData.id,
                       title: courseData.title,
-                      subtitle: courseData.description?.substring(0, 150) + "...",
+                      subtitle: courseData.description ? courseData.description.substring(0, 150) + "..." : "Prepare-se para transformar sua carreira com a metodologia W-Tech.",
                       hero_image: courseData.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4",
                       hero_secondary_image: null,
                       video_url: null,

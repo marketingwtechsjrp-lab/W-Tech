@@ -29,7 +29,10 @@ const Courses: React.FC = () => {
                 setCourses(data.map((c: any) => ({
                     ...c,
                     locationType: c.location_type,
-                    registeredCount: c.registered_count
+                    registeredCount: c.registered_count,
+                    type: c.type,
+                    tags: c.tags || [],
+                    features: c.features || []
                 })));
             }
             setLoading(false);

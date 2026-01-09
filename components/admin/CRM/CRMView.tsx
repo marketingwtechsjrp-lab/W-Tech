@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import type { Lead } from '../../../types';
+import { SplashedPushNotifications, SplashedPushNotificationsHandle } from '@/components/ui/splashed-push-notifications';
+import LeadTaskSidebar from './LeadTaskSidebar';
+import { useRef } from 'react'; // Ensure useRef is imported
 
 // Helper for Drag & Drop
 const DragContext = React.createContext<{
@@ -314,16 +317,49 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     // New Advanced Filters
     const [searchQuery, setSearchQuery] = useState('');
     const [contextFilter, setContextFilter] = useState('All');
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [selectedLeadForTasks, setSelectedLeadForTasks] = useState<Lead | null>(null);
+    const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
+    const { user } = useAuth();
     
     // View Mode: Kanban or List
     const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
     const [distMode, setDistMode] = useState<'Manual' | 'Random'>('Manual');
     const [showSettings, setShowSettings] = useState(false);
+    
+    // Create Lead State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [newLeadForm, setNewLeadForm] = useState({ name: '', email: '', phone: '' });
+
     const [editingLead, setEditingLead] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({ assignedTo: '', internalNotes: '', tags: [] as string[] });
     const [tagInput, setTagInput] = useState('');
-    const { user } = useAuth();
+
+    const handleCreateLead = async () => {
+        if (!newLeadForm.name || !newLeadForm.phone) return alert("Nome e Telefone são obrigatórios.");
+        
+        const payload = {
+            name: newLeadForm.name,
+            email: newLeadForm.email,
+            phone: newLeadForm.phone,
+            status: 'New',
+            context_id: 'Manual',
+            assigned_to: user?.id, // Auto-assign to creator
+            created_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase.from('SITE_Leads').insert([payload]).select().single();
+        
+        if (error) {
+            alert("Erro ao criar lead: " + error.message);
+        } else if (data) {
+             setLeads(prev => [data, ...prev]);
+             setIsCreateModalOpen(false);
+             setNewLeadForm({ name: '', email: '', phone: '' });
+             notificationRef.current?.createNotification('success', 'Lead Criado!', `${data.name} foi adicionado com sucesso.`);
+        }
+    };
     
     // Permission Check Helper
     const hasPermission = (key: string) => {
@@ -469,10 +505,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         const now = new Date().toISOString();
         
         // Optimistic Update: Also update the 'updated_at' to reset component timer logic
-        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus as any } : l));
+        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus as any, updated_at: now } : l));
 
         // DB Update
-        const { error } = await supabase.from('SITE_Leads').update({ status: newStatus }).eq('id', leadId);
+        const { error } = await supabase.from('SITE_Leads').update({ status: newStatus, updated_at: now }).eq('id', leadId);
         if (error) {
             console.error("Move Lead Error:", error);
             alert(`Falha ao mover lead: ${error.message || JSON.stringify(error)}`);
@@ -651,7 +687,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             </button>
                         </div>
 
-                        <button className="bg-wtech-black text-white p-2.5 rounded-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        <button 
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="bg-wtech-black text-white p-2.5 rounded-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl active:scale-95"
+                        >
                             <Plus size={18} />
                         </button>
                     </div>
@@ -822,11 +861,37 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
                         >
                             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                                <div>
+                                <div className="flex-1">
                                     <h3 className="text-xl font-bold text-gray-900">{editingLead.name}</h3>
                                     <p className="text-sm text-gray-500">{editingLead.email}</p>
                                 </div>
-                                <button onClick={() => setEditingLead(null)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+                                <div className="flex gap-2 items-center">
+                                    <button
+                                        onClick={() => setSelectedLeadForTasks(editingLead)}
+                                        className="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors flex items-center gap-2 text-xs font-bold uppercase"
+                                        title="Tarefas e Lembretes"
+                                    >
+                                       <Clock size={16} /> Tarefas
+                                    </button>
+                                    <button 
+                                        onClick={() => setEditingLead(null)} 
+                                        className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contato</span>
+                                <div className="flex items-center gap-2">
+                                     <Phone size={16} className="text-wtech-gold" />
+                                     <span className="font-bold text-lg text-gray-900 selection:bg-wtech-gold selection:text-black">
+                                        {editingLead.phone || 'Sem Telefone'}
+                                     </span>
+                                </div>
+                                <div className="text-xs text-blue-600 font-medium hover:underline cursor-pointer flex items-center gap-1" onClick={() => window.open(`https://wa.me/55${editingLead.phone?.replace(/\D/g, '')}`, '_blank')}>
+                                    <MessageCircle size={12} /> Abrir no WhatsApp
+                                </div>
                             </div>
 
                             <div className="space-y-4">
@@ -935,6 +1000,94 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     <p>Is Admin: {hasPermission('admin_access') ? 'YES' : 'NO'}</p>
                  </div>
             )}
+            {/* Lead Task Sidebar */}
+            {selectedLeadForTasks && (
+                <LeadTaskSidebar
+                    lead={selectedLeadForTasks}
+                    isOpen={!!selectedLeadForTasks}
+                    onClose={() => setSelectedLeadForTasks(null)}
+                    onTaskCreated={(task) => {
+                         notificationRef.current?.createNotification('success', 'Agendado!', `Tarefa "${task.title}" criada.`);
+                    }}
+                />
+            )}
+            {/* NEW LEAD MODAL */}
+            <AnimatePresence>
+                {/* Reusing similar modal style */}
+                {showSettings /* reusing showSettings as createModal trigger for now or creating new state? lets create new state below */ }
+            </AnimatePresence>
+            
+             <AnimatePresence>
+                {isCreateModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
+                        >
+                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                                <h3 className="text-xl font-bold text-gray-900">Novo Lead</h3>
+                                <button 
+                                    onClick={() => setIsCreateModalOpen(false)} 
+                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo *</label>
+                                    <input
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
+                                        placeholder="Ex: João Silva"
+                                        value={newLeadForm.name}
+                                        onChange={e => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
+                                        autoFocus
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                                    <input
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
+                                        placeholder="email@exemplo.com"
+                                        value={newLeadForm.email}
+                                        onChange={e => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefone / WhatsApp *</label>
+                                    <input
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
+                                        placeholder="11999999999"
+                                        value={newLeadForm.phone}
+                                        onChange={e => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
+                                    />
+                                </div>
+                                
+                                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-2 text-xs text-gray-600">
+                                    <Users size={14} className="text-wtech-gold" />
+                                    <span>Cadastrado por: <strong>{user?.name || 'Você'}</strong> (Auto-atribuído)</span>
+                                </div>
+
+                                <button
+                                    onClick={handleCreateLead}
+                                    disabled={!newLeadForm.name || !newLeadForm.phone}
+                                    className="w-full bg-wtech-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Plus size={16} /> Cadastrar Lead
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <SplashedPushNotifications ref={notificationRef} />
+
         </DragContext.Provider >
     );
 };

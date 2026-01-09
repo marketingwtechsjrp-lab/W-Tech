@@ -45,10 +45,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
         </p>
         
         <div className="mt-auto space-y-3">
-            <div className="flex items-center text-gray-500 text-sm">
-                <Users size={16} className="mr-2 text-wtech-gold" />
-                <span>{course.capacity - course.registeredCount} vagas restantes</span>
-            </div>
+            {course.type !== 'Event' && (
+                <div className="flex items-center text-gray-500 text-sm">
+                    <Users size={16} className="mr-2 text-wtech-gold" />
+                    <span>{course.capacity - course.registeredCount} vagas restantes</span>
+                </div>
+            )}
             <div className="flex items-center text-gray-500 text-sm">
                 <MapPin size={16} className="mr-2 text-wtech-gold" />
                 <span className="truncate">{course.location}</span>
@@ -59,7 +61,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                     to={`/lp/${course.slug || course.id}`}
                     className="w-full bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95"
                 >
-                    CONHECER CURSO <ArrowRight size={16} className="ml-2 animate-pulse" />
+                    {course.type === 'Event' ? 'MAIS DETALHES' : 'CONHECER CURSO'} <ArrowRight size={16} className="ml-2 animate-pulse" />
                 </Link>
             </div>
         </div>

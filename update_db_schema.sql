@@ -1,23 +1,31 @@
--- COMBINED MIGRATION SCRIPT FOR W-TECH
--- Run this in your Supabase SQL Editor to fix the "missing column" errors.
 
--- 1. Enable Quiz on Landing Pages
-ALTER TABLE "public"."SITE_LandingPages" ADD COLUMN IF NOT EXISTS "quiz_enabled" boolean DEFAULT false;
+-- ATUALIZAÇÃO TABELA DE CURSOS (SITE_Courses)
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "hotels_info" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "type" TEXT DEFAULT 'Course';
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "recycling_price" NUMERIC;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "start_time" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "end_time" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "date_end" DATE;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "map_url" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "schedule" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "location_type" TEXT;
 
--- 2. Store Quiz Results in Leads
-ALTER TABLE "public"."SITE_Leads" ADD COLUMN IF NOT EXISTS "quiz_data" jsonb;
+-- Campos de Endereço no Curso
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "zip_code" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "address" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "address_number" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "address_neighborhood" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "city" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "state" TEXT;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "latitude" NUMERIC;
+ALTER TABLE "SITE_Courses" ADD COLUMN IF NOT EXISTS "longitude" NUMERIC;
 
--- 3. Ensure other Lead Allocation fields exist (Required for CRM & Tracking)
-ALTER TABLE "public"."SITE_Leads" ADD COLUMN IF NOT EXISTS "origin" text;
-ALTER TABLE "public"."SITE_Leads" ADD COLUMN IF NOT EXISTS "assigned_to" uuid REFERENCES auth.users(id);
-ALTER TABLE "public"."SITE_Leads" ADD COLUMN IF NOT EXISTS "tags" text[] DEFAULT '{}';
-ALTER TABLE "public"."SITE_Leads" ADD COLUMN IF NOT EXISTS "internal_notes" text;
-ALTER TABLE "public"."SITE_Leads" ADD COLUMN IF NOT EXISTS "context_id" text;
-
--- 4. Grant Permissions (Just in case RLS is blocking)
-GRANT INSERT, SELECT, UPDATE ON TABLE "public"."SITE_LandingPages" TO authenticated;
-GRANT INSERT, SELECT, UPDATE ON TABLE "public"."SITE_LandingPages" TO anon;
-GRANT ALL ON TABLE "public"."SITE_Leads" TO authenticated;
-GRANT INSERT ON TABLE "public"."SITE_Leads" TO anon;
-
--- End of Script
+-- ATUALIZAÇÃO TABELA DE INSCRIÇÕES (SITE_Enrollments)
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "is_credentialed" BOOLEAN DEFAULT FALSE;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "total_amount" NUMERIC;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "zip_code" TEXT;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "address" TEXT;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "address_number" TEXT;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "address_neighborhood" TEXT;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "city" TEXT;
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "state" TEXT;

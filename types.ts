@@ -66,6 +66,8 @@ export interface Course {
   mapUrl?: string; // Mapped from map_url
   schedule?: string; // Mapped from schedule
   recyclingPrice?: number; // Mapped from recycling_price
+  type?: 'Course' | 'Event'; // Mapped from type
+  imageSourceType?: 'Url' | 'Upload';
 }
 
 export interface Enrollment {
@@ -283,4 +285,50 @@ export interface SequenceEnrollment {
   currentStepOrder: number;
   nextExecutionAt?: string;
   status: 'Active' | 'Completed' | 'Cancelled';
+}
+
+export interface Task {
+    id: string;
+    title: string;
+    description: string;
+    assignedTo?: string; // Mapped from assigned_to
+    createdBy: string; // Mapped from created_by
+    dueDate?: string; // Mapped from due_date
+    status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    created_at: string; // Mapped from created_at
+    leadId?: string; // Link to a Lead
+    leadName?: string; // Mapped Lead Name
+    tags?: string[]; // Array of tags
+    categoryId?: string; // Mapped from category_id
+    category?: { name: string; color: string; }; // Joined category data
+    // WhatsApp Automation
+    isWhatsappSchedule?: boolean; // Mapped from is_whatsapp_schedule
+    whatsappMessageBody?: string; // Mapped from whatsapp_message_body
+    whatsappTemplateId?: string; // Mapped from whatsapp_template_id
+    whatsappStatus?: 'PENDING' | 'SENT' | 'FAILED'; // Mapped from whatsapp_status
+    whatsappMediaUrl?: string; // Mapped from whatsapp_media_url
+}
+
+export interface TaskCategory {
+    id: string;
+    name: string;
+    color: string;
+    createdAt?: string;
+}
+
+export interface UserIntegration {
+    id: string;
+    userId: string; // Mapped from user_id
+    instanceName: string; // Mapped from instance_name
+    instanceStatus: string; // Mapped from instance_status
+    updatedAt: string; // Mapped from updated_at
+}
+
+export interface MessageTemplate {
+    id: string;
+    title: string;
+    content: string;
+    createdBy?: string;
+    createdAt: string;
 }
