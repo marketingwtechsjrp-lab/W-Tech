@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { generateBlogPost } from '../lib/gemini';
 import { LandingPageEditor } from './LandingPageEditor';
 import { useSettings } from '../context/SettingsContext';
-import EmailMarketingView from '../components/EmailMarketingView';
+import MarketingView from '../components/admin/Marketing/MarketingView';
 import DashboardView from '../components/admin/Dashboard/DashboardView';
 import CRMView from '../components/admin/CRM/CRMView';
 import BlogManagerView from '../components/admin/Blog/BlogManagerView';
@@ -305,7 +305,7 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
 
 // --- View: Courses Manager (List/Calendar) ---
 
-const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: { initialLead?: Lead | null, onConsumeInitialLead?: () => void, permissions?: any }) => {
+const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead, permissions }: { initialLead?: Lead | null, initialCourseId?: string | null, onConsumeInitialLead?: () => void, permissions?: any }) => {
     const [courses, setCourses] = useState<Course[]>([]);
     const { user } = useAuth();
     const [leadsCount, setLeadsCount] = useState<Record<string, number>>({});
@@ -321,11 +321,17 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
 
     // Auto-Enrollment Effect
     useEffect(() => {
-        if (initialLead && courses.length > 0) {
-            // Fuzzy match course by context_id
-            const match = courses.find(c => 
-                (c.title && initialLead.contextId?.toLowerCase().includes(c.title.toLowerCase()))
-            ) || courses[0]; // Fallback to first course if no specific match found
+        if ((initialLead || initialCourseId) && courses.length > 0) {
+            let match;
+            if (initialCourseId) {
+                match = courses.find(c => c.id === initialCourseId);
+            }
+            if (!match && initialLead) {
+                // Fuzzy match course by context_id
+                match = courses.find(c => 
+                    (c.title && initialLead.contextId?.toLowerCase().includes(c.title.toLowerCase()))
+                ) || courses[0]; // Fallback to first course if no specific match found
+            }
 
             if (match) {
                 // Open Enrollment View & Modal
@@ -1822,6 +1828,9 @@ const CoursesManagerView = ({ initialLead, onConsumeInitialLead, permissions }: 
                                         )}
                                         {hasPermission('courses_edit') && (
                                             <button onClick={() => handleEdit(course)} title="Editar Curso" className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Edit size={16} /></button>
+                                        )}
+                                        {hasPermission('courses_edit') && (
+                                            <button onClick={() => handleDuplicate(course)} title="Duplicar Curso" className="p-2 text-gray-400 hover:text-wtech-gold transition-colors"><Copy size={16} /></button>
                                         )}
                                         {hasPermission('courses_delete') && (
                                             <button onClick={() => handleDelete(course.id)} title="Excluir Curso" className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
@@ -5609,6 +5618,7 @@ const Admin: React.FC = () => {
 
     const [currentView, setCurrentView] = useState<View>('dashboard');
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
+    const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     // useAuth and useNavigate moved to top
@@ -5703,6 +5713,16 @@ const Admin: React.FC = () => {
         // Handle specific "manage_orders" legacy case if necessary, or just use key
         return !!effectivePermissions[key];
     };
+
+    // REDIRECT RULE: If User cannot see Dashboard, send to CRM (Leads)
+    useEffect(() => {
+        if (!loading && user) {
+             const canViewDashboard = hasPermission('dashboard_view');
+             if (currentView === 'dashboard' && !canViewDashboard) {
+                 setCurrentView('crm');
+             }
+        }
+    }, [user, loading, livePermissions, currentView]);
 
     const handleLogout = () => {
         logout();
@@ -5823,7 +5843,7 @@ const Admin: React.FC = () => {
                             )}
                             
                             {(hasPermission('manage_marketing')) && (
-                                <SidebarItem icon={Mail} label="Email Marketing" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                                <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                             )}
                         </div>
 
@@ -5889,7 +5909,7 @@ const Admin: React.FC = () => {
                                 {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />}
                                 <MobileMenuItem icon={CheckCircle} label="Tarefas" onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} />
                                 {hasPermission('blog_view') && <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('manage_marketing') && <MobileMenuItem icon={Mail} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manage_marketing') && <MobileMenuItem icon={Megaphone} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
                                 
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
@@ -5923,19 +5943,22 @@ const Admin: React.FC = () => {
                         className="p-4 md:p-6 w-full min-h-full"
                     >
                         {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView />}
-                        {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead) => {
-                            setPendingEnrollmentLead(lead);
-                            setCurrentView('courses_manager');
+                        {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
+                            if (conversionData?.type === 'course') {
+                                setPendingEnrollmentLead(lead);
+                                setPendingCourseId(conversionData.courseId);
+                                setCurrentView('courses_manager');
+                            }
                         }} permissions={livePermissions} />}
                         {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} onOpenProfile={() => setIsProfileModalOpen(true)} />}
                         {currentView === 'orders' && hasPermission('manage_orders') && <SalesManagerView />}
                         {currentView === 'catalog_manager' && hasPermission('manage_orders') && <CatalogManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
-                        {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} onConsumeInitialLead={() => setPendingEnrollmentLead(null)} permissions={livePermissions} />}
+                        {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} initialCourseId={pendingCourseId} onConsumeInitialLead={() => { setPendingEnrollmentLead(null); setPendingCourseId(null); }} permissions={livePermissions} />}
                         {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
-                        {currentView === 'email_marketing' && hasPermission('manage_marketing') && <EmailMarketingView />}
+                        {currentView === 'email_marketing' && hasPermission('manage_marketing') && <MarketingView />}
                         {currentView === 'tasks' && <TaskManagerView />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
                         {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView />}

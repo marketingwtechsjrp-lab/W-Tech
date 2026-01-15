@@ -96,7 +96,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm"
                 onClick={onClose}
             >
                 <motion.div
@@ -104,24 +104,24 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.95, y: 20 }}
                     onClick={e => e.stopPropagation()}
-                    className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                    className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
                 >
                     {/* Header */}
-                    <div className="bg-wtech-black p-8 text-white relative overflow-hidden">
+                    <div className="bg-wtech-black p-4 sm:p-8 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-wtech-gold/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                         <div className="relative z-10 flex justify-between items-start">
-                            <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-black text-3xl shadow-xl shadow-wtech-gold/20">
+                            <div className="flex items-center gap-3 sm:gap-6">
+                                <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-black text-lg sm:text-3xl shadow-xl shadow-wtech-gold/20 shrink-0">
                                     {formData.name.charAt(0) || user?.email?.charAt(0)}
                                 </div>
-                                <div>
-                                    <h3 className="text-2xl font-black tracking-tight">{formData.name || 'Meu Perfil'}</h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="bg-wtech-gold text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-lg sm:text-2xl font-black tracking-tight truncate">{formData.name || 'Meu Perfil'}</h3>
+                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                        <span className="bg-wtech-gold text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider whitespace-nowrap">
                                             {getRoleName()}
                                         </span>
                                         {getRoleLevel() && (
-                                            <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border border-white/20 px-2 py-0.5 rounded">
+                                            <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest border border-white/20 px-2 py-0.5 rounded whitespace-nowrap">
                                                 Nível {getRoleLevel()}
                                             </span>
                                         )}
@@ -130,24 +130,24 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                             </div>
                             <button 
                                 onClick={onClose}
-                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white"
+                                className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white shrink-0"
                             >
-                                <X size={24} />
+                                <X size={20} className="sm:w-6 sm:h-6" />
                             </button>
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex gap-8 mt-8 border-b border-white/10">
+                        <div className="flex gap-4 sm:gap-8 mt-4 sm:mt-8 border-b border-white/10 overflow-x-auto scrollbar-hide">
                             <button 
                                 onClick={() => setActiveTab('profile')}
-                                className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'profile' ? 'text-wtech-gold' : 'text-gray-400 hover:text-white'}`}
+                                className={`pb-3 sm:pb-4 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'profile' ? 'text-wtech-gold' : 'text-gray-400 hover:text-white'}`}
                             >
                                 Dados Pessoais
                                 {activeTab === 'profile' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-1 bg-wtech-gold" />}
                             </button>
                             <button 
                                 onClick={() => setActiveTab('whatsapp')}
-                                className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'whatsapp' ? 'text-wtech-gold' : 'text-gray-400 hover:text-white'}`}
+                                className={`pb-3 sm:pb-4 text-xs sm:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'whatsapp' ? 'text-wtech-gold' : 'text-gray-400 hover:text-white'}`}
                             >
                                 Conexão WhatsApp
                                 {activeTab === 'whatsapp' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-1 bg-wtech-gold" />}
@@ -156,7 +156,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
                         {activeTab === 'profile' ? (
                             <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-md mx-auto">
                                 <div className="grid grid-cols-1 gap-6">

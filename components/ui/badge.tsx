@@ -9,6 +9,8 @@ export interface BadgeProps
   asChild?: boolean;
   disabled?: boolean;
   children?: React.ReactNode;
+  className?: string;
+  title?: string;
 }
 
 export interface BadgeButtonProps
@@ -16,6 +18,7 @@ export interface BadgeButtonProps
     VariantProps<typeof badgeButtonVariants> {
   asChild?: boolean;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export type BadgeDotProps = React.HTMLAttributes<HTMLSpanElement>;

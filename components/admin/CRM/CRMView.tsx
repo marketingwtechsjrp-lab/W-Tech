@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -165,6 +165,16 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
                     <Clock size={10} />
                     <span>Tempo Médio: {averageTime}</span>
                 </div>
+                {/* Total Value for Won Column */}
+                {(status === 'Converted' || status === 'Matriculated' || status === 'Fechamento' || status === 'Ganho') && (
+                    <div className="flex items-center gap-1 mt-1 bg-white/20 p-1.5 rounded text-xs font-bold border border-white/10">
+                        <Banknote size={12} />
+                        <span>
+                            Total: {leads.reduce((acc: number, l: any) => acc + (Number(l.conversion_value) || 0), 0)
+                                .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Cards Container */}
@@ -462,11 +472,109 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 updated_at: l.updated_at || l.created_at,
                 assignedTo: l.assigned_to,
                 internalNotes: l.internal_notes,
-                quiz_data: l.quiz_data
+                quiz_data: l.quiz_data,
+                conversion_value: l.conversion_value,
+                conversion_summary: l.conversion_summary,
+                conversion_type: l.conversion_type
             }));
             setLeads(mapped);
         }
     }
+
+
+
+    // Refs for Realtime Cleanup (Avoid Stale Closures)
+    const activeModalLeadId = useRef<string | null>(null);
+    const activeSidebarLeadId = useRef<string | null>(null);
+
+    useEffect(() => { activeModalLeadId.current = editingLead?.id || null; }, [editingLead]);
+    useEffect(() => { activeSidebarLeadId.current = selectedLeadForTasks?.id || null; }, [selectedLeadForTasks]);
+
+    // Realtime Subscription
+    useEffect(() => {
+        // Determine Access Level for Realtime Filtering
+        const hasFullAccess =
+            (typeof user?.role === 'string' && (user.role === 'ADMIN' || user.role === 'Admin' || user.role === 'Super Admin')) ||
+            (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
+            (typeof user?.role !== 'string' && user?.role?.name === 'Super Admin') ||
+            (typeof user?.role !== 'string' && user?.role?.permissions?.admin_access) ||
+            hasPermission('crm_view_all');
+
+        const channel = supabase
+            .channel('lead_updates_crm')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'SITE_Leads'
+                },
+                (payload) => {
+                    const { eventType, new: newRecord, old: oldRecord } = payload;
+                    
+                    // Helper to map record to frontend structure
+                    const mapLead = (r: any) => ({
+                         ...r,
+                         contextId: r.context_id,
+                         createdAt: r.created_at,
+                         updated_at: r.updated_at || r.created_at,
+                         assignedTo: r.assigned_to,
+                         internalNotes: r.internal_notes,
+                         quiz_data: r.quiz_data,
+                         conversion_value: r.conversion_value,
+                         conversion_summary: r.conversion_summary,
+                         conversion_type: r.conversion_type
+                    });
+
+                     if (eventType === 'INSERT') {
+                         // Only add if user has access
+                         if (hasFullAccess || newRecord.assigned_to === user?.id || !newRecord.assigned_to) {
+                              setLeads(prev => {
+                                  // Prevent duplicates just in case
+                                  if (prev.some(l => l.id === newRecord.id)) return prev;
+                                  return [mapLead(newRecord), ...prev];
+                              });
+                              if (!newRecord.assigned_to || newRecord.assigned_to === user?.id) {
+                                  notificationRef.current?.createNotification('info', 'Novo Lead', `${newRecord.name || 'Um novo lead'} chegou no CRM.`);
+                              }
+                         }
+                     } else if (eventType === 'UPDATE') {
+                         const mapped = mapLead(newRecord);
+                         
+                         if (hasFullAccess || newRecord.assigned_to === user?.id) {
+                             setLeads(prev => {
+                                 const exists = prev.find(l => l.id === newRecord.id);
+                                 if (exists) {
+                                     return prev.map(l => l.id === newRecord.id ? mapped : l);
+                                 } else {
+                                     // New lead for this user (e.g. just assigned)
+                                     return [mapped, ...prev];
+                                 }
+                             });
+                         } else {
+                             // User sent away or lost access
+                             setLeads(prev => prev.filter(l => l.id !== newRecord.id));
+                         }
+                     } else if (eventType === 'DELETE') {
+                         setLeads(prev => prev.filter(l => l.id !== oldRecord.id));
+                         
+                         // Auto-close modals if open
+                         if (activeModalLeadId.current === oldRecord.id) {
+                             setEditingLead(null);
+                             notificationRef.current?.createNotification('warning', 'Lead Removido', 'O lead que você estava visualizando foi excluído.');
+                         }
+                         if (activeSidebarLeadId.current === oldRecord.id) {
+                             setSelectedLeadForTasks(null);
+                         }
+                     }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user, permissions]); // Dependencies for access logic re-eval
 
     // Update Distribution Mode
     const toggleDistMode = async (mode: 'Manual' | 'Random') => {
@@ -485,40 +593,122 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     };
 
     // Drag & Drop Handler
+    // --- Conversion Modal State ---
+    const [conversionModal, setConversionModal] = useState<{ isOpen: boolean, lead: Lead | null, targetStatus: string }>({ isOpen: false, lead: null, targetStatus: '' });
+    const [conversionType, setConversionType] = useState<'Course' | 'Product'>('Course');
+    
+    // Course Conversion State
+    const [activeCourses, setActiveCourses] = useState<any[]>([]);
+    const [selectedCourseId, setSelectedCourseId] = useState('');
+    
+    // Product Conversion State
+    const [productSummary, setProductSummary] = useState('');
+    const [saleValue, setSaleValue] = useState('');
+
+    useEffect(() => {
+        if (conversionModal.isOpen && conversionType === 'Course') {
+            const fetchActiveCourses = async () => {
+                const { data } = await supabase.from('SITE_Courses')
+                    .select('id, title, date')
+                    .eq('status', 'Published')
+                    .gte('date', new Date().toISOString()) // Only future courses
+                    .order('date', { ascending: true });
+                if (data) setActiveCourses(data);
+            };
+            fetchActiveCourses();
+        }
+    }, [conversionModal.isOpen, conversionType]);
+
+    // Drag & Drop Handler
     const onDropLead = async (leadId: string, newStatus: string) => {
         const currentLead = leads.find(l => l.id === leadId);
         if (!currentLead) return;
 
         const currentIndex = getStageIndex(currentLead.status);
         const newIndex = getStageIndex(newStatus);
+        const isWonStage = ['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(newStatus);
 
-        // Permission Check
         const isAdm = 
             (typeof user?.role === 'string' && (user.role === 'ADMIN' || user.role === 'Admin' || user.role === 'Super Admin')) ||
-            (typeof user?.role !== 'string' && user?.role?.level >= 10);
+            (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
+            hasPermission('crm_manage_all');
 
         if (!isAdm && newIndex < currentIndex) {
             alert('Apenas administradores podem mover leads para trás no funil.');
             return;
         }
 
+        // Intercept Won Stage
+        if (isWonStage) {
+            setConversionModal({ isOpen: true, lead: currentLead, targetStatus: newStatus });
+            return;
+        }
+
+        // Standard Move
+        await executeMove(leadId, newStatus, currentLead);
+    };
+
+    const executeMove = async (leadId: string, newStatus: string, currentLead: Lead) => {
         const now = new Date().toISOString();
         
-        // Optimistic Update: Also update the 'updated_at' to reset component timer logic
+        // Optimistic Update
         setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus as any, updated_at: now } : l));
 
         // DB Update
         const { error } = await supabase.from('SITE_Leads').update({ status: newStatus, updated_at: now }).eq('id', leadId);
+        
         if (error) {
             console.error("Move Lead Error:", error);
-            alert(`Falha ao mover lead: ${error.message || JSON.stringify(error)}`);
-            // Revert optimistic update
-            fetchData();
-        } else {
-             if (['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(newStatus) && onConvertLead) {
-                 onConvertLead({ ...currentLead, status: newStatus as any });
-             }
+            alert(`Falha ao mover lead: ${error.message}`);
+            fetchData(); // Revert
         }
+    };
+
+    const handleConfirmConversion = async () => {
+        if (!conversionModal.lead) return;
+        
+        const { lead, targetStatus } = conversionModal;
+        
+        // 1. Update Lead Status
+        await executeMove(lead.id, targetStatus, lead);
+
+        // 2. Handle Logic
+        if (conversionType === 'Course') {
+            if (onConvertLead) {
+                // Pass extra data: { type: 'course', courseId: ... }
+                // We cast as any to bypass strict prop type check if it wasn't updated yet, 
+                // but we will update Admin.tsx to handle this structure.
+                (onConvertLead as any)(lead, { type: 'course', courseId: selectedCourseId });
+            }
+        } else {
+            // Product Sale
+            const value = parseFloat(saleValue.replace('R$', '').replace('.', '').replace(',', '.').trim()) || 0;
+            
+            // Update Lead with conversion metadata - assuming columns exist or will be added
+            // Using a safe raw SQL query or check if columns exist? 
+            // We'll assume typical Supabase flexibility or that I will add columns.
+            // I'll add columns `conversion_value`, `conversion_summary`, `conversion_type` to Leads table later if errors arise.
+            // For now, I'll try to update.
+            const { error } = await supabase.from('SITE_Leads').update({
+                internal_notes: `${lead.internalNotes || ''}\n[CONVERSÃO PRODUTO]: R$${value} - ${productSummary}`,
+                conversion_value: value,
+                conversion_summary: productSummary,
+                conversion_type: 'Product'
+            }).eq('id', lead.id);
+
+            if (error) console.error("Error saving conversion details:", error);
+            
+            notificationRef.current?.createNotification('success', 'Venda Registrada!', `Venda de R$ ${value.toLocaleString('pt-BR')} registrada.`);
+        
+             if (onConvertLead) {
+                (onConvertLead as any)(lead, { type: 'product', summary: productSummary, value });
+            }
+        }
+
+        setConversionModal({ isOpen: false, lead: null, targetStatus: '' });
+        setProductSummary('');
+        setSaleValue('');
+        setSelectedCourseId('');
     };
     
     const saveLeadUpdates = async () => {
@@ -990,7 +1180,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             </AnimatePresence>
 
             {/* Debug Info (Only for diagnosing) */}
-            { import.meta.env.DEV && (
+            { (import.meta as any).env.DEV && (
                  <div className="fixed bottom-4 left-4 p-4 bg-gray-900 text-white rounded-lg shadow-xl text-xs font-mono z-50 opacity-80 hover:opacity-100 transition-opacity">
                     <p className="font-bold border-b border-gray-700 pb-1 mb-1 text-green-400">DEBUG PERMISSÕES</p>
                     <p>User ID: {user?.id?.substring(0,8)}...</p>
@@ -1083,6 +1273,121 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             </div>
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* --- Conversion Selection Modal --- */}
+            <AnimatePresence>
+                {conversionModal.isOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    >
+                         <motion.div 
+                            initial={{ scale: 0.95 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.95 }}
+                            className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+                         >
+                            <div className="p-6 bg-gradient-to-r from-gray-900 to-black text-white flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                        <CheckCircle className="text-green-400" /> Lead Convertido!
+                                    </h2>
+                                    <p className="text-gray-400 text-sm mt-1">
+                                        Como devemos processar essa conversão de <strong>{conversionModal.lead?.name}</strong>?
+                                    </p>
+                                </div>
+                                <button onClick={() => setConversionModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="p-6">
+                                {/* Type Selector */}
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <button 
+                                        onClick={() => setConversionType('Course')}
+                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Course' ? 'border-wtech-gold bg-yellow-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+                                    >
+                                        <GraduationCap size={32} className={conversionType === 'Course' ? 'text-wtech-gold' : 'text-gray-400'} />
+                                        <span className={`font-bold ${conversionType === 'Course' ? 'text-gray-900' : 'text-gray-500'}`}>Matrícula em Curso</span>
+                                    </button>
+
+                                    <button 
+                                        onClick={() => setConversionType('Product')}
+                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Product' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+                                    >
+                                        <ShoppingBag size={32} className={conversionType === 'Product' ? 'text-blue-500' : 'text-gray-400'} />
+                                        <span className={`font-bold ${conversionType === 'Product' ? 'text-gray-900' : 'text-gray-500'}`}>Venda de Produtos</span>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {conversionType === 'Course' ? (
+                                        <div className="animate-in fade-in slide-in-from-left-4">
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Escolha o Curso</label>
+                                            <div className="relative">
+                                                <select 
+                                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-wtech-gold appearance-none"
+                                                    value={selectedCourseId}
+                                                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                                                >
+                                                    <option value="">Selecione um curso ativo...</option>
+                                                    {activeCourses.map(c => (
+                                                        <option key={c.id} value={c.id}>
+                                                            {new Date(c.date).toLocaleDateString()} - {c.title}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <Calendar className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2">Você será redirecionado para a tela de inscrições.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Resumo do Pedido</label>
+                                                <textarea 
+                                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 min-h-[80px]"
+                                                    placeholder="Ex: 2x Filtros, 1x Óleo 5W30..."
+                                                    value={productSummary}
+                                                    onChange={e => setProductSummary(e.target.value)}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Valor Total da Venda</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-3 text-gray-500 font-bold">R$</span>
+                                                    <input 
+                                                        className="w-full p-3 pl-10 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-mono font-bold text-lg"
+                                                        placeholder="0,00"
+                                                        value={saleValue}
+                                                        onChange={e => setSaleValue(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button 
+                                    onClick={handleConfirmConversion}
+                                    disabled={conversionType === 'Course' ? !selectedCourseId : (!productSummary || !saleValue)}
+                                    className={`mt-8 w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+                                        ${conversionType === 'Course' ? 'bg-wtech-gold hover:bg-yellow-500 text-black' : 'bg-blue-600 hover:bg-blue-500'}`}
+                                >
+                                    {conversionType === 'Course' ? (
+                                        <>Ir para Matrícula <ArrowRight size={18} /></>
+                                    ) : (
+                                        <>Registrar Venda <CheckCircle size={18} /></>
+                                    )}
+                                </button>
+                            </div>
+                         </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

@@ -350,6 +350,58 @@ export interface MessageTemplate {
     createdAt: string;
 }
 
+// --- NEW: Marketing Center ---
+
+export interface MarketingList {
+  id: string;
+  name: string;
+  description?: string;
+  ownerId?: string; // Mapped from owner_id
+  type: 'Static' | 'Dynamic';
+  rules?: any; // JSONB
+  createdAt: string;
+}
+
+export interface MarketingListMember {
+  id: string;
+  listId: string; // Mapped from list_id
+  leadId?: string; // Mapped from lead_id
+  name: string;
+  phone: string;
+  email: string;
+  customData?: any; // JSONB
+}
+
+export interface MarketingCampaign {
+  id: string;
+  name: string;
+  channel: 'WhatsApp' | 'Email' | 'SMS';
+  status: 'Draft' | 'Scheduled' | 'Processing' | 'Completed' | 'Paused';
+  templateId?: string; // Mapped from template_id
+  subject?: string;
+  content?: string;
+  listId?: string; // Mapped from list_id
+  targetAudienceSummary?: string; // Mapped from target_audience_summary
+  scheduledFor?: string; // Mapped from scheduled_for
+  throttlingSettings?: { delay_seconds: number, batch_size: number }; // Mapped from throttling_settings
+  stats?: { sent: number, failed: number, read: number };
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface CampaignQueueItem {
+  id: string;
+  campaignId: string; // Mapped from campaign_id
+  recipientName: string; // Mapped from recipient_name
+  recipientPhone: string; // Mapped from recipient_phone
+  recipientEmail: string; // Mapped from recipient_email
+  recipientData?: any; // Mapped from recipient_data
+  status: 'Pending' | 'Sent' | 'Failed' | 'Skipped';
+  errorMessage?: string; // Mapped from error_message
+  scheduledFor?: string; // Mapped from scheduled_for
+  sentAt?: string; // Mapped from sent_at
+}
+
 // --- NEW: Stock & Logistics ---
 
 export interface Product {

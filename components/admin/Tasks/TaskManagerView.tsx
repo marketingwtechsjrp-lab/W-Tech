@@ -16,130 +16,105 @@ interface TaskCardProps {
     isDoneStyle?: boolean;
 }
 
-// Task Card Component (Minimalist V3)
+// Task Card Component (Refined Visual Adaptation)
 const TaskCard: React.FC<TaskCardProps> = ({ task, usersMap, onDelete, onEdit, isOverdueStyle, isDoneStyle }) => {
+    // Determine Border Color based on Category or Priority or Status
+    // Using simple functional colors for Left Border to match the reference feel: Blue (Pending), Teal (Progress), Green (Done)
+    // Or fallback to priority colors if preferred.
+    // Let's stick to Priority for functional urgency unless category overrides.
+    const borderColor = task.category?.color || 
+        (task.priority === 'URGENT' ? '#ef4444' : 
+         task.priority === 'HIGH' ? '#f97316' : 
+         task.priority === 'MEDIUM' ? '#3b82f6' : '#9ca3af');
+
+    const formattedDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '';
+    const isLate = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'DONE';
+
     return (
         <div 
             className={`
-                group bg-white rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden relative
-                ${isDoneStyle ? 'opacity-60 bg-gray-50' : 'hover:-translate-y-0.5'} 
-                ${!task.category && isOverdueStyle ? 'border-l-4 border-l-red-500' : ''}
-                ${!task.category && !isOverdueStyle ? 'border-gray-100 border-l-4 border-l-transparent hover:border-l-wtech-gold' : ''}
+                group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer relative overflow-hidden flex flex-col border border-gray-100
+                ${isDoneStyle ? 'opacity-60 bg-gray-50' : 'hover:-translate-y-0.5'}
             `}
-            style={task.category?.color ? { 
-                borderColor: task.category.color,
-                borderLeftWidth: '6px',
-                boxShadow: `0 0 10px -2px ${task.category.color}40`
-            } : { borderLeftWidth: '6px' }}
+            style={{ borderLeft: `5px solid ${borderColor}` }}
             onClick={() => onEdit(task)}
         >
-        {isOverdueStyle && task.category && (
-            <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-bl-lg z-10" title="Atrasado" />
-        )}
-            <div className="p-3">
-                {/* Header: Priority & Status */}
-                <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                        {task.status === 'DONE' ? (
-                            <Badge variant="success" size="xs" className="uppercase font-bold tracking-wider">Concluído</Badge>
-                        ) : (
-                            <Badge 
-                                variant={
-                                    task.priority === 'URGENT' ? 'destructive' :
-                                    task.priority === 'HIGH' ? 'warning' :
-                                    task.priority === 'MEDIUM' ? 'primary' : 'secondary'
-                                }
-                                size="xs"
-                                className="uppercase font-bold tracking-wider"
-                            >
-                                {task.priority === 'URGENT' && <AlertTriangle size={8} className="mr-1" />}
-                                {task.priority}
-                            </Badge>
-                        )}
+             <div className="p-4 flex-1 flex flex-col gap-2">
+                
+                {/* Header: Title & Avatar */}
+                <div className="flex justify-between items-start">
+                    <h3 className={`font-bold text-gray-800 text-sm leading-snug line-clamp-2 ${task.status === 'DONE' ? 'line-through text-gray-400' : ''}`}>
+                        {task.title}
+                    </h3>
 
-                        {task.category && (
-                            <Badge 
-                                variant="mono" 
-                                appearance="outline" 
-                                size="xs"
-                                style={task.category.color ? { borderColor: task.category.color, color: task.category.color } : {}}
-                                className="uppercase font-bold tracking-wide"
-                            >
-                                {task.category.name}
-                            </Badge>
-                        )}
-                        
-                        {(task as any).isWhatsappSchedule && (
-                             <Badge 
-                                variant="success" 
-                                appearance="light" 
-                                size="xs" 
-                                className="animate-pulse"
-                                title="Automação WhatsApp Ativa"
-                            >
-                                <Bot size={10} className="mr-1" /> AUTO
-                            </Badge>
-                        )}
-                        
-                        {task.leadName && (
-                            <div className="flex items-center gap-1 text-[10px] text-gray-400 font-medium uppercase truncate max-w-[120px]" title={`Lead: ${task.leadName}`}>
-                                <User size={10} />
-                                {task.leadName}
+                    {/* Assignee Avatar (Top Right) */}
+                    <div className="shrink-0 ml-2">
+                        {usersMap[task.assignedTo] ? (
+                            <div className="w-6 h-6 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[9px] font-bold text-gray-600 shadow-sm" title={usersMap[task.assignedTo]}>
+                                {usersMap[task.assignedTo].charAt(0)}
                             </div>
-                        )}
-                    </div>
-
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {task.status !== 'DONE' && (
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onEdit({...task, status: 'DONE'}); }} 
-                                className="p-1 hover:bg-green-50 text-gray-300 hover:text-green-600 rounded"
-                                title="Concluir"
-                            >
-                                <CheckCircle size={14} />
-                            </button>
-                        )}
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} 
-                            className="p-1 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded"
-                            title="Excluir"
-                        >
-                            <Trash2 size={14} />
-                        </button>
+                        ) : <div className="w-6 h-6 rounded-full bg-gray-50 border border-white flex items-center justify-center"><User size={12} className="text-gray-300"/></div>}
                     </div>
                 </div>
 
-                {/* Content */}
-                <h3 className={`font-semibold text-gray-800 text-sm mb-1 leading-snug ${task.status === 'DONE' ? 'line-through text-gray-500' : ''}`}>
-                    {task.title}
-                </h3>
-                
-                {task.description && (
-                    <p className="text-xs text-gray-400 line-clamp-2 mb-2 leading-relaxed">
-                        {task.description}
-                    </p>
-                )}
-
-                {/* Footer: Date & Assignee */}
-                <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-gray-50 pt-2 mt-auto">
-                    <div className="flex items-center gap-2">
-                        {usersMap[task.assignedTo] && (
-                            <div className="flex items-center gap-1" title={`Responsável: ${usersMap[task.assignedTo]}`}>
-                                <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-600">
-                                    {usersMap[task.assignedTo].charAt(0)}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {task.dueDate && (
-                        <div className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() && task.status !== 'DONE' ? 'text-red-500 font-bold' : ''}`}>
-                            <Calendar size={10} />
-                            <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                {/* Subtitle: Lead/Project & Auto Tag */}
+                <div className="flex flex-col gap-1">
+                    {task.leadName ? (
+                        <div className="text-xs text-gray-400 font-medium">
+                            {task.leadName}
                         </div>
+                    ) : (
+                        <div className="text-xs text-gray-300 italic">Geral</div>
+                    )}
+
+                    {(task as any).isWhatsappSchedule && (
+                         <div className="flex items-center gap-1 w-max bg-green-50 border border-green-100 text-green-700 px-1.5 py-0.5 rounded-[4px]" title="Automação WhatsApp Ativa">
+                            <Bot size={10} />
+                            <span className="text-[9px] font-bold uppercase tracking-wide">Auto</span>
+                         </div>
                     )}
                 </div>
-            </div>
+
+                {/* Footer: Actions & Date Badge */}
+                <div className="mt-4 flex items-center justify-between">
+                    
+                    {/* Left Actions (Play, Edit, etc mimic) */}
+                    <div className="flex items-center gap-2">
+                        {/* Play Button Mockup (could be Start Timer) */}
+                        <button className="w-6 h-6 rounded-full border border-gray-100 text-gray-300 flex items-center justify-center hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 ml-0.5">
+                                <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                        
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onEdit(task); }}
+                                className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"
+                            >
+                                <Edit size={14} />
+                            </button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+                                className="text-gray-300 hover:text-red-500 transition-colors" title="Excluir"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right Date Badge */}
+                    {task.dueDate && (
+                        <div className={`
+                            px-2 py-0.5 rounded text-[10px] font-bold text-white flex items-center gap-1
+                            ${isLate ? 'bg-red-500' : 'bg-wtech-gold'}
+                        `}>
+                             <span>{formattedDate}</span>
+                        </div>
+                    )}
+
+                </div>
+             </div>
         </div>
     );
 };
@@ -455,15 +430,23 @@ const TaskManagerView: React.FC = () => {
         return true;
     });
 
-    // Column Partitioning
-    const scheduledTasks = filteredTasks.filter(t => t.status !== 'DONE' && !isOverdue(t));
-    const overdueTasks = filteredTasks.filter(t => t.status !== 'DONE' && isOverdue(t));
-    const finishedTasks = filteredTasks.filter(t => t.status === 'DONE');
+    // Column Partitioning (Prioritizing Status over Overdue for columns)
+    const todoTasks = filteredTasks.filter(t => t.status === 'TODO');
+    const inProgressTasks = filteredTasks.filter(t => t.status === 'IN_PROGRESS');
+    const doneTasks = filteredTasks.filter(t => t.status === 'DONE');
     
-    // Sort: Overdue (oldest first), Scheduled (soonest first), Finished (newest first)
-    overdueTasks.sort((a, b) => new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime());
-    scheduledTasks.sort((a, b) => new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime());
-    finishedTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Sort
+    const sortFn = (a: Task, b: Task) => {
+        // High priority first
+        const pMap: any = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+        if (pMap[a.priority] !== pMap[b.priority]) return pMap[a.priority] - pMap[b.priority];
+        // Then due date
+        return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
+    };
+
+    todoTasks.sort(sortFn);
+    inProgressTasks.sort(sortFn);
+    doneTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const getPriorityColor = (p: string) => {
         switch(p) {
@@ -478,35 +461,37 @@ const TaskManagerView: React.FC = () => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
             {/* Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-start sm:items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Gerenciador de Tarefas</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gerenciador de Tarefas</h2>
                     <p className="text-gray-500 text-sm">Organize e delegue atividades para a equipe.</p>
                 </div>
-                <button onClick={handlePrint} className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold flex items-center gap-2 print:hidden">
-                    <User size={18} /> Imprimir Relatório
-                </button>
-                <div className="flex bg-gray-100 p-1 rounded-lg print:hidden">
-                    <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white shadow text-wtech-gold' : 'text-gray-400'}`}>
-                        <LayoutGrid size={18} />
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <button onClick={handlePrint} className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold flex items-center gap-2 print:hidden text-sm flex-1 sm:flex-none justify-center">
+                        <User size={18} /> <span className="hidden sm:inline">Relatório</span>
                     </button>
-                    <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow text-wtech-gold' : 'text-gray-400'}`}>
-                        <List size={18} />
+                    <div className="flex bg-gray-100 p-1 rounded-lg print:hidden">
+                        <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white shadow text-wtech-gold' : 'text-gray-400'}`}>
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow text-wtech-gold' : 'text-gray-400'}`}>
+                            <List size={18} />
+                        </button>
+                    </div>
+                    <button 
+                        onClick={() => { setEditingTask(null); setFormData({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '', status: 'TODO', leadId: '', categoryId: '', isWhatsappSchedule: false, whatsappTemplateId: '', whatsappMessageBody: '' }); setIsModalOpen(true); }}
+                        className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg print:hidden flex-1 sm:flex-none justify-center ml-auto"
+                    >
+                        <Plus size={18} /> <span className="hidden sm:inline">Nova Tarefa</span><span className="sm:hidden">Nova</span>
                     </button>
                 </div>
-                <button 
-                    onClick={() => { setEditingTask(null); setFormData({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '', status: 'TODO', leadId: '', categoryId: '', isWhatsappSchedule: false, whatsappTemplateId: '', whatsappMessageBody: '' }); setIsModalOpen(true); }}
-                    className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg print:hidden"
-                >
-                    <Plus size={18} /> Nova Tarefa
-                </button>
             </div>
 
             {/* Filters (Hidden on Print) */}
-            <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-4 print:hidden">
-                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200">
-                    <Filter size={16} className="text-gray-400" />
-                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none">
+            <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-2 sm:gap-4 print:hidden">
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
+                    <Filter size={16} className="text-gray-400 shrink-0" />
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full">
                         <option value="ALL">Todos os Status</option>
                         <option value="TODO">Pendente</option>
                         <option value="IN_PROGRESS">Em Andamento</option>
@@ -515,9 +500,9 @@ const TaskManagerView: React.FC = () => {
                 </div>
                 
                 {isAdmin && (
-                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200">
-                        <User size={16} className="text-gray-400" />
-                        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none max-w-[150px]">
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
+                        <User size={16} className="text-gray-400 shrink-0" />
+                        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full sm:max-w-[150px]">
                             <option value="ALL">Todos Usuários</option>
                             {Object.entries(usersMap).map(([id, name]) => (
                                 <option key={id} value={id}>{name}</option>
@@ -526,9 +511,9 @@ const TaskManagerView: React.FC = () => {
                     </div>
                 )}
 
-                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200">
-                    <Tag size={16} className="text-gray-400" />
-                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none max-w-[150px]">
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
+                    <Tag size={16} className="text-gray-400 shrink-0" />
+                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full sm:max-w-[150px]">
                         <option value="ALL">Todas Categorias</option>
                         {categories.map(cat => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -536,21 +521,21 @@ const TaskManagerView: React.FC = () => {
                     </select>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white p-1 rounded border border-gray-200">
-                    <button onClick={() => setDatePreset(0)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded">Hoje</button>
-                    <button onClick={() => setDatePreset(7)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded">7d</button>
-                    <button onClick={() => setDatePreset(30)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded">30d</button>
-                    <div className="w-px h-4 bg-gray-200 mx-1"></div>
+                <div className="flex items-center gap-2 bg-white p-1 rounded border border-gray-200 w-full sm:w-auto overflow-x-auto">
+                    <button onClick={() => setDatePreset(0)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded whitespace-nowrap">Hoje</button>
+                    <button onClick={() => setDatePreset(7)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded whitespace-nowrap">7d</button>
+                    <button onClick={() => setDatePreset(30)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded whitespace-nowrap">30d</button>
+                    <div className="w-px h-4 bg-gray-200 mx-1 shrink-0"></div>
                     <input 
                         type="date" 
-                        className="text-xs outline-none font-bold text-gray-600 bg-transparent"
+                        className="text-xs outline-none font-bold text-gray-600 bg-transparent min-w-[100px]"
                         value={dateRange.start}
                         onChange={e => setDateRange({...dateRange, start: e.target.value})}
                     />
                     <span className="text-gray-300">-</span>
                     <input 
                         type="date" 
-                        className="text-xs outline-none font-bold text-gray-600 bg-transparent"
+                        className="text-xs outline-none font-bold text-gray-600 bg-transparent min-w-[100px]"
                         value={dateRange.end}
                         onChange={e => setDateRange({...dateRange, end: e.target.value})}
                     />
@@ -558,52 +543,57 @@ const TaskManagerView: React.FC = () => {
             </div>
 
             {/* Task Content (Grid or List) */}
-            <div className="flex-1 overflow-hidden bg-gray-50/50">
+            <div className="flex-1 overflow-hidden bg-gray-50/50 flex flex-col">
                 {viewMode === 'grid' ? (
-                    // GRID VIEW (V2 Kanban Minimalist)
-                    <div className="flex-1 overflow-x-auto h-full p-4 bg-gray-50">
-                        <div className="flex gap-4 h-full min-w-[800px]">
+                    // GRID VIEW (V2 Kanban Minimalist - Updated to Print 3 Style)
+                    <div className="flex-1 overflow-y-auto md:overflow-x-auto h-full p-2 sm:p-4 bg-gray-50">
+                        <div className="flex flex-col md:flex-row gap-6 md:gap-4 h-auto md:h-full w-full md:min-w-[1000px]">
                             
-                            {/* SCHEDULED COL */}
-                            <div className="flex-1 flex flex-col min-w-[280px]">
-                                <div className="mb-3 flex items-center justify-between px-1">
-                                     <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                        <h3 className="font-bold text-gray-600 uppercase tracking-widest text-[11px]">Agendadas ({scheduledTasks.length})</h3>
+                            {/* TODO COL */}
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 md:bg-transparent rounded-xl p-2 md:p-0">
+                                <div className="mb-4 flex items-center justify-between px-1">
+                                     <div className="flex items-center gap-2 text-blue-500">
+                                        <Clock size={18} />
+                                        <h3 className="font-bold text-gray-700 text-sm">Pendentes ({todoTasks.length})</h3>
                                      </div>
+                                     <button onClick={() => { setFormData({ ...formData, status: 'TODO' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-blue-500 transition-colors w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1 pb-20">
-                                     {scheduledTasks.map(task => (
+                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                     {todoTasks.map(task => (
                                          <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} />
                                      ))}
+                                     {todoTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa pendente</div>}
                                 </div>
                             </div>
 
-                            {/* OVERDUE COL */}
-                            <div className="flex-1 flex flex-col min-w-[280px]">
-                                <div className="mb-3 flex items-center justify-between px-1">
-                                     <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                        <h3 className="font-bold text-red-500 uppercase tracking-widest text-[11px]">Atrasadas ({overdueTasks.length})</h3>
+                            {/* IN PROGRESS COL */}
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 md:bg-transparent rounded-xl p-2 md:p-0">
+                                <div className="mb-4 flex items-center justify-between px-1">
+                                     <div className="flex items-center gap-2 text-sky-500">
+                                        <Clock size={18} />
+                                        <h3 className="font-bold text-gray-700 text-sm">Em andamento ({inProgressTasks.length})</h3>
                                      </div>
+                                     <button onClick={() => { setFormData({ ...formData, status: 'IN_PROGRESS' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-sky-500 transition-colors w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1 pb-20">
-                                     {overdueTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} isOverdueStyle />
+                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                     {inProgressTasks.map(task => (
+                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} />
                                      ))}
+                                     {inProgressTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa em andamento</div>}
                                 </div>
                             </div>
 
-                            {/* FINISHED COL */}
-                            <div className="flex-1 flex flex-col min-w-[280px]">
-                                <div className="mb-3 flex items-center justify-between px-1">
-                                     <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                        <h3 className="font-bold text-gray-400 uppercase tracking-widest text-[11px]">Finalizadas ({finishedTasks.length})</h3>
+                            {/* DONE COL */}
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 md:bg-transparent rounded-xl p-2 md:p-0">
+                                <div className="mb-4 flex items-center justify-between px-1">
+                                     <div className="flex items-center gap-2 text-green-500">
+                                        <CheckCircle size={18} />
+                                        <h3 className="font-bold text-gray-700 text-sm">Concluídas ({doneTasks.length})</h3>
                                      </div>
+                                     <button className="text-gray-300 hover:text-green-500 transition-colors w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center pointer-events-none opacity-50"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1 pb-20">
-                                     {finishedTasks.map(task => (
+                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                     {doneTasks.map(task => (
                                          <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} isDoneStyle />
                                      ))}
                                 </div>
@@ -613,8 +603,8 @@ const TaskManagerView: React.FC = () => {
                     </div>
                 ) : (
                     // LIST VIEW (Table)
-                    <div className="flex-1 overflow-y-auto p-6 pb-20">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-6 pb-20">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 border-b border-gray-100">
                                     <tr>
@@ -650,7 +640,7 @@ const TaskManagerView: React.FC = () => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg"
+                            className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-hide"
                         >
                             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-2">
                                 <h3 className="font-bold text-xl">{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
