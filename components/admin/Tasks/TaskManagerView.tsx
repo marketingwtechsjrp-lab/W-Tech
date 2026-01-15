@@ -318,7 +318,13 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             const { error: uploadError } = await supabase.storage.from('site-assets').upload(filePath, file);
 
             if (uploadError) {
-                alert('Erro no upload: ' + uploadError.message);
+                if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) { 
+                    alert('ERRO DE CONFIGURAÇÃO: O bucket "site-assets" não existe.\nExecute "fix_storage_permissions.sql" no Supabase.');
+                } else if (uploadError.message.includes('row-level security') || uploadError.message.includes('policy')) {
+                    alert('ERRO DE PERMISSÃO: O bloqueio de segurança (RLS) impediu o upload.\n\nPor favor, execute o script "fix_storage_permissions.sql" no SQL Editor do Supabase.');
+                } else {
+                    alert('Erro no upload: ' + uploadError.message);
+                }
                 return;
             }
 

@@ -1210,17 +1210,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 )}
             </AnimatePresence>
 
-            {/* Debug Info (Only for diagnosing) */}
-            { (import.meta as any).env.DEV && (
-                 <div className="fixed bottom-4 left-4 p-4 bg-gray-900 text-white rounded-lg shadow-xl text-xs font-mono z-50 opacity-80 hover:opacity-100 transition-opacity">
-                    <p className="font-bold border-b border-gray-700 pb-1 mb-1 text-green-400">DEBUG PERMISSÕES</p>
-                    <p>User ID: {user?.id?.substring(0,8)}...</p>
-                    <p>Role (Ctx): {typeof user?.role === 'string' ? user.role : user?.role?.name}</p>
-                    <p>Perms Loaded: {permissions ? 'YES' : 'NO'}</p>
-                    <p>View All Key: {hasPermission('crm_view_all') ? 'YES' : 'NO'}</p>
-                    <p>Is Admin: {hasPermission('admin_access') ? 'YES' : 'NO'}</p>
-                 </div>
-            )}
+            {/* Debug Info Removed */}
+
             {/* Lead Task Sidebar */}
             {selectedLeadForTasks && (
                 <LeadTaskSidebar
