@@ -93,4 +93,6 @@ Sempre utilize o script automatizado para lançar novas versões e manter o hist
 **Correção de Permissões (RLS):**
 - Se houver erro de "Row Level Security" ou upload falhar:
 - Executar script `fix_storage_permissions.sql` no SQL Editor do Supabase.
+- Se houver erro "permission denied for table users" ao criar listas:
+- Executar script `fix_marketing_list_fk.sql`.
 
