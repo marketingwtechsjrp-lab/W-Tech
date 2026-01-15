@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.2.0",
+    "date": "2026-01-15",
+    "title": "Módulos Marketing e Clientes",
+    "changes": [
+      "FEAT: Paginação na listagem de clientes (50/100/300 itens).",
+      "FEAT: Grupos de Marketing agora podem ter dono específico (owner_id)."
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.1.0",
     "date": "2026-01-15",
     "title": "Correções Críticas e Otimização do Dash",

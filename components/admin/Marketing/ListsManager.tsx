@@ -7,6 +7,7 @@ import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw } 
 const ListsManager = () => {
     const { user } = useAuth();
     const [lists, setLists] = useState<MarketingList[]>([]);
+    const [users, setUsers] = useState<any[]>([]); // User mapping
     const [isLoading, setIsLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     
@@ -15,7 +16,8 @@ const ListsManager = () => {
         name: '',
         description: '',
         type: 'Static',
-        rules: {}
+        rules: {},
+        ownerId: '' 
     });
 
     // Courses for Filters
@@ -24,16 +26,29 @@ const ListsManager = () => {
     useEffect(() => {
         fetchLists();
         fetchCourses();
+        fetchUsers();
     }, []);
+
+    const fetchUsers = async () => {
+        // Fetch simple user list for assignment
+        const { data } = await supabase.from('SITE_Users').select('id, name, email');
+        if (data) setUsers(data);
+    };
 
     const fetchLists = async () => {
         setIsLoading(true);
+        // We fetch all, and can filter in UI or RLS handles it.
         const { data, error } = await supabase
             .from('SITE_MarketingLists')
             .select('*')
             .order('created_at', { ascending: false });
         
-        if (data) setLists(data);
+        if (data) {
+             // Map snake_case to camelCase if needed, though types might handle it.
+             // Currently types: ownerId, DB: owner_id. We need to be careful with mapping.
+             // Let's assume the component uses the raw DB return extended with types or manual map.
+             setLists(data.map((l: any) => ({ ...l, ownerId: l.owner_id })));
+        }
         setIsLoading(false);
     };
 
@@ -47,14 +62,15 @@ const ListsManager = () => {
         
         setIsLoading(true);
         try {
+            // Determine Owner: Explicitly set, or current user
+            const ownerToSave = currentList.ownerId || user?.id;
+
             const payload = {
                 name: currentList.name,
                 description: currentList.description,
                 type: currentList.type,
                 rules: currentList.rules,
-                // owner_id: user?.id 
-                // Temporarily removed owner_id to bypass potential FK permission issues with 'users' table.
-                // We will rely on RLS or backend triggers if needed later, or fix the FK constraint in DB.
+                owner_id: ownerToSave
             };
 
             let error;
@@ -69,7 +85,7 @@ const ListsManager = () => {
             if (error) throw error;
             
             setIsEditing(false);
-            setCurrentList({ name: '', description: '', type: 'Static', rules: {} });
+            setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: '' });
             fetchLists();
         } catch (error: any) {
             alert('Erro ao salvar: ' + error.message);
@@ -84,6 +100,12 @@ const ListsManager = () => {
         if (!error) fetchLists();
     };
 
+    const getUserName = (uid?: string) => {
+        if (!uid) return 'Sistema';
+        const found = users.find(u => u.id === uid);
+        return found ? found.name : 'Desconhecido';
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -91,11 +113,11 @@ const ListsManager = () => {
                      <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
                         <Users className="text-blue-600" /> Listas de Contatos
                     </h3>
-                    <p className="text-sm text-gray-500">Gerencie grupos de contatos para suas campanhas.</p>
+                    <p className="text-sm text-gray-500">Gerencie grupos de contatos por usuário.</p>
                 </div>
                 {!isEditing && (
                     <button 
-                        onClick={() => { setIsEditing(true); setCurrentList({ name: '', description: '', type: 'Static', rules: {} }); }}
+                        onClick={() => { setIsEditing(true); setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: user?.id }); }}
                         className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800"
                     >
                         <Plus size={16} /> Nova Lista
@@ -120,6 +142,21 @@ const ListsManager = () => {
                                     onChange={e => setCurrentList({...currentList, name: e.target.value})}
                                 />
                             </div>
+                           
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Dono da Lista (Vinculado)</label>
+                                <select 
+                                    className="w-full border border-gray-300 rounded p-2 text-sm bg-white"
+                                    value={currentList.ownerId || ''}
+                                    onChange={e => setCurrentList({...currentList, ownerId: e.target.value})}
+                                >
+                                    <option value="">-- Atribuir a Mim --</option>
+                                    {users.map(u => (
+                                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Descrição</label>
                                 <input 
@@ -237,11 +274,20 @@ const ListsManager = () => {
                         </div>
                         
                         <h4 className="font-bold text-gray-800 text-lg mb-1">{list.name}</h4>
-                        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{list.description || 'Sem descrição'}</p>
+                        <p className="text-sm text-gray-500 mb-2 line-clamp-2">{list.description || 'Sem descrição'}</p>
+
+                         {/* Owner Badge */}
+                         {list.ownerId && (
+                             <div className="flex items-center gap-1.5 mb-3 bg-gray-50 px-2 py-1 rounded w-fit">
+                                <Users size={10} className="text-gray-400" />
+                                <span className="text-[10px] uppercase font-bold text-gray-600">
+                                    {getUserName(list.ownerId)}
+                                </span>
+                             </div>
+                         )}
 
                         <div className="pt-3 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
                             <span>Criada em: {new Date(list.createdAt).toLocaleDateString()}</span>
-                            {/* Potential Count Badge could go here */}
                         </div>
                     </div>
                 ))}

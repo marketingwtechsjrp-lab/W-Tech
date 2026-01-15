@@ -19,6 +19,10 @@ const ClientsManagerView = () => {
     const [newListName, setNewListName] = useState('');
     const [isSavingGroup, setIsSavingGroup] = useState(false);
 
+    // Pagination
+    const [itemsPerPage, setItemsPerPage] = useState(50);
+    const [currentPage, setCurrentPage] = useState(1);
+
     useEffect(() => {
         fetchClients();
     }, []);
@@ -79,6 +83,11 @@ const ClientsManagerView = () => {
         const matchesType = filterType === 'all' || client.type === filterType;
         return matchesSearch && matchesType;
     });
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedClients = filteredClients.slice(startIndex, startIndex + itemsPerPage);
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -223,9 +232,9 @@ const ClientsManagerView = () => {
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
                                 <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Carregando carteira de clientes...</td></tr>
-                            ) : filteredClients.length === 0 ? (
+                            ) : paginatedClients.length === 0 ? (
                                 <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Nenhum cliente encontrado.</td></tr>
-                            ) : filteredClients.map((client, idx) => (
+                            ) : paginatedClients.map((client, idx) => (
                                 <tr key={`${client.type}-${client.id}-${idx}`} className={`hover:bg-gray-50/50 transition-colors ${selectedClients.includes(client.id) ? 'bg-blue-50/30' : ''}`}>
                                      <td className="px-6 py-4">
                                         <input 
@@ -283,6 +292,48 @@ const ClientsManagerView = () => {
                         </tbody>
                     </table>
                 </div>
+                
+                {/* Pagination Controls */}
+                {!loading && filteredClients.length > 0 && (
+                     <div className="border-t border-gray-100 p-4 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="text-xs font-bold text-gray-500">
+                            Exibindo {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredClients.length)} de {filteredClients.length} clientes
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-500 uppercase mr-2">Itens por página:</span>
+                            {[50, 100, 300].map(limit => (
+                                <button
+                                    key={limit}
+                                    onClick={() => { setItemsPerPage(limit); setCurrentPage(1); }}
+                                    className={`px-3 py-1 rounded text-xs font-bold ${itemsPerPage === limit ? 'bg-white shadow text-black border' : 'text-gray-400 hover:text-gray-600'}`}
+                                >
+                                    {limit}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                             <button 
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1.5 rounded bg-white border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50"
+                             >
+                                Anterior
+                             </button>
+                             <span className="text-xs font-bold text-gray-900">
+                                Página {currentPage} de {totalPages}
+                             </span>
+                             <button 
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1.5 rounded bg-white border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50"
+                             >
+                                Próxima
+                             </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Add to Group Modal */}
