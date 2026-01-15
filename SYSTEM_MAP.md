@@ -83,12 +83,12 @@ Tabelas principais:
 
 ## 5. Procedimentos Comuns
 
-**Deploy / Atualização (REGRA):**
-Sempre utilize o script automatizado para lançar novas versões e manter o histórico atualizado.
-1. No terminal, execute: `npm run release`
-2. Responda o número da versão (ex: 2.2.0).
-3. Descreva as mudanças.
-4. O script atualizará automaticamente `package.json`, `CHANGELOG.json`, `CHANGELOG.md` e fará o push para o GitHub com tags.
+**Deploy / Atualização (ROTINA OBRIGATÓRIA):**
+Para garantir que toda atualização no GitHub tenha versionamento e histórico:
+1. NÃO use `git commit` direto.
+2. Utilize SEMPRE: `npm run release`
+3. O script solicitará: Versão, Título e Mudanças.
+4. Ele atualizará os registros (JSON/MD) e fará o Push + Tag automaticamente.
 
 **Correção de Permissões (RLS):**
 - Se houver erro de "Row Level Security" ou upload falhar:

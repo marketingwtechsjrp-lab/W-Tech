@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.2.2",
+    "date": "2026-01-15",
+    "title": "Deploy Script Improvement",
+    "changes": [
+      "Improved deploy script to enforce git operations",
+      "Updated SYSTEM_MAP to reflect mandatory routine"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.2.0",
     "date": "2026-01-15",
     "title": "Módulos Marketing e Clientes",

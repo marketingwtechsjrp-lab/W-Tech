@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.2.2 (2026-01-15) - Deploy Script Improvement
+- Improved deploy script to enforce git operations
+- Updated SYSTEM_MAP to reflect mandatory routine
+
 ## v2.2.0 (2026-01-15) - Módulos Marketing e Clientes
 - FEAT: Paginação na listagem de clientes (50/100/300 itens).
 - FEAT: Grupos de Marketing agora podem ter dono específico (owner_id).
