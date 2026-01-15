@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.2.4",
+    "date": "2026-01-15",
+    "title": "Fix WhatsApp Duplicates, Variables, Lead Deletion and UI Improvements",
+    "changes": [
+      "- Corrigido duplicidade no envio de WhatsApp (Reserva Atômica)",
+      "- Suporte a variáveis {{nome}}, {{telefone}}, {{email}}, {{status}} e {{origem}}",
+      "- Implementado envio sequencial (Texto -> Imagem t-> Texo)",
+      "- Corrigido erro de exclusão de Leads no CRM (RLS e Cascata)",
+      "- Nova interface de Campanhas com Filtros, Busca e Barra de Progresso Real-time",
+      "- Corrigido erro de data inválida na listagem de hcampanas",
+      "- Adicionado vídeo padrão no Editor de Landing Pages"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.2.3",
     "date": "2026-01-15",
     "title": "Tab System in Clients & Marketing Permissions",

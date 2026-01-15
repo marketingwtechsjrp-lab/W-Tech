@@ -39,16 +39,17 @@ const MessageTemplateManager = () => {
             const { error } = await supabase
                 .from('SITE_MessageTemplates')
                 .upsert({
-                    id: currentTemplate.id, // If ID exists, it updates; otherwise inserts (but we need to handle ID generation for upsert if UUID? Actually Supabase handles it if we don't pass ID on insert, but passing undefined ID might break upsert logic depending on setup. Better to separate Insert/Update or let Supabase handle gen_random_uuid)
+                    id: currentTemplate.id,
                     title: currentTemplate.title,
-                    content: currentTemplate.content
-                }); // For new items, we shouldn't pass ID if we want auto-gen, or we generate one here. 
-                // Let's use simpler logic: Select ID if editing.
+                    content: currentTemplate.content,
+                    imageUrl: currentTemplate.imageUrl || null,
+                    content2: currentTemplate.content2 || null
+                });
             
             if (error) throw error;
             
             setIsEditing(false);
-            setCurrentTemplate({ title: '', content: '' });
+            setCurrentTemplate({ title: '', content: '', imageUrl: '', content2: '' });
             fetchTemplates();
         } catch (error: any) {
             alert('Erro ao salvar: ' + error.message);
@@ -88,31 +89,65 @@ const MessageTemplateManager = () => {
                         <h4 className="font-bold text-gray-700">{currentTemplate.id ? 'Editar Modelo' : 'Novo Modelo'}</h4>
                         <button onClick={() => setIsEditing(false)}><X size={20} className="text-gray-400 hover:text-red-500" /></button>
                      </div>
-                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Título do Modelo</label>
-                            <input 
-                                className="w-full border border-gray-300 rounded p-2 text-sm" 
-                                placeholder="Ex: Confirmação de Visita"
-                                value={currentTemplate.title}
-                                onChange={e => setCurrentTemplate({...currentTemplate, title: e.target.value})}
-                            />
+                     <div className="space-y-6">
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Título do Modelo</label>
+                                <input 
+                                    className="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold outline-none focus:border-blue-500 transition-all" 
+                                    placeholder="Ex: Confirmação de Visita"
+                                    value={currentTemplate.title}
+                                    onChange={e => setCurrentTemplate({...currentTemplate, title: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="bg-white p-4 rounded-2xl border border-gray-100 space-y-4">
+                                <div>
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2">
+                                        <span className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px]">1</span> 
+                                        Mensagem Inicial (Texto)
+                                    </label>
+                                    <textarea 
+                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm h-24 font-medium outline-none focus:ring-2 focus:ring-blue-500/20" 
+                                        placeholder="Olá! Gostaria de confirmar nossa reunião..."
+                                        value={currentTemplate.content}
+                                        onChange={e => setCurrentTemplate({...currentTemplate, content: e.target.value})}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-purple-500 uppercase tracking-widest mb-2">
+                                        <span className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center text-[10px]">2</span> 
+                                        Imagem (URL Directa)
+                                    </label>
+                                    <input 
+                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20" 
+                                        placeholder="https://exemplo.com/foto.jpg"
+                                        value={currentTemplate.imageUrl || ''}
+                                        onChange={e => setCurrentTemplate({...currentTemplate, imageUrl: e.target.value})}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">
+                                        <span className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[10px]">3</span> 
+                                        Mensagem Final (Texto)
+                                    </label>
+                                    <textarea 
+                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm h-24 font-medium outline-none focus:ring-2 focus:ring-indigo-500/20" 
+                                        placeholder="Caso precise alterar, nos avise."
+                                        value={currentTemplate.content2 || ''}
+                                        onChange={e => setCurrentTemplate({...currentTemplate, content2: e.target.value})}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Conteúdo da Mensagem</label>
-                            <textarea 
-                                className="w-full border border-gray-300 rounded p-3 text-sm h-32" 
-                                placeholder="Olá! Gostaria de confirmar nossa reunião..."
-                                value={currentTemplate.content}
-                                onChange={e => setCurrentTemplate({...currentTemplate, content: e.target.value})}
-                            />
-                            <p className="text-[10px] text-gray-400 mt-1">Dica: Use variáveis como apenas manualmente por enquanto.</p>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded">Cancelar</button>
-                            <button onClick={handleSave} disabled={isLoading} className="bg-green-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
-                                <Save size={16} /> Salvar Modelo
-                            </button>
+
+                        <div className="flex justify-end gap-2 p-2 pt-4 border-t border-gray-100">
+                             <button onClick={() => setIsEditing(false)} className="px-6 py-2 text-sm font-bold text-gray-400 hover:text-gray-600">Cancelar</button>
+                             <button onClick={handleSave} disabled={isLoading} className="bg-green-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-green-100 transition-all active:scale-95">
+                                 <Save size={18} /> Salvar Modelo
+                             </button>
                         </div>
                      </div>
                 </div>

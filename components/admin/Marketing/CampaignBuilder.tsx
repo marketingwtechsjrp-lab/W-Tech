@@ -25,6 +25,8 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
         listId: '',
         templateId: '',
         content: '',
+        imageUrl: '',
+        content2: '',
         throttling: { delay_seconds: 120, batch_size: 1 } // Default 2 mins to be safe
     });
     
@@ -90,6 +92,8 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                 list_id: formData.listId,
                 template_id: formData.templateId || null,
                 content: formData.content,
+                imageUrl: formData.imageUrl || null,
+                content2: formData.content2 || null,
                 throttling_settings: formData.throttling,
                 created_by: user?.id
             }]).select().single();
@@ -132,13 +136,16 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                     recipient_phone: lead.phone,
                     recipient_email: lead.email,
                     lead_id: lead.id,
-                    recipient_data: { lead_status: lead.status } 
+                    recipient_data: { 
+                        status: lead.status,
+                        tipo: lead.type,
+                        origem: lead.context_id || 'Indefinida',
+                        id: lead.id
+                    } 
                 }));
             }
 
             if (recipients.length === 0) {
-                // Alert and abort if no one to send to? Or just define campaign as completed/empty?
-                // Better to alert user.
                 await supabase.from('SITE_MarketingCampaigns').delete().eq('id', campaign.id);
                 throw new Error('Nenhum destinatário encontrado com os filtros selecionados.');
             }
@@ -149,7 +156,13 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                 recipient_name: r.name || r.recipient_name,
                 recipient_phone: r.phone || r.recipient_phone,
                 recipient_email: r.email || r.recipient_email,
-                recipient_data: r.custom_data || r.recipient_data || {},
+                recipient_data: {
+                    ...(r.custom_data || r.customData || r.recipient_data || {}),
+                    // Ensure core fields are also available as variables if needed
+                    nome: r.name || r.recipient_name,
+                    email: r.email || r.recipient_email,
+                    telefone: r.phone || r.recipient_phone
+                },
                 status: 'Pending'
             }));
 
@@ -261,7 +274,13 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                                     value={formData.templateId}
                                     onChange={e => {
                                         const t = templates.find(t => t.id === e.target.value);
-                                        setFormData({...formData, templateId: e.target.value, content: t?.content || ''});
+                                        setFormData({
+                                            ...formData, 
+                                            templateId: e.target.value, 
+                                            content: t?.content || '',
+                                            imageUrl: t?.imageUrl || '',
+                                            content2: t?.content2 || ''
+                                        });
                                     }}
                                 >
                                     <option value="">(Opcional) Selecione um modelo...</option>
@@ -269,15 +288,39 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Conteúdo da Mensagem</label>
-                                <div className="text-[10px] text-gray-400 mb-1">Variáveis disponíveis: {'{{name}}'}, {'{{phone}}'}</div>
-                                <textarea 
-                                    className="w-full border border-gray-300 rounded-lg p-3 h-32"
-                                    value={formData.content}
-                                    onChange={e => setFormData({...formData, content: e.target.value})}
-                                    placeholder="Digite sua mensagem aqui..."
-                                />
+                            <div className="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest border-b border-gray-200 pb-2">Conteúdo Sequencial</h4>
+                                
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-blue-500 uppercase">1. Texto Inicial</label>
+                                    <div className="text-[10px] text-gray-400 mb-1">Variáveis: {'{{nome}}'}, {'{{telefone}}'}, {'{{email}}'}, {'{{status}}'}, {'{{origem}}'}</div>
+                                    <textarea 
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm h-24"
+                                        value={formData.content}
+                                        onChange={e => setFormData({...formData, content: e.target.value})}
+                                        placeholder="Olá {{nome}}..."
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-purple-500 uppercase">2. Imagem (URL)</label>
+                                    <input 
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm"
+                                        placeholder="https://..."
+                                        value={formData.imageUrl}
+                                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-indigo-500 uppercase">3. Texto Final</label>
+                                    <textarea 
+                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm h-24"
+                                        value={formData.content2}
+                                        onChange={e => setFormData({...formData, content2: e.target.value})}
+                                        placeholder="Aguardo seu retorno!"
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}

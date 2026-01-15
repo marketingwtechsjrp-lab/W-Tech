@@ -40,7 +40,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         instructorName: 'Alex Crepaldi',
         instructorBio: 'Referência nacional em suspensões, Alex Crepaldi ensina as técnicas de acerto e ajuste em todos os modelos. Torne-se um profissional diferenciado ao associar-se à empresa líder no mercado nacional e desfrute de todas as vantagens de ser um credenciado W-Tech!',
         instructorImage: 'https://w-techbrasil.com.br/wp-content/uploads/2021/05/alex-crepaldi.jpg',
-        whatsappNumber: '5511999999999'
+        whatsappNumber: '5511999999999',
+        videoUrl: 'https://www.youtube.com/watch?v=RePclscnxDM'
     });
 
     useEffect(() => {
@@ -61,7 +62,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                 courseId: data.course_id,
                 heroImage: data.hero_image,
                 heroSecondaryImage: data.hero_secondary_image,
-                videoUrl: data.video_url,
+                videoUrl: data.video_url || 'https://www.youtube.com/watch?v=RePclscnxDM',
                 instructorName: data.instructor_name,
                 instructorBio: data.instructor_bio,
                 instructorImage: data.instructor_image,

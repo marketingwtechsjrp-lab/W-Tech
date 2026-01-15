@@ -346,6 +346,8 @@ export interface MessageTemplate {
     id: string;
     title: string;
     content: string;
+    imageUrl?: string; // NEW: Part 2
+    content2?: string; // NEW: Part 3
     createdBy?: string;
     createdAt: string;
 }
@@ -370,7 +372,7 @@ export interface MarketingListMember {
   phone: string;
   email: string;
   customData?: any; // JSONB
-}
+  }
 
 export interface MarketingCampaign {
   id: string;
@@ -379,7 +381,9 @@ export interface MarketingCampaign {
   status: 'Draft' | 'Scheduled' | 'Processing' | 'Completed' | 'Paused';
   templateId?: string; // Mapped from template_id
   subject?: string;
-  content?: string;
+  content?: string; // Part 1
+  imageUrl?: string; // Part 2
+  content2?: string; // Part 3
   listId?: string; // Mapped from list_id
   targetAudienceSummary?: string; // Mapped from target_audience_summary
   scheduledFor?: string; // Mapped from scheduled_for

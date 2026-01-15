@@ -126,23 +126,21 @@ const ClientsManagerView = () => {
                 }]).select().single();
 
                 if (error) throw error;
+                // Map snake_case to camelCase for the state if needed, or just use DB fields
                 targetListId = data.id;
             }
 
             if (!targetListId) return alert("Selecione um grupo.");
 
             // 2. Prepare Members Payload
-            // Filter selected clients details
             const clientsToAdd = clients.filter(c => selectedClients.includes(c.id));
             
             const membersPayload = clientsToAdd.map(c => ({
                 list_id: targetListId,
                 name: c.name,
-                email: c.email || '',
+                email: c.email?.trim() || null,
                 phone: c.phone || '',
                 lead_id: c.type === 'Lead' ? c.id : null,
-                // mechanic_id? If table supports it, otherwise store in customData or similar. 
-                // For now, adhering to schema derived from types (leadId only explicit)
             }));
 
             // 3. Insert Members
@@ -152,11 +150,12 @@ const ClientsManagerView = () => {
 
             if (membersError) throw membersError;
 
-            alert(`${clientsToAdd.length} contatos adicionados ao grupo com sucesso!`);
+            alert(`${membersPayload.length} contatos adicionados ao grupo com sucesso!`);
             setIsGroupModalOpen(false);
             setSelectedClients([]);
             setNewListName('');
             setSelectedListId('');
+            fetchClients(); // Refresh to clear selection state if needed
 
         } catch (error: any) {
             console.error(error);

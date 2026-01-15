@@ -15,11 +15,9 @@ export const getGlobalWhatsAppConfig = async (): Promise<Omit<WhatsAppConfig, 'i
         const map: Record<string, string> = {};
         data.forEach((c: any) => map[c.key] = c.value);
 
-        if (!map['evolution_api_url'] || !map['evolution_api_key']) return null;
-
         return {
-            serverUrl: map['evolution_api_url'],
-            apiKey: map['evolution_api_key'],
+            serverUrl: map['evolution_api_url'].replace(/\/$/, ''),
+            apiKey: map['evolution_api_key'].trim(),
         };
     } catch (error) {
         console.error('Error fetching Global WhatsApp config:', error);
@@ -46,7 +44,7 @@ export const getUserWhatsAppConfig = async (userId: string): Promise<WhatsAppCon
         return {
             serverUrl: globalConfig.serverUrl,
             apiKey: globalConfig.apiKey,
-            instanceName: userInt.instance_name
+            instanceName: userInt.instance_name.trim()
         };
     } catch (error) {
         // console.error('Error fetching User WhatsApp config:', error);
@@ -70,7 +68,7 @@ export const sendWhatsAppMessage = async (to: string, message: string, userId?: 
         const globalC = await getGlobalWhatsAppConfig();
         const { data: fallbackInstance } = await supabase.from('SITE_Config').select('*').eq('key', 'evolution_instance_name').single();
         if (globalC && fallbackInstance) {
-            config = { ...globalC, instanceName: fallbackInstance.value };
+            config = { ...globalC, instanceName: fallbackInstance.value.trim() };
         }
     }
 
@@ -123,7 +121,7 @@ export const sendWhatsAppMedia = async (to: string, mediaUrl: string, caption: s
         const globalC = await getGlobalWhatsAppConfig();
         const { data: fallbackInstance } = await supabase.from('SITE_Config').select('*').eq('key', 'evolution_instance_name').single();
         if (globalC && fallbackInstance) {
-            config = { ...globalC, instanceName: fallbackInstance.value };
+            config = { ...globalC, instanceName: fallbackInstance.value.trim() };
         }
     }
 

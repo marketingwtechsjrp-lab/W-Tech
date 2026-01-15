@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { MarketingList } from '../../../types';
-import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw } from 'lucide-react';
+import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw, Eye, Mail, Phone } from 'lucide-react';
 
 const ListsManager = () => {
     const { user } = useAuth();
@@ -11,6 +11,19 @@ const ListsManager = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     
+    // Member Management
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+    const [selectedList, setSelectedList] = useState<MarketingList | null>(null);
+    const [members, setMembers] = useState<any[]>([]);
+    const [isFetchingMembers, setIsFetchingMembers] = useState(false);
+    const [isAddingMember, setIsAddingMember] = useState(false);
+    const [newMember, setNewMember] = useState({ name: '', email: '', phone: '' });
+    
+    // Existing Clients Search
+    const [allSelectableClients, setAllSelectableClients] = useState<any[]>([]);
+    const [clientSearchTerm, setClientSearchTerm] = useState('');
+    const [showClientResults, setShowClientResults] = useState(false);
+
     // Form State
     const [currentList, setCurrentList] = useState<Partial<MarketingList>>({
         name: '',
@@ -27,29 +40,106 @@ const ListsManager = () => {
         fetchLists();
         fetchCourses();
         fetchUsers();
+        fetchPotentialClients();
     }, []);
 
+    useEffect(() => {
+        if (selectedList && isMembersModalOpen) {
+            fetchMembers(selectedList.id);
+        }
+    }, [selectedList, isMembersModalOpen]);
+
     const fetchUsers = async () => {
-        // Fetch simple user list for assignment
         const { data } = await supabase.from('SITE_Users').select('id, name, email');
         if (data) setUsers(data);
     };
 
     const fetchLists = async () => {
         setIsLoading(true);
-        // We fetch all, and can filter in UI or RLS handles it.
         const { data, error } = await supabase
             .from('SITE_MarketingLists')
             .select('*')
             .order('created_at', { ascending: false });
         
         if (data) {
-             // Map snake_case to camelCase if needed, though types might handle it.
-             // Currently types: ownerId, DB: owner_id. We need to be careful with mapping.
-             // Let's assume the component uses the raw DB return extended with types or manual map.
-             setLists(data.map((l: any) => ({ ...l, ownerId: l.owner_id })));
+             setLists(data.map((l: any) => ({ 
+                 ...l, 
+                 ownerId: l.owner_id,
+                 createdAt: l.created_at // Ensure mapping
+             })));
         }
         setIsLoading(false);
+    };
+
+    const fetchMembers = async (listId: string) => {
+        setIsFetchingMembers(true);
+        const { data } = await supabase
+            .from('SITE_MarketingListMembers')
+            .select('*')
+            .eq('list_id', listId)
+            .order('name', { ascending: true });
+        
+        if (data) setMembers(data);
+        setIsFetchingMembers(false);
+    };
+
+    const handleDeleteMember = async (memberId: string) => {
+        if (!confirm('Remover este contato do grupo?')) return;
+        const { error } = await supabase.from('SITE_MarketingListMembers').delete().eq('id', memberId);
+        if (!error && selectedList) fetchMembers(selectedList.id);
+    };
+
+    const fetchPotentialClients = async () => {
+        const { data: leads } = await supabase.from('SITE_Leads').select('id, name, email, phone').order('name');
+        const { data: mechanics } = await supabase.from('SITE_Mechanics').select('id, name, email, phone').order('name');
+        
+        const combined = [
+            ...(leads || []).map(l => ({ ...l, type: 'Lead' })),
+            ...(mechanics || []).map(m => ({ ...m, type: 'Credenciado' }))
+        ].sort((a, b) => a.name.localeCompare(b.name));
+        
+        setAllSelectableClients(combined);
+    };
+
+    const handleAddExistingClient = async (client: any) => {
+        if (!selectedList) return;
+        setIsFetchingMembers(true);
+        const { error } = await supabase.from('SITE_MarketingListMembers').insert([{
+            list_id: selectedList.id,
+            name: client.name,
+            email: client.email || null,
+            phone: client.phone || '',
+            lead_id: client.type === 'Lead' ? client.id : null
+        }]);
+
+        if (!error) {
+            fetchMembers(selectedList.id);
+            setClientSearchTerm('');
+            setShowClientResults(false);
+        } else {
+            alert('Erro ao vincular: ' + error.message);
+        }
+        setIsFetchingMembers(false);
+    };
+
+    const handleAddManualMember = async () => {
+        if (!selectedList || !newMember.name) return alert('Nome é obrigatório');
+        
+        setIsAddingMember(true);
+        const { error } = await supabase.from('SITE_MarketingListMembers').insert([{
+            list_id: selectedList.id,
+            name: newMember.name,
+            email: newMember.email || null,
+            phone: newMember.phone || ''
+        }]);
+
+        if (!error) {
+            setNewMember({ name: '', email: '', phone: '' });
+            fetchMembers(selectedList.id);
+        } else {
+            alert('Erro ao adicionar: ' + error.message);
+        }
+        setIsAddingMember(false);
     };
 
     const fetchCourses = async () => {
@@ -62,7 +152,6 @@ const ListsManager = () => {
         
         setIsLoading(true);
         try {
-            // Determine Owner: Explicitly set, or current user
             const ownerToSave = currentList.ownerId || user?.id;
 
             const payload = {
@@ -95,7 +184,7 @@ const ListsManager = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Excluir esta lista?')) return;
+        if (!confirm('Excluir esta lista? (Os membros vinculados serão mantidos se pertencerem a outras listas)')) return;
         const { error } = await supabase.from('SITE_MarketingLists').delete().eq('id', id);
         if (!error) fetchLists();
     };
@@ -286,13 +375,200 @@ const ListsManager = () => {
                              </div>
                          )}
 
-                        <div className="pt-3 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
-                            <span>Criada em: {new Date(list.createdAt).toLocaleDateString()}</span>
+                         <div className="pt-3 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
+                            <span>Criada em: {list.createdAt ? new Date(list.createdAt).toLocaleDateString() : 'N/A'}</span>
+                            <button 
+                                onClick={() => { setSelectedList(list); setIsMembersModalOpen(true); }}
+                                className="flex items-center gap-1 text-blue-600 font-bold hover:underline"
+                            >
+                                <Eye size={12} /> Ver Membros
+                            </button>
                         </div>
                     </div>
                 ))}
             </div>
             
+            {/* Members Modal */}
+            {isMembersModalOpen && selectedList && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh]">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <div>
+                                <h3 className="font-black text-xl text-gray-900">{selectedList.name}</h3>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{members.length} Membros Vinculados</p>
+                            </div>
+                            <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-400 hover:text-red-500">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                            {/* NEW: Pull Existing Client Section */}
+                            <div className="space-y-3">
+                                <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 px-1">
+                                    <Search size={14} /> Puxar Cliente Existente
+                                </h4>
+                                <div className="relative">
+                                    <div className="relative">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar por nome, e-mail ou telefone..."
+                                            className="w-full bg-white border-2 border-gray-100 rounded-2xl px-12 py-4 text-sm font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                            value={clientSearchTerm}
+                                            onChange={e => {
+                                                setClientSearchTerm(e.target.value);
+                                                setShowClientResults(true);
+                                            }}
+                                            onFocus={() => setShowClientResults(true)}
+                                        />
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                                        {clientSearchTerm && (
+                                            <button 
+                                                onClick={() => { setClientSearchTerm(''); setShowClientResults(false); }}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Search Results Dropdown */}
+                                    {showClientResults && clientSearchTerm && (
+                                        <div className="absolute z-50 left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-60 overflow-y-auto animate-in slide-in-from-top-2">
+                                            {allSelectableClients
+                                                .filter(c => 
+                                                    c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+                                                    (c.email && c.email.toLowerCase().includes(clientSearchTerm.toLowerCase())) ||
+                                                    (c.phone && c.phone.includes(clientSearchTerm))
+                                                )
+                                                .slice(0, 10)
+                                                .map(client => (
+                                                    <button
+                                                        key={`${client.type}-${client.id}`}
+                                                        onClick={() => handleAddExistingClient(client)}
+                                                        className="w-full flex items-center justify-between p-4 hover:bg-blue-50 text-left transition-colors border-b last:border-0 border-gray-50"
+                                                    >
+                                                        <div>
+                                                            <p className="font-bold text-sm text-gray-900">{client.name}</p>
+                                                            <p className="text-[10px] text-gray-400 font-medium">
+                                                                {client.type} • {client.email || 'Sem e-mail'}
+                                                            </p>
+                                                        </div>
+                                                        <Plus size={16} className="text-blue-500" />
+                                                    </button>
+                                                ))}
+                                            {allSelectableClients.filter(c => c.name.toLowerCase().includes(clientSearchTerm.toLowerCase())).length === 0 && (
+                                                <div className="p-4 text-center text-sm text-gray-400 font-bold">
+                                                    Nenhum cliente encontrado.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Manual Member Form - Fixed for Overflow */}
+                            <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 space-y-4">
+                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                    <Plus size={14} className="text-blue-600" /> Ou Cadastrar Novo Contato
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Nome</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Nome completo"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                            value={newMember.name}
+                                            onChange={e => setNewMember({...newMember, name: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">E-mail</label>
+                                        <input 
+                                            type="email" 
+                                            placeholder="exemplo@v.com"
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                            value={newMember.email}
+                                            onChange={e => setNewMember({...newMember, email: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">WhatsApp</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text" 
+                                                placeholder="(00) 00000-0000"
+                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                                value={newMember.phone}
+                                                onChange={e => setNewMember({...newMember, phone: e.target.value})}
+                                            />
+                                            <button 
+                                                onClick={handleAddManualMember}
+                                                disabled={isAddingMember || !newMember.name}
+                                                className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95 shadow-lg flex-shrink-0"
+                                            >
+                                                {isAddingMember ? <RefreshCw className="animate-spin" size={20} /> : <Check size={20} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-1 underline decoration-gray-200 underline-offset-4">Contatos no Grupo</h4>
+                                {isFetchingMembers ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                        <RefreshCw className="animate-spin mb-2" size={32} />
+                                        <p className="font-bold">Carregando membros...</p>
+                                    </div>
+                                ) : members.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-400">
+                                        <Users size={48} className="mx-auto mb-2 opacity-20" />
+                                        <p>Nenhum membro encontrado nesta lista.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {members.map(member => (
+                                            <div key={member.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                                        {member.name?.charAt(0) || '?'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-sm text-gray-900">{member.name}</p>
+                                                        <div className="flex items-center gap-3 text-[10px] text-gray-500 font-medium">
+                                                            <span className="flex items-center gap-1"><Mail size={10} /> {member.email || 'N/A'}</span>
+                                                            <span className="flex items-center gap-1"><Phone size={10} /> {member.phone || 'N/A'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleDeleteMember(member.id)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                    title="Remover do grupo"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+                            <button 
+                                onClick={() => setIsMembersModalOpen(false)}
+                                className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg"
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {lists.length === 0 && !isLoading && !isEditing && (
                 <div className="text-center py-10 text-gray-400">
                     <Users size={48} className="mx-auto mb-2 opacity-20" />

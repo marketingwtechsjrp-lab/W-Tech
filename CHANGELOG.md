@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.2.4 (2026-01-15) - Fix WhatsApp Duplicates, Variables, Lead Deletion and UI Improvements
+- - Corrigido duplicidade no envio de WhatsApp (Reserva Atômica)
+- - Suporte a variáveis {{nome}}, {{telefone}}, {{email}}, {{status}} e {{origem}}
+- - Implementado envio sequencial (Texto -> Imagem t-> Texo)
+- - Corrigido erro de exclusão de Leads no CRM (RLS e Cascata)
+- - Nova interface de Campanhas com Filtros, Busca e Barra de Progresso Real-time
+- - Corrigido erro de data inválida na listagem de hcampanas
+- - Adicionado vídeo padrão no Editor de Landing Pages
+
 ## v2.2.3 (2026-01-15) - Tab System in Clients & Marketing Permissions
 - Added Sub-Tabs to Clients Manager (Clients/Groups)
 - Integrated ListsManager into Clients View
