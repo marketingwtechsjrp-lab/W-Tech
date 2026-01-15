@@ -83,10 +83,12 @@ Tabelas principais:
 
 ## 5. Procedimentos Comuns
 
-**Deploy / Atualização:**
-1. Commit das alterações: `git commit -am "Mensagem"`
-2. Push para GitHub: `git push`
-3. O Vercel/Netlify (se configurado) fará o deploy automático.
+**Deploy / Atualização (REGRA):**
+Sempre utilize o script automatizado para lançar novas versões e manter o histórico atualizado.
+1. No terminal, execute: `npm run release`
+2. Responda o número da versão (ex: 2.2.0).
+3. Descreva as mudanças.
+4. O script atualizará automaticamente `package.json`, `CHANGELOG.json`, `CHANGELOG.md` e fará o push para o GitHub com tags.
 
 **Correção de Permissões (RLS):**
 - Se houver erro de "Row Level Security" ou upload falhar:

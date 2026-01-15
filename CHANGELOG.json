@@ -1,0 +1,34 @@
+[
+  {
+    "version": "2.1.0",
+    "date": "2026-01-15",
+    "title": "Correções Críticas e Otimização do Dash",
+    "changes": [
+      "FIX: Corrigido bug no upload de imagens (Erro de RLS/Bucket inexistente).",
+      "FIX: KPIs do Dashboard agora priorizam vendas CRM vs Matrículas.",
+      "FIX: Ranking de Atendentes corrigido para usar 'assigned_to'.",
+      "FEAT: Adicionada documentação SYSTEM_MAP.md.",
+      "FEAT: Removido widget de debug visual do CRM."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.0.5",
+    "date": "2026-01-14",
+    "title": "Integração Horos e Ajustes de CRM",
+    "changes": [
+      "FEAT: Integração com visualizador DICOM (Horos).",
+      "FIX: Ajustes na renderização do CRM e permissões de usuários."
+    ]
+  },
+  {
+    "version": "2.0.0",
+    "date": "2026-01-01",
+    "title": "Lançamento da Versão 2.0",
+    "changes": [
+      "Reescrita completa do frontend em React/Vite.",
+      "Novo Dashboard Administrativo.",
+      "Integração completa com Supabase."
+    ]
+  }
+]

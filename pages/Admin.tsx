@@ -36,6 +36,7 @@ import { TaskCategoryList } from '../components/admin/TaskCategoryList';
 import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
 import UserProfileModal from '../components/admin/UserProfileModal';
+import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
 
@@ -3995,7 +3996,7 @@ const SettingsView = () => {
             {/* Header / Tabs */}
             <div className="border-b border-gray-200 bg-gray-50 flex items-center justify-between px-6 pt-4">
                 <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                    {['Geral', 'E-mail', 'WhatsApp API', 'Marketplace & ERP', 'Modelos Msg', 'Categorias', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Backup & Reset'].map(tab => (
+                    {['Geral', 'E-mail', 'WhatsApp API', 'Marketplace & ERP', 'Modelos Msg', 'Categorias', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Histórico de Versões', 'Backup & Reset'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -4346,6 +4347,15 @@ const SettingsView = () => {
                                 <textarea className="w-full h-40 border border-gray-300 p-4 rounded-lg font-mono text-xs bg-gray-50" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* Tab: Histórico de Versões */}
+                {activeTab === 'Histórico de Versões' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                         <div className="max-w-4xl mx-auto">
+                            <ChangelogViewer />
+                         </div>
                     </div>
                 )}
 
