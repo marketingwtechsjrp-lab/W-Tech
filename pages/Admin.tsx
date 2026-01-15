@@ -658,7 +658,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         const { error: uploadError } = await supabase.storage.from('site-assets').upload(filePath, file);
 
         if (uploadError) {
-             alert('Erro no upload: ' + uploadError.message);
+             console.error("Upload error:", uploadError);
+             if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) { 
+                 alert('ERRO DE CONFIGURAÇÃO: O bucket "site-assets" não existe.\nExecute "fix_storage_permissions.sql" no Supabase.');
+             } else if (uploadError.message.includes('row-level security') || uploadError.message.includes('policy')) {
+                 alert('ERRO DE PERMISSÃO: O bloqueio de segurança (RLS) impediu o upload.\n\nPor favor, execute o script "fix_storage_permissions.sql" no SQL Editor do Supabase para corrigir as permissões.');
+             } else {
+                 alert('Erro no upload: ' + uploadError.message);
+             }
              return;
         }
 
@@ -3859,6 +3866,7 @@ const SettingsView = () => {
                 { key: 'crm_delete_leads', label: 'Excluir Leads' },
                 { key: 'crm_export', label: 'Exportar Dados' },
                 { key: 'crm_distribute', label: 'Configurar Distribuição' },
+                { key: 'crm_view_team', label: 'Ver Leads da Equipe (Gestor)' },
                 { key: 'crm_view_all', label: 'Ver Todos os Leads (Igual Admin)' }
             ]
         },
@@ -3898,6 +3906,13 @@ const SettingsView = () => {
                 { key: 'financial_export', label: 'Exportar Relatórios' },
                 { key: 'financial_edit_transaction', label: 'Editar Transações (Risco)' },
                 { key: 'financial_delete_transaction', label: 'Excluir Transações (Risco)' },
+            ]
+        },
+        {
+            title: 'Gestão de Tarefas',
+            perms: [
+                 { key: 'tasks_view_team', label: 'Ver Tarefas da Equipe (Gestor)' },
+                 { key: 'tasks_delete', label: 'Excluir Tarefas de Outros' },
             ]
         },
         {
@@ -5959,7 +5974,7 @@ const Admin: React.FC = () => {
                         {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && hasPermission('manage_marketing') && <MarketingView />}
-                        {currentView === 'tasks' && <TaskManagerView />}
+                        {currentView === 'tasks' && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
                         {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView />}
                         {currentView === 'invoices' && hasPermission('financial_view') && <InvoicesManagerView />}

@@ -317,6 +317,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [leads, setLeads] = useState<Lead[]>([]);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [usersMap, setUsersMap] = useState<Record<string, string>>({});
+    const [usersList, setUsersList] = useState<{ id: string, name: string }[]>([]); // NEW
     
     // CRM Filter State
     const [filterPeriod, setFilterPeriod] = useState(30); // Days
@@ -327,6 +328,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     // New Advanced Filters
     const [searchQuery, setSearchQuery] = useState('');
     const [contextFilter, setContextFilter] = useState('All');
+    const [selectedUserFilter, setSelectedUserFilter] = useState('All'); // NEW
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [selectedLeadForTasks, setSelectedLeadForTasks] = useState<Lead | null>(null);
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
@@ -423,6 +425,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             // Safer to select specific columns we know exist. 'full_name' might be missing from schema causing errors.
             const { data: usersData } = await supabase.from('SITE_Users').select('id, name');
             if (usersData) {
+                setUsersList(usersData);
                 const map: Record<string, string> = {};
                 usersData.forEach((u: any) => { map[u.id] = u.name || 'Usuário'; });
                 setUsersMap(map);
@@ -448,7 +451,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
             (typeof user?.role !== 'string' && user?.role?.name === 'Super Admin') ||
             (typeof user?.role !== 'string' && user?.role?.permissions?.admin_access) ||
-            hasPermission('crm_view_all'); // NEW PERMISSION CHECK
+            hasPermission('crm_view_all') ||
+            hasPermission('crm_view_team'); // Added Team View
 
         console.log("CRM Access Level:", { role: user?.role, hasFullAccess });
 
@@ -498,7 +502,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
             (typeof user?.role !== 'string' && user?.role?.name === 'Super Admin') ||
             (typeof user?.role !== 'string' && user?.role?.permissions?.admin_access) ||
-            hasPermission('crm_view_all');
+            hasPermission('crm_view_all') ||
+            hasPermission('crm_view_team');
 
         const channel = supabase
             .channel('lead_updates_crm')
@@ -769,6 +774,11 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             if (!ctx.includes(contextFilter.toLowerCase())) return false;
         }
 
+        // Check User Filter (NEW)
+        if (selectedUserFilter !== 'All') {
+            if (l.assignedTo !== selectedUserFilter) return false;
+        }
+
         // Check Search Query
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
@@ -823,6 +833,27 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                 ))}
                             </div>
                         </div>
+
+
+                        {/* User Filter (Admin/Manager Only) */}
+                        {(hasPermission('crm_view_all') || hasPermission('crm_view_team') || user?.role === 'Super Admin') && (
+                            <div className="relative group">
+                                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-white transition-colors">
+                                    <Users size={14} className="text-gray-400" />
+                                    <span className="text-xs font-bold text-gray-600 truncate max-w-[150px]">
+                                        {selectedUserFilter === 'All' ? 'Todos os Usuários' : (usersMap[selectedUserFilter] || 'Usuário')}
+                                    </span>
+                                </div>
+                                <div className="absolute top-full left-0 mt-2 w-64 bg-white shadow-xl rounded-xl border border-gray-100 p-2 hidden group-hover:block z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <button onClick={() => setSelectedUserFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-xs font-bold text-gray-700">Todos</button>
+                                    {usersList.map((u) => (
+                                        <button key={u.id} onClick={() => setSelectedUserFilter(u.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-xs text-gray-600 truncate">
+                                            {u.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right: Date Filters & Actions */}

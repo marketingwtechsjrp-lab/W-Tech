@@ -49,11 +49,10 @@ const DashboardView = () => {
 
         try {
             // 1. Fetch Leads (for Conversion & Attendant Rank)
-            // We need owner info. Assuming 'owner_id' links to SITE_Users or we join manually.
-            // fetching owner_id directly.
+            // Added conversion_value and corrected owner_id to assigned_to
             const { data: leadsDTO } = await supabase
                 .from('SITE_Leads')
-                .select('id, status, owner_id, created_at')
+                .select('id, status, assigned_to, created_at, conversion_value')
                 .gte('created_at', startDate);
             
             const leads = leadsDTO || [];
@@ -92,7 +91,19 @@ const DashboardView = () => {
             const convertedLeads = leads.filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status)).length;
             const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
             
-            const totalRevenue = enrollments?.reduce((acc, curr) => acc + (curr.amount_paid || 0), 0) || 0;
+            // Revenue: Sum of Enrollments Paid + CRM Won Values (if distinct? For now, we assume CRM Value is the Sales Metric the user wants)
+            // If enrollments are empty, we rely on CRM Sales.
+            const enrollmentRevenue = enrollments?.reduce((acc, curr) => acc + (curr.amount_paid || 0), 0) || 0;
+            
+            // CRM Sales Value
+            const crmSalesValue = leads
+                .filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status))
+                .reduce((acc, curr) => acc + (Number(curr.conversion_value) || 0), 0);
+
+            // Use the greater of real payments or CRM booked value for "Revenue" display, or sum if they track different things.
+            // Given the user report, they expect CRM value to show up.
+            const totalRevenue = Math.max(enrollmentRevenue, crmSalesValue); 
+
             const totalExpenses = expensesDTO?.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0;
             const totalStudents = enrollments?.filter(e => e.status !== 'Cancelled').length || 0;
             const activeCoursesCount = courses?.filter(c => c.status === 'Published').length || 0;
@@ -115,7 +126,7 @@ const DashboardView = () => {
             const attendantStats: Record<string, { name: string, total: number, converted: number }> = {};
             
             leads.forEach(l => {
-                const ownerId = l.owner_id || 'unassigned';
+                const ownerId = l.assigned_to || 'unassigned'; // FIXED: use assigned_to
                 const name = ownerId === 'unassigned' ? 'Sem Dono' : (userMap.get(ownerId) || 'Desconhecido');
                 
                 if (!attendantStats[ownerId]) attendantStats[ownerId] = { name, total: 0, converted: 0 };
@@ -159,10 +170,27 @@ const DashboardView = () => {
             // Init 12 months
             for(let i=0; i<12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
 
-            enrollments?.forEach((e: any) => {
-                const month = new Date(e.created_at).getMonth();
-                historyMap[month].revenue += (e.amount_paid || 0);
+            // Merge Enrollment Revenue AND CRM Revenue into History?
+            // For now, let's stick to consistent logic: if enrollmentRevenue is 0, use CRM.
+            // To do this simply for history, we can iterate leads too.
+            
+            leads.forEach((l: any) => {
+                 if (['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status)) {
+                     const month = new Date(l.created_at).getMonth();
+                     historyMap[month].revenue += (Number(l.conversion_value) || 0);
+                 }
             });
+
+            // Note: If we really want to use enrollment revenue when available, we would need to not double add.
+            // Assuming for now user is relying on CRM for sales tracking.
+            if (crmSalesValue === 0 && enrollmentRevenue > 0) {
+                 // Reset and use enrollments if CRM is empty but Enrollments exist
+                 for(let i=0; i<12; i++) historyMap[i].revenue = 0;
+                 enrollments?.forEach((e: any) => {
+                    const month = new Date(e.created_at).getMonth();
+                    historyMap[month].revenue += (e.amount_paid || 0);
+                });
+            }
 
             expensesDTO?.forEach((ex: any) => {
                 const month = new Date(ex.date).getMonth();

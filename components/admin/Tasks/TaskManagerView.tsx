@@ -184,7 +184,7 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
 };
 
 
-const TaskManagerView: React.FC = () => {
+const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [leads, setLeads] = useState<{id: string, name: string}[]>([]); // New Leads State
@@ -244,15 +244,32 @@ const TaskManagerView: React.FC = () => {
         return new Date(task.dueDate) < new Date() && task.status !== 'DONE';
     };
 
+    const hasPermission = (key: string) => {
+        if (!user) return false;
+        if (permissions) {
+             if (permissions.admin_access) return true;
+             return !!permissions[key];
+        }
+        if (typeof user.role === 'string') {
+                if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
+                return false;
+        }
+        if (user.role?.level >= 10) return true;
+        if (user.role?.name === 'Super Admin') return true;
+        const rolePermissions = user.role?.permissions || {};
+        return !!rolePermissions[key];
+    };
+
     const canAssignOthers = React.useMemo(() => {
-        const r = user?.role?.name || (typeof user?.role === 'string' ? user.role : '');
-        return r === 'ADMIN' || r === 'Super Admin' || r === 'MANAGER' || r === 'Gestor';
-    }, [user]);
+        return hasPermission('tasks_view_team') || hasPermission('admin_access');
+    }, [user, permissions]);
 
     const isAdmin = React.useMemo(() => {
         const r = user?.role?.name || (typeof user?.role === 'string' ? user.role : '');
         return r === 'ADMIN' || r === 'Super Admin';
     }, [user]);
+
+    const canViewTeam = hasPermission('tasks_view_team') || isAdmin;
 
     useEffect(() => {
         fetchUsers();
@@ -414,6 +431,9 @@ const TaskManagerView: React.FC = () => {
 
     // Filter Logic
     const filteredTasks = tasks.filter(t => {
+        // Enforce Privacy
+        if (!canViewTeam && t.assignedTo !== user?.id) return false;
+
         if (filterStatus !== 'ALL' && t.status !== filterStatus) return false;
         if (filterPriority !== 'ALL' && t.priority !== filterPriority) return false;
         if (filterUser !== 'ALL' && t.assignedTo !== filterUser) return false;
@@ -499,7 +519,7 @@ const TaskManagerView: React.FC = () => {
                     </select>
                 </div>
                 
-                {isAdmin && (
+                {(isAdmin || canViewTeam) && (
                     <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
                         <User size={16} className="text-gray-400 shrink-0" />
                         <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full sm:max-w-[150px]">
