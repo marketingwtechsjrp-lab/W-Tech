@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.2.3 (2026-01-15) - Tab System in Clients & Marketing Permissions
+- Added Sub-Tabs to Clients Manager (Clients/Groups)
+- Integrated ListsManager into Clients View
+- Improved DB instructions for marketing permissions
+
 ## v2.2.2 (2026-01-15) - Deploy Script Improvement
 - Improved deploy script to enforce git operations
 - Updated SYSTEM_MAP to reflect mandatory routine

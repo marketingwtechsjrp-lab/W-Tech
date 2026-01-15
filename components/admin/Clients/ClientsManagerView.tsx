@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, UserPlus, Phone, Mail, MapPin, Filter, MoreVertical, Shield, Users, Plus, X, Save, CheckCircle } from 'lucide-react';
+import { Search, User, UserPlus, Phone, Mail, MapPin, Filter, MoreVertical, Shield, Users, Plus, X, Save, CheckCircle, PanelsTopLeft } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import ListsManager from '../Marketing/ListsManager';
 
 const ClientsManagerView = () => {
     const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState<'clients' | 'groups'>('clients');
     const [clients, setClients] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -172,7 +174,7 @@ const ClientsManagerView = () => {
                     <p className="text-gray-500 font-medium">Visualize Leads e Credenciados em um só lugar.</p>
                 </div>
                 <div className="flex gap-2">
-                    {selectedClients.length > 0 && (
+                    {activeTab === 'clients' && selectedClients.length > 0 && (
                         <button 
                             onClick={() => setIsGroupModalOpen(true)}
                             className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl active:scale-95 animate-in slide-in-from-right-4"
@@ -187,28 +189,57 @@ const ClientsManagerView = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-3 text-gray-400" size={20} />
-                        <input 
-                            type="text"
-                            placeholder="Buscar por nome, email ou telefone..."
-                            className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <select 
-                        className="px-6 py-3 bg-gray-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-gold"
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                    >
-                        <option value="all">Todos os Tipos</option>
-                        <option value="Lead">Leads</option>
-                        <option value="Credenciado">Credenciados</option>
-                    </select>
+            {/* Sub-Tabs */}
+            <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-fit">
+                <button
+                    onClick={() => setActiveTab('clients')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
+                        activeTab === 'clients' 
+                        ? 'bg-black text-white shadow-lg' 
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                    <User size={16} /> Todos os Clientes
+                </button>
+                <button
+                    onClick={() => setActiveTab('groups')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
+                        activeTab === 'groups' 
+                        ? 'bg-black text-white shadow-lg' 
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                    <Users size={16} /> Grupos de Marketing
+                </button>
+            </div>
+
+            {activeTab === 'groups' ? (
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-6 animate-in fade-in zoom-in-95 duration-200">
+                    <ListsManager />
                 </div>
+            ) : (
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">
+                    <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-3 text-gray-400" size={20} />
+                            <input 
+                                type="text"
+                                placeholder="Buscar por nome, email ou telefone..."
+                                className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <select 
+                            className="px-6 py-3 bg-gray-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-gold"
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                        >
+                            <option value="all">Todos os Tipos</option>
+                            <option value="Lead">Leads</option>
+                            <option value="Credenciado">Credenciados</option>
+                        </select>
+                    </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -335,6 +366,7 @@ const ClientsManagerView = () => {
                     </div>
                 )}
             </div>
+            )}
 
             {/* Add to Group Modal */}
             {isGroupModalOpen && (

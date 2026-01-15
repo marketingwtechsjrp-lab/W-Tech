@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.2.3",
+    "date": "2026-01-15",
+    "title": "Tab System in Clients & Marketing Permissions",
+    "changes": [
+      "Added Sub-Tabs to Clients Manager (Clients/Groups)",
+      "Integrated ListsManager into Clients View",
+      "Improved DB instructions for marketing permissions"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.2.2",
     "date": "2026-01-15",
     "title": "Deploy Script Improvement",
