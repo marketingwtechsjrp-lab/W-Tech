@@ -295,7 +295,11 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
             {lead.tags && lead.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                     {lead.tags.slice(0, 3).map((tag: string, i: number) => (
-                        <Badge key={i} variant="secondary" size="xs" appearance="outline" className="text-[9px] h-4 px-1">{tag}</Badge>
+                        <div key={`${lead.id}-tag-${i}`}>
+                            <Badge variant="secondary" size="xs" appearance="outline" className="text-[9px] h-4 px-1">
+                                {tag}
+                            </Badge>
+                        </div>
                     ))}
                      {lead.tags.length > 3 && <span className="text-[9px] text-gray-400">+{lead.tags.length - 3}</span>}
                 </div>
@@ -812,44 +816,49 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
 
     // Filter Logic
-    const filteredLeads = leads.filter(l => {
-        const d = new Date(l.createdAt);
-        
-        if (filterType === 'Period') {
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - d.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays <= filterPeriod;
-        } else if (filterType === 'Month') {
-            return l.createdAt.startsWith(selectedMonth);
-        } else if (filterType === 'Custom') {
-            if (customRange.start && d < new Date(customRange.start)) return false;
-            // Add 1 day to end date to handle "until end of day" implicitly or just compare strict
-             if (customRange.end && d > new Date(new Date(customRange.end).setHours(23,59,59,999))) return false;
+    const filteredLeads = useMemo(() => {
+        return leads.filter(l => {
+            const d = new Date(l.createdAt);
+            
+            // 1. Time Filters (Restrictive)
+            if (filterType === 'Period') {
+                if (filterPeriod !== 9999) { // 9999 is "Tudo"
+                    const now = new Date();
+                    const diffTime = Math.abs(now.getTime() - d.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > filterPeriod) return false;
+                }
+            } else if (filterType === 'Month') {
+                if (!l.createdAt.startsWith(selectedMonth)) return false;
+            } else if (filterType === 'Custom') {
+                if (customRange.start && d < new Date(customRange.start)) return false;
+                if (customRange.end && d > new Date(new Date(customRange.end).setHours(23, 59, 59, 999))) return false;
+            }
+
+            // 2. Source/Context Filter
+            if (contextFilter && contextFilter !== 'All') {
+                const ctx = String(l.contextId || '').toLowerCase();
+                const filter = contextFilter.toLowerCase();
+                if (!ctx.includes(filter)) return false;
+            }
+
+            // 3. User Filter
+            if (selectedUserFilter && selectedUserFilter !== 'All') {
+                if (String(l.assignedTo) !== String(selectedUserFilter)) return false;
+            }
+
+            // 4. Search Filter
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase().trim();
+                const name = String(l.name || '').toLowerCase();
+                const email = String(l.email || '').toLowerCase();
+                const phone = String(l.phone || '').toLowerCase();
+                if (!name.includes(q) && !email.includes(q) && !phone.includes(q)) return false;
+            }
+
             return true;
-        }
-        // Check Source/Context
-        if (contextFilter !== 'All') {
-            const ctx = (l.contextId || '').toLowerCase();
-            if (!ctx.includes(contextFilter.toLowerCase())) return false;
-        }
-
-        // Check User Filter (NEW)
-        if (selectedUserFilter !== 'All') {
-            if (l.assignedTo !== selectedUserFilter) return false;
-        }
-
-        // Check Search Query
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            const matchName = l.name.toLowerCase().includes(q);
-            const matchEmail = l.email.toLowerCase().includes(q);
-            const matchPhone = l.phone.includes(q);
-            if (!matchName && !matchEmail && !matchPhone) return false;
-        }
-
-        return true;
-    });
+        });
+    }, [leads, filterType, filterPeriod, selectedMonth, customRange, contextFilter, selectedUserFilter, searchQuery]);
 
     // Extract unique contexts for filter
     const uniqueContexts = useMemo(() => {
@@ -1116,22 +1125,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 )}
             </div>
 
-            {/* Conversion Chart Overlay (Mini) */}
-            <div className="fixed bottom-8 right-8 bg-white p-4 rounded-xl shadow-2xl border border-gray-100 z-40 animate-in slide-in-from-right">
-                <div className="flex items-center gap-4">
-                    <div className="relative w-16 h-16">
-                        <svg className="w-full h-full transform -rotate-90">
-                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-100" />
-                            <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={175.9} strokeDashoffset={175.9 - (175.9 * conversionRate) / 100} className="text-green-500" />
-                        </svg>
-                        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold">{conversionRate}%</span>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 uppercase">Taxa de Conversão</p>
-                        <p className="text-sm font-bold text-gray-900">{leads.filter(l => l.status === 'Converted').length} Vendas / {leads.length} Leads</p>
-                    </div>
-                </div>
-            </div>     {/* Lead Edit Modal */}
+
             <AnimatePresence>
                 {editingLead && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

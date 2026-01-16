@@ -1,7 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v2.2.7 (2026-01-16) - UI Polishing & CRM Cleanup
+- FIX: Removido widget de Taxa de Conversão flutuante no CRM
+- FIX: Correções de Dark Mode no painel administrativo
+- FIX: Melhorias na deleção de leads (Cascade & Permissions)
+- FEAT: Novas melhorias no Task Manager UI
 
-## v2.2.6 (2026-01-15) - Melhorias no Gerenciador de Tarefas e Dark Mode
+## v2.2.6 (2026-01-16) - Melhorias no Gerenciador de Tarefas e Dark Mode
 - FEAT: Cards de tarefas redesenhados - sempre escuros com textos claros
 - FEAT: Tags de categoria visíveis em cada card de tarefa
 - FEAT: Indicador de automação WhatsApp (ícone de robô pulsante)

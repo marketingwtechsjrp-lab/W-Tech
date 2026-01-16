@@ -1,7 +1,7 @@
 {
   "name": "w-tech-experience-portal",
   "private": true,
-  "version": "2.2.5",
+  "version": "2.2.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
