@@ -42,6 +42,8 @@ import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
 import changelogData from '../CHANGELOG.json';
 import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
 import { History } from 'lucide-react';
+import { Slider } from '../components/ui/slider-number-flow';
+import { ToggleTheme } from '../components/ui/toggle-theme';
 
 
 // --- Types for Local State ---
@@ -78,26 +80,41 @@ const SidebarItem = ({
     label,
     active,
     onClick,
-    collapsed
+    collapsed,
+    menuStyles
 }: {
     icon: any,
     label: string,
     active: boolean,
     onClick: () => void,
-    collapsed?: boolean
-}) => (
+    collapsed?: boolean,
+    menuStyles?: any
+}) => {
+    // Defaults matching the "compact" aggressive look we just made
+    const fSize = menuStyles?.fontSize || 11;
+    const iSize = menuStyles?.iconSize || 15;
+    const pY = menuStyles?.paddingY !== undefined ? menuStyles.paddingY : 4; // px
+    const mY = menuStyles?.marginY !== undefined ? menuStyles.marginY : 1; // px
+    
+    // Responsive Logic: Cap values based on viewport height (vh) to prevent overflow on small screens
+    const responsivePY = `min(${pY}px, 0.8vh)`;
+    const responsiveMY = `min(${mY}px, 0.4vh)`;
+    const responsiveFS = `min(${fSize}px, 2.2vh)`; // Font size shouldn't exceed ~2.2% of screen height
+
+    return (
     <button
         onClick={onClick}
         title={collapsed ? label : undefined}
-        className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-2'} py-1 my-px rounded-md transition-all duration-200 group ${active
+        className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-2'} rounded-md transition-all duration-200 group ${active
             ? 'bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-bold shadow-sm shadow-yellow-500/20'
             : 'text-gray-400 hover:bg-gray-800 hover:text-white'
             }`}
+        style={{ paddingTop: responsivePY, paddingBottom: responsivePY, marginTop: responsiveMY, marginBottom: responsiveMY }}
     >
-        <Icon size={15} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-2'}`} />
-        {!collapsed && <span className="text-[11px] font-medium tracking-tight transition-opacity duration-200 truncate leading-none">{label}</span>}
+        <Icon size={iSize} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-2'}`} />
+        {!collapsed && <span className="font-medium tracking-tight transition-opacity duration-200 truncate leading-none" style={{ fontSize: responsiveFS }}>{label}</span>}
     </button>
-);
+)};
 
 const MobileMenuItem = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
     <button onClick={onClick} className="flex flex-col items-center gap-3 group">
@@ -1488,19 +1505,19 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         const totalPotential = enrollments.length * (currentCourse.price || 0);
 
         return (
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 min-h-screen">
+            <div className="bg-white dark:bg-[#1A1A1A] p-8 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 min-h-screen">
                 <div className="flex justify-between items-start mb-8 print:hidden">
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-gray-500 hover:text-black flex items-center gap-1">
+                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-gray-500 hover:text-black dark:hover:text-white flex items-center gap-1">
                                 <ArrowRight className="rotate-180" size={14} /> Voltar
                             </button>
                         </div>
-                        <h2 className="text-2xl font-black text-gray-900">Lista de Inscritos</h2>
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white">Lista de Inscritos</h2>
                         <p className="text-gray-500">{currentCourse.title} • {new Date(currentCourse.date).toLocaleDateString()}</p>
                         <div className="mt-2 text-sm flex gap-4">
-                            <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">Recebido: R$ {totalPaid.toFixed(2)}</span>
-                            <span className="text-gray-600 font-bold bg-gray-100 px-2 py-1 rounded">Total Previsto: R$ {totalPotential.toFixed(2)}</span>
+                            <span className="text-green-600 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: R$ {totalPaid.toFixed(2)}</span>
+                            <span className="text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: R$ {totalPotential.toFixed(2)}</span>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1784,9 +1801,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
     const Table = () => (
         <>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 <table className="w-full text-left font-bold text-sm">
-                    <thead className="bg-[#eff6ff] text-[#1e3a8a] text-xs uppercase">
+                    <thead className="bg-[#eff6ff] dark:bg-[#111] text-[#1e3a8a] dark:text-blue-400 text-xs uppercase">
                         <tr>
                             <th className="p-4">Evento</th>
                             <th className="p-4">Data</th>
@@ -1795,15 +1812,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <th className="p-4 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-600">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-600 dark:text-gray-400">
                         {filteredCourses.length > 0 ? (
                             filteredCourses.map(course => (
-                                <tr key={course.id} className="hover:bg-gray-50">
+                                <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                     <td className="p-4">
-                                        <div className="text-blue-700 font-bold">{course.title}</div>
+                                        <div className="text-blue-700 dark:text-blue-400 font-bold">{course.title}</div>
                                         <div className="text-xs text-gray-400">{course.location}</div>
                                     </td>
-                                    <td className="p-4 text-gray-800 font-bold">
+                                    <td className="p-4 text-gray-800 dark:text-gray-300 font-bold">
                                         {new Date(course.date).toLocaleDateString()}
                                         <div className="text-xs text-gray-400 font-normal">{new Date(course.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                     </td>
@@ -2098,14 +2115,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         <div className="text-gray-900 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h2 className="text-xl font-bold">Gestão de Cursos e Eventos</h2>
+                    <h2 className="text-xl font-bold dark:text-white">Gestão de Cursos e Eventos</h2>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                     {/* Search Bar */}
                     <div className="relative">
                         <input
-                            className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-wtech-gold w-full md:w-64"
+                            className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-wtech-gold w-full md:w-64 dark:bg-[#222] dark:border-gray-700 dark:text-white"
                             placeholder="Buscar curso..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -2114,30 +2131,32 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     </div>
 
                     {/* Date Filter */}
-                    <div className="flex items-center gap-2 bg-white border rounded-lg px-2 py-1">
+                    <div className="flex items-center gap-2 bg-white dark:bg-[#222] border dark:border-gray-700 rounded-lg px-2 py-1">
                         <span className="text-xs font-bold text-gray-400 uppercase">Período:</span>
-                        <input type="date" className="text-sm border-none focus:ring-0 text-gray-600" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
+                        <input type="date" className="text-sm border-none focus:ring-0 text-gray-600 dark:text-gray-300 dark:bg-transparent" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
                         <span className="text-gray-400">-</span>
-                        <input type="date" className="text-sm border-none focus:ring-0 text-gray-600" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
+                        <input type="date" className="text-sm border-none focus:ring-0 text-gray-600 dark:text-gray-300 dark:bg-transparent" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
                         {(dateRange.start || dateRange.end) && (
                             <button onClick={() => setDateRange({ start: '', end: '' })} className="text-gray-400 hover:text-red-500"><X size={14} /></button>
                         )}
                     </div>
 
-                    <div className="h-8 w-px bg-gray-300 mx-2"></div>
+                    <div className="h-8 w-px bg-gray-300 mx-2 hidden md:block"></div>
 
-                    <button onClick={downloadCoursesReport} className="bg-green-100 text-green-800 border border-green-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-green-200 transition-colors" title="Exportar Relatório CSV">
-                        <Download size={16} /> Relatório
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={downloadCoursesReport} className="bg-green-100 text-green-800 border border-green-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-green-200 transition-colors dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" title="Exportar Relatório CSV">
+                            <Download size={16} /> Relatório
+                        </button>
 
-                    <button onClick={handlePrintCoursesReport} className="bg-gray-100 text-gray-800 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors" title="Imprimir Lista">
-                        <Printer size={16} /> Imprimir
-                    </button>
+                        <button onClick={handlePrintCoursesReport} className="bg-gray-100 text-gray-800 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700" title="Imprimir Lista">
+                            <Printer size={16} /> Imprimir
+                        </button>
+                    </div>
 
                     {/* View Toggles */}
-                    <div className="flex bg-gray-100 p-1 rounded-lg">
-                        <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'calendar' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Calendário</button>
-                        <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Lista</button>
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                        <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'calendar' ? 'bg-white dark:bg-[#333] shadow-sm dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Calendário</button>
+                        <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'list' ? 'bg-white dark:bg-[#333] shadow-sm dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Lista</button>
                     </div>
                 </div>
             </div>
@@ -3775,7 +3794,7 @@ const SettingsView = () => {
             data.forEach((item: any) => {
                 configObj[item.key] = item.value;
             });
-            setConfig(configObj);
+            
             // Parse webhooks if active
             if (configObj.system_webhooks) {
                 try { setWebhooks(JSON.parse(configObj.system_webhooks)); } catch (e) { }
@@ -3783,6 +3802,19 @@ const SettingsView = () => {
             if (configObj.partner_brands) {
                 try { setPartnerBrands(JSON.parse(configObj.partner_brands)); } catch (e) { }
             }
+             // Parse Menu Styles
+             if (configObj.menu_styles) {
+                try {
+                    configObj.menu_styles = JSON.parse(configObj.menu_styles);
+                } catch (e) {
+                    console.warn("Failed to parse menu_styles", e);
+                    configObj.menu_styles = {};
+                }
+            } else {
+                configObj.menu_styles = {};
+            }
+
+            setConfig(configObj);
         }
     };
 
@@ -3800,11 +3832,13 @@ const SettingsView = () => {
         const finalConfig = { 
             ...config, 
             system_webhooks: JSON.stringify(webhooks), 
-            partner_brands: JSON.stringify(partnerBrands) 
+            partner_brands: JSON.stringify(partnerBrands),
+            menu_styles: config.menu_styles ? JSON.stringify(config.menu_styles) : null
         };
+        
         const updates = Object.entries(finalConfig).map(([key, value]) => ({
             key,
-            value: typeof value === 'string' ? value : String(value || '')
+            value: typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value || '')
         }));
 
         const { error } = await supabase.from('SITE_SystemSettings').upsert(updates, { onConflict: 'key' });
@@ -4035,6 +4069,7 @@ const SettingsView = () => {
                             { id: 'Webhooks & API', icon: Code, label: 'API & Hooks', color: 'bg-pink-500' },
                             { id: 'Permissões & Cargos', icon: Shield, label: 'Permissões', color: 'bg-red-500' },
                             { id: 'Scripts Globais', icon: Code, label: 'Scripts', color: 'bg-yellow-500' },
+                            { id: 'Layout Menu', icon: Layout, label: 'Layout Menu', color: 'bg-cyan-500' },
                             { id: 'Histórico de Versões', icon: History, label: 'Versões', color: 'bg-gray-500' },
                             { id: 'Backup & Reset', icon: Save, label: 'Backup', color: 'bg-blue-600' },
                         ]}
@@ -4380,6 +4415,86 @@ const SettingsView = () => {
                                 <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* Tab: Layout Menu */}
+                {activeTab === 'Layout Menu' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                         <div className="max-w-xl mx-auto space-y-8">
+                            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-6 flex items-center gap-2">
+                                    <Layout size={20} className="text-cyan-500" /> Personalização do Menu
+                                </h3>
+                                
+                                <div className="space-y-8 py-4">
+                                    {/* Icon Size */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tamanho dos Ícones</label>
+                                        </div>
+                                        <Slider 
+                                            value={[config.menu_styles?.iconSize || 15]} 
+                                            max={24} 
+                                            min={12} 
+                                            step={1} 
+                                            onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), iconSize: val[0] })}
+                                        />
+                                    </div>
+
+                                    {/* Font Size */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tamanho da Fonte</label>
+                                        </div>
+                                        <Slider 
+                                            value={[config.menu_styles?.fontSize || 11]} 
+                                            max={16} 
+                                            min={9} 
+                                            step={1} 
+                                            onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), fontSize: val[0] })}
+                                        />
+                                    </div>
+
+                                    {/* Spacing (Padding Y) */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Espaçamento Vertical (Padding)</label>
+                                        </div>
+                                        <Slider 
+                                            value={[config.menu_styles?.paddingY !== undefined ? config.menu_styles.paddingY : 4]} 
+                                            max={12} 
+                                            min={2} 
+                                            step={1} 
+                                            onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), paddingY: val[0] })}
+                                        />
+                                    </div>
+
+                                    {/* Margin Y */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-end">
+                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Margem Entre Itens</label>
+                                        </div>
+                                        <Slider 
+                                            value={[config.menu_styles?.marginY !== undefined ? config.menu_styles.marginY : 1]} 
+                                            max={8} 
+                                            min={0} 
+                                            step={1} 
+                                            onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), marginY: val[0] })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                                    <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg">
+                                        <AlertTriangle size={16} />
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        As alterações são aplicadas a <strong>todos os usuários</strong> do sistema.
+                                    </p>
+                                </div>
+                            </div>
+                         </div>
                     </div>
                 )}
 
@@ -5676,21 +5791,11 @@ const Admin: React.FC = () => {
         return () => clearInterval(interval);
     }, [user]);
 
+
+
     const [currentView, setCurrentView] = useState<View>('dashboard');
-    
-    // Dark Mode State
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('wtech_theme') === 'dark';
-        }
-        return false;
-    });
-
-    useEffect(() => {
-        localStorage.setItem('wtech_theme', isDarkMode ? 'dark' : 'light');
-    }, [isDarkMode]);
-
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
+
     const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -5805,7 +5910,7 @@ const Admin: React.FC = () => {
     if (loading || !user) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wtech-gold"></div></div>;
 
     return (
-        <div className={`flex h-screen bg-[#F8F9FA] dark:bg-black overflow-hidden transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
+        <div className={`flex h-screen bg-[#F8F9FA] dark:bg-black overflow-hidden transition-colors duration-300`}>
 
             {/* Sidebar (Desktop Only) */}
             <div className={`
@@ -5843,13 +5948,7 @@ const Admin: React.FC = () => {
                                 <span className="opacity-40 hover:opacity-100 transition-opacity text-[9px] font-black text-wtech-gold uppercase tracking-[0.3em] font-mono">
                                     v{changelogData[0]?.version || '2.2.4'}
                                 </span>
-                                <button 
-                                    onClick={() => setIsDarkMode(!isDarkMode)}
-                                    className="text-gray-500 hover:text-wtech-gold transition-colors p-1"
-                                    title={isDarkMode ? "Modo Claro" : "Modo Escuro"}
-                                >
-                                    {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
-                                </button>
+                                {!isSidebarCollapsed && <ToggleTheme />}
                             </div>
                         </div>
                         {/* Desktop Toggle Button */}
@@ -5903,66 +6002,66 @@ const Admin: React.FC = () => {
 
                     <div className="flex-1 flex flex-col justify-between overflow-hidden gap-0.5 pb-2 min-h-0">
                         {hasPermission('dashboard_view') && (
-                            <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
                         
                         {hasPermission('crm_view') && (
-                            <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
-                        <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                        <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         
                         {hasPermission('manage_users') && (
-                            <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
                         
                         {hasPermission('manage_orders') && (
-                            <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
                         {hasPermission('manage_orders') && (
-                            <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
                         {hasPermission('manage_orders') && (
-                            <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
                         {hasPermission('financial_view') && (
-                            <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
                         
                         {hasPermission('courses_view') && (
-                            <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
                         
                         {hasPermission('accredited_view') && (
-                            <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
                         
                         {hasPermission('financial_view') && (
-                            <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
                         
                         {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && (
-                            <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                            <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
                         <div className={`pt-4 mt-4 border-t border-gray-800 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
                              {!isSidebarCollapsed && <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>}
 
                             {hasPermission('blog_view') && (
-                                <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                                <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
                             
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
-                                <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                                <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
                         </div>
 
                         <div className="pt-4 mt-4 border-t border-gray-800">
                             {hasPermission('manage_settings') && (
-                                <SidebarItem icon={Settings} label="Configurações" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
+                                <SidebarItem icon={Settings} label="Configurações" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
                         </div>
                     </div>

@@ -47,6 +47,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             if (data) {
                 const config: any = {};
                 data.forEach((item: any) => config[item.key] = item.value);
+
+                // Parse standard JSON fields
+                try { if (config.menu_styles && typeof config.menu_styles === 'string') config.menu_styles = JSON.parse(config.menu_styles); } catch (e) { config.menu_styles = {}; }
+                try { if (config.system_webhooks && typeof config.system_webhooks === 'string') config.system_webhooks = JSON.parse(config.system_webhooks); } catch (e) { }
+                try { if (config.partner_brands && typeof config.partner_brands === 'string') config.partner_brands = JSON.parse(config.partner_brands); } catch (e) { }
+
                 setSettings(config);
 
                 // Apply Global Styles/Meta

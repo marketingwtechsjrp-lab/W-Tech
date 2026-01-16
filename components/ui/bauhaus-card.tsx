@@ -1,14 +1,14 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { ChronicleButton } from "./chronicle-button";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, Bot } from "lucide-react";
 
 const BAUHAUS_CARD_STYLES = `
 .bauhaus-card {
   position: relative;
   z-index: 1;
   max-width: 17rem;
-  min-height: 17rem;
+  min-height: 12rem;
   width: 100%;
   display: grid;
   place-content: center;
@@ -165,10 +165,12 @@ export interface BauhausCardProps {
   progressValue: string;
   filledButtonInscription?: string;
   outlinedButtonInscription?: string;
-  onFilledButtonClick: (id: string) => void;
-  onOutlinedButtonClick: (id: string) => void;
+  onFilledButtonClick?: (id: string) => void;
+  onOutlinedButtonClick?: (id: string) => void;
   onMoreOptionsClick?: (id: string) => void;
   onDeleteClick?: (id: string) => void;
+  onCardClick?: (id: string) => void;
+  headerIcon?: any;
   mirrored?: boolean;
   swapButtons?: boolean;
   ChronicleButtonHoverColor?: string;
@@ -181,6 +183,12 @@ export interface BauhausCardProps {
   chronicleButtonBg?: string;
   chronicleButtonFg?: string;
   chronicleButtonHoverFg?: string;
+  customButtonHeight?: string;
+  customButtonFontSize?: string;
+  customCardPadding?: string;
+  tag?: string;
+  tagColor?: string;
+  isAutomated?: boolean;
 }
 
 export const BauhausCard: React.FC<BauhausCardProps> = ({
@@ -197,12 +205,14 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
   progressBarInscription = "Not Set!",
   progress = 0,
   progressValue = "Not Set!",
-  filledButtonInscription = "Not Set!",
-  outlinedButtonInscription = "Not Set!",
+  filledButtonInscription,
+  outlinedButtonInscription,
   onFilledButtonClick,
   onOutlinedButtonClick,
   onMoreOptionsClick,
   onDeleteClick,
+  onCardClick,
+  headerIcon: HeaderIcon = MoreVertical,
   mirrored = false,
   ChronicleButtonHoverColor = "#156ef6",
   textColorTop = "#bfc7d5",
@@ -217,6 +227,9 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
   customButtonHeight,
   customButtonFontSize,
   customCardPadding = "1.5rem",
+  tag,
+  tagColor,
+  isAutomated = false,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -246,6 +259,7 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
     <div
       className="bauhaus-card"
       ref={cardRef}
+      onClick={() => onCardClick && onCardClick(id)}
       style={{
         '--card-bg': backgroundColor,
         '--card-border': separatorColor,
@@ -259,7 +273,8 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
         '--card-text-progress-value': textColorProgressValue,
         '--card-text-progress-val': textColorProgressValue,
         '--card-progress-bg': progressBarBackground,
-        padding: customCardPadding
+        padding: customCardPadding,
+        cursor: onCardClick ? 'pointer' : 'default'
       } as React.CSSProperties}
     >
       <div
@@ -274,11 +289,18 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
           }}
         >
           {topInscription}
+          {isAutomated && (
+            <Bot 
+              size={14} 
+              className="inline-block ml-2 text-green-400 animate-pulse" 
+              title="Automação WhatsApp Ativa"
+            />
+          )}
         </div>
         <div className="flex items-center gap-2">
           {onDeleteClick && (
             <div
-              onClick={() => onDeleteClick(id)}
+              onClick={(e) => { e.stopPropagation(); onDeleteClick(id); }}
               style={{ cursor: 'pointer' }}
               className="text-gray-400 hover:text-red-500 transition-colors p-1"
               title="Excluir"
@@ -288,16 +310,28 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
           )}
           {onMoreOptionsClick && (
             <div
-              onClick={() => onMoreOptionsClick(id)}
+              onClick={(e) => { e.stopPropagation(); onMoreOptionsClick(id); }}
               style={{ cursor: 'pointer' }}
               className="text-white hover:text-wtech-gold transition-colors p-1"
             >
-              <MoreVertical size={18} />
+              <HeaderIcon size={18} />
             </div>
           )}
         </div>
       </div>
       <div className="bauhaus-card-body">
+        {tag && (
+          <span 
+            className="inline-block px-2 py-0.5 mb-2 rounded text-[10px] font-bold uppercase tracking-wider"
+            style={{ 
+              backgroundColor: tagColor ? `${tagColor}20` : 'rgba(255,255,255,0.1)', 
+              color: tagColor || '#ffffff',
+              border: `1px solid ${tagColor ? `${tagColor}40` : 'rgba(255,255,255,0.2)'}`
+            }}
+          >
+            {tag}
+          </span>
+        )}
         <h3 style={{ direction: isRTL(mainText) ? 'rtl' : 'ltr' }}>{mainText}</h3>
         <p style={{ direction: isRTL(subMainText) ? 'rtl' : 'ltr' }}>{subMainText}</p>
         <div className="bauhaus-progress">
@@ -326,47 +360,57 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
           </span>
         </div>
       </div>
-      <div className="bauhaus-card-footer">
-        <div className="bauhaus-button-container">
-          {swapButtons ? (
-            <>
-              <ChronicleButton
-                text={outlinedButtonInscription || ""}
-                outlined={true}
-                width={swapButtons ? "auto" : "100%"}
-                onClick={() => onOutlinedButtonClick(id)}
-                borderRadius={borderRadius}
-                hoverColor={accentColor}
-                customBackground={chronicleButtonBg}
-                customForeground={chronicleButtonFg}
-                hoverForeground={chronicleButtonHoverFg}
-                height={customButtonHeight}
-                fontSize={customButtonFontSize}
-              />
-              <ChronicleButton
-                text={filledButtonInscription || ""}
-                width={swapButtons ? "auto" : "100%"}
-                onClick={() => onFilledButtonClick(id)}
-                borderRadius={borderRadius}
-                hoverColor={accentColor}
-                customBackground="var(--card-accent)"
-                customForeground={chronicleButtonFg}
-                hoverForeground={chronicleButtonHoverFg}
-                height={customButtonHeight}
-                fontSize={customButtonFontSize}
-              />
-            </>
-          ) : (
-            <>
-              <ChronicleButton
-                text={filledButtonInscription || ""}
-                customForeground={chronicleButtonFg}
-                hoverForeground={chronicleButtonHoverFg}
-              />
-            </>
-          )}
-        </div>
-      </div>
+      
+      {/* Only render footer if buttons are present */}
+      {(filledButtonInscription || outlinedButtonInscription) && (
+          <div className="bauhaus-card-footer">
+            <div className="bauhaus-button-container">
+              {swapButtons ? (
+                <>
+                  <ChronicleButton
+                    text={outlinedButtonInscription || ""}
+                    outlined={true}
+                    width={swapButtons ? "auto" : "100%"}
+                    onClick={(id) => { if(onOutlinedButtonClick) onOutlinedButtonClick(id); }}
+                    borderRadius={borderRadius}
+                    hoverColor={accentColor}
+                    customBackground={chronicleButtonBg}
+                    customForeground={chronicleButtonFg}
+                    hoverForeground={chronicleButtonHoverFg}
+                    height={customButtonHeight}
+                    fontSize={customButtonFontSize}
+                  />
+                  <ChronicleButton
+                    text={filledButtonInscription || ""}
+                    width={swapButtons ? "auto" : "100%"}
+                    onClick={(id) => { if (onFilledButtonClick) onFilledButtonClick(id); }}
+                    borderRadius={borderRadius}
+                    hoverColor={accentColor}
+                    customBackground="var(--card-accent)"
+                    customForeground={chronicleButtonFg}
+                    hoverForeground={chronicleButtonHoverFg}
+                    height={customButtonHeight}
+                    fontSize={customButtonFontSize}
+                  />
+                </>
+              ) : (
+                <>
+                  <ChronicleButton
+                    text={filledButtonInscription || ""}
+                    onClick={(id) => { if(onFilledButtonClick) onFilledButtonClick(id); }}
+                    borderRadius={borderRadius}
+                    hoverColor={accentColor}
+                    customBackground="var(--card-accent)"
+                    customForeground={chronicleButtonFg}
+                    hoverForeground={chronicleButtonHoverFg}
+                    height={customButtonHeight}
+                    fontSize={customButtonFontSize}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+      )}
     </div>
   );
 };

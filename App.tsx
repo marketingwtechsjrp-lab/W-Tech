@@ -46,53 +46,54 @@ declare global {
   }
 }
 
+import { ThemeProvider } from 'next-themes';
+
 const App = () => {
-    // Logic moved to SettingsContext
-
-
   return (
     <SettingsProvider>
-    <Router>
-        <AuthProvider>
-            <CartProvider>
-                <div className="flex flex-col min-h-screen">
-                    <WhatsAppInterceptor />
-                    <Suspense fallback={<PageLoader />}>
-                        <Routes>
-                            <Route path="/" element={<Layout><Home /></Layout>} />
-                            <Route path="/home-p2" element={<HomeP2 />} />
-                            <Route path="/cursos" element={<Layout><Courses /></Layout>} />
-                            <Route path="/cursos/:id" element={<Layout><CourseDetail /></Layout>} />
-                            <Route path="/glossario" element={<Glossary />} />
-                            <Route path="/admin" element={<Admin />} />
-                            <Route path="/sou-mecanico" element={<MechanicRegister />} />
-                            <Route path="/mapa" element={<Layout><MechanicsMap /></Layout>} />
-                            <Route path="/checkout/:planId" element={<Layout><Checkout /></Layout>} />
-                            <Route path="/contato" element={<Layout><Contact /></Layout>} />
-                            <Route path="/blog" element={<Layout><Blog /></Layout>} />
-                            <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
-                            
-                            {/* Landing Pages */}
-                            <Route path="/lp/europa" element={<LPEuropa />} />
-                            <Route path="/lp-lisboa-fev-2026" element={<LPLisboaFev2026 />} />
-                            <Route path="/lp-wtech-lisboa" element={<LPWTechLisboa />} />
-                            <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
-                            <Route path="/lp/:slug" element={<LandingPageViewer />} />
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <Router>
+            <AuthProvider>
+                <CartProvider>
+                    <div className="flex flex-col min-h-screen bg-white dark:bg-[#111] transition-colors duration-300">
+                        <WhatsAppInterceptor />
+                        <Suspense fallback={<PageLoader />}>
+                            <Routes>
+                                <Route path="/" element={<Layout><Home /></Layout>} />
+                                <Route path="/home-p2" element={<HomeP2 />} />
+                                <Route path="/cursos" element={<Layout><Courses /></Layout>} />
+                                <Route path="/cursos/:id" element={<Layout><CourseDetail /></Layout>} />
+                                <Route path="/glossario" element={<Glossary />} />
+                                <Route path="/admin" element={<Admin />} />
+                                <Route path="/sou-mecanico" element={<MechanicRegister />} />
+                                <Route path="/mapa" element={<Layout><MechanicsMap /></Layout>} />
+                                <Route path="/checkout/:planId" element={<Layout><Checkout /></Layout>} />
+                                <Route path="/contato" element={<Layout><Contact /></Layout>} />
+                                <Route path="/blog" element={<Layout><Blog /></Layout>} />
+                                <Route path="/blog/:slug" element={<Layout><BlogPost /></Layout>} />
+                                
+                                {/* Landing Pages */}
+                                <Route path="/lp/europa" element={<LPEuropa />} />
+                                <Route path="/lp-lisboa-fev-2026" element={<LPLisboaFev2026 />} />
+                                <Route path="/lp-wtech-lisboa" element={<LPWTechLisboa />} />
+                                <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
+                                <Route path="/lp/:slug" element={<LandingPageViewer />} />
 
-                            {/* Legal Pages */}
-                            <Route path="/termos" element={<Termos />} />
-                            <Route path="/privacidade" element={<Privacidade />} />
-                            <Route path="/cancelamento" element={<Cancelamento />} />
-                            <Route path="/suporte" element={<Suporte />} />
+                                {/* Legal Pages */}
+                                <Route path="/termos" element={<Termos />} />
+                                <Route path="/privacidade" element={<Privacidade />} />
+                                <Route path="/cancelamento" element={<Cancelamento />} />
+                                <Route path="/suporte" element={<Suporte />} />
 
-                            <Route path="*" element={<NotFound />} />
+                                <Route path="*" element={<NotFound />} />
 
-                        </Routes>
-                    </Suspense>
-                </div>
-            </CartProvider>
-        </AuthProvider>
-    </Router>
+                            </Routes>
+                        </Suspense>
+                    </div>
+                </CartProvider>
+            </AuthProvider>
+        </Router>
+      </ThemeProvider>
     </SettingsProvider>
   );
 };

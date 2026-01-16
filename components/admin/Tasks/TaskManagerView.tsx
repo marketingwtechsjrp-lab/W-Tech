@@ -4,7 +4,6 @@ import { sendWhatsAppMessage } from '../../../lib/whatsapp';
 import { useAuth } from '../../../context/AuthContext';
 import { Task, TaskCategory } from '../../../types';
 import { Plus, Clock, CheckCircle, AlertTriangle, Trash2, User, Search, Filter, X, Calendar, Flag, LayoutGrid, List, Edit, Tag, Image as ImageIcon, Upload, Bot } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BauhausCard } from '@/components/ui/bauhaus-card';
 
@@ -48,7 +47,7 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
             <BauhausCard
                 id={task.id}
                 accentColor={accentColor}
-                backgroundColor={isDoneStyle ? "rgba(26, 26, 26, 0.5)" : "var(--bauhaus-card-bg)"}
+                backgroundColor={isDoneStyle ? "rgba(26, 26, 26, 0.5)" : "#151419"}
                 separatorColor="var(--bauhaus-card-separator)"
                 borderRadius="1rem"
                 borderWidth="1px"
@@ -58,29 +57,43 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
                 progressBarInscription={task.status === 'DONE' ? 'Concluído' : task.status === 'IN_PROGRESS' ? 'Em Andamento' : 'Pendente'}
                 progress={progress}
                 progressValue={task.dueDate ? formattedDate : ''}
-                filledButtonInscription={task.status === 'DONE' ? 'Reabrir' : 'Concluir'}
-                outlinedButtonInscription="Editar"
-                onFilledButtonClick={() => onStatusToggle(task)}
-                onOutlinedButtonClick={() => onEdit(task)}
-                onDeleteClick={() => onDelete(task.id)} 
-                onMoreOptionsClick={() => onEdit(task)}
                 
-                // Colors
-                textColorTop={isDoneStyle ? "#888" : "var(--bauhaus-card-inscription-top)"}
-                textColorMain={isDoneStyle ? "#aaa" : "var(--bauhaus-card-inscription-main)"}
-                textColorSub={isDoneStyle ? "#666" : "var(--bauhaus-card-inscription-sub)"}
-                textColorProgressLabel="var(--bauhaus-card-inscription-progress-label)"
-                textColorProgressValue="var(--bauhaus-card-inscription-progress-value)"
+                // Tag Data
+                tag={task.category?.name}
+                tagColor={task.category?.color}
+                
+                // Automation Indicator
+                isAutomated={(task as any).isWhatsappSchedule}
+                
+                // Removed bottom buttons as requested
+                // filledButtonInscription={task.status === 'DONE' ? 'Reabrir' : 'Concluir'}
+                // outlinedButtonInscription="Editar"
+                // onFilledButtonClick={() => onStatusToggle(task)}
+                // onOutlinedButtonClick={() => onEdit(task)}
+                
+                // Header Action: Toggle Status via Icon
+                headerIcon={task.status === 'DONE' ? CheckCircle : CheckCircle} // Using CheckCircle for both, visual cues can differ if needed
+                onMoreOptionsClick={() => onStatusToggle(task)}
+                onDeleteClick={() => onDelete(task.id)} 
+                
+                // Card Click: Open Details
+                onCardClick={() => onEdit(task)}
+                
+                // Colors - Always Light Text for Dark Card
+                textColorTop={isDoneStyle ? "#888" : "#bfc7d5"}
+                textColorMain={isDoneStyle ? "#aaa" : "#f0f0f1"}
+                textColorSub={isDoneStyle ? "#666" : "#a0a1b3"}
+                textColorProgressLabel="#b4c7e7"
+                textColorProgressValue="#e7e7f7"
                 progressBarBackground="var(--bauhaus-card-progress-bar-bg)"
                 
-                // Button Colors (Fix for Light/Dark)
+                // Button Colors (Leftovers just in case, but unused now)
                 chronicleButtonBg="var(--bauhaus-chronicle-bg)"
-                chronicleButtonFg="#808080" // Gray text for better visibility on light/dark defaults if vars fail, but we rely on CSS vars mostly
+                chronicleButtonFg="#808080" 
                 chronicleButtonHoverFg="#ffffff"
                 
-                // Compact Mode Customizations - REDUCED SIZE
-                customButtonHeight="2rem"
-                customButtonFontSize="0.7rem"
+                customButtonHeight="1.5rem"
+                customButtonFontSize="0.65rem"
                 customCardPadding="0.8rem"
             />
         </div>
@@ -106,22 +119,20 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
                 ) : <span className="text-gray-300 text-xs">-</span>}
             </td>
             <td className="p-3">
-                <Badge 
-                    variant={
-                        task.priority === 'URGENT' ? 'destructive' :
-                        task.priority === 'HIGH' ? 'warning' :
-                        task.priority === 'MEDIUM' ? 'primary' : 'secondary'
-                    }
-                    size="xs"
-                    className="uppercase font-bold tracking-wider"
+                <span 
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                        task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                        task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                    }`}
                 >
                     {task.priority === 'URGENT' && <AlertTriangle size={8} className="mr-1" />}
                     {task.priority}
-                </Badge>
+                </span>
                 {(task as any).isWhatsappSchedule && (
-                    <Badge variant="success" appearance="light" size="xs" className="ml-2 animate-pulse" title="Automação WhatsApp Ativa">
+                    <span className="ml-2 bg-green-100 text-green-700 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider animate-pulse" title="Automação WhatsApp Ativa">
                         <Bot size={10} className="mr-1" />
-                    </Badge>
+                    </span>
                 )}
             </td>
             <td className="p-3 text-xs text-gray-500 font-medium">
@@ -643,23 +654,23 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-hide"
+                            className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-hide"
                         >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-2">
-                                <h3 className="font-bold text-xl">{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
-                                <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-black" /></button>
+                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-2">
+                                <h3 className="font-bold text-xl dark:text-white">{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</h3>
+                                <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-black dark:hover:text-white" /></button>
                             </div>
 
                             <form onSubmit={handleSave} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Título</label>
-                                    <input required className="w-full border border-gray-300 rounded p-2" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Título</label>
+                                    <input required className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Prioridade</label>
-                                        <select className="w-full border border-gray-300 rounded p-2" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value as any})}>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Prioridade</label>
+                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value as any})}>
                                             <option value="LOW">Baixa</option>
                                             <option value="MEDIUM">Média</option>
                                             <option value="HIGH">Alta</option>
@@ -667,8 +678,8 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
-                                        <select className="w-full border border-gray-300 rounded p-2" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})}>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status</label>
+                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})}>
                                             <option value="TODO">Pendente</option>
                                             <option value="IN_PROGRESS">Em Andamento</option>
                                             <option value="DONE">Concluído</option>
@@ -677,24 +688,24 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Atribuir Para</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Atribuir Para</label>
                                     {canAssignOthers ? (
-                                        <select className="w-full border border-gray-300 rounded p-2" value={formData.assignedTo} onChange={e => setFormData({...formData, assignedTo: e.target.value})}>
+                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.assignedTo} onChange={e => setFormData({...formData, assignedTo: e.target.value})}>
                                             <option value="">-- Selecione --</option>
                                             {Object.entries(usersMap).map(([id, name]) => (
                                                 <option key={id} value={id}>{name}</option>
                                             ))}
                                         </select>
                                     ) : (
-                                        <div className="w-full border border-gray-100 bg-gray-50 rounded p-2 text-gray-500 text-sm italic">
+                                        <div className="w-full border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 rounded p-2 text-gray-500 dark:text-gray-400 text-sm italic">
                                             {user?.name || 'Você'} (Atribuição Automática)
                                         </div>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vincular Lead (Opcional)</label>
-                                    <select className="w-full border border-gray-300 rounded p-2" value={formData.leadId} onChange={e => setFormData({...formData, leadId: e.target.value})}>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Vincular Lead (Opcional)</label>
+                                    <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.leadId} onChange={e => setFormData({...formData, leadId: e.target.value})}>
                                         <option value="">-- Nenhum Lead --</option>
                                         {leads.map(lead => (
                                             <option key={lead.id} value={lead.id}>{lead.name}</option>
@@ -703,8 +714,8 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Categoria</label>
-                                    <select className="w-full border border-gray-300 rounded p-2" value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})}>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
+                                    <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})}>
                                         <option value="">-- Sem Categoria --</option>
                                         {categories.map(cat => (
                                             <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -713,16 +724,16 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vencimento (Data de Disparo)</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Vencimento (Data de Disparo)</label>
                                     <input 
                                         type="datetime-local" 
-                                        className="w-full border border-gray-300 rounded p-2" 
+                                        className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" 
                                         value={formData.dueDate} 
                                         onChange={e => setFormData({...formData, dueDate: e.target.value})} 
                                     />
                                 </div>
 
-                                <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-2">
                                             <input 
@@ -732,12 +743,12 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                                 checked={formData.isWhatsappSchedule}
                                                 onChange={e => setFormData({...formData, isWhatsappSchedule: e.target.checked})} 
                                             />
-                                            <label htmlFor="wa_schedule" className="font-bold text-green-800 text-sm cursor-pointer flex items-center gap-1">
+                                            <label htmlFor="wa_schedule" className="font-bold text-green-800 dark:text-green-400 text-sm cursor-pointer flex items-center gap-1">
                                                 Automação WhatsApp
                                             </label>
                                         </div>
                                         {formData.isWhatsappSchedule && (
-                                            <span className="text-[10px] font-black text-green-600 uppercase tracking-widest bg-white/50 px-2 py-0.5 rounded border border-green-200">
+                                            <span className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded border border-green-200 dark:border-green-700">
                                                 Envio Automático
                                             </span>
                                         )}
@@ -745,19 +756,19 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     
                                     {formData.isWhatsappSchedule && (
                                         <div className="space-y-4 mt-3 animate-in fade-in slide-in-from-top-2">
-                                            <div className="bg-white/50 p-3 rounded-lg border border-green-100/50">
-                                                <label className="block text-[10px] font-black text-green-700 uppercase mb-2">Conteúdo do Disparo</label>
+                                            <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg border border-green-100/50 dark:border-green-800/50">
+                                                <label className="block text-[10px] font-black text-green-700 dark:text-green-400 uppercase mb-2">Conteúdo do Disparo</label>
                                                 <div className="flex gap-2 mb-3">
                                                     <button 
                                                         type="button"
                                                         onClick={() => setFormData({...formData, whatsappTemplateId: '', whatsappMessageBody: ''})} 
-                                                        className={`flex-1 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${!formData.whatsappTemplateId ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                                                        className={`flex-1 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${!formData.whatsappTemplateId ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
                                                     >
                                                         Personalizado
                                                     </button>
                                                     <div className="flex-1">
                                                         <select 
-                                                            className={`w-full py-1.5 px-2 rounded text-[10px] font-bold uppercase tracking-wider outline-none transition-all ${formData.whatsappTemplateId ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                                                            className={`w-full py-1.5 px-2 rounded text-[10px] font-bold uppercase tracking-wider outline-none transition-all ${formData.whatsappTemplateId ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
                                                             value={formData.whatsappTemplateId}
                                                             onChange={e => {
                                                                 const tmpl = messageTemplates.find(t => t.id === e.target.value);
@@ -777,7 +788,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                                 </div>
 
                                                 <textarea 
-                                                    className="w-full border border-green-200 rounded-lg p-3 text-sm h-32 focus:border-green-500 outline-none transition-all"
+                                                    className="w-full border border-green-200 dark:border-green-800 dark:bg-[#222] dark:text-white rounded-lg p-3 text-sm h-32 focus:border-green-500 outline-none transition-all"
                                                     value={formData.whatsappMessageBody}
                                                     onChange={e => setFormData({...formData, whatsappMessageBody: e.target.value})}
                                                     placeholder="Digite a mensagem personalizada..."
@@ -785,27 +796,27 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-xs font-bold text-green-700 uppercase mb-1 flex items-center gap-1.5">
+                                                <label className="block text-xs font-bold text-green-700 dark:text-green-400 uppercase mb-1 flex items-center gap-1.5">
                                                      Imagem do Disparo <span className="text-[9px] font-normal lowercase">(Opcional)</span>
                                                 </label>
                                                 <div className="flex gap-2">
                                                     <div className="relative flex-1">
                                                         <ImageIcon size={14} className="absolute left-3 top-2.5 text-green-400" />
                                                         <input 
-                                                            className="w-full border border-green-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-green-500 outline-none transition-all bg-white" 
+                                                            className="w-full border border-green-200 dark:border-green-800 dark:bg-[#222] dark:text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:border-green-500 outline-none transition-all bg-white" 
                                                             placeholder="URL da imagem (https://...)"
                                                             value={formData.whatsappMediaUrl}
                                                             onChange={e => setFormData({...formData, whatsappMediaUrl: e.target.value})}
                                                         />
                                                     </div>
-                                                    <label className="flex items-center justify-center bg-green-50 border border-green-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-green-100 transition-colors" title="Fazer Upload">
-                                                        <Upload size={14} className="text-green-600" />
+                                                    <label className="flex items-center justify-center bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors" title="Fazer Upload">
+                                                        <Upload size={14} className="text-green-600 dark:text-green-400" />
                                                         <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
                                                     </label>
                                                 </div>
                                             </div>
 
-                                            <p className="text-[10px] text-green-600 leading-tight italic">
+                                            <p className="text-[10px] text-green-600 dark:text-green-400 leading-tight italic">
                                                 O disparo ocorrerá no vencimento selecionado. Certifique-se de que sua conexão WhatsApp está ATIVA no perfil.
                                             </p>
                                         </div>
@@ -813,12 +824,12 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descrição</label>
-                                    <textarea className="w-full border border-gray-300 rounded p-2 h-24" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
+                                    <textarea className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2 h-24" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                                 </div>
 
                                 <div className="pt-4 flex justify-end gap-2">
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancelar</button>
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">Cancelar</button>
                                     <button type="submit" className="px-6 py-2 bg-wtech-black text-white font-bold rounded">Salvar Tarefa</button>
                                 </div>
                             </form>

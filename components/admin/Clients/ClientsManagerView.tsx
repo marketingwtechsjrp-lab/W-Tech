@@ -231,20 +231,20 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                     <ListsManager permissions={permissions} />
                 </div>
             ) : (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">
-                    <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4">
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">
+                    <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex flex-col md:flex-row gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-4 top-3 text-gray-400" size={20} />
                             <input 
                                 type="text"
                                 placeholder="Buscar por nome, email ou telefone..."
-                                className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
+                                className="w-full bg-gray-50 dark:bg-[#222] dark:text-white border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <select 
-                            className="px-6 py-3 bg-gray-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-gold"
+                            className="px-6 py-3 bg-gray-50 dark:bg-[#222] dark:text-white border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-gold"
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
                         >
@@ -256,7 +256,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-50/50">
+                        <thead className="bg-gray-50/50 dark:bg-[#111]">
                             <tr>
                                 <th className="px-6 py-4 w-[50px]">
                                     <input 
@@ -273,13 +273,13 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                                 <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Data</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                             {loading ? (
                                 <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Carregando carteira de clientes...</td></tr>
                             ) : paginatedClients.length === 0 ? (
                                 <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Nenhum cliente encontrado.</td></tr>
                             ) : paginatedClients.map((client, idx) => (
-                                <tr key={`${client.type}-${client.id}-${idx}`} className={`hover:bg-gray-50/50 transition-colors ${selectedClients.includes(client.id) ? 'bg-blue-50/30' : ''}`}>
+                                <tr key={`${client.type}-${client.id}-${idx}`} className={`hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors ${selectedClients.includes(client.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}>
                                      <td className="px-6 py-4">
                                         <input 
                                             type="checkbox" 
