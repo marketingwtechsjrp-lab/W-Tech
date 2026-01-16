@@ -1,6 +1,18 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.2.6 (2026-01-15) - Melhorias no Gerenciador de Tarefas e Dark Mode
+- FEAT: Cards de tarefas redesenhados - sempre escuros com textos claros
+- FEAT: Tags de categoria visíveis em cada card de tarefa
+- FEAT: Indicador de automação WhatsApp (ícone de robô pulsante)
+- FEAT: Cards totalmente clicáveis para abrir detalhes
+- FEAT: Ícone de conclusão rápida no header do card
+- FEAT: Removidos botões inferiores para design mais limpo
+- FIX: Modal de edição de tarefas totalmente adaptado para dark mode
+- FIX: Gestão de Cursos com suporte completo a dark mode
+- FIX: Gestão de Clientes com suporte completo a dark mode
+- FEAT: Toggle de tema integrado no sidebar do Admin
+
 ## v2.2.5 (2026-01-16) - Adiciona Customização de Menu
 - Adicionado coluna menu_styles na tabela SITE_Config
 - DONEy
