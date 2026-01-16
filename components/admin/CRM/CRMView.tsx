@@ -864,14 +864,14 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 <FunnelChart leads={filteredLeads} />
 
                 {/* Controls Bar */}
-                <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4 bg-white dark:bg-[#1A1A1A] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                     
                     {/* Left: Search & Context */}
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-3 text-gray-400" />
                             <input 
-                                className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold w-64 focus:bg-white focus:border-wtech-gold outline-none transition-all"
+                                className="pl-9 pr-4 py-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-lg text-xs font-bold w-64 focus:bg-white dark:focus:bg-[#111] focus:border-wtech-gold outline-none transition-all"
                                 placeholder="Buscar por nome, email, telefone..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -879,17 +879,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         </div>
 
                         <div className="relative group">
-                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-white transition-colors">
+                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-[#111] transition-colors">
                                 <Filter size={14} className="text-gray-400" />
-                                <span className="text-xs font-bold text-gray-600 truncate max-w-[150px]">
+                                <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
                                     {contextFilter === 'All' ? 'Todas as Origens' : contextFilter}
                                 </span>
                             </div>
                             {/* Dropdown */}
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-white shadow-xl rounded-xl border border-gray-100 p-2 hidden group-hover:block z-50 max-h-64 overflow-y-auto custom-scrollbar">
-                                <button onClick={() => setContextFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-xs font-bold text-gray-700">Todas as Origens</button>
+                            <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#1A1A1A] shadow-xl rounded-xl border border-gray-100 dark:border-gray-700 p-2 hidden group-hover:block z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                                <button onClick={() => setContextFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-200">Todas as Origens</button>
                                 {uniqueContexts.map((ctx: any) => (
-                                    <button key={ctx} onClick={() => setContextFilter(ctx)} className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-xs text-gray-600 truncate">{ctx}</button>
+                                    <button key={ctx} onClick={() => setContextFilter(ctx)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs text-gray-600 dark:text-gray-400 truncate">{ctx}</button>
                                 ))}
                             </div>
                         </div>
@@ -898,16 +898,16 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         {/* User Filter (Admin/Manager Only) */}
                         {(hasPermission('crm_view_all') || hasPermission('crm_view_team') || user?.role === 'Super Admin') && (
                             <div className="relative group">
-                                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-white transition-colors">
+                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-[#111] transition-colors">
                                     <Users size={14} className="text-gray-400" />
-                                    <span className="text-xs font-bold text-gray-600 truncate max-w-[150px]">
+                                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
                                         {selectedUserFilter === 'All' ? 'Todos os Usuários' : (usersMap[selectedUserFilter] || 'Usuário')}
                                     </span>
                                 </div>
-                                <div className="absolute top-full left-0 mt-2 w-64 bg-white shadow-xl rounded-xl border border-gray-100 p-2 hidden group-hover:block z-50 max-h-64 overflow-y-auto custom-scrollbar">
-                                    <button onClick={() => setSelectedUserFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-xs font-bold text-gray-700">Todos</button>
+                                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#1A1A1A] shadow-xl rounded-xl border border-gray-100 dark:border-gray-700 p-2 hidden group-hover:block z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <button onClick={() => setSelectedUserFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-200">Todos</button>
                                     {usersList.map((u) => (
-                                        <button key={u.id} onClick={() => setSelectedUserFilter(u.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-xs text-gray-600 truncate">
+                                        <button key={u.id} onClick={() => setSelectedUserFilter(u.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs text-gray-600 dark:text-gray-400 truncate">
                                             {u.name}
                                         </button>
                                     ))}
@@ -920,12 +920,12 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     <div className="flex flex-wrap items-center gap-4">
                          
                          {/* Date Filter Compact */}
-                         <div className="flex bg-gray-100 p-1 rounded-lg">
+                         <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
                             {[7, 30, 9999].map(days => (
                                 <button
                                     key={days}
                                     onClick={() => { setFilterPeriod(days); setFilterType('Period'); }}
-                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${filterType === 'Period' && filterPeriod === days ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
+                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${filterType === 'Period' && filterPeriod === days ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-500 hover:text-black dark:hover:text-gray-200'}`}
                                 >
                                     {days === 9999 ? 'Tudo' : `${days}d`}
                                 </button>
@@ -933,8 +933,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         </div>
 
                         {/* Distribution Switch - Permission Gated */}
-                        {hasPermission('crm_config_dist') && (
-                            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                         {hasPermission('crm_config_dist') && (
+                            <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase">Distribuição</span>
                                     <span className={`text-xs font-black uppercase ${distMode === 'Random' ? 'text-green-600' : 'text-orange-600'}`}>
@@ -951,17 +951,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         )}
 
                         {/* View Mode Toggle */}
-                         <div className="flex bg-gray-100 p-1 rounded-lg">
+                         <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
                             <button 
                                 onClick={() => setViewMode('kanban')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-black' : 'text-gray-400 hover:text-black'}`}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-400 hover:text-black dark:hover:text-gray-200'}`}
                                 title="Visualização Kanban"
                             >
                                 <KanbanSquare size={16} />
                             </button>
                             <button 
                                 onClick={() => setViewMode('list')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-black' : 'text-gray-400 hover:text-black'}`}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-400 hover:text-black dark:hover:text-gray-200'}`}
                                 title="Visualização em Lista"
                             >
                                 <List size={16} />
@@ -1371,7 +1371,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             initial={{ scale: 0.95 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.95 }}
-                            className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+                            className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-transparent dark:border-gray-800"
                          >
                             <div className="p-6 bg-gradient-to-r from-gray-900 to-black text-white flex justify-between items-start">
                                 <div>
@@ -1389,31 +1389,31 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                             <div className="p-6">
                                 {/* Type Selector */}
-                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                     <button 
                                         onClick={() => setConversionType('Course')}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Course' ? 'border-wtech-gold bg-yellow-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Course' ? 'border-wtech-gold bg-yellow-50/50 dark:bg-wtech-gold/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-transparent'}`}
                                     >
                                         <GraduationCap size={32} className={conversionType === 'Course' ? 'text-wtech-gold' : 'text-gray-400'} />
-                                        <span className={`font-bold ${conversionType === 'Course' ? 'text-gray-900' : 'text-gray-500'}`}>Matrícula em Curso</span>
+                                        <span className={`font-bold ${conversionType === 'Course' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>Matrícula em Curso</span>
                                     </button>
-
+                                    
                                     <button 
                                         onClick={() => setConversionType('Product')}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Product' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Product' ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-transparent'}`}
                                     >
                                         <ShoppingBag size={32} className={conversionType === 'Product' ? 'text-blue-500' : 'text-gray-400'} />
-                                        <span className={`font-bold ${conversionType === 'Product' ? 'text-gray-900' : 'text-gray-500'}`}>Venda de Produtos</span>
+                                        <span className={`font-bold ${conversionType === 'Product' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>Venda de Produtos</span>
                                     </button>
                                 </div>
 
                                 <div className="space-y-4">
                                     {conversionType === 'Course' ? (
-                                        <div className="animate-in fade-in slide-in-from-left-4">
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Escolha o Curso</label>
+                                         <div className="animate-in fade-in slide-in-from-left-4">
+                                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Escolha o Curso</label>
                                             <div className="relative">
                                                 <select 
-                                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-wtech-gold appearance-none"
+                                                    className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-wtech-gold appearance-none"
                                                     value={selectedCourseId}
                                                     onChange={(e) => setSelectedCourseId(e.target.value)}
                                                 >
@@ -1426,25 +1426,25 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                                 </select>
                                                 <Calendar className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-2">Você será redirecionado para a tela de inscrições.</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Você será redirecionado para a tela de inscrições.</p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Resumo do Pedido</label>
+                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Resumo do Pedido</label>
                                                 <textarea 
-                                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 min-h-[80px]"
+                                                    className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-blue-500 min-h-[80px]"
                                                     placeholder="Ex: 2x Filtros, 1x Óleo 5W30..."
                                                     value={productSummary}
                                                     onChange={e => setProductSummary(e.target.value)}
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">Valor Total da Venda</label>
+                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Valor Total da Venda</label>
                                                 <div className="relative">
-                                                    <span className="absolute left-3 top-3 text-gray-500 font-bold">R$</span>
+                                                    <span className="absolute left-3 top-3 text-gray-500 dark:text-gray-400 font-bold">R$</span>
                                                     <input 
-                                                        className="w-full p-3 pl-10 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-mono font-bold text-lg"
+                                                        className="w-full p-3 pl-10 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-blue-500 font-mono font-bold text-lg"
                                                         placeholder="0,00"
                                                         value={saleValue}
                                                         onChange={e => setSaleValue(e.target.value)}

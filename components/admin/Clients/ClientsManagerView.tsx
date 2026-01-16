@@ -179,12 +179,16 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
         }
     };
 
+    const totalClients = clients.length;
+    const leadsCount = clients.filter(c => c.type === 'Lead').length;
+    const mechanicsCount = clients.filter(c => c.type === 'Credenciado').length;
+
     return (
         <div className="p-6 space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Gestão de Clientes</h2>
-                    <p className="text-gray-500 font-medium">Visualize Leads e Credenciados em um só lugar.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Gestão de Clientes</h2>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Visualize Leads e Credenciados em um só lugar.</p>
                 </div>
                 <div className="flex gap-2">
                     {activeTab === 'clients' && selectedClients.length > 0 && (
@@ -196,20 +200,59 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                             Criar Grupo / Adicionar ({selectedClients.length})
                         </button>
                     )}
-                    <button className="bg-wtech-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 transition-all shadow-xl active:scale-95">
+                    <button className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-xl active:scale-95">
                         <UserPlus size={20} /> Novo Cliente
                     </button>
                 </div>
             </div>
 
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="p-3 rounded-2xl bg-wtech-gold/10 text-wtech-gold">
+                            <Users size={24} />
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{totalClients}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Total de Clientes</p>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
+                            <Shield size={24} />
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{mechanicsCount}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Credenciados (Oficinas)</p>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
+                            <User size={24} />
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{leadsCount}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Leads Interessados</p>
+                    </div>
+                </div>
+            </div>
+
             {/* Sub-Tabs */}
-            <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-fit">
+            <div className="flex bg-white dark:bg-[#111] p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 w-fit">
                 <button
                     onClick={() => setActiveTab('clients')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
                         activeTab === 'clients' 
-                        ? 'bg-black text-white shadow-lg' 
-                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                        ? 'bg-black dark:bg-white dark:text-black text-white shadow-lg' 
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
                     }`}
                 >
                     <User size={16} /> Todos os Clientes
@@ -218,8 +261,8 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                     onClick={() => setActiveTab('groups')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
                         activeTab === 'groups' 
-                        ? 'bg-black text-white shadow-lg' 
-                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                        ? 'bg-black dark:bg-white dark:text-black text-white shadow-lg' 
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
                     }`}
                 >
                     <Users size={16} /> Grupos de Marketing
@@ -227,7 +270,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {activeTab === 'groups' ? (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden p-6 animate-in fade-in zoom-in-95 duration-200">
                     <ListsManager permissions={permissions} />
                 </div>
             ) : (
@@ -294,7 +337,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                                                 {client.type === 'Credenciado' ? <Shield size={18} /> : <User size={18} />}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-black text-gray-900 line-clamp-1">{client.name || 'Sem Nome'}</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white line-clamp-1">{client.name || 'Sem Nome'}</p>
                                                 <p className="text-[10px] text-gray-400 uppercase font-bold">ID: {client.id.slice(0, 8)}</p>
                                             </div>
                                         </div>
@@ -302,13 +345,13 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col gap-1">
                                             {client.phone && (
-                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
                                                     <Phone size={12} className="text-gray-400" />
                                                     {client.phone}
                                                 </div>
                                             )}
                                             {client.email && (
-                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
                                                     <Mail size={12} className="text-gray-400" />
                                                     {client.email}
                                                 </div>
@@ -317,14 +360,14 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className={`text-[10px] font-black uppercase tracking-wider w-fit px-2 py-0.5 rounded ${client.type === 'Credenciado' ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'}`}>
+                                            <span className={`text-[10px] font-black uppercase tracking-wider w-fit px-2 py-0.5 rounded ${client.type === 'Credenciado' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'}`}>
                                                 {client.type}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 mt-1 truncate max-w-[150px]">{client.origin}</span>
+                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 truncate max-w-[150px]">{client.origin}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-lg">
+                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#222] px-2 py-1 rounded-lg border border-transparent dark:border-gray-800">
                                             {client.status || 'Ativo'}
                                         </span>
                                     </td>
@@ -338,19 +381,19 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 </div>
                 
                 {/* Pagination Controls */}
-                {!loading && filteredClients.length > 0 && (
-                     <div className="border-t border-gray-100 p-4 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="text-xs font-bold text-gray-500">
+                 {!loading && filteredClients.length > 0 && (
+                     <div className="border-t border-gray-100 dark:border-gray-800 p-4 bg-gray-50 dark:bg-[#111] flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
                             Exibindo {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredClients.length)} de {filteredClients.length} clientes
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-500 uppercase mr-2">Itens por página:</span>
+                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mr-2">Itens por página:</span>
                             {[50, 100, 300].map(limit => (
                                 <button
                                     key={limit}
                                     onClick={() => { setItemsPerPage(limit); setCurrentPage(1); }}
-                                    className={`px-3 py-1 rounded text-xs font-bold ${itemsPerPage === limit ? 'bg-white shadow text-black border' : 'text-gray-400 hover:text-gray-600'}`}
+                                    className={`px-3 py-1 rounded text-xs font-bold ${itemsPerPage === limit ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white border border-gray-200 dark:border-gray-700' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
                                 >
                                     {limit}
                                 </button>
@@ -361,17 +404,17 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                              <button 
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1.5 rounded bg-white border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50"
+                                className="px-3 py-1.5 rounded bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-400 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-white/5"
                              >
                                 Anterior
                              </button>
-                             <span className="text-xs font-bold text-gray-900">
+                             <span className="text-xs font-bold text-gray-900 dark:text-white">
                                 Página {currentPage} de {totalPages}
                              </span>
                              <button 
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1.5 rounded bg-white border border-gray-200 text-xs font-bold text-gray-600 disabled:opacity-50 hover:bg-gray-50"
+                                className="px-3 py-1.5 rounded bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-400 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-white/5"
                              >
                                 Próxima
                              </button>
@@ -384,11 +427,11 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
             {/* Add to Group Modal */}
             {isGroupModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 border border-gray-100 dark:border-gray-800">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#111]">
                             <div>
-                                <h3 className="font-black text-xl text-gray-900">Adicionar ao Grupo</h3>
-                                <p className="text-xs text-gray-500 font-bold">{selectedClients.length} contatos selecionados</p>
+                                <h3 className="font-black text-xl text-gray-900 dark:text-white">Adicionar ao Grupo</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">{selectedClients.length} contatos selecionados</p>
                             </div>
                             <button onClick={() => setIsGroupModalOpen(false)} className="text-gray-400 hover:text-red-500">
                                 <X size={20} />
@@ -397,9 +440,9 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Selecione o Grupo</label>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Selecione o Grupo</label>
                                 <select 
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
+                                    className="w-full p-3 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
                                     value={selectedListId}
                                     onChange={(e) => setSelectedListId(e.target.value)}
                                 >
@@ -413,11 +456,11 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
 
                             {selectedListId === 'new' && (
                                 <div className="space-y-2 animate-in slide-in-from-top-2">
-                                    <label className="block text-xs font-bold text-gray-500 uppercase">Nome do Novo Grupo</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Nome do Novo Grupo</label>
                                     <input 
                                         type="text" 
                                         placeholder="Ex: Alunos VIP 2024"
-                                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
+                                        className="w-full p-3 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
                                         value={newListName}
                                         onChange={(e) => setNewListName(e.target.value)}
                                         autoFocus
@@ -428,14 +471,14 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                             <div className="flex justify-end gap-3 pt-4">
                                 <button 
                                     onClick={() => setIsGroupModalOpen(false)}
-                                    className="px-4 py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
+                                    className="px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button 
                                     onClick={handleAddToGroup}
                                     disabled={!selectedListId || (selectedListId === 'new' && !newListName) || isSavingGroup}
-                                    className="bg-wtech-black text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSavingGroup ? 'Salvando...' : 'Salvar Grupo'}
                                 </button>

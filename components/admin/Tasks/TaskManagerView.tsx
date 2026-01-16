@@ -515,9 +515,9 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                 </div>
                 
                 {(isAdmin || canViewTeam) && (
-                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
                         <User size={16} className="text-gray-400 shrink-0" />
-                        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full sm:max-w-[150px]">
+                        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 dark:text-gray-300 outline-none w-full sm:max-w-[150px]">
                             <option value="ALL">Todos Usuários</option>
                             {Object.entries(usersMap).map(([id, name]) => (
                                 <option key={id} value={id}>{name}</option>
@@ -526,9 +526,9 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                     </div>
                 )}
 
-                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
+                <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
                     <Tag size={16} className="text-gray-400 shrink-0" />
-                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full sm:max-w-[150px]">
+                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 dark:text-gray-300 outline-none w-full sm:max-w-[150px]">
                         <option value="ALL">Todas Categorias</option>
                         {categories.map(cat => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -536,21 +536,21 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                     </select>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white p-1 rounded border border-gray-200 w-full sm:w-auto overflow-x-auto">
-                    <button onClick={() => setDatePreset(0)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded whitespace-nowrap">Hoje</button>
-                    <button onClick={() => setDatePreset(7)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded whitespace-nowrap">7d</button>
-                    <button onClick={() => setDatePreset(30)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 rounded whitespace-nowrap">30d</button>
-                    <div className="w-px h-4 bg-gray-200 mx-1 shrink-0"></div>
+                <div className="flex items-center gap-2 bg-white dark:bg-black/20 p-1 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto overflow-x-auto">
+                    <button onClick={() => setDatePreset(0)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/10 rounded whitespace-nowrap text-gray-700 dark:text-gray-300">Hoje</button>
+                    <button onClick={() => setDatePreset(7)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/10 rounded whitespace-nowrap text-gray-700 dark:text-gray-300">7d</button>
+                    <button onClick={() => setDatePreset(30)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/10 rounded whitespace-nowrap text-gray-700 dark:text-gray-300">30d</button>
+                    <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1 shrink-0"></div>
                     <input 
                         type="date" 
-                        className="text-xs outline-none font-bold text-gray-600 bg-transparent min-w-[100px]"
+                        className="text-xs outline-none font-bold text-gray-600 dark:text-gray-400 bg-transparent min-w-[100px]"
                         value={dateRange.start}
                         onChange={e => setDateRange({...dateRange, start: e.target.value})}
                     />
-                    <span className="text-gray-300">-</span>
+                    <span className="text-gray-300 dark:text-gray-600">-</span>
                     <input 
                         type="date" 
-                        className="text-xs outline-none font-bold text-gray-600 bg-transparent min-w-[100px]"
+                        className="text-xs outline-none font-bold text-gray-600 dark:text-gray-400 bg-transparent min-w-[100px]"
                         value={dateRange.end}
                         onChange={e => setDateRange({...dateRange, end: e.target.value})}
                     />

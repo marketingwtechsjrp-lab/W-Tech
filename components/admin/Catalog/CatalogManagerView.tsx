@@ -373,22 +373,22 @@ const CatalogManagerView = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div>
-                    <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                         <Package className="text-wtech-gold" /> Catálogo & Estoque
                     </h2>
-                    <p className="text-sm text-gray-500 font-medium">Gerencie seus produtos, insumos e movimentações de estoque.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Gerencie seus produtos, insumos e movimentações de estoque.</p>
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
-                    <label className={`cursor-pointer px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-all shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <label className={`cursor-pointer px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
                         <Upload size={20} /> 
                         {isImporting ? 'Processando...' : 'Importar CSV'}
                         <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
                     </label>
                     <button 
                         onClick={() => { setEditingProduct({ type: 'product', unit: 'un' }); setIsProductModalOpen(true); }}
-                        className="flex-1 md:flex-none px-6 py-3 bg-wtech-black text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-lg active:scale-95"
+                        className="flex-1 md:flex-none px-6 py-3 bg-wtech-black dark:bg-white dark:text-black text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-lg active:scale-95"
                     >
                         <Plus size={20} /> Novo Item
                     </button>
@@ -397,40 +397,40 @@ const CatalogManagerView = () => {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-colors">
                     <p className="text-xs font-bold text-gray-400 uppercase">Total de Itens</p>
-                    <h3 className="text-2xl font-black">{products.length}</h3>
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">{products.length}</h3>
                 </div>
-                <div className="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
+                <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/20 shadow-sm transition-colors">
                     <p className="text-xs font-bold text-red-400 uppercase">Estoque Crítico</p>
-                    <h3 className="text-2xl font-black text-red-600">{products.filter(p => p.currentStock <= p.minStock).length}</h3>
+                    <h3 className="text-2xl font-black text-red-600 dark:text-red-400">{products.filter(p => p.currentStock <= p.minStock).length}</h3>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+                <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20 shadow-sm transition-colors">
                     <p className="text-xs font-bold text-blue-400 uppercase">Produtos Finais</p>
-                    <h3 className="text-2xl font-black text-blue-600">{products.filter(p => p.type === 'product').length}</h3>
+                    <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400">{products.filter(p => p.type === 'product').length}</h3>
                 </div>
-                <div className="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm">
+                <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900/20 shadow-sm transition-colors">
                     <p className="text-xs font-bold text-green-400 uppercase">Valor em Estoque</p>
-                    <h3 className="text-2xl font-black text-green-600">
+                    <h3 className="text-2xl font-black text-green-600 dark:text-green-400">
                         R$ {products.reduce((acc, p) => acc + (p.currentStock * p.averageCost), 0).toLocaleString('pt-BR')}
                     </h3>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-3 text-gray-400" size={18} />
                     <input 
                         type="text" 
                         placeholder="Buscar por nome ou SKU..." 
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 ring-wtech-gold/20 outline-none"
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 dark:text-white rounded-lg focus:ring-2 ring-wtech-gold/20 outline-none transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <select 
-                    className="px-4 py-2 border border-gray-200 rounded-lg bg-white outline-none"
+                    className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111] dark:text-white outline-none"
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                 >
@@ -442,14 +442,14 @@ const CatalogManagerView = () => {
             </div>
 
             {/* Products Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase">
+                    <thead className="bg-gray-50 dark:bg-[#111] border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                         <tr>
                             <th className="px-6 py-4 w-[50px]">
                                 <input 
                                     type="checkbox" 
-                                    className="rounded border-gray-300"
+                                    className="rounded border-gray-300 dark:border-gray-600 bg-transparent"
                                     onChange={(e) => handleSelectAll(e.target.checked)}
                                     checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
                                 />
@@ -460,7 +460,7 @@ const CatalogManagerView = () => {
                             <th className="px-6 py-4 text-center">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                         {loading ? (
                              <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center">
@@ -479,45 +479,45 @@ const CatalogManagerView = () => {
                         ) : filteredProducts.map((product) => {
                             const isSelected = selectedProducts.includes(product.id);
                             return (
-                            <tr key={product.id} className={`hover:bg-gray-50/50 transition-colors group ${isSelected ? 'bg-indigo-50/30' : ''}`}>
+                            <tr key={product.id} className={`hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group ${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}>
                                 <td className="px-6 py-4 align-top">
                                     <input 
                                         type="checkbox" 
-                                        className="rounded border-gray-300"
+                                        className="rounded border-gray-300 dark:border-gray-600 bg-transparent"
                                         checked={isSelected}
                                         onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
                                     />
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center text-gray-400 border border-gray-200 overflow-hidden shadow-sm">
+                                        <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-[#111] flex-shrink-0 flex items-center justify-center text-gray-400 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
                                             {product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <Package size={20} />}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900 leading-tight text-sm line-clamp-2 max-w-[300px]" title={product.name}>
+                                            <p className="font-bold text-gray-900 dark:text-gray-100 leading-tight text-sm line-clamp-2 max-w-[300px]" title={product.name}>
                                                 {product.name}
                                             </p>
                                             
                                             <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                                <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-bold border border-gray-200">
+                                                <span className="text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 font-bold border border-gray-200 dark:border-gray-700">
                                                     {product.sku || 'S/ SKU'}
                                                 </span>
                                                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase border ${
-                                                    product.type === 'product' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                    product.type === 'raw_material' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                                    'bg-purple-50 text-purple-600 border-purple-100'
+                                                    product.type === 'product' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
+                                                    product.type === 'raw_material' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-900/30' :
+                                                    'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30'
                                                 }`}>
                                                     {product.type === 'product' ? 'Produto' : product.type === 'raw_material' ? 'Insumo' : 'Serviço'}
                                                 </span>
                                                 {product.category && (
-                                                     <span className="text-[10px] bg-white px-1.5 py-0.5 rounded text-gray-400 font-medium border border-gray-100 truncate max-w-[100px]">
+                                                     <span className="text-[10px] bg-white dark:bg-white/5 px-1.5 py-0.5 rounded text-gray-400 dark:text-gray-500 font-medium border border-gray-100 dark:border-gray-800 truncate max-w-[100px]">
                                                         {product.category}
                                                     </span>
                                                 )}
                                             </div>
                                             
                                             {(product.weight || product.length) > 0 && (
-                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
+                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400 dark:text-gray-500">
                                                     {product.weight > 0 && <span>{product.weight}g</span>}
                                                     {product.length > 0 && <span>{product.length}x{product.width}x{product.height}cm</span>}
                                                 </div>
@@ -528,12 +528,12 @@ const CatalogManagerView = () => {
                                 <td className="px-6 py-4 text-center">
                                     <div className="flex flex-col items-start gap-1">
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-sm font-black ${product.currentStock <= product.minStock ? 'text-red-600' : 'text-green-600'}`}>
+                                            <span className={`text-sm font-black ${product.currentStock <= product.minStock ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                                                 {product.currentStock} {product.unit}
                                             </span>
                                             {product.currentStock <= product.minStock && <AlertTriangle size={14} className="text-red-500 animate-pulse" />}
                                         </div>
-                                        <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                                        <div className="w-24 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
                                             <div 
                                                 className={`h-full transition-all ${product.currentStock <= product.minStock ? 'bg-red-500' : 'bg-green-500'}`} 
                                                 style={{ width: `${Math.min(100, (product.currentStock / (product.minStock * 2 || 1)) * 100)}%` }}
@@ -542,20 +542,20 @@ const CatalogManagerView = () => {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <p className="text-xs text-gray-400 font-medium">Custo: R$ {product.averageCost.toLocaleString('pt-BR')}</p>
-                                    <p className="text-sm font-bold text-gray-900 mt-0.5">Venda: R$ {product.salePrice.toLocaleString('pt-BR')}</p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Custo: R$ {product.averageCost.toLocaleString('pt-BR')}</p>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-0.5">Venda: R$ {product.salePrice.toLocaleString('pt-BR')}</p>
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={() => { setEditingProduct(product); setActiveModalTab('general'); setIsProductModalOpen(true); }}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar"
+                                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Editar"
                                         >
                                             <Edit size={18} />
                                         </button>
                                         <button 
                                             onClick={() => { setEditingProduct(product); setActiveModalTab('history'); setIsProductModalOpen(true); }}
-                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Movimentar Estoque"
+                                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors" title="Movimentar Estoque"
                                         >
                                             <Layers size={18} />
                                         </button>
@@ -566,7 +566,7 @@ const CatalogManagerView = () => {
                                                     fetchProducts();
                                                 }
                                             }}
-                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir"
+                                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Excluir"
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -587,22 +587,22 @@ const CatalogManagerView = () => {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+                            className="bg-white dark:bg-[#1A1A1A] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
                         >
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
                                 <div>
-                                    <h3 className="text-xl font-black text-gray-900">{editingProduct?.id ? 'Editar Item' : 'Novo Item no Catálogo'}</h3>
+                                    <h3 className="text-xl font-black text-gray-900 dark:text-white">{editingProduct?.id ? 'Editar Item' : 'Novo Item no Catálogo'}</h3>
                                     <div className="flex gap-4 mt-2">
                                         <button 
                                             onClick={() => setActiveModalTab('general')}
-                                            className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'general' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400'}`}
+                                            className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'general' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
                                         >
                                             Geral
                                         </button>
                                         {editingProduct?.id && editingProduct.type === 'product' && (
                                             <button 
                                                 onClick={() => setActiveModalTab('bom')}
-                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'bom' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400'}`}
+                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'bom' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
                                             >
                                                 Composição (BOM)
                                             </button>
@@ -610,7 +610,7 @@ const CatalogManagerView = () => {
                                         {editingProduct?.id && (
                                             <button 
                                                 onClick={() => setActiveModalTab('history')}
-                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'history' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400'}`}
+                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'history' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
                                             >
                                                 Movimentações
                                             </button>
@@ -618,14 +618,14 @@ const CatalogManagerView = () => {
                                         {editingProduct?.id && (
                                             <button 
                                                 onClick={() => setActiveModalTab('reservations')}
-                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'reservations' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400'}`}
+                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'reservations' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
                                             >
                                                 Reservas
                                             </button>
                                         )}
                                     </div>
                                 </div>
-                                <button onClick={() => setIsProductModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors text-gray-400 hover:text-red-500">
+                                <button onClick={() => setIsProductModalOpen(false)} className="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-red-500">
                                     <X size={24} />
                                 </button>
                             </div>
@@ -634,9 +634,9 @@ const CatalogManagerView = () => {
                                 {activeModalTab === 'general' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Nome do Item</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Nome do Item</label>
                                             <input 
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.name || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
                                                 placeholder="Ex: Kit de Suspensão Hércules"
@@ -644,9 +644,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">SKU / Código</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">SKU / Código</label>
                                             <input 
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all uppercase"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all uppercase"
                                                 value={editingProduct?.sku || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, sku: e.target.value.toUpperCase()})}
                                                 placeholder="WT-KIT-001"
@@ -654,9 +654,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Tipo de Item</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Tipo de Item</label>
                                             <select 
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.type || 'product'}
                                                 onChange={e => setEditingProduct({...editingProduct, type: e.target.value as any})}
                                             >
@@ -667,9 +667,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Unidade</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Unidade</label>
                                             <select 
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.unit || 'un'}
                                                 onChange={e => setEditingProduct({...editingProduct, unit: e.target.value})}
                                             >
@@ -682,33 +682,33 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Estoque Mínimo</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Estoque Mínimo</label>
                                             <input 
                                                 type="number"
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.minStock || 0}
                                                 onChange={e => setEditingProduct({...editingProduct, minStock: parseInt(e.target.value)})}
                                             />
                                         </div>
 
-                                        <div className="bg-green-50/50 p-4 rounded-2xl border border-green-100 flex flex-col gap-4 md:col-span-2">
+                                        <div className="bg-green-50/50 dark:bg-green-900/10 p-4 rounded-2xl border border-green-100 dark:border-green-900/20 flex flex-col gap-4 md:col-span-2">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-green-600 uppercase tracking-widest mb-1 ml-1">Custo Médio (R$)</label>
+                                                    <label className="block text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1 ml-1">Custo Médio (R$)</label>
                                                     <input 
                                                         type="number"
                                                         step="0.01"
-                                                        className="w-full bg-white border border-green-200 rounded-xl p-3 text-sm font-bold focus:border-green-400 outline-none transition-all"
+                                                        className="w-full bg-white dark:bg-[#111] border border-green-200 dark:border-green-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-green-400 outline-none transition-all"
                                                         value={editingProduct?.averageCost || 0}
                                                         onChange={e => setEditingProduct({...editingProduct, averageCost: parseFloat(e.target.value)})}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-green-600 uppercase tracking-widest mb-1 ml-1">Preço de Venda (R$)</label>
+                                                    <label className="block text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1 ml-1">Preço de Venda (R$)</label>
                                                     <input 
                                                         type="number"
                                                         step="0.01"
-                                                        className="w-full bg-white border border-green-200 rounded-xl p-3 text-sm font-bold focus:border-green-400 outline-none transition-all"
+                                                        className="w-full bg-white dark:bg-[#111] border border-green-200 dark:border-green-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-green-400 outline-none transition-all"
                                                         value={editingProduct?.salePrice || 0}
                                                         onChange={e => setEditingProduct({...editingProduct, salePrice: parseFloat(e.target.value)})}
                                                     />
@@ -716,41 +716,41 @@ const CatalogManagerView = () => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex flex-col gap-4 md:col-span-2">
-                                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Logística & Dimensões</p>
+                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20 flex flex-col gap-4 md:col-span-2">
+                                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">Logística & Dimensões</p>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Peso (g)</label>
+                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Peso (g)</label>
                                                     <input 
                                                         type="number"
-                                                        className="w-full bg-white border border-blue-200 rounded-xl p-3 text-sm font-bold focus:border-blue-400 outline-none transition-all"
+                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
                                                         value={editingProduct?.weight || 0}
                                                         onChange={e => setEditingProduct({...editingProduct, weight: parseFloat(e.target.value)})}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Comp. (cm)</label>
+                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Comp. (cm)</label>
                                                     <input 
                                                         type="number"
-                                                        className="w-full bg-white border border-blue-200 rounded-xl p-3 text-sm font-bold focus:border-blue-400 outline-none transition-all"
+                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
                                                         value={editingProduct?.length || 0}
                                                         onChange={e => setEditingProduct({...editingProduct, length: parseFloat(e.target.value)})}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Larg. (cm)</label>
+                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Larg. (cm)</label>
                                                     <input 
                                                         type="number"
-                                                        className="w-full bg-white border border-blue-200 rounded-xl p-3 text-sm font-bold focus:border-blue-400 outline-none transition-all"
+                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
                                                         value={editingProduct?.width || 0}
                                                         onChange={e => setEditingProduct({...editingProduct, width: parseFloat(e.target.value)})}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Alt. (cm)</label>
+                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Alt. (cm)</label>
                                                     <input 
                                                         type="number"
-                                                        className="w-full bg-white border border-blue-200 rounded-xl p-3 text-sm font-bold focus:border-blue-400 outline-none transition-all"
+                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
                                                         value={editingProduct?.height || 0}
                                                         onChange={e => setEditingProduct({...editingProduct, height: parseFloat(e.target.value)})}
                                                     />
@@ -759,9 +759,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">URL da Imagem</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">URL da Imagem</label>
                                             <input 
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.imageUrl || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, imageUrl: e.target.value})}
                                                 placeholder="https://exemplo.com/imagem.jpg"
@@ -769,9 +769,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Descrição Curta</label>
+                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Descrição Curta</label>
                                             <textarea 
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-bold focus:bg-white focus:border-wtech-gold outline-none transition-all h-24"
+                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all h-24"
                                                 value={editingProduct?.description || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, description: e.target.value})}
                                                 placeholder="Detalhes do produto para o catálogo..."
