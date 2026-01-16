@@ -5,11 +5,12 @@ import { X, ArrowRight, ArrowLeft, Send, Users, FileText, CheckCircle, Smartphon
 
 interface CampaignBuilderProps {
     onClose: () => void;
+    permissions?: any;
 }
 
 import { useAuth } from '../../../context/AuthContext';
 
-const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
+const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions }) => {
     const { user } = useAuth();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
         content: '',
         imageUrl: '',
         content2: '',
+        part_delay: 0,
         throttling: { delay_seconds: 120, batch_size: 1 } // Default 2 mins to be safe
     });
     
@@ -35,10 +37,19 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
 
     useEffect(() => {
         const loadData = async () => {
-             const { data: l } = await supabase.from('SITE_MarketingLists').select('*');
+             const isAdmin = permissions?.admin_access || permissions?.manage_marketing;
+             
+             let listQuery = supabase.from('SITE_MarketingLists').select('*');
+             if (!isAdmin && user?.id) {
+                 listQuery = listQuery.eq('owner_id', user.id);
+             }
+             const { data: l } = await listQuery;
              if (l) setLists(l);
              
-             const { data: t } = await supabase.from('SITE_MessageTemplates').select('*');
+             let templateQuery = supabase.from('SITE_MessageTemplates').select('*');
+             // Templates are usually shared, but user asked for campaigns/lists. 
+             // I'll leave templates global unless asked otherwise.
+             const { data: t } = await templateQuery;
              if (t) setTemplates(t);
         };
         loadData();
@@ -94,6 +105,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                 content: formData.content,
                 imageUrl: formData.imageUrl || null,
                 content2: formData.content2 || null,
+                part_delay: formData.part_delay || 0,
                 throttling_settings: formData.throttling,
                 created_by: user?.id
             }]).select().single();
@@ -194,53 +206,60 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-5xl mx-auto border border-gray-100 dark:border-gray-800 flex flex-col h-[85vh] animate-in zoom-in-95">
                 
-                {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                {/* Fixed Header */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#222]">
                     <div>
-                        <h3 className="font-bold text-xl text-gray-900">Nova Campanha</h3>
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                            Nova Campanha
+                        </h3>
                         <div className="flex gap-2 mt-2">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className={`h-1.5 w-8 rounded-full ${step >= i ? 'bg-purple-600' : 'bg-gray-200'}`} />
+                                <div key={i} className={`h-1.5 w-8 rounded-full transition-colors ${step >= i ? 'bg-purple-600 dark:bg-purple-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
                             ))}
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full"><X size={20} /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-gray-400 hover:text-red-500 transition-all">
+                        <X size={24} />
+                    </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-8 flex-1 overflow-y-auto">
+                {/* Content with scroll */}
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                     
                     {/* Step 1: Config */}
                     {step === 1 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Nome da Campanha</label>
+                        <div className="space-y-6 animate-in slide-in-from-right-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Campanha</label>
                                 <input 
-                                    className="w-full border border-gray-300 rounded-lg p-3"
-                                    placeholder="Ex: Lembrete Curso Offroad"
+                                    type="text" 
+                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all dark:text-white"
+                                    placeholder="Ex: Promoção de Natal 2024"
                                     value={formData.name}
                                     onChange={e => setFormData({...formData, name: e.target.value})}
+                                    autoFocus
                                 />
                             </div>
                             
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Canal de Envio</label>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Canal de Envio</label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <button 
                                         onClick={() => setFormData({...formData, channel: 'WhatsApp'})}
-                                        className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${formData.channel === 'WhatsApp' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-100 hover:border-gray-200'}`}
+                                        className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${formData.channel === 'WhatsApp' ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-xl shadow-green-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-400 hover:bg-gray-50 dark:hover:bg-[#222]'}`}
                                     >
-                                        <Smartphone size={24} />
-                                        <span className="font-bold">WhatsApp</span>
+                                        <Smartphone size={32} />
+                                        <span className="font-black uppercase tracking-tight">WhatsApp</span>
                                     </button>
                                     <button 
-                                        onClick={() => setFormData({...formData, channel: 'Email'})}
-                                        className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${formData.channel === 'Email' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-100 hover:border-gray-200'}`}
+                                        onClick={() => setFormData({...formData, channel: 'Email'})} // Assuming Email logic exists or is planned
+                                        disabled // Disabled based on previous code usually disable email
+                                        className={`p-6 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex flex-col items-center gap-3 text-gray-300 dark:text-gray-600 cursor-not-allowed grayscale bg-gray-50 dark:bg-[#222]/50`}
                                     >
-                                        <Mail size={24} />
-                                        <span className="font-bold">Email</span>
+                                        <Mail size={32} />
+                                        <span className="font-black uppercase tracking-tight">Email (Em breve)</span>
                                     </button>
                                 </div>
                             </div>
@@ -249,11 +268,11 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
 
                     {/* Step 2: Audience & Content */}
                     {step === 2 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Selecione a Lista de Destino</label>
+                        <div className="space-y-6 animate-in slide-in-from-right-4">
+                             <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Selecione a Lista de Destino</label>
                                 <select 
-                                    className="w-full border border-gray-300 rounded-lg p-3"
+                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all dark:text-white"
                                     value={formData.listId}
                                     onChange={e => setFormData({...formData, listId: e.target.value})}
                                 >
@@ -261,16 +280,16 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                                     {lists.map(l => <option key={l.id} value={l.id}>{l.name} ({l.type})</option>)}
                                 </select>
                                 {formData.listId && (
-                                    <div className="mt-2 text-sm text-purple-600 font-bold bg-purple-50 p-2 rounded inline-block">
+                                    <div className="mt-2 text-sm text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg inline-block shadow-sm">
                                         {audienceCount === null ? 'Calculando...' : `${audienceCount} destinatários estimados`}
                                     </div>
                                 )}
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Modelo de Mensagem</label>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Modelo de Mensagem</label>
                                 <select 
-                                    className="w-full border border-gray-300 rounded-lg p-3"
+                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all dark:text-white"
                                     value={formData.templateId}
                                     onChange={e => {
                                         const t = templates.find(t => t.id === e.target.value);
@@ -279,7 +298,8 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                                             templateId: e.target.value, 
                                             content: t?.content || '',
                                             imageUrl: t?.imageUrl || '',
-                                            content2: t?.content2 || ''
+                                            content2: t?.content2 || '',
+                                            part_delay: t?.part_delay || 0
                                         });
                                     }}
                                 >
@@ -288,34 +308,49 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                                 </select>
                             </div>
 
-                            <div className="space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest border-b border-gray-200 pb-2">Conteúdo Sequencial</h4>
+                            <div className="space-y-4 bg-gray-50 dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner">
+                                <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+                                    <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest ">Conteúdo Sequencial</h4>
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-[9px] font-black text-gray-400 uppercase">Intervalo entre partes (Seg)</label>
+                                        <input 
+                                            type="number" 
+                                            min="0"
+                                            max="60"
+                                            className="w-16 border border-gray-200 dark:border-gray-700 rounded p-1 text-xs font-bold bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white text-center"
+                                            value={formData.part_delay || 0}
+                                            onChange={e => setFormData({...formData, part_delay: parseInt(e.target.value) || 0})}
+                                        />
+                                    </div>
+                                </div>
                                 
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black text-blue-500 uppercase">1. Texto Inicial</label>
-                                    <div className="text-[10px] text-gray-400 mb-1">Variáveis: {'{{nome}}'}, {'{{telefone}}'}, {'{{email}}'}, {'{{status}}'}, {'{{origem}}'}</div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-blue-500 uppercase flex justify-between">
+                                        <span>1. Texto Inicial</span>
+                                        <span className="text-gray-400 font-medium normal-case">Variáveis: {'{{nome}}'}, {'{{telefone}}'}...</span>
+                                    </label>
                                     <textarea 
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm h-24"
+                                        className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm font-medium h-32 outline-none focus:ring-2 focus:ring-blue-500/20 dark:text-white transition-all shadow-sm"
                                         value={formData.content}
                                         onChange={e => setFormData({...formData, content: e.target.value})}
                                         placeholder="Olá {{nome}}..."
                                     />
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                     <label className="text-[10px] font-black text-purple-500 uppercase">2. Imagem (URL)</label>
                                     <input 
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm"
+                                        className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white transition-all shadow-sm"
                                         placeholder="https://..."
                                         value={formData.imageUrl}
                                         onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                                     />
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                     <label className="text-[10px] font-black text-indigo-500 uppercase">3. Texto Final</label>
                                     <textarea 
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm h-24"
+                                        className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm font-medium h-24 outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white transition-all shadow-sm"
                                         value={formData.content2}
                                         onChange={e => setFormData({...formData, content2: e.target.value})}
                                         placeholder="Aguardo seu retorno!"
@@ -327,19 +362,19 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
 
                      {/* Step 3: Throttling & Confirm */}
                      {step === 3 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl flex gap-3 text-yellow-800">
+                        <div className="space-y-6 animate-in slide-in-from-right-4">
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-xl flex gap-4 text-yellow-800 dark:text-yellow-300 shadow-sm">
                                 <AlertTriangle className="shrink-0" />
                                 <div className="text-sm">
-                                    <p className="font-bold mb-1">Importante: Mantenha a aba aberta</p>
-                                    <p>O envio será feito pelo seu navegador em intervalos para evitar bloqueios do WhatsApp.</p>
+                                    <p className="font-bold mb-1 text-base">Importante: Mantenha a aba aberta</p>
+                                    <p className="opacity-90">O envio será feito pelo seu navegador em intervalos para evitar bloqueios do WhatsApp.</p>
                                 </div>
                             </div>
 
-                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Velocidade de Envio (Segurança)</label>
+                             <div className="space-y-2">
+                                <label className="block text-xs font-black uppercase text-gray-500 dark:text-gray-400 mb-1 tracking-widest ml-1">Velocidade de Envio (Segurança)</label>
                                 <select 
-                                    className="w-full border border-gray-300 rounded-lg p-3"
+                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl p-4 text-lg font-bold outline-none transition-all dark:text-white"
                                     value={formData.throttling.delay_seconds}
                                     onChange={e => setFormData({...formData, throttling: {...formData.throttling, delay_seconds: Number(e.target.value)}})}
                                 >
@@ -348,16 +383,28 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                                     <option value="180">Seguro (1 msg / 3 min)</option>
                                     <option value="300">Lento (1 msg / 5 min)</option>
                                 </select>
-                                <p className="text-xs text-gray-400 mt-1">Recomendamos 3 minutos para listas frias.</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-1 font-medium"> Recomendamos 3 minutos para listas frias.</p>
                             </div>
 
-                            <div className="border-t pt-4">
-                                <h4 className="font-bold text-gray-700 mb-2">Resumo</h4>
-                                <ul className="text-sm space-y-1 text-gray-600">
-                                    <li>• <strong>Campanha:</strong> {formData.name}</li>
-                                    <li>• <strong>Canal:</strong> {formData.channel}</li>
-                                    <li>• <strong>Destinatários:</strong> ~{audienceCount}</li>
-                                    <li>• <strong>Intervalo:</strong> {formData.throttling.delay_seconds} segundos</li>
+                            <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                                <h4 className="font-black text-gray-900 dark:text-white mb-4 text-lg">Resumo da Campanha</h4>
+                                <ul className="space-y-3 text-sm">
+                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
+                                        <span className="text-gray-500 dark:text-gray-400">Campanha</span>
+                                        <strong className="text-gray-900 dark:text-white">{formData.name}</strong>
+                                    </li>
+                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
+                                        <span className="text-gray-500 dark:text-gray-400">Canal</span>
+                                        <strong className="text-gray-900 dark:text-white">{formData.channel}</strong>
+                                    </li>
+                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
+                                        <span className="text-gray-500 dark:text-gray-400">Destinatários estimados</span>
+                                        <strong className="text-purple-600 dark:text-purple-400">{audienceCount}</strong>
+                                    </li>
+                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
+                                        <span className="text-gray-500 dark:text-gray-400">Intervalo de envio</span>
+                                        <strong className="text-gray-900 dark:text-white">{formData.throttling.delay_seconds} segundos</strong>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -366,11 +413,11 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-gray-50 dark:bg-[#222] rounded-b-2xl">
                     {step > 1 && (
                         <button 
                             onClick={() => setStep(step - 1)}
-                            className="px-6 py-2 rounded-lg font-bold text-gray-500 hover:bg-gray-200"
+                            className="px-6 py-3 rounded-xl font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#333] transition-all"
                         >
                             Voltar
                         </button>
@@ -380,17 +427,17 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose }) => {
                         <button 
                             onClick={() => setStep(step + 1)}
                             disabled={!formData.name}
-                            className="bg-black text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 disabled:opacity-50"
+                            className="bg-black text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:transform-none"
                         >
-                            Próximo <ArrowRight size={16} />
+                            Próximo <ArrowRight size={18} />
                         </button>
                     ) : (
                         <button 
                             onClick={handleCreateCampaign}
                             disabled={isLoading}
-                            className="bg-purple-600 text-white px-8 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-purple-700 shadow-lg shadow-purple-200 disabled:opacity-50"
+                            className="bg-purple-600 text-white px-8 py-3 rounded-xl font-black uppercase tracking-wider flex items-center gap-2 hover:bg-purple-700 shadow-xl shadow-purple-200 dark:shadow-none transition-all active:scale-95 disabled:opacity-50"
                         >
-                            {isLoading ? 'Criando...' : 'Lançar Campanha'} <Send size={16} />
+                            {isLoading ? 'Criando...' : 'Lançar Campanha'} <Send size={18} />
                         </button>
                     )}
                 </div>

@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.2.5",
+    "date": "2026-01-16",
+    "title": "Adiciona Customização de Menu",
+    "changes": [
+      "Adicionado coluna menu_styles na tabela SITE_Config",
+      "DONEy",
+      "y",
+      "y"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.2.4",
     "date": "2026-01-15",
     "title": "Fix WhatsApp Duplicates, Variables, Lead Deletion and UI Improvements",

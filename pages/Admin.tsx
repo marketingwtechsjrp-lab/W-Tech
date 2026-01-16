@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -39,6 +39,9 @@ import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
+import changelogData from '../CHANGELOG.json';
+import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
+import { History } from 'lucide-react';
 
 
 // --- Types for Local State ---
@@ -86,13 +89,13 @@ const SidebarItem = ({
     <button
         onClick={onClick}
         title={collapsed ? label : undefined}
-        className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-3'} py-3 my-1 rounded-lg transition-all duration-200 group ${active
-            ? 'bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-bold shadow-lg shadow-yellow-500/20'
+        className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-2'} py-1 my-px rounded-md transition-all duration-200 group ${active
+            ? 'bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-bold shadow-sm shadow-yellow-500/20'
             : 'text-gray-400 hover:bg-gray-800 hover:text-white'
             }`}
     >
-        <Icon size={20} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-3'}`} />
-        {!collapsed && <span className="text-sm tracking-wide transition-opacity duration-200">{label}</span>}
+        <Icon size={15} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-2'}`} />
+        {!collapsed && <span className="text-[11px] font-medium tracking-tight transition-opacity duration-200 truncate leading-none">{label}</span>}
     </button>
 );
 
@@ -760,8 +763,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     // Auto-Generate Landing Page Logic
     if (generateLP && savedCourseId && payload.title && payload.date) {
         try {
-            const dateStr = new Date(payload.date).toISOString().split('T')[0];
+            const dateObj = new Date(payload.date);
+            const dateStr = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
             const normalizedTitle = payload.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            // Slug: title-date (e.g. curso-de-suspensao-2024-05-15)
             const slug = `${normalizedTitle.replace(/[^a-z0-9]+/g, '-')}-${dateStr}`.replace(/^-+|-+$/g, '');
             
             const lpPayload = {
@@ -774,16 +779,26 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 status: 'Published'
             };
 
-            const { error: lpError } = await supabase.from('SITE_LandingPages').insert([lpPayload]);
+            // Check if LP already exists for this course
+            const { data: existingLP } = await supabase.from('SITE_LandingPages').select('id').eq('course_id', savedCourseId).maybeSingle();
+
+            let lpError;
+            if (existingLP) {
+                const { error } = await supabase.from('SITE_LandingPages').update(lpPayload).eq('id', existingLP.id);
+                lpError = error;
+            } else {
+                const { error } = await supabase.from('SITE_LandingPages').insert([lpPayload]);
+                lpError = error;
+            }
             
             // ALSO Update Course Slug to ensure links work correctly
             await supabase.from('SITE_Courses').update({ slug: slug }).eq('id', savedCourseId);
 
             if (lpError) {
-                console.error('Error creating Auto LP:', lpError);
-                alert('Curso salvo, mas erro ao criar LP: ' + lpError.message);
+                console.error('Error creating/updating Auto LP:', lpError);
+                alert('Curso salvo, mas erro ao processar LP: ' + lpError.message);
             } else {
-                alert(`Curso salvo e LP criada com sucesso!\nURL: A URL será atualizada em breve.\nLink: w-tech.com/#/lp/${slug}`);
+                alert(`LP processada com sucesso!\nURL: w-tech.com/#/lp/${slug}`);
             }
         } catch (err) {
             console.error('LP Gen Error:', err);
@@ -2174,108 +2189,115 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {/* INLINE FORM / TOP INSERTION */}
             {isEditing && (
-                <div className="mb-8 bg-white p-8 rounded-xl shadow-lg border-2 border-wtech-gold/20 animate-in slide-in-from-top-4 relative">
-                    {/* ... Form ... */}
-                    <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black"><X size={20} /></button>
-                    <h2 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
-                        <GraduationCap className="text-wtech-gold" /> {formData.id ? 'Editar Curso' : 'Novo Curso'}
-                    </h2>
-                    <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-900">
-                        
-                        {/* Type Selector */}
-                        <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4 flex items-center gap-6">
-                            <label className="font-bold text-gray-700">O que você está cadastrando?</label>
-                            <div className="flex gap-4">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="courseType" 
-                                        checked={!formData.type || formData.type === 'Course'} 
-                                        onChange={() => setFormData({ ...formData, type: 'Course' })} 
-                                        className="w-5 h-5 text-wtech-gold focus:ring-wtech-gold"
-                                    />
-                                    <span className="font-bold">Curso (Com Inscrição/Preço)</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="courseType" 
-                                        checked={formData.type === 'Event'} 
-                                        onChange={() => setFormData({ ...formData, type: 'Event' })} 
-                                        className="w-5 h-5 text-wtech-gold focus:ring-wtech-gold"
-                                    />
-                                    <span className="font-bold">Evento / Palestra (Apenas Agenda)</span>
-                                </label>
+                <div className="mb-8 bg-white dark:bg-[#1A1A1A] p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-black text-2xl text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                            {formData.id ? <Edit className="text-wtech-gold" /> : <Plus className="text-wtech-gold" />}
+                            {formData.id ? 'Editar Evento' : 'Novo Evento'}
+                        </h3>
+                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-gray-100 dark:hover:bg-[#333] rounded-full transition-colors dark:text-gray-300">
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Título do Evento</label>
+                            <input autoFocus className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] text-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Curso de Suspensão Avançada" required />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Tipo de Evento</label>
+                            <div className="flex gap-2">
+                                {['Course', 'Event', 'TrackDay'].map(type => (
+                                    <button
+                                        type="button"
+                                        key={type}
+                                        onClick={() => setFormData({ ...formData, type: type as any })}
+                                        className={`flex-1 p-3 rounded-lg border font-bold text-sm transition-all ${formData.type === type
+                                            ? 'bg-black text-white dark:bg-white dark:text-black'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-[#222] dark:text-gray-400 dark:border-gray-700 dark:hover:bg-[#333]'
+                                            }`}
+                                    >
+                                        {type === 'Course' ? 'Curso' : type === 'TrackDay' ? 'Track Day' : 'Evento'}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Título do {formData.type === 'Event' ? 'Evento' : 'Curso'}</label>
-                            <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
+                        <div>
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Data de Início</label>
+                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Data de Fim (Opcional)</label>
+                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.dateEnd ? new Date(formData.dateEnd).toISOString().split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
                         </div>
 
-                        {/* Date & Time */}
-                        <div className="grid grid-cols-4 gap-4 md:col-span-2">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Data Início</label>
-                                <input type="date" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Hora Início</label>
+                                <input type="time" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Data Término</label>
-                                <input type="date" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Hora Fim</label>
+                                <input type="time" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Hora Início</label>
-                                <input type="time" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Hora Fim</label>
-                                <input type="time" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
-                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Status</label>
+                            <select className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-bold" value={formData.status || 'Draft'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
+                                <option value="Draft">Rascunho (Oculto)</option>
+                                <option value="Published">Publicado (Visível)</option>
+                                <option value="Full">Esgotado</option>
+                                <option value="Completed">Concluído</option>
+                                <option value="Cancelled">Cancelado</option>
+                            </select>
                         </div>
 
                         {/* LOCATION SECTION */}
-                        <div className="md:col-span-2 border-t pt-4 mt-2">
-                            <label className="block text-sm font-bold mb-3 text-gray-800 uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
+                        <div className="md:col-span-2 border-t pt-4 mt-2 border-gray-100 dark:border-gray-800">
+                            <label className="block text-sm font-bold mb-3 text-gray-800 dark:text-gray-200 uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
                             <div className="grid grid-cols-4 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">CEP</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} onBlur={handleBlurCEP} placeholder="00000-000" />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">CEP</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} onBlur={handleBlurCEP} placeholder="00000-000" />
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Endereço (Rua/Av)</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Endereço (Rua/Av)</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Número</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.addressNumber || ''} onChange={e => setFormData({ ...formData, addressNumber: e.target.value })} onBlur={handleGeocodeCourse} placeholder="Ex: 123" />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Número</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.addressNumber || ''} onChange={e => setFormData({ ...formData, addressNumber: e.target.value })} onBlur={handleGeocodeCourse} placeholder="Ex: 123" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Bairro</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.addressNeighborhood || ''} onChange={e => setFormData({ ...formData, addressNeighborhood: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Bairro</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.addressNeighborhood || ''} onChange={e => setFormData({ ...formData, addressNeighborhood: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Cidade</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Cidade</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Estado</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.state || ''} onChange={e => setFormData({ ...formData, state: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Estado</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.state || ''} onChange={e => setFormData({ ...formData, state: e.target.value })} />
                                 </div>
                                 <div className="col-span-4">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Local (Exibido no Cabeçalho)</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Local (Exibido no Cabeçalho)</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Latitude</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900 bg-gray-50" value={formData.latitude || ''} readOnly />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Latitude</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222] bg-gray-50 dark:bg-[#333]" value={formData.latitude || ''} readOnly />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500">Longitude</label>
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900 bg-gray-50" value={formData.longitude || ''} readOnly />
+                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Longitude</label>
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222] bg-gray-50 dark:bg-[#333]" value={formData.longitude || ''} readOnly />
                                 </div>
                                 <div className="col-span-4">
-                                    <button type="button" onClick={handleGeocodeCourse} className="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded font-bold hover:bg-blue-100 border border-blue-200">
+                                    <button type="button" onClick={handleGeocodeCourse} className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-3 py-1 rounded font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-900/40">
                                         📍 Atualizar Pin no Mapa (Forçar)
                                     </button>
                                 </div>
@@ -2283,8 +2305,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Modalidade</label>
-                            <select className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Modalidade</label>
+                            <select className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
                                 <option value="Presencial">Presencial</option>
                                 <option value="Online">Online</option>
                             </select>
@@ -2292,45 +2314,45 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                         {/* Event Types DON'T have instructor usually? Or maybe they do. Keeping for now. */}
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Resposável / Instrutor</label>
-                            <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Resposável / Instrutor</label>
+                            <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
 
                         {(!formData.type || formData.type === 'Course') && (
-                            <div className="grid grid-cols-3 gap-4 md:col-span-2 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                            <div className="grid grid-cols-3 gap-4 md:col-span-2 bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-100 dark:border-yellow-900/40">
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700">Valor (R$)</label>
-                                    <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Valor (R$)</label>
+                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700">Reciclagem (R$)</label>
-                                    <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
+                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Reciclagem (R$)</label>
+                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700">Vagas / Cotas</label>
-                                    <input type="number" className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
+                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Vagas / Cotas</label>
+                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
                                 </div>
                             </div>
                         )}
 
                         <div className="md:col-span-2">
-                             <label className="block text-sm font-bold mb-1 text-gray-700">Imagem de Capa</label>
+                             <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Imagem de Capa</label>
                              <div className="flex flex-col gap-2">
                                 <div className="flex gap-4 mb-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer dark:text-gray-300">
                                         <input type="radio" name="imgSource" checked={formData.imageSourceType !== 'Upload'} onChange={() => setFormData({...formData, imageSourceType: 'Url'})} />
                                         <span className="text-sm">Link Externo (URL)</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer dark:text-gray-300">
                                         <input type="radio" name="imgSource" checked={formData.imageSourceType === 'Upload'} onChange={() => setFormData({...formData, imageSourceType: 'Upload'})} />
                                         <span className="text-sm">Upload de Arquivo</span>
                                     </label>
                                 </div>
 
                                 {formData.imageSourceType === 'Upload' ? (
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 p-2 rounded text-gray-900 bg-white" />
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white bg-white dark:bg-[#222]" />
                                 ) : (
-                                    <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
+                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
                                 )}
                                 
                                 {formData.image && (
@@ -2343,32 +2365,32 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">URL do Mapa (Opcional - Gerado Automático)</label>
-                            <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">URL do Mapa (Opcional - Gerado Automático)</label>
+                            <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
                         </div>
 
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Cronograma / Conteúdo</label>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Cronograma / Conteúdo</label>
                                 <div className="mb-2 flex gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, schedule: DEFAULT_COURSE_SCHEDULE })}
-                                        className="text-xs bg-yellow-100 text-yellow-800 border border-yellow-200 px-2 py-1 rounded font-bold hover:bg-yellow-200"
+                                        className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 px-2 py-1 rounded font-bold hover:bg-yellow-200"
                                     >
                                         📥 Carregar Modelo: Suspensão
                                     </button>
                                 </div>
-                                <textarea rows={8} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                                <textarea rows={8} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
                             </div>
 
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-bold mb-1 text-gray-700">O que levar / Requisitos</label>
-                                <textarea rows={4} className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">O que levar / Requisitos</label>
+                                <textarea rows={4} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
                             </div>
 
-                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-                                <div className="bg-green-50 p-4 rounded-xl border border-green-100/50">
-                                    <h4 className="font-bold text-green-800 text-xs uppercase mb-3 flex items-center gap-2">
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                                <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100/50 dark:border-green-900/30">
+                                    <h4 className="font-bold text-green-800 dark:text-green-400 text-xs uppercase mb-3 flex items-center gap-2">
                                         <Bell size={14} /> Lembrete Antecipado
                                     </h4>
                                     <div className="flex items-center gap-4">
@@ -2378,22 +2400,22 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 checked={formData.reminder5dEnabled ?? true} 
                                                 onChange={e => setFormData({...formData, reminder5dEnabled: e.target.checked})} 
                                             />
-                                            <span className="text-sm font-bold">Ativar</span>
+                                            <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <input 
                                                 type="number" 
-                                                className="w-16 p-1 border rounded text-sm font-bold text-center" 
+                                                className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700" 
                                                 value={formData.reminder5dDays ?? 5} 
                                                 onChange={e => setFormData({...formData, reminder5dDays: parseInt(e.target.value)})} 
                                             />
-                                            <span className="text-xs text-gray-500">dias antes</span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">dias antes</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100/50">
-                                    <h4 className="font-bold text-blue-800 text-xs uppercase mb-3 flex items-center gap-2">
+                                <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100/50 dark:border-blue-900/30">
+                                    <h4 className="font-bold text-blue-800 dark:text-blue-400 text-xs uppercase mb-3 flex items-center gap-2">
                                         <Bell size={14} /> Lembrete Final
                                     </h4>
                                     <div className="flex items-center gap-4">
@@ -2403,22 +2425,22 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 checked={formData.reminder1dEnabled ?? true} 
                                                 onChange={e => setFormData({...formData, reminder1dEnabled: e.target.checked})} 
                                             />
-                                            <span className="text-sm font-bold">Ativar</span>
+                                            <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <input 
                                                 type="number" 
-                                                className="w-16 p-1 border rounded text-sm font-bold text-center" 
+                                                className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700" 
                                                 value={formData.reminder1dDays ?? 1} 
                                                 onChange={e => setFormData({...formData, reminder1dDays: parseInt(e.target.value)})} 
                                             />
-                                            <span className="text-xs text-gray-500">dia(s) antes</span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">dia(s) antes</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="md:col-span-2 bg-gray-50 p-4 rounded border border-gray-200">
+                            <div className="md:col-span-2 bg-gray-50 dark:bg-[#222] p-4 rounded border border-gray-200 dark:border-gray-700">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input 
                                         type="checkbox" 
@@ -2426,29 +2448,29 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         checked={generateLP} 
                                         onChange={e => setGenerateLP(e.target.checked)} 
                                     />
-                                    <span className="font-bold text-gray-900">Gerar Landing Page Automática?</span>
+                                    <span className="font-bold text-gray-900 dark:text-white">Gerar Landing Page Automática?</span>
                                 </label>
-                                <div className="text-xs text-gray-500 mt-1 ml-7">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
                                     Cria uma página em <code>/lp/titulo-data</code> vinculada a este curso.
                                 </div>
                             </div>
 
-                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                                 <div className="flex gap-2 w-full md:w-auto">
-                                    <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-white border border-gray-200 text-blue-600 rounded-lg font-bold hover:bg-gray-50 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
+                                    <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-white dark:bg-[#333] border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-[#444] flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
                                         <Mail size={16} /> Anunciar p/ Base (Email)
                                     </button>
                                     <button 
                                         type="button" 
                                         onClick={handleTestReminderMessage}
-                                        className="flex-1 md:flex-none py-3 px-6 bg-green-50 border border-green-200 text-green-700 rounded-lg font-bold hover:bg-green-100 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95"
+                                        className="flex-1 md:flex-none py-3 px-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg font-bold hover:bg-green-100 dark:hover:bg-green-900/30 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95"
                                     >
                                         <MessageCircle size={16} /> Testar Lembrete (WhatsApp)
                                     </button>
                                 </div>
                                 <div className="flex gap-3 w-full md:w-auto">
-                                    <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-gray-300 rounded-lg font-bold text-gray-600 hover:bg-gray-100 transition-all">Cancelar</button>
-                                    <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 shadow-xl transition-all active:scale-95">Salvar Curso</button>
+                                    <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">Cancelar</button>
+                                    <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 dark:hover:bg-gray-700 shadow-xl transition-all active:scale-95">Salvar Curso</button>
                                 </div>
                             </div>
                     </form>
@@ -2457,20 +2479,20 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {!isEditing && hasPermission('courses_add') && (
                 <div className="mb-4">
-                    <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 font-bold hover:border-wtech-gold hover:text-wtech-gold transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 dark:text-gray-400 font-bold hover:border-wtech-gold hover:text-wtech-gold transition-colors flex items-center justify-center gap-2">
                         <Plus size={20} /> Adicionar Novo Curso no Topo
                     </button>
                 </div>
             )}
 
             {/* DATA DISPLAY */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[400px]">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden min-h-[400px]">
                 {viewMode === 'list' ? (
                     <Table />
                 ) : (
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-gray-700">Calendário de {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
+                            <h3 className="font-bold text-gray-700 dark:text-gray-200">Calendário de {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
                             <span className="text-xs text-gray-400">Navegue acima para mudar</span>
                         </div>
                         <CalendarGrid />
@@ -2899,20 +2921,20 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
     }
 
     return (
-        <div className="text-gray-900">
+        <div className="text-gray-900 dark:text-gray-100">
             <div className="flex flex-col gap-4 mb-6">
                 {/* Header Row */}
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">Oficinas Credenciadas</h2>
+                    <h2 className="text-xl font-bold dark:text-white">Oficinas Credenciadas</h2>
                     <div className="flex gap-2">
                         {processingCount.total > 0 && (
-                            <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded text-xs font-bold flex items-center gap-2">
+                            <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 px-4 py-2 rounded text-xs font-bold flex items-center gap-2">
                                 <span className="animate-spin">⚙️</span> Processando {processingCount.current}/{processingCount.total}
                             </div>
                         )}
 
                         {!isImporting && processingCount.total === 0 && (
-                            <button onClick={handleBatchGeocode} className="bg-blue-100 text-blue-800 border border-blue-200 px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-blue-200">
+                            <button onClick={handleBatchGeocode} className="bg-blue-100 text-blue-800 border border-blue-200 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-400 px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-blue-200 dark:hover:bg-blue-900/30">
                                 📍 Atualizar PINs (GPS)
                             </button>
                         )}
@@ -2924,13 +2946,13 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                         )}
 
                         {isImporting ? (
-                            <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
-                                <input type="file" accept=".csv" onChange={handleCSVImport} className="text-xs" />
-                                <button onClick={() => setIsImporting(false)}><X size={16} /></button>
+                            <div className="flex items-center gap-2 bg-gray-100 dark:bg-[#222] p-2 rounded">
+                                <input type="file" accept=".csv" onChange={handleCSVImport} className="text-xs dark:text-gray-300" />
+                                <button onClick={() => setIsImporting(false)} className="dark:text-gray-300"><X size={16} /></button>
                             </div>
                         ) : (
                             hasPermission('accredited_import') && (
-                                <button onClick={() => setIsImporting(true)} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded font-bold flex items-center gap-2">
+                                <button onClick={() => setIsImporting(true)} className="bg-white border border-gray-300 text-gray-700 dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 px-4 py-2 rounded font-bold flex items-center gap-2">
                                     <Upload size={18} /> Importar CSV
                                 </button>
                             )
@@ -2945,18 +2967,18 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
 
                 {/* Filter Row */}
                 <div className="flex gap-4">
-                    <div className="flex-grow flex items-center bg-white border border-gray-200 rounded px-3 py-2">
+                    <div className="flex-grow flex items-center bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded px-3 py-2">
                         <Search size={18} className="text-gray-400 mr-2" />
                         <input
                             placeholder="Buscar por Oficina, Cidade, UF ou Região..."
-                            className="flex-grow outline-none text-sm text-gray-900"
+                            className="flex-grow outline-none text-sm text-gray-900 dark:text-white bg-transparent"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <button
                         onClick={() => setFilterMissingGPS(!filterMissingGPS)}
-                        className={`px-4 py-2 rounded font-bold flex items-center gap-2 border transition-all ${filterMissingGPS ? 'bg-orange-100 border-orange-200 text-orange-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                        className={`px-4 py-2 rounded font-bold flex items-center gap-2 border transition-all ${filterMissingGPS ? 'bg-orange-100 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-900/40 dark:text-orange-400' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-[#222] dark:border-gray-700 dark:text-gray-400 dark:hover:bg-[#333]'}`}
                     >
                         <MapPin size={18} className={filterMissingGPS ? "fill-orange-500" : ""} />
                         {filterMissingGPS ? 'Mostrando Sem GPS' : 'Filtrar Sem GPS'}
@@ -2964,9 +2986,9 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs">
+                    <thead className="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 uppercase font-bold text-xs">
                         <tr>
                             <th className="px-4 py-3 w-10">
                                 <input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.length > 0 && selectedIds.length === filteredMechanics.length} />
@@ -2978,9 +3000,9 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                             <th className="px-6 py-3">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-900">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-200">
                         {currentMechanics.map(mech => (
-                            <tr key={mech.id} className="hover:bg-gray-50">
+                            <tr key={mech.id} className="hover:bg-gray-50 dark:hover:bg-[#222]">
                                 <td className="px-4 py-4 w-10">
                                     <input type="checkbox" checked={selectedIds.includes(mech.id)} onChange={() => toggleSelect(mech.id)} />
                                 </td>
@@ -2991,7 +3013,7 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                                 <td className="px-6 py-4">{mech.name}</td>
                                 <td className="px-6 py-4">{mech.city}/{mech.state}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${mech.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase ${mech.status === 'Approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'}`}>
                                         {mech.status}
                                     </span>
                                 </td>
@@ -2999,16 +3021,16 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                                     {hasPermission('accredited_revoke') && (
                                         <button
                                             onClick={() => toggleStatus(mech.id, mech.status)}
-                                            className={`text-xs font-bold px-3 py-1 rounded ${mech.status === 'Approved' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+                                            className={`text-xs font-bold px-3 py-1 rounded ${mech.status === 'Approved' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'}`}
                                         >
                                             {mech.status === 'Approved' ? 'Revogar' : 'Aprovar'}
                                         </button>
                                     )}
                                     {hasPermission('accredited_edit') && (
-                                        <button onClick={() => { setFormData(mech); setIsEditing(true); }} className="text-gray-500 hover:text-black"><Edit size={16} /></button>
+                                        <button onClick={() => { setFormData(mech); setIsEditing(true); }} className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"><Edit size={16} /></button>
                                     )}
                                     {(!mech.latitude || !mech.longitude) && hasPermission('accredited_edit') && (
-                                        <button onClick={() => handleQuickGeocode(mech)} className="text-blue-500 hover:text-blue-700" title="Atualizar GPS Rápido">
+                                        <button onClick={() => handleQuickGeocode(mech)} className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" title="Atualizar GPS Rápido">
                                             <Sparkles size={16} />
                                         </button>
                                     )}
@@ -3021,12 +3043,12 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                     </tbody>
                 </table>
                 {filteredMechanics.length === 0 && (
-                    <div className="p-10 text-center text-gray-500">Nenhum credenciado encontrado com os filtros atuais.</div>
+                    <div className="p-10 text-center text-gray-500 dark:text-gray-400">Nenhum credenciado encontrado com os filtros atuais.</div>
                 )}
             </div>
             {/* Pagination Controls */}
             {filteredMechanics.length > itemsPerPage && (
-                <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
+                <div className="flex justify-between items-center mt-4 text-sm text-gray-600 dark:text-gray-400">
                     <div>
                         Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredMechanics.length)} de {filteredMechanics.length}
                     </div>
@@ -3034,14 +3056,14 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                         <button
                             onClick={prevPage}
                             disabled={currentPage === 1}
-                            className="px-4 py-2 bg-white border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50"
+                            className="px-4 py-2 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-[#333] disabled:opacity-50"
                         >
                             Anterior
                         </button>
                         <button
                             onClick={nextPage}
                             disabled={currentPage === totalPages}
-                            className="px-4 py-2 bg-white border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50"
+                            className="px-4 py-2 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-[#333] disabled:opacity-50"
                         >
                             Próxima
                         </button>
@@ -3242,17 +3264,17 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     const balance = income - expense;
 
     return (
-        <div className="text-gray-900 animate-fade-in space-y-6 pb-20">
+        <div className="text-gray-900 dark:text-gray-100 animate-fade-in space-y-6 pb-20">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
                 <div className="w-full md:w-auto">
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Fluxo de Caixa</h2>
-                    <p className="text-gray-500 font-medium">Gestão financeira completa e transparente.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">Fluxo de Caixa</h2>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Gestão financeira completa e transparente.</p>
                 </div>
                 <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
                     {/* Course/Event Filter */}
                     <select
-                        className="border border-gray-300 rounded-lg p-2 text-sm font-bold text-gray-600 bg-white max-w-[200px]"
+                        className="border border-gray-300 dark:border-gray-700 rounded-lg p-2 text-sm font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-[#222] max-w-[200px]"
                         value={filterReference.type === 'All' ? 'All' : `${filterReference.type}:${filterReference.id}`}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -3272,7 +3294,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                         </optgroup>
                     </select>
 
-                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                    <div className="flex bg-gray-100 dark:bg-[#222] p-1 rounded-lg">
                         {[
                             { id: '7d', l: '7 dias' }, 
                             { id: '30d', l: '30 dias' }, 
@@ -3280,7 +3302,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             <button
                                 key={f.id}
                                 onClick={() => setFilterType(f.id as any)}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${filterType === f.id ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-black'}`}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${filterType === f.id ? 'bg-white shadow text-black dark:bg-gray-700 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'}`}
                             >
                                 {f.l}
                             </button>
@@ -3291,21 +3313,21 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                         type="month" 
                         value={selectedMonth}
                         onChange={(e) => { setSelectedMonth(e.target.value); setFilterType('Month'); }}
-                        className={`border rounded-lg px-2 py-1 text-xs font-bold h-9 ${filterType === 'Month' ? 'border-wtech-gold bg-white' : 'border-gray-200 bg-gray-50'}`}
+                        className={`border rounded-lg px-2 py-1 text-xs font-bold h-9 ${filterType === 'Month' ? 'border-wtech-gold bg-white dark:bg-[#222] dark:border-wtech-gold' : 'border-gray-200 bg-gray-50 dark:bg-[#222] dark:border-gray-700'}`}
                     />
 
                     {/* Custom Range */}
-                    <div className={`flex items-center border rounded-lg overflow-hidden h-9 ${filterType === 'Custom' ? 'border-wtech-gold bg-white' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`flex items-center border rounded-lg overflow-hidden h-9 ${filterType === 'Custom' ? 'border-wtech-gold bg-white dark:bg-[#222] dark:border-wtech-gold' : 'border-gray-200 bg-gray-50 dark:bg-[#222] dark:border-gray-700'}`}>
                         <input 
                             type="date"
-                            className="bg-transparent text-xs px-2 outline-none"
+                            className="bg-transparent text-xs px-2 outline-none dark:text-gray-300"
                             value={customRange.start}
                             onChange={e => { setCustomRange(p => ({...p, start: e.target.value})); setFilterType('Custom'); }}
                         />
                         <span className="text-gray-400 text-[10px]">-</span>
                         <input 
                             type="date"
-                            className="bg-transparent text-xs px-2 outline-none"
+                            className="bg-transparent text-xs px-2 outline-none dark:text-gray-300"
                             value={customRange.end}
                             onChange={e => { setCustomRange(p => ({...p, end: e.target.value})); setFilterType('Custom'); }}
                         />
@@ -3321,55 +3343,55 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
             {/* Monthly Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <div className="flex justify-between mb-4">
                         <span className="text-xs font-bold uppercase text-gray-400">Saldo Líquido</span>
-                        <span className={`p-2 rounded-lg ${balance >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}><DollarSign size={20} /></span>
+                        <span className={`p-2 rounded-lg ${balance >= 0 ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`}><DollarSign size={20} /></span>
                     </div>
                     <h3 className={`text-2xl font-black ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <div className="flex justify-between mb-4">
                         <span className="text-xs font-bold uppercase text-gray-400">Receitas</span>
-                        <span className="p-2 rounded-lg bg-green-50 text-green-600"><TrendingUp size={20} /></span>
+                        <span className="p-2 rounded-lg bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"><TrendingUp size={20} /></span>
                     </div>
-                    <h3 className="text-2xl font-black text-gray-900">R$ {income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">R$ {income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <div className="flex justify-between mb-4">
                         <span className="text-xs font-bold uppercase text-gray-400">Despesas</span>
-                        <span className="p-2 rounded-lg bg-red-50 text-red-600"><TrendingDown size={20} /></span>
+                        <span className="p-2 rounded-lg bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"><TrendingDown size={20} /></span>
                     </div>
-                    <h3 className="text-2xl font-black text-gray-900">R$ {expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">R$ {expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <div className="flex justify-between mb-4">
                         <span className="text-xs font-bold uppercase text-gray-400">A Receber (Previsão)</span>
-                        <span className="p-2 rounded-lg bg-blue-50 text-blue-600"><ShoppingBag size={20} /></span>
+                        <span className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"><ShoppingBag size={20} /></span>
                     </div>
-                    <h3 className="text-2xl font-black text-blue-600">R$ {receivables.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                    <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400">R$ {receivables.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                     <p className="text-[10px] text-gray-400 mt-1">Saldos de alunos pendentes</p>
                 </div>
             </div>
 
             {/* Transactions List */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2 w-full md:w-auto">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 w-full md:w-auto">
                         <ArrowRight size={16} className="text-wtech-gold" /> Últimas Movimentações
                     </h3>
                     <div className="flex flex-wrap gap-2 w-full md:w-auto">
 
                         {/* Removed duplicate date filter which was here */}
                         {hasPermission('financial_export') && (
-                            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 font-bold text-sm bg-white">
+                            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 font-bold text-sm bg-white dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 dark:hover:bg-[#333]">
                                 <Download size={16} /> Exportar
                             </button>
                         )}
                     </div>
                 </div>
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 uppercase font-bold text-xs border-b border-gray-100 dark:border-gray-800">
                         <tr>
                             <th className="px-6 py-4">Descrição</th>
                             <th className="px-6 py-4">Categoria</th>
@@ -3378,23 +3400,23 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             <th className="px-6 py-4 text-right">Valor</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-900">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-200">
                         {loading ? <tr><td colSpan={5} className="p-8 text-center text-gray-400">Carregando...</td></tr> :
                             filteredTransactions.length === 0 ? <tr><td colSpan={5} className="p-8 text-center text-gray-400">Nenhuma transação encontrada.</td></tr> :
                                 filteredTransactions.map(t => (
-                                    <tr key={t.id} className="hover:bg-gray-50 transition-colors group">
+                                    <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-[#222] transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="font-bold">{t.description}</div>
                                             <div className="text-xs text-gray-400">{t.payment_method}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-xs font-bold uppercase text-gray-500">{t.category}</td>
-                                        <td className="px-6 py-4 text-gray-600">{new Date(t.date).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{t.category}</td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{new Date(t.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${t.type === 'Income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${t.type === 'Income' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>
                                                 {t.type === 'Income' ? 'Entrada' : 'Saída'}
                                             </span>
                                         </td>
-                                        <td className={`px-6 py-4 text-right font-bold ${t.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
+                                        <td className={`px-6 py-4 text-right font-bold ${t.type === 'Income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                             {t.type === 'Expense' ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </td>
                                     </tr>
@@ -3406,20 +3428,20 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
             {/* Add Transaction Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-                        <h3 className="text-xl font-bold mb-4">Nova Transação</h3>
+                    <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-2xl w-full max-w-md p-6">
+                        <h3 className="text-xl font-bold mb-4 dark:text-white">Nova Transação</h3>
                         <form onSubmit={handleAddTransaction} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Tipo</label>
-                                    <select className="w-full p-2 border rounded-lg" value={newTrans.type} onChange={e => setNewTrans({ ...newTrans, type: e.target.value as any })}>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Tipo</label>
+                                    <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.type} onChange={e => setNewTrans({ ...newTrans, type: e.target.value as any })}>
                                         <option value="Income">Receita (Entrada)</option>
                                         <option value="Expense">Despesa (Saída)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Categoria</label>
-                                    <select className="w-full p-2 border rounded-lg" value={newTrans.category} onChange={e => setNewTrans({ ...newTrans, category: e.target.value as any })}>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Categoria</label>
+                                    <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.category} onChange={e => setNewTrans({ ...newTrans, category: e.target.value as any })}>
                                         <option value="Sales">Vendas</option>
                                         <option value="Operational">Operacional</option>
                                         <option value="Marketing">Marketing</option>
@@ -3430,10 +3452,10 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                             {/* Link to Course/Event */}
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Vincular a (Opcional)</label>
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Vincular a (Opcional)</label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <select
-                                        className="w-full p-2 border rounded-lg"
+                                        className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300"
                                         value={linkType}
                                         onChange={e => {
                                             setLinkType(e.target.value as any);
@@ -3447,7 +3469,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                                     {linkType === 'Course' && (
                                         <select
-                                            className="w-full p-2 border rounded-lg"
+                                            className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300"
                                             value={linkedId}
                                             onChange={e => setLinkedId(e.target.value)}
                                         >
@@ -3458,7 +3480,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                                     {linkType === 'Event' && (
                                         <select
-                                            className="w-full p-2 border rounded-lg"
+                                            className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300"
                                             value={linkedId}
                                             onChange={e => setLinkedId(e.target.value)}
                                         >
@@ -3471,23 +3493,23 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Data</label>
-                                    <input type="date" required className="w-full p-2 border rounded-lg" value={newTrans.date} onChange={e => setNewTrans({ ...newTrans, date: e.target.value })} />
+                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Data</label>
+                                    <input type="date" required className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.date} onChange={e => setNewTrans({ ...newTrans, date: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Valor (R$)</label>
-                                    <input type="number" step="0.01" required className="w-full p-2 border rounded-lg font-bold" value={newTrans.amount || ''} onChange={e => setNewTrans({ ...newTrans, amount: parseFloat(e.target.value) })} />
+                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Valor (R$)</label>
+                                    <input type="number" step="0.01" required className="w-full p-2 border rounded-lg font-bold dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.amount || ''} onChange={e => setNewTrans({ ...newTrans, amount: parseFloat(e.target.value) })} />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Descrição</label>
-                                <input required className="w-full p-2 border rounded-lg" placeholder="Ex: Venda Curso X" value={newTrans.description || ''} onChange={e => setNewTrans({ ...newTrans, description: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Descrição</label>
+                                <input required className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" placeholder="Ex: Venda Curso X" value={newTrans.description || ''} onChange={e => setNewTrans({ ...newTrans, description: e.target.value })} />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Método Pagamento</label>
-                                <select className="w-full p-2 border rounded-lg" value={newTrans.payment_method || ''} onChange={e => setNewTrans({ ...newTrans, payment_method: e.target.value })}>
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Método Pagamento</label>
+                                <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.payment_method || ''} onChange={e => setNewTrans({ ...newTrans, payment_method: e.target.value })}>
                                     <option value="">Selecione...</option>
                                     <option value="Pix">Pix</option>
                                     <option value="Cartão Crédito">Cartão de Crédito</option>
@@ -3498,7 +3520,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             </div>
 
                             <div className="flex justify-end gap-2 mt-6">
-                                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-bold">Cancelar</button>
+                                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#333] rounded-lg font-bold">Cancelar</button>
                                 <button type="submit" className="px-6 py-2 bg-wtech-black text-white rounded-lg font-bold shadow hover:bg-gray-800">Salvar Transação</button>
                             </div>
                         </form>
@@ -3543,22 +3565,22 @@ const NewsCenterView = () => {
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in">
-            <h2 className="text-3xl font-black text-gray-900 mb-2">Centro de Notícias</h2>
-            <p className="text-gray-500 mb-8">Envie comunicados para credenciados e alunos via Email e WhatsApp.</p>
+            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Centro de Notícias</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Envie comunicados para credenciados e alunos via Email e WhatsApp.</p>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Título / Assunto</label>
-                        <input className="w-full border border-gray-200 rounded-lg p-3 font-bold text-gray-900 outline-none focus:border-wtech-gold" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Atualização Importante" />
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Título / Assunto</label>
+                        <input className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 font-bold text-gray-900 dark:text-white outline-none focus:border-wtech-gold" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Atualização Importante" />
                     </div>
                     <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mensagem</label>
-                        <textarea className="w-full border border-gray-200 rounded-lg p-3 h-40 outline-none focus:border-wtech-gold" value={message} onChange={e => setMessage(e.target.value)} placeholder="Escreva sua mensagem aqui..." />
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Mensagem</label>
+                        <textarea className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 h-40 outline-none focus:border-wtech-gold dark:bg-[#222] dark:text-white" value={message} onChange={e => setMessage(e.target.value)} placeholder="Escreva sua mensagem aqui..." />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Público Alvo</label>
-                        <select className="w-full border border-gray-200 rounded-lg p-3 bg-white outline-none" value={audience} onChange={e => setAudience(e.target.value)}>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Público Alvo</label>
+                        <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-[#222] dark:text-white outline-none" value={audience} onChange={e => setAudience(e.target.value)}>
                             <option value="All">Todos (Geral)</option>
                             <option value="Mechanics">Credenciados (Oficinas)</option>
                             <option value="Students">Alunos</option>
@@ -3566,8 +3588,8 @@ const NewsCenterView = () => {
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-4 border-t border-gray-100 pt-6">
-                    <button className="px-6 py-3 border border-gray-200 rounded-lg font-bold text-gray-600 hover:bg-gray-50">Salvar Rascunho</button>
+                <div className="flex justify-end gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
+                    <button className="px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#333]">Salvar Rascunho</button>
                     <button onClick={handleSend} disabled={sending} className="px-8 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 shadow-lg flex items-center gap-2">
                         {sending ? 'Enviando...' : <><Send size={18} /> Enviar Comunicado</>}
                     </button>
@@ -3639,22 +3661,22 @@ const OrdersView = () => {
     });
 
     return (
-        <div className="text-gray-900 space-y-6 animate-fade-in">
+        <div className="text-gray-900 dark:text-gray-100 space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Pedidos & Inscrições</h2>
-                    <p className="text-gray-500 font-medium">Acompanhe as vendas de cursos e produtos.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">Pedidos & Inscrições</h2>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">Acompanhe as vendas de cursos e produtos.</p>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar por Cliente</label>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Buscar por Cliente</label>
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-3 text-gray-400" />
                         <input
-                            className="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold dark:bg-[#222] dark:text-white"
                             placeholder="Nome do aluno..."
                             value={filterName}
                             onChange={e => setFilterName(e.target.value)}
@@ -3662,11 +3684,11 @@ const OrdersView = () => {
                     </div>
                 </div>
                 <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar por Curso/Item</label>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Buscar por Curso/Item</label>
                     <div className="relative">
                         <ShoppingBag size={16} className="absolute left-3 top-3 text-gray-400" />
                         <input
-                            className="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold dark:bg-[#222] dark:text-white"
                             placeholder="Nome do curso..."
                             value={filterCourse}
                             onChange={e => setFilterCourse(e.target.value)}
@@ -3675,9 +3697,9 @@ const OrdersView = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold text-xs border-b border-gray-100">
+                    <thead className="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 uppercase font-bold text-xs border-b border-gray-100 dark:border-gray-800">
                         <tr>
                             <th className="px-6 py-4">Cliente / Aluno</th>
                             <th className="px-6 py-4">Item Comprado</th>
@@ -3686,33 +3708,33 @@ const OrdersView = () => {
                             <th className="px-6 py-4">Status</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-900">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-200">
                         {loading ? (
                             <tr><td colSpan={5} className="p-8 text-center text-gray-400">Carregando pedidos...</td></tr>
                         ) : filteredOrders.length === 0 ? (
                             <tr><td colSpan={5} className="p-8 text-center text-gray-400">Nenhum pedido encontrado.</td></tr>
                         ) : (
                             filteredOrders.map((order, idx) => (
-                                <tr key={`${order.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
+                                <tr key={`${order.id}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-gray-900">{order.customerName}</div>
-                                        <div className="text-xs text-gray-500">{order.customerEmail}</div>
+                                        <div className="font-bold text-gray-900 dark:text-white">{order.customerName}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">{order.customerEmail}</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${order.type === 'Curso' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${order.type === 'Curso' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'}`}>
                                                 {order.type}
                                             </span>
                                             <span className="font-medium">{order.itemName}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600">{new Date(order.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 font-bold text-gray-900">
+                                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{new Date(order.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Paid' || order.status === 'Confirmed' ? 'bg-green-100 text-green-700' :
-                                            order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Paid' || order.status === 'Confirmed' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                                            order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400'
                                             }`}>
                                             {order.status === 'Paid' || order.status === 'Confirmed' ? 'Pago / Confirmado' : 'Pendente'}
                                         </span>
@@ -3878,14 +3900,17 @@ const SettingsView = () => {
             ]
         },
         {
-            title: 'Marketing (Blog & Email)',
+            title: 'Marketing Center',
             perms: [
-                { key: 'blog_view', label: 'Acessar Blog' },
+                { key: 'marketing_view', label: 'Acessar Central de Marketing' },
+                { key: 'marketing_manage_campaigns', label: 'Gerenciar Campanhas' },
+                { key: 'marketing_manage_lists', label: 'Gerenciar Listas de Transmissão' },
+                { key: 'marketing_manage_templates', label: 'Gerenciar Modelos (WhatsApp)' },
+                { key: 'blog_view', label: 'Acessar Blog Manager' },
                 { key: 'blog_create', label: 'Criar / Publicar Posts' },
                 { key: 'blog_edit', label: 'Editar Posts' },
                 { key: 'blog_delete', label: 'Excluir Posts' },
                 { key: 'blog_ai', label: 'Usar Gerador IA' },
-                { key: 'manage_marketing', label: 'Acessar Email Marketing' }
             ]
         },
         {
@@ -3992,25 +4017,33 @@ const SettingsView = () => {
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col h-full">
             {/* Header / Tabs */}
-            <div className="border-b border-gray-200 bg-gray-50 flex items-center justify-between px-6 pt-4">
-                <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                    {['Geral', 'E-mail', 'WhatsApp API', 'Marketplace & ERP', 'Modelos Msg', 'Categorias', 'Webhooks & API', 'Permissões & Cargos', 'Scripts Globais', 'Histórico de Versões', 'Backup & Reset'].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`pb-4 text-sm font-bold uppercase tracking-wider relative whitespace-nowrap ${activeTab === tab ? 'text-wtech-gold' : 'text-gray-400 hover:text-gray-600'}`}
-                        >
-                            {tab}
-                            {activeTab === tab && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-wtech-gold" />}
-                        </button>
-                    ))}
+            {/* Header / Tabs */}
+            <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222] px-6 pt-4 pb-4 flex items-center justify-between gap-4">
+                <div className="flex-1 overflow-x-auto scrollbar-hide">
+                    <ExpandableTabs 
+                        activeId={activeTab}
+                        onChange={setActiveTab}
+                        tabs={[
+                            { id: 'Geral', icon: Settings, label: 'Geral', color: 'bg-blue-500' },
+                            { id: 'E-mail', icon: Mail, label: 'E-mail', color: 'bg-indigo-500' },
+                            { id: 'WhatsApp API', icon: MessageCircle, label: 'WhatsApp', color: 'bg-green-500' },
+                            { id: 'Marketplace & ERP', icon: ShoppingBag, label: 'Integrações', color: 'bg-orange-500' },
+                            { id: 'Modelos Msg', icon: MessageSquare, label: 'Modelos', color: 'bg-teal-500' },
+                            { id: 'Categorias', icon: List, label: 'Categorias', color: 'bg-purple-500' },
+                            { id: 'Webhooks & API', icon: Code, label: 'API & Hooks', color: 'bg-pink-500' },
+                            { id: 'Permissões & Cargos', icon: Shield, label: 'Permissões', color: 'bg-red-500' },
+                            { id: 'Scripts Globais', icon: Code, label: 'Scripts', color: 'bg-yellow-500' },
+                            { id: 'Histórico de Versões', icon: History, label: 'Versões', color: 'bg-gray-500' },
+                            { id: 'Backup & Reset', icon: Save, label: 'Backup', color: 'bg-blue-600' },
+                        ]}
+                    />
                 </div>
                 {activeTab !== 'Permissões & Cargos' && (
                     <button
                         onClick={handleSaveConfig}
-                        className="mb-2 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-2 rounded-lg font-bold text-xs uppercase shadow-lg shadow-yellow-500/20 hover:scale-105 transition-transform flex items-center gap-2 whitespace-nowrap"
+                        className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-2 rounded-lg font-bold text-xs uppercase shadow-lg shadow-yellow-500/20 hover:scale-105 transition-transform flex items-center gap-2 whitespace-nowrap"
                     >
                         <Save size={16} /> Salvar Alterações
                     </button>
@@ -4027,51 +4060,51 @@ const SettingsView = () => {
 
                             {/* Visual Identity */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><ImageIcon size={18} /> Identidade Visual</h3>
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><ImageIcon size={18} /> Identidade Visual</h3>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nome do Site</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Nome do Site</label>
                                     <input
-                                        className="w-full border border-gray-300 p-3 rounded-lg"
+                                        className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
                                         value={config.site_title || ''}
                                         onChange={(e) => handleChange('site_title', e.target.value)}
                                         placeholder="W-TECH Brasil"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Logo URL</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo URL</label>
                                     <div className="flex gap-3">
-                                        <div className="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center overflow-hidden relative group">
+                                        <div className="w-16 h-16 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden relative group">
                                             {config.logo_url ? <img src={config.logo_url} className="w-full h-full object-contain" /> : <ImageIcon size={20} className="text-gray-400" />}
                                         </div>
                                         <div className="flex-1 flex gap-2">
                                             <input
-                                                className="w-full border border-gray-300 p-3 rounded-lg text-sm"
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
                                                 value={config.logo_url || ''}
                                                 onChange={(e) => handleChange('logo_url', e.target.value)}
                                                 placeholder="https://..."
                                             />
-                                            <label className="cursor-pointer bg-gray-100 border border-gray-300 p-3 rounded-lg hover:bg-gray-200">
-                                                <Upload size={18} className="text-gray-600" />
+                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
+                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
                                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'logo_url')} />
                                             </label>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Favicon URL (Ícone da Aba)</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Favicon URL (Ícone da Aba)</label>
                                     <div className="flex gap-3">
-                                        <div className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center overflow-hidden">
+                                        <div className="w-10 h-10 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden">
                                             {config.favicon_url ? <img src={config.favicon_url} className="w-6 h-6 object-contain" /> : <div className="w-4 h-4 bg-gray-400 rounded-full" />}
                                         </div>
                                         <div className="flex-1 flex gap-2">
                                             <input
-                                                className="w-full border border-gray-300 p-3 rounded-lg text-sm"
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
                                                 value={config.favicon_url || ''}
                                                 onChange={(e) => handleChange('favicon_url', e.target.value)}
                                                 placeholder="https://... (PNG/ICO)"
                                             />
-                                            <label className="cursor-pointer bg-gray-100 border border-gray-300 p-3 rounded-lg hover:bg-gray-200">
-                                                <Upload size={18} className="text-gray-600" />
+                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
+                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
                                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'favicon_url')} />
                                             </label>
                                         </div>
@@ -4079,17 +4112,17 @@ const SettingsView = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Cor Primária</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Cor Primária</label>
                                         <div className="flex items-center gap-2">
                                             <input type="color" className="w-8 h-8 rounded cursor-pointer border-0" value={config.primary_color || '#D4AF37'} onChange={(e) => handleChange('primary_color', e.target.value)} />
-                                            <span className="text-xs font-mono">{config.primary_color}</span>
+                                            <span className="text-xs font-mono dark:text-gray-300">{config.primary_color}</span>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Cor Secundária</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Cor Secundária</label>
                                         <div className="flex items-center gap-2">
                                             <input type="color" className="w-8 h-8 rounded cursor-pointer border-0" value={config.secondary_color || '#111111'} onChange={(e) => handleChange('secondary_color', e.target.value)} />
-                                            <span className="text-xs font-mono">{config.secondary_color}</span>
+                                            <span className="text-xs font-mono dark:text-gray-300">{config.secondary_color}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -4097,13 +4130,13 @@ const SettingsView = () => {
 
                             {/* Contact & WhatsApp */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><MessageCircle size={18} /> Contato & WhatsApp</h3>
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><MessageCircle size={18} /> Contato & WhatsApp</h3>
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
-                                        <label className="text-xs font-bold text-gray-500 uppercase">WhatsApp Button</label>
+                                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">WhatsApp Button</label>
                                         <button
                                             onClick={() => handleChange('whatsapp_enabled', !config.whatsapp_enabled)}
-                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.whatsapp_enabled ? 'bg-green-500' : 'bg-gray-300'}`}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.whatsapp_enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.whatsapp_enabled ? 'left-5' : 'left-1'}`}></div>
                                         </button>
@@ -4111,12 +4144,12 @@ const SettingsView = () => {
                                     {config.whatsapp_enabled && (
                                         <div>
                                             <input
-                                                className="w-full border border-green-200 p-3 rounded-lg text-green-800 font-bold bg-green-50"
+                                                className="w-full border border-green-200 dark:border-green-900/40 p-3 rounded-lg text-green-800 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/20"
                                                 value={config.whatsapp_phone || ''}
                                                 onChange={(e) => handleChange('whatsapp_phone', e.target.value)}
                                                 placeholder="5511999999999"
                                             />
-                                            <p className="text-[10px] text-gray-400 mt-1">Apenas números (DDI+DDD+Num).</p>
+                                            <p className="text-[10px] text-gray-400">Apenas números (DDI+DDD+Num).</p>
                                         </div>
                                     )}
                                 </div>
@@ -4131,9 +4164,9 @@ const SettingsView = () => {
                                         { k: 'linkedin', l: 'LinkedIn URL' }
                                     ].map(field => (
                                         <div key={field.k}>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{field.l}</label>
+                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{field.l}</label>
                                             <input
-                                                className="w-full border border-gray-300 p-2 rounded-lg text-sm"
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-sm dark:bg-[#222] dark:text-white"
                                                 value={config[field.k] || ''}
                                                 onChange={(e) => handleChange(field.k, e.target.value)}
                                                 placeholder="..."
@@ -4145,8 +4178,8 @@ const SettingsView = () => {
 
                             {/* Tracking & Integrations */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><Code size={18} /> Tracking & Pixels</h3>
-                                <div className="p-3 bg-blue-50 text-blue-800 text-xs rounded-lg mb-4">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Code size={18} /> Tracking & Pixels</h3>
+                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 text-xs rounded-lg mb-4">
                                     Insira os IDs de rastreamento para ativar a coleta de dados automática.
                                 </div>
                                 {[
@@ -4155,9 +4188,9 @@ const SettingsView = () => {
                                     { k: 'gtm_id', l: 'Google Tag Manager' }
                                 ].map(field => (
                                     <div key={field.k}>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{field.l}</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">{field.l}</label>
                                         <input
-                                            className="w-full border border-gray-300 p-3 rounded-lg font-mono text-sm"
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg font-mono text-sm dark:bg-[#222] dark:text-white"
                                             value={config[field.k] || ''}
                                             onChange={(e) => handleChange(field.k, e.target.value)}
                                             placeholder="..."
@@ -4168,23 +4201,23 @@ const SettingsView = () => {
 
                             {/* Dev Tools */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><Shield size={18} /> Ferramentas do Sistema</h3>
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Shield size={18} /> Ferramentas do Sistema</h3>
+                                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-100 dark:border-gray-700">
                                     <div>
-                                        <h4 className="font-bold text-sm text-gray-900">Painel do Desenvolvedor</h4>
-                                        <p className="text-xs text-gray-500">Ativa botão flutuante para troca rápida de usuários (para testes).</p>
+                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">Painel do Desenvolvedor</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Ativa botão flutuante para troca rápida de usuários (para testes).</p>
                                     </div>
                                     <button
                                         onClick={() => handleChange('enable_dev_panel', config.enable_dev_panel === 'true' ? 'false' : 'true')}
-                                        className={`w-12 h-6 rounded-full transition-colors relative ${config.enable_dev_panel === 'true' ? 'bg-red-600' : 'bg-gray-300'}`}
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${config.enable_dev_panel === 'true' ? 'bg-red-600' : 'bg-gray-300 dark:bg-gray-600'}`}
                                     >
                                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.enable_dev_panel === 'true' ? 'left-7' : 'left-1'}`}></div>
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100">
+                                <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-900/40">
                                     <div>
-                                        <h4 className="font-bold text-sm text-gray-900">Distribuição de Leads (CRM)</h4>
-                                        <p className="text-xs text-purple-800">
+                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">Distribuição de Leads (CRM)</h4>
+                                        <p className="text-xs text-purple-800 dark:text-purple-400">
                                             {config.crm_distribution_mode === 'Random' 
                                                 ? 'MODO AUTOMÁTICO: Leads são distribuídos aleatoriamente entre a equipe.' 
                                                 : 'MODO MANUAL: Leads caem na "Fila" e devem ser pegos manualmente.'}
@@ -4194,23 +4227,23 @@ const SettingsView = () => {
                             </div>
 
                             {/* Hero & Parceiros */}
-                            <div className="space-y-6 col-span-1 md:col-span-2 lg:col-span-3 border-t pt-8 mt-4">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><Sparkles size={18} /> Página Inicial (Hero & Parceiros)</h3>
+                            <div className="space-y-6 col-span-1 md:col-span-2 lg:col-span-3 border-t dark:border-gray-800 pt-8 mt-4">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Sparkles size={18} /> Página Inicial (Hero & Parceiros)</h3>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Headline do Hero</label>
+                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Headline do Hero</label>
                                             <input
-                                                className="w-full border border-gray-300 p-3 rounded-lg"
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
                                                 value={config.hero_headline || ''}
                                                 onChange={(e) => handleChange('hero_headline', e.target.value)}
                                                 placeholder="A Elite da Tecnologia Automotiva"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Subheadline do Hero</label>
+                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Subheadline do Hero</label>
                                             <textarea
-                                                className="w-full border border-gray-300 p-3 rounded-lg"
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
                                                 rows={3}
                                                 value={config.hero_subheadline || ''}
                                                 onChange={(e) => handleChange('hero_subheadline', e.target.value)}
@@ -4218,16 +4251,16 @@ const SettingsView = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">URL do Vídeo (Fundo)</label>
+                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">URL do Vídeo (Fundo)</label>
                                             <div className="flex gap-2">
                                                 <input
-                                                    className="flex-1 border border-gray-300 p-3 rounded-lg font-mono text-xs"
+                                                    className="flex-1 border border-gray-300 dark:border-gray-700 p-3 rounded-lg font-mono text-xs dark:bg-[#222] dark:text-white"
                                                     value={config.hero_video_url || ''}
                                                     onChange={(e) => handleChange('hero_video_url', e.target.value)}
                                                     placeholder="https://..."
                                                 />
-                                                <label className="cursor-pointer bg-gray-100 border border-gray-300 p-3 rounded-lg hover:bg-gray-200">
-                                                    <Upload size={18} className="text-gray-600" />
+                                                <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
+                                                    <Upload size={18} className="text-gray-600 dark:text-gray-300" />
                                                     <input type="file" className="hidden" accept="video/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'hero_video_url')} />
                                                 </label>
                                             </div>
@@ -4236,7 +4269,7 @@ const SettingsView = () => {
 
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center mb-2">
-                                            <label className="block text-xs font-bold text-gray-500 uppercase">Marcas Parceiras</label>
+                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Marcas Parceiras</label>
                                             <button 
                                                 onClick={() => setPartnerBrands([...partnerBrands, { name: '', logo: '' }])}
                                                 className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded hover:bg-gray-800 flex items-center gap-1 uppercase"
@@ -4247,15 +4280,15 @@ const SettingsView = () => {
                                         
                                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                             {partnerBrands.length === 0 && (
-                                                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 text-gray-400 text-xs">
+                                                <div className="text-center py-8 bg-gray-50 dark:bg-[#222] rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 text-xs">
                                                     Nenhuma marca cadastrada. Use os padrões do sistema.
                                                 </div>
                                             )}
                                             {partnerBrands.map((brand, idx) => (
-                                                <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex flex-col gap-3 group">
+                                                <div key={idx} className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 group">
                                                     <div className="flex gap-2">
                                                         <input 
-                                                            className="flex-1 border bg-white p-2 rounded text-xs px-2"
+                                                            className="flex-1 border bg-white dark:bg-[#1A1A1A] p-2 rounded text-xs px-2 dark:border-gray-700 dark:text-white"
                                                             placeholder="Nome da Marca"
                                                             value={brand.name}
                                                             onChange={e => {
@@ -4266,17 +4299,17 @@ const SettingsView = () => {
                                                         />
                                                         <button 
                                                             onClick={() => setPartnerBrands(partnerBrands.filter((_, i) => i !== idx))}
-                                                            className="text-red-500 hover:bg-red-50 p-2 rounded"
+                                                            className="text-red-500 hover:bg-red-50 p-2 rounded dark:hover:bg-red-900/20"
                                                         >
                                                             <Trash2 size={14} />
                                                         </button>
                                                     </div>
                                                     <div className="flex gap-2">
-                                                        <div className="w-10 h-10 bg-white border rounded shrink-0 flex items-center justify-center p-1">
+                                                        <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] border dark:border-gray-700 rounded shrink-0 flex items-center justify-center p-1">
                                                             {brand.logo ? <img src={brand.logo} className="max-h-full max-w-full object-contain" /> : <ImageIcon size={14} className="text-gray-300" />}
                                                         </div>
                                                         <input 
-                                                            className="flex-1 border bg-white p-2 rounded text-[10px] px-2 font-mono"
+                                                            className="flex-1 border bg-white dark:bg-[#1A1A1A] p-2 rounded text-[10px] px-2 font-mono dark:border-gray-700 dark:text-white"
                                                             placeholder="Logo URL"
                                                             value={brand.logo}
                                                             onChange={e => {
@@ -4285,8 +4318,8 @@ const SettingsView = () => {
                                                                 setPartnerBrands(newBrands);
                                                             }}
                                                         />
-                                                        <label className="cursor-pointer bg-white border border-gray-300 p-2 rounded hover:bg-gray-50">
-                                                            <Upload size={14} className="text-gray-600" />
+                                                        <label className="cursor-pointer bg-white dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-2 rounded hover:bg-gray-50 dark:hover:bg-[#333]">
+                                                            <Upload size={14} className="text-gray-600 dark:text-gray-300" />
                                                             <input 
                                                                 type="file" 
                                                                 className="hidden" 
@@ -4328,23 +4361,23 @@ const SettingsView = () => {
                 {/* Tab: Scripts Globais (Old Códigos & Scripts) */}
                 {activeTab === 'Scripts Globais' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-                        <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg mb-6">
-                            <p className="text-sm text-yellow-800">
+                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/40 rounded-lg mb-6">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-400">
                                 <strong>Cuidado:</strong> Scripts inseridos aqui são carregados em todas as páginas do site.
                             </p>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="col-span-2">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">HEAD Code</label>
-                                <textarea className="w-full h-40 border border-gray-300 p-4 rounded-lg font-mono text-xs bg-gray-50" value={config.head_code} onChange={e => handleChange('head_code', e.target.value)} placeholder="<meta...>, <style...>" />
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">HEAD Code</label>
+                                <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.head_code} onChange={e => handleChange('head_code', e.target.value)} placeholder="<meta...>, <style...>" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Body Start</label>
-                                <textarea className="w-full h-40 border border-gray-300 p-4 rounded-lg font-mono text-xs bg-gray-50" value={config.body_start_code} onChange={e => handleChange('body_start_code', e.target.value)} />
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Body Start</label>
+                                <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.body_start_code} onChange={e => handleChange('body_start_code', e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Body End</label>
-                                <textarea className="w-full h-40 border border-gray-300 p-4 rounded-lg font-mono text-xs bg-gray-50" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Body End</label>
+                                <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
                             </div>
                         </div>
                     </div>
@@ -4364,11 +4397,11 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Backup Section */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                <h3 className="text-lg font-bold text-gray-900 border-b pb-4 mb-4 flex items-center gap-2">
+                            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-4 flex items-center gap-2">
                                     <Save size={20} className="text-blue-600" /> Backup System
                                 </h3>
-                                <p className="text-sm text-gray-500 mb-6">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                                     Faça o download dos dados principais do sistema em formato JSON.
                                     Recomendamos fazer backups regulares.
                                 </p>
@@ -4393,7 +4426,7 @@ const SettingsView = () => {
                                                 a.download = `${item.table}_backup_${new Date().toISOString().split('T')[0]}.json`;
                                                 a.click();
                                             }}
-                                            className="w-full flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-all font-bold text-gray-700 text-xs"
+                                            className="w-full flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-[#222] hover:border-blue-300 transition-all font-bold text-gray-700 dark:text-gray-300 text-xs"
                                         >
                                             {item.label}
                                             <TrendingUp size={16} className="text-blue-500" />
@@ -4403,11 +4436,11 @@ const SettingsView = () => {
                             </div>
 
                             {/* Reset / Danger Zone */}
-                            <div className="bg-red-50 p-6 rounded-2xl border border-red-100">
-                                <h3 className="text-lg font-bold text-red-900 border-b border-red-200 pb-4 mb-4 flex items-center gap-2">
+                            <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-2xl border border-red-100 dark:border-red-900/40">
+                                <h3 className="text-lg font-bold text-red-900 dark:text-red-400 border-b border-red-200 dark:border-red-900/40 pb-4 mb-4 flex items-center gap-2">
                                     <AlertTriangle size={20} className="text-red-600" /> Danger Zone (Reset)
                                 </h3>
-                                <p className="text-sm text-red-800 mb-6">
+                                <p className="text-sm text-red-800 dark:text-red-400 mb-6">
                                     Ações irreversíveis. Tenha certeza absoluta antes de apagar dados.
                                 </p>
 
@@ -4417,9 +4450,9 @@ const SettingsView = () => {
                                         { table: 'SITE_Notifications', label: 'LIMPAR NOTIFICAÇÕES', desc: 'Remove alertas e avisos enviados.' },
                                         { table: 'SITE_Transactions', label: 'LIMPAR FINANCEIRO', desc: 'Apaga todas as receitas e despesas.' },
                                     ].map((item) => (
-                                        <div key={item.table} className="bg-white p-4 rounded-xl border border-red-100 shadow-sm">
+                                        <div key={item.table} className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-red-100 dark:border-red-900/40 shadow-sm">
                                             <div className="flex justify-between items-center mb-2">
-                                                <h4 className="font-bold text-red-700 text-sm">{item.label}</h4>
+                                                <h4 className="font-bold text-red-700 dark:text-red-400 text-sm">{item.label}</h4>
                                                 <button 
                                                     onClick={async () => {
                                                         const confirmText = prompt(`Para confirmar, digite "CONFIRMAR" para apagar a tabela ${item.table}:`);
@@ -4434,7 +4467,7 @@ const SettingsView = () => {
                                                     RESETAR
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-gray-500">{item.desc}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -4448,25 +4481,25 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><Mail size={18} /> Configurações de SMTP</h3>
-                                <div className="p-4 bg-blue-50 text-blue-800 text-xs rounded-lg mb-4 flex items-center gap-2">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Mail size={18} /> Configurações de SMTP</h3>
+                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 text-xs rounded-lg mb-4 flex items-center gap-2">
                                     <AlertCircle size={16} />
                                     Essas configurações são usadas para disparos de Email Marketing e notificações do sistema.
                                 </div>
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-3">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Servidor SMTP (Host)</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Servidor SMTP (Host)</label>
                                         <input 
-                                            className="w-full border p-2 rounded text-sm font-mono" 
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
                                             value={config.email_smtp_host || ''} 
                                             onChange={e => handleChange('email_smtp_host', e.target.value)} 
                                             placeholder="smtp.example.com"
                                         />
                                     </div>
                                     <div className="col-span-1">
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Porta</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Porta</label>
                                         <input 
-                                            className="w-full border p-2 rounded text-sm font-mono" 
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
                                             value={config.email_smtp_port || ''} 
                                             onChange={e => handleChange('email_smtp_port', e.target.value)} 
                                             placeholder="587"
@@ -4474,21 +4507,21 @@ const SettingsView = () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Usuário / Email Autenticação</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Usuário / Email Autenticação</label>
                                     <input 
-                                        className="w-full border p-2 rounded text-sm font-mono" 
+                                        className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
                                         value={config.email_smtp_user || ''} 
                                         onChange={e => handleChange('email_smtp_user', e.target.value)} 
                                         placeholder="user@example.com"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Senha de App / SMTP</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Senha de App / SMTP</label>
                                     <div className="relative">
                                         <Lock size={14} className="absolute left-3 top-3 text-gray-400" />
                                         <input 
                                             type="password"
-                                            className="w-full border p-2 pl-10 rounded text-sm font-mono" 
+                                            className="w-full border dark:border-gray-700 p-2 pl-10 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
                                             value={config.email_smtp_pass || ''} 
                                             onChange={e => handleChange('email_smtp_pass', e.target.value)} 
                                             placeholder="••••••••••••"
@@ -4500,20 +4533,20 @@ const SettingsView = () => {
 
                             <div className="space-y-8">
                                 <div className="space-y-6">
-                                    <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2"><User size={18} /> Remetente Padrão</h3>
+                                    <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><User size={18} /> Remetente Padrão</h3>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Remetente</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome do Remetente</label>
                                         <input 
-                                            className="w-full border p-2 rounded text-sm font-bold" 
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-bold dark:bg-[#222] dark:text-white" 
                                             value={config.email_sender_name || ''} 
                                             onChange={e => handleChange('email_sender_name', e.target.value)} 
                                             placeholder="W-Tech Brasil"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email do Remetente</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email do Remetente</label>
                                         <input 
-                                            className="w-full border p-2 rounded text-sm font-mono" 
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
                                             value={config.email_sender_email || ''} 
                                             onChange={e => handleChange('email_sender_email', e.target.value)} 
                                             placeholder="contato@wtech.com"
@@ -4522,18 +4555,18 @@ const SettingsView = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-6 pt-4 border-t border-gray-100">
-                                    <h3 className="font-bold text-gray-900 pb-2 flex items-center gap-2"><Send size={18} /> Teste de Envio</h3>
-                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-4">
-                                        <p className="text-xs text-gray-500">
+                                <div className="space-y-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <h3 className="font-bold text-gray-900 dark:text-white pb-2 flex items-center gap-2"><Send size={18} /> Teste de Envio</h3>
+                                    <div className="p-4 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl space-y-4">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                             Use este campo para verificar se as configurações estão corretas. 
                                             <strong>Salve antes de testar.</strong>
                                         </p>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">E-mail de Destino</label>
+                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">E-mail de Destino</label>
                                             <input 
                                                 type="email"
-                                                className="w-full border p-2 rounded text-sm" 
+                                                className="w-full border dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white" 
                                                 value={testEmail}
                                                 onChange={e => setTestEmail(e.target.value)}
                                                 placeholder="seu-email@exemplo.com"
@@ -4542,7 +4575,7 @@ const SettingsView = () => {
                                         <button 
                                             onClick={handleTestEmail}
                                             disabled={isTestingEmail}
-                                            className={`w-full py-3 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${isTestingEmail ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-wtech-black text-white hover:bg-gray-800 shadow-md'}`}
+                                            className={`w-full py-3 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${isTestingEmail ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-[#333] dark:text-gray-500' : 'bg-wtech-black text-white hover:bg-gray-800 shadow-md'}`}
                                         >
                                             {isTestingEmail ? (
                                                 <><Loader2 size={16} className="animate-spin" /> Testando...</>
@@ -4570,24 +4603,24 @@ const SettingsView = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* ERP / Bling */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2">
                                     <Package size={18} /> ERP & Faturamento
                                 </h3>
                                 
-                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-green-600 font-bold text-xs border border-green-100">
+                                            <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-xs border border-green-100 dark:border-green-900/40">
                                                 BLING
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900">Integração Bling ERP</h4>
-                                                <p className="text-xs text-gray-500">Sincroniza pedidos e emite notas fiscais.</p>
+                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Integração Bling ERP</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Sincroniza pedidos e emite notas fiscais.</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleChange('bling_enabled', config.bling_enabled === 'true' ? 'false' : 'true')}
-                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.bling_enabled === 'true' ? 'bg-green-500' : 'bg-gray-300'}`}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.bling_enabled === 'true' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.bling_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
                                         </button>
@@ -4596,12 +4629,12 @@ const SettingsView = () => {
                                     {config.bling_enabled === 'true' && (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">API Key (Personal Token)</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">API Key (Personal Token)</label>
                                                 <div className="relative">
                                                     <Lock size={14} className="absolute left-3 top-2.5 text-gray-400" />
                                                     <input 
                                                         type="password"
-                                                        className="w-full border border-gray-200 p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none" 
+                                                        className="w-full border border-gray-200 dark:border-gray-700 p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none dark:bg-[#222] dark:text-white" 
                                                         value={config.bling_api_key || ''} 
                                                         onChange={e => handleChange('bling_api_key', e.target.value)} 
                                                         placeholder="••••••••••••••••••••••••"
@@ -4619,25 +4652,25 @@ const SettingsView = () => {
 
                             {/* Marketplaces */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2">
                                     <Globe size={18} /> Marketplaces
                                 </h3>
 
                                 {/* Mercado Livre */}
-                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600 font-bold text-xs border border-yellow-100">
+                                            <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center text-yellow-600 dark:text-yellow-400 font-bold text-xs border border-yellow-100 dark:border-yellow-900/40">
                                                 MELI
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900">Mercado Livre</h4>
-                                                <p className="text-xs text-gray-500">Sincroniza anúncios e vendas.</p>
+                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Mercado Livre</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Sincroniza anúncios e vendas.</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleChange('meli_enabled', config.meli_enabled === 'true' ? 'false' : 'true')}
-                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.meli_enabled === 'true' ? 'bg-yellow-400' : 'bg-gray-300'}`}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.meli_enabled === 'true' ? 'bg-yellow-400' : 'bg-gray-300 dark:bg-gray-600'}`}
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.meli_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
                                         </button>
@@ -4646,19 +4679,19 @@ const SettingsView = () => {
                                     {config.meli_enabled === 'true' && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">App ID</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">App ID</label>
                                                 <input 
-                                                    className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono outline-none" 
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white" 
                                                     value={config.meli_app_id || ''} 
                                                     onChange={e => handleChange('meli_app_id', e.target.value)} 
                                                     placeholder="12345678"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Client Secret</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Client Secret</label>
                                                 <input 
                                                     type="password"
-                                                    className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono outline-none" 
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white" 
                                                     value={config.meli_secret || ''} 
                                                     onChange={e => handleChange('meli_secret', e.target.value)} 
                                                     placeholder="••••••••"
@@ -4669,20 +4702,20 @@ const SettingsView = () => {
                                 </div>
 
                                 {/* Shopee */}
-                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-orange-600 font-bold text-xs border border-orange-100">
+                                            <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-xs border border-orange-100 dark:border-orange-900/40">
                                                 SHP
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900">Shopee</h4>
-                                                <p className="text-xs text-gray-500">Integração oficial Shopee Open Platform.</p>
+                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Shopee</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Integração oficial Shopee Open Platform.</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleChange('shopee_enabled', config.shopee_enabled === 'true' ? 'false' : 'true')}
-                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.shopee_enabled === 'true' ? 'bg-orange-500' : 'bg-gray-300'}`}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.shopee_enabled === 'true' ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.shopee_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
                                         </button>
@@ -4692,37 +4725,37 @@ const SettingsView = () => {
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Partner ID</label>
-                                                    <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.shopee_partner_id || ''} onChange={e => handleChange('shopee_partner_id', e.target.value)} />
+                                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Partner ID</label>
+                                                    <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.shopee_partner_id || ''} onChange={e => handleChange('shopee_partner_id', e.target.value)} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Shop ID</label>
-                                                    <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.shopee_shop_id || ''} onChange={e => handleChange('shopee_shop_id', e.target.value)} />
+                                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Shop ID</label>
+                                                    <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.shopee_shop_id || ''} onChange={e => handleChange('shopee_shop_id', e.target.value)} />
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Partner Key (Secret)</label>
-                                                <input type="password" className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.shopee_key || ''} onChange={e => handleChange('shopee_key', e.target.value)} placeholder="••••••••" />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Partner Key (Secret)</label>
+                                                <input type="password" className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.shopee_key || ''} onChange={e => handleChange('shopee_key', e.target.value)} placeholder="••••••••" />
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Amazon */}
-                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-800 font-bold text-xs border border-gray-200">
+                                            <div className="w-10 h-10 bg-gray-50 dark:bg-[#222] rounded-lg flex items-center justify-center text-gray-800 dark:text-gray-200 font-bold text-xs border border-gray-200 dark:border-gray-700">
                                                 AMZ
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900">Amazon Seller</h4>
-                                                <p className="text-xs text-gray-500">SP-API Integration.</p>
+                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Amazon Seller</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">SP-API Integration.</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleChange('amazon_enabled', config.amazon_enabled === 'true' ? 'false' : 'true')}
-                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.amazon_enabled === 'true' ? 'bg-black' : 'bg-gray-300'}`}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.amazon_enabled === 'true' ? 'bg-black' : 'bg-gray-300 dark:bg-gray-600'}`}
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.amazon_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
                                         </button>
@@ -4731,36 +4764,36 @@ const SettingsView = () => {
                                     {config.amazon_enabled === 'true' && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Partner ID</label>
-                                                <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.amazon_seller_id || ''} onChange={e => handleChange('amazon_seller_id', e.target.value)} placeholder="A2..." />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Selling Partner ID</label>
+                                                <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.amazon_seller_id || ''} onChange={e => handleChange('amazon_seller_id', e.target.value)} placeholder="A2..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">AWS Access Key ID</label>
-                                                <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.amazon_access_key || ''} onChange={e => handleChange('amazon_access_key', e.target.value)} placeholder="AKIA..." />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">AWS Access Key ID</label>
+                                                <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.amazon_access_key || ''} onChange={e => handleChange('amazon_access_key', e.target.value)} placeholder="AKIA..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">AWS Secret Key</label>
-                                                <input type="password" className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.amazon_secret || ''} onChange={e => handleChange('amazon_secret', e.target.value)} placeholder="••••••••" />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">AWS Secret Key</label>
+                                                <input type="password" className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.amazon_secret || ''} onChange={e => handleChange('amazon_secret', e.target.value)} placeholder="••••••••" />
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* WooCommerce (WordPress) */}
-                                <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600 font-bold text-xs border border-purple-100">
+                                            <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-xs border border-purple-100 dark:border-purple-900/40">
                                                 WOO
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900">WooCommerce (WordPress)</h4>
-                                                <p className="text-xs text-gray-500">Sincroniza estoques, pedidos, etiquetas e notas.</p>
+                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">WooCommerce (WordPress)</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Sincroniza estoques, pedidos, etiquetas e notas.</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => handleChange('woocommerce_enabled', config.woocommerce_enabled === 'true' ? 'false' : 'true')}
-                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.woocommerce_enabled === 'true' ? 'bg-purple-500' : 'bg-gray-300'}`}
+                                            className={`w-10 h-6 rounded-full transition-colors relative ${config.woocommerce_enabled === 'true' ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                                         >
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${config.woocommerce_enabled === 'true' ? 'left-5' : 'left-1'}`}></div>
                                         </button>
@@ -4769,19 +4802,19 @@ const SettingsView = () => {
                                     {config.woocommerce_enabled === 'true' && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">URL da Loja</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL da Loja</label>
                                                 <div className="relative">
                                                     <Globe size={14} className="absolute left-3 top-2.5 text-gray-400" />
-                                                    <input className="w-full border border-gray-200 p-2 pl-9 rounded-lg text-sm font-mono" value={config.woocommerce_url || ''} onChange={e => handleChange('woocommerce_url', e.target.value)} placeholder="https://sua-loja.com" />
+                                                    <input className="w-full border border-gray-200 dark:border-gray-700 p-2 pl-9 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.woocommerce_url || ''} onChange={e => handleChange('woocommerce_url', e.target.value)} placeholder="https://sua-loja.com" />
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Consumer Key (CK)</label>
-                                                <input className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.woocommerce_key || ''} onChange={e => handleChange('woocommerce_key', e.target.value)} placeholder="ck_..." />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Consumer Key (CK)</label>
+                                                <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.woocommerce_key || ''} onChange={e => handleChange('woocommerce_key', e.target.value)} placeholder="ck_..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Consumer Secret (CS)</label>
-                                                <input type="password" className="w-full border border-gray-200 p-2 rounded-lg text-sm font-mono" value={config.woocommerce_secret || ''} onChange={e => handleChange('woocommerce_secret', e.target.value)} placeholder="cs_..." />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Consumer Secret (CS)</label>
+                                                <input type="password" className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.woocommerce_secret || ''} onChange={e => handleChange('woocommerce_secret', e.target.value)} placeholder="cs_..." />
                                             </div>
                                         </div>
                                     )}
@@ -4803,14 +4836,14 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                          <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Categorias de Tarefas</h3>
-                                <p className="text-sm text-gray-500">Gerencie as categorias usadas para organizar tarefas.</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Categorias de Tarefas</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie as categorias usadas para organizar tarefas.</p>
                             </div>
                            
                             {/* Simple Inline Create */}
                             <div className="flex gap-2">
                                 <input 
-                                    className="border border-gray-300 p-2 rounded-lg text-sm"
+                                    className="border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-sm dark:bg-[#222] dark:text-white"
                                     placeholder="Nova Categoria..."
                                     id="new-cat-name"
                                 />
@@ -4841,7 +4874,7 @@ const SettingsView = () => {
                                             // Ideally, we move this to a separate component, but I'll implement a basic list fetch below.
                                         }
                                     }}
-                                    className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-800"
+                                    className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                                 >
                                     <Plus size={14} /> Adicionar
                                 </button>
@@ -4857,8 +4890,8 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Webhooks do Sistema</h3>
-                                <p className="text-sm text-gray-500">Notifique sistemas externos sobre eventos ocorridos na W-TECH.</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Webhooks do Sistema</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Notifique sistemas externos sobre eventos ocorridos na W-TECH.</p>
                             </div>
                             <button className="bg-wtech-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-gray-800" onClick={() => {
                                 const url = prompt("URL do Webhook:");
@@ -4869,12 +4902,12 @@ const SettingsView = () => {
                             </button>
                         </div>
 
-                        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                        <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
                             {webhooks.length === 0 ? (
                                 <div className="p-8 text-center text-gray-400">Nenhum webhook configurado.</div>
                             ) : (
                                 <table className="w-full text-left">
-                                    <thead className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 uppercase">
+                                    <thead className="bg-gray-50 dark:bg-[#222] border-b border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
                                         <tr>
                                             <th className="p-4">Tópico</th>
                                             <th className="p-4">URL de Destino</th>
@@ -4882,11 +4915,11 @@ const SettingsView = () => {
                                             <th className="p-4 text-right">Ações</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-100 text-sm">
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
                                         {webhooks.map((wh, idx) => (
                                             <tr key={idx}>
-                                                <td className="p-4 font-bold"><span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">{wh.topic}</span></td>
-                                                <td className="p-4 font-mono text-xs text-gray-600 truncate max-w-xs">{wh.url}</td>
+                                                <td className="p-4 font-bold"><span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded">{wh.topic}</span></td>
+                                                <td className="p-4 font-mono text-xs text-gray-600 dark:text-gray-300 truncate max-w-xs">{wh.url}</td>
                                                 <td className="p-4 font-mono text-xs text-gray-400">{wh.secret}</td>
                                                 <td className="p-4 text-right">
                                                     <button onClick={() => setWebhooks(webhooks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
@@ -4905,12 +4938,12 @@ const SettingsView = () => {
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Hierarquia de Acesso</h3>
-                                <p className="text-sm text-gray-500">Defina os perfis e o que cada uno pode fazer no sistema.</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Hierarquia de Acesso</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Defina os perfis e o que cada uno pode fazer no sistema.</p>
                             </div>
                             <button
                                 onClick={() => setEditingRole({ name: '', description: '', permissions: {}, level: 1 })}
-                                className="bg-gray-900 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2 hover:bg-black"
+                                className="bg-gray-900 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200"
                             >
                                 <Plus size={14} /> Criar Novo Cargo
                             </button>
@@ -4923,13 +4956,13 @@ const SettingsView = () => {
                                     <div
                                         key={role.id}
                                         onClick={() => setEditingRole(role)}
-                                        className={`p-4 rounded-xl border cursor-pointer transition-all ${editingRole?.id === role.id ? 'bg-white border-wtech-gold shadow-md scale-[1.02]' : 'bg-white border-gray-100 hover:border-gray-200'}`}
+                                        className={`p-4 rounded-xl border cursor-pointer transition-all ${editingRole?.id === role.id ? 'bg-white border-wtech-gold shadow-md scale-[1.02] dark:bg-[#1A1A1A] dark:border-wtech-gold' : 'bg-white border-gray-100 hover:border-gray-200 dark:bg-[#1A1A1A] dark:border-gray-800 dark:hover:border-gray-700'}`}
                                     >
                                         <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-bold text-gray-900">{role.name}</h4>
-                                            <span className="bg-gray-100 text-gray-600 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Nível {role.level}</span>
+                                            <h4 className="font-bold text-gray-900 dark:text-white">{role.name}</h4>
+                                            <span className="bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Nível {role.level}</span>
                                         </div>
-                                        <p className="text-xs text-gray-500 line-clamp-2">{role.description}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{role.description}</p>
                                     </div>
                                 ))}
                             </div>
@@ -4937,16 +4970,16 @@ const SettingsView = () => {
                             {/* Editor */}
                             <div className="lg:col-span-2">
                                 {editingRole ? (
-                                    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 animate-in fade-in slide-in-from-right-4">
-                                        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                                            <h3 className="font-bold text-lg">{editingRole.id ? 'Editar Cargo' : 'Novo Cargo'}</h3>
+                                    <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-right-4">
+                                        <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                                            <h3 className="font-bold text-lg dark:text-white">{editingRole.id ? 'Editar Cargo' : 'Novo Cargo'}</h3>
                                             <div className="flex gap-2">
                                                 {editingRole.id && (
-                                                    <button onClick={() => handleDeleteRole(editingRole.id!)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                                                    <button onClick={() => handleDeleteRole(editingRole.id!)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors dark:hover:bg-red-900/20">
                                                         <Trash2 size={18} />
                                                     </button>
                                                 )}
-                                                <button onClick={() => setEditingRole(null)} className="text-gray-400 hover:text-gray-600 p-2">
+                                                <button onClick={() => setEditingRole(null)} className="text-gray-400 hover:text-gray-600 p-2 dark:hover:text-gray-300">
                                                     <X size={20} />
                                                 </button>
                                             </div>
@@ -4954,27 +4987,27 @@ const SettingsView = () => {
 
                                         <div className="grid grid-cols-2 gap-4 mb-6">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome do Cargo</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome do Cargo</label>
                                                 <input
-                                                    className="w-full border border-gray-200 p-2 rounded text-sm font-bold"
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded text-sm font-bold dark:bg-[#222] dark:text-white"
                                                     value={editingRole.name || ''}
                                                     onChange={e => setEditingRole({ ...editingRole, name: e.target.value })}
                                                     placeholder="Ex: Editor Chefe"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nível Hierárquico (1-10)</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nível Hierárquico (1-10)</label>
                                                 <input
                                                     type="number"
-                                                    className="w-full border border-gray-200 p-2 rounded text-sm"
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white"
                                                     value={editingRole.level || 1}
                                                     onChange={e => setEditingRole({ ...editingRole, level: parseInt(e.target.value) })}
                                                 />
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descrição</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
                                                 <input
-                                                    className="w-full border border-gray-200 p-2 rounded text-sm"
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white"
                                                     value={editingRole.description || ''}
                                                     onChange={e => setEditingRole({ ...editingRole, description: e.target.value })}
                                                     placeholder="O que este cargo pode fazer?"
@@ -4985,11 +5018,11 @@ const SettingsView = () => {
                                         <div>
                                             {permissionCategories.map((category, idx) => (
                                                 <div key={idx} className="mb-6">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-2 border-b border-gray-100 pb-1">{category.title}</h4>
+                                                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 border-b border-gray-100 dark:border-gray-800 pb-1">{category.title}</h4>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         {category.perms.map(perm => (
-                                                            <label key={perm.key} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${editingRole.permissions?.[perm.key] ? 'bg-wtech-gold border-wtech-gold' : 'border-gray-300 bg-white'}`}>
+                                                            <label key={perm.key} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
+                                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${editingRole.permissions?.[perm.key] ? 'bg-wtech-gold border-wtech-gold' : 'border-gray-300 bg-white dark:bg-[#1A1A1A] dark:border-gray-700'}`}>
                                                                     {editingRole.permissions?.[perm.key] && <CheckCircle size={14} className="text-black" />}
                                                                 </div>
                                                                 <input
@@ -4998,7 +5031,7 @@ const SettingsView = () => {
                                                                     checked={editingRole.permissions?.[perm.key] || false}
                                                                     onChange={() => togglePermission(perm.key)}
                                                                 />
-                                                                <span className={`text-sm ${perm.label.includes('(Risco)') || perm.label.includes('Excluir') ? 'text-red-700 font-medium' : 'text-gray-700'}`}>{perm.label}</span>
+                                                                <span className={`text-sm ${perm.label.includes('(Risco)') || perm.label.includes('Excluir') ? 'text-red-700 font-medium dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>{perm.label}</span>
                                                             </label>
                                                         ))}
                                                     </div>
@@ -5006,13 +5039,13 @@ const SettingsView = () => {
                                             ))}
                                         </div>
 
-                                        <button onClick={handleSaveRole} className="w-full bg-wtech-black text-white py-3 rounded-lg font-bold uppercase hover:bg-gray-800 transition-all shadow-lg">
+                                        <button onClick={handleSaveRole} className="w-full bg-wtech-black text-white py-3 rounded-lg font-bold uppercase hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all shadow-lg">
                                             Salvar Cargo
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl p-10">
-                                        <Shield size={48} className="mb-4 text-gray-200" />
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl p-10">
+                                        <Shield size={48} className="mb-4 text-gray-200 dark:text-gray-700" />
                                         <p className="text-sm font-medium">Selecione um cargo para editar ou crie um novo.</p>
                                     </div>
                                 )}
@@ -5183,15 +5216,15 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Equipe & Acessos</h2>
-                    <p className="text-gray-500 mt-1">Gerencie os colaboradores e suas permissões no sistema.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Equipe & Acessos</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie os colaboradores e suas permissões no sistema.</p>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={() => onOpenProfile?.()}
-                        className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-50 flex items-center gap-2 shadow-sm"
+                        className="bg-white border border-gray-200 text-gray-700 dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-50 dark:hover:bg-[#333] flex items-center gap-2 shadow-sm"
                     >
                         <User size={16} /> Meu Perfil
                     </button>
@@ -5206,11 +5239,11 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
             {/* User Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {users.map(u => (
-                    <div key={u.id} onClick={() => { setEditingUser(u); setIsModalOpen(true); }} className="bg-white group hover:shadow-xl transition-all duration-300 rounded-2xl border border-gray-100 p-6 flex flex-col items-center text-center relative overflow-hidden cursor-pointer">
-                        <div className={`absolute top-0 left-0 w-full h-1 ${u.status === 'Active' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div key={u.id} onClick={() => { setEditingUser(u); setIsModalOpen(true); }} className="bg-white dark:bg-[#1A1A1A] group hover:shadow-xl transition-all duration-300 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex flex-col items-center text-center relative overflow-hidden cursor-pointer">
+                        <div className={`absolute top-0 left-0 w-full h-1 ${u.status === 'Active' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
 
                             {/* Avatar */}
-                        <div className="w-20 h-20 rounded-full bg-gray-50 border-2 border-white shadow-lg flex items-center justify-center text-2xl font-bold text-gray-400 mb-4 group-hover:scale-110 transition-transform bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-wtech-gold/20 group-hover:to-yellow-50">
+                        <div className="w-20 h-20 rounded-full bg-gray-50 dark:bg-[#222] border-2 border-white dark:border-[#333] shadow-lg flex items-center justify-center text-2xl font-bold text-gray-400 dark:text-gray-500 mb-4 group-hover:scale-110 transition-transform bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#222] dark:to-[#111] group-hover:from-wtech-gold/20 group-hover:to-yellow-50 dark:group-hover:to-yellow-900/20">
                             {(u.name || '?').charAt(0)}
                         </div>
 
@@ -5226,7 +5259,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 
                         <div className="mt-auto w-full">
                             <button
-                                className="w-full py-2 rounded border border-gray-200 text-gray-500 font-bold text-xs uppercase group-hover:bg-black group-hover:text-white group-hover:border-black transition-colors"
+                                className="w-full py-2 rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black group-hover:border-black dark:group-hover:border-white transition-colors"
                             >
                                 Editar Perfil
                             </button>
@@ -5246,48 +5279,50 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
+                            className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-md"
                         >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                                <h3 className="text-xl font-bold text-gray-900">{editingUser.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
+                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{editingUser.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
                                 <div className="flex gap-2">
                                     {editingUser.id && hasPermission('manage_users') && (
                                         <button
                                             onClick={() => handleDeleteUser(editingUser.id!)}
-                                            className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
                                             title="Excluir Usuário"
                                         >
                                             <Trash2 size={20} />
                                         </button>
                                     )}
-                                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+                                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-[#333] rounded-full text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome Completo</label>
                                     <input
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none dark:bg-[#222] dark:text-white"
                                         value={editingUser.name || ''}
                                         onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
+                                        placeholder="Ex: João Silva"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">E-mail</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">E-mail</label>
                                     <input
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none dark:bg-[#222] dark:text-white"
                                         value={editingUser.email || ''}
                                         onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                                        placeholder="joao@exemplo.com"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Senha {editingUser.id && '(Deixe em branco para manter)'}</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Senha {editingUser.id && '(Deixe em branco para manter)'}</label>
                                     <div className="relative">
                                         <Lock size={16} className="absolute left-3 top-3 text-gray-400" />
                                         <input
                                             type="password"
-                                            className="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-3 text-sm font-medium focus:border-wtech-gold outline-none"
+                                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-3 text-sm font-medium focus:border-wtech-gold outline-none dark:bg-[#222] dark:text-white"
                                             placeholder={editingUser.id ? "Nova senha..." : "Definir senha..."}
                                             value={editingUser.password || ''}
                                             onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
@@ -5295,9 +5330,9 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cargo / Função</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Cargo / Função</label>
                                     <select
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white dark:bg-[#222] dark:text-white"
                                         value={editingUser.role_id || ''}
                                         onChange={e => setEditingUser({ ...editingUser, role_id: e.target.value })}
                                     >
@@ -5308,9 +5343,9 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status</label>
                                     <select
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white"
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white dark:bg-[#222] dark:text-white"
                                         value={editingUser.status || 'Active'}
                                         onChange={e => setEditingUser({ ...editingUser, status: e.target.value as any })}
                                     >
@@ -5319,7 +5354,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                     </select>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-900/30">
                                     <input
                                         type="checkbox"
                                         id="receives_leads"
@@ -5327,15 +5362,15 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                         checked={editingUser.receives_leads || false}
                                         onChange={e => setEditingUser({ ...editingUser, receives_leads: e.target.checked })}
                                     />
-                                    <label htmlFor="receives_leads" className="text-sm font-bold text-blue-900 cursor-pointer">
+                                    <label htmlFor="receives_leads" className="text-sm font-bold text-blue-900 dark:text-blue-300 cursor-pointer">
                                         Apto a receber Leads (Atendimento)
-                                        <p className="text-[10px] font-normal text-blue-700">Se marcado, receberá leads automaticamente.</p>
+                                        <p className="text-[10px] font-normal text-blue-700 dark:text-blue-400">Se marcado, receberá leads automaticamente.</p>
                                     </label>
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
-                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-gray-200 rounded-lg font-bold text-gray-600 hover:bg-gray-50">Cancelar</button>
-                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 shadow-lg">Salvar Dados</button>
+                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#333]">Cancelar</button>
+                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-lg">Salvar Dados</button>
                                 </div>
                             </div>
                         </motion.div>
@@ -5642,6 +5677,19 @@ const Admin: React.FC = () => {
     }, [user]);
 
     const [currentView, setCurrentView] = useState<View>('dashboard');
+    
+    // Dark Mode State
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('wtech_theme') === 'dark';
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        localStorage.setItem('wtech_theme', isDarkMode ? 'dark' : 'light');
+    }, [isDarkMode]);
+
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
     const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -5757,36 +5805,52 @@ const Admin: React.FC = () => {
     if (loading || !user) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wtech-gold"></div></div>;
 
     return (
-        <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
+        <div className={`flex h-screen bg-[#F8F9FA] dark:bg-black overflow-hidden transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
 
             {/* Sidebar (Desktop Only) */}
             <div className={`
-            hidden md:flex flex-col justify-between shadow-2xl bg-black text-white p-4 transition-all duration-300 ease-in-out relative z-30 ${isSidebarCollapsed ? 'w-20' : 'w-64'}
+            hidden md:flex flex-col justify-between shadow-2xl dark:shadow-[0_0_20px_rgba(234,179,8,0.15)] bg-black text-white p-4 transition-all duration-300 ease-in-out relative z-30 ${isSidebarCollapsed ? 'w-20' : 'w-64'}
         `}>
                 <div>
                     {/* Brand / Toggle */}
-                    <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center flex-col gap-4' : 'gap-3'} mb-8 mt-12 md:mt-0 transition-all`}>
-                        <div className="flex items-center gap-3 w-full overflow-hidden">
-                            {config.logo_url ? (
-                                <div className={`${isSidebarCollapsed ? 'w-12 h-12' : 'h-10 w-full'} flex items-center transition-all`}>
-                                    <img 
-                                        src={config.logo_url} 
-                                        alt={config.site_title || 'W-TECH'} 
-                                        className={`${isSidebarCollapsed ? 'w-full h-full object-contain' : 'h-full w-auto object-contain'}`} 
-                                    />
-                                </div>
-                            ) : (
-                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-bold text-xl font-sans shadow-lg shadow-yellow-500/20 shrink-0">
-                                    'W'
-                                </div>
-                            )}
+                    <div className={`flex items-start ${isSidebarCollapsed ? 'justify-center' : 'gap-3'} mb-8 mt-12 md:mt-0 transition-all`}>
+                        <div className={`flex flex-col ${isSidebarCollapsed ? 'items-center' : 'items-start'} gap-1 w-full overflow-hidden`}>
+                            <div className="flex items-center gap-3 w-full">
+                                {config.logo_url ? (
+                                    <div className={`${isSidebarCollapsed ? 'w-12 h-12' : 'h-10 w-full'} flex items-center transition-all`}>
+                                        <img 
+                                            src={config.logo_url} 
+                                            alt={config.site_title || 'W-TECH'} 
+                                            className={`${isSidebarCollapsed ? 'w-full h-full object-contain' : 'h-full w-auto object-contain'}`} 
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-bold text-xl font-sans shadow-lg shadow-yellow-500/20 shrink-0">
+                                        'W'
+                                    </div>
+                                )}
+                                
+                                {!isSidebarCollapsed && !config.logo_url && (
+                                    <div className="overflow-hidden whitespace-nowrap">
+                                        <h1 className="font-black text-xl tracking-tighter text-white leading-none">{config.site_title || 'W-TECH'}</h1>
+                                        <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">Admin</p>
+                                    </div>
+                                )}
+                            </div>
                             
-                            {!isSidebarCollapsed && !config.logo_url && (
-                                <div className="overflow-hidden whitespace-nowrap">
-                                    <h1 className="font-black text-xl tracking-tighter text-white leading-none">{config.site_title || 'W-TECH'}</h1>
-                                    <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">Admin</p>
-                                </div>
-                            )}
+                            {/* Version Tag & Dark Mode Toggle */}
+                            <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'flex-col scale-75' : 'px-0.5'}`}>
+                                <span className="opacity-40 hover:opacity-100 transition-opacity text-[9px] font-black text-wtech-gold uppercase tracking-[0.3em] font-mono">
+                                    v{changelogData[0]?.version || '2.2.4'}
+                                </span>
+                                <button 
+                                    onClick={() => setIsDarkMode(!isDarkMode)}
+                                    className="text-gray-500 hover:text-wtech-gold transition-colors p-1"
+                                    title={isDarkMode ? "Modo Claro" : "Modo Escuro"}
+                                >
+                                    {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
+                                </button>
+                            </div>
                         </div>
                         {/* Desktop Toggle Button */}
                         <button 
@@ -5798,22 +5862,46 @@ const Admin: React.FC = () => {
                     </div>
 
                     {/* Sidebar User Profile */}
-                    <div onClick={() => { setIsProfileModalOpen(true); setIsMobileMenuOpen(false); }} className={`mb-6 p-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors group ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-wtech-gold to-yellow-700 flex items-center justify-center text-black font-bold text-sm shadow-lg shrink-0">
-                            {user?.name?.charAt(0)}
+                    <div onClick={() => { setIsProfileModalOpen(true); setIsMobileMenuOpen(false); }} className={`mb-2 p-1.5 bg-white/5 rounded-xl border border-white/10 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors group ${isSidebarCollapsed ? 'justify-center' : ''}`}>
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-wtech-gold to-yellow-700 flex items-center justify-center text-black font-bold text-xs shadow-lg shrink-0 overflow-hidden">
+                            {user?.avatar_url ? (
+                                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                user?.name?.charAt(0)
+                            )}
                         </div>
                         {!isSidebarCollapsed && (
                             <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="text-sm font-bold text-white truncate group-hover:text-wtech-gold transition-colors">{user?.name}</div>
-                                <div className="text-[10px] text-gray-400 font-medium uppercase truncate">
+                                <div className="text-xs font-bold text-white truncate group-hover:text-wtech-gold transition-colors">{user?.name}</div>
+                                <div className="text-[9px] text-gray-400 font-medium uppercase truncate">
                                     {typeof user?.role === 'string' ? user?.role : (user?.role?.name || 'Sem Cargo')}
                                 </div>
                             </div>
                         )}
-                        {!isSidebarCollapsed && <Settings size={14} className="text-gray-500 group-hover:text-white transition-colors" />}
+                        {!isSidebarCollapsed && (
+                            <div className="flex items-center gap-1">
+                                <Settings size={12} className="text-gray-500 hover:text-white transition-colors" />
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleLogout(); }} 
+                                    className="p-1 hover:bg-red-500/20 rounded transition-colors text-gray-500 hover:text-red-500"
+                                    title="Sair"
+                                >
+                                    <LogOut size={12} />
+                                </button>
+                            </div>
+                        )}
+                        {isSidebarCollapsed && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleLogout(); }} 
+                                className="absolute -bottom-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Sair"
+                            >
+                                <LogOut size={10} />
+                            </button>
+                        )}
                     </div>
 
-                    <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar">
+                    <div className="flex-1 flex flex-col justify-between overflow-hidden gap-0.5 pb-2 min-h-0">
                         {hasPermission('dashboard_view') && (
                             <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                         )}
@@ -5867,7 +5955,7 @@ const Admin: React.FC = () => {
                                 <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                             )}
                             
-                            {(hasPermission('manage_marketing')) && (
+                            {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
                                 <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} />
                             )}
                         </div>
@@ -5880,9 +5968,7 @@ const Admin: React.FC = () => {
                     </div>
                 </div>
 
-                <button onClick={handleLogout} className={`w-full mb-4 md:mb-0 flex items-center justify-center gap-2 p-3 rounded-lg border border-red-900/30 text-red-500 hover:bg-red-900/10 font-bold transition-all text-xs uppercase tracking-wide ${isSidebarCollapsed ? '' : ''}`} title="Sair">
-                    <LogOut size={16} /> {!isSidebarCollapsed && "Sair do Sistema"}
-                </button>
+                {/* Logout Button Removed From Bottom */}
             </div>
 
             {/* Mobile Bottom FAB (Floating Action Button) */}
@@ -5957,7 +6043,8 @@ const Admin: React.FC = () => {
             </AnimatePresence>
 
             {/* Main Content */}
-            <div className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
+            <div className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
+                
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentView}
@@ -5983,10 +6070,10 @@ const Admin: React.FC = () => {
                         {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} initialCourseId={pendingCourseId} onConsumeInitialLead={() => { setPendingEnrollmentLead(null); setPendingCourseId(null); }} permissions={livePermissions} />}
                         {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
-                        {currentView === 'email_marketing' && hasPermission('manage_marketing') && <MarketingView />}
+                        {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('manage_marketing')) && <MarketingView permissions={livePermissions} />}
                         {currentView === 'tasks' && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
-                        {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView />}
+                        {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView permissions={livePermissions} />}
                         {currentView === 'invoices' && hasPermission('financial_view') && <InvoicesManagerView />}
                     </motion.div>
                 </AnimatePresence>

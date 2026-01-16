@@ -6,9 +6,22 @@ import { supabase } from '../lib/supabaseClient';
 import { Course } from '../types';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
+import { useSettings } from '../context/SettingsContext';
+import { generateAgendaPDF } from '../lib/pdfGenerator';
+import { Download } from 'lucide-react';
 
 const Courses: React.FC = () => {
+    const { get } = useSettings();
     const [searchTerm, setSearchTerm] = useState('');
+    // ... rest of state stays same but I need to make sure I don't break it
+    // Wait, replace_file_content needs exact match.
+
+    // Let me just add the download function first.
+    const handleDownloadPDF = async () => {
+        const siteTitle = get('site_title', 'W-TECH BRASIL');
+        const logoUrl = get('logo_url', '');
+        await generateAgendaPDF(siteTitle, logoUrl);
+    };
     const [filterType, setFilterType] = useState<'All' | 'Presencial' | 'Online'>('All');
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
@@ -175,7 +188,14 @@ const Courses: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/20"></div>
                 <div className="container mx-auto px-4 relative z-10 text-center">
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">Agenda Oficial</h1>
-                    <p className="text-xl text-gray-400 max-w-2xl mx-auto">Confira os próximos treinamentos, workshops e eventos técnicos da Rede W-Tech.</p>
+                    <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">Confira os próximos treinamentos, workshops e eventos técnicos da Rede W-Tech.</p>
+                    
+                    <button 
+                        onClick={handleDownloadPDF}
+                        className="inline-flex items-center gap-2 px-8 py-3 bg-wtech-gold text-black font-black rounded-xl hover:bg-yellow-500 transition-all shadow-xl shadow-wtech-gold/20 uppercase text-sm tracking-widest"
+                    >
+                        <Download size={20} /> Baixar Agenda {new Date().getFullYear()}
+                    </button>
                 </div>
             </div>
 

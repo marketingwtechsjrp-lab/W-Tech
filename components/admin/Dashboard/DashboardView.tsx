@@ -170,44 +170,49 @@ const DashboardView = () => {
             // Init 12 months
             for(let i=0; i<12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
 
-            // Merge Enrollment Revenue AND CRM Revenue into History?
-            // For now, let's stick to consistent logic: if enrollmentRevenue is 0, use CRM.
-            // To do this simply for history, we can iterate leads too.
-            
-            leads.forEach((l: any) => {
-                 if (['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status)) {
-                     const month = new Date(l.created_at).getMonth();
-                     historyMap[month].revenue += (Number(l.conversion_value) || 0);
-                 }
+            // Merge Enrollment Revenue
+            enrollments?.forEach((e: any) => {
+                if (!e.created_at) return;
+                const month = new Date(e.created_at).getMonth();
+                historyMap[month].revenue += (Number(e.amount_paid) || 0);
             });
 
-            // Note: If we really want to use enrollment revenue when available, we would need to not double add.
-            // Assuming for now user is relying on CRM for sales tracking.
-            if (crmSalesValue === 0 && enrollmentRevenue > 0) {
-                 // Reset and use enrollments if CRM is empty but Enrollments exist
-                 for(let i=0; i<12; i++) historyMap[i].revenue = 0;
-                 enrollments?.forEach((e: any) => {
-                    const month = new Date(e.created_at).getMonth();
-                    historyMap[month].revenue += (e.amount_paid || 0);
-                });
-            }
+            // Merge CRM Revenue (Only if not already tracked in enrollments or as a supplement)
+            // Strategy: Add if user tracks value in CRM that isn't yet an enrollment
+            leads.forEach((l: any) => {
+                if (['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)) {
+                    if (!l.created_at) return;
+                    const month = new Date(l.created_at).getMonth();
+                    const val = Number(l.conversion_value) || 0;
+                    // If we have both, we take the max per month to avoid double counting if they record both
+                    // Or follow the KPI logic: Math.max(enrollmentRevenue, crmSalesValue)
+                    // But history is per month. Let's add them for now as many users track recurring or different types.
+                    // Actually, if they are seeing 0 in history but 1730 in KPI, it's because crmSalesValue > 0
+                    // and it was resetting historyMap in the old code.
+                    
+                    // Improved logic: If this lead resulted in an enrollment, it might be double counting.
+                    // But we don't have a direct link often. Let's just sum and let the user manage data, 
+                    // OR follow the KPI logic of "Math.max" at month level.
+                    historyMap[month].revenue = Math.max(historyMap[month].revenue, val);
+                }
+            });
 
             expensesDTO?.forEach((ex: any) => {
+                if (!ex.date) return;
                 const month = new Date(ex.date).getMonth();
                 historyMap[month].expenses += Number(ex.amount || 0);
             });
 
-            // Filter to show only relevant months if using filterPeriod, for 'YYYY' show all up to current month?
-            // Doing full year for simplicity as requested "Evolucao mes a mes"
-            const chartData = Object.keys(historyMap).map(mIndex => ({
-                month: months[Number(mIndex)],
-                revenue: historyMap[Number(mIndex)].revenue,
-                expenses: historyMap[Number(mIndex)].expenses
+            const chartData = months.map((mName, mIndex) => ({
+                month: mName,
+                revenue: historyMap[mIndex].revenue,
+                expenses: historyMap[mIndex].expenses
             }));
             
-            // Trim future months if needed, or leave to show zero
+            // Show at least 6 months or all months with data
             const currentMonthIndex = new Date().getMonth();
-            setFinancialHistory(chartData.slice(0, currentMonthIndex + 1));
+            const displayMonths = Math.max(6, currentMonthIndex + 1);
+            setFinancialHistory(chartData.slice(0, displayMonths));
 
         } catch (error) {
             console.error("Error fetching dashboard:", error);
@@ -219,22 +224,22 @@ const DashboardView = () => {
     // --- SUB-COMPONENTS ---
     
     const KpiCard = ({ label, value, sub, icon: Icon, color, trend }: any) => (
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-lg transition-all">
+        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-transparent shadow-sm relative overflow-hidden group hover:shadow-lg transition-all">
             <div className={`absolute top-0 right-0 p-12 bg-${color.replace('text-', '')}/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2`}></div>
             <div className="flex justify-between items-start mb-2">
                 <div className={`p-3 rounded-xl bg-${color.replace('text-', '')}/10 ${color}`}>
                     <Icon size={22} />
                 </div>
                 {trend && (
-                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                    <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
                         <ArrowUpRight size={10} /> {trend}
                     </span>
                 )}
             </div>
             <div>
-                <h3 className="text-2xl font-black text-gray-900 tracking-tight mt-2">{value}</h3>
-                <p className="text-gray-500 text-xs font-bold uppercase tracking-wide mt-1">{label}</p>
-                {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mt-2">{value}</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wide mt-1">{label}</p>
+                {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>}
             </div>
         </div>
     );
@@ -247,7 +252,7 @@ const DashboardView = () => {
                 {financialHistory.map((item, idx) => (
                     <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
                         {/* Tooltip */}
-                        <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs p-2 rounded pointer-events-none whitespace-nowrap z-10">
+                        <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 dark:bg-black text-white text-xs p-2 rounded pointer-events-none whitespace-nowrap z-10">
                             <div className="text-green-400 font-bold">Rec: R$ {item.revenue.toLocaleString('pt-BR')}</div>
                             <div className="text-red-400 font-bold">Desp: R$ {item.expenses.toLocaleString('pt-BR')}</div>
                         </div>
@@ -275,17 +280,17 @@ const DashboardView = () => {
         <div className="space-y-8 animate-fade-in pb-12">
             
             {/* Header & Filter */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent transition-colors">
                 <div>
-                     <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                     <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
                         <BarChart3 className="text-wtech-gold" /> Visão Geral do Sistema
                      </h2>
-                     <p className="text-gray-500 text-sm">Acompanhe métricas, ranking de equipe e saúde financeira.</p>
+                     <p className="text-gray-500 dark:text-gray-400 text-sm">Acompanhe métricas, ranking de equipe e saúde financeira.</p>
                 </div>
                 <select 
                     value={filterPeriod} 
                     onChange={e => setFilterPeriod(e.target.value)}
-                    className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-wtech-gold focus:border-wtech-gold block w-full md:w-auto p-2.5 font-bold"
+                    className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-wtech-gold focus:border-wtech-gold block w-full md:w-auto p-2.5 font-bold"
                 >
                     <option value="YYYY">Ano Atual</option>
                     <option value="90d">Últimos 3 Meses</option>
@@ -330,20 +335,20 @@ const DashboardView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* FINANCIAL CHART */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden transition-colors">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
                             <TrendingUp size={20} className="text-gray-400" />
                             Evolução Financeira
                         </h3>
                         <div className="flex gap-4 text-xs font-bold">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-full"></div> Receita</div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div> Despesas</div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-full"></div> <span className="text-gray-500 dark:text-gray-400">Receita</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div> <span className="text-gray-500 dark:text-gray-400">Despesas</span></div>
                         </div>
                     </div>
                     
                     {/* Graph Container */}
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div className="bg-gray-50 dark:bg-black/30 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
                         <FinancialChart />
                     </div>
                 </div>
@@ -389,15 +394,15 @@ const DashboardView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
                 {/* Attendants Ranking Table */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                        <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden flex flex-col transition-colors">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
                             <Award className="text-wtech-gold" /> Ranking de Atendimento (Top 10)
                         </h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                            <thead className="bg-gray-50 dark:bg-black/40 text-gray-500 dark:text-gray-400 font-bold uppercase text-xs">
                                 <tr>
                                     <th className="px-6 py-3">#</th>
                                     <th className="px-6 py-3">Nome</th>
@@ -406,25 +411,25 @@ const DashboardView = () => {
                                     <th className="px-6 py-3 text-right">Conv. %</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 dark:text-gray-300">
                                 {attendantsRank.slice(0, 10).map((att, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                         <td className="px-6 py-4 font-bold text-gray-400">
                                             {idx === 0 ? '👑' : idx + 1}
                                         </td>
-                                        <td className="px-6 py-4 font-bold text-gray-900">{att.name}</td>
-                                        <td className="px-6 py-4 text-center text-gray-600">{att.total}</td>
-                                        <td className="px-6 py-4 text-center text-green-600 font-bold">{att.converted}</td>
-                                        <td className="px-6 py-4 text-right font-black text-gray-900">{att.rate.toFixed(1)}%</td>
+                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{att.name}</td>
+                                        <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-400">{att.total}</td>
+                                        <td className="px-6 py-4 text-center text-green-600 dark:text-green-400 font-bold">{att.converted}</td>
+                                        <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white">{att.rate.toFixed(1)}%</td>
                                     </tr>
                                 ))}
                                 {attendantsRank.length === 0 && (
-                                    <tr><td colSpan={5} className="p-6 text-center text-gray-400">Nenhum dado encontrado.</td></tr>
+                                    <tr><td colSpan={5} className="p-6 text-center text-gray-400 dark:text-gray-500">Nenhum dado encontrado.</td></tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                    <div className="p-4 border-t border-gray-100 bg-gray-50 text-center">
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-black/20 text-center">
                         <button className="text-xs font-bold text-gray-500 hover:text-wtech-gold uppercase flex items-center justify-center gap-1 mx-auto">
                             Ver Lista Completa <ArrowRight size={12} />
                         </button>
@@ -432,35 +437,35 @@ const DashboardView = () => {
                 </div>
 
                 {/* Courses Ranking Table */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                        <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden flex flex-col transition-colors">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
                             <ShoppingBag className="text-purple-600" /> Cursos Mais Rentáveis
                         </h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                            <thead className="bg-gray-50 dark:bg-black/40 text-gray-500 dark:text-gray-400 font-bold uppercase text-xs">
                                 <tr>
                                     <th className="px-6 py-3">Curso</th>
                                     <th className="px-6 py-3 text-center">Alunos</th>
                                     <th className="px-6 py-3 text-right">Gerado (R$)</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 dark:text-gray-300">
                                 {coursesRank.slice(0, 10).map((course, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-gray-900 truncate max-w-[200px]" title={course.title}>
+                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white truncate max-w-[200px]" title={course.title}>
                                             {idx + 1}. {course.title}
                                         </td>
-                                        <td className="px-6 py-4 text-center text-gray-600">{course.students}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-green-600">
+                                        <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-400">{course.students}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400">
                                             R$ {course.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
                                         </td>
                                     </tr>
                                 ))}
                                 {coursesRank.length === 0 && (
-                                    <tr><td colSpan={3} className="p-6 text-center text-gray-400">Nenhum dado encontrado.</td></tr>
+                                    <tr><td colSpan={3} className="p-6 text-center text-gray-400 dark:text-gray-500">Nenhum dado encontrado.</td></tr>
                                 )}
                             </tbody>
                         </table>

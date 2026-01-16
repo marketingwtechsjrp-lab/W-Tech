@@ -4,7 +4,13 @@ import { useAuth } from '../../../context/AuthContext';
 import { MarketingList } from '../../../types';
 import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw, Eye, Mail, Phone } from 'lucide-react';
 
-const ListsManager = () => {
+const ListsManager = ({ permissions }: { permissions?: any }) => {
+    const hasPerm = (key: string) => {
+        if (!permissions) return true;
+        if (permissions.admin_access) return true;
+        return !!permissions[key] || !!permissions['manage_marketing'];
+    };
+
     const { user } = useAuth();
     const [lists, setLists] = useState<MarketingList[]>([]);
     const [users, setUsers] = useState<any[]>([]); // User mapping
@@ -37,11 +43,13 @@ const ListsManager = () => {
     const [courses, setCourses] = useState<any[]>([]);
 
     useEffect(() => {
-        fetchLists();
-        fetchCourses();
-        fetchUsers();
-        fetchPotentialClients();
-    }, []);
+        if (user?.id) {
+            fetchLists();
+            fetchCourses();
+            fetchUsers();
+            fetchPotentialClients();
+        }
+    }, [user?.id, permissions]);
 
     useEffect(() => {
         if (selectedList && isMembersModalOpen) {
@@ -56,10 +64,23 @@ const ListsManager = () => {
 
     const fetchLists = async () => {
         setIsLoading(true);
-        const { data, error } = await supabase
+        let query = supabase
             .from('SITE_MarketingLists')
             .select('*')
             .order('created_at', { ascending: false });
+        
+        // Filter by owner if NOT admin
+        const isAdmin = permissions?.admin_access; 
+        if (!isAdmin) {
+            if (user?.id) {
+                query = query.eq('owner_id', user.id);
+            } else {
+                setIsLoading(false);
+                return;
+            }
+        }
+
+        const { data, error } = await query;
         
         if (data) {
              setLists(data.map((l: any) => ({ 
@@ -199,15 +220,15 @@ const ListsManager = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                     <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                        <Users className="text-blue-600" /> Listas de Contatos
+                     <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                        <Users className="text-blue-600 dark:text-blue-400" /> Listas de Contatos
                     </h3>
-                    <p className="text-sm text-gray-500">Gerencie grupos de contatos por usuário.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie grupos de contatos por usuário.</p>
                 </div>
-                {!isEditing && (
+                {!isEditing && hasPerm('marketing_manage_lists') && (
                     <button 
                         onClick={() => { setIsEditing(true); setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: user?.id }); }}
-                        className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800"
+                        className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                     >
                         <Plus size={16} /> Nova Lista
                     </button>
@@ -215,17 +236,17 @@ const ListsManager = () => {
             </div>
 
             {isEditing && (
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4">
+                <div className="bg-gray-50 dark:bg-[#222] p-6 rounded-xl border border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-top-4">
                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-bold text-gray-700">{currentList.id ? 'Editar Lista' : 'Nova Lista'}</h4>
+                        <h4 className="font-bold text-gray-700 dark:text-white">{currentList.id ? 'Editar Lista' : 'Nova Lista'}</h4>
                         <button onClick={() => setIsEditing(false)}><X size={20} className="text-gray-400 hover:text-red-500" /></button>
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nome da Lista</label>
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Nome da Lista</label>
                                 <input 
-                                    className="w-full border border-gray-300 rounded p-2 text-sm" 
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#1A1A1A] dark:text-white" 
                                     placeholder="Ex: Alunos de Offroad 2024"
                                     value={currentList.name}
                                     onChange={e => setCurrentList({...currentList, name: e.target.value})}
@@ -233,9 +254,9 @@ const ListsManager = () => {
                             </div>
                            
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Dono da Lista (Vinculado)</label>
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Dono da Lista (Vinculado)</label>
                                 <select 
-                                    className="w-full border border-gray-300 rounded p-2 text-sm bg-white"
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm bg-white dark:bg-[#1A1A1A] dark:text-white"
                                     value={currentList.ownerId || ''}
                                     onChange={e => setCurrentList({...currentList, ownerId: e.target.value})}
                                 >
@@ -247,16 +268,16 @@ const ListsManager = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Descrição</label>
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Descrição</label>
                                 <input 
-                                    className="w-full border border-gray-300 rounded p-2 text-sm" 
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#1A1A1A] dark:text-white" 
                                     placeholder="Opcional"
                                     value={currentList.description || ''}
                                     onChange={e => setCurrentList({...currentList, description: e.target.value})}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Tipo de Lista</label>
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Tipo de Lista</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input 
@@ -265,7 +286,7 @@ const ListsManager = () => {
                                             checked={currentList.type === 'Static'} 
                                             onChange={() => setCurrentList({...currentList, type: 'Static'})} 
                                         />
-                                        <span className="text-sm text-gray-700 font-medium">Estática (Manual)</span>
+                                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Estática (Manual)</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input 
@@ -274,20 +295,20 @@ const ListsManager = () => {
                                             checked={currentList.type === 'Dynamic'} 
                                             onChange={() => setCurrentList({...currentList, type: 'Dynamic'})} 
                                         />
-                                        <span className="text-sm text-gray-700 font-medium">Dinâmica (Filtros)</span>
+                                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Dinâmica (Filtros)</span>
                                     </label>
                                 </div>
                             </div>
                         </div>
 
                         {currentList.type === 'Dynamic' && (
-                            <div className="bg-white p-4 rounded border border-gray-200">
-                                <h5 className="font-bold text-sm mb-3 flex items-center gap-2"><Filter size={14} /> Regras de Filtragem</h5>
+                            <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded border border-gray-200 dark:border-gray-700">
+                                <h5 className="font-bold text-sm mb-3 flex items-center gap-2 dark:text-white"><Filter size={14} /> Regras de Filtragem</h5>
                                 <div className="space-y-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Filtrar por Curso</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Filtrar por Curso</label>
                                         <select 
-                                            className="w-full border border-gray-300 rounded p-2 text-sm"
+                                            className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#222] dark:text-white"
                                             value={currentList.rules?.course_id || ''}
                                             onChange={e => setCurrentList({
                                                 ...currentList, 
@@ -299,9 +320,9 @@ const ListsManager = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status do Lead</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status do Lead</label>
                                         <select 
-                                            className="w-full border border-gray-300 rounded p-2 text-sm"
+                                            className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#222] dark:text-white"
                                             value={currentList.rules?.status || ''}
                                             onChange={e => setCurrentList({
                                                 ...currentList, 
@@ -323,14 +344,14 @@ const ListsManager = () => {
                         )}
                         
                         {currentList.type === 'Static' && (
-                             <div className="bg-white p-4 rounded border border-gray-200 flex items-center justify-center text-gray-400 text-sm">
+                             <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-sm">
                                 <p>Contatos são adicionados manualmente ou via importação após salvar a lista.</p>
                              </div>
                         )}
                      </div>
 
                      <div className="flex justify-end gap-2 mt-6">
-                        <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded">Cancelar</button>
+                        <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors">Cancelar</button>
                         <button onClick={handleSave} disabled={isLoading} className="bg-green-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
                             <Save size={16} /> Salvar Lista
                         </button>
@@ -340,46 +361,48 @@ const ListsManager = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {lists.map(list => (
-                    <div key={list.id} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative">
+                    <div key={list.id} className="bg-white dark:bg-[#1A1A1A] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group relative">
                         <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`w-2 h-2 rounded-full ${list.type === 'Dynamic' ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
                                 <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">{list.type === 'Dynamic' ? 'Dinâmica' : 'Estática'}</span>
                             </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                    onClick={() => { setCurrentList(list); setIsEditing(true); }}
-                                    className="p-1.5 hover:bg-blue-50 text-blue-500 rounded"
-                                >
-                                    <Edit size={14} />
-                                </button>
-                                <button 
-                                    onClick={() => handleDelete(list.id)}
-                                    className="p-1.5 hover:bg-red-50 text-red-500 rounded"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
+                            {hasPerm('marketing_manage_lists') && (
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={() => { setCurrentList(list); setIsEditing(true); }}
+                                        className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded"
+                                    >
+                                        <Edit size={14} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(list.id)}
+                                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         
-                        <h4 className="font-bold text-gray-800 text-lg mb-1">{list.name}</h4>
-                        <p className="text-sm text-gray-500 mb-2 line-clamp-2">{list.description || 'Sem descrição'}</p>
+                        <h4 className="font-bold text-gray-800 dark:text-gray-100 text-lg mb-1">{list.name}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{list.description || 'Sem descrição'}</p>
 
                          {/* Owner Badge */}
                          {list.ownerId && (
-                             <div className="flex items-center gap-1.5 mb-3 bg-gray-50 px-2 py-1 rounded w-fit">
+                             <div className="flex items-center gap-1.5 mb-3 bg-gray-50 dark:bg-[#222] px-2 py-1 rounded w-fit">
                                 <Users size={10} className="text-gray-400" />
-                                <span className="text-[10px] uppercase font-bold text-gray-600">
+                                <span className="text-[10px] uppercase font-bold text-gray-600 dark:text-gray-300">
                                     {getUserName(list.ownerId)}
                                 </span>
                              </div>
                          )}
 
-                         <div className="pt-3 border-t border-gray-50 flex justify-between items-center text-xs text-gray-400">
+                         <div className="pt-3 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-xs text-gray-400">
                             <span>Criada em: {list.createdAt ? new Date(list.createdAt).toLocaleDateString() : 'N/A'}</span>
                             <button 
                                 onClick={() => { setSelectedList(list); setIsMembersModalOpen(true); }}
-                                className="flex items-center gap-1 text-blue-600 font-bold hover:underline"
+                                className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold hover:underline"
                             >
                                 <Eye size={12} /> Ver Membros
                             </button>
@@ -391,21 +414,21 @@ const ListsManager = () => {
             {/* Members Modal */}
             {isMembersModalOpen && selectedList && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh]">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh] border dark:border-gray-800">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#222]">
                             <div>
-                                <h3 className="font-black text-xl text-gray-900">{selectedList.name}</h3>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{members.length} Membros Vinculados</p>
+                                <h3 className="font-black text-xl text-gray-900 dark:text-white">{selectedList.name}</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{members.length} Membros Vinculados</p>
                             </div>
                             <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-400 hover:text-red-500">
                                 <X size={24} />
                             </button>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                             {/* NEW: Pull Existing Client Section */}
                             <div className="space-y-3">
-                                <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 px-1">
+                                <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 px-1">
                                     <Search size={14} /> Puxar Cliente Existente
                                 </h4>
                                 <div className="relative">
@@ -413,7 +436,7 @@ const ListsManager = () => {
                                         <input 
                                             type="text" 
                                             placeholder="Buscar por nome, e-mail ou telefone..."
-                                            className="w-full bg-white border-2 border-gray-100 rounded-2xl px-12 py-4 text-sm font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                                            className="w-full bg-white dark:bg-[#222] border-2 border-gray-100 dark:border-gray-700 rounded-2xl px-12 py-4 text-sm font-bold outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all dark:text-white"
                                             value={clientSearchTerm}
                                             onChange={e => {
                                                 setClientSearchTerm(e.target.value);
@@ -434,7 +457,7 @@ const ListsManager = () => {
 
                                     {/* Search Results Dropdown */}
                                     {showClientResults && clientSearchTerm && (
-                                        <div className="absolute z-50 left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 max-h-60 overflow-y-auto animate-in slide-in-from-top-2">
+                                        <div className="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 max-h-60 overflow-y-auto animate-in slide-in-from-top-2">
                                             {allSelectableClients
                                                 .filter(c => 
                                                     c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
@@ -446,10 +469,10 @@ const ListsManager = () => {
                                                     <button
                                                         key={`${client.type}-${client.id}`}
                                                         onClick={() => handleAddExistingClient(client)}
-                                                        className="w-full flex items-center justify-between p-4 hover:bg-blue-50 text-left transition-colors border-b last:border-0 border-gray-50"
+                                                        className="w-full flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800"
                                                     >
                                                         <div>
-                                                            <p className="font-bold text-sm text-gray-900">{client.name}</p>
+                                                            <p className="font-bold text-sm text-gray-900 dark:text-white">{client.name}</p>
                                                             <p className="text-[10px] text-gray-400 font-medium">
                                                                 {client.type} • {client.email || 'Sem e-mail'}
                                                             </p>
@@ -468,9 +491,9 @@ const ListsManager = () => {
                             </div>
 
                             {/* Manual Member Form - Fixed for Overflow */}
-                            <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 space-y-4">
-                                <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Plus size={14} className="text-blue-600" /> Ou Cadastrar Novo Contato
+                            <div className="bg-gray-50 dark:bg-[#222] p-5 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-4">
+                                <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Plus size={14} className="text-blue-600 dark:text-blue-400" /> Ou Cadastrar Novo Contato
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     <div className="space-y-1">
@@ -478,7 +501,7 @@ const ListsManager = () => {
                                         <input 
                                             type="text" 
                                             placeholder="Nome completo"
-                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20 dark:text-white"
                                             value={newMember.name}
                                             onChange={e => setNewMember({...newMember, name: e.target.value})}
                                         />
@@ -488,7 +511,7 @@ const ListsManager = () => {
                                         <input 
                                             type="email" 
                                             placeholder="exemplo@v.com"
-                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20 dark:text-white"
                                             value={newMember.email}
                                             onChange={e => setNewMember({...newMember, email: e.target.value})}
                                         />
@@ -499,7 +522,7 @@ const ListsManager = () => {
                                             <input 
                                                 type="text" 
                                                 placeholder="(00) 00000-0000"
-                                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20 dark:text-white"
                                                 value={newMember.phone}
                                                 onChange={e => setNewMember({...newMember, phone: e.target.value})}
                                             />
@@ -516,7 +539,7 @@ const ListsManager = () => {
                             </div>
 
                             <div className="pt-2">
-                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-1 underline decoration-gray-200 underline-offset-4">Contatos no Grupo</h4>
+                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-1 underline decoration-gray-200 dark:decoration-gray-700 underline-offset-4">Contatos no Grupo</h4>
                                 {isFetchingMembers ? (
                                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                                         <RefreshCw className="animate-spin mb-2" size={32} />
@@ -530,14 +553,14 @@ const ListsManager = () => {
                                 ) : (
                                     <div className="space-y-2">
                                         {members.map(member => (
-                                            <div key={member.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                                            <div key={member.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
                                                         {member.name?.charAt(0) || '?'}
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-sm text-gray-900">{member.name}</p>
-                                                        <div className="flex items-center gap-3 text-[10px] text-gray-500 font-medium">
+                                                        <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{member.name}</p>
+                                                        <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                                                             <span className="flex items-center gap-1"><Mail size={10} /> {member.email || 'N/A'}</span>
                                                             <span className="flex items-center gap-1"><Phone size={10} /> {member.phone || 'N/A'}</span>
                                                         </div>
@@ -545,7 +568,7 @@ const ListsManager = () => {
                                                 </div>
                                                 <button 
                                                     onClick={() => handleDeleteMember(member.id)}
-                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                                                     title="Remover do grupo"
                                                 >
                                                     <Trash2 size={16} />
@@ -557,10 +580,10 @@ const ListsManager = () => {
                             </div>
                         </div>
                         
-                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+                        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] flex justify-end">
                             <button 
                                 onClick={() => setIsMembersModalOpen(false)}
-                                className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg"
+                                className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all active:scale-95 shadow-lg"
                             >
                                 Fechar
                             </button>

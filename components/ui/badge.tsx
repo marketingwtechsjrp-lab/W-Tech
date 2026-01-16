@@ -7,18 +7,14 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
   asChild?: boolean;
+  dotClassName?: string;
   disabled?: boolean;
-  children?: React.ReactNode;
-  className?: string;
-  title?: string;
 }
 
 export interface BadgeButtonProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof badgeButtonVariants> {
   asChild?: boolean;
-  children?: React.ReactNode;
-  className?: string;
 }
 
 export type BadgeDotProps = React.HTMLAttributes<HTMLSpanElement>;

@@ -127,8 +127,20 @@ async function main() {
             console.log('Files were updated locally. Please check git status.');
         }
 
-    } catch (e) {
-        console.error('Script Error:', e);
+        // 9. Generate Sitemap
+        console.log('\n🌐 Generating Sitemap...');
+        try {
+            execSync('node scripts/generate-sitemap.js', { stdio: 'inherit' });
+            console.log('✅ Sitemap updated!');
+        } catch (e) {
+            console.error('❌ Failed to generate sitemap:', e.message);
+        }
+
+        console.log(`\n🎉 RELEASE ${newVersion} READY! 🎉`);
+        console.log('============================');
+
+    } catch (error) {
+        console.error('\n❌ Release process failed:', error);
     } finally {
         rl.close();
     }

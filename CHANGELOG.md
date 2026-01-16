@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.2.5 (2026-01-16) - Adiciona Customização de Menu
+- Adicionado coluna menu_styles na tabela SITE_Config
+- DONEy
+- y
+- y
+
 ## v2.2.4 (2026-01-15) - Fix WhatsApp Duplicates, Variables, Lead Deletion and UI Improvements
 - - Corrigido duplicidade no envio de WhatsApp (Reserva Atômica)
 - - Suporte a variáveis {{nome}}, {{telefone}}, {{email}}, {{status}} e {{origem}}

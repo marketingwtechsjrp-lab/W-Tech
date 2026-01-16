@@ -5,7 +5,16 @@ import { Plus, Megaphone, Calendar, CheckCircle, AlertCircle, Play, Pause, Trash
 import CampaignBuilder from './CampaignBuilder';
 import QueueProcessor from './QueueProcessor';
 
-const CampaignsManager = () => {
+import { useAuth } from '../../../context/AuthContext';
+
+const CampaignsManager = ({ permissions }: { permissions?: any }) => {
+    const { user } = useAuth();
+    const hasPerm = (key: string) => {
+        if (!permissions) return true;
+        if (permissions.admin_access) return true;
+        return !!permissions[key] || !!permissions['manage_marketing'];
+    };
+
     const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
@@ -15,7 +24,9 @@ const CampaignsManager = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetchCampaigns();
+        if (user?.id) {
+            fetchCampaigns();
+        }
         
         const subscription = supabase
             .channel('campaigns_changes')
@@ -25,7 +36,7 @@ const CampaignsManager = () => {
             .subscribe();
 
         return () => { subscription.unsubscribe(); }
-    }, [filterDays]); // Refetch when filter changes
+    }, [filterDays, user?.id, permissions]); // Refetch when filter, user or perms change
 
     const fetchCampaigns = async () => {
         setIsLoading(true);
@@ -38,6 +49,17 @@ const CampaignsManager = () => {
             const date = new Date();
             date.setDate(date.getDate() - parseInt(filterDays));
             query = query.gte('created_at', date.toISOString());
+        }
+
+        // Filter by user if NOT admin
+        const isAdmin = permissions?.admin_access;
+        if (!isAdmin) {
+            if (user?.id) {
+                query = query.eq('created_by', user.id);
+            } else {
+                setIsLoading(false);
+                return;
+            }
         }
 
         const { data } = await query;
@@ -85,7 +107,7 @@ const CampaignsManager = () => {
     };
 
     if (isBuilderOpen) {
-        return <CampaignBuilder onClose={() => { setIsBuilderOpen(false); fetchCampaigns(); }} />;
+        return <CampaignBuilder permissions={permissions} onClose={() => { setIsBuilderOpen(false); fetchCampaigns(); }} />;
     }
 
     const activeProcessingCampaign = campaigns.find(c => c.status === 'Processing');
@@ -101,12 +123,12 @@ const CampaignsManager = () => {
                 <QueueProcessor campaign={activeProcessingCampaign} onComplete={fetchCampaigns} />
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div>
-                     <h3 className="font-black text-2xl text-gray-900 flex items-center gap-2">
-                        <Megaphone className="text-purple-600" /> Campanhas
+                     <h3 className="font-black text-2xl text-gray-900 dark:text-white flex items-center gap-2">
+                        <Megaphone className="text-purple-600 dark:text-purple-400" /> Campanhas
                     </h3>
-                    <p className="text-sm text-gray-500 font-medium tracking-tight">Gerencie e monitore seus disparos de marketing.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Gerencie e monitore seus disparos de marketing.</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -114,7 +136,7 @@ const CampaignsManager = () => {
                         <input 
                             type="text" 
                             placeholder="Buscar campanha..."
-                            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all font-medium"
+                            className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all font-medium dark:text-white"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -122,7 +144,7 @@ const CampaignsManager = () => {
                     </div>
 
                     <select 
-                        className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 outline-none focus:border-purple-400"
+                        className="bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 dark:text-gray-200 outline-none focus:border-purple-400 dark:focus:border-purple-500"
                         value={filterDays}
                         onChange={e => setFilterDays(e.target.value)}
                     >
@@ -132,12 +154,14 @@ const CampaignsManager = () => {
                         <option value="all">Todo o período</option>
                     </select>
 
-                    <button 
-                        onClick={() => setIsBuilderOpen(true)}
-                        className="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider flex items-center gap-2 hover:bg-purple-700 shadow-xl shadow-purple-100 active:scale-95 transition-all"
-                    >
-                        <Plus size={18} /> Nova Campanha
-                    </button>
+                    {hasPerm('marketing_manage_campaigns') && (
+                        <button 
+                            onClick={() => setIsBuilderOpen(true)}
+                            className="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider flex items-center gap-2 hover:bg-purple-700 shadow-xl shadow-purple-100 dark:shadow-none active:scale-95 transition-all"
+                        >
+                            <Plus size={18} /> Nova Campanha
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -148,47 +172,49 @@ const CampaignsManager = () => {
                     const progress = totalCount > 0 ? Math.round((sentCount / totalCount) * 100) : 0;
 
                     return (
-                        <div key={campaign.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                        <div key={campaign.id} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
                             {/* Decorative accent */}
                             <div className={`absolute top-0 left-0 w-1 h-full ${campaign.status === 'Completed' ? 'bg-green-500' : campaign.status === 'Processing' ? 'bg-yellow-500' : 'bg-purple-500'}`} />
 
                             <div className="flex justify-between items-start">
                                 <div className="flex gap-5 items-center">
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${campaign.channel === 'WhatsApp' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${campaign.channel === 'WhatsApp' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'}`}>
                                         {campaign.channel === 'WhatsApp' ? <Send size={24} /> : <Mail size={24} />} 
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-gray-900 text-lg leading-tight mb-1 group-hover:text-purple-600 transition-colors uppercase tracking-tight">{campaign.name}</h4>
+                                        <h4 className="font-black text-gray-900 dark:text-white text-lg leading-tight mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors uppercase tracking-tight">{campaign.name}</h4>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold mt-2">
                                             <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase tracking-widest ${getStatusColor(campaign.status)}`}>
                                                 {campaign.status === 'Processing' ? 'ENVIANDO' : campaign.status === 'Completed' ? 'CONCLUÍDA' : campaign.status === 'Paused' ? 'PAUSADA' : campaign.status}
                                             </span>
-                                            <span className="flex items-center gap-1.5 text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
-                                                <Calendar size={12} className="text-gray-300" /> {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}
+                                            <span className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-[#222] px-2 py-1 rounded-md">
+                                                <Calendar size={12} className="text-gray-300 dark:text-gray-600" /> {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}
                                             </span>
-                                            <span className="flex items-center gap-1.5 text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                                            <span className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-[#222] px-2 py-1 rounded-md">
                                                 <CheckCircle size={12} className="text-green-500" /> {sentCount} de {totalCount} Enviados
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    {campaign.status === 'Processing' && (
-                                        <button onClick={(e) => handlePause(campaign.id, e)} className="p-2.5 bg-yellow-50 text-yellow-600 rounded-xl hover:bg-yellow-100 transition-all active:scale-90" title="Pausar">
-                                            <Pause size={18} fill="currentColor" />
+                                {hasPerm('marketing_manage_campaigns') && (
+                                    <div className="flex items-center gap-2">
+                                        {campaign.status === 'Processing' && (
+                                            <button onClick={(e) => handlePause(campaign.id, e)} className="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-xl hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-all active:scale-90" title="Pausar">
+                                                <Pause size={18} fill="currentColor" />
+                                            </button>
+                                        )}
+                                        {(campaign.status === 'Paused' || campaign.status === 'Draft' || campaign.status === 'Scheduled') && (
+                                             <button onClick={(e) => handleResume(campaign.id, e)} className="p-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/40 transition-all active:scale-90" title="Iniciar/Retomar">
+                                                <Play size={18} fill="currentColor" />
+                                            </button>
+                                        )}
+                                        
+                                        <button onClick={(e) => handleDelete(campaign.id, e)} className="p-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 dark:text-red-500 rounded-xl transition-all hover:text-red-500 active:scale-90" title="Excluir">
+                                            <Trash2 size={18} />
                                         </button>
-                                    )}
-                                    {(campaign.status === 'Paused' || campaign.status === 'Draft' || campaign.status === 'Scheduled') && (
-                                         <button onClick={(e) => handleResume(campaign.id, e)} className="p-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-all active:scale-90" title="Iniciar/Retomar">
-                                            <Play size={18} fill="currentColor" />
-                                        </button>
-                                    )}
-                                    
-                                    <button onClick={(e) => handleDelete(campaign.id, e)} className="p-2.5 hover:bg-red-50 text-red-400 rounded-xl transition-all hover:text-red-500 active:scale-90" title="Excluir">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
+                                    </div>
+                                )}
                             </div>
                             
                             {/* Improved Progress Bar */}
@@ -196,9 +222,9 @@ const CampaignsManager = () => {
                                  <div className="mt-6">
                                     <div className="flex justify-between items-end mb-2">
                                         <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Progresso do Disparo</span>
-                                        <span className="text-xs font-black text-gray-900">{progress}%</span>
+                                        <span className="text-xs font-black text-gray-900 dark:text-white">{progress}%</span>
                                     </div>
-                                    <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden p-0.5 border border-gray-50">
+                                    <div className="w-full bg-gray-100 dark:bg-[#333] rounded-full h-2.5 overflow-hidden p-0.5 border border-gray-50 dark:border-gray-800">
                                         <div 
                                             className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${campaign.status === 'Completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-purple-500 to-indigo-600 shadow-[0_0_10px_rgba(139,92,246,0.3)]'}`} 
                                             style={{ width: `${progress}%` }}
@@ -212,7 +238,7 @@ const CampaignsManager = () => {
             </div>
 
             {filteredCampaigns.length === 0 && !isLoading && (
-                <div className="bg-white border-2 border-dashed border-gray-100 rounded-3xl py-20 text-center text-gray-400">
+                <div className="bg-white dark:bg-[#1A1A1A] border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl py-20 text-center text-gray-400">
                     <Megaphone size={64} className="mx-auto mb-4 opacity-10" />
                     <p className="text-lg font-bold">Nenhuma campanha encontrada</p>
                     <p className="text-sm">Ajuste os filtros ou crie uma nova campanha.</p>

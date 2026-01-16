@@ -7,6 +7,7 @@ import type { Lead } from '../../../types';
 import { SplashedPushNotifications, SplashedPushNotificationsHandle } from '@/components/ui/splashed-push-notifications';
 import LeadTaskSidebar from './LeadTaskSidebar';
 import { useRef } from 'react'; // Ensure useRef is imported
+import { BauhausCard } from '@/components/ui/bauhaus-card';
 
 // Helper for Drag & Drop
 const DragContext = React.createContext<{
@@ -35,20 +36,20 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
     ];
 
     return (
-        <div className="mb-6 w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+        <div className="mb-6 w-full bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent relative overflow-hidden transition-colors">
             <div className="flex justify-between items-center mb-4">
                <div>
-                 <h3 className="font-bold text-gray-900">Visão do Funil</h3>
-                 <p className="text-xs text-gray-500">Fluxo de conversão atual</p>
+                 <h3 className="font-bold text-gray-900 dark:text-white">Visão do Funil</h3>
+                 <p className="text-xs text-gray-500 dark:text-gray-400">Fluxo de conversão atual</p>
                </div>
-               <div className="bg-gray-100 px-3 py-1 rounded-full text-xs font-bold text-gray-600">
+               <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300">
                     Total: {leads.length}
                </div>
             </div>
 
             <div className="flex items-center justify-between h-32 relative px-4">
                 {/* Connecting Line (Background Pipe) */}
-                <div className="absolute top-1/2 left-0 w-full h-4 bg-gray-100 -translate-y-1/2 rounded-full z-0"></div>
+                <div className="absolute top-1/2 left-0 w-full h-4 bg-gray-100 dark:bg-gray-800 -translate-y-1/2 rounded-full z-0"></div>
 
                 {stages.map((stage, i) => {
                     const isLast = i === stages.length - 1;
@@ -94,7 +95,7 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
 
                             {/* Label */}
                             <div className="mt-3 text-center">
-                                <span className="block text-xs font-bold text-gray-800 group-hover:text-wtech-gold transition-colors uppercase tracking-wider">{stage.label}</span>
+                                <span className="block text-xs font-bold text-gray-800 dark:text-gray-300 group-hover:text-wtech-gold transition-colors uppercase tracking-wider">{stage.label}</span>
                             </div>
                         </div>
                     );
@@ -145,17 +146,17 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
         'Contacted': 'bg-blue-600 text-white border-blue-600',
         'Qualified': 'bg-purple-600 text-white border-purple-600',
         'Converted': 'bg-green-600 text-white border-green-600',
-        'Cold': 'bg-gray-500 text-white border-gray-500'
+        'Cold': 'bg-gray-500 dark:bg-gray-700 text-white border-gray-500 dark:border-gray-700'
     };
 
     return (
         <div
-            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-gray-100/50 border-2 border-dashed border-gray-300' : 'bg-gray-50 border border-gray-200'}`}
+            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-gray-100/50 dark:bg-[#111]/50 border-2 border-dashed border-gray-300 dark:border-gray-700' : 'bg-gray-50 dark:bg-[#1A1A1A] border border-gray-200 dark:border-transparent'}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
         >
             {/* Header */}
-            <div className={`p-4 rounded-t-2xl flex flex-col gap-2 ${status === 'New' || status === 'Converted' ? 'shadow-md' : ''} ${statusColors[status] || 'bg-white text-gray-800'}`}>
+            <div className={`p-4 rounded-t-2xl flex flex-col gap-2 ${status === 'New' || status === 'Converted' ? 'shadow-md' : ''} ${statusColors[status] || 'bg-white dark:bg-[#111] text-gray-800 dark:text-gray-100'}`}>
                 <div className="flex justify-between items-center">
                     <h3 className="font-bold text-sm uppercase tracking-wider">{title}</h3>
                     <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">{leads.length}</span>
@@ -183,7 +184,7 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
                     <LeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} usersMap={usersMap} />
                 ))}
                 {leads.length === 0 && (
-                    <div className="text-center py-8 text-gray-400 text-xs italic">
+                    <div className="text-center py-8 text-gray-400 dark:text-gray-600 text-xs italic">
                         Sem leads nesta etapa
                     </div>
                 )}
@@ -221,89 +222,101 @@ const useTimeInStatus = (dateString: string) => {
     return { timeDisplay, isLongWait };
 };
 
+import { Badge } from '@/components/ui/badge';
+import { Edit } from 'lucide-react';
+
 const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<string, string> }> = ({ lead, onClick, usersMap }) => {
     const { setDraggedId } = React.useContext(DragContext);
     const [isDragging, setIsDragging] = React.useState(false);
 
     // Timer Logic
-    // Prefer updated_at (which we will update on column move), fallback to created_at
     const statusDate = lead.updated_at || lead.createdAt; 
     const { timeDisplay, isLongWait } = useTimeInStatus(statusDate);
 
     // Quiz Data Parsing
     const quizData = lead.quiz_data || (lead.internalNotes && lead.internalNotes.startsWith('{') ? JSON.parse(lead.internalNotes) : null);
-    const quizScore = quizData?.score;
     const quizTemp = quizData?.temperature; // 'Frio', 'Morno', 'Quente'
+
+    // Color Mapping
+    const getAccentColor = () => {
+        if (quizTemp?.toLowerCase().includes('quen') || quizTemp?.toLowerCase().includes('alta')) return '#ef4444'; // Red
+        if (quizTemp?.toLowerCase().includes('morn')) return '#f97316'; // Orange
+        return '#3b82f6'; // Blue default
+    };
+
+    const accentColor = getAccentColor();
+    const attendantName = lead.assignedTo && usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'S/ Atendente';
 
     return (
         <div
             draggable
             onDragStart={() => { setDraggedId(lead.id); setIsDragging(true); }}
             onDragEnd={() => { setDraggedId(null); setIsDragging(false); }}
+            className={`transition-all bg-white dark:bg-[#1f1f1f] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md p-3 relative group active:scale-95 cursor-grab ${isDragging ? 'opacity-50 scale-95' : ''}`}
+            style={{ borderLeft: `3px solid ${accentColor}` }}
             onClick={onClick}
-            className={`bg-white p-4 rounded-xl shadow-sm border ${isLongWait ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-100'} cursor-pointer active:cursor-grabbing hover:shadow-md transition-all group relative ${isDragging ? 'opacity-50 scale-95' : ''}`}
         >
-            <div className="flex justify-between items-start mb-2">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{new Date(lead.createdAt).toLocaleDateString()}</span>
-                <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${isLongWait ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-500'}`}>
-                    <Clock size={10} />
-                    {timeDisplay}
+            {/* Header: Attendant & Actions */}
+            <div className="flex justify-between items-center mb-1">
+                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">
+                    {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
+                </span>
+                
+                <div className="flex gap-1">
+                     {/* Tasks/History Icon */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onClick(); }} 
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-blue-500 transition-colors" 
+                        title="Histórico de Tarefas"
+                    >
+                         <Clock size={13} />
+                    </button>
+                    {/* View Details/Edit Icon */}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onClick(); }} 
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-wtech-gold transition-colors" 
+                        title="Ver Detalhes/Editar"
+                    >
+                         <Edit size={13} />
+                    </button>
                 </div>
             </div>
 
-            {/* Quiz Results Badge */}
-            {(quizScore !== undefined || quizTemp) && (
-                 <div className="mb-2 flex gap-1">
-                    {quizTemp && (
-                        <span className={`px-2 py-0.5 text-[10px] uppercase font-bold rounded flex items-center gap-1 
-                            ${quizTemp.toLowerCase().includes('quen') || quizTemp.toLowerCase().includes('alta') ? 'bg-red-50 text-red-600' : 
-                              quizTemp.toLowerCase().includes('morn') ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
-                            <Thermometer size={10} /> {quizTemp}
-                        </span>
-                    )}
-                    {quizScore !== undefined && (
-                        <span className="px-2 py-0.5 bg-gray-50 text-gray-600 text-[10px] font-bold uppercase rounded border border-gray-200">
-                           {quizScore}/100 pts
-                        </span>
-                    )}
-                 </div>
-            )}
+            {/* Main Info */}
+            <div className="mb-2">
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight truncate">{lead.name}</h4>
+                <div className="flex flex-col gap-0.5 mt-0.5">
+                     {lead.email && <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{lead.email}</span>}
+                     {lead.phone && <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono tracking-tight"><Phone size={9}/> {lead.phone}</span>}
+                </div>
+            </div>
 
+            {/* Tags */}
             {lead.tags && lead.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
-                    {lead.tags.map((tag: string, i: number) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold uppercase rounded border border-gray-200">
-                            {tag}
-                        </span>
+                    {lead.tags.slice(0, 3).map((tag: string, i: number) => (
+                        <Badge key={i} variant="secondary" size="xs" appearance="outline" className="text-[9px] h-4 px-1">{tag}</Badge>
                     ))}
+                     {lead.tags.length > 3 && <span className="text-[9px] text-gray-400">+{lead.tags.length - 3}</span>}
                 </div>
             )}
 
-            <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-black flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                    {lead.name.charAt(0)}
-                </div>
-                <div className="leading-tight">
-                    <h4 className="font-bold text-gray-900 group-hover:text-wtech-gold transition-colors">{lead.name}</h4>
-                    <p className="text-xs text-gray-500 max-w-[150px] truncate">{lead.email}</p>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between mt-3 text-xs text-gray-500 border-t border-gray-50 pt-3">
-                <div className="flex items-center gap-1">
-                    {/* Consistent User Display Logic */}
-                    {lead.assignedTo ? (
-                        <span className="flex items-center gap-1 bg-yellow-50 text-yellow-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px]" title={usersMap[lead.assignedTo] || lead.assignedTo}>
-                            <Users size={10} /> 
-                            {usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'Usuário...'}
-                        </span>
-                    ) : (
-                        <span className="flex items-center gap-1 bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px]">
-                            <Users size={10} /> Fila
-                        </span>
-                    )}
-                </div>
-                <button className="text-gray-400 hover:text-black transition-colors"><MoreVertical size={14} /></button>
+            {/* Progress Bar (Compact) */}
+            <div className="mt-1">
+                 <div className="flex justify-between items-end mb-0.5">
+                     <span className={`text-[8px] font-bold uppercase ${isLongWait ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                        TEMPO NA ETAPA
+                     </span>
+                     <span className={`text-[8px] font-mono ${isLongWait ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                        {timeDisplay}
+                     </span>
+                 </div>
+                 <div className="h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                     <div 
+                        className={`h-full rounded-full ${isLongWait ? 'bg-red-500' : 'bg-blue-500'}`} 
+                        style={{ width: isLongWait ? '100%' : '30%' }}
+                     ></div>
+                 </div>
             </div>
         </div>
     );
@@ -610,6 +623,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [productSummary, setProductSummary] = useState('');
     const [saleValue, setSaleValue] = useState('');
 
+    // Lost Reason State
+    const [lostReasonModal, setLostReasonModal] = useState<{ isOpen: boolean, lead: Lead | null, targetStatus: string }>({ isOpen: false, lead: null, targetStatus: '' });
+    const [lostReason, setLostReason] = useState('');
+
     useEffect(() => {
         if (conversionModal.isOpen && conversionType === 'Course') {
             const fetchActiveCourses = async () => {
@@ -647,6 +664,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         if (isWonStage) {
             setConversionModal({ isOpen: true, lead: currentLead, targetStatus: newStatus });
             return;
+        }
+
+        // Intercept Lost Stage
+        const isLostStage = ['Cold', 'Rejected', 'Lost', 'Esfriou', 'Perdido'].includes(newStatus);
+        if (isLostStage) {
+             setLostReasonModal({ isOpen: true, lead: currentLead, targetStatus: newStatus });
+             return;
         }
 
         // Standard Move
@@ -714,6 +738,42 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         setProductSummary('');
         setSaleValue('');
         setSelectedCourseId('');
+    };
+
+    const handleConfirmLost = async () => {
+        if (!lostReasonModal.lead) return;
+        if (!lostReason.trim()) return alert("Por favor, informe o motivo.");
+
+        const { lead, targetStatus } = lostReasonModal;
+
+        // 1. Update Internal Notes with Reason
+        const newNotes = `${lead.internalNotes || ''}\n\n[MOTIVO PERDA - ${new Date().toLocaleDateString()}]: ${lostReason}`;
+
+        // 2. Execute Move with updated notes (Implicitly we want to save notes first or just update it all)
+        // Since executeMove only updates status/updated_at, we need a separate update or modified executeMove.
+        // We'll just update directly here to save the note + status.
+        
+        const now = new Date().toISOString();
+        
+        // Optimistic Update (including note locally? maybe overkill, just status)
+        setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: targetStatus as any, updated_at: now, internalNotes: newNotes } : l));
+
+        const { error } = await supabase.from('SITE_Leads').update({ 
+            status: targetStatus, 
+            updated_at: now,
+            internal_notes: newNotes
+        }).eq('id', lead.id);
+
+        if (error) {
+             console.error("Move Lead Error:", error);
+             alert(`Falha ao mover lead: ${error.message}`);
+             fetchData(); // Revert
+        } else {
+             notificationRef.current?.createNotification('info', 'Lead Atualizado', 'Motivo da perda registrado.');
+        }
+
+        setLostReasonModal({ isOpen: false, lead: null, targetStatus: '' });
+        setLostReason('');
     };
     
     const saveLeadUpdates = async () => {
@@ -1407,6 +1467,66 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         <>Registrar Venda <CheckCircle size={18} /></>
                                     )}
                                 </button>
+                            </div>
+                         </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* --- Lost Reason Modal --- */}
+            <AnimatePresence>
+                {lostReasonModal.isOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    >
+                         <motion.div 
+                            initial={{ scale: 0.95 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.95 }}
+                            className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800"
+                         >
+                            <div className="p-6 bg-gray-50 dark:bg-black/40 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <AlertTriangle className="text-orange-500" size={20} /> Motivo da Perda
+                                    </h2>
+                                    <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                                        Por que este lead está sendo marcado como "Perdido"?
+                                    </p>
+                                </div>
+                                <button onClick={() => setLostReasonModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="p-6">
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Descreva o motivo *</label>
+                                <textarea 
+                                    className="w-full p-3 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-orange-500 min-h-[100px] text-sm"
+                                    placeholder="Ex: Preço alto, optou pelo concorrente, sem interesse no momento..."
+                                    value={lostReason}
+                                    onChange={e => setLostReason(e.target.value)}
+                                    autoFocus
+                                />
+
+                                <div className="flex gap-3 mt-6">
+                                    <button 
+                                        onClick={() => setLostReasonModal(prev => ({ ...prev, isOpen: false }))}
+                                        className="flex-1 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        onClick={handleConfirmLost}
+                                        disabled={!lostReason.trim()}
+                                        className="flex-1 py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
+                                    >
+                                        Confirmar
+                                    </button>
+                                </div>
                             </div>
                          </motion.div>
                     </motion.div>

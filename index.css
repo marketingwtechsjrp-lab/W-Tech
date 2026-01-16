@@ -27,3 +27,39 @@ body {
     width: 100%;
     height: 100%;
 }
+
+:root {
+  --bauhaus-card-bg: #f0f4fb;
+  --bauhaus-card-separator: #d3dce8;
+  --bauhaus-card-accent: #156ef6;
+  --bauhaus-card-radius: 2em;
+  --bauhaus-card-border-width: 2px;
+  --bauhaus-card-inscription-top: #3b4252;
+  --bauhaus-card-inscription-main: #111014;
+  --bauhaus-card-inscription-sub: #5e6473;
+  --bauhaus-card-inscription-progress-label: #454f55;
+  --bauhaus-card-inscription-progress-value: #1c2541;
+  --bauhaus-card-progress-bar-bg: #e5e7eb;
+  --bauhaus-chronicle-bg: #151419;
+  --bauhaus-chronicle-fg: #fff;
+  --bauhaus-chronicle-hover-fg: #fff;
+}
+
+.dark {
+  --background: #252533;
+  --bauhaus-card-bg: #151419;
+  --bauhaus-card-separator: #2F2B2A;
+  --bauhaus-card-accent: #156ef6;
+  --bauhaus-card-radius: 2em;
+  --bauhaus-card-border-width: 2px;
+  --bauhaus-card-inscription-top: #bfc7d5;
+  --bauhaus-card-inscription-main: #f0f0f1;
+  --bauhaus-card-inscription-sub: #a0a1b3;
+  --bauhaus-card-inscription-progress-label: #b5b6c4;
+  --bauhaus-card-inscription-progress-value: #e7e7f7;
+  --bauhaus-card-progress-bar-bg: #363636;
+  --bauhaus-chronicle-bg: #fff;
+  --bauhaus-chronicle-fg: #151419;
+  --bauhaus-chronicle-hover-fg: #fff;
+}
+

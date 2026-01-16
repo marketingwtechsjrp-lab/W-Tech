@@ -8,7 +8,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   showLoginModal: boolean;
-  impersonateUser: (user: User) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,9 +22,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Check local storage for session
     const storedUser = localStorage.getItem('wtech_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsed = JSON.parse(storedUser);
+      setUser(parsed);
+      // Also refresh from DB to ensure data is live
+      refreshUser(parsed.id);
     }
   }, []);
+
+  const refreshUser = async (userId?: string) => {
+    const id = userId || user?.id;
+    if (!id) return;
+
+    try {
+      const { data: userData } = await supabase
+        .from('SITE_Users')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (userData) {
+        // Fetch Role Separately (Manual Join) as in login
+        let roleData = null;
+        if (userData.role_id) {
+            const { data: rData } = await supabase
+                .from('SITE_Roles')
+                .select('*')
+                .eq('id', userData.role_id)
+                .single();
+            roleData = rData;
+        }
+
+        const updatedUser: User = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: roleData || userData.role || 'User',
+          avatar_url: userData.avatar_url,
+          phone: userData.phone,
+          permissions: userData.permissions || (roleData?.permissions) || {},
+          status: userData.status,
+          role_id: userData.role_id,
+        };
+
+        setUser(updatedUser);
+        localStorage.setItem('wtech_user', JSON.stringify(updatedUser));
+      }
+    } catch (err) {
+      console.error("Refresh User Error:", err);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -65,7 +111,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         name: userData.name,
         email: userData.email,
         role: roleData || userData.role || 'User', // Fallback to DB role column if role_id is null
-        avatar: userData.avatar,
+        avatar_url: userData.avatar_url,
+        phone: userData.phone,
         permissions: userData.permissions || (roleData?.permissions) || {},
         status: userData.status,
         role_id: userData.role_id, // Ensure ID is preserved
@@ -99,7 +146,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, showLoginModal, setShowLoginModal, impersonateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, showLoginModal, setShowLoginModal, impersonateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

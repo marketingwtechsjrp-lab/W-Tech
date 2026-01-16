@@ -26,7 +26,9 @@ export interface User {
   name: string;
   email: string;
   role: Role | string; // Supporting both object (after fetch) and string (legacy/simple)
-  avatar: string;
+  avatar?: string; // Legacy
+  avatar_url?: string;
+  phone?: string;
   permissions: Permission; // Legacy
   status: 'Active' | 'Inactive';
   password?: string;
@@ -348,6 +350,7 @@ export interface MessageTemplate {
     content: string;
     imageUrl?: string; // NEW: Part 2
     content2?: string; // NEW: Part 3
+    part_delay?: number; // NEW: Seconds between parts (1-2, 2-3)
     createdBy?: string;
     createdAt: string;
 }
@@ -384,11 +387,13 @@ export interface MarketingCampaign {
   content?: string; // Part 1
   imageUrl?: string; // Part 2
   content2?: string; // Part 3
+  part_delay?: number; // NEW: Seconds between parts
   listId?: string; // Mapped from list_id
   targetAudienceSummary?: string; // Mapped from target_audience_summary
   scheduledFor?: string; // Mapped from scheduled_for
   throttlingSettings?: { delay_seconds: number, batch_size: number }; // Mapped from throttling_settings
-  stats?: { sent: number, failed: number, read: number };
+  stats?: { sent: number, failed: number, total: number };
+  total_recipients?: number;
   createdBy: string;
   createdAt: string;
 }

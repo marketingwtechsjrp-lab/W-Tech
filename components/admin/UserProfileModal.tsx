@@ -4,6 +4,8 @@ import { X, User, Lock, Smartphone, Shield, Save, Loader2, CheckCircle, RefreshC
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import UserWhatsAppConnection from './WhatsApp/UserWhatsAppConnection';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { AvatarUploader } from '../ui/avatar-uploader';
 
 interface UserProfileModalProps {
     isOpen: boolean;
@@ -11,7 +13,7 @@ interface UserProfileModalProps {
 }
 
 const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [activeTab, setActiveTab] = useState<'profile' | 'whatsapp'>('profile');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -20,7 +22,8 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
         name: '',
         email: '',
         phone: '',
-        password: ''
+        password: '',
+        avatar_url: ''
     });
 
     useEffect(() => {
@@ -28,11 +31,53 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
             setFormData({
                 name: user.name || '',
                 email: user.email || '',
-                phone: (user as any).phone || '',
-                password: ''
+                phone: user.phone || '',
+                password: '',
+                avatar_url: user.avatar_url || ''
             });
         }
     }, [user, isOpen]);
+
+    const handleAvatarUpload = async (file: File) => {
+        if (!user) return { success: false };
+        
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            // 1. Upload to Storage
+            const { error: uploadError } = await supabase.storage
+                .from('site-assets')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('site-assets')
+                .getPublicUrl(filePath);
+
+            // 3. Update User Record
+            const { error: dbError } = await supabase
+                .from('SITE_Users')
+                .update({ avatar_url: publicUrl })
+                .eq('id', user.id);
+
+            if (dbError) throw dbError;
+
+            // Trigger global refresh
+            await refreshUser();
+            
+            setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
+            alert('Foto de perfil atualizada!');
+            return { success: true };
+        } catch (error: any) {
+            console.error('Error uploading avatar:', error);
+            alert('Erro ao carregar imagem: ' + error.message);
+            return { success: false };
+        }
+    };
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,12 +87,22 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
         setSuccess(false);
 
         try {
-            // 1. Update Password if provided
-            if (formData.password) {
+            // 1. Update Password IF AND ONLY IF user intentionally provided a new one
+            // We check for length > 5 and trim to avoid browser autofill issues
+            const newPassword = formData.password.trim();
+            if (newPassword && newPassword.length >= 6) {
+                // Check session explicitly
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    throw new Error('Sessão expirada. Por favor, faça login novamente.');
+                }
+
                 const { error: authError } = await supabase.auth.updateUser({ 
-                    password: formData.password 
+                    password: newPassword 
                 });
                 if (authError) throw authError;
+            } else if (newPassword && newPassword.length > 0) {
+                throw new Error('A nova senha deve ter pelo menos 6 caracteres.');
             }
 
             // 2. Update Public Profile
@@ -61,17 +116,17 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
 
             if (dbError) throw dbError;
 
+            // Trigger global refresh to update UI everywhere
+            await refreshUser();
+
             setSuccess(true);
             setTimeout(() => {
                 setSuccess(false);
-                // We don't necessarily want to close the modal or reload the whole page
-                // But we should refresh user state if possible. 
-                // Since useAuth might not auto-refresh SITE_Users data, a reload is safest for now
-                // but let's try to just show success first.
             }, 3000);
 
         } catch (error: any) {
-            alert('Erro ao atualizar perfil: ' + error.message);
+            console.error('Update Profile Error:', error);
+            alert('Erro ao atualizar perfil: ' + (error.message || 'Erro desconhecido'));
         } finally {
             setLoading(false);
         }
@@ -111,9 +166,19 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                         <div className="absolute top-0 right-0 w-64 h-64 bg-wtech-gold/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                         <div className="relative z-10 flex justify-between items-start">
                             <div className="flex items-center gap-3 sm:gap-6">
-                                <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-black text-lg sm:text-3xl shadow-xl shadow-wtech-gold/20 shrink-0">
-                                    {formData.name.charAt(0) || user?.email?.charAt(0)}
-                                </div>
+                                <AvatarUploader onUpload={handleAvatarUpload}>
+                                    <div className="relative group cursor-pointer shadow-xl shadow-wtech-gold/10 rounded-2xl overflow-hidden ring-2 ring-wtech-gold/20 hover:ring-wtech-gold transition-all">
+                                        <Avatar className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl transition-transform group-hover:scale-110">
+                                            <AvatarImage src={formData.avatar_url} />
+                                            <AvatarFallback className="bg-gradient-to-br from-wtech-gold to-yellow-600 text-black font-black text-lg sm:text-3xl">
+                                                {formData.name.charAt(0) || user?.email?.charAt(0)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                            <RefreshCw size={24} className="animate-spin-slow" />
+                                        </div>
+                                    </div>
+                                </AvatarUploader>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-lg sm:text-2xl font-black tracking-tight truncate">{formData.name || 'Meu Perfil'}</h3>
                                     <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -209,6 +274,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                                                 value={formData.password}
                                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                                                 placeholder="••••••••"
+                                                autoComplete="new-password"
                                             />
                                             <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Deixe em branco para manter a senha atual.</p>
                                         </div>

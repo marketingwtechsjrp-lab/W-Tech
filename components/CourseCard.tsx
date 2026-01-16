@@ -56,14 +56,16 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                 <span className="truncate">{course.location}</span>
             </div>
             
-            <div className="pt-4 border-t border-gray-100 mt-4">
-                <Link 
-                    to={`/lp/${course.slug || course.id}`}
-                    className="w-full bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95"
-                >
-                    {course.type === 'Event' ? 'MAIS DETALHES' : 'CONHECER CURSO'} <ArrowRight size={16} className="ml-2 animate-pulse" />
-                </Link>
-            </div>
+            {course.type !== 'Event' && (
+                <div className="pt-4 border-t border-gray-100 mt-4">
+                    <Link 
+                        to={`/lp/${course.slug || course.id}`}
+                        className="w-full bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95"
+                    >
+                        {course.type === 'Event' ? 'MAIS DETALHES' : 'CONHECER CURSO'} <ArrowRight size={16} className="ml-2 animate-pulse" />
+                    </Link>
+                </div>
+            )}
         </div>
       </div>
     </div>

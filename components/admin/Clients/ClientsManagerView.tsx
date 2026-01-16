@@ -5,7 +5,7 @@ import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import ListsManager from '../Marketing/ListsManager';
 
-const ClientsManagerView = () => {
+const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'clients' | 'groups'>('clients');
     const [clients, setClients] = useState<any[]>([]);
@@ -26,14 +26,16 @@ const ClientsManagerView = () => {
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
-        fetchClients();
-    }, []);
+        if (user?.id) {
+            fetchClients();
+        }
+    }, [user?.id]);
 
     useEffect(() => {
-        if (isGroupModalOpen) {
+        if (isGroupModalOpen && user?.id) {
             fetchStaticLists();
         }
-    }, [isGroupModalOpen]);
+    }, [isGroupModalOpen, user?.id, permissions]);
 
     const fetchClients = async () => {
         setLoading(true);
@@ -70,11 +72,23 @@ const ClientsManagerView = () => {
     };
 
     const fetchStaticLists = async () => {
-        const { data } = await supabase
+        let query = supabase
             .from('SITE_MarketingLists')
             .select('*')
             .eq('type', 'Static')
             .order('created_at', { ascending: false });
+        
+        // Filter by owner if NOT admin
+        const isAdmin = permissions?.admin_access;
+        if (!isAdmin) {
+            if (user?.id) {
+                query = query.eq('owner_id', user.id);
+            } else {
+                return;
+            }
+        }
+
+        const { data } = await query;
         if (data) setStaticLists(data);
     };
 
@@ -214,7 +228,7 @@ const ClientsManagerView = () => {
 
             {activeTab === 'groups' ? (
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-6 animate-in fade-in zoom-in-95 duration-200">
-                    <ListsManager />
+                    <ListsManager permissions={permissions} />
                 </div>
             ) : (
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">

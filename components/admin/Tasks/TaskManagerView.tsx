@@ -6,6 +6,7 @@ import { Task, TaskCategory } from '../../../types';
 import { Plus, Clock, CheckCircle, AlertTriangle, Trash2, User, Search, Filter, X, Calendar, Flag, LayoutGrid, List, Edit, Tag, Image as ImageIcon, Upload, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BauhausCard } from '@/components/ui/bauhaus-card';
 
 interface TaskCardProps {
     task: Task;
@@ -16,105 +17,72 @@ interface TaskCardProps {
     isDoneStyle?: boolean;
 }
 
-// Task Card Component (Refined Visual Adaptation)
-const TaskCard: React.FC<TaskCardProps> = ({ task, usersMap, onDelete, onEdit, isOverdueStyle, isDoneStyle }) => {
-    // Determine Border Color based on Category or Priority or Status
-    // Using simple functional colors for Left Border to match the reference feel: Blue (Pending), Teal (Progress), Green (Done)
-    // Or fallback to priority colors if preferred.
-    // Let's stick to Priority for functional urgency unless category overrides.
-    const borderColor = task.category?.color || 
-        (task.priority === 'URGENT' ? '#ef4444' : 
-         task.priority === 'HIGH' ? '#f97316' : 
-         task.priority === 'MEDIUM' ? '#3b82f6' : '#9ca3af');
+// Task Card Component (Refined Visual Adaptation with Bauhaus Card)
+const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void }> = ({ 
+    task, 
+    usersMap, 
+    onDelete, 
+    onEdit, 
+    onStatusToggle,
+    isDoneStyle 
+}) => {
+    const priorityColors: Record<string, string> = {
+        'URGENT': '#ef4444',
+        'HIGH': '#f97316',
+        'MEDIUM': '#3b82f6',
+        'LOW': '#9ca3af'
+    };
 
-    const formattedDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '';
-    const isLate = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'DONE';
+    const accentColor = task.priority ? priorityColors[task.priority] : '#3b82f6';
+    
+    const formattedDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Sem prazo';
+    const progress = task.status === 'DONE' ? 100 : task.status === 'IN_PROGRESS' ? 60 : 20;
+    
+    const topText = usersMap[task.assignedTo] ? `Para: ${usersMap[task.assignedTo]}` : 'Sem responsável';
+    const subText = task.leadName ? `Lead: ${task.leadName}` : (task.description ? task.description.slice(0, 60) + '...' : 'Sem descrição');
 
     return (
         <div 
-            className={`
-                group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer relative overflow-hidden flex flex-col border border-gray-100
-                ${isDoneStyle ? 'opacity-60 bg-gray-50' : 'hover:-translate-y-0.5'}
-            `}
-            style={{ borderLeft: `5px solid ${borderColor}` }}
-            onClick={() => onEdit(task)}
+            className={`w-full max-w-sm mx-auto ${isDoneStyle ? 'opacity-70' : ''}`}
         >
-             <div className="p-4 flex-1 flex flex-col gap-2">
+            <BauhausCard
+                id={task.id}
+                accentColor={accentColor}
+                backgroundColor={isDoneStyle ? "rgba(26, 26, 26, 0.5)" : "var(--bauhaus-card-bg)"}
+                separatorColor="var(--bauhaus-card-separator)"
+                borderRadius="1rem"
+                borderWidth="1px"
+                topInscription={topText}
+                mainText={task.title}
+                subMainText={subText}
+                progressBarInscription={task.status === 'DONE' ? 'Concluído' : task.status === 'IN_PROGRESS' ? 'Em Andamento' : 'Pendente'}
+                progress={progress}
+                progressValue={task.dueDate ? formattedDate : ''}
+                filledButtonInscription={task.status === 'DONE' ? 'Reabrir' : 'Concluir'}
+                outlinedButtonInscription="Editar"
+                onFilledButtonClick={() => onStatusToggle(task)}
+                onOutlinedButtonClick={() => onEdit(task)}
+                onDeleteClick={() => onDelete(task.id)} 
+                onMoreOptionsClick={() => onEdit(task)}
                 
-                {/* Header: Title & Avatar */}
-                <div className="flex justify-between items-start">
-                    <h3 className={`font-bold text-gray-800 text-sm leading-snug line-clamp-2 ${task.status === 'DONE' ? 'line-through text-gray-400' : ''}`}>
-                        {task.title}
-                    </h3>
-
-                    {/* Assignee Avatar (Top Right) */}
-                    <div className="shrink-0 ml-2">
-                        {usersMap[task.assignedTo] ? (
-                            <div className="w-6 h-6 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[9px] font-bold text-gray-600 shadow-sm" title={usersMap[task.assignedTo]}>
-                                {usersMap[task.assignedTo].charAt(0)}
-                            </div>
-                        ) : <div className="w-6 h-6 rounded-full bg-gray-50 border border-white flex items-center justify-center"><User size={12} className="text-gray-300"/></div>}
-                    </div>
-                </div>
-
-                {/* Subtitle: Lead/Project & Auto Tag */}
-                <div className="flex flex-col gap-1">
-                    {task.leadName ? (
-                        <div className="text-xs text-gray-400 font-medium">
-                            {task.leadName}
-                        </div>
-                    ) : (
-                        <div className="text-xs text-gray-300 italic">Geral</div>
-                    )}
-
-                    {(task as any).isWhatsappSchedule && (
-                         <div className="flex items-center gap-1 w-max bg-green-50 border border-green-100 text-green-700 px-1.5 py-0.5 rounded-[4px]" title="Automação WhatsApp Ativa">
-                            <Bot size={10} />
-                            <span className="text-[9px] font-bold uppercase tracking-wide">Auto</span>
-                         </div>
-                    )}
-                </div>
-
-                {/* Footer: Actions & Date Badge */}
-                <div className="mt-4 flex items-center justify-between">
-                    
-                    {/* Left Actions (Play, Edit, etc mimic) */}
-                    <div className="flex items-center gap-2">
-                        {/* Play Button Mockup (could be Start Timer) */}
-                        <button className="w-6 h-6 rounded-full border border-gray-100 text-gray-300 flex items-center justify-center hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 ml-0.5">
-                                <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                        
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-                                className="text-gray-300 hover:text-blue-500 transition-colors" title="Editar"
-                            >
-                                <Edit size={14} />
-                            </button>
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-                                className="text-gray-300 hover:text-red-500 transition-colors" title="Excluir"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Right Date Badge */}
-                    {task.dueDate && (
-                        <div className={`
-                            px-2 py-0.5 rounded text-[10px] font-bold text-white flex items-center gap-1
-                            ${isLate ? 'bg-red-500' : 'bg-wtech-gold'}
-                        `}>
-                             <span>{formattedDate}</span>
-                        </div>
-                    )}
-
-                </div>
-             </div>
+                // Colors
+                textColorTop={isDoneStyle ? "#888" : "var(--bauhaus-card-inscription-top)"}
+                textColorMain={isDoneStyle ? "#aaa" : "var(--bauhaus-card-inscription-main)"}
+                textColorSub={isDoneStyle ? "#666" : "var(--bauhaus-card-inscription-sub)"}
+                textColorProgressLabel="var(--bauhaus-card-inscription-progress-label)"
+                textColorProgressValue="var(--bauhaus-card-inscription-progress-value)"
+                progressBarBackground="var(--bauhaus-card-progress-bar-bg)"
+                
+                // Button Colors (Fix for Light/Dark)
+                chronicleButtonBg="var(--bauhaus-chronicle-bg)"
+                chronicleButtonFg="#808080" // Gray text for better visibility on light/dark defaults if vars fail, but we rely on CSS vars mostly
+                chronicleButtonHoverFg="#ffffff"
+                
+                // Compact Mode Customizations - REDUCED SIZE
+                customButtonHeight="2rem"
+                customButtonFontSize="0.7rem"
+                customCardPadding="0.8rem"
+            />
         </div>
     );
 };
@@ -123,7 +91,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, usersMap, onDelete, onEdit, i
 const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => void, onEdit: (task: Task) => void }> = ({ task, usersMap, onDelete, onEdit }) => {
     const isOverdue = !task.dueDate ? false : new Date(task.dueDate) < new Date() && task.status !== 'DONE';
     return (
-        <tr className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${task.status === 'DONE' ? 'opacity-60 bg-gray-50' : ''} ${isOverdue ? 'bg-red-50/30' : ''}`}>
+        <tr className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${task.status === 'DONE' ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : ''} ${isOverdue ? 'bg-red-50/30 dark:bg-red-900/20' : ''}`}>
             <td className="p-3">
                  <div className={`w-2 h-2 rounded-full ${task.status === 'DONE' ? 'bg-green-500' : isOverdue ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
             </td>
@@ -410,6 +378,16 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         fetchTasks();
     };
 
+    const handleToggleStatus = async (task: Task) => {
+        const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
+        const { error } = await supabase.from('SITE_Tasks').update({ status: newStatus }).eq('id', task.id);
+        if (error) {
+            alert('Erro ao atualizar status: ' + error.message);
+        } else {
+            fetchTasks();
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm('Excluir tarefa?')) return;
         await supabase.from('SITE_Tasks').delete().eq('id', id);
@@ -485,22 +463,22 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-transparent h-full flex flex-col transition-colors duration-300">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-start sm:items-center">
+            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-start sm:items-center">
                 <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gerenciador de Tarefas</h2>
-                    <p className="text-gray-500 text-sm">Organize e delegue atividades para a equipe.</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Gerenciador de Tarefas</h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Organize e delegue atividades para a equipe.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    <button onClick={handlePrint} className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg font-bold flex items-center gap-2 print:hidden text-sm flex-1 sm:flex-none justify-center">
+                    <button onClick={handlePrint} className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 print:hidden text-sm flex-1 sm:flex-none justify-center">
                         <User size={18} /> <span className="hidden sm:inline">Relatório</span>
                     </button>
-                    <div className="flex bg-gray-100 p-1 rounded-lg print:hidden">
-                        <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white shadow text-wtech-gold' : 'text-gray-400'}`}>
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg print:hidden">
+                        <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow text-wtech-gold' : 'text-gray-400'}`}>
                             <LayoutGrid size={18} />
                         </button>
-                        <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow text-wtech-gold' : 'text-gray-400'}`}>
+                        <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-white dark:bg-gray-600 shadow text-wtech-gold' : 'text-gray-400'}`}>
                             <List size={18} />
                         </button>
                     </div>
@@ -514,10 +492,10 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             </div>
 
             {/* Filters (Hidden on Print) */}
-            <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-2 sm:gap-4 print:hidden">
-                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border border-gray-200 w-full sm:w-auto">
+            <div className="p-4 bg-gray-50 dark:bg-[#1A1A1A] border-b border-gray-100 dark:border-gray-800 flex flex-wrap gap-2 sm:gap-4 print:hidden">
+                <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
                     <Filter size={16} className="text-gray-400 shrink-0" />
-                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 outline-none w-full">
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-transparent text-sm font-bold text-gray-700 dark:text-gray-300 outline-none w-full cursor-pointer">
                         <option value="ALL">Todos os Status</option>
                         <option value="TODO">Pendente</option>
                         <option value="IN_PROGRESS">Em Andamento</option>
@@ -569,81 +547,80 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             </div>
 
             {/* Task Content (Grid or List) */}
-            <div className="flex-1 overflow-hidden bg-gray-50/50 flex flex-col">
+            <div className="flex-1 overflow-hidden bg-gray-50/50 dark:bg-[#111]/50 flex flex-col">
                 {viewMode === 'grid' ? (
                     // GRID VIEW (V2 Kanban Minimalist - Updated to Print 3 Style)
-                    <div className="flex-1 overflow-y-auto md:overflow-x-auto h-full p-2 sm:p-4 bg-gray-50">
+                    <div className="flex-1 overflow-y-auto md:overflow-x-auto h-full p-2 sm:p-4 bg-gray-50 dark:bg-[#111]">
                         <div className="flex flex-col md:flex-row gap-6 md:gap-4 h-auto md:h-full w-full md:min-w-[1000px]">
                             
                             {/* TODO COL */}
-                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 md:bg-transparent rounded-xl p-2 md:p-0">
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-0 border border-transparent dark:border-gray-800">
                                 <div className="mb-4 flex items-center justify-between px-1">
                                      <div className="flex items-center gap-2 text-blue-500">
                                         <Clock size={18} />
-                                        <h3 className="font-bold text-gray-700 text-sm">Pendentes ({todoTasks.length})</h3>
+                                        <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm">Pendentes ({todoTasks.length})</h3>
                                      </div>
-                                     <button onClick={() => { setFormData({ ...formData, status: 'TODO' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-blue-500 transition-colors w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center"><Plus size={14} /></button>
+                                     <button onClick={() => { setFormData({ ...formData, status: 'TODO' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-blue-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                 <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
                                      {todoTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} />
+                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
                                      ))}
                                      {todoTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa pendente</div>}
                                 </div>
                             </div>
 
                             {/* IN PROGRESS COL */}
-                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 md:bg-transparent rounded-xl p-2 md:p-0">
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-0 border border-transparent dark:border-gray-800">
                                 <div className="mb-4 flex items-center justify-between px-1">
                                      <div className="flex items-center gap-2 text-sky-500">
                                         <Clock size={18} />
-                                        <h3 className="font-bold text-gray-700 text-sm">Em andamento ({inProgressTasks.length})</h3>
+                                        <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm">Em andamento ({inProgressTasks.length})</h3>
                                      </div>
-                                     <button onClick={() => { setFormData({ ...formData, status: 'IN_PROGRESS' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-sky-500 transition-colors w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center"><Plus size={14} /></button>
+                                     <button onClick={() => { setFormData({ ...formData, status: 'IN_PROGRESS' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-sky-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
                                 <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
                                      {inProgressTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} />
+                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
                                      ))}
                                      {inProgressTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa em andamento</div>}
                                 </div>
                             </div>
 
                             {/* DONE COL */}
-                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 md:bg-transparent rounded-xl p-2 md:p-0">
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-0 border border-transparent dark:border-gray-800">
                                 <div className="mb-4 flex items-center justify-between px-1">
                                      <div className="flex items-center gap-2 text-green-500">
                                         <CheckCircle size={18} />
-                                        <h3 className="font-bold text-gray-700 text-sm">Concluídas ({doneTasks.length})</h3>
+                                        <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm">Concluídas ({doneTasks.length})</h3>
                                      </div>
-                                     <button className="text-gray-300 hover:text-green-500 transition-colors w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center pointer-events-none opacity-50"><Plus size={14} /></button>
+                                     <button className="text-gray-300 hover:text-green-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center pointer-events-none opacity-50"><Plus size={14} /></button>
                                 </div>
                                 <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
                                      {doneTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} isDoneStyle />
+                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} isDoneStyle />
                                      ))}
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 ) : (
                     // LIST VIEW (Table)
                     <div className="flex-1 overflow-y-auto p-2 sm:p-6 pb-20">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-100">
+                                <thead className="bg-gray-50 dark:bg-[#111] border-b border-gray-100 dark:border-gray-800">
                                     <tr>
                                         <th className="p-3 w-4"></th>
-                                        <th className="p-3 text-xs font-bold text-gray-500 uppercase">Tarefa</th>
-                                        <th className="p-3 text-xs font-bold text-gray-500 uppercase">Lead</th>
-                                        <th className="p-3 text-xs font-bold text-gray-500 uppercase">Prioridade</th>
-                                        <th className="p-3 text-xs font-bold text-gray-500 uppercase">Vencimento</th>
-                                        <th className="p-3 text-xs font-bold text-gray-500 uppercase">Responsável</th>
-                                        <th className="p-3 text-right text-xs font-bold text-gray-500 uppercase">Ações</th>
+                                        <th className="p-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Tarefa</th>
+                                        <th className="p-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Lead</th>
+                                        <th className="p-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Prioridade</th>
+                                        <th className="p-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Vencimento</th>
+                                        <th className="p-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Responsável</th>
+                                        <th className="p-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="dark:text-gray-200">
                                     {filteredTasks.length === 0 ? (
                                         <tr><td colSpan={7} className="p-10 text-center text-gray-400 italic">Nenhuma tarefa encontrada.</td></tr>
                                     ) : (

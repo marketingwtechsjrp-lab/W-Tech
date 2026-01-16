@@ -3,7 +3,13 @@ import { supabase } from '../../../lib/supabaseClient';
 import { MessageTemplate } from '../../../types';
 import { Plus, Trash2, Save, FileText, X, Edit, MessageSquare } from 'lucide-react';
 
-const MessageTemplateManager = () => {
+const MessageTemplateManager = ({ permissions }: { permissions?: any }) => {
+    const hasPerm = (key: string) => {
+        if (!permissions) return true;
+        if (permissions.admin_access) return true;
+        return !!permissions[key] || !!permissions['manage_marketing'];
+    };
+
     const [templates, setTemplates] = useState<MessageTemplate[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -43,7 +49,8 @@ const MessageTemplateManager = () => {
                     title: currentTemplate.title,
                     content: currentTemplate.content,
                     imageUrl: currentTemplate.imageUrl || null,
-                    content2: currentTemplate.content2 || null
+                    content2: currentTemplate.content2 || null,
+                    part_delay: currentTemplate.part_delay || 0
                 });
             
             if (error) throw error;
@@ -68,112 +75,129 @@ const MessageTemplateManager = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                     <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                     <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                         <FileText className="text-orange-500" /> Modelos de Mensagem
                     </h3>
-                    <p className="text-sm text-gray-500">Crie modelos para usar em agendamentos automáticos.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Crie modelos para usar em agendamentos automáticos.</p>
                 </div>
-                {!isEditing && (
+                {!isEditing && hasPerm('marketing_manage_templates') && (
                     <button 
                         onClick={() => { setIsEditing(true); setCurrentTemplate({ title: '', content: '' }); }}
-                        className="bg-wtech-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800"
+                        className="bg-black text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all shadow-lg active:scale-95"
                     >
                         <Plus size={16} /> Novo Modelo
                     </button>
                 )}
             </div>
 
+            {/* Editor (Modal or Inline) */}
             {isEditing && (
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4">
-                     <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-bold text-gray-700">{currentTemplate.id ? 'Editar Modelo' : 'Novo Modelo'}</h4>
-                        <button onClick={() => setIsEditing(false)}><X size={20} className="text-gray-400 hover:text-red-500" /></button>
-                     </div>
-                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 gap-4">
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl border-2 border-wtech-gold/20 dark:border-wtech-gold/10 p-8 mb-8 shadow-2xl animate-in zoom-in-95">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                            <Edit className="text-wtech-gold" /> {currentTemplate.id ? 'Editar Modelo' : 'Novo Modelo'}
+                        </h3>
+                        <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-[#333] rounded-full transition-colors text-gray-500 dark:text-gray-400">
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Título do Modelo</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Título do Modelo</label>
                                 <input 
-                                    className="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold outline-none focus:border-blue-500 transition-all" 
-                                    placeholder="Ex: Confirmação de Visita"
-                                    value={currentTemplate.title}
+                                    className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-[#222] dark:text-white" 
+                                    placeholder="Ex: Boas-vindas Pós Curso"
+                                    value={currentTemplate.title || ''}
                                     onChange={e => setCurrentTemplate({...currentTemplate, title: e.target.value})}
                                 />
                             </div>
 
-                            <div className="bg-white p-4 rounded-2xl border border-gray-100 space-y-4">
-                                <div>
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2">
-                                        <span className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px]">1</span> 
-                                        Mensagem Inicial (Texto)
-                                    </label>
-                                    <textarea 
-                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm h-24 font-medium outline-none focus:ring-2 focus:ring-blue-500/20" 
-                                        placeholder="Olá! Gostaria de confirmar nossa reunião..."
-                                        value={currentTemplate.content}
-                                        onChange={e => setCurrentTemplate({...currentTemplate, content: e.target.value})}
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Texto 1 (Introdução)</label>
+                                <textarea 
+                                    className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-medium h-32 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none bg-white dark:bg-[#222] dark:text-white" 
+                                    placeholder="Olá {{name}}, tudo bem?"
+                                    value={currentTemplate.content || ''}
+                                    onChange={e => setCurrentTemplate({...currentTemplate, content: e.target.value})}
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 italic font-medium">Use {"{{name}}"} para personalizar com o nome do lead.</p>
+                            </div>
+                        </div>
 
-                                <div>
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-purple-500 uppercase tracking-widest mb-2">
-                                        <span className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center text-[10px]">2</span> 
-                                        Imagem (URL Directa)
-                                    </label>
-                                    <input 
-                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20" 
-                                        placeholder="https://exemplo.com/foto.jpg"
-                                        value={currentTemplate.imageUrl || ''}
-                                        onChange={e => setCurrentTemplate({...currentTemplate, imageUrl: e.target.value})}
-                                    />
-                                </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">URL da Imagem (Parte 2)</label>
+                                <input 
+                                    className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all bg-white dark:bg-[#222] dark:text-white" 
+                                    placeholder="https://sua-imagem.com/foto.jpg (Opcional)"
+                                    value={currentTemplate.imageUrl || ''}
+                                    onChange={e => setCurrentTemplate({...currentTemplate, imageUrl: e.target.value})}
+                                />
+                            </div>
 
+                            <div className="space-y-4">
                                 <div>
-                                    <label className="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">
-                                        <span className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-[10px]">3</span> 
-                                        Mensagem Final (Texto)
-                                    </label>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Texto 2 (Fechamento)</label>
                                     <textarea 
-                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm h-24 font-medium outline-none focus:ring-2 focus:ring-indigo-500/20" 
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-medium h-32 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none bg-white dark:bg-[#222] dark:text-white" 
                                         placeholder="Caso precise alterar, nos avise."
                                         value={currentTemplate.content2 || ''}
                                         onChange={e => setCurrentTemplate({...currentTemplate, content2: e.target.value})}
                                     />
                                 </div>
+
+                                <div className="pt-2">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Intervalo entre partes (Segundos)</label>
+                                    <div className="flex items-center gap-3">
+                                        <input 
+                                            type="number"
+                                            className="w-24 border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-600 bg-white dark:bg-[#222] dark:text-white" 
+                                            min="0"
+                                            max="60"
+                                            value={currentTemplate.part_delay || 0}
+                                            onChange={e => setCurrentTemplate({...currentTemplate, part_delay: parseInt(e.target.value) || 0})}
+                                        />
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">Tempo de espera entre a Texto 1, Imagem e Texto 2.</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="flex justify-end gap-2 p-2 pt-4 border-t border-gray-100">
-                             <button onClick={() => setIsEditing(false)} className="px-6 py-2 text-sm font-bold text-gray-400 hover:text-gray-600">Cancelar</button>
-                             <button onClick={handleSave} disabled={isLoading} className="bg-green-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-green-100 transition-all active:scale-95">
-                                 <Save size={18} /> Salvar Modelo
-                             </button>
-                        </div>
-                     </div>
+                    <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+                         <button onClick={() => setIsEditing(false)} className="px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#333] transition-all">Cancelar</button>
+                         <button onClick={handleSave} disabled={isLoading} className="bg-green-600 text-white px-8 py-3 rounded-xl text-sm font-black hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-green-100 dark:shadow-none transition-all active:scale-95">
+                             <Save size={18} /> Salvar Modelo
+                         </button>
+                    </div>
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {templates.map(template => (
-                    <div key={template.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group relative">
+                    <div key={template.id} className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow group relative">
                         <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-bold text-gray-800">{template.title}</h4>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                    onClick={() => { setCurrentTemplate(template); setIsEditing(true); }}
-                                    className="p-1.5 hover:bg-blue-50 text-blue-500 rounded"
-                                >
-                                    <Edit size={14} />
-                                </button>
-                                <button 
-                                    onClick={() => handleDelete(template.id)}
-                                    className="p-1.5 hover:bg-red-50 text-red-500 rounded"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
+                            <h4 className="font-bold text-gray-800 dark:text-gray-200">{template.title}</h4>
+                            {hasPerm('marketing_manage_templates') && (
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={() => { setCurrentTemplate(template); setIsEditing(true); }}
+                                        className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded"
+                                    >
+                                        <Edit size={14} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(template.id)}
+                                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100 h-24 overflow-y-auto whitespace-pre-wrap">
+                        <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-[#222] p-3 rounded-lg border border-gray-100 dark:border-gray-700 h-24 overflow-y-auto whitespace-pre-wrap custom-scrollbar">
                             {template.content}
                         </div>
                     </div>

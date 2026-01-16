@@ -10,6 +10,8 @@ interface QueueProcessorProps {
     onComplete: () => void;
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete }) => {
     const { user } = useAuth();
     const [isProcessRunning, setIsProcessRunning] = useState(true);
@@ -125,16 +127,20 @@ const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete })
 
         try {
             if (campaign.channel === 'WhatsApp') {
+                const pDelay = (campaign.part_delay || 0) * 1000;
+
                 // Part 1: Text
                 if (campaign.content) {
                     const res1 = await sendWhatsAppMessage(item.recipient_phone, replaceVars(campaign.content), user?.id);
                     if (!res1.success) throw new Error(`Falha no Texto 1: ${JSON.stringify(res1.error)}`);
+                    if (pDelay > 0 && (campaign.imageUrl || campaign.content2)) await sleep(pDelay);
                 }
 
                 // Part 2: Image
                 if (campaign.imageUrl) {
                     const res2 = await sendWhatsAppMedia(item.recipient_phone, campaign.imageUrl, '', user?.id, 'image');
                     if (!res2.success) throw new Error(`Falha na Imagem: ${JSON.stringify(res2.error)}`);
+                    if (pDelay > 0 && campaign.content2) await sleep(pDelay);
                 }
 
                 // Part 3: Text 2
@@ -192,21 +198,21 @@ const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete })
     };
 
     return (
-        <div className="bg-white border-l-4 border-purple-600 shadow-lg rounded-r-lg p-4 mb-6 animate-in slide-in-from-top-2">
+        <div className="bg-white dark:bg-[#1A1A1A] border-l-4 border-purple-600 dark:border-purple-500 shadow-lg rounded-r-lg p-4 mb-6 animate-in slide-in-from-top-2">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                         <Loader2 className={`text-purple-600 ${isProcessRunning ? 'animate-spin' : ''}`} size={24} />
+                         <Loader2 className={`text-purple-600 dark:text-purple-400 ${isProcessRunning ? 'animate-spin' : ''}`} size={24} />
                          {isProcessRunning && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span></span>}
                     </div>
                     <div>
-                        <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                        <h4 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
                             Enviando Campanha: {campaign.name}
                         </h4>
-                        <div className="text-xs text-gray-500 flex gap-4 mt-1">
-                             <span className="text-green-600 font-bold">{stats.sent} Enviados</span>
-                             <span className="text-red-500 font-bold">{stats.failed} Falhas</span>
-                             <span className="text-blue-500 font-bold">{stats.pending} Pendentes</span>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 flex gap-4 mt-1">
+                             <span className="text-green-600 dark:text-green-400 font-bold">{stats.sent} Enviados</span>
+                             <span className="text-red-500 dark:text-red-400 font-bold">{stats.failed} Falhas</span>
+                             <span className="text-blue-500 dark:text-blue-400 font-bold">{stats.pending} Pendentes</span>
                         </div>
                     </div>
                 </div>
@@ -215,14 +221,14 @@ const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete })
                     {/* Countdown */}
                     {isProcessRunning && countdown > 0 && (
                         <div className="text-center">
-                            <span className="text-2xl font-black text-gray-200">{countdown}s</span>
+                            <span className="text-2xl font-black text-gray-200 dark:text-gray-600">{countdown}s</span>
                             <p className="text-[10px] text-gray-400 uppercase">Próximo envio</p>
                         </div>
                     )}
 
                     {/* Controls */}
                     <div className="flex items-center gap-2">
-                        <button onClick={togglePause} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full">
+                        <button onClick={togglePause} className="p-2 bg-gray-100 dark:bg-[#333] hover:bg-gray-200 dark:hover:bg-[#444] rounded-full text-gray-600 dark:text-gray-300">
                             {isProcessRunning ? <Pause size={20} /> : <Play size={20} />}
                         </button>
                     </div>
@@ -230,13 +236,13 @@ const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete })
             </div>
 
             {lastProcessed && (
-                <div className="mt-2 bg-gray-50 p-2 rounded text-xs text-gray-500 flex items-center gap-2">
+                <div className="mt-2 bg-gray-50 dark:bg-[#222] p-2 rounded text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                     <CheckCircle size={12} className="text-gray-400" />
                     Último processamento: <strong>{lastProcessed}</strong>
                 </div>
             )}
             
-            <div className="mt-2 text-[10px] text-red-400 bg-red-50 p-1 rounded text-center">
+            <div className="mt-2 text-[10px] text-red-400 bg-red-50 dark:bg-red-900/10 p-1 rounded text-center border border-red-100 dark:border-red-900/20">
                  ⚠️ Mantenha esta aba aberta e o computador ligado até o fim do processo.
             </div>
         </div>
