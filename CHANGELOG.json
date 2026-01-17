@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.3.0",
+    "date": "2026-01-17",
+    "title": "Módulo de Analytics e Integração GA4",
+    "changes": [
+      "FEAT: Novo módulo de Analytics Interno (PageViews, Visitantes Únicos, Eventos)",
+      "FEAT: Integração automática com Google Analytics 4 (GA4) via Configurações",
+      "FEAT: Integração automática com Facebook Pixel (Meta) via Configurações",
+      "FEAT: Dashboard de Analytics com gráficos de visitas diárias e fontes de tráfego",
+      "FEAT: Configurações Globais de Tracking centralizadas no Admin"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.2.6",
     "date": "2026-01-15",
     "title": "Melhorias no Gerenciador de Tarefas e Dark Mode",

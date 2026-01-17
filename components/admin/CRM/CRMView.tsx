@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import type { Lead } from '../../../types';
+import { createPaymentLink } from '../../../lib/asaas';
+import { createStripePaymentLink } from '../../../lib/stripe';
 import { SplashedPushNotifications, SplashedPushNotificationsHandle } from '@/components/ui/splashed-push-notifications';
 import LeadTaskSidebar from './LeadTaskSidebar';
 import { useRef } from 'react'; // Ensure useRef is imported
@@ -38,13 +40,13 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
     return (
         <div className="mb-6 w-full bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent relative overflow-hidden transition-colors">
             <div className="flex justify-between items-center mb-4">
-               <div>
-                 <h3 className="font-bold text-gray-900 dark:text-white">Visão do Funil</h3>
-                 <p className="text-xs text-gray-500 dark:text-gray-400">Fluxo de conversão atual</p>
-               </div>
-               <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300">
+                <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white">Visão do Funil</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Fluxo de conversão atual</p>
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300">
                     Total: {leads.length}
-               </div>
+                </div>
             </div>
 
             <div className="flex items-center justify-between h-32 relative px-4">
@@ -54,14 +56,14 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
                 {stages.map((stage, i) => {
                     const isLast = i === stages.length - 1;
                     const percent = (stage.count / counts.total) * 100;
-                    
+
                     return (
                         <div key={i} className="relative z-10 flex flex-col items-center group cursor-pointer" style={{ flex: 1 }}>
                             {/* 3D Node */}
                             <div className="relative">
                                 {/* Glow Effect */}
                                 <div className="absolute inset-0 bg-white blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500" style={{ backgroundColor: stage.color }}></div>
-                                
+
                                 <svg width="100" height="80" viewBox="0 0 100 80" className="drop-shadow-xl transition-transform duration-300 group-hover:-translate-y-1">
                                     <defs>
                                         <linearGradient id={`grad-${i}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -69,23 +71,23 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
                                             <stop offset="100%" stopColor={stage.to} />
                                         </linearGradient>
                                         <filter id={`shadow-${i}`}>
-                                            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor={stage.color} floodOpacity="0.3"/>
+                                            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor={stage.color} floodOpacity="0.3" />
                                         </filter>
                                     </defs>
-                                    
+
                                     {/* Hexagon or Circle Shape */}
-                                    <path 
-                                        d="M50 0 L95 25 L95 55 L50 80 L5 55 L5 25 Z" 
-                                        fill={`url(#grad-${i})`} 
-                                        stroke="white" 
+                                    <path
+                                        d="M50 0 L95 25 L95 55 L50 80 L5 55 L5 25 Z"
+                                        fill={`url(#grad-${i})`}
+                                        stroke="white"
                                         strokeWidth="2"
                                         filter={`url(#shadow-${i})`}
                                     />
-                                    
+
                                     {/* Inner Shine */}
                                     <path d="M50 5 L85 25 L50 40 L15 25 Z" fill="white" fillOpacity="0.2" />
                                 </svg>
-                                
+
                                 {/* Centered Count & % */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white pointer-events-none pt-1">
                                     <span className="text-2xl font-black leading-none drop-shadow-md">{stage.count}</span>
@@ -101,13 +103,13 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
                     );
                 })}
             </div>
-            
+
             {/* Legend / Stats Footer */}
             <div className="flex gap-4 mt-2 justify-center border-t border-gray-50 pt-2 opacity-60 hover:opacity-100 transition-opacity">
-                 <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
                     <span className="text-[10px] font-bold text-gray-500">{counts.lost} Perdidos</span>
-                 </div>
+                </div>
             </div>
         </div>
     );
@@ -133,10 +135,10 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
             return acc + (now - start);
         }, 0);
         const avgMs = totalMs / leads.length;
-        
+
         const days = Math.floor(avgMs / (1000 * 60 * 60 * 24));
         const hours = Math.floor((avgMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        
+
         if (days > 0) return `${days}d ${hours}h`;
         return `${hours}h médios`;
     }, [leads]);
@@ -207,7 +209,7 @@ const useTimeInStatus = (dateString: string) => {
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            
+
             if (days > 0) setTimeDisplay(`${days}d ${hours}h`);
             else if (hours > 0) setTimeDisplay(`${hours}h ${minutes}m`);
             else setTimeDisplay(`${minutes}m`);
@@ -230,7 +232,7 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
     const [isDragging, setIsDragging] = React.useState(false);
 
     // Timer Logic
-    const statusDate = lead.updated_at || lead.createdAt; 
+    const statusDate = lead.updated_at || lead.createdAt;
     const { timeDisplay, isLongWait } = useTimeInStatus(statusDate);
 
     // Quiz Data Parsing
@@ -261,23 +263,23 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
                 <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">
                     {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
                 </span>
-                
+
                 <div className="flex gap-1">
-                     {/* Tasks/History Icon */}
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onClick(); }} 
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-blue-500 transition-colors" 
+                    {/* Tasks/History Icon */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onClick(); }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-blue-500 transition-colors"
                         title="Histórico de Tarefas"
                     >
-                         <Clock size={13} />
+                        <Clock size={13} />
                     </button>
                     {/* View Details/Edit Icon */}
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onClick(); }} 
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-wtech-gold transition-colors" 
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onClick(); }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-wtech-gold transition-colors"
                         title="Ver Detalhes/Editar"
                     >
-                         <Edit size={13} />
+                        <Edit size={13} />
                     </button>
                 </div>
             </div>
@@ -286,8 +288,8 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
             <div className="mb-2">
                 <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight truncate">{lead.name}</h4>
                 <div className="flex flex-col gap-0.5 mt-0.5">
-                     {lead.email && <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{lead.email}</span>}
-                     {lead.phone && <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono tracking-tight"><Phone size={9}/> {lead.phone}</span>}
+                    {lead.email && <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{lead.email}</span>}
+                    {lead.phone && <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono tracking-tight"><Phone size={9} /> {lead.phone}</span>}
                 </div>
             </div>
 
@@ -301,26 +303,26 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
                             </Badge>
                         </div>
                     ))}
-                     {lead.tags.length > 3 && <span className="text-[9px] text-gray-400">+{lead.tags.length - 3}</span>}
+                    {lead.tags.length > 3 && <span className="text-[9px] text-gray-400">+{lead.tags.length - 3}</span>}
                 </div>
             )}
 
             {/* Progress Bar (Compact) */}
             <div className="mt-1">
-                 <div className="flex justify-between items-end mb-0.5">
-                     <span className={`text-[8px] font-bold uppercase ${isLongWait ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                <div className="flex justify-between items-end mb-0.5">
+                    <span className={`text-[8px] font-bold uppercase ${isLongWait ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'}`}>
                         TEMPO NA ETAPA
-                     </span>
-                     <span className={`text-[8px] font-mono ${isLongWait ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                    </span>
+                    <span className={`text-[8px] font-mono ${isLongWait ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
                         {timeDisplay}
-                     </span>
-                 </div>
-                 <div className="h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                     <div 
-                        className={`h-full rounded-full ${isLongWait ? 'bg-red-500' : 'bg-blue-500'}`} 
+                    </span>
+                </div>
+                <div className="h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                        className={`h-full rounded-full ${isLongWait ? 'bg-red-500' : 'bg-blue-500'}`}
                         style={{ width: isLongWait ? '100%' : '30%' }}
-                     ></div>
-                 </div>
+                    ></div>
+                </div>
             </div>
         </div>
     );
@@ -335,13 +337,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [usersMap, setUsersMap] = useState<Record<string, string>>({});
     const [usersList, setUsersList] = useState<{ id: string, name: string }[]>([]); // NEW
-    
+
     // CRM Filter State
     const [filterPeriod, setFilterPeriod] = useState(30); // Days
     const [filterType, setFilterType] = useState<'Period' | 'Month' | 'Custom'>('Period');
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
     const [customRange, setCustomRange] = useState({ start: '', end: '' });
-    
+
     // New Advanced Filters
     const [searchQuery, setSearchQuery] = useState('');
     const [contextFilter, setContextFilter] = useState('All');
@@ -350,13 +352,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [selectedLeadForTasks, setSelectedLeadForTasks] = useState<Lead | null>(null);
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
     const { user } = useAuth();
-    
+
     // View Mode: Kanban or List
     const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
     const [distMode, setDistMode] = useState<'Manual' | 'Random'>('Manual');
     const [showSettings, setShowSettings] = useState(false);
-    
+
     // Create Lead State
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newLeadForm, setNewLeadForm] = useState({ name: '', email: '', phone: '' });
@@ -367,7 +369,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const handleCreateLead = async () => {
         if (!newLeadForm.name || !newLeadForm.phone) return alert("Nome e Telefone são obrigatórios.");
-        
+
         const payload = {
             name: newLeadForm.name,
             email: newLeadForm.email,
@@ -379,38 +381,38 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         };
 
         const { data, error } = await supabase.from('SITE_Leads').insert([payload]).select().single();
-        
+
         if (error) {
             alert("Erro ao criar lead: " + error.message);
         } else if (data) {
-             setLeads(prev => [data, ...prev]);
-             setIsCreateModalOpen(false);
-             setNewLeadForm({ name: '', email: '', phone: '' });
-             notificationRef.current?.createNotification('success', 'Lead Criado!', `${data.name} foi adicionado com sucesso.`);
+            setLeads(prev => [data, ...prev]);
+            setIsCreateModalOpen(false);
+            setNewLeadForm({ name: '', email: '', phone: '' });
+            notificationRef.current?.createNotification('success', 'Lead Criado!', `${data.name} foi adicionado com sucesso.`);
         }
     };
-    
+
     // Permission Check Helper
     const hasPermission = (key: string) => {
         if (!user) return false;
 
         // 1. Priority: Live Permissions (Prop)
         if (permissions) {
-             // Super Admins in DB Role
-             if (permissions.admin_access) return true;
-             return !!permissions[key];
+            // Super Admins in DB Role
+            if (permissions.admin_access) return true;
+            return !!permissions[key];
         }
-        
+
         // 2. Super Admin / Admin legacy string check
         if (typeof user.role === 'string') {
-                if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
-                return false;
+            if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
+            return false;
         }
-        
+
         // 3. Fallback to Auth Context
         if (user.role?.level >= 10) return true;
         if (user.role?.name === 'Super Admin') return true;
-        
+
         const rolePermissions = user.role?.permissions || {};
         return !!rolePermissions[key];
     };
@@ -434,7 +436,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     // Fetch Settings & Leads & Users
     useEffect(() => {
         const fetchSettingsAndUsers = async () => {
-             // 1. Settings
+            // 1. Settings
             const { data: settings } = await supabase.from('SITE_SystemSettings').select('value').eq('key', 'crm_distribution_mode').single();
             if (settings) setDistMode(settings.value);
 
@@ -456,7 +458,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         if (permissions || (user && typeof user.role === 'string')) {
             fetchData();
         }
-    }, [user, filterPeriod, permissions]); 
+    }, [user, filterPeriod, permissions]);
 
     const fetchData = async () => {
         setLeads([]); // Clear before fetch to show loading state if desired
@@ -478,7 +480,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         }
 
         const { data, error } = await query;
-        
+
         if (error) {
             console.error("Error fetching leads:", error);
         }
@@ -533,62 +535,62 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 },
                 (payload) => {
                     const { eventType, new: newRecord, old: oldRecord } = payload;
-                    
+
                     // Helper to map record to frontend structure
                     const mapLead = (r: any) => ({
-                         ...r,
-                         contextId: r.context_id,
-                         createdAt: r.created_at,
-                         updated_at: r.updated_at || r.created_at,
-                         assignedTo: r.assigned_to,
-                         internalNotes: r.internal_notes,
-                         quiz_data: r.quiz_data,
-                         conversion_value: r.conversion_value,
-                         conversion_summary: r.conversion_summary,
-                         conversion_type: r.conversion_type
+                        ...r,
+                        contextId: r.context_id,
+                        createdAt: r.created_at,
+                        updated_at: r.updated_at || r.created_at,
+                        assignedTo: r.assigned_to,
+                        internalNotes: r.internal_notes,
+                        quiz_data: r.quiz_data,
+                        conversion_value: r.conversion_value,
+                        conversion_summary: r.conversion_summary,
+                        conversion_type: r.conversion_type
                     });
 
-                     if (eventType === 'INSERT') {
-                         // Only add if user has access
-                         if (hasFullAccess || newRecord.assigned_to === user?.id || !newRecord.assigned_to) {
-                              setLeads(prev => {
-                                  // Prevent duplicates just in case
-                                  if (prev.some(l => l.id === newRecord.id)) return prev;
-                                  return [mapLead(newRecord), ...prev];
-                              });
-                              if (!newRecord.assigned_to || newRecord.assigned_to === user?.id) {
-                                  notificationRef.current?.createNotification('info', 'Novo Lead', `${newRecord.name || 'Um novo lead'} chegou no CRM.`);
-                              }
-                         }
-                     } else if (eventType === 'UPDATE') {
-                         const mapped = mapLead(newRecord);
-                         
-                         if (hasFullAccess || newRecord.assigned_to === user?.id) {
-                             setLeads(prev => {
-                                 const exists = prev.find(l => l.id === newRecord.id);
-                                 if (exists) {
-                                     return prev.map(l => l.id === newRecord.id ? mapped : l);
-                                 } else {
-                                     // New lead for this user (e.g. just assigned)
-                                     return [mapped, ...prev];
-                                 }
-                             });
-                         } else {
-                             // User sent away or lost access
-                             setLeads(prev => prev.filter(l => l.id !== newRecord.id));
-                         }
-                     } else if (eventType === 'DELETE') {
-                         setLeads(prev => prev.filter(l => l.id !== oldRecord.id));
-                         
-                         // Auto-close modals if open
-                         if (activeModalLeadId.current === oldRecord.id) {
-                             setEditingLead(null);
-                             notificationRef.current?.createNotification('warning', 'Lead Removido', 'O lead que você estava visualizando foi excluído.');
-                         }
-                         if (activeSidebarLeadId.current === oldRecord.id) {
-                             setSelectedLeadForTasks(null);
-                         }
-                     }
+                    if (eventType === 'INSERT') {
+                        // Only add if user has access
+                        if (hasFullAccess || newRecord.assigned_to === user?.id || !newRecord.assigned_to) {
+                            setLeads(prev => {
+                                // Prevent duplicates just in case
+                                if (prev.some(l => l.id === newRecord.id)) return prev;
+                                return [mapLead(newRecord), ...prev];
+                            });
+                            if (!newRecord.assigned_to || newRecord.assigned_to === user?.id) {
+                                notificationRef.current?.createNotification('info', 'Novo Lead', `${newRecord.name || 'Um novo lead'} chegou no CRM.`);
+                            }
+                        }
+                    } else if (eventType === 'UPDATE') {
+                        const mapped = mapLead(newRecord);
+
+                        if (hasFullAccess || newRecord.assigned_to === user?.id) {
+                            setLeads(prev => {
+                                const exists = prev.find(l => l.id === newRecord.id);
+                                if (exists) {
+                                    return prev.map(l => l.id === newRecord.id ? mapped : l);
+                                } else {
+                                    // New lead for this user (e.g. just assigned)
+                                    return [mapped, ...prev];
+                                }
+                            });
+                        } else {
+                            // User sent away or lost access
+                            setLeads(prev => prev.filter(l => l.id !== newRecord.id));
+                        }
+                    } else if (eventType === 'DELETE') {
+                        setLeads(prev => prev.filter(l => l.id !== oldRecord.id));
+
+                        // Auto-close modals if open
+                        if (activeModalLeadId.current === oldRecord.id) {
+                            setEditingLead(null);
+                            notificationRef.current?.createNotification('warning', 'Lead Removido', 'O lead que você estava visualizando foi excluído.');
+                        }
+                        if (activeSidebarLeadId.current === oldRecord.id) {
+                            setSelectedLeadForTasks(null);
+                        }
+                    }
                 }
             )
             .subscribe();
@@ -610,7 +612,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         if (status === 'Contacted') return 1;
         if (['Qualified', 'Negotiating'].includes(status)) return 2;
         if (['Converted', 'Matriculated', 'CheckedIn'].includes(status)) return 3;
-        if (['Cold', 'Rejected', 'Lost'].includes(status)) return 4; 
+        if (['Cold', 'Rejected', 'Lost'].includes(status)) return 4;
         return 0; // Default
     };
 
@@ -618,14 +620,20 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     // --- Conversion Modal State ---
     const [conversionModal, setConversionModal] = useState<{ isOpen: boolean, lead: Lead | null, targetStatus: string }>({ isOpen: false, lead: null, targetStatus: '' });
     const [conversionType, setConversionType] = useState<'Course' | 'Product'>('Course');
-    
+
     // Course Conversion State
     const [activeCourses, setActiveCourses] = useState<any[]>([]);
     const [selectedCourseId, setSelectedCourseId] = useState('');
-    
+
     // Product Conversion State
     const [productSummary, setProductSummary] = useState('');
     const [saleValue, setSaleValue] = useState('');
+    const [generatePaymentLink, setGeneratePaymentLink] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'Asaas' | 'Stripe' | 'Manual'>('Asaas');
+    const [stripeCurrency, setStripeCurrency] = useState<'BRL' | 'USD' | 'EUR'>('BRL');
+    const [manualDetails, setManualDetails] = useState('');
+    const [createdPaymentLink, setCreatedPaymentLink] = useState('');
+    const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
     // Lost Reason State
     const [lostReasonModal, setLostReasonModal] = useState<{ isOpen: boolean, lead: Lead | null, targetStatus: string }>({ isOpen: false, lead: null, targetStatus: '' });
@@ -654,7 +662,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         const newIndex = getStageIndex(newStatus);
         const isWonStage = ['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(newStatus);
 
-        const isAdm = 
+        const isAdm =
             (typeof user?.role === 'string' && (user.role === 'ADMIN' || user.role === 'Admin' || user.role === 'Super Admin')) ||
             (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
             hasPermission('crm_manage_all');
@@ -673,8 +681,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         // Intercept Lost Stage
         const isLostStage = ['Cold', 'Rejected', 'Lost', 'Esfriou', 'Perdido'].includes(newStatus);
         if (isLostStage) {
-             setLostReasonModal({ isOpen: true, lead: currentLead, targetStatus: newStatus });
-             return;
+            setLostReasonModal({ isOpen: true, lead: currentLead, targetStatus: newStatus });
+            return;
         }
 
         // Standard Move
@@ -683,13 +691,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const executeMove = async (leadId: string, newStatus: string, currentLead: Lead) => {
         const now = new Date().toISOString();
-        
+
         // Optimistic Update
         setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus as any, updated_at: now } : l));
 
         // DB Update
         const { error } = await supabase.from('SITE_Leads').update({ status: newStatus, updated_at: now }).eq('id', leadId);
-        
+
         if (error) {
             console.error("Move Lead Error:", error);
             alert(`Falha ao mover lead: ${error.message}`);
@@ -699,9 +707,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const handleConfirmConversion = async () => {
         if (!conversionModal.lead) return;
-        
+
         const { lead, targetStatus } = conversionModal;
-        
+
         // 1. Update Lead Status
         await executeMove(lead.id, targetStatus, lead);
 
@@ -716,7 +724,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         } else {
             // Product Sale
             const value = parseFloat(saleValue.replace('R$', '').replace('.', '').replace(',', '.').trim()) || 0;
-            
+
             // Update Lead with conversion metadata - assuming columns exist or will be added
             // Using a safe raw SQL query or check if columns exist? 
             // We'll assume typical Supabase flexibility or that I will add columns.
@@ -730,18 +738,45 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             }).eq('id', lead.id);
 
             if (error) console.error("Error saving conversion details:", error);
-            
+
             notificationRef.current?.createNotification('success', 'Venda Registrada!', `Venda de R$ ${value.toLocaleString('pt-BR')} registrada.`);
-        
-             if (onConvertLead) {
+
+            if (onConvertLead) {
                 (onConvertLead as any)(lead, { type: 'product', summary: productSummary, value });
+            }
+
+            // --- Asaas Integration ---
+            if (generatePaymentLink) {
+                setIsGeneratingLink(true);
+                try {
+                    const { success, invoiceUrl, error: paymentError } = await createPaymentLink({
+                        lead,
+                        value,
+                        description: `Venda: ${productSummary || 'Produto/Serviço'}`
+                    });
+
+                    if (success && invoiceUrl) {
+                        setCreatedPaymentLink(invoiceUrl);
+                        // Don't close modal yet, show the link
+                        setIsGeneratingLink(false);
+                        return;
+                    } else {
+                        alert(`Erro ao gerar link Asaas: ${paymentError}`);
+                    }
+                } catch (e: any) {
+                    alert(`Erro ao conectar Asaas: ${e.message}`);
+                }
+                setIsGeneratingLink(false);
             }
         }
 
-        setConversionModal({ isOpen: false, lead: null, targetStatus: '' });
-        setProductSummary('');
-        setSaleValue('');
-        setSelectedCourseId('');
+        if (!generatePaymentLink) {
+            setConversionModal({ isOpen: false, lead: null, targetStatus: '' });
+            setProductSummary('');
+            setSaleValue('');
+            setSelectedCourseId('');
+            setGeneratePaymentLink(false);
+        }
     };
 
     const handleConfirmLost = async () => {
@@ -756,30 +791,30 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         // 2. Execute Move with updated notes (Implicitly we want to save notes first or just update it all)
         // Since executeMove only updates status/updated_at, we need a separate update or modified executeMove.
         // We'll just update directly here to save the note + status.
-        
+
         const now = new Date().toISOString();
-        
+
         // Optimistic Update (including note locally? maybe overkill, just status)
         setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: targetStatus as any, updated_at: now, internalNotes: newNotes } : l));
 
-        const { error } = await supabase.from('SITE_Leads').update({ 
-            status: targetStatus, 
+        const { error } = await supabase.from('SITE_Leads').update({
+            status: targetStatus,
             updated_at: now,
             internal_notes: newNotes
         }).eq('id', lead.id);
 
         if (error) {
-             console.error("Move Lead Error:", error);
-             alert(`Falha ao mover lead: ${error.message}`);
-             fetchData(); // Revert
+            console.error("Move Lead Error:", error);
+            alert(`Falha ao mover lead: ${error.message}`);
+            fetchData(); // Revert
         } else {
-             notificationRef.current?.createNotification('info', 'Lead Atualizado', 'Motivo da perda registrado.');
+            notificationRef.current?.createNotification('info', 'Lead Atualizado', 'Motivo da perda registrado.');
         }
 
         setLostReasonModal({ isOpen: false, lead: null, targetStatus: '' });
         setLostReason('');
     };
-    
+
     const saveLeadUpdates = async () => {
         if (!editingLead) return;
 
@@ -819,7 +854,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const filteredLeads = useMemo(() => {
         return leads.filter(l => {
             const d = new Date(l.createdAt);
-            
+
             // 1. Time Filters (Restrictive)
             if (filterType === 'Period') {
                 if (filterPeriod !== 9999) { // 9999 is "Tudo"
@@ -874,12 +909,12 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                 {/* Controls Bar */}
                 <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4 bg-white dark:bg-[#1A1A1A] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                    
+
                     {/* Left: Search & Context */}
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-3 text-gray-400" />
-                            <input 
+                            <input
                                 className="pl-9 pr-4 py-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-lg text-xs font-bold w-64 focus:bg-white dark:focus:bg-[#111] focus:border-wtech-gold outline-none transition-all"
                                 placeholder="Buscar por nome, email, telefone..."
                                 value={searchQuery}
@@ -927,9 +962,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                     {/* Right: Date Filters & Actions */}
                     <div className="flex flex-wrap items-center gap-4">
-                         
-                         {/* Date Filter Compact */}
-                         <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
+
+                        {/* Date Filter Compact */}
+                        <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
                             {[7, 30, 9999].map(days => (
                                 <button
                                     key={days}
@@ -942,7 +977,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         </div>
 
                         {/* Distribution Switch - Permission Gated */}
-                         {hasPermission('crm_config_dist') && (
+                        {hasPermission('crm_config_dist') && (
                             <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase">Distribuição</span>
@@ -950,8 +985,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         {distMode === 'Random' ? 'Roleta (Auto)' : 'Manual'}
                                     </span>
                                 </div>
-                                <div 
-                                    onClick={() => toggleDistMode(distMode === 'Manual' ? 'Random' : 'Manual')} 
+                                <div
+                                    onClick={() => toggleDistMode(distMode === 'Manual' ? 'Random' : 'Manual')}
                                     className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${distMode === 'Random' ? 'bg-green-500' : 'bg-gray-300'}`}
                                 >
                                     <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform ${distMode === 'Random' ? 'translate-x-6' : 'translate-x-0'}`}></div>
@@ -960,15 +995,15 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         )}
 
                         {/* View Mode Toggle */}
-                         <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
-                            <button 
+                        <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
+                            <button
                                 onClick={() => setViewMode('kanban')}
                                 className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-400 hover:text-black dark:hover:text-gray-200'}`}
                                 title="Visualização Kanban"
                             >
                                 <KanbanSquare size={16} />
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setViewMode('list')}
                                 className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-400 hover:text-black dark:hover:text-gray-200'}`}
                                 title="Visualização em Lista"
@@ -977,7 +1012,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             </button>
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => setIsCreateModalOpen(true)}
                             className="bg-wtech-black text-white p-2.5 rounded-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl active:scale-95"
                         >
@@ -989,53 +1024,53 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                 {/* Board or List */}
                 {viewMode === 'kanban' ? (
-                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar flex-1 w-full min-h-0"> 
-                    <KanbanColumn
-                        title="Novos (Entrada)"
-                        status="New"
-                        leads={filteredLeads.filter(l => l.status === 'New')}
-                        onMove={onDropLead}
-                        onDropLead={onDropLead}
-                        onLeadClick={handleLeadClick}
-                        usersMap={usersMap}
-                    />
-                    <KanbanColumn
-                        title="Em Atendimento"
-                        status="Contacted"
-                        leads={filteredLeads.filter(l => l.status === 'Contacted')}
-                        onMove={onDropLead}
-                        onDropLead={onDropLead}
-                        onLeadClick={handleLeadClick}
-                        usersMap={usersMap}
-                    />
-                    <KanbanColumn
-                        title="Negociação"
-                        status="Qualified"
-                        leads={filteredLeads.filter(l => l.status === 'Qualified' || l.status === 'Negotiating')}
-                        onMove={onDropLead}
-                        onDropLead={onDropLead}
-                        onLeadClick={handleLeadClick}
-                        usersMap={usersMap}
-                    />
-                    <KanbanColumn
-                        title="Fechado / Ganho"
-                        status="Converted"
-                        leads={filteredLeads.filter(l => l.status === 'Converted' || l.status === 'Matriculated')}
-                        onMove={onDropLead}
-                        onDropLead={onDropLead}
-                        onLeadClick={handleLeadClick}
-                        usersMap={usersMap}
-                    />
-                    <KanbanColumn
-                        title="Esfriou / Perdido"
-                        status="Cold"
-                        leads={filteredLeads.filter(l => l.status === 'Cold' || l.status === 'Rejected')}
-                        onMove={onDropLead}
-                        onDropLead={onDropLead}
-                        onLeadClick={handleLeadClick}
-                        usersMap={usersMap}
-                    />
-                </div>
+                    <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar flex-1 w-full min-h-0">
+                        <KanbanColumn
+                            title="Novos (Entrada)"
+                            status="New"
+                            leads={filteredLeads.filter(l => l.status === 'New')}
+                            onMove={onDropLead}
+                            onDropLead={onDropLead}
+                            onLeadClick={handleLeadClick}
+                            usersMap={usersMap}
+                        />
+                        <KanbanColumn
+                            title="Em Atendimento"
+                            status="Contacted"
+                            leads={filteredLeads.filter(l => l.status === 'Contacted')}
+                            onMove={onDropLead}
+                            onDropLead={onDropLead}
+                            onLeadClick={handleLeadClick}
+                            usersMap={usersMap}
+                        />
+                        <KanbanColumn
+                            title="Negociação"
+                            status="Qualified"
+                            leads={filteredLeads.filter(l => l.status === 'Qualified' || l.status === 'Negotiating')}
+                            onMove={onDropLead}
+                            onDropLead={onDropLead}
+                            onLeadClick={handleLeadClick}
+                            usersMap={usersMap}
+                        />
+                        <KanbanColumn
+                            title="Fechado / Ganho"
+                            status="Converted"
+                            leads={filteredLeads.filter(l => l.status === 'Converted' || l.status === 'Matriculated')}
+                            onMove={onDropLead}
+                            onDropLead={onDropLead}
+                            onLeadClick={handleLeadClick}
+                            usersMap={usersMap}
+                        />
+                        <KanbanColumn
+                            title="Esfriou / Perdido"
+                            status="Cold"
+                            leads={filteredLeads.filter(l => l.status === 'Cold' || l.status === 'Rejected')}
+                            onMove={onDropLead}
+                            onDropLead={onDropLead}
+                            onLeadClick={handleLeadClick}
+                            usersMap={usersMap}
+                        />
+                    </div>
                 ) : (
                     <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                         <div className="overflow-y-auto flex-1 custom-scrollbar">
@@ -1063,11 +1098,11 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         else if (lead.status === 'Cold' || lead.status === 'Rejected') { statusColor = 'bg-red-50 text-red-400 border border-red-100'; statusLabel = 'PERDIDO'; }
 
                                         // Time Calc Inline
-                                         const start = new Date(lead.updated_at || lead.createdAt).getTime();
-                                         const now = new Date().getTime();
-                                         const diff = now - start;
-                                         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                                         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                        const start = new Date(lead.updated_at || lead.createdAt).getTime();
+                                        const now = new Date().getTime();
+                                        const diff = now - start;
+                                        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
                                         return (
                                             <tr key={lead.id} className="hover:bg-gray-50 transition-colors group cursor-pointer" onClick={() => handleLeadClick(lead)}>
@@ -1091,20 +1126,20 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                     {/* Robust User Display */}
-                                                     {lead.assignedTo ? (
+                                                    {/* Robust User Display */}
+                                                    {lead.assignedTo ? (
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold overflow-hidden border border-gray-300">
                                                                 {/* Try to show Avatar or Initial */}
                                                                 {usersMap[lead.assignedTo] ? (
-                                                                     usersMap[lead.assignedTo].charAt(0).toUpperCase() 
+                                                                    usersMap[lead.assignedTo].charAt(0).toUpperCase()
                                                                 ) : '?'}
                                                             </div>
                                                             <span className="text-xs text-gray-700 font-bold truncate max-w-[100px]" title={usersMap[lead.assignedTo] || lead.assignedTo}>
-                                                                {usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'Usuário ' + lead.assignedTo.substr(0,4)}
+                                                                {usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'Usuário ' + lead.assignedTo.substr(0, 4)}
                                                             </span>
                                                         </div>
-                                                     ) : <span className="text-xs text-gray-400 italic">Fila (Sem Dono)</span>}
+                                                    ) : <span className="text-xs text-gray-400 italic">Fila (Sem Dono)</span>}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-xs font-bold text-gray-500">{days}d {hours}h</span>
@@ -1146,10 +1181,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         className="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors flex items-center gap-2 text-xs font-bold uppercase"
                                         title="Tarefas e Lembretes"
                                     >
-                                       <Clock size={16} /> Tarefas
+                                        <Clock size={16} /> Tarefas
                                     </button>
-                                    <button 
-                                        onClick={() => setEditingLead(null)} 
+                                    <button
+                                        onClick={() => setEditingLead(null)}
                                         className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
                                     >
                                         <X size={20} />
@@ -1159,10 +1194,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             <div className="flex flex-col gap-2 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contato</span>
                                 <div className="flex items-center gap-2">
-                                     <Phone size={16} className="text-wtech-gold" />
-                                     <span className="font-bold text-lg text-gray-900 selection:bg-wtech-gold selection:text-black">
+                                    <Phone size={16} className="text-wtech-gold" />
+                                    <span className="font-bold text-lg text-gray-900 selection:bg-wtech-gold selection:text-black">
                                         {editingLead.phone || 'Sem Telefone'}
-                                     </span>
+                                    </span>
                                 </div>
                                 <div className="text-xs text-blue-600 font-medium hover:underline cursor-pointer flex items-center gap-1" onClick={() => window.open(`https://wa.me/55${editingLead.phone?.replace(/\D/g, '')}`, '_blank')}>
                                     <MessageCircle size={12} /> Abrir no WhatsApp
@@ -1229,7 +1264,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                                 }
                                             }}
                                         />
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 if (tagInput.trim()) {
                                                     setEditForm(prev => ({ ...prev, tags: [...(prev.tags || []), tagInput.trim()] }));
@@ -1273,17 +1308,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     isOpen={!!selectedLeadForTasks}
                     onClose={() => setSelectedLeadForTasks(null)}
                     onTaskCreated={(task) => {
-                         notificationRef.current?.createNotification('success', 'Agendado!', `Tarefa "${task.title}" criada.`);
+                        notificationRef.current?.createNotification('success', 'Agendado!', `Tarefa "${task.title}" criada.`);
                     }}
                 />
             )}
             {/* NEW LEAD MODAL */}
             <AnimatePresence>
                 {/* Reusing similar modal style */}
-                {showSettings /* reusing showSettings as createModal trigger for now or creating new state? lets create new state below */ }
+                {showSettings /* reusing showSettings as createModal trigger for now or creating new state? lets create new state below */}
             </AnimatePresence>
-            
-             <AnimatePresence>
+
+            <AnimatePresence>
                 {isCreateModalOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                         <motion.div
@@ -1294,8 +1329,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         >
                             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                                 <h3 className="text-xl font-bold text-gray-900">Novo Lead</h3>
-                                <button 
-                                    onClick={() => setIsCreateModalOpen(false)} 
+                                <button
+                                    onClick={() => setIsCreateModalOpen(false)}
                                     className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
                                 >
                                     <X size={20} />
@@ -1313,7 +1348,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         autoFocus
                                     />
                                 </div>
-                                
+
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
                                     <input
@@ -1333,7 +1368,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         onChange={e => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
                                     />
                                 </div>
-                                
+
                                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-2 text-xs text-gray-600">
                                     <Users size={14} className="text-wtech-gold" />
                                     <span>Cadastrado por: <strong>{user?.name || 'Você'}</strong> (Auto-atribuído)</span>
@@ -1355,18 +1390,18 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             {/* --- Conversion Selection Modal --- */}
             <AnimatePresence>
                 {conversionModal.isOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                     >
-                         <motion.div 
+                        <motion.div
                             initial={{ scale: 0.95 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.95 }}
                             className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-transparent dark:border-gray-800"
-                         >
+                        >
                             <div className="p-6 bg-gradient-to-r from-gray-900 to-black text-white flex justify-between items-start">
                                 <div>
                                     <h2 className="text-xl font-bold flex items-center gap-2">
@@ -1383,16 +1418,16 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                             <div className="p-6">
                                 {/* Type Selector */}
-                                 <div className="grid grid-cols-2 gap-4 mb-6">
-                                    <button 
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <button
                                         onClick={() => setConversionType('Course')}
                                         className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Course' ? 'border-wtech-gold bg-yellow-50/50 dark:bg-wtech-gold/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-transparent'}`}
                                     >
                                         <GraduationCap size={32} className={conversionType === 'Course' ? 'text-wtech-gold' : 'text-gray-400'} />
                                         <span className={`font-bold ${conversionType === 'Course' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>Matrícula em Curso</span>
                                     </button>
-                                    
-                                    <button 
+
+                                    <button
                                         onClick={() => setConversionType('Product')}
                                         className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Product' ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-transparent'}`}
                                     >
@@ -1403,10 +1438,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                                 <div className="space-y-4">
                                     {conversionType === 'Course' ? (
-                                         <div className="animate-in fade-in slide-in-from-left-4">
+                                        <div className="animate-in fade-in slide-in-from-left-4">
                                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Escolha o Curso</label>
                                             <div className="relative">
-                                                <select 
+                                                <select
                                                     className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-wtech-gold appearance-none"
                                                     value={selectedCourseId}
                                                     onChange={(e) => setSelectedCourseId(e.target.value)}
@@ -1423,10 +1458,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Você será redirecionado para a tela de inscrições.</p>
                                         </div>
                                     ) : (
-                                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Resumo do Pedido</label>
-                                                <textarea 
+                                                <textarea
                                                     className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-blue-500 min-h-[80px]"
                                                     placeholder="Ex: 2x Filtros, 1x Óleo 5W30..."
                                                     value={productSummary}
@@ -1437,7 +1472,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Valor Total da Venda</label>
                                                 <div className="relative">
                                                     <span className="absolute left-3 top-3 text-gray-500 dark:text-gray-400 font-bold">R$</span>
-                                                    <input 
+                                                    <input
                                                         className="w-full p-3 pl-10 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-blue-500 font-mono font-bold text-lg"
                                                         placeholder="0,00"
                                                         value={saleValue}
@@ -1449,7 +1484,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     )}
                                 </div>
 
-                                <button 
+                                <button
                                     onClick={handleConfirmConversion}
                                     disabled={conversionType === 'Course' ? !selectedCourseId : (!productSummary || !saleValue)}
                                     className={`mt-8 w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
@@ -1462,7 +1497,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     )}
                                 </button>
                             </div>
-                         </motion.div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -1470,18 +1505,18 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             {/* --- Lost Reason Modal --- */}
             <AnimatePresence>
                 {lostReasonModal.isOpen && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                     >
-                         <motion.div 
+                        <motion.div
                             initial={{ scale: 0.95 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.95 }}
                             className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800"
-                         >
+                        >
                             <div className="p-6 bg-gray-50 dark:bg-black/40 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">
                                 <div>
                                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -1498,7 +1533,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                             <div className="p-6">
                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Descreva o motivo *</label>
-                                <textarea 
+                                <textarea
                                     className="w-full p-3 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-orange-500 min-h-[100px] text-sm"
                                     placeholder="Ex: Preço alto, optou pelo concorrente, sem interesse no momento..."
                                     value={lostReason}
@@ -1507,13 +1542,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                 />
 
                                 <div className="flex gap-3 mt-6">
-                                    <button 
+                                    <button
                                         onClick={() => setLostReasonModal(prev => ({ ...prev, isOpen: false }))}
                                         className="flex-1 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                                     >
                                         Cancelar
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleConfirmLost}
                                         disabled={!lostReason.trim()}
                                         className="flex-1 py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
@@ -1522,7 +1557,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     </button>
                                 </div>
                             </div>
-                         </motion.div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
