@@ -1,5 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
+
+## v2.3.1 (2026-01-17) - Correções e Documentação Técnica
+- FIX: Script SQL para correção de permissões em listas de marketing
+- FEAT: Documentação técnica completa do sistema de automação WhatsApp
+- FIX: Ajustes de permissões RLS no banco de dados
 ## v2.2.7 (2026-01-16) - UI Polishing & CRM Cleanup
 - FIX: Removido widget de Taxa de Conversão flutuante no CRM
 - FIX: Correções de Dark Mode no painel administrativo
