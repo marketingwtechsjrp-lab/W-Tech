@@ -7,13 +7,14 @@ const BAUHAUS_CARD_STYLES = `
 .bauhaus-card {
   position: relative;
   z-index: 1;
-  max-width: 17rem;
-  min-height: 12rem;
+  max-width: 100%;
+  min-height: 10rem;
   width: 100%;
-  display: grid;
-  place-content: center;
-  place-items: center;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
   box-shadow: 1px 12px 25px rgb(0,0,0/40%);
   border-radius: var(--card-radius, 20px);
   border: var(--card-border-width, 2px) solid transparent;
@@ -46,7 +47,7 @@ const BAUHAUS_CARD_STYLES = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.8em 0.5em 0em 1.5em;
+  padding: 0.8em 1.5em 0em 1.5em;
 }
 .bauhaus-button-container {
   display: flex;
@@ -68,13 +69,10 @@ const BAUHAUS_CARD_STYLES = `
   cursor: pointer;
 }
 .bauhaus-card-body {
-  position: absolute;
+  position: relative;
   width: 100%;
   display: block;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 0.7em 1.25em 0.5em 1.5em;
+  padding: 2.2rem 1.25rem 1rem 1.5rem;
 }
 .bauhaus-card-body h3 {
   font-size: 1.1rem;
@@ -139,12 +137,13 @@ const BAUHAUS_CARD_STYLES = `
 
 function injectBauhausCardStyles() {
   if (typeof window === "undefined") return;
-  if (!document.getElementById("bauhaus-card-styles")) {
-    const style = document.createElement("style");
+  let style = document.getElementById("bauhaus-card-styles");
+  if (!style) {
+    style = document.createElement("style");
     style.id = "bauhaus-card-styles";
-    style.innerHTML = BAUHAUS_CARD_STYLES;
     document.head.appendChild(style);
   }
+  style.innerHTML = BAUHAUS_CARD_STYLES;
 }
 
 const isRTL = (text: string): boolean =>
@@ -290,9 +289,9 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
         >
           {topInscription}
           {isAutomated && (
-            <Bot 
-              size={14} 
-              className="inline-block ml-2 text-green-400 animate-pulse" 
+            <Bot
+              size={14}
+              className="inline-block ml-2 text-green-400 animate-pulse"
               title="Automação WhatsApp Ativa"
             />
           )}
@@ -321,10 +320,10 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
       </div>
       <div className="bauhaus-card-body">
         {tag && (
-          <span 
+          <span
             className="inline-block px-2 py-0.5 mb-2 rounded text-[10px] font-bold uppercase tracking-wider"
-            style={{ 
-              backgroundColor: tagColor ? `${tagColor}20` : 'rgba(255,255,255,0.1)', 
+            style={{
+              backgroundColor: tagColor ? `${tagColor}20` : 'rgba(255,255,255,0.1)',
               color: tagColor || '#ffffff',
               border: `1px solid ${tagColor ? `${tagColor}40` : 'rgba(255,255,255,0.2)'}`
             }}
@@ -360,56 +359,56 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
           </span>
         </div>
       </div>
-      
+
       {/* Only render footer if buttons are present */}
       {(filledButtonInscription || outlinedButtonInscription) && (
-          <div className="bauhaus-card-footer">
-            <div className="bauhaus-button-container">
-              {swapButtons ? (
-                <>
-                  <ChronicleButton
-                    text={outlinedButtonInscription || ""}
-                    outlined={true}
-                    width={swapButtons ? "auto" : "100%"}
-                    onClick={(id) => { if(onOutlinedButtonClick) onOutlinedButtonClick(id); }}
-                    borderRadius={borderRadius}
-                    hoverColor={accentColor}
-                    customBackground={chronicleButtonBg}
-                    customForeground={chronicleButtonFg}
-                    hoverForeground={chronicleButtonHoverFg}
-                    height={customButtonHeight}
-                    fontSize={customButtonFontSize}
-                  />
-                  <ChronicleButton
-                    text={filledButtonInscription || ""}
-                    width={swapButtons ? "auto" : "100%"}
-                    onClick={(id) => { if (onFilledButtonClick) onFilledButtonClick(id); }}
-                    borderRadius={borderRadius}
-                    hoverColor={accentColor}
-                    customBackground="var(--card-accent)"
-                    customForeground={chronicleButtonFg}
-                    hoverForeground={chronicleButtonHoverFg}
-                    height={customButtonHeight}
-                    fontSize={customButtonFontSize}
-                  />
-                </>
-              ) : (
-                <>
-                  <ChronicleButton
-                    text={filledButtonInscription || ""}
-                    onClick={(id) => { if(onFilledButtonClick) onFilledButtonClick(id); }}
-                    borderRadius={borderRadius}
-                    hoverColor={accentColor}
-                    customBackground="var(--card-accent)"
-                    customForeground={chronicleButtonFg}
-                    hoverForeground={chronicleButtonHoverFg}
-                    height={customButtonHeight}
-                    fontSize={customButtonFontSize}
-                  />
-                </>
-              )}
-            </div>
+        <div className="bauhaus-card-footer mt-auto">
+          <div className="bauhaus-button-container">
+            {swapButtons ? (
+              <>
+                <ChronicleButton
+                  text={outlinedButtonInscription || ""}
+                  outlined={true}
+                  width={swapButtons ? "auto" : "100%"}
+                  onClick={(id) => { if (onOutlinedButtonClick) onOutlinedButtonClick(id); }}
+                  borderRadius={borderRadius}
+                  hoverColor={accentColor}
+                  customBackground={chronicleButtonBg}
+                  customForeground={chronicleButtonFg}
+                  hoverForeground={chronicleButtonHoverFg}
+                  height={customButtonHeight}
+                  fontSize={customButtonFontSize}
+                />
+                <ChronicleButton
+                  text={filledButtonInscription || ""}
+                  width={swapButtons ? "auto" : "100%"}
+                  onClick={(id) => { if (onFilledButtonClick) onFilledButtonClick(id); }}
+                  borderRadius={borderRadius}
+                  hoverColor={accentColor}
+                  customBackground="var(--card-accent)"
+                  customForeground={chronicleButtonFg}
+                  hoverForeground={chronicleButtonHoverFg}
+                  height={customButtonHeight}
+                  fontSize={customButtonFontSize}
+                />
+              </>
+            ) : (
+              <>
+                <ChronicleButton
+                  text={filledButtonInscription || ""}
+                  onClick={(id) => { if (onFilledButtonClick) onFilledButtonClick(id); }}
+                  borderRadius={borderRadius}
+                  hoverColor={accentColor}
+                  customBackground="var(--card-accent)"
+                  customForeground={chronicleButtonFg}
+                  hoverForeground={chronicleButtonHoverFg}
+                  height={customButtonHeight}
+                  fontSize={customButtonFontSize}
+                />
+              </>
+            )}
           </div>
+        </div>
       )}
     </div>
   );

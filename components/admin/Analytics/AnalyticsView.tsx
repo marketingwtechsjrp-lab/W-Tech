@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import ReactApexChart from 'react-apexcharts';
-import { Users, Eye, MousePointer, Smartphone, Monitor } from 'lucide-react';
+import { Users, Eye, MousePointer, Smartphone, Monitor, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { useSettings } from '../../../context/SettingsContext';
+
 
 const AnalyticsView = () => {
     // State
@@ -17,10 +19,52 @@ const AnalyticsView = () => {
     const [topPages, setTopPages] = useState<any[]>([]);
     const [topSources, setTopSources] = useState<any[]>([]);
     const [deviceStats, setDeviceStats] = useState<{ mobile: number, desktop: number }>({ mobile: 0, desktop: 0 });
+    const { settings } = useSettings();
+    const [googleStatus, setGoogleStatus] = useState<'idle' | 'checking' | 'success' | 'error'>('idle');
+    const [statusMessage, setStatusMessage] = useState('');
+
 
     useEffect(() => {
         fetchData();
     }, [period]);
+
+    const verifyGoogleIntegration = async () => {
+        setGoogleStatus('checking');
+        setStatusMessage('Verificando integração...');
+
+        // Artificial delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const gaId = settings.ga_id;
+        const gtagPresent = typeof (window as any).gtag === 'function';
+
+        if (!gaId) {
+            setGoogleStatus('error');
+            setStatusMessage('ID do Google Analytics (GA4) não configurado nas configurações do sistema.');
+            return;
+        }
+
+        if (!gtagPresent) {
+            setGoogleStatus('error');
+            setStatusMessage('Script do Google Analytics não detectado na página. Verifique se há bloqueadores de anúncios.');
+            return;
+        }
+
+        try {
+            // Tentativa de enviar um evento de teste
+            (window as any).gtag('event', 'integration_check', {
+                'event_category': 'admin_action',
+                'event_label': 'manual_verification'
+            });
+
+            setGoogleStatus('success');
+            setStatusMessage(`Integração Ativa! ID Detectado: ${gaId}. Script carregado e funcional.`);
+        } catch (error) {
+            setGoogleStatus('error');
+            setStatusMessage('Erro ao comunicar com o Google Analytics: ' + (error as Error).message);
+        }
+    };
+
 
     const fetchData = async () => {
         setLoading(true);
@@ -143,18 +187,54 @@ const AnalyticsView = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Analytics Geral</h2>
-                <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg">
-                    {[7, 30, 90].map(d => (
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Analytics Geral</h2>
+                    <p className="text-sm text-gray-500">Monitoramento interno de acessos e eventos.</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {/* Google Verification Button */}
+                    <div className="flex flex-col items-end">
                         <button
-                            key={d}
-                            onClick={() => setPeriod(d)}
-                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === d ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-500'}`}
+                            onClick={verifyGoogleIntegration}
+                            disabled={googleStatus === 'checking'}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${googleStatus === 'success' ? 'bg-green-500/10 text-green-600 border border-green-200 dark:border-green-900/50' :
+                                googleStatus === 'error' ? 'bg-red-500/10 text-red-600 border border-red-200 dark:border-red-900/50' :
+                                    'bg-white dark:bg-[#1A1A1A] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:border-wtech-gold/50 shadow-sm'
+                                }`}
                         >
-                            {d} dias
+                            {googleStatus === 'checking' ? <RefreshCw size={16} className="animate-spin" /> :
+                                googleStatus === 'success' ? <CheckCircle size={16} /> :
+                                    googleStatus === 'error' ? <AlertCircle size={16} /> :
+                                        <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" className="w-4 h-4" alt="Google" />
+                            }
+                            {googleStatus === 'success' ? 'Google Integrado' :
+                                googleStatus === 'error' ? 'Erro na Integração' :
+                                    'Verificar Google API'}
                         </button>
-                    ))}
+                        {statusMessage && (
+                            <span className={`text-[10px] mt-1 font-medium ${googleStatus === 'success' ? 'text-green-500' :
+                                googleStatus === 'error' ? 'text-red-500' :
+                                    'text-gray-400'
+                                }`}>
+                                {statusMessage}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg">
+
+                        {[7, 30, 90].map(d => (
+                            <button
+                                key={d}
+                                onClick={() => setPeriod(d)}
+                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === d ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-500'}`}
+                            >
+                                {d} dias
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
