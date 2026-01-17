@@ -254,7 +254,7 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
             draggable
             onDragStart={() => { setDraggedId(lead.id); setIsDragging(true); }}
             onDragEnd={() => { setDraggedId(null); setIsDragging(false); }}
-            className={`transition-all bg-white dark:bg-[#1f1f1f] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md p-3 relative group active:scale-95 cursor-grab ${isDragging ? 'opacity-50 scale-95' : ''}`}
+            className={`transition-all bg-white dark:bg-[#1f1f1f] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg p-4 relative group active:scale-[0.98] cursor-grab ${isDragging ? 'opacity-50 scale-95' : ''}`}
             style={{ borderLeft: `3px solid ${accentColor}` }}
             onClick={onClick}
         >
@@ -264,22 +264,20 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
                     {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
                 </span>
 
-                <div className="flex gap-1">
-                    {/* Tasks/History Icon */}
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                         onClick={(e) => { e.stopPropagation(); onClick(); }}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-blue-500 transition-colors"
-                        title="Histórico de Tarefas"
+                        className="p-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400 transition-colors"
+                        title="Histórico & Tarefas"
                     >
-                        <Clock size={13} />
+                        <Clock size={14} />
                     </button>
-                    {/* View Details/Edit Icon */}
                     <button
                         onClick={(e) => { e.stopPropagation(); onClick(); }}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-wtech-gold transition-colors"
-                        title="Ver Detalhes/Editar"
+                        className="p-1.5 bg-wtech-gold/10 hover:bg-wtech-gold/20 rounded-lg text-wtech-gold transition-colors"
+                        title="Editar Detalhes"
                     >
-                        <Edit size={13} />
+                        <Edit size={14} />
                     </button>
                 </div>
             </div>
