@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.3.2 (2026-01-17) - Release v2.3.2
+- General system updates
+- Release automation
+
 ## v2.3.1 (2026-01-17) - Correções e Documentação Técnica
 - FIX: Script SQL para correção de permissões em listas de marketing
 - FEAT: Documentação técnica completa do sistema de automação WhatsApp
