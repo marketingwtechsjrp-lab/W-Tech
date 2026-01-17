@@ -1,5 +1,14 @@
 [
   {
+    "version": "2.3.3",
+    "date": "2026-01-17",
+    "title": "Fix Partners Display",
+    "changes": [
+      "Fixed partner brands parsing logic in Hero section"
+    ],
+    "author": "danielmarques"
+  },
+  {
     "version": "2.3.2",
     "date": "2026-01-17",
     "title": "Release v2.3.2",

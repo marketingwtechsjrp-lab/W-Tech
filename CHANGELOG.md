@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.3.3 (2026-01-17) - Fix Partners Display
+- Fixed partner brands parsing logic in Hero section
+
 ## v2.3.2 (2026-01-17) - Release v2.3.2
 - General system updates
 - Release automation
