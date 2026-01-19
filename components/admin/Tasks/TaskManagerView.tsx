@@ -17,13 +17,13 @@ interface TaskCardProps {
 }
 
 // Task Card Component (Refined Visual Adaptation with Bauhaus Card)
-const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void }> = ({ 
-    task, 
-    usersMap, 
-    onDelete, 
-    onEdit, 
+const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void }> = ({
+    task,
+    usersMap,
+    onDelete,
+    onEdit,
     onStatusToggle,
-    isDoneStyle 
+    isDoneStyle
 }) => {
     const priorityColors: Record<string, string> = {
         'URGENT': '#ef4444',
@@ -33,16 +33,16 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
     };
 
     const accentColor = task.priority ? priorityColors[task.priority] : '#3b82f6';
-    
+
     const formattedDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Sem prazo';
     const progress = task.status === 'DONE' ? 100 : task.status === 'IN_PROGRESS' ? 60 : 20;
-    
+
     const topText = usersMap[task.assignedTo] ? `Para: ${usersMap[task.assignedTo]}` : 'Sem responsável';
-    const subText = task.leadName ? `Lead: ${task.leadName}` : (task.description ? task.description.slice(0, 60) + '...' : 'Sem descrição');
+    const subText = task.leadName ? `Lead: ${task.leadName}` : (task.description ? task.description.slice(0, 120) + (task.description.length > 120 ? '...' : '') : 'Sem descrição');
 
     return (
-        <div 
-            className={`w-full max-w-sm mx-auto ${isDoneStyle ? 'opacity-70' : ''}`}
+        <div
+            className={`w-full ${isDoneStyle ? 'opacity-70' : ''}`}
         >
             <BauhausCard
                 id={task.id}
@@ -57,28 +57,22 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
                 progressBarInscription={task.status === 'DONE' ? 'Concluído' : task.status === 'IN_PROGRESS' ? 'Em Andamento' : 'Pendente'}
                 progress={progress}
                 progressValue={task.dueDate ? formattedDate : ''}
-                
+
                 // Tag Data
                 tag={task.category?.name}
                 tagColor={task.category?.color}
-                
+
                 // Automation Indicator
                 isAutomated={(task as any).isWhatsappSchedule}
-                
-                // Removed bottom buttons as requested
-                // filledButtonInscription={task.status === 'DONE' ? 'Reabrir' : 'Concluir'}
-                // outlinedButtonInscription="Editar"
-                // onFilledButtonClick={() => onStatusToggle(task)}
-                // onOutlinedButtonClick={() => onEdit(task)}
-                
+
                 // Header Action: Toggle Status via Icon
-                headerIcon={task.status === 'DONE' ? CheckCircle : CheckCircle} // Using CheckCircle for both, visual cues can differ if needed
+                headerIcon={task.status === 'DONE' ? CheckCircle : CheckCircle}
                 onMoreOptionsClick={() => onStatusToggle(task)}
-                onDeleteClick={() => onDelete(task.id)} 
-                
+                onDeleteClick={() => onDelete(task.id)}
+
                 // Card Click: Open Details
                 onCardClick={() => onEdit(task)}
-                
+
                 // Colors - Always Light Text for Dark Card
                 textColorTop={isDoneStyle ? "#888" : "#bfc7d5"}
                 textColorMain={isDoneStyle ? "#aaa" : "#f0f0f1"}
@@ -86,15 +80,15 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
                 textColorProgressLabel="#b4c7e7"
                 textColorProgressValue="#e7e7f7"
                 progressBarBackground="var(--bauhaus-card-progress-bar-bg)"
-                
+
                 // Button Colors (Leftovers just in case, but unused now)
                 chronicleButtonBg="var(--bauhaus-chronicle-bg)"
-                chronicleButtonFg="#808080" 
+                chronicleButtonFg="#808080"
                 chronicleButtonHoverFg="#ffffff"
-                
+
                 customButtonHeight="1.5rem"
                 customButtonFontSize="0.65rem"
-                customCardPadding="0.8rem"
+                customCardPadding="0.6rem 1.25rem"
             />
         </div>
     );
@@ -106,12 +100,12 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
     return (
         <tr className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${task.status === 'DONE' ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : ''} ${isOverdue ? 'bg-red-50/30 dark:bg-red-900/20' : ''}`}>
             <td className="p-3">
-                 <div className={`w-2 h-2 rounded-full ${task.status === 'DONE' ? 'bg-green-500' : isOverdue ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${task.status === 'DONE' ? 'bg-green-500' : isOverdue ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
             </td>
             <td className="p-3 font-bold text-gray-800 text-sm">
                 {task.title}
             </td>
-             <td className="p-3">
+            <td className="p-3">
                 {task.leadName ? (
                     <span className="text-xs font-bold text-wtech-gold uppercase tracking-wide flex items-center gap-1">
                         <User size={10} /> {task.leadName}
@@ -119,12 +113,11 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
                 ) : <span className="text-gray-300 text-xs">-</span>}
             </td>
             <td className="p-3">
-                <span 
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                        task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                        task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                        task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                    }`}
+                <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                            task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                                task.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                        }`}
                 >
                     {task.priority === 'URGENT' && <AlertTriangle size={8} className="mr-1" />}
                     {task.priority}
@@ -136,25 +129,25 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
                 )}
             </td>
             <td className="p-3 text-xs text-gray-500 font-medium">
-                 {task.dueDate ? (
-                        <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-bold' : ''}`}>
-                            {new Date(task.dueDate).toLocaleDateString()} {new Date(task.dueDate).toLocaleTimeString().slice(0,5)}
-                        </div>
-                    ) : '-'}
+                {task.dueDate ? (
+                    <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600 font-bold' : ''}`}>
+                        {new Date(task.dueDate).toLocaleDateString()} {new Date(task.dueDate).toLocaleTimeString().slice(0, 5)}
+                    </div>
+                ) : '-'}
             </td>
             <td className="p-3 text-xs text-gray-600">
                 {task.assignedTo ? (usersMap[task.assignedTo] || 'Removido') : 'N/A'}
             </td>
             <td className="p-3 flex items-center justify-end gap-2 print:hidden">
-                 {task.status !== 'DONE' && (
-                    <button 
-                        onClick={() => onEdit({...task, status: 'DONE'})} 
+                {task.status !== 'DONE' && (
+                    <button
+                        onClick={() => onEdit({ ...task, status: 'DONE' })}
                         className="p-1 hover:bg-green-100 text-gray-400 hover:text-green-600 rounded transition"
                         title="Concluir"
                     >
                         <CheckCircle size={14} />
                     </button>
-                 )}
+                )}
                 <button onClick={() => onEdit(task)} className="p-1 hover:bg-blue-50 text-blue-500 rounded transition"><Edit size={14} /></button>
                 <button onClick={() => onDelete(task.id)} className="p-1 hover:bg-red-50 text-red-500 rounded transition"><Trash2 size={14} /></button>
             </td>
@@ -166,12 +159,12 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
 const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [leads, setLeads] = useState<{id: string, name: string}[]>([]); // New Leads State
-    const [categories, setCategories] = useState<TaskCategory[]>([]); // Categories State
+    const [leads, setLeads] = useState<{ id: string, name: string }[]>([]);
+    const [categories, setCategories] = useState<TaskCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [usersMap, setUsersMap] = useState<Record<string, string>>({});
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // View Mode State
-    
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
     // Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -182,19 +175,16 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         priority: 'MEDIUM' as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
         dueDate: '',
         status: 'TODO' as 'TODO' | 'IN_PROGRESS' | 'DONE',
-        leadId: '', // Lead ID in Form
+        leadId: '',
         categoryId: '',
-        
-        // WhatsApp Automation
         isWhatsappSchedule: false,
         whatsappTemplateId: '',
         whatsappMessageBody: '',
         whatsappMediaUrl: ''
     });
 
-    const [messageTemplates, setMessageTemplates] = useState<{id: string, title: string, content: string}[]>([]);
+    const [messageTemplates, setMessageTemplates] = useState<{ id: string, title: string, content: string }[]>([]);
 
-    // Filters
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
     const [filterPriority, setFilterPriority] = useState<string>('ALL');
     const [filterCategory, setFilterCategory] = useState<string>('ALL');
@@ -202,19 +192,17 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const [showOverdue, setShowOverdue] = useState(false);
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
-    // Print Handler
     const handlePrint = () => {
         window.print();
     };
 
-    // Date Presets
     const setDatePreset = (days: number) => {
         const end = new Date();
         const start = new Date();
         start.setDate(end.getDate() - days);
-        setDateRange({ 
-            start: start.toISOString().split('T')[0], 
-            end: end.toISOString().split('T')[0] 
+        setDateRange({
+            start: start.toISOString().split('T')[0],
+            end: end.toISOString().split('T')[0]
         });
     };
 
@@ -226,12 +214,12 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const hasPermission = (key: string) => {
         if (!user) return false;
         if (permissions) {
-             if (permissions.admin_access) return true;
-             return !!permissions[key];
+            if (permissions.admin_access) return true;
+            return !!permissions[key];
         }
         if (typeof user.role === 'string') {
-                if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
-                return false;
+            if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
+            return false;
         }
         if (user.role?.level >= 10) return true;
         if (user.role?.name === 'Super Admin') return true;
@@ -253,8 +241,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     useEffect(() => {
         fetchUsers();
         fetchTasks();
-        fetchLeads(); // Fetch Leads
-        fetchCategories();
+        fetchLeads();
         fetchCategories();
         fetchTemplates();
     }, [user]);
@@ -297,13 +284,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             const { error: uploadError } = await supabase.storage.from('site-assets').upload(filePath, file);
 
             if (uploadError) {
-                if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) { 
-                    alert('ERRO DE CONFIGURAÇÃO: O bucket "site-assets" não existe.\nExecute "fix_storage_permissions.sql" no Supabase.');
-                } else if (uploadError.message.includes('row-level security') || uploadError.message.includes('policy')) {
-                    alert('ERRO DE PERMISSÃO: O bloqueio de segurança (RLS) impediu o upload.\n\nPor favor, execute o script "fix_storage_permissions.sql" no SQL Editor do Supabase.');
-                } else {
-                    alert('Erro no upload: ' + uploadError.message);
-                }
+                alert('Erro no upload: ' + uploadError.message);
                 return;
             }
 
@@ -318,10 +299,9 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
     const fetchTasks = async () => {
         setLoading(true);
-        // Select all tasks and related Lead Name
         const { data, error } = await supabase
             .from('SITE_Tasks')
-            .select('*, SITE_Leads(name, phone), SITE_TaskCategories(name, color)') 
+            .select('*, SITE_Leads(name, phone), SITE_TaskCategories(name, color)')
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -338,8 +318,8 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                 priority: t.priority,
                 createdAt: t.created_at,
                 leadId: t.lead_id,
-                leadName: t.SITE_Leads?.name, // Map lead name
-                leadPhone: t.SITE_Leads?.phone, // Map Phone
+                leadName: t.SITE_Leads?.name,
+                leadPhone: t.SITE_Leads?.phone,
                 tags: t.tags,
                 categoryId: t.category_id,
                 category: t.SITE_TaskCategories,
@@ -355,34 +335,31 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         const payload = {
             title: formData.title,
             description: formData.description,
-            assigned_to: canAssignOthers ? (formData.assignedTo || null) : user?.id, // Force self-assign if not admin/manager
+            assigned_to: canAssignOthers ? (formData.assignedTo || null) : user?.id,
             priority: formData.priority,
             due_date: formData.dueDate || null,
             status: formData.status,
             created_by: user?.id,
-            lead_id: formData.leadId || null, // Save Lead ID
+            lead_id: formData.leadId || null,
             category_id: formData.categoryId || null,
-            // WhatsApp
             is_whatsapp_schedule: formData.isWhatsappSchedule,
             whatsapp_template_id: formData.whatsappTemplateId || null,
             whatsapp_message_body: formData.whatsappMessageBody || null,
             whatsapp_media_url: formData.whatsappMediaUrl || null,
-            whatsapp_status: formData.isWhatsappSchedule ? 'PENDING' : 'PENDING' 
+            whatsapp_status: formData.isWhatsappSchedule ? 'PENDING' : 'PENDING'
         };
 
-
         if (editingTask) {
-             const { error } = await supabase.from('SITE_Tasks').update(payload).eq('id', editingTask.id);
-             if (error) alert('Erro ao atualizar: ' + error.message);
+            const { error } = await supabase.from('SITE_Tasks').update(payload).eq('id', editingTask.id);
+            if (error) alert('Erro ao atualizar: ' + error.message);
         } else {
-             const { error } = await supabase.from('SITE_Tasks').insert([payload]);
-             if (error) alert('Erro ao criar: ' + error.message);
+            const { error } = await supabase.from('SITE_Tasks').insert([payload]);
+            if (error) alert('Erro ao criar: ' + error.message);
         }
 
         setIsModalOpen(false);
         setEditingTask(null);
-        setEditingTask(null);
-        setFormData({ 
+        setFormData({
             title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '', status: 'TODO', leadId: '', categoryId: '',
             isWhatsappSchedule: false, whatsappTemplateId: '', whatsappMessageBody: '', whatsappMediaUrl: ''
         });
@@ -414,7 +391,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             priority: task.priority,
             dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : '',
             status: task.status,
-            leadId: task.leadId || '', // Load Lead ID
+            leadId: task.leadId || '',
             categoryId: task.categoryId || '',
             isWhatsappSchedule: (task as any).isWhatsappSchedule || false,
             whatsappTemplateId: (task as any).whatsappTemplateId || '',
@@ -424,54 +401,34 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         setIsModalOpen(true);
     };
 
-    // Filter Logic
     const filteredTasks = tasks.filter(t => {
-        // Enforce Privacy
         if (!canViewTeam && t.assignedTo !== user?.id) return false;
-
         if (filterStatus !== 'ALL' && t.status !== filterStatus) return false;
         if (filterPriority !== 'ALL' && t.priority !== filterPriority) return false;
         if (filterUser !== 'ALL' && t.assignedTo !== filterUser) return false;
         if (filterCategory !== 'ALL' && t.categoryId !== filterCategory) return false;
-        
         if (showOverdue) {
             if (t.status === 'DONE') return false;
             if (!t.dueDate || new Date(t.dueDate) > new Date()) return false;
         }
-
         if (dateRange.start && new Date(t.createdAt) < new Date(dateRange.start)) return false;
         if (dateRange.end && new Date(t.createdAt) > new Date(dateRange.end)) return false;
-
         return true;
     });
 
-    // Column Partitioning (Prioritizing Status over Overdue for columns)
     const todoTasks = filteredTasks.filter(t => t.status === 'TODO');
     const inProgressTasks = filteredTasks.filter(t => t.status === 'IN_PROGRESS');
     const doneTasks = filteredTasks.filter(t => t.status === 'DONE');
-    
-    // Sort
+
     const sortFn = (a: Task, b: Task) => {
-        // High priority first
         const pMap: any = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
         if (pMap[a.priority] !== pMap[b.priority]) return pMap[a.priority] - pMap[b.priority];
-        // Then due date
         return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
     };
 
     todoTasks.sort(sortFn);
     inProgressTasks.sort(sortFn);
     doneTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    const getPriorityColor = (p: string) => {
-        switch(p) {
-            case 'URGENT': return 'bg-red-100 text-red-700 border-red-200';
-            case 'HIGH': return 'bg-orange-100 text-orange-700 border-orange-200';
-            case 'MEDIUM': return 'bg-blue-100 text-blue-700 border-blue-200';
-            case 'LOW': return 'bg-gray-100 text-gray-700 border-gray-200';
-            default: return 'bg-gray-100';
-        }
-    };
 
     return (
         <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-transparent h-full flex flex-col transition-colors duration-300">
@@ -493,7 +450,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                             <List size={18} />
                         </button>
                     </div>
-                    <button 
+                    <button
                         onClick={() => { setEditingTask(null); setFormData({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '', status: 'TODO', leadId: '', categoryId: '', isWhatsappSchedule: false, whatsappTemplateId: '', whatsappMessageBody: '' }); setIsModalOpen(true); }}
                         className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors shadow-lg print:hidden flex-1 sm:flex-none justify-center ml-auto"
                     >
@@ -502,7 +459,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                 </div>
             </div>
 
-            {/* Filters (Hidden on Print) */}
+            {/* Filters */}
             <div className="p-4 bg-gray-50 dark:bg-[#1A1A1A] border-b border-gray-100 dark:border-gray-800 flex flex-wrap gap-2 sm:gap-4 print:hidden">
                 <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
                     <Filter size={16} className="text-gray-400 shrink-0" />
@@ -513,7 +470,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                         <option value="DONE">Concluído</option>
                     </select>
                 </div>
-                
+
                 {(isAdmin || canViewTeam) && (
                     <div className="flex items-center gap-2 bg-white dark:bg-black/20 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
                         <User size={16} className="text-gray-400 shrink-0" />
@@ -541,82 +498,80 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                     <button onClick={() => setDatePreset(7)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/10 rounded whitespace-nowrap text-gray-700 dark:text-gray-300">7d</button>
                     <button onClick={() => setDatePreset(30)} className="px-3 py-1 text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/10 rounded whitespace-nowrap text-gray-700 dark:text-gray-300">30d</button>
                     <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1 shrink-0"></div>
-                    <input 
-                        type="date" 
+                    <input
+                        type="date"
                         className="text-xs outline-none font-bold text-gray-600 dark:text-gray-400 bg-transparent min-w-[100px]"
                         value={dateRange.start}
-                        onChange={e => setDateRange({...dateRange, start: e.target.value})}
+                        onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
                     />
                     <span className="text-gray-300 dark:text-gray-600">-</span>
-                    <input 
-                        type="date" 
+                    <input
+                        type="date"
                         className="text-xs outline-none font-bold text-gray-600 dark:text-gray-400 bg-transparent min-w-[100px]"
                         value={dateRange.end}
-                        onChange={e => setDateRange({...dateRange, end: e.target.value})}
+                        onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
                     />
                 </div>
             </div>
 
-            {/* Task Content (Grid or List) */}
+            {/* Task Content */}
             <div className="flex-1 overflow-hidden bg-gray-50/50 dark:bg-[#111]/50 flex flex-col">
                 {viewMode === 'grid' ? (
-                    // GRID VIEW (V2 Kanban Minimalist - Updated to Print 3 Style)
                     <div className="flex-1 overflow-y-auto md:overflow-x-auto h-full p-2 sm:p-4 bg-gray-50 dark:bg-[#111]">
                         <div className="flex flex-col md:flex-row gap-6 md:gap-4 h-auto md:h-full w-full md:min-w-[1000px]">
-                            
+
                             {/* TODO COL */}
-                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-0 border border-transparent dark:border-gray-800">
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-3 border border-transparent dark:border-gray-800">
                                 <div className="mb-4 flex items-center justify-between px-1">
-                                     <div className="flex items-center gap-2 text-blue-500">
+                                    <div className="flex items-center gap-2 text-blue-500">
                                         <Clock size={18} />
                                         <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm">Pendentes ({todoTasks.length})</h3>
-                                     </div>
-                                     <button onClick={() => { setFormData({ ...formData, status: 'TODO' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-blue-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
+                                    </div>
+                                    <button onClick={() => { setFormData({ ...formData, status: 'TODO' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-blue-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
-                                 <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
-                                     {todoTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
-                                     ))}
-                                     {todoTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa pendente</div>}
+                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                    {todoTasks.map(task => (
+                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
+                                    ))}
+                                    {todoTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa pendente</div>}
                                 </div>
                             </div>
 
                             {/* IN PROGRESS COL */}
-                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-0 border border-transparent dark:border-gray-800">
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-3 border border-transparent dark:border-gray-800">
                                 <div className="mb-4 flex items-center justify-between px-1">
-                                     <div className="flex items-center gap-2 text-sky-500">
+                                    <div className="flex items-center gap-2 text-sky-500">
                                         <Clock size={18} />
                                         <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm">Em andamento ({inProgressTasks.length})</h3>
-                                     </div>
-                                     <button onClick={() => { setFormData({ ...formData, status: 'IN_PROGRESS' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-sky-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
+                                    </div>
+                                    <button onClick={() => { setFormData({ ...formData, status: 'IN_PROGRESS' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-sky-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
                                 <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
-                                     {inProgressTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
-                                     ))}
-                                     {inProgressTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa em andamento</div>}
+                                    {inProgressTasks.map(task => (
+                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
+                                    ))}
+                                    {inProgressTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa em andamento</div>}
                                 </div>
                             </div>
 
                             {/* DONE COL */}
-                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-0 border border-transparent dark:border-gray-800">
+                            <div className="flex-none md:flex-1 flex flex-col w-full md:min-w-[300px] bg-gray-100/50 dark:bg-[#1A1A1A] rounded-xl p-2 md:p-3 border border-transparent dark:border-gray-800">
                                 <div className="mb-4 flex items-center justify-between px-1">
-                                     <div className="flex items-center gap-2 text-green-500">
+                                    <div className="flex items-center gap-2 text-green-500">
                                         <CheckCircle size={18} />
                                         <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm">Concluídas ({doneTasks.length})</h3>
-                                     </div>
-                                     <button className="text-gray-300 hover:text-green-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center pointer-events-none opacity-50"><Plus size={14} /></button>
+                                    </div>
+                                    <button className="text-gray-300 hover:text-green-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center pointer-events-none opacity-50"><Plus size={14} /></button>
                                 </div>
                                 <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
-                                     {doneTasks.map(task => (
-                                         <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} isDoneStyle />
-                                     ))}
+                                    {doneTasks.map(task => (
+                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} isDoneStyle />
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    // LIST VIEW (Table)
                     <div className="flex-1 overflow-y-auto p-2 sm:p-6 pb-20">
                         <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
                             <table className="w-full text-left">
@@ -650,7 +605,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             <AnimatePresence>
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
@@ -664,13 +619,13 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                             <form onSubmit={handleSave} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Título</label>
-                                    <input required className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                                    <input required className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Prioridade</label>
-                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value as any})}>
+                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.priority} onChange={e => setFormData({ ...formData, priority: e.target.value as any })}>
                                             <option value="LOW">Baixa</option>
                                             <option value="MEDIUM">Média</option>
                                             <option value="HIGH">Alta</option>
@@ -679,7 +634,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status</label>
-                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value as any})}>
+                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
                                             <option value="TODO">Pendente</option>
                                             <option value="IN_PROGRESS">Em Andamento</option>
                                             <option value="DONE">Concluído</option>
@@ -690,7 +645,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Atribuir Para</label>
                                     {canAssignOthers ? (
-                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.assignedTo} onChange={e => setFormData({...formData, assignedTo: e.target.value})}>
+                                        <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.assignedTo} onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}>
                                             <option value="">-- Selecione --</option>
                                             {Object.entries(usersMap).map(([id, name]) => (
                                                 <option key={id} value={id}>{name}</option>
@@ -705,17 +660,17 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Vincular Lead (Opcional)</label>
-                                    <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.leadId} onChange={e => setFormData({...formData, leadId: e.target.value})}>
+                                    <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.leadId} onChange={e => setFormData({ ...formData, leadId: e.target.value })}>
                                         <option value="">-- Nenhum Lead --</option>
                                         {leads.map(lead => (
                                             <option key={lead.id} value={lead.id}>{lead.name}</option>
                                         ))}
                                     </select>
                                 </div>
-                                
+
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoria</label>
-                                    <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})}>
+                                    <select className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })}>
                                         <option value="">-- Sem Categoria --</option>
                                         {categories.map(cat => (
                                             <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -725,107 +680,60 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Vencimento (Data de Disparo)</label>
-                                    <input 
-                                        type="datetime-local" 
-                                        className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2" 
-                                        value={formData.dueDate} 
-                                        onChange={e => setFormData({...formData, dueDate: e.target.value})} 
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2"
+                                        value={formData.dueDate}
+                                        onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
                                     />
                                 </div>
 
                                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-2">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 id="wa_schedule"
                                                 className="w-4 h-4 text-green-600 rounded"
                                                 checked={formData.isWhatsappSchedule}
-                                                onChange={e => setFormData({...formData, isWhatsappSchedule: e.target.checked})} 
+                                                onChange={e => setFormData({ ...formData, isWhatsappSchedule: e.target.checked })}
                                             />
                                             <label htmlFor="wa_schedule" className="font-bold text-green-800 dark:text-green-400 text-sm cursor-pointer flex items-center gap-1">
                                                 Automação WhatsApp
                                             </label>
                                         </div>
-                                        {formData.isWhatsappSchedule && (
-                                            <span className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded border border-green-200 dark:border-green-700">
-                                                Envio Automático
-                                            </span>
-                                        )}
                                     </div>
-                                    
+
                                     {formData.isWhatsappSchedule && (
                                         <div className="space-y-4 mt-3 animate-in fade-in slide-in-from-top-2">
                                             <div className="bg-white/50 dark:bg-white/5 p-3 rounded-lg border border-green-100/50 dark:border-green-800/50">
                                                 <label className="block text-[10px] font-black text-green-700 dark:text-green-400 uppercase mb-2">Conteúdo do Disparo</label>
-                                                <div className="flex gap-2 mb-3">
-                                                    <button 
-                                                        type="button"
-                                                        onClick={() => setFormData({...formData, whatsappTemplateId: '', whatsappMessageBody: ''})} 
-                                                        className={`flex-1 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${!formData.whatsappTemplateId ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
-                                                    >
-                                                        Personalizado
-                                                    </button>
-                                                    <div className="flex-1">
-                                                        <select 
-                                                            className={`w-full py-1.5 px-2 rounded text-[10px] font-bold uppercase tracking-wider outline-none transition-all ${formData.whatsappTemplateId ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
-                                                            value={formData.whatsappTemplateId}
-                                                            onChange={e => {
-                                                                const tmpl = messageTemplates.find(t => t.id === e.target.value);
-                                                                setFormData({
-                                                                    ...formData, 
-                                                                    whatsappTemplateId: e.target.value,
-                                                                    whatsappMessageBody: tmpl ? tmpl.content : ''
-                                                                });
-                                                            }}
-                                                        >
-                                                            <option value="">Usar Modelo...</option>
-                                                            {messageTemplates.map(t => (
-                                                                <option key={t.id} value={t.id}>{t.title}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <textarea 
+                                                <textarea
                                                     className="w-full border border-green-200 dark:border-green-800 dark:bg-[#222] dark:text-white rounded-lg p-3 text-sm h-32 focus:border-green-500 outline-none transition-all"
                                                     value={formData.whatsappMessageBody}
-                                                    onChange={e => setFormData({...formData, whatsappMessageBody: e.target.value})}
+                                                    onChange={e => setFormData({ ...formData, whatsappMessageBody: e.target.value })}
                                                     placeholder="Digite a mensagem personalizada..."
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-xs font-bold text-green-700 dark:text-green-400 uppercase mb-1 flex items-center gap-1.5">
-                                                     Imagem do Disparo <span className="text-[9px] font-normal lowercase">(Opcional)</span>
-                                                </label>
+                                                <label className="block text-xs font-bold text-green-700 dark:text-green-400 uppercase mb-1">Imagem do Disparo</label>
                                                 <div className="flex gap-2">
-                                                    <div className="relative flex-1">
-                                                        <ImageIcon size={14} className="absolute left-3 top-2.5 text-green-400" />
-                                                        <input 
-                                                            className="w-full border border-green-200 dark:border-green-800 dark:bg-[#222] dark:text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:border-green-500 outline-none transition-all bg-white" 
-                                                            placeholder="URL da imagem (https://...)"
-                                                            value={formData.whatsappMediaUrl}
-                                                            onChange={e => setFormData({...formData, whatsappMediaUrl: e.target.value})}
-                                                        />
-                                                    </div>
-                                                    <label className="flex items-center justify-center bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors" title="Fazer Upload">
-                                                        <Upload size={14} className="text-green-600 dark:text-green-400" />
-                                                        <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
-                                                    </label>
+                                                    <input
+                                                        className="flex-1 border border-green-200 dark:border-green-800 dark:bg-[#222] dark:text-white rounded-lg px-3 py-2 text-sm focus:border-green-500 outline-none"
+                                                        placeholder="URL da imagem..."
+                                                        value={formData.whatsappMediaUrl}
+                                                        onChange={e => setFormData({ ...formData, whatsappMediaUrl: e.target.value })}
+                                                    />
                                                 </div>
                                             </div>
-
-                                            <p className="text-[10px] text-green-600 dark:text-green-400 leading-tight italic">
-                                                O disparo ocorrerá no vencimento selecionado. Certifique-se de que sua conexão WhatsApp está ATIVA no perfil.
-                                            </p>
                                         </div>
                                     )}
                                 </div>
 
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
-                                    <textarea className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2 h-24" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                                    <textarea className="w-full border border-gray-300 dark:border-gray-700 dark:bg-[#222] dark:text-white rounded p-2 h-24" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                                 </div>
 
                                 <div className="pt-4 flex justify-end gap-2">

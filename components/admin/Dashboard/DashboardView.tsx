@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Users, ShoppingBag, Calendar, CheckCircle, BarChart3, Award, ArrowUpRight, ArrowRight, User } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { DollarSign, TrendingUp, Users, ShoppingBag, CheckCircle, BarChart3, Award, ArrowUpRight, ArrowRight, Target, Megaphone, MessageCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
+import Chart from 'react-apexcharts';
+import CountUp from 'react-countup';
+import { useAuth } from '../../../context/AuthContext';
 
 const DashboardView = () => {
+    const { user } = useAuth(); // Import user context
     const [loading, setLoading] = useState(true);
     const [filterPeriod, setFilterPeriod] = useState('YYYY');
 
@@ -17,19 +20,27 @@ const DashboardView = () => {
         totalStudents: 0,
         activeCourses: 0,
         totalAttendances: 0,
-        completedTasks: 0
+        completedTasks: 0,
+        whatsappShots: 0
     });
 
-    // Lists for Rankings
+    // Lists for Rankings & Summaries
     const [attendantsRank, setAttendantsRank] = useState<any[]>([]);
     const [coursesRank, setCoursesRank] = useState<any[]>([]);
-    
+    const [recentCampaigns, setRecentCampaigns] = useState<any[]>([]);
+
     // Charts Data
-    const [financialHistory, setFinancialHistory] = useState<{ month: string, revenue: number, expenses: number }[]>([]);
+    const [financialChartSeries, setFinancialChartSeries] = useState<any[]>([]);
+    const [financialChartOptions, setFinancialChartOptions] = useState<any>({});
+
+    const [funnelSeries, setFunnelSeries] = useState<any[]>([]);
+    const [funnelOptions, setFunnelOptions] = useState<any>({});
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [filterPeriod]);
+        if (user) {
+            fetchDashboardData();
+        }
+    }, [filterPeriod, user]);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -48,67 +59,98 @@ const DashboardView = () => {
         }
 
         try {
-            // 1. Fetch Leads (for Conversion & Attendant Rank)
-            // Added conversion_value and corrected owner_id to assigned_to
-            const { data: leadsDTO } = await supabase
-                .from('SITE_Leads')
-                .select('id, status, assigned_to, created_at, conversion_value')
-                .gte('created_at', startDate);
-            
-            const leads = leadsDTO || [];
-            
-            // 2. Fetch Users (for Names)
-            const { data: users } = await supabase.from('SITE_Users').select('id, name');
-            const userMap = new Map(users?.map(u => [u.id, u.name]) || []);
+            // Determine Role (Robust Check)
+            let isAdmin = false;
 
-            // 3. Fetch Enrollments (Revenue & Course Rank)
-            const { data: enrollments } = await supabase
-                .from('SITE_Enrollments')
-                .select('amount_paid, created_at, course_id, status')
-                .gte('created_at', startDate);
+            if (user?.role) {
+                if (typeof user.role === 'string') {
+                    isAdmin = ['ADMIN', 'Admin', 'Super Admin'].includes(user.role);
+                } else if (typeof user.role === 'object') {
+                    // Check name or level (assuming Level 10+ is Admin)
+                    isAdmin =
+                        ['ADMIN', 'Admin', 'Super Admin'].includes(user.role.name) ||
+                        (user.role.level && user.role.level >= 10);
+                }
+            }
 
-            // 4. Fetch Courses (Titles)
-            const { data: courses } = await supabase.from('SITE_Courses').select('id, title, status');
+            console.log("Dashboard Role Check:", { role: user?.role, isAdmin }); // Debug log
+
+            const userId = user?.id;
+
+            // 1. Fetch Global Data (Rankings needs everyone)
+            // Ideally we fetch "Leads" globally for ranking, BUT display "My Results" differently.
+            // Let's fetch ALL leads for calculation, then filter in memory for "My Stats".
+
+            // Optimization: If dataset grows huge, we should split queries. 
+            // For now, fetching all is fine for ranking purposes.
+
+            const [
+                { data: leadsDTO },
+                { data: usersDTO },
+                { data: enrollments },
+                { data: courses },
+                { data: tasksDTO },
+                { data: expensesDTO },
+                { data: campaigns }
+            ] = await Promise.all([
+                supabase.from('SITE_Leads').select('id, status, assigned_to, created_at, conversion_value').gte('created_at', startDate),
+                supabase.from('SITE_Users').select('id, name'),
+                supabase.from('SITE_Enrollments').select('amount_paid, created_at, course_id, status').gte('created_at', startDate),
+                supabase.from('SITE_Courses').select('id, title, status'),
+                supabase.from('SITE_Tasks').select('id, status, closed_at, assigned_to').gte('created_at', startDate),
+                supabase.from('SITE_Transactions').select('amount, date, type').eq('type', 'Expense').gte('date', startDate),
+                supabase.from('SITE_MarketingCampaigns').select('id, name, channel, status, stats_sent, created_at').order('created_at', { ascending: false }).limit(5)
+            ]);
+
+            const allLeads = leadsDTO || [];
+            const userMap = new Map(usersDTO?.map(u => [u.id, u.name]) || []);
             const courseMap = new Map(courses?.map(c => [c.id, c.title]) || []);
+            const allTasks = tasksDTO || [];
 
-            // 5. Fetch Tasks (Attendances/Productivity)
-            const { data: tasks } = await supabase
-                .from('SITE_Tasks')
-                .select('id, status, closed_at')
-                .gte('created_at', startDate);
+            // --- FILTERING FOR VIEW ---
+            // If Admin: View All. If User: View Only Assigned.
+            // Exception: Ranking (Always Global). Campaigns (Usually Global or Permission based? Let's keep Global for now as "Company Campaings").
+            // Expenses: Usually only Admins see expenses. Let's hide expenses for non-admins? Or show 0? 
+            // User requested: "cada usuario veja seu resultado" (their result).
 
-            // 6. Fetch Expenses (Transactions)
-            const { data: expensesDTO } = await supabase
-                .from('SITE_Transactions')
-                .select('amount, date, type')
-                .eq('type', 'Expense') // Ensure we only get expenses
-                .gte('date', startDate);
+            const myLeads = isAdmin ? allLeads : allLeads.filter(l => l.assigned_to === userId);
+            const myTasks = isAdmin ? allTasks : allTasks.filter(t => t.assigned_to === userId);
 
-            // --- CALCULATIONS ---
+            // Revenue for User: Based on THEIR closed leads/enrollments.
+            // Enrollments don't always have 'assigned_to'. We link via Lead? 
+            // For simplicty, let's use CRM Value for users, or assume Enrollments are global revenue (Company Revenue).
+            // "cada usuario veja SEU resultado". So Revenue should be "Minhas Vendas".
+            // Expenses: Users usually don't have "My Expenses" in this context unless tracked. Let's show 0 for users or hide.
 
-            // A. General KPIs
-            const totalLeads = leads.length;
-            const convertedLeads = leads.filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status)).length;
+            // Filter Enrollments? We don't have 'sold_by' on enrollments clearly here, often assumed from Lead owner.
+            // Let's rely on CRM Sales Value for the User's "Revenue" KPI.
+
+            // --- CALCULATIONS (PERSONAL VIEW) ---
+            const totalLeads = myLeads.length;
+            const convertedLeads = myLeads.filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)).length;
             const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
-            
-            // Revenue: Sum of Enrollments Paid + CRM Won Values (if distinct? For now, we assume CRM Value is the Sales Metric the user wants)
-            // If enrollments are empty, we rely on CRM Sales.
-            const enrollmentRevenue = enrollments?.reduce((acc, curr) => acc + (curr.amount_paid || 0), 0) || 0;
-            
-            // CRM Sales Value
-            const crmSalesValue = leads
-                .filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status))
+
+            const crmSalesValue = myLeads
+                .filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status))
                 .reduce((acc, curr) => acc + (Number(curr.conversion_value) || 0), 0);
 
-            // Use the greater of real payments or CRM booked value for "Revenue" display, or sum if they track different things.
-            // Given the user report, they expect CRM value to show up.
-            const totalRevenue = Math.max(enrollmentRevenue, crmSalesValue); 
+            // Special Case: Enrollment Revenue often tracks real payments. 
+            // If Admin, use Total Enrollment Revenue. If User, maybe use CRM Value as proxy for "My Contribution"?
+            // Or if we can link enrollments. The current code matches CRM value.
+            const totalRevenue = crmSalesValue;
 
-            const totalExpenses = expensesDTO?.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0;
-            const totalStudents = enrollments?.filter(e => e.status !== 'Cancelled').length || 0;
+            // Expenses: Only Admin sees company expenses
+            const totalExpenses = isAdmin ? (expensesDTO?.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0) : 0;
+
+            const totalStudents = enrollments?.filter(e => e.status !== 'Cancelled').length || 0; // Global Stat? Or "My Students"? Usually Global is fine for "Active Students in School".
             const activeCoursesCount = courses?.filter(c => c.status === 'Published').length || 0;
-            const totalAttendances = tasks?.length || 0;
-            const completedTasks = tasks?.filter(t => t.status === 'DONE').length || 0;
+
+            const totalAttendances = myTasks.length;
+            const completedTasks = myTasks.filter(t => t.status === 'DONE').length;
+
+            // WhatsApp: Global stat usually? Or messages sent by me? 
+            // Campaings are usually central. Let's show Global for everyone for now (System Health).
+            const whatsappShots = campaigns?.filter(c => c.channel === 'WhatsApp').reduce((acc, curr) => acc + (curr.stats_sent || 0), 0) || 0;
 
             setKpis({
                 revenue: totalRevenue,
@@ -116,103 +158,183 @@ const DashboardView = () => {
                 netResult: totalRevenue - totalExpenses,
                 totalLeads,
                 conversionRate,
-                totalStudents,
-                activeCourses: activeCoursesCount,
+                totalStudents, // Keep Global
+                activeCourses: activeCoursesCount, // Keep Global
                 totalAttendances,
-                completedTasks
+                completedTasks,
+                whatsappShots // Keep Global
             });
+            setRecentCampaigns(campaigns || []);
 
-            // B. Attendant Ranking
-            const attendantStats: Record<string, { name: string, total: number, converted: number }> = {};
-            
-            leads.forEach(l => {
-                const ownerId = l.assigned_to || 'unassigned'; // FIXED: use assigned_to
-                const name = ownerId === 'unassigned' ? 'Sem Dono' : (userMap.get(ownerId) || 'Desconhecido');
-                
-                if (!attendantStats[ownerId]) attendantStats[ownerId] = { name, total: 0, converted: 0 };
-                
-                attendantStats[ownerId].total++;
-                if (['Converted', 'Matriculated', 'Fechamento', 'Ganho'].includes(l.status)) {
-                    attendantStats[ownerId].converted++;
-                }
-            });
-
-            const rankedAttendants = Object.values(attendantStats)
-                .map(stat => ({
-                    ...stat,
-                    rate: stat.total > 0 ? (stat.converted / stat.total) * 100 : 0
-                }))
-                .sort((a, b) => b.rate - a.rate || b.converted - a.converted); // Sort by Rate then Volume
-
-            setAttendantsRank(rankedAttendants);
-
-            // C. Course Ranking
-            const courseStats: Record<string, { title: string, students: number, revenue: number }> = {};
-            
-            enrollments?.forEach((e: any) => {
-                const cId = e.course_id || 'unknown';
-                const title = courseMap.get(cId) || 'Curso Desconhecido';
-                
-                if (!courseStats[cId]) courseStats[cId] = { title, students: 0, revenue: 0 };
-                courseStats[cId].students++; // Count all enrollments for volume
-                courseStats[cId].revenue += (e.amount_paid || 0);
-            });
-
-            const rankedCourses = Object.values(courseStats)
-                .sort((a, b) => b.revenue - a.revenue);
-
-            setCoursesRank(rankedCourses);
-
-            // D. Financial History (Month by Month)
+            // B. ApexCharts: Financial Evolution (PERSONAL)
             const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             const historyMap: Record<number, { revenue: number, expenses: number }> = {};
+            for (let i = 0; i < 12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
 
-            // Init 12 months
-            for(let i=0; i<12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
-
-            // Merge Enrollment Revenue
-            enrollments?.forEach((e: any) => {
-                if (!e.created_at) return;
-                const month = new Date(e.created_at).getMonth();
-                historyMap[month].revenue += (Number(e.amount_paid) || 0);
-            });
-
-            // Merge CRM Revenue (Only if not already tracked in enrollments or as a supplement)
-            // Strategy: Add if user tracks value in CRM that isn't yet an enrollment
-            leads.forEach((l: any) => {
+            // For Chart, stick to CRM Value for consistency with "My Results"
+            myLeads.forEach((l: any) => {
                 if (['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)) {
                     if (!l.created_at) return;
                     const month = new Date(l.created_at).getMonth();
-                    const val = Number(l.conversion_value) || 0;
-                    // If we have both, we take the max per month to avoid double counting if they record both
-                    // Or follow the KPI logic: Math.max(enrollmentRevenue, crmSalesValue)
-                    // But history is per month. Let's add them for now as many users track recurring or different types.
-                    // Actually, if they are seeing 0 in history but 1730 in KPI, it's because crmSalesValue > 0
-                    // and it was resetting historyMap in the old code.
-                    
-                    // Improved logic: If this lead resulted in an enrollment, it might be double counting.
-                    // But we don't have a direct link often. Let's just sum and let the user manage data, 
-                    // OR follow the KPI logic of "Math.max" at month level.
-                    historyMap[month].revenue = Math.max(historyMap[month].revenue, val);
+                    historyMap[month].revenue += (Number(l.conversion_value) || 0);
                 }
             });
 
-            expensesDTO?.forEach((ex: any) => {
-                if (!ex.date) return;
-                const month = new Date(ex.date).getMonth();
-                historyMap[month].expenses += Number(ex.amount || 0);
+            if (isAdmin) {
+                expensesDTO?.forEach((ex: any) => {
+                    if (!ex.date) return;
+                    const month = new Date(ex.date).getMonth();
+                    historyMap[month].expenses += Number(ex.amount || 0);
+                });
+            }
+
+            // Prepare Series
+            const currentMonthIndex = new Date().getMonth();
+            const sliceLimit = filterPeriod === 'YYYY' ? currentMonthIndex + 2 : 12;
+
+            const revenueData = months.map((_, i) => historyMap[i].revenue).slice(0, sliceLimit);
+            const expensesData = months.map((_, i) => historyMap[i].expenses).slice(0, sliceLimit);
+            const categories = months.slice(0, sliceLimit);
+
+            setFinancialChartSeries([
+                { name: isAdmin ? 'Receita Total' : 'Minhas Vendas', data: revenueData },
+                { name: 'Despesas', data: expensesData }
+            ]);
+
+            setFinancialChartOptions({
+                chart: {
+                    type: 'area',
+                    height: 350,
+                    toolbar: { show: false },
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800,
+                        animateGradually: { enabled: true, delay: 150 },
+                        dynamicAnimation: { enabled: true, speed: 350 }
+                    }
+                },
+                colors: ['#22c55e', '#ef4444'],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.2,
+                        stops: [0, 90, 100]
+                    }
+                },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 2 },
+                xaxis: {
+                    categories: categories,
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    labels: { style: { colors: '#9ca3af', fontSize: '12px', fontFamily: 'Inter' } }
+                },
+                yaxis: {
+                    labels: {
+                        style: { colors: '#9ca3af', fontSize: '12px', fontFamily: 'Inter' },
+                        formatter: (val: number) => `R$ ${val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val.toFixed(0)}`
+                    }
+                },
+                grid: {
+                    borderColor: '#f3f4f6',
+                    strokeDashArray: 4,
+                    yaxis: { lines: { show: true } }
+                },
+                tooltip: {
+                    theme: 'dark',
+                    y: { formatter: (val: number) => `R$ ${val.toLocaleString('pt-BR')}` }
+                }
             });
 
-            const chartData = months.map((mName, mIndex) => ({
-                month: mName,
-                revenue: historyMap[mIndex].revenue,
-                expenses: historyMap[mIndex].expenses
-            }));
-            
-            // Show at least 6 months or all months with data
-            const currentMonthIndex = new Date().getMonth();
-            const displayMonths = Math.max(6, currentMonthIndex + 1);
-            setFinancialHistory(chartData.slice(0, displayMonths));
+            // C. ApexCharts: Sales Funnel (PERSONAL)
+            const leadsInteracted = myLeads.filter(l => l.status !== 'New').length;
+            const leadsNegotiating = myLeads.filter(l => ['Negotiating', 'Qualified', 'Proposta', 'Agendado'].includes(l.status)).length;
+
+            setFunnelSeries([{
+                name: "Leads",
+                data: [totalLeads, leadsInteracted, leadsNegotiating + convertedLeads, convertedLeads]
+            }]);
+
+            setFunnelOptions({
+                chart: {
+                    type: 'bar',
+                    height: 350,
+                    dropShadow: {
+                        enabled: true,
+                    },
+                    toolbar: { show: false }
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 0,
+                        horizontal: true,
+                        barHeight: '80%',
+                        isFunnel: true,
+                    },
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val: any, opt: any) {
+                        return opt.w.globals.labels[opt.dataPointIndex] + ':  ' + val
+                    },
+                    dropShadow: {
+                        enabled: true,
+                    },
+                    style: {
+                        colors: ['#fff']
+                    }
+                },
+                title: {
+                    text: isAdmin ? 'Funil de Conversão (Geral)' : 'Meu Funil de Conversão',
+                    align: 'middle',
+                    style: { color: '#888' }
+                },
+                xaxis: {
+                    categories: [
+                        'Total Leads',
+                        'Interação',
+                        'Negociação',
+                        'Vendas'
+                    ],
+                    labels: { style: { colors: '#9ca3af' } }
+                },
+                legend: {
+                    show: false,
+                },
+                colors: ['#3b82f6', '#818cf8', '#facc15', '#22c55e'],
+                tooltip: { theme: 'dark' }
+            });
+
+
+            // D. Rankings (ALWAYS GLOBAL)
+            const attendantStats: Record<string, { name: string, total: number, converted: number }> = {};
+
+            // Use allLeads for ranking
+            allLeads.forEach(l => {
+                const ownerId = l.assigned_to || 'unassigned';
+                const name = ownerId === 'unassigned' ? 'Sem Dono' : (userMap.get(ownerId) || 'Desconhecido');
+                if (!attendantStats[ownerId]) attendantStats[ownerId] = { name, total: 0, converted: 0 };
+                attendantStats[ownerId].total++;
+                if (['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)) attendantStats[ownerId].converted++;
+            });
+            setAttendantsRank(Object.values(attendantStats)
+                .map(stat => ({ ...stat, rate: stat.total > 0 ? (stat.converted / stat.total) * 100 : 0 }))
+                .sort((a, b) => b.rate - a.rate || b.converted - a.converted)
+            );
+
+            // Course Ranking (Always Global)
+            const courseStats: Record<string, { title: string, students: number, revenue: number }> = {};
+            enrollments?.forEach((e: any) => {
+                const cId = e.course_id || 'unknown';
+                const title = courseMap.get(cId) || 'Curso Desconhecido';
+                if (!courseStats[cId]) courseStats[cId] = { title, students: 0, revenue: 0 };
+                courseStats[cId].students++;
+                courseStats[cId].revenue += (e.amount_paid || 0);
+            });
+            setCoursesRank(Object.values(courseStats).sort((a, b) => b.revenue - a.revenue));
 
         } catch (error) {
             console.error("Error fetching dashboard:", error);
@@ -221,11 +343,9 @@ const DashboardView = () => {
         }
     };
 
-    // --- SUB-COMPONENTS ---
-    
-    const KpiCard = ({ label, value, sub, icon: Icon, color, trend }: any) => (
-        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-transparent shadow-sm relative overflow-hidden group hover:shadow-lg transition-all">
-            <div className={`absolute top-0 right-0 p-12 bg-${color.replace('text-', '')}/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2`}></div>
+    const KpiCard = ({ label, value, sub, icon: Icon, color, trend, isCurrency = false, isPercent = false }: any) => (
+        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-transparent shadow-sm relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+            <div className={`absolute top-0 right-0 p-12 bg-${color.replace('text-', '')}/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-${color.replace('text-', '')}/20 transition-colors`}></div>
             <div className="flex justify-between items-start mb-2">
                 <div className={`p-3 rounded-xl bg-${color.replace('text-', '')}/10 ${color}`}>
                     <Icon size={22} />
@@ -237,167 +357,181 @@ const DashboardView = () => {
                 )}
             </div>
             <div>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mt-2">{value}</h3>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mt-2">
+                    <CountUp
+                        end={value}
+                        duration={2.5}
+                        separator="."
+                        prefix={isCurrency ? 'R$ ' : ''}
+                        suffix={isPercent ? '%' : ''}
+                        decimals={isPercent ? 1 : 0}
+                    />
+                </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wide mt-1">{label}</p>
                 {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>}
             </div>
         </div>
     );
 
-    const FinancialChart = () => {
-        const maxVal = Math.max(...financialHistory.map(h => Math.max(h.revenue, h.expenses)), 1000);
-        
-        return (
-            <div className="w-full h-64 flex items-end gap-2 md:gap-4 mt-8 px-2">
-                {financialHistory.map((item, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 dark:bg-black text-white text-xs p-2 rounded pointer-events-none whitespace-nowrap z-10">
-                            <div className="text-green-400 font-bold">Rec: R$ {item.revenue.toLocaleString('pt-BR')}</div>
-                            <div className="text-red-400 font-bold">Desp: R$ {item.expenses.toLocaleString('pt-BR')}</div>
-                        </div>
-
-                        <div className="w-full flex justify-center gap-1 items-end h-full">
-                            {/* Revenue Bar */}
-                            <div 
-                                className="w-3 md:w-6 bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm transition-all duration-500 hover:opacity-80"
-                                style={{ height: `${(item.revenue / maxVal) * 100}%` }}
-                            ></div>
-                            {/* Expense Bar */}
-                            <div 
-                                className="w-3 md:w-6 bg-gradient-to-t from-red-600 to-red-400 rounded-t-sm transition-all duration-500 hover:opacity-80"
-                                style={{ height: `${(item.expenses / maxVal) * 100}%` }}
-                            ></div>
-                        </div>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">{item.month}</span>
-                    </div>
-                ))}
-            </div>
-        );
-    };
-
     return (
         <div className="space-y-8 animate-fade-in pb-12">
-            
+
             {/* Header & Filter */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent transition-colors">
                 <div>
-                     <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <BarChart3 className="text-wtech-gold" /> Visão Geral do Sistema
-                     </h2>
-                     <p className="text-gray-500 dark:text-gray-400 text-sm">Acompanhe métricas, ranking de equipe e saúde financeira.</p>
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <BarChart3 className="text-wtech-gold" /> Visão Geral ({
+                            (typeof user?.role === 'string' && ['ADMIN', 'Admin', 'Super Admin'].includes(user.role)) ||
+                                (typeof user?.role === 'object' && (['ADMIN', 'Admin', 'Super Admin'].includes(user?.role?.name) || (user?.role?.level && user.role.level >= 10)))
+                                ? 'Geral (Admin)' : 'Individual'
+                        })
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Acompanhe métricas, funil de vendas e saúde financeira.</p>
                 </div>
-                <select 
-                    value={filterPeriod} 
-                    onChange={e => setFilterPeriod(e.target.value)}
-                    className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-wtech-gold focus:border-wtech-gold block w-full md:w-auto p-2.5 font-bold"
-                >
-                    <option value="YYYY">Ano Atual</option>
-                    <option value="90d">Últimos 3 Meses</option>
-                    <option value="30d">Últimos 30 Dias</option>
-                </select>
+                <div className="flex gap-2">
+                    <select
+                        value={filterPeriod}
+                        onChange={e => setFilterPeriod(e.target.value)}
+                        className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-wtech-gold focus:border-wtech-gold block p-2.5 font-bold"
+                    >
+                        <option value="YYYY">Ano Atual</option>
+                        <option value="90d">Últimos 3 Meses</option>
+                        <option value="30d">Últimos 30 Dias</option>
+                    </select>
+                </div>
             </div>
 
-            {/* KPI ROW 1: General Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KpiCard 
-                    label="Receita Total" 
-                    value={`R$ ${kpis.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} 
-                    sub={`Despesas: R$ ${kpis.expenses.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-                    icon={DollarSign} 
-                    color="text-green-600" 
+            {/* KPI ROW: Animated Numbers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <KpiCard
+                    label="Receita (Total)"
+                    value={kpis.revenue}
+                    sub={`Despesas: R$ ${kpis.expenses.toLocaleString('pt-BR')}`}
+                    icon={DollarSign}
+                    color="text-green-600"
                     trend={kpis.revenue > 0 ? '+OK' : null}
+                    isCurrency={true}
                 />
-                <KpiCard 
-                    label="Total de Leads" 
-                    value={kpis.totalLeads} 
-                    sub={`Conversão Global: ${kpis.conversionRate.toFixed(1)}%`}
-                    icon={Users} 
-                    color="text-blue-600" 
+                <KpiCard
+                    label="Leads Atendidos"
+                    value={kpis.totalLeads}
+                    sub={`Conversão: ${kpis.conversionRate.toFixed(1)}%`}
+                    icon={Users}
+                    color="text-blue-600"
                 />
-                <KpiCard 
-                    label="Alunos Ativos" 
-                    value={kpis.totalStudents} 
-                    sub={`${kpis.activeCourses} Cursos Ofertados`}
-                    icon={ShoppingBag} 
-                    color="text-purple-600" 
+                <KpiCard
+                    label="Disparos WhatsApp"
+                    value={kpis.whatsappShots}
+                    sub="Mensagens Enviadas"
+                    icon={MessageCircle}
+                    color="text-green-500"
                 />
-                <KpiCard 
-                    label="Atendimentos" 
-                    value={kpis.completedTasks} 
-                    sub={`De ${kpis.totalAttendances} tarefas totais`}
-                    icon={CheckCircle} 
-                    color="text-wtech-gold" 
+                <KpiCard
+                    label="Alunos (Escola)"
+                    value={kpis.totalStudents}
+                    sub={`${kpis.activeCourses} Cursos`}
+                    icon={ShoppingBag}
+                    color="text-purple-600"
+                />
+                <KpiCard
+                    label="Tarefas Feitas"
+                    value={kpis.completedTasks}
+                    sub={`De ${kpis.totalAttendances} total`}
+                    icon={CheckCircle}
+                    color="text-wtech-gold"
                 />
             </div>
 
-            {/* MAIN SECTION: Financials & Top Performer */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* FINANCIAL CHART */}
-                <div className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden transition-colors">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
-                            <TrendingUp size={20} className="text-gray-400" />
-                            Evolução Financeira
-                        </h3>
-                        <div className="flex gap-4 text-xs font-bold">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-full"></div> <span className="text-gray-500 dark:text-gray-400">Receita</span></div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div> <span className="text-gray-500 dark:text-gray-400">Despesas</span></div>
-                        </div>
-                    </div>
-                    
-                    {/* Graph Container */}
-                    <div className="bg-gray-50 dark:bg-black/30 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
-                        <FinancialChart />
-                    </div>
+            {/* ROW 2: Financial Evolution (ApexCharts) */}
+            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent transition-colors">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
+                        <TrendingUp size={20} className="text-gray-400" />
+                        Evolução Financeira
+                    </h3>
                 </div>
 
-                {/* BEST ATTENDANT HIGHLIGHT */}
-                <div className="bg-gradient-to-br from-wtech-black to-gray-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden flex flex-col justify-between">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-wtech-gold rounded-full opacity-10 blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-                    
-                    <div>
-                        <div className="inline-block px-3 py-1 bg-wtech-gold text-black rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                            🏆 Top Performance
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-200">Melhor Atendente</h3>
-                        <p className="text-xs text-gray-400 mb-6">Maior taxa de conversão do período.</p>
-                        
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-wtech-gold to-yellow-600 p-[2px] shadow-lg shadow-wtech-gold/20">
-                                <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center text-xl font-bold text-wtech-gold">
-                                    {(attendantsRank[0]?.name || 'N/A').charAt(0)}
-                                </div>
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-white leading-none">{attendantsRank[0]?.name || 'Ninguém'}</div>
-                                <div className="text-wtech-gold font-bold text-lg mt-1">{attendantsRank[0]?.rate.toFixed(1)}% Conversão</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 bg-white/5 rounded-xl p-4 border border-white/10">
-                        <div>
-                            <div className="text-xs text-gray-400 uppercase">Vendas</div>
-                            <div className="text-lg font-bold text-white">{attendantsRank[0]?.converted || 0}</div>
-                        </div>
-                        <div>
-                            <div className="text-xs text-gray-400 uppercase">Total Leads</div>
-                            <div className="text-lg font-bold text-white">{attendantsRank[0]?.total || 0}</div>
-                        </div>
-                    </div>
+                <div className="h-[350px] w-full text-black">
+                    {financialChartSeries.length > 0 && typeof window !== 'undefined' && (
+                        <Chart options={financialChartOptions} series={financialChartSeries} type="area" height={350} />
+                    )}
                 </div>
             </div>
 
-            {/* RANKINGS ROW */}
+            {/* ROW 3: Sales Funnel & Marketing Campaigns */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                {/* Attendants Ranking Table */}
+
+                {/* Sales Funnel (ApexBar) */}
+                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent transition-colors">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
+                            <Target size={20} className="text-blue-500" />
+                            {(typeof user?.role === 'string' && ['ADMIN', 'Admin', 'Super Admin'].includes(user.role)) ||
+                                (typeof user?.role === 'object' && (['ADMIN', 'Admin', 'Super Admin'].includes(user?.role?.name) || user?.role?.level >= 10))
+                                ? 'Funil Global' : 'Meu Funil de Vendas'}
+                        </h3>
+                    </div>
+                    {funnelSeries.length > 0 && (
+                        <div className="h-[300px] w-full">
+                            <Chart options={funnelOptions} series={funnelSeries} type="bar" height={350} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Marketing Campaigns Summary */}
                 <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden flex flex-col transition-colors">
                     <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                         <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
-                            <Award className="text-wtech-gold" /> Ranking de Atendimento (Top 10)
+                            <Megaphone className="text-pink-500" /> Resumo de Campanhas
+                        </h3>
+                        <button className="text-xs text-wtech-gold font-bold uppercase hover:underline">Ver Todas</button>
+                    </div>
+                    <div className="overflow-x-auto flex-1">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 dark:bg-black/40 text-gray-500 dark:text-gray-400 font-bold uppercase text-xs">
+                                <tr>
+                                    <th className="px-6 py-3">Campanha</th>
+                                    <th className="px-6 py-3">Canal</th>
+                                    <th className="px-6 py-3 text-center">Disparos</th>
+                                    <th className="px-6 py-3 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 dark:text-gray-300">
+                                {recentCampaigns.map((camp, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{camp.name}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${camp.channel === 'WhatsApp' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                }`}>
+                                                {camp.channel}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center font-mono">{camp.stats_sent || 0}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`text-xs font-bold uppercase ${camp.status === 'Completed' ? 'text-green-500' :
+                                                camp.status === 'Processing' ? 'text-yellow-500' : 'text-gray-400'
+                                                }`}>{camp.status}</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {recentCampaigns.length === 0 && (
+                                    <tr><td colSpan={4} className="p-8 text-center text-gray-400 text-sm">Nenhuma campanha recente.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            {/* ROW 4: Rankings (Existing - ALWAYS GLOBAL) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* Attendants Ranking */}
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden flex flex-col transition-colors">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
+                            <Award className="text-wtech-gold" /> Ranking (Top 5)
                         </h3>
                     </div>
                     <div className="overflow-x-auto">
@@ -406,41 +540,29 @@ const DashboardView = () => {
                                 <tr>
                                     <th className="px-6 py-3">#</th>
                                     <th className="px-6 py-3">Nome</th>
-                                    <th className="px-6 py-3 text-center">Leads</th>
-                                    <th className="px-6 py-3 text-center">Vendas</th>
-                                    <th className="px-6 py-3 text-right">Conv. %</th>
+                                    <th className="px-6 py-3 text-center">Vd</th>
+                                    <th className="px-6 py-3 text-right">Cv %</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 dark:text-gray-300">
-                                {attendantsRank.slice(0, 10).map((att, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-gray-400">
-                                            {idx === 0 ? '👑' : idx + 1}
-                                        </td>
-                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{att.name}</td>
-                                        <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-400">{att.total}</td>
+                                {attendantsRank.slice(0, 5).map((att, idx) => (
+                                    <tr key={idx} className={`transition-colors ${att.name === user?.name ? 'bg-wtech-gold/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}>
+                                        <td className="px-6 py-4 font-bold text-gray-400">{idx + 1}</td>
+                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{att.name} {att.name === user?.name && <span className="text-[10px] bg-wtech-gold text-white px-1 rounded ml-1">VOCÊ</span>}</td>
                                         <td className="px-6 py-4 text-center text-green-600 dark:text-green-400 font-bold">{att.converted}</td>
-                                        <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white">{att.rate.toFixed(1)}%</td>
+                                        <td className="px-6 py-4 text-right font-black text-gray-900 dark:text-white">{att.rate.toFixed(0)}%</td>
                                     </tr>
                                 ))}
-                                {attendantsRank.length === 0 && (
-                                    <tr><td colSpan={5} className="p-6 text-center text-gray-400 dark:text-gray-500">Nenhum dado encontrado.</td></tr>
-                                )}
                             </tbody>
                         </table>
                     </div>
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-black/20 text-center">
-                        <button className="text-xs font-bold text-gray-500 hover:text-wtech-gold uppercase flex items-center justify-center gap-1 mx-auto">
-                            Ver Lista Completa <ArrowRight size={12} />
-                        </button>
-                    </div>
                 </div>
 
-                {/* Courses Ranking Table */}
+                {/* Courses Ranking */}
                 <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent overflow-hidden flex flex-col transition-colors">
                     <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                         <h3 className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
-                            <ShoppingBag className="text-purple-600" /> Cursos Mais Rentáveis
+                            <ShoppingBag className="text-purple-600" /> Top Cursos
                         </h3>
                     </div>
                     <div className="overflow-x-auto">
@@ -448,31 +570,25 @@ const DashboardView = () => {
                             <thead className="bg-gray-50 dark:bg-black/40 text-gray-500 dark:text-gray-400 font-bold uppercase text-xs">
                                 <tr>
                                     <th className="px-6 py-3">Curso</th>
-                                    <th className="px-6 py-3 text-center">Alunos</th>
-                                    <th className="px-6 py-3 text-right">Gerado (R$)</th>
+                                    <th className="px-6 py-3 text-right">Gerado</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 dark:text-gray-300">
-                                {coursesRank.slice(0, 10).map((course, idx) => (
+                                {coursesRank.slice(0, 5).map((course, idx) => (
                                     <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white truncate max-w-[200px]" title={course.title}>
-                                            {idx + 1}. {course.title}
-                                        </td>
-                                        <td className="px-6 py-4 text-center text-gray-600 dark:text-gray-400">{course.students}</td>
+                                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white truncate max-w-[200px]">{course.title}</td>
                                         <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400">
                                             R$ {course.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
                                         </td>
                                     </tr>
                                 ))}
-                                {coursesRank.length === 0 && (
-                                    <tr><td colSpan={3} className="p-6 text-center text-gray-400 dark:text-gray-500">Nenhum dado encontrado.</td></tr>
-                                )}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
             </div>
+
         </div>
     );
 };

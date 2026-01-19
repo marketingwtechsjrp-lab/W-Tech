@@ -37,6 +37,7 @@ import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplate
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
+import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
 import changelogData from '../CHANGELOG.json';
@@ -73,7 +74,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices';
 
 const SidebarItem = ({
     icon: Icon,
@@ -95,26 +96,27 @@ const SidebarItem = ({
     const iSize = menuStyles?.iconSize || 15;
     const pY = menuStyles?.paddingY !== undefined ? menuStyles.paddingY : 4; // px
     const mY = menuStyles?.marginY !== undefined ? menuStyles.marginY : 1; // px
-    
+
     // Responsive Logic: Cap values based on viewport height (vh) to prevent overflow on small screens
     const responsivePY = `min(${pY}px, 0.8vh)`;
     const responsiveMY = `min(${mY}px, 0.4vh)`;
     const responsiveFS = `min(${fSize}px, 2.2vh)`; // Font size shouldn't exceed ~2.2% of screen height
 
     return (
-    <button
-        onClick={onClick}
-        title={collapsed ? label : undefined}
-        className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-2'} rounded-md transition-all duration-200 group ${active
-            ? 'bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-bold shadow-sm shadow-yellow-500/20'
-            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-            }`}
-        style={{ paddingTop: responsivePY, paddingBottom: responsivePY, marginTop: responsiveMY, marginBottom: responsiveMY }}
-    >
-        <Icon size={iSize} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-2'}`} />
-        {!collapsed && <span className="font-medium tracking-tight transition-opacity duration-200 truncate leading-none" style={{ fontSize: responsiveFS }}>{label}</span>}
-    </button>
-)};
+        <button
+            onClick={onClick}
+            title={collapsed ? label : undefined}
+            className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-2'} rounded-md transition-all duration-200 group ${active
+                ? 'bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-bold shadow-sm shadow-yellow-500/20'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                }`}
+            style={{ paddingTop: responsivePY, paddingBottom: responsivePY, marginTop: responsiveMY, marginBottom: responsiveMY }}
+        >
+            <Icon size={iSize} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-2'}`} />
+            {!collapsed && <span className="font-medium tracking-tight transition-opacity duration-200 truncate leading-none" style={{ fontSize: responsiveFS }}>{label}</span>}
+        </button>
+    )
+};
 
 const MobileMenuItem = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
     <button onClick={onClick} className="flex flex-col items-center gap-3 group">
@@ -349,7 +351,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             }
             if (!match && initialLead) {
                 // Fuzzy match course by context_id
-                match = courses.find(c => 
+                match = courses.find(c =>
                     (c.title && initialLead.contextId?.toLowerCase().includes(c.title.toLowerCase()))
                 ) || courses[0]; // Fallback to first course if no specific match found
             }
@@ -360,14 +362,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 setShowEnrollments(true);
                 // Pre-fill data
                 setEditingEnrollment({
-                    status: 'Confirmed', 
+                    status: 'Confirmed',
                     amountPaid: 0,
                     studentName: initialLead.name,
                     studentEmail: initialLead.email,
                     studentPhone: initialLead.phone,
                     // Try to guess address from lead if available? Lead doesn't have address usually.
                 });
-                
+
                 // Fetch existing enrollments for context
                 fetchEnrollments(match.id);
 
@@ -376,7 +378,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
     }, [initialLead, courses]); // Dependency to run when courses are loaded
 
-// Notification logic removed from here
+    // Notification logic removed from here
 
     // --- Report State ---
     const [showReportModal, setShowReportModal] = useState(false);
@@ -420,7 +422,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             // Strategy: Fetch leads and match strictly against Course Title OR any Linked LP
             // We fetch wider and filter to ensure accuracy with "LP: Title (slug)" format
             const { data: allLeadsRaw } = await supabase.from('SITE_Leads').select('*');
-            
+
             let leads: any[] = [];
             let leadsByOrigin: any[] = [];
 
@@ -439,18 +441,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                 // Group by Origin
                 const originGroups: Record<string, { count: number, negotiating: number, converted: number }> = {};
-                
+
                 leads.forEach(l => {
                     let originName = l.context_id;
                     // Simplify "LP: Title (slug)" to just "LP: Title" or similar if desired, but keeping "Title" is good
                     // Removing the slug part might look cleaner: "LP: Nome do Curso"
                     if (originName.includes('(')) originName = originName.split('(')[0].trim();
-                    
+
                     if (!originGroups[originName]) {
                         originGroups[originName] = { count: 0, negotiating: 0, converted: 0 };
                     }
                     originGroups[originName].count++;
-                    
+
                     if (l.status === 'Converted' || l.status === 'Matriculated') { // Ensure we catch converted
                         originGroups[originName].converted++;
                     } else if (!['Cold', 'Rejected', 'Lost'].includes(l.status)) {
@@ -514,8 +516,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
         // 0. Live Permissions (Prop)
         if (permissions) {
-             if (permissions.admin_access) return true;
-             return !!permissions[key];
+            if (permissions.admin_access) return true;
+            return !!permissions[key];
         }
 
         // Super Admin Override
@@ -629,7 +631,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             endTime: c.end_time,
             dateEnd: c.date_end,
             mapUrl: c.map_url,
-// UPDATE: Added recyclingPrice mapping
+            // UPDATE: Added recyclingPrice mapping
             zipCode: c.zip_code,
             addressNumber: c.address_number,
             addressNeighborhood: c.address_neighborhood,
@@ -679,15 +681,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         const { error: uploadError } = await supabase.storage.from('site-assets').upload(filePath, file);
 
         if (uploadError) {
-             console.error("Upload error:", uploadError);
-             if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) { 
-                 alert('ERRO DE CONFIGURAÇÃO: O bucket "site-assets" não existe.\nExecute "fix_storage_permissions.sql" no Supabase.');
-             } else if (uploadError.message.includes('row-level security') || uploadError.message.includes('policy')) {
-                 alert('ERRO DE PERMISSÃO: O bloqueio de segurança (RLS) impediu o upload.\n\nPor favor, execute o script "fix_storage_permissions.sql" no SQL Editor do Supabase para corrigir as permissões.');
-             } else {
-                 alert('Erro no upload: ' + uploadError.message);
-             }
-             return;
+            console.error("Upload error:", uploadError);
+            if (uploadError.message.includes('not found') || uploadError.message.includes('bucket')) {
+                alert('ERRO DE CONFIGURAÇÃO: O bucket "site-assets" não existe.\nExecute "fix_storage_permissions.sql" no Supabase.');
+            } else if (uploadError.message.includes('row-level security') || uploadError.message.includes('policy')) {
+                alert('ERRO DE PERMISSÃO: O bloqueio de segurança (RLS) impediu o upload.\n\nPor favor, execute o script "fix_storage_permissions.sql" no SQL Editor do Supabase para corrigir as permissões.');
+            } else {
+                alert('Erro no upload: ' + uploadError.message);
+            }
+            return;
         }
 
         const { data } = supabase.storage.from('site-assets').getPublicUrl(filePath);
@@ -696,7 +698,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
     const handleAnnounceCourse = async (course: Course) => {
         if (!confirm(`Deseja criar e enviar uma campanha de email para anunciar "${course.title}"?`)) return;
-        
+
         const payload = {
             name: `Anúncio: ${course.title}`,
             subject: `Novidade: ${course.title} - Inscrições Abertas!`,
@@ -762,77 +764,77 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         let error;
         let savedCourseId = formData.id;
 
-    if (formData.id) {
-        const { error: updateError } = await supabase.from('SITE_Courses').update(payload).eq('id', formData.id);
-        error = updateError;
-    } else {
-        const { data, error: insertError } = await supabase.from('SITE_Courses').insert([payload]).select();
-        error = insertError;
-        if (data && data[0]) savedCourseId = data[0].id;
-    }
-
-    if (error) {
-        console.error('Error saving course:', error);
-        alert('Erro ao salvar curso: ' + error.message);
-        return;
-    }
-
-    // Auto-Generate Landing Page Logic
-    if (generateLP && savedCourseId && payload.title && payload.date) {
-        try {
-            const dateObj = new Date(payload.date);
-            const dateStr = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
-            const normalizedTitle = payload.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            // Slug: title-date (e.g. curso-de-suspensao-2024-05-15)
-            const slug = `${normalizedTitle.replace(/[^a-z0-9]+/g, '-')}-${dateStr}`.replace(/^-+|-+$/g, '');
-            
-            const lpPayload = {
-                course_id: savedCourseId,
-                title: 'Info: ' + payload.title,
-                slug: slug,
-                hero_headline: payload.title,
-                hero_subheadline: payload.description ? payload.description.substring(0, 150) : 'Participe deste evento exclusivo!',
-                hero_image: payload.image,
-                status: 'Published'
-            };
-
-            // Check if LP already exists for this course
-            const { data: existingLP } = await supabase.from('SITE_LandingPages').select('id').eq('course_id', savedCourseId).maybeSingle();
-
-            let lpError;
-            if (existingLP) {
-                const { error } = await supabase.from('SITE_LandingPages').update(lpPayload).eq('id', existingLP.id);
-                lpError = error;
-            } else {
-                const { error } = await supabase.from('SITE_LandingPages').insert([lpPayload]);
-                lpError = error;
-            }
-            
-            // ALSO Update Course Slug to ensure links work correctly
-            await supabase.from('SITE_Courses').update({ slug: slug }).eq('id', savedCourseId);
-
-            if (lpError) {
-                console.error('Error creating/updating Auto LP:', lpError);
-                alert('Curso salvo, mas erro ao processar LP: ' + lpError.message);
-            } else {
-                alert(`LP processada com sucesso!\nURL: w-tech.com/#/lp/${slug}`);
-            }
-        } catch (err) {
-            console.error('LP Gen Error:', err);
+        if (formData.id) {
+            const { error: updateError } = await supabase.from('SITE_Courses').update(payload).eq('id', formData.id);
+            error = updateError;
+        } else {
+            const { data, error: insertError } = await supabase.from('SITE_Courses').insert([payload]).select();
+            error = insertError;
+            if (data && data[0]) savedCourseId = data[0].id;
         }
-    }
 
-    setIsEditing(false);
-    setGenerateLP(false); // Reset
-    fetchCourses();
-};
+        if (error) {
+            console.error('Error saving course:', error);
+            alert('Erro ao salvar curso: ' + error.message);
+            return;
+        }
+
+        // Auto-Generate Landing Page Logic
+        if (generateLP && savedCourseId && payload.title && payload.date) {
+            try {
+                const dateObj = new Date(payload.date);
+                const dateStr = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+                const normalizedTitle = payload.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                // Slug: title-date (e.g. curso-de-suspensao-2024-05-15)
+                const slug = `${normalizedTitle.replace(/[^a-z0-9]+/g, '-')}-${dateStr}`.replace(/^-+|-+$/g, '');
+
+                const lpPayload = {
+                    course_id: savedCourseId,
+                    title: 'Info: ' + payload.title,
+                    slug: slug,
+                    hero_headline: payload.title,
+                    hero_subheadline: payload.description ? payload.description.substring(0, 150) : 'Participe deste evento exclusivo!',
+                    hero_image: payload.image,
+                    status: 'Published'
+                };
+
+                // Check if LP already exists for this course
+                const { data: existingLP } = await supabase.from('SITE_LandingPages').select('id').eq('course_id', savedCourseId).maybeSingle();
+
+                let lpError;
+                if (existingLP) {
+                    const { error } = await supabase.from('SITE_LandingPages').update(lpPayload).eq('id', existingLP.id);
+                    lpError = error;
+                } else {
+                    const { error } = await supabase.from('SITE_LandingPages').insert([lpPayload]);
+                    lpError = error;
+                }
+
+                // ALSO Update Course Slug to ensure links work correctly
+                await supabase.from('SITE_Courses').update({ slug: slug }).eq('id', savedCourseId);
+
+                if (lpError) {
+                    console.error('Error creating/updating Auto LP:', lpError);
+                    alert('Curso salvo, mas erro ao processar LP: ' + lpError.message);
+                } else {
+                    alert(`LP processada com sucesso!\nURL: w-tech.com/#/lp/${slug}`);
+                }
+            } catch (err) {
+                console.error('LP Gen Error:', err);
+            }
+        }
+
+        setIsEditing(false);
+        setGenerateLP(false); // Reset
+        fetchCourses();
+    };
 
     const handleTestReminderMessage = async () => {
         const phone = prompt("Para qual número (WhatsApp) deseja enviar o teste?\nUse o formato: DD9XXXXXXXX", "");
         if (!phone) return;
 
         const mapsLink = formData.latitude ? `https://www.google.com/maps?q=${formData.latitude},${formData.longitude}` : (formData.mapUrl || '');
-        
+
         // Texto IDÊNTICO ao oficial
         const message = `Olá *Aluno Exemplo*! Tudo bem? 🏍️\n\n` +
             `*Lembrete do curso: ${formData.title}*\n\n` +
@@ -1136,7 +1138,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         if (!confirm(`Enviar lembrete manual para ${enr.studentName}?`)) return;
 
         const mapsLink = currentCourse.latitude ? `https://www.google.com/maps?q=${currentCourse.latitude},${currentCourse.longitude}` : (currentCourse.mapUrl || '');
-        
+
         const message = `Olá *${enr.studentName}*! Tudo bem? 🏍️\n\n` +
             `*Lembrete do curso: ${currentCourse.title}*\n\n` +
             `📅 *Data:* ${new Date(currentCourse.date).toLocaleDateString('pt-BR')}\n` +
@@ -1339,11 +1341,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             // Update
             const { error } = await supabase.from('SITE_Enrollments').update(payload).eq('id', editingEnrollment.id);
             if (!error) {
-                setEnrollments(prev => prev.map(enr => enr.id === editingEnrollment.id ? { 
-                    ...enr, 
-                    ...editingEnrollment, 
-                    amountPaid: payload.amount_paid, 
-                    paymentMethod: payload.payment_method, 
+                setEnrollments(prev => prev.map(enr => enr.id === editingEnrollment.id ? {
+                    ...enr,
+                    ...editingEnrollment,
+                    amountPaid: payload.amount_paid,
+                    paymentMethod: payload.payment_method,
                     totalAmount: payload.total_amount,
                     address: payload.address,
                     city: payload.city,
@@ -1564,23 +1566,23 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <div className="md:col-span-2 grid grid-cols-3 gap-4 border-t border-gray-200 pt-4 mt-2">
                                 <div>
                                     <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Valor Total (Negociado)</label>
-                                    <input 
-                                        type="number" 
-                                        className="w-full p-2 border rounded font-bold text-gray-900" 
-                                        value={editingEnrollment.totalAmount ?? currentCourse.price ?? 0} 
-                                        onChange={e => setEditingEnrollment({ ...editingEnrollment, totalAmount: parseFloat(e.target.value) })} 
+                                    <input
+                                        type="number"
+                                        className="w-full p-2 border rounded font-bold text-gray-900"
+                                        value={editingEnrollment.totalAmount ?? currentCourse.price ?? 0}
+                                        onChange={e => setEditingEnrollment({ ...editingEnrollment, totalAmount: parseFloat(e.target.value) })}
                                     />
-                                    { currentCourse.recyclingPrice && (
+                                    {currentCourse.recyclingPrice && (
                                         <div className="flex flex-col gap-1 mt-1">
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, totalAmount: currentCourse.price || 0 })}
                                                 className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.price ? 'bg-blue-100 border-blue-300 text-blue-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
                                             >
                                                 <span>Normal</span> <span>R$ {currentCourse.price}</span>
                                             </button>
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, totalAmount: currentCourse.recyclingPrice || 0 })}
                                                 className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.recyclingPrice ? 'bg-green-100 border-green-300 text-green-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
                                             >
@@ -1618,34 +1620,34 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                 {/* Address & Credentialing Section */}
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 bg-gray-100 p-4 rounded-lg">
-                                    <h4 className="md:col-span-2 font-bold text-gray-700 flex items-center gap-2"><MapPin size={16}/> Endereço & Credenciamento</h4>
-                                    
+                                    <h4 className="md:col-span-2 font-bold text-gray-700 flex items-center gap-2"><MapPin size={16} /> Endereço & Credenciamento</h4>
+
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 mb-1">CEP</label>
-                                        <input className="w-full p-2 border rounded" value={editingEnrollment.zipCode || ''} onChange={e => setEditingEnrollment({...editingEnrollment, zipCode: e.target.value})} />
+                                        <input className="w-full p-2 border rounded" value={editingEnrollment.zipCode || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, zipCode: e.target.value })} />
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="flex-1">
-                                             <label className="block text-xs font-bold text-gray-500 mb-1">Cidade</label>
-                                             <input className="w-full p-2 border rounded" value={editingEnrollment.city || ''} onChange={e => setEditingEnrollment({...editingEnrollment, city: e.target.value})} />
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">Cidade</label>
+                                            <input className="w-full p-2 border rounded" value={editingEnrollment.city || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, city: e.target.value })} />
                                         </div>
                                         <div className="w-20">
-                                             <label className="block text-xs font-bold text-gray-500 mb-1">UF</label>
-                                             <input className="w-full p-2 border rounded" value={editingEnrollment.state || ''} onChange={e => setEditingEnrollment({...editingEnrollment, state: e.target.value})} />
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">UF</label>
+                                            <input className="w-full p-2 border rounded" value={editingEnrollment.state || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, state: e.target.value })} />
                                         </div>
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-bold text-gray-500 mb-1">Endereço Completo (Rua, Nº, Bairro)</label>
-                                        <input className="w-full p-2 border rounded" value={editingEnrollment.address || ''} onChange={e => setEditingEnrollment({...editingEnrollment, address: e.target.value})} />
+                                        <input className="w-full p-2 border rounded" value={editingEnrollment.address || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, address: e.target.value })} />
                                     </div>
-                                    
+
                                     <div className="md:col-span-2 flex items-center gap-2 mt-2 bg-white p-3 rounded border border-gray-200">
-                                        <input 
-                                            type="checkbox" 
-                                            id="cred" 
+                                        <input
+                                            type="checkbox"
+                                            id="cred"
                                             className="w-5 h-5 text-wtech-gold rounded"
-                                            checked={editingEnrollment.isCredentialed || false} 
-                                            onChange={e => setEditingEnrollment({...editingEnrollment, isCredentialed: e.target.checked})} 
+                                            checked={editingEnrollment.isCredentialed || false}
+                                            onChange={e => setEditingEnrollment({ ...editingEnrollment, isCredentialed: e.target.checked })}
                                         />
                                         <div className="flex flex-col">
                                             <label htmlFor="cred" className="text-sm font-bold text-gray-900 cursor-pointer">Aluno Credenciado</label>
@@ -1841,15 +1843,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             value={course.status || 'Draft'}
                                             onChange={async (e) => {
                                                 const newStatus = e.target.value;
-                                                 await supabase.from('SITE_Courses').update({ status: newStatus }).eq('id', course.id);
-                                                 // Optimistic Update
-                                                 setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: newStatus as any } : c));
+                                                await supabase.from('SITE_Courses').update({ status: newStatus }).eq('id', course.id);
+                                                // Optimistic Update
+                                                setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: newStatus as any } : c));
                                             }}
-                                            className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${
-                                                course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' : 
-                                                course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                'bg-gray-100 text-gray-600 border-gray-200'
-                                            }`}
+                                            className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' :
+                                                    course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                        'bg-gray-100 text-gray-600 border-gray-200'
+                                                }`}
                                         >
                                             <option value="Draft">Rascunho</option>
                                             <option value="Published">Publicado (Ativo)</option>
@@ -2355,15 +2356,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         )}
 
                         <div className="md:col-span-2">
-                             <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Imagem de Capa</label>
-                             <div className="flex flex-col gap-2">
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Imagem de Capa</label>
+                            <div className="flex flex-col gap-2">
                                 <div className="flex gap-4 mb-2">
                                     <label className="flex items-center gap-2 cursor-pointer dark:text-gray-300">
-                                        <input type="radio" name="imgSource" checked={formData.imageSourceType !== 'Upload'} onChange={() => setFormData({...formData, imageSourceType: 'Url'})} />
+                                        <input type="radio" name="imgSource" checked={formData.imageSourceType !== 'Upload'} onChange={() => setFormData({ ...formData, imageSourceType: 'Url' })} />
                                         <span className="text-sm">Link Externo (URL)</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer dark:text-gray-300">
-                                        <input type="radio" name="imgSource" checked={formData.imageSourceType === 'Upload'} onChange={() => setFormData({...formData, imageSourceType: 'Upload'})} />
+                                        <input type="radio" name="imgSource" checked={formData.imageSourceType === 'Upload'} onChange={() => setFormData({ ...formData, imageSourceType: 'Upload' })} />
                                         <span className="text-sm">Upload de Arquivo</span>
                                     </label>
                                 </div>
@@ -2373,14 +2374,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 ) : (
                                     <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
                                 )}
-                                
+
                                 {formData.image && (
                                     <div className="mt-2 text-xs text-gray-500">
-                                        Preview: <br/>
+                                        Preview: <br />
                                         <img src={formData.image} alt="Capa" className="h-20 w-auto rounded border border-gray-200 mt-1 object-cover" />
                                     </div>
                                 )}
-                             </div>
+                            </div>
                         </div>
 
                         <div className="md:col-span-2">
@@ -2388,110 +2389,110 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
                         </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Cronograma / Conteúdo</label>
-                                <div className="mb-2 flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, schedule: DEFAULT_COURSE_SCHEDULE })}
-                                        className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 px-2 py-1 rounded font-bold hover:bg-yellow-200"
-                                    >
-                                        📥 Carregar Modelo: Suspensão
-                                    </button>
-                                </div>
-                                <textarea rows={8} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Cronograma / Conteúdo</label>
+                            <div className="mb-2 flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, schedule: DEFAULT_COURSE_SCHEDULE })}
+                                    className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 px-2 py-1 rounded font-bold hover:bg-yellow-200"
+                                >
+                                    📥 Carregar Modelo: Suspensão
+                                </button>
                             </div>
+                            <textarea rows={8} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                        </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">O que levar / Requisitos</label>
-                                <textarea rows={4} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
-                            </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">O que levar / Requisitos</label>
+                            <textarea rows={4} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
+                        </div>
 
-                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-                                <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100/50 dark:border-green-900/30">
-                                    <h4 className="font-bold text-green-800 dark:text-green-400 text-xs uppercase mb-3 flex items-center gap-2">
-                                        <Bell size={14} /> Lembrete Antecipado
-                                    </h4>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={formData.reminder5dEnabled ?? true} 
-                                                onChange={e => setFormData({...formData, reminder5dEnabled: e.target.checked})} 
-                                            />
-                                            <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <input 
-                                                type="number" 
-                                                className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700" 
-                                                value={formData.reminder5dDays ?? 5} 
-                                                onChange={e => setFormData({...formData, reminder5dDays: parseInt(e.target.value)})} 
-                                            />
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">dias antes</span>
-                                        </div>
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                            <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100/50 dark:border-green-900/30">
+                                <h4 className="font-bold text-green-800 dark:text-green-400 text-xs uppercase mb-3 flex items-center gap-2">
+                                    <Bell size={14} /> Lembrete Antecipado
+                                </h4>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.reminder5dEnabled ?? true}
+                                            onChange={e => setFormData({ ...formData, reminder5dEnabled: e.target.checked })}
+                                        />
+                                        <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
                                     </div>
-                                </div>
-
-                                <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100/50 dark:border-blue-900/30">
-                                    <h4 className="font-bold text-blue-800 dark:text-blue-400 text-xs uppercase mb-3 flex items-center gap-2">
-                                        <Bell size={14} /> Lembrete Final
-                                    </h4>
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={formData.reminder1dEnabled ?? true} 
-                                                onChange={e => setFormData({...formData, reminder1dEnabled: e.target.checked})} 
-                                            />
-                                            <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <input 
-                                                type="number" 
-                                                className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700" 
-                                                value={formData.reminder1dDays ?? 1} 
-                                                onChange={e => setFormData({...formData, reminder1dDays: parseInt(e.target.value)})} 
-                                            />
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">dia(s) antes</span>
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700"
+                                            value={formData.reminder5dDays ?? 5}
+                                            onChange={e => setFormData({ ...formData, reminder5dDays: parseInt(e.target.value) })}
+                                        />
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">dias antes</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="md:col-span-2 bg-gray-50 dark:bg-[#222] p-4 rounded border border-gray-200 dark:border-gray-700">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        className="w-5 h-5"
-                                        checked={generateLP} 
-                                        onChange={e => setGenerateLP(e.target.checked)} 
-                                    />
-                                    <span className="font-bold text-gray-900 dark:text-white">Gerar Landing Page Automática?</span>
-                                </label>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-                                    Cria uma página em <code>/lp/titulo-data</code> vinculada a este curso.
+                            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100/50 dark:border-blue-900/30">
+                                <h4 className="font-bold text-blue-800 dark:text-blue-400 text-xs uppercase mb-3 flex items-center gap-2">
+                                    <Bell size={14} /> Lembrete Final
+                                </h4>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.reminder1dEnabled ?? true}
+                                            onChange={e => setFormData({ ...formData, reminder1dEnabled: e.target.checked })}
+                                        />
+                                        <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700"
+                                            value={formData.reminder1dDays ?? 1}
+                                            onChange={e => setFormData({ ...formData, reminder1dDays: parseInt(e.target.value) })}
+                                        />
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">dia(s) antes</span>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="md:col-span-2 bg-gray-50 dark:bg-[#222] p-4 rounded border border-gray-200 dark:border-gray-700">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="w-5 h-5"
+                                    checked={generateLP}
+                                    onChange={e => setGenerateLP(e.target.checked)}
+                                />
+                                <span className="font-bold text-gray-900 dark:text-white">Gerar Landing Page Automática?</span>
+                            </label>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                                Cria uma página em <code>/lp/titulo-data</code> vinculada a este curso.
+                            </div>
+                        </div>
 
                         <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
-                                <div className="flex gap-2 w-full md:w-auto">
-                                    <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-white dark:bg-[#333] border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-[#444] flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
-                                        <Mail size={16} /> Anunciar p/ Base (Email)
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        onClick={handleTestReminderMessage}
-                                        className="flex-1 md:flex-none py-3 px-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg font-bold hover:bg-green-100 dark:hover:bg-green-900/30 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95"
-                                    >
-                                        <MessageCircle size={16} /> Testar Lembrete (WhatsApp)
-                                    </button>
-                                </div>
-                                <div className="flex gap-3 w-full md:w-auto">
-                                    <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">Cancelar</button>
-                                    <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 dark:hover:bg-gray-700 shadow-xl transition-all active:scale-95">Salvar Curso</button>
-                                </div>
+                            <div className="flex gap-2 w-full md:w-auto">
+                                <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-white dark:bg-[#333] border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-[#444] flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
+                                    <Mail size={16} /> Anunciar p/ Base (Email)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleTestReminderMessage}
+                                    className="flex-1 md:flex-none py-3 px-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg font-bold hover:bg-green-100 dark:hover:bg-green-900/30 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95"
+                                >
+                                    <MessageCircle size={16} /> Testar Lembrete (WhatsApp)
+                                </button>
                             </div>
+                            <div className="flex gap-3 w-full md:w-auto">
+                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">Cancelar</button>
+                                <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 dark:hover:bg-gray-700 shadow-xl transition-all active:scale-95">Salvar Curso</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             )}
@@ -2546,8 +2547,8 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
 
         // 0. Live Permissions (Prop)
         if (permissions) {
-             if (permissions.admin_access) return true;
-             return !!permissions[key];
+            if (permissions.admin_access) return true;
+            return !!permissions[key];
         }
 
         // Handle String Role (Legacy/Simple Auth)
@@ -3100,7 +3101,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     const [receivables, setReceivables] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    
+
     // Finance Filters
     const [filterType, setFilterType] = useState<'All' | '7d' | '30d' | 'Month' | 'Custom'>('30d');
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -3117,8 +3118,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
         // 0. Live Permissions (Prop)
         if (permissions) {
-             if (permissions.admin_access) return true;
-             return !!permissions[key];
+            if (permissions.admin_access) return true;
+            return !!permissions[key];
         }
 
         // Handle String Role
@@ -3248,7 +3249,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     const filteredTransactions = transactions.filter(t => {
         const tDate = new Date(t.date);
         const now = new Date();
-        
+
         let matchesDate = true;
 
         if (filterType === '7d') {
@@ -3262,8 +3263,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
         } else if (filterType === 'Month') {
             matchesDate = t.date.startsWith(selectedMonth);
         } else if (filterType === 'Custom') {
-             if (customRange.start && tDate < new Date(customRange.start)) matchesDate = false;
-             if (customRange.end && tDate > new Date(customRange.end)) matchesDate = false;
+            if (customRange.start && tDate < new Date(customRange.start)) matchesDate = false;
+            if (customRange.end && tDate > new Date(customRange.end)) matchesDate = false;
         }
 
         let matchesRef = true;
@@ -3315,8 +3316,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                     <div className="flex bg-gray-100 dark:bg-[#222] p-1 rounded-lg">
                         {[
-                            { id: '7d', l: '7 dias' }, 
-                            { id: '30d', l: '30 dias' }, 
+                            { id: '7d', l: '7 dias' },
+                            { id: '30d', l: '30 dias' },
                         ].map(f => (
                             <button
                                 key={f.id}
@@ -3328,8 +3329,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                         ))}
                     </div>
 
-                    <input 
-                        type="month" 
+                    <input
+                        type="month"
                         value={selectedMonth}
                         onChange={(e) => { setSelectedMonth(e.target.value); setFilterType('Month'); }}
                         className={`border rounded-lg px-2 py-1 text-xs font-bold h-9 ${filterType === 'Month' ? 'border-wtech-gold bg-white dark:bg-[#222] dark:border-wtech-gold' : 'border-gray-200 bg-gray-50 dark:bg-[#222] dark:border-gray-700'}`}
@@ -3337,18 +3338,18 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                     {/* Custom Range */}
                     <div className={`flex items-center border rounded-lg overflow-hidden h-9 ${filterType === 'Custom' ? 'border-wtech-gold bg-white dark:bg-[#222] dark:border-wtech-gold' : 'border-gray-200 bg-gray-50 dark:bg-[#222] dark:border-gray-700'}`}>
-                        <input 
+                        <input
                             type="date"
                             className="bg-transparent text-xs px-2 outline-none dark:text-gray-300"
                             value={customRange.start}
-                            onChange={e => { setCustomRange(p => ({...p, start: e.target.value})); setFilterType('Custom'); }}
+                            onChange={e => { setCustomRange(p => ({ ...p, start: e.target.value })); setFilterType('Custom'); }}
                         />
                         <span className="text-gray-400 text-[10px]">-</span>
-                        <input 
+                        <input
                             type="date"
                             className="bg-transparent text-xs px-2 outline-none dark:text-gray-300"
                             value={customRange.end}
-                            onChange={e => { setCustomRange(p => ({...p, end: e.target.value})); setFilterType('Custom'); }}
+                            onChange={e => { setCustomRange(p => ({ ...p, end: e.target.value })); setFilterType('Custom'); }}
                         />
                     </div>
 
@@ -3794,7 +3795,7 @@ const SettingsView = () => {
             data.forEach((item: any) => {
                 configObj[item.key] = item.value;
             });
-            
+
             // Parse webhooks if active
             if (configObj.system_webhooks) {
                 try { setWebhooks(JSON.parse(configObj.system_webhooks)); } catch (e) { }
@@ -3802,8 +3803,8 @@ const SettingsView = () => {
             if (configObj.partner_brands) {
                 try { setPartnerBrands(JSON.parse(configObj.partner_brands)); } catch (e) { }
             }
-             // Parse Menu Styles
-             if (configObj.menu_styles) {
+            // Parse Menu Styles
+            if (configObj.menu_styles) {
                 try {
                     configObj.menu_styles = JSON.parse(configObj.menu_styles);
                 } catch (e) {
@@ -3829,13 +3830,13 @@ const SettingsView = () => {
 
     const handleSaveConfig = async () => {
         // Save webhooks to config
-        const finalConfig = { 
-            ...config, 
-            system_webhooks: JSON.stringify(webhooks), 
+        const finalConfig = {
+            ...config,
+            system_webhooks: JSON.stringify(webhooks),
             partner_brands: JSON.stringify(partnerBrands),
             menu_styles: config.menu_styles ? JSON.stringify(config.menu_styles) : null
         };
-        
+
         const updates = Object.entries(finalConfig).map(([key, value]) => ({
             key,
             value: typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value || '')
@@ -3971,8 +3972,8 @@ const SettingsView = () => {
         {
             title: 'Gestão de Tarefas',
             perms: [
-                 { key: 'tasks_view_team', label: 'Ver Tarefas da Equipe (Gestor)' },
-                 { key: 'tasks_delete', label: 'Excluir Tarefas de Outros' },
+                { key: 'tasks_view_team', label: 'Ver Tarefas da Equipe (Gestor)' },
+                { key: 'tasks_delete', label: 'Excluir Tarefas de Outros' },
             ]
         },
         {
@@ -4038,7 +4039,7 @@ const SettingsView = () => {
     const handleTestEmail = async () => {
         if (!testEmail) return alert('Por favor, informe um e-mail para o teste.');
         if (!config.email_smtp_host) return alert('Configure o host SMTP antes de testar.');
-        
+
         setIsTestingEmail(true);
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -4056,7 +4057,7 @@ const SettingsView = () => {
             {/* Header / Tabs */}
             <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222] px-6 pt-4 pb-4 flex items-center justify-between gap-4">
                 <div className="flex-1 overflow-x-auto scrollbar-hide">
-                    <ExpandableTabs 
+                    <ExpandableTabs
                         activeId={activeTab}
                         onChange={setActiveTab}
                         tabs={[
@@ -4253,8 +4254,8 @@ const SettingsView = () => {
                                     <div>
                                         <h4 className="font-bold text-sm text-gray-900 dark:text-white">Distribuição de Leads (CRM)</h4>
                                         <p className="text-xs text-purple-800 dark:text-purple-400">
-                                            {config.crm_distribution_mode === 'Random' 
-                                                ? 'MODO AUTOMÁTICO: Leads são distribuídos aleatoriamente entre a equipe.' 
+                                            {config.crm_distribution_mode === 'Random'
+                                                ? 'MODO AUTOMÁTICO: Leads são distribuídos aleatoriamente entre a equipe.'
                                                 : 'MODO MANUAL: Leads caem na "Fila" e devem ser pegos manualmente.'}
                                         </p>
                                     </div>
@@ -4305,14 +4306,14 @@ const SettingsView = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center mb-2">
                                             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Marcas Parceiras</label>
-                                            <button 
+                                            <button
                                                 onClick={() => setPartnerBrands([...partnerBrands, { name: '', logo: '' }])}
                                                 className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded hover:bg-gray-800 flex items-center gap-1 uppercase"
                                             >
                                                 <Plus size={12} /> Adicionar Marca
                                             </button>
                                         </div>
-                                        
+
                                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                             {partnerBrands.length === 0 && (
                                                 <div className="text-center py-8 bg-gray-50 dark:bg-[#222] rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 text-xs">
@@ -4322,7 +4323,7 @@ const SettingsView = () => {
                                             {partnerBrands.map((brand, idx) => (
                                                 <div key={idx} className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 group">
                                                     <div className="flex gap-2">
-                                                        <input 
+                                                        <input
                                                             className="flex-1 border bg-white dark:bg-[#1A1A1A] p-2 rounded text-xs px-2 dark:border-gray-700 dark:text-white"
                                                             placeholder="Nome da Marca"
                                                             value={brand.name}
@@ -4332,7 +4333,7 @@ const SettingsView = () => {
                                                                 setPartnerBrands(newBrands);
                                                             }}
                                                         />
-                                                        <button 
+                                                        <button
                                                             onClick={() => setPartnerBrands(partnerBrands.filter((_, i) => i !== idx))}
                                                             className="text-red-500 hover:bg-red-50 p-2 rounded dark:hover:bg-red-900/20"
                                                         >
@@ -4343,7 +4344,7 @@ const SettingsView = () => {
                                                         <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] border dark:border-gray-700 rounded shrink-0 flex items-center justify-center p-1">
                                                             {brand.logo ? <img src={brand.logo} className="max-h-full max-w-full object-contain" /> : <ImageIcon size={14} className="text-gray-300" />}
                                                         </div>
-                                                        <input 
+                                                        <input
                                                             className="flex-1 border bg-white dark:bg-[#1A1A1A] p-2 rounded text-[10px] px-2 font-mono dark:border-gray-700 dark:text-white"
                                                             placeholder="Logo URL"
                                                             value={brand.logo}
@@ -4355,10 +4356,10 @@ const SettingsView = () => {
                                                         />
                                                         <label className="cursor-pointer bg-white dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-2 rounded hover:bg-gray-50 dark:hover:bg-[#333]">
                                                             <Upload size={14} className="text-gray-600 dark:text-gray-300" />
-                                                            <input 
-                                                                type="file" 
-                                                                className="hidden" 
-                                                                accept="image/*" 
+                                                            <input
+                                                                type="file"
+                                                                className="hidden"
+                                                                accept="image/*"
                                                                 onChange={async (e) => {
                                                                     if (e.target.files?.[0]) {
                                                                         const file = e.target.files[0];
@@ -4377,7 +4378,7 @@ const SettingsView = () => {
                                                                             setPartnerBrands(newBrands);
                                                                         }
                                                                     }
-                                                                }} 
+                                                                }}
                                                             />
                                                         </label>
                                                     </div>
@@ -4421,23 +4422,23 @@ const SettingsView = () => {
                 {/* Tab: Layout Menu */}
                 {activeTab === 'Layout Menu' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-                         <div className="max-w-xl mx-auto space-y-8">
+                        <div className="max-w-xl mx-auto space-y-8">
                             <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
                                 <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-6 flex items-center gap-2">
                                     <Layout size={20} className="text-cyan-500" /> Personalização do Menu
                                 </h3>
-                                
+
                                 <div className="space-y-8 py-4">
                                     {/* Icon Size */}
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-end">
                                             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tamanho dos Ícones</label>
                                         </div>
-                                        <Slider 
-                                            value={[config.menu_styles?.iconSize || 15]} 
-                                            max={24} 
-                                            min={12} 
-                                            step={1} 
+                                        <Slider
+                                            value={[config.menu_styles?.iconSize || 15]}
+                                            max={24}
+                                            min={12}
+                                            step={1}
                                             onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), iconSize: val[0] })}
                                         />
                                     </div>
@@ -4447,11 +4448,11 @@ const SettingsView = () => {
                                         <div className="flex justify-between items-end">
                                             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tamanho da Fonte</label>
                                         </div>
-                                        <Slider 
-                                            value={[config.menu_styles?.fontSize || 11]} 
-                                            max={16} 
-                                            min={9} 
-                                            step={1} 
+                                        <Slider
+                                            value={[config.menu_styles?.fontSize || 11]}
+                                            max={16}
+                                            min={9}
+                                            step={1}
                                             onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), fontSize: val[0] })}
                                         />
                                     </div>
@@ -4461,11 +4462,11 @@ const SettingsView = () => {
                                         <div className="flex justify-between items-end">
                                             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Espaçamento Vertical (Padding)</label>
                                         </div>
-                                        <Slider 
-                                            value={[config.menu_styles?.paddingY !== undefined ? config.menu_styles.paddingY : 4]} 
-                                            max={12} 
-                                            min={2} 
-                                            step={1} 
+                                        <Slider
+                                            value={[config.menu_styles?.paddingY !== undefined ? config.menu_styles.paddingY : 4]}
+                                            max={12}
+                                            min={2}
+                                            step={1}
                                             onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), paddingY: val[0] })}
                                         />
                                     </div>
@@ -4475,11 +4476,11 @@ const SettingsView = () => {
                                         <div className="flex justify-between items-end">
                                             <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Margem Entre Itens</label>
                                         </div>
-                                        <Slider 
-                                            value={[config.menu_styles?.marginY !== undefined ? config.menu_styles.marginY : 1]} 
-                                            max={8} 
-                                            min={0} 
-                                            step={1} 
+                                        <Slider
+                                            value={[config.menu_styles?.marginY !== undefined ? config.menu_styles.marginY : 1]}
+                                            max={8}
+                                            min={0}
+                                            step={1}
                                             onValueChange={(val) => handleChange('menu_styles', { ...(config.menu_styles || {}), marginY: val[0] })}
                                         />
                                     </div>
@@ -4494,16 +4495,16 @@ const SettingsView = () => {
                                     </p>
                                 </div>
                             </div>
-                         </div>
+                        </div>
                     </div>
                 )}
 
                 {/* Tab: Histórico de Versões */}
                 {activeTab === 'Histórico de Versões' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-                         <div className="max-w-4xl mx-auto">
+                        <div className="max-w-4xl mx-auto">
                             <ChangelogViewer />
-                         </div>
+                        </div>
                     </div>
                 )}
 
@@ -4520,7 +4521,7 @@ const SettingsView = () => {
                                     Faça o download dos dados principais do sistema em formato JSON.
                                     Recomendamos fazer backups regulares.
                                 </p>
-                                
+
                                 <div className="space-y-3">
                                     {[
                                         { table: 'SITE_Leads', label: 'Exportar CRM / Leads' },
@@ -4529,7 +4530,7 @@ const SettingsView = () => {
                                         { table: 'SITE_Transactions', label: 'Exportar Transações Financeiras' },
                                         { table: 'SITE_Users', label: 'Exportar Usuários' },
                                     ].map((item) => (
-                                        <button 
+                                        <button
                                             key={item.table}
                                             onClick={async () => {
                                                 const { data } = await supabase.from(item.table).select('*');
@@ -4568,11 +4569,11 @@ const SettingsView = () => {
                                         <div key={item.table} className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-red-100 dark:border-red-900/40 shadow-sm">
                                             <div className="flex justify-between items-center mb-2">
                                                 <h4 className="font-bold text-red-700 dark:text-red-400 text-sm">{item.label}</h4>
-                                                <button 
+                                                <button
                                                     onClick={async () => {
                                                         const confirmText = prompt(`Para confirmar, digite "CONFIRMAR" para apagar a tabela ${item.table}:`);
                                                         if (confirmText !== 'CONFIRMAR') return alert('Ação cancelada.');
-                                                        
+
                                                         const { error } = await supabase.from(item.table).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
                                                         if (error) alert('Erro: ' + error.message);
                                                         else alert('Dados apagados com sucesso.');
@@ -4604,29 +4605,29 @@ const SettingsView = () => {
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-3">
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Servidor SMTP (Host)</label>
-                                        <input 
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
-                                            value={config.email_smtp_host || ''} 
-                                            onChange={e => handleChange('email_smtp_host', e.target.value)} 
+                                        <input
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            value={config.email_smtp_host || ''}
+                                            onChange={e => handleChange('email_smtp_host', e.target.value)}
                                             placeholder="smtp.example.com"
                                         />
                                     </div>
                                     <div className="col-span-1">
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Porta</label>
-                                        <input 
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
-                                            value={config.email_smtp_port || ''} 
-                                            onChange={e => handleChange('email_smtp_port', e.target.value)} 
+                                        <input
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            value={config.email_smtp_port || ''}
+                                            onChange={e => handleChange('email_smtp_port', e.target.value)}
                                             placeholder="587"
                                         />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Usuário / Email Autenticação</label>
-                                    <input 
-                                        className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
-                                        value={config.email_smtp_user || ''} 
-                                        onChange={e => handleChange('email_smtp_user', e.target.value)} 
+                                    <input
+                                        className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                        value={config.email_smtp_user || ''}
+                                        onChange={e => handleChange('email_smtp_user', e.target.value)}
                                         placeholder="user@example.com"
                                     />
                                 </div>
@@ -4634,11 +4635,11 @@ const SettingsView = () => {
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Senha de App / SMTP</label>
                                     <div className="relative">
                                         <Lock size={14} className="absolute left-3 top-3 text-gray-400" />
-                                        <input 
+                                        <input
                                             type="password"
-                                            className="w-full border dark:border-gray-700 p-2 pl-10 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
-                                            value={config.email_smtp_pass || ''} 
-                                            onChange={e => handleChange('email_smtp_pass', e.target.value)} 
+                                            className="w-full border dark:border-gray-700 p-2 pl-10 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            value={config.email_smtp_pass || ''}
+                                            onChange={e => handleChange('email_smtp_pass', e.target.value)}
                                             placeholder="••••••••••••"
                                         />
                                     </div>
@@ -4651,19 +4652,19 @@ const SettingsView = () => {
                                     <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><User size={18} /> Remetente Padrão</h3>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome do Remetente</label>
-                                        <input 
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-bold dark:bg-[#222] dark:text-white" 
-                                            value={config.email_sender_name || ''} 
-                                            onChange={e => handleChange('email_sender_name', e.target.value)} 
+                                        <input
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-bold dark:bg-[#222] dark:text-white"
+                                            value={config.email_sender_name || ''}
+                                            onChange={e => handleChange('email_sender_name', e.target.value)}
                                             placeholder="W-Tech Brasil"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email do Remetente</label>
-                                        <input 
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white" 
-                                            value={config.email_sender_email || ''} 
-                                            onChange={e => handleChange('email_sender_email', e.target.value)} 
+                                        <input
+                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            value={config.email_sender_email || ''}
+                                            onChange={e => handleChange('email_sender_email', e.target.value)}
                                             placeholder="contato@wtech.com"
                                         />
                                         <p className="text-[10px] text-gray-400 mt-1">Certifique-se de que este email está autorizado no seu provedor SMTP.</p>
@@ -4674,20 +4675,20 @@ const SettingsView = () => {
                                     <h3 className="font-bold text-gray-900 dark:text-white pb-2 flex items-center gap-2"><Send size={18} /> Teste de Envio</h3>
                                     <div className="p-4 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl space-y-4">
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            Use este campo para verificar se as configurações estão corretas. 
+                                            Use este campo para verificar se as configurações estão corretas.
                                             <strong>Salve antes de testar.</strong>
                                         </p>
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">E-mail de Destino</label>
-                                            <input 
+                                            <input
                                                 type="email"
-                                                className="w-full border dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white" 
+                                                className="w-full border dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white"
                                                 value={testEmail}
                                                 onChange={e => setTestEmail(e.target.value)}
                                                 placeholder="seu-email@exemplo.com"
                                             />
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={handleTestEmail}
                                             disabled={isTestingEmail}
                                             className={`w-full py-3 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${isTestingEmail ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-[#333] dark:text-gray-500' : 'bg-wtech-black text-white hover:bg-gray-800 shadow-md'}`}
@@ -4721,7 +4722,7 @@ const SettingsView = () => {
                                 <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2">
                                     <Package size={18} /> ERP & Faturamento
                                 </h3>
-                                
+
                                 <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
@@ -4747,11 +4748,11 @@ const SettingsView = () => {
                                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">API Key (Personal Token)</label>
                                                 <div className="relative">
                                                     <Lock size={14} className="absolute left-3 top-2.5 text-gray-400" />
-                                                    <input 
+                                                    <input
                                                         type="password"
-                                                        className="w-full border border-gray-200 dark:border-gray-700 p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none dark:bg-[#222] dark:text-white" 
-                                                        value={config.bling_api_key || ''} 
-                                                        onChange={e => handleChange('bling_api_key', e.target.value)} 
+                                                        className="w-full border border-gray-200 dark:border-gray-700 p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none dark:bg-[#222] dark:text-white"
+                                                        value={config.bling_api_key || ''}
+                                                        onChange={e => handleChange('bling_api_key', e.target.value)}
                                                         placeholder="••••••••••••••••••••••••"
                                                     />
                                                 </div>
@@ -4795,20 +4796,20 @@ const SettingsView = () => {
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">App ID</label>
-                                                <input 
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white" 
-                                                    value={config.meli_app_id || ''} 
-                                                    onChange={e => handleChange('meli_app_id', e.target.value)} 
+                                                <input
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white"
+                                                    value={config.meli_app_id || ''}
+                                                    onChange={e => handleChange('meli_app_id', e.target.value)}
                                                     placeholder="12345678"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Client Secret</label>
-                                                <input 
+                                                <input
                                                     type="password"
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white" 
-                                                    value={config.meli_secret || ''} 
-                                                    onChange={e => handleChange('meli_secret', e.target.value)} 
+                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white"
+                                                    value={config.meli_secret || ''}
+                                                    onChange={e => handleChange('meli_secret', e.target.value)}
                                                     placeholder="••••••••"
                                                 />
                                             </div>
@@ -4949,37 +4950,37 @@ const SettingsView = () => {
                 {/* Tab: Task Categories (NEW) */}
                 {activeTab === 'Categorias' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-                         <div className="flex justify-between items-center mb-6">
+                        <div className="flex justify-between items-center mb-6">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Categorias de Tarefas</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie as categorias usadas para organizar tarefas.</p>
                             </div>
-                           
+
                             {/* Simple Inline Create */}
                             <div className="flex gap-2">
-                                <input 
+                                <input
                                     className="border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-sm dark:bg-[#222] dark:text-white"
                                     placeholder="Nova Categoria..."
                                     id="new-cat-name"
                                 />
-                                <input 
-                                    type="color" 
+                                <input
+                                    type="color"
                                     className="w-10 h-10 border-0 p-1 rounded cursor-pointer"
                                     defaultValue="#e0f2fe"
                                     id="new-cat-color"
                                 />
-                                <button 
+                                <button
                                     onClick={async () => {
                                         const nameInput = document.getElementById('new-cat-name') as HTMLInputElement;
                                         const colorInput = document.getElementById('new-cat-color') as HTMLInputElement;
-                                        if(!nameInput.value) return alert('Nome obrigatório');
+                                        if (!nameInput.value) return alert('Nome obrigatório');
 
                                         const { error } = await supabase.from('SITE_TaskCategories').insert({
                                             name: nameInput.value,
                                             color: colorInput.value
                                         });
 
-                                        if(error) alert('Erro: ' + error.message);
+                                        if (error) alert('Erro: ' + error.message);
                                         else {
                                             alert('Categoria criada!');
                                             nameInput.value = '';
@@ -5190,8 +5191,8 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 
         // 0. Live Permissions (Prop)
         if (permissions) {
-             if (permissions.admin_access) return true;
-             return !!permissions[key];
+            if (permissions.admin_access) return true;
+            return !!permissions[key];
         }
 
         // Handle String Role
@@ -5357,7 +5358,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                     <div key={u.id} onClick={() => { setEditingUser(u); setIsModalOpen(true); }} className="bg-white dark:bg-[#1A1A1A] group hover:shadow-xl transition-all duration-300 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex flex-col items-center text-center relative overflow-hidden cursor-pointer">
                         <div className={`absolute top-0 left-0 w-full h-1 ${u.status === 'Active' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
 
-                            {/* Avatar */}
+                        {/* Avatar */}
                         <div className="w-20 h-20 rounded-full bg-gray-50 dark:bg-[#222] border-2 border-white dark:border-[#333] shadow-lg flex items-center justify-center text-2xl font-bold text-gray-400 dark:text-gray-500 mb-4 group-hover:scale-110 transition-transform bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#222] dark:to-[#111] group-hover:from-wtech-gold/20 group-hover:to-yellow-50 dark:group-hover:to-yellow-900/20">
                             {(u.name || '?').charAt(0)}
                         </div>
@@ -5502,12 +5503,12 @@ const Admin: React.FC = () => {
     const { user, loading, logout } = useAuth();
     const navigate = useNavigate();
     const { settings: config } = useSettings();
-    
+
     // --- WhatsApp Scheduler Polling ---
     useEffect(() => {
         const checkScheduledMessages = async () => {
             const now = new Date().toISOString();
-            
+
             // 1. Find pending tasks due for WhatsApp sending
             const { data: dueTasks } = await supabase
                 .from('SITE_Tasks')
@@ -5518,19 +5519,19 @@ const Admin: React.FC = () => {
 
             if (dueTasks && dueTasks.length > 0) {
                 console.log(`Found ${dueTasks.length} WhatsApp messages to send.`);
-                
+
                 for (const task of dueTasks) {
-                    const senderUserId = task.created_by; 
+                    const senderUserId = task.created_by;
                     const targetPhone = task.SITE_Leads?.phone;
                     const messageBody = task.whatsapp_message_body;
 
                     if (senderUserId && targetPhone && messageBody) {
                         try {
                             const result = await sendWhatsAppMessage(targetPhone, messageBody, senderUserId);
-                            
+
                             await supabase.from('SITE_Tasks').update({
                                 whatsapp_status: result.success ? 'SENT' : 'FAILED',
-                                status: result.success ? 'DONE' : task.status 
+                                status: result.success ? 'DONE' : task.status
                             }).eq('id', task.id);
 
                             console.log(`Msg Task ${task.id}: ${result.success ? 'Sent' : 'Failed'}`);
@@ -5540,18 +5541,18 @@ const Admin: React.FC = () => {
                             await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
                         }
                     } else {
-                         await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
+                        await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
                     }
                 }
             }
         };
 
         const interval = setInterval(checkScheduledMessages, 60000); // 60s
-        checkScheduledMessages(); 
+        checkScheduledMessages();
 
         return () => clearInterval(interval);
     }, []);
-    
+
     // Alert Dismissal State
     const [alertDismissedAt, setAlertDismissedAt] = useState<number | null>(null);
 
@@ -5559,13 +5560,13 @@ const Admin: React.FC = () => {
         if (alertDismissedAt) {
             const interval = setInterval(() => {
                 if (Date.now() - alertDismissedAt > 5 * 60 * 1000) { // 5 minutes
-                     setAlertDismissedAt(null); 
+                    setAlertDismissedAt(null);
                 }
-            }, 5000); 
+            }, 5000);
             return () => clearInterval(interval);
         }
     }, [alertDismissedAt]);
-    
+
     // --- Global Task Notifications ---
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
     const notifiedTaskIds = useRef<Set<string>>(new Set());
@@ -5585,8 +5586,8 @@ const Admin: React.FC = () => {
         const checkDueTasks = async () => {
             const now = new Date();
             // Tolerance: Notify if due in next 5 mins OR was due less than 1 hour ago (and not done)
-            const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60000); 
-            const oneHourAgo = new Date(now.getTime() - 60 * 60000); 
+            const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60000);
+            const oneHourAgo = new Date(now.getTime() - 60 * 60000);
 
             const { data: dueTasks } = await supabase
                 .from('SITE_Tasks')
@@ -5600,11 +5601,11 @@ const Admin: React.FC = () => {
                 dueTasks.forEach((task: any) => {
                     // Check if we already notified this specific task ID in this session
                     if (!notifiedTaskIds.current.has(task.id)) {
-                        
+
                         // Prepare Actions
                         const actions: { label: string; onClick: () => void; variant?: 'default' | 'outline' | 'whatsapp' }[] = [
-                            { 
-                                label: 'Concluir', 
+                            {
+                                label: 'Concluir',
                                 onClick: () => { void handleCompleteTask(task.id); },
                                 variant: 'default'
                             }
@@ -5623,8 +5624,8 @@ const Admin: React.FC = () => {
 
                         // Trigger Notification
                         notificationRef.current?.createNotification(
-                            'warning', 
-                            'Lembrete de Tarefa', 
+                            'warning',
+                            'Lembrete de Tarefa',
                             `"${task.title}" vence ${new Date(task.due_date) < now ? 'há pouco' : 'em breve'}!`,
                             actions
                         );
@@ -5647,7 +5648,7 @@ const Admin: React.FC = () => {
 
         const checkScheduledMessages = async () => {
             const now = new Date().toISOString();
-            
+
             // Fetch pending WhatsApp tasks that are due
             const { data: tasksToSend, error } = await supabase
                 .from('SITE_Tasks')
@@ -5672,7 +5673,7 @@ const Admin: React.FC = () => {
 
                 // Use the assigned user's ID to send the message (or the current user if not assigned)
                 const senderId = task.assigned_to || task.created_by || user.id;
-                
+
                 let result;
                 if (task.whatsapp_media_url) {
                     result = await sendWhatsAppMedia(
@@ -5690,14 +5691,14 @@ const Admin: React.FC = () => {
                 }
 
                 if (result.success) {
-                    await supabase.from('SITE_Tasks').update({ 
+                    await supabase.from('SITE_Tasks').update({
                         whatsapp_status: 'SENT',
-                        status: 'DONE' 
+                        status: 'DONE'
                     }).eq('id', task.id);
                 } else {
                     console.error(`Failed to send scheduled message for task ${task.id}:`, result.error);
-                    await supabase.from('SITE_Tasks').update({ 
-                        whatsapp_status: 'FAILED' 
+                    await supabase.from('SITE_Tasks').update({
+                        whatsapp_status: 'FAILED'
                     }).eq('id', task.id);
                 }
             }
@@ -5715,7 +5716,7 @@ const Admin: React.FC = () => {
 
         const checkCourseReminders = async () => {
             const now = new Date();
-            
+
             // 1. Fetch active courses with reminders enabled
             const { data: courses } = await supabase
                 .from('SITE_Courses')
@@ -5726,20 +5727,20 @@ const Admin: React.FC = () => {
 
             for (const course of courses) {
                 const courseDate = new Date(course.date);
-                
+
                 // Helper to check and send
                 const processReminder = async (daysBeforeKey: string, sentField: string, enabledField: string) => {
                     if (!course[enabledField]) return;
-                    
+
                     const triggerDate = new Date(courseDate);
                     const daysBefore = course[daysBeforeKey] || (sentField.includes('5d') ? 5 : 1);
                     triggerDate.setDate(triggerDate.getDate() - daysBefore);
-                    
+
                     // Only send if we are past the trigger date but NOT past the course date
                     // And only send during daylight hours (e.g., 9:00 to 19:00) to be polite
                     const currentHour = now.getHours();
                     if (now >= triggerDate && now < courseDate && currentHour >= 9 && currentHour <= 20) {
-                        
+
                         // Fetch enrollments for this course that haven't received this specific reminder
                         const { data: enrollments } = await supabase
                             .from('SITE_Enrollments')
@@ -5750,12 +5751,12 @@ const Admin: React.FC = () => {
 
                         if (enrollments && enrollments.length > 0) {
                             console.log(`Sending ${sentField} reminders for course: ${course.title} to ${enrollments.length} students.`);
-                            
+
                             for (const enr of enrollments) {
                                 if (!enr.student_phone) continue;
 
                                 const mapsLink = course.latitude ? `https://www.google.com/maps?q=${course.latitude},${course.longitude}` : (course.map_url || '');
-                                
+
                                 const message = `Olá *${enr.student_name}*! Tudo bem? 🏍️\n\n` +
                                     `*Lembrete do curso: ${course.title}*\n\n` +
                                     `📅 *Data:* ${new Date(course.date).toLocaleDateString('pt-BR')}\n` +
@@ -5767,7 +5768,7 @@ const Admin: React.FC = () => {
                                     `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
 
                                 const result = await sendWhatsAppMessage(enr.student_phone, message);
-                                
+
                                 if (result.success) {
                                     await supabase.from('SITE_Enrollments').update({ [sentField]: true }).eq('id', enr.id);
                                 }
@@ -5778,14 +5779,14 @@ const Admin: React.FC = () => {
 
                 // Check 1st Reminder (e.g. 5 days)
                 await processReminder('reminder_5d_days', 'reminder_5d_sent', 'reminder_5d_enabled');
-                
+
                 // Check 2nd Reminder (e.g. 1 day)
                 await processReminder('reminder_1d_days', 'reminder_1d_sent', 'reminder_1d_enabled');
             }
         };
 
         // Run every hour for reminders (to be less aggressive than the per-minute task checker)
-        const interval = setInterval(checkCourseReminders, 3600000); 
+        const interval = setInterval(checkCourseReminders, 3600000);
         checkCourseReminders();
 
         return () => clearInterval(interval);
@@ -5807,16 +5808,16 @@ const Admin: React.FC = () => {
     useEffect(() => {
         if (!user) return;
         const fetchUrgentTasks = async () => {
-             const { count, error } = await supabase
+            const { count, error } = await supabase
                 .from('SITE_Tasks')
                 .select('*', { count: 'exact', head: true })
                 .eq('assigned_to', user.id)
                 .neq('status', 'DONE')
                 .or(`priority.eq.URGENT,priority.eq.HIGH,due_date.lt.${new Date().toISOString()}`); // Include Overdue
-             
-             if (!error && count !== null) setUrgentTasksCount(count);
+
+            if (!error && count !== null) setUrgentTasksCount(count);
         };
-        
+
         fetchUrgentTasks();
         const interval = setInterval(fetchUrgentTasks, 60000); // Check every minute
         return () => clearInterval(interval);
@@ -5840,25 +5841,25 @@ const Admin: React.FC = () => {
             try {
                 // Refresh user role_id from DB to be safe
                 const { data: userData } = await supabase.from('SITE_Users').select('role_id, role').eq('id', user.id).single();
-                
+
                 let roleId = userData?.role_id || user.role_id;
                 let roleName = typeof userData?.role === 'string' ? userData.role : (typeof user.role === 'string' ? user.role : null);
 
                 if (roleId) {
-                     const { data } = await supabase.from('SITE_Roles').select('permissions').eq('id', roleId).single();
-                     if (data) setLivePermissions(data.permissions);
+                    const { data } = await supabase.from('SITE_Roles').select('permissions').eq('id', roleId).single();
+                    if (data) setLivePermissions(data.permissions);
                 } else if (roleName) {
-                     // Try exact match first
-                     let { data } = await supabase.from('SITE_Roles').select('permissions').eq('name', roleName).maybeSingle();
-                     
-                     // If no data, try case-insensitive match assuming roles might differ in case
-                     if (!data) {
-                          const { data: allRoles } = await supabase.from('SITE_Roles').select('name, permissions');
-                          const match = allRoles?.find((r: any) => r.name.toLowerCase() === roleName?.toLowerCase());
-                          if (match) data = match;
-                     }
+                    // Try exact match first
+                    let { data } = await supabase.from('SITE_Roles').select('permissions').eq('name', roleName).maybeSingle();
 
-                     if (data) setLivePermissions(data.permissions);
+                    // If no data, try case-insensitive match assuming roles might differ in case
+                    if (!data) {
+                        const { data: allRoles } = await supabase.from('SITE_Roles').select('name, permissions');
+                        const match = allRoles?.find((r: any) => r.name.toLowerCase() === roleName?.toLowerCase());
+                        if (match) data = match;
+                    }
+
+                    if (data) setLivePermissions(data.permissions);
                 }
             } catch (err) {
                 console.error("Error fetching live permissions in Admin:", err);
@@ -5873,8 +5874,8 @@ const Admin: React.FC = () => {
 
         // 0. Live Permissions (Highest Priority)
         if (livePermissions) {
-             if (livePermissions.admin_access) return true;
-             return !!livePermissions[key];
+            if (livePermissions.admin_access) return true;
+            return !!livePermissions[key];
         }
 
         // 1. Super Admin / Admin String Override
@@ -5895,10 +5896,10 @@ const Admin: React.FC = () => {
     // REDIRECT RULE: If User cannot see Dashboard, send to CRM (Leads)
     useEffect(() => {
         if (!loading && user) {
-             const canViewDashboard = hasPermission('dashboard_view');
-             if (currentView === 'dashboard' && !canViewDashboard) {
-                 setCurrentView('crm');
-             }
+            const canViewDashboard = hasPermission('dashboard_view');
+            if (currentView === 'dashboard' && !canViewDashboard) {
+                setCurrentView('crm');
+            }
         }
     }, [user, loading, livePermissions, currentView]);
 
@@ -5923,10 +5924,10 @@ const Admin: React.FC = () => {
                             <div className="flex items-center gap-3 w-full">
                                 {config.logo_url ? (
                                     <div className={`${isSidebarCollapsed ? 'w-12 h-12' : 'h-10 w-full'} flex items-center transition-all`}>
-                                        <img 
-                                            src={config.logo_url} 
-                                            alt={config.site_title || 'W-TECH'} 
-                                            className={`${isSidebarCollapsed ? 'w-full h-full object-contain' : 'h-full w-auto object-contain'}`} 
+                                        <img
+                                            src={config.logo_url}
+                                            alt={config.site_title || 'W-TECH'}
+                                            className={`${isSidebarCollapsed ? 'w-full h-full object-contain' : 'h-full w-auto object-contain'}`}
                                         />
                                     </div>
                                 ) : (
@@ -5934,7 +5935,7 @@ const Admin: React.FC = () => {
                                         'W'
                                     </div>
                                 )}
-                                
+
                                 {!isSidebarCollapsed && !config.logo_url && (
                                     <div className="overflow-hidden whitespace-nowrap">
                                         <h1 className="font-black text-xl tracking-tighter text-white leading-none">{config.site_title || 'W-TECH'}</h1>
@@ -5942,7 +5943,7 @@ const Admin: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            
+
                             {/* Version Tag & Dark Mode Toggle */}
                             <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'flex-col scale-75' : 'px-0.5'}`}>
                                 <span className="opacity-40 hover:opacity-100 transition-opacity text-[9px] font-black text-wtech-gold uppercase tracking-[0.3em] font-mono">
@@ -5952,8 +5953,8 @@ const Admin: React.FC = () => {
                             </div>
                         </div>
                         {/* Desktop Toggle Button */}
-                        <button 
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+                        <button
+                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                             className={`hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors ${isSidebarCollapsed ? 'mt-2' : 'ml-auto'}`}
                         >
                             {isSidebarCollapsed ? <ArrowRight size={14} /> : <ChevronLeft size={14} />}
@@ -5980,8 +5981,8 @@ const Admin: React.FC = () => {
                         {!isSidebarCollapsed && (
                             <div className="flex items-center gap-1">
                                 <Settings size={12} className="text-gray-500 hover:text-white transition-colors" />
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleLogout(); }} 
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleLogout(); }}
                                     className="p-1 hover:bg-red-500/20 rounded transition-colors text-gray-500 hover:text-red-500"
                                     title="Sair"
                                 >
@@ -5990,8 +5991,8 @@ const Admin: React.FC = () => {
                             </div>
                         )}
                         {isSidebarCollapsed && (
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleLogout(); }} 
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleLogout(); }}
                                 className="absolute -bottom-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                                 title="Sair"
                             >
@@ -6004,17 +6005,21 @@ const Admin: React.FC = () => {
                         {hasPermission('dashboard_view') && (
                             <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
-                        
+
+                        {hasPermission('dashboard_view') && (
+                            <SidebarItem icon={BarChart3} label="Analytics" active={currentView === 'analytics'} onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                        )}
+
                         {hasPermission('crm_view') && (
                             <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
                         <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        
+
                         {hasPermission('manage_users') && (
                             <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
-                        
+
                         {hasPermission('manage_orders') && (
                             <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
@@ -6030,30 +6035,30 @@ const Admin: React.FC = () => {
                         {hasPermission('financial_view') && (
                             <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
-                        
+
                         {hasPermission('courses_view') && (
                             <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
-                        
+
                         {hasPermission('accredited_view') && (
                             <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
-                        
+
                         {hasPermission('financial_view') && (
                             <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
-                        
+
                         {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && (
                             <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
                         <div className={`pt-4 mt-4 border-t border-gray-800 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
-                             {!isSidebarCollapsed && <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>}
+                            {!isSidebarCollapsed && <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>}
 
                             {hasPermission('blog_view') && (
                                 <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
-                            
+
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
                                 <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
@@ -6105,10 +6110,11 @@ const Admin: React.FC = () => {
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="w-12 h-1.5 bg-white/30 rounded-full mx-auto mb-8"></div>
-                            
+
                             <div className="grid grid-cols-3 gap-6 mb-auto overflow-y-auto">
                                 {hasPermission('dashboard_view') && <MobileMenuItem icon={LayoutDashboard} label="Visão Geral" onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />}
-                                
+                                {hasPermission('dashboard_view') && <MobileMenuItem icon={BarChart3} label="Analytics" onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} />}
+
                                 {hasPermission('crm_view') && <MobileMenuItem icon={KanbanSquare} label="Leads & CRM" onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_users') && <MobileMenuItem icon={Users} label="Equipe" onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_orders') && <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />}
@@ -6121,7 +6127,7 @@ const Admin: React.FC = () => {
                                 {hasPermission('blog_view') && <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_marketing') && <MobileMenuItem icon={Megaphone} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
-                                
+
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
                                     <div className="w-16 h-16 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 shadow-lg group-active:scale-95 transition-transform">
                                         <LogOut size={28} />
@@ -6130,7 +6136,7 @@ const Admin: React.FC = () => {
                                 </button>
                             </div>
 
-                            <button 
+                            <button
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white mx-auto mt-4 active:scale-95 transition-transform"
                             >
@@ -6143,7 +6149,7 @@ const Admin: React.FC = () => {
 
             {/* Main Content */}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
-                
+
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentView}
@@ -6154,6 +6160,7 @@ const Admin: React.FC = () => {
                         className="p-4 md:p-6 w-full min-h-full"
                     >
                         {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView />}
+                        {currentView === 'analytics' && hasPermission('dashboard_view') && <AnalyticsView />}
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
                             if (conversionData?.type === 'course') {
                                 setPendingEnrollmentLead(lead);
@@ -6186,7 +6193,7 @@ const Admin: React.FC = () => {
                         exit={{ y: -50, opacity: 0 }}
                         className="fixed top-6 right-6 z-50 group"
                     >
-                         <button 
+                        <button
                             onClick={(e) => { e.stopPropagation(); setAlertDismissedAt(Date.now()); }}
                             className="absolute -top-2 -left-2 bg-white text-gray-400 hover:text-red-500 rounded-full p-1.5 shadow-lg border border-gray-100 opacity-0 group-hover:opacity-100 transition-all z-50 hover:rotate-90"
                             title="Ocultar por 5 min"
@@ -6194,7 +6201,7 @@ const Admin: React.FC = () => {
                             <X size={14} />
                         </button>
 
-                        <div 
+                        <div
                             onClick={() => setCurrentView('tasks')}
                             className="bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 hover:scale-105 transition-transform border border-red-500 animate-pulse cursor-pointer"
                         >

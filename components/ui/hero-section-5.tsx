@@ -14,7 +14,7 @@ export function HeroSection() {
     const heroHeadline = get('hero_headline', 'A Elite da Tecnologia Automotiva');
     const heroSubheadline = get('hero_subheadline', 'Evolua sua oficina e sua carreira com treinamentos especializados em suspensões off-road e on-road.');
     const heroVideoUrl = get('hero_video_url', 'https://www.youtube.com/watch?v=_cGW7k6bOgc');
-    
+
     // Function to check if URL is YouTube and get ID
     const getYouTubeId = (url: string) => {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -27,10 +27,15 @@ export function HeroSection() {
     // Partner brands logic
     const partnerBrandsRaw = get('partner_brands', '[]');
     let partnerBrands = [];
-    try {
-        partnerBrands = JSON.parse(partnerBrandsRaw);
-    } catch (e) {
-        partnerBrands = [];
+
+    if (Array.isArray(partnerBrandsRaw)) {
+        partnerBrands = partnerBrandsRaw;
+    } else if (typeof partnerBrandsRaw === 'string') {
+        try {
+            partnerBrands = JSON.parse(partnerBrandsRaw);
+        } catch (e) {
+            partnerBrands = [];
+        }
     }
 
     // Default partner brands if none configured
@@ -53,12 +58,12 @@ export function HeroSection() {
                 <div className="py-24 md:pb-32 lg:pb-36 lg:pt-56">
                     <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                         <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-3xl lg:text-left">
-                            <motion.h1 
+                            <motion.h1
                                 className="mt-8 max-w-2xl text-balance text-5xl font-black md:text-6xl lg:mt-16 xl:text-7xl text-white tracking-tighter"
                             >
                                 {heroHeadline}
                             </motion.h1>
-                            <motion.p 
+                            <motion.p
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, delay: 0.2 }}
@@ -67,7 +72,7 @@ export function HeroSection() {
                                 {heroSubheadline}
                             </motion.p>
 
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, delay: 0.4 }}
@@ -102,7 +107,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 -z-10 overflow-hidden bg-black">
                     <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent z-10"></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-                    
+
                     {youtubeId ? (
                         <div className="absolute inset-0 size-full pointer-events-none">
                             <iframe
