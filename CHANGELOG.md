@@ -1,14 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
-<<<<<<< HEAD
-## v2.3.0 (2026-01-19) - Sistema de Notificações de Conversão (Prova Social)
+## v2.4.0 (2026-01-19) - Sistema de Notificações de Conversão (Prova Social)
 - FEAT: Sistema de popups aleatórios de inscrição para Landing Pages
 - FEAT: Toggle de controle (ON/OFF) integrado no Editor de Landing Pages
 - FEAT: Componente FakeSignupAlert com 30 nomes e cidades brasileiras
 - FEAT: Configuração dinâmica por curso e cronômetro inteligente (10-15s)
 - DB: Nova coluna fake_alerts_enabled na tabela SITE_LandingPages
-
-=======
 
 ## v2.3.3 (2026-01-17) - Fix Partners Display
 - Fixed partner brands parsing logic in Hero section
@@ -21,7 +18,14 @@
 - FIX: Script SQL para correção de permissões em listas de marketing
 - FEAT: Documentação técnica completa do sistema de automação WhatsApp
 - FIX: Ajustes de permissões RLS no banco de dados
->>>>>>> 1c7594a07002a0dd6909840dcffb82e52986a3c9
+
+## v2.3.0 (2026-01-17) - Módulo de Analytics e Integração GA4
+- FEAT: Novo módulo de Analytics Interno (PageViews, Visitantes Únicos, Eventos)
+- FEAT: Integração automática com Google Analytics 4 (GA4) via Configurações
+- FEAT: Integração automática com Facebook Pixel (Meta) via Configurações
+- FEAT: Dashboard de Analytics com gráficos de visitas diárias e fontes de tráfego
+- FEAT: Configurações Globais de Tracking centralizadas no Admin
+
 ## v2.2.7 (2026-01-16) - UI Polishing & CRM Cleanup
 - FIX: Removido widget de Taxa de Conversão flutuante no CRM
 - FIX: Correções de Dark Mode no painel administrativo
@@ -67,6 +71,7 @@
 ## v2.2.0 (2026-01-15) - Módulos Marketing e Clientes
 - FEAT: Paginação na listagem de clientes (50/100/300 itens).
 - FEAT: Grupos de Marketing agora podem ter dono específico (owner_id).
+
 ## v2.1.0 (2026-01-15) - Correções Críticas e Otimização do Dash
 - FIX: Corrigido bug no upload de imagens (Erro de RLS/Bucket inexistente).
 - FIX: KPIs do Dashboard agora priorizam vendas CRM vs Matrículas.

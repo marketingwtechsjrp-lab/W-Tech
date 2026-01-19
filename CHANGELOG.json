@@ -1,7 +1,6 @@
 [
   {
-<<<<<<< HEAD
-    "version": "2.3.0",
+    "version": "2.4.0",
     "date": "2026-01-19",
     "title": "Sistema de Notificações de Conversão (Prova Social)",
     "changes": [
@@ -10,7 +9,10 @@
       "FEAT: Componente FakeSignupAlert com 30 nomes e cidades brasileiras",
       "FEAT: Configuração dinâmica por curso e cronômetro inteligente (10-15s)",
       "DB: Nova coluna fake_alerts_enabled na tabela SITE_LandingPages"
-=======
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.3.3",
     "date": "2026-01-17",
     "title": "Fix Partners Display",
@@ -50,9 +52,8 @@
       "FEAT: Integração automática com Facebook Pixel (Meta) via Configurações",
       "FEAT: Dashboard de Analytics com gráficos de visitas diárias e fontes de tráfego",
       "FEAT: Configurações Globais de Tracking centralizadas no Admin"
->>>>>>> 1c7594a07002a0dd6909840dcffb82e52986a3c9
     ],
-    "author": "Antigravity"
+    "author": "danielmarques"
   },
   {
     "version": "2.2.6",
