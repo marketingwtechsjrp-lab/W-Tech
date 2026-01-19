@@ -68,7 +68,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                 instructorImage: data.instructor_image,
                 whatsappNumber: data.whatsapp_number,
                 modules: data.modules || [], // Ensure array
-                quizEnabled: data.quiz_enabled
+                quizEnabled: data.quiz_enabled,
+                fakeAlertsEnabled: data.fake_alerts_enabled
             });
         }
         setLoading(false);
@@ -93,7 +94,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     instructor_bio: lp.instructorBio,
                     instructor_image: lp.instructorImage,
                     whatsapp_number: lp.whatsappNumber,
-                    quiz_enabled: lp.quizEnabled
+                    quiz_enabled: lp.quizEnabled,
+                    fake_alerts_enabled: lp.fakeAlertsEnabled
                 }, { onConflict: 'course_id' })
                 .select()
                 .single();
@@ -112,7 +114,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     instructorImage: data.instructor_image,
                     whatsappNumber: data.whatsapp_number,
                     modules: data.modules,
-                    quizEnabled: data.quiz_enabled
+                    quizEnabled: data.quiz_enabled,
+                    fakeAlertsEnabled: data.fake_alerts_enabled
                 }));
             }
             alert('Página salva com sucesso!');
@@ -260,6 +263,19 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" className="sr-only peer" checked={lp.quizEnabled || false} onChange={e => setLp({ ...lp, quizEnabled: e.target.checked })} />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                                    </label>
+                                </div>
+
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between mt-4">
+                                    <div>
+                                        <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                            <Layout className="text-blue-600" size={18} /> Notificações de Inscrição Fake
+                                        </h4>
+                                        <p className="text-xs text-gray-500 max-w-md">Ative para mostrar pequenos popups aleatórios de "Alguém acabou de se inscrever" para aumentar a prova social.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" className="sr-only peer" checked={lp.fakeAlertsEnabled || false} onChange={e => setLp({ ...lp, fakeAlertsEnabled: e.target.checked })} />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                     </label>
                                 </div>
                             </div>

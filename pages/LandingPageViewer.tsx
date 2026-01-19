@@ -6,6 +6,7 @@ import { CheckCircle, ShieldCheck, ArrowRight, Star, Play, MapPin, Calendar, Clo
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead } from '../lib/leadDistribution';
 import { QualificationQuiz } from '../components/QualificationQuiz';
+import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
 
 const LandingPageViewer: React.FC = () => {
@@ -110,6 +111,7 @@ const LandingPageViewer: React.FC = () => {
             modules: lpData.modules,
             heroSecondaryImage: (lpData as any).hero_secondary_image,
             quizEnabled: (lpData as any).quiz_enabled,
+            fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
             course: mappedCourse
         };
         setLp(mappedData);
@@ -174,6 +176,8 @@ const LandingPageViewer: React.FC = () => {
   return (
     <div className="min-h-screen font-sans bg-[#050505] text-white selection:bg-wtech-gold selection:text-black overflow-x-hidden">
         
+        {lp.fakeAlertsEnabled && <FakeSignupAlert courseName={lp.title} />}
+
         {/* Navbar */}
         <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-md border-b border-white/5 transition-all duration-300">
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">

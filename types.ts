@@ -148,6 +148,7 @@ export interface LandingPage {
   modules?: { title: string; description: string; image: string }[];
   heroSecondaryImage?: string;
   quizEnabled?: boolean; // Mapped from quiz_enabled
+  fakeAlertsEnabled?: boolean; // Mapped from fake_alerts_enabled
 }
 
 
