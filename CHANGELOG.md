@@ -1,5 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v2.3.0 (2026-01-19) - Sistema de Notificações de Conversão (Prova Social)
+- FEAT: Sistema de popups aleatórios de inscrição para Landing Pages
+- FEAT: Toggle de controle (ON/OFF) integrado no Editor de Landing Pages
+- FEAT: Componente FakeSignupAlert com 30 nomes e cidades brasileiras
+- FEAT: Configuração dinâmica por curso e cronômetro inteligente (10-15s)
+- DB: Nova coluna fake_alerts_enabled na tabela SITE_LandingPages
+
 ## v2.2.7 (2026-01-16) - UI Polishing & CRM Cleanup
 - FIX: Removido widget de Taxa de Conversão flutuante no CRM
 - FIX: Correções de Dark Mode no painel administrativo

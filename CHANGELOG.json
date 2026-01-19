@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.3.0",
+    "date": "2026-01-19",
+    "title": "Sistema de Notificações de Conversão (Prova Social)",
+    "changes": [
+      "FEAT: Sistema de popups aleatórios de inscrição para Landing Pages",
+      "FEAT: Toggle de controle (ON/OFF) integrado no Editor de Landing Pages",
+      "FEAT: Componente FakeSignupAlert com 30 nomes e cidades brasileiras",
+      "FEAT: Configuração dinâmica por curso e cronômetro inteligente (10-15s)",
+      "DB: Nova coluna fake_alerts_enabled na tabela SITE_LandingPages"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.2.6",
     "date": "2026-01-15",
     "title": "Melhorias no Gerenciador de Tarefas e Dark Mode",
