@@ -240,45 +240,45 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col border-l border-gray-100"
+                        className="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-[#1A1A1A] shadow-2xl z-[70] flex flex-col border-l border-gray-100 dark:border-gray-800"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111]">
                             <div>
-                                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                                <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
                                     <Clock className="text-wtech-gold" />
                                     Tarefas & Lembretes
                                 </h3>
-                                <p className="text-xs text-gray-500 font-medium">{lead.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{lead.name}</p>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={openWhatsApp}
-                                    className="p-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-full transition-colors"
+                                    className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 text-green-700 dark:text-green-400 rounded-full transition-colors"
                                     title="WhatsApp Rápido"
                                 >
                                     <MessageCircle size={18} />
                                 </button>
-                                <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full text-gray-500">
+                                <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400">
                                     <X size={20} />
                                 </button>
                             </div>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                             
                             {/* Create New Task Form */}
-                            <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
-                                <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                                    <Plus size={14} className="bg-wtech-black text-white rounded-full p-0.5" />
+                            <div className="bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow">
+                                <h4 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                                    <Plus size={14} className="bg-wtech-black dark:bg-white text-white dark:text-black rounded-full p-0.5" />
                                     Novo Lembrete
                                 </h4>
                                 <form onSubmit={handleCreateTask} className="space-y-3">
                                     <div>
                                         <input
                                             placeholder="O que precisa ser feito?"
-                                            className="w-full text-sm border-b border-gray-200 py-2 focus:border-wtech-gold outline-none font-medium text-gray-800 placeholder:text-gray-400"
+                                            className="w-full text-sm border-b border-gray-200 dark:border-gray-700 py-2 focus:border-wtech-gold outline-none font-medium text-gray-800 dark:text-gray-100 placeholder:text-gray-400 bg-transparent"
                                             value={newTask.title}
                                             onChange={e => setNewTask({ ...newTask, title: e.target.value })}
                                         />
@@ -288,7 +288,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                             <label className="text-[10px] font-bold text-gray-400 uppercase">Data/Hora</label>
                                             <input
                                                 type="datetime-local"
-                                                className="w-full text-xs bg-gray-50 border border-gray-200 rounded p-2 focus:border-wtech-gold outline-none"
+                                                className="w-full text-xs bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded p-2 focus:border-wtech-gold outline-none text-gray-800 dark:text-gray-200"
                                                 value={newTask.dueDate}
                                                 onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
                                             />
@@ -296,7 +296,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                         <div className="w-1/3">
                                             <label className="text-[10px] font-bold text-gray-400 uppercase">Prioridade</label>
                                             <select
-                                                className="w-full text-xs bg-gray-50 border border-gray-200 rounded p-2 focus:border-wtech-gold outline-none"
+                                                className="w-full text-xs bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded p-2 focus:border-wtech-gold outline-none text-gray-800 dark:text-gray-200"
                                                 value={newTask.priority}
                                                 onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}
                                             >
@@ -311,7 +311,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-400 uppercase">Categoria</label>
                                         <select
-                                            className="w-full text-xs bg-gray-50 border border-gray-200 rounded p-2 focus:border-wtech-gold outline-none"
+                                            className="w-full text-xs bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded p-2 focus:border-wtech-gold outline-none text-gray-800 dark:text-gray-200"
                                             value={newTask.categoryId}
                                             onChange={e => setNewTask({ ...newTask, categoryId: e.target.value })}
                                         >
@@ -323,7 +323,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                     </div>
 
                                     {/* WhatsApp Automation Section */}
-                                    <div className="bg-green-50 p-4 rounded-xl border border-green-100/50 my-2">
+                                    <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100/50 dark:border-green-800/30 my-2">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2">
                                                 <input 
@@ -333,7 +333,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                     checked={newTask.isWhatsappSchedule}
                                                     onChange={e => setNewTask({...newTask, isWhatsappSchedule: e.target.checked})} 
                                                 />
-                                                <label htmlFor="wa_schedule_sidebar" className="font-bold text-green-800 text-xs cursor-pointer">
+                                                <label htmlFor="wa_schedule_sidebar" className="font-bold text-green-800 dark:text-green-400 text-xs cursor-pointer">
                                                     Disparo WhatsApp
                                                 </label>
                                             </div>
@@ -344,7 +344,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
 
                                         {newTask.isWhatsappSchedule && (
                                             <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                                <div className="flex gap-1.5 p-1 bg-white/50 rounded-lg border border-green-100">
+                                                <div className="flex gap-1.5 p-1 bg-white/50 dark:bg-black/20 rounded-lg border border-green-100 dark:border-green-900/50">
                                                     <button 
                                                         type="button"
                                                         onClick={() => setNewTask({...newTask, whatsappTemplateId: '', whatsappMessageBody: ''})} 
@@ -354,7 +354,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                     </button>
                                                     <div className="flex-1 relative">
                                                         <select 
-                                                            className={`w-full py-1 pl-1.5 pr-4 rounded-[6px] text-[9px] font-black uppercase tracking-widest outline-none appearance-none transition-all ${newTask.whatsappTemplateId ? 'bg-green-600 text-white shadow-sm' : 'text-gray-400 hover:text-green-600'}`}
+                                                            className={`w-full py-1 pl-1.5 pr-4 rounded-[6px] text-[9px] font-black uppercase tracking-widest outline-none appearance-none transition-all ${newTask.whatsappTemplateId ? 'bg-green-600 text-white shadow-sm' : 'text-gray-400 hover:text-green-600 bg-transparent'}`}
                                                             value={newTask.whatsappTemplateId}
                                                             onChange={e => {
                                                                 const tmpl = messageTemplates.find(t => t.id === e.target.value);
@@ -375,7 +375,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                 </div>
 
                                                 <textarea 
-                                                    className="w-full bg-white border border-green-100 rounded-lg p-2 text-xs h-20 focus:border-green-400 outline-none transition-all placeholder:text-gray-300"
+                                                    className="w-full bg-white dark:bg-[#111] border border-green-100 dark:border-green-900/50 rounded-lg p-2 text-xs h-20 focus:border-green-400 outline-none transition-all placeholder:text-gray-300 dark:text-gray-200"
                                                     value={newTask.whatsappMessageBody}
                                                     onChange={e => setNewTask({...newTask, whatsappMessageBody: e.target.value})}
                                                     placeholder="Sua mensagem aqui..."
@@ -385,13 +385,13 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                     <div className="relative flex-1">
                                                         <ImageIcon size={10} className="absolute left-2 top-2.5 text-green-400" />
                                                         <input 
-                                                            className="w-full bg-white border border-green-100 rounded-lg pl-6 pr-2 py-1.5 text-[10px] focus:border-green-400 outline-none transition-all" 
+                                                            className="w-full bg-white dark:bg-[#111] border border-green-100 dark:border-green-900/50 rounded-lg pl-6 pr-2 py-1.5 text-[10px] focus:border-green-400 outline-none transition-all dark:text-gray-300" 
                                                             placeholder="URL da imagem (opcional)"
                                                             value={newTask.whatsappMediaUrl}
                                                             onChange={e => setNewTask({...newTask, whatsappMediaUrl: e.target.value})}
                                                         />
                                                     </div>
-                                                    <label className="flex items-center justify-center bg-white border border-green-100 rounded-lg px-2 py-1.5 cursor-pointer hover:bg-green-50 transition-colors" title="Fazer Upload">
+                                                    <label className="flex items-center justify-center bg-white dark:bg-[#111] border border-green-100 dark:border-green-900/50 rounded-lg px-2 py-1.5 cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" title="Fazer Upload">
                                                         <Upload size={10} className="text-green-600" />
                                                         <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
                                                     </label>
@@ -403,7 +403,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                     <textarea
                                         placeholder="Detalhes adicionais..."
                                         rows={2}
-                                        className="w-full text-xs bg-gray-50 border border-gray-200 rounded p-2 focus:border-wtech-gold outline-none resize-none"
+                                        className="w-full text-xs bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded p-2 focus:border-wtech-gold outline-none resize-none text-gray-800 dark:text-gray-200"
                                         value={newTask.description}
                                         onChange={e => setNewTask({ ...newTask, description: e.target.value })}
                                     />
@@ -411,7 +411,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full py-2 bg-wtech-black text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                                        className="w-full py-2 bg-wtech-black dark:bg-white dark:text-black text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
                                     >
                                         {isLoading ? 'Agendando...' : 'Agendar Tarefa'}
                                     </button>
@@ -429,7 +429,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                     tasks.map(task => (
                                         <div 
                                             key={task.id} 
-                                            className={`p-4 rounded-lg border ${task.status === 'DONE' ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white shadow-sm hover:shadow-md'} transition-all relative overflow-hidden`}
+                                            className={`p-4 rounded-lg border ${task.status === 'DONE' ? 'bg-gray-50 dark:bg-[#111] border-gray-100 dark:border-gray-800 opacity-60' : 'bg-white dark:bg-[#1E1E1E] shadow-sm hover:shadow-md dark:border-gray-800'} transition-all relative overflow-hidden`}
                                             style={task.category?.color ? { 
                                                 borderColor: task.category.color,
                                                 borderLeftWidth: '5px',
@@ -439,12 +439,12 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                             <div className="flex items-start gap-3">
                                                 <button
                                                     onClick={() => toggleTaskStatus(task)}
-                                                    className={`mt-1 flex-shrink-0 w-5 h-5 rounded border ${task.status === 'DONE' ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-wtech-gold'} flex items-center justify-center transition-colors`}
+                                                    className={`mt-1 flex-shrink-0 w-5 h-5 rounded border ${task.status === 'DONE' ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 dark:border-gray-600 hover:border-wtech-gold'} flex items-center justify-center transition-colors`}
                                                 >
                                                     {task.status === 'DONE' && <CheckSquare size={14} />}
                                                 </button>
                                                 <div className="flex-1">
-                                                    <p className={`text-sm font-bold text-gray-800 ${task.status === 'DONE' ? 'line-through text-gray-500' : ''}`}>
+                                                    <p className={`text-sm font-bold text-gray-800 dark:text-gray-100 ${task.status === 'DONE' ? 'line-through text-gray-500' : ''}`}>
                                                         {task.title}
                                                     </p>
                                                     
@@ -453,13 +453,13 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                          <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-bl-lg" title="Atrasado" />
                                                     )}
 
-                                                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{task.description}</p>
                                                     
                                                     {task.category && (
                                                         <div className="mt-2">
                                                             <span 
                                                                 className="text-[9px] px-1.5 py-0.5 rounded border font-bold uppercase"
-                                                                style={{ backgroundColor: task.category.color + '20', borderColor: task.category.color, color: '#333' }}
+                                                                style={{ backgroundColor: task.category.color + '20', borderColor: task.category.color, color: task.category.color }}
                                                             >
                                                                 {task.category.name}
                                                             </span>
@@ -470,7 +470,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                         <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${task.priority === 'URGENT' ? 'bg-red-100 text-red-700' : task.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'}`}>
                                                             {task.priority === 'URGENT' ? 'Urgente' : task.priority === 'HIGH' ? 'Alta' : task.priority === 'MEDIUM' ? 'Média' : 'Baixa'}
                                                         </span>
-                                                        <div className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                                        <div className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-100 dark:bg-[#111] px-2 py-0.5 rounded-full">
                                                             <Calendar size={10} />
                                                             {new Date(task.dueDate!).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                                                         </div>
@@ -479,7 +479,7 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                                                     {task.tags && task.tags.length > 0 && (
                                                         <div className="flex flex-wrap gap-1 mt-2">
                                                             {task.tags.map((tag, i) => (
-                                                                <span key={i} className="text-[9px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded border border-gray-200">
+                                                                <span key={i} className="text-[9px] px-1.5 py-0.5 bg-gray-100 dark:bg-[#111] text-gray-600 dark:text-gray-400 rounded border border-gray-200 dark:border-gray-700">
                                                                     #{tag}
                                                                 </span>
                                                             ))}

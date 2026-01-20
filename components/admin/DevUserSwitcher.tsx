@@ -66,7 +66,7 @@ const DevUserSwitcher = ({ onClose }: { onClose?: () => void }) => {
             <button 
                 onClick={() => setIsOpen(true)}
                 className="fixed bottom-4 left-4 z-[9999] bg-red-600 text-white p-3 rounded-full shadow-lg hover:bg-red-700 transition-colors border-2 border-white/20"
-                title="Abrir Painel Dev"
+                title="Abrir Super Admin"
             >
                 <Shield size={20} />
             </button>
@@ -79,7 +79,7 @@ const DevUserSwitcher = ({ onClose }: { onClose?: () => void }) => {
             <div className="bg-red-600 px-4 py-3 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-2">
                     <Shield size={16} className="text-white" />
-                    <span className="text-xs font-black uppercase tracking-wider text-white">Modo Desenvolvedor</span>
+                    <span className="text-xs font-black uppercase tracking-wider text-white">Super Admin</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button onClick={fetchUsers} className="text-white/80 hover:text-white"><RefreshCw size={14} /></button>

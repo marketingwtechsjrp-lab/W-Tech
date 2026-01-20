@@ -4240,7 +4240,7 @@ const SettingsView = () => {
                                 <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Shield size={18} /> Ferramentas do Sistema</h3>
                                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-100 dark:border-gray-700">
                                     <div>
-                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">Painel do Desenvolvedor</h4>
+                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">Super Admin</h4>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">Ativa botão flutuante para troca rápida de usuários (para testes).</p>
                                     </div>
                                     <button

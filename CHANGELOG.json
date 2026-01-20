@@ -1,5 +1,27 @@
 [
   {
+    "version": "2.4.2",
+    "date": "2026-01-20",
+    "title": "LPs Lisboa, Fix RLS e Super Admin",
+    "changes": [
+      "FEAT: Atualizadas as datas das Landing Pages de Lisboa para Abril de 2026",
+      "FEAT: Renomeado Painel do Desenvolvedor para Super Admin",
+      "FIX: Novo script de correção RLS para o sistema de tarefas (SITE_Tasks v5)"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.4.1",
+    "date": "2026-01-19",
+    "title": "Correções de Tarefas e Fila de Marketing",
+    "changes": [
+      "FIX: Conclusão de tarefas na visualização em lista corrigida",
+      "FIX: Botão de check nos cards de tarefa agora sincronizado com o status",
+      "DB: Script de correção de permissões SITE_Users vs auth.users (Marketing)"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.4.0",
     "date": "2026-01-19",
     "title": "Sistema de Notificações de Conversão (Prova Social)",

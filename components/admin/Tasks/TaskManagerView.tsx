@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { sendWhatsAppMessage } from '../../../lib/whatsapp';
 import { useAuth } from '../../../context/AuthContext';
 import { Task, TaskCategory } from '../../../types';
-import { Plus, Clock, CheckCircle, AlertTriangle, Trash2, User, Search, Filter, X, Calendar, Flag, LayoutGrid, List, Edit, Tag, Image as ImageIcon, Upload, Bot } from 'lucide-react';
+import { Plus, Clock, CheckCircle, AlertTriangle, Trash2, User, Search, Filter, X, Calendar, Flag, LayoutGrid, List, Edit, Tag, Image as ImageIcon, Upload, Bot, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BauhausCard } from '@/components/ui/bauhaus-card';
 
@@ -66,7 +66,7 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
                 isAutomated={(task as any).isWhatsappSchedule}
 
                 // Header Action: Toggle Status via Icon
-                headerIcon={task.status === 'DONE' ? CheckCircle : CheckCircle}
+                headerIcon={task.status === 'DONE' ? CheckCircle : Circle}
                 onMoreOptionsClick={() => onStatusToggle(task)}
                 onDeleteClick={() => onDelete(task.id)}
 
@@ -95,7 +95,7 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
 };
 
 // Task List Row Component
-const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => void, onEdit: (task: Task) => void }> = ({ task, usersMap, onDelete, onEdit }) => {
+const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => void, onEdit: (task: Task) => void, onStatusToggle: (task: Task) => void }> = ({ task, usersMap, onDelete, onEdit, onStatusToggle }) => {
     const isOverdue = !task.dueDate ? false : new Date(task.dueDate) < new Date() && task.status !== 'DONE';
     return (
         <tr className={`border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${task.status === 'DONE' ? 'opacity-60 bg-gray-50 dark:bg-gray-900/50' : ''} ${isOverdue ? 'bg-red-50/30 dark:bg-red-900/20' : ''}`}>
@@ -141,7 +141,7 @@ const TaskRow: React.FC<{ task: Task, usersMap: any, onDelete: (id: string) => v
             <td className="p-3 flex items-center justify-end gap-2 print:hidden">
                 {task.status !== 'DONE' && (
                     <button
-                        onClick={() => onEdit({ ...task, status: 'DONE' })}
+                        onClick={() => onStatusToggle(task)}
                         className="p-1 hover:bg-green-100 text-gray-400 hover:text-green-600 rounded transition"
                         title="Concluir"
                     >
@@ -378,8 +378,13 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Excluir tarefa?')) return;
-        await supabase.from('SITE_Tasks').delete().eq('id', id);
-        fetchTasks();
+        const { error } = await supabase.from('SITE_Tasks').delete().eq('id', id);
+        if (error) {
+            alert('Erro ao excluir tarefa: ' + error.message);
+            console.error(error);
+        } else {
+            fetchTasks();
+        }
     };
 
     const openEdit = (task: Task) => {
@@ -591,7 +596,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                         <tr><td colSpan={7} className="p-10 text-center text-gray-400 italic">Nenhuma tarefa encontrada.</td></tr>
                                     ) : (
                                         filteredTasks.map(task => (
-                                            <TaskRow key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} />
+                                            <TaskRow key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
                                         ))
                                     )}
                                 </tbody>

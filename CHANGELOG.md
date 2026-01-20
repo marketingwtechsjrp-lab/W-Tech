@@ -1,5 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
+
+## v2.4.2 (2026-01-20) - LPs Lisboa, Fix RLS e Super Admin
+- FEAT: Atualizadas as datas das Landing Pages de Lisboa para Abril de 2026
+- FEAT: Renomeado Painel do Desenvolvedor para Super Admin
+- FIX: Novo script de correção RLS para o sistema de tarefas (SITE_Tasks v5)
+## v2.4.1 (2026-01-19) - Hotfix de Tarefas e Marketing
+- FIX: Conclusão de tarefas na visualização em lista corrigida
+- FIX: Botão de check nos cards de tarefa sincronizado em todas as views
+- DB: Script de desbloqueio de permissões SITE_Users (Marketing)
+
 ## v2.4.0 (2026-01-19) - Sistema de Notificações de Conversão (Prova Social)
 - FEAT: Sistema de popups aleatórios de inscrição para Landing Pages
 - FEAT: Toggle de controle (ON/OFF) integrado no Editor de Landing Pages

@@ -167,34 +167,79 @@ const DashboardView = () => {
             setRecentCampaigns(campaigns || []);
 
             // B. ApexCharts: Financial Evolution (PERSONAL)
-            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            const historyMap: Record<number, { revenue: number, expenses: number }> = {};
-            for (let i = 0; i < 12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
+            let categories: string[] = [];
+            let revenueData: number[] = [];
+            let expensesData: number[] = [];
 
-            // For Chart, stick to CRM Value for consistency with "My Results"
-            myLeads.forEach((l: any) => {
-                if (['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)) {
-                    if (!l.created_at) return;
-                    const month = new Date(l.created_at).getMonth();
-                    historyMap[month].revenue += (Number(l.conversion_value) || 0);
+            if (filterPeriod === '30d') {
+                // DAILY VIEW (Last 30 Days)
+                const daysMap: Record<string, { revenue: number, expenses: number }> = {};
+                
+                // Initialize last 30 days
+                for (let i = 29; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const key = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                    const label = `${d.getDate()}/${d.getMonth() + 1}`; // DD/M
+                    daysMap[key] = { revenue: 0, expenses: 0 };
+                    categories.push(label);
                 }
-            });
 
-            if (isAdmin) {
-                expensesDTO?.forEach((ex: any) => {
-                    if (!ex.date) return;
-                    const month = new Date(ex.date).getMonth();
-                    historyMap[month].expenses += Number(ex.amount || 0);
+                // Fill Revenue
+                myLeads.forEach((l: any) => {
+                    if (['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)) {
+                        if (!l.created_at) return;
+                        const dateKey = l.created_at.split('T')[0];
+                        if (daysMap[dateKey]) {
+                            daysMap[dateKey].revenue += (Number(l.conversion_value) || 0);
+                        }
+                    }
                 });
+
+                // Fill Expenses (Admin only)
+                if (isAdmin) {
+                    expensesDTO?.forEach((ex: any) => {
+                        if (!ex.date) return;
+                        const dateKey = ex.date.split('T')[0];
+                        if (daysMap[dateKey]) {
+                            daysMap[dateKey].expenses += Number(ex.amount || 0);
+                        }
+                    });
+                }
+
+                const sortedKeys = Object.keys(daysMap).sort();
+                revenueData = sortedKeys.map(k => daysMap[k].revenue);
+                expensesData = sortedKeys.map(k => daysMap[k].expenses);
+
+            } else {
+                // MONTHLY VIEW (Existing Logic)
+                const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                const historyMap: Record<number, { revenue: number, expenses: number }> = {};
+                for (let i = 0; i < 12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
+
+                myLeads.forEach((l: any) => {
+                    if (['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)) {
+                        if (!l.created_at) return;
+                        const month = new Date(l.created_at).getMonth();
+                        historyMap[month].revenue += (Number(l.conversion_value) || 0);
+                    }
+                });
+
+                if (isAdmin) {
+                    expensesDTO?.forEach((ex: any) => {
+                        if (!ex.date) return;
+                        const month = new Date(ex.date).getMonth();
+                        historyMap[month].expenses += Number(ex.amount || 0);
+                    });
+                }
+
+                const currentMonthIndex = new Date().getMonth();
+                const sliceLimit = filterPeriod === 'YYYY' ? currentMonthIndex + 2 : 12;
+
+                revenueData = months.map((_, i) => historyMap[i].revenue).slice(0, sliceLimit);
+                expensesData = months.map((_, i) => historyMap[i].expenses).slice(0, sliceLimit);
+                categories = months.slice(0, sliceLimit);
             }
-
-            // Prepare Series
-            const currentMonthIndex = new Date().getMonth();
-            const sliceLimit = filterPeriod === 'YYYY' ? currentMonthIndex + 2 : 12;
-
-            const revenueData = months.map((_, i) => historyMap[i].revenue).slice(0, sliceLimit);
-            const expensesData = months.map((_, i) => historyMap[i].expenses).slice(0, sliceLimit);
-            const categories = months.slice(0, sliceLimit);
 
             setFinancialChartSeries([
                 { name: isAdmin ? 'Receita Total' : 'Minhas Vendas', data: revenueData },
@@ -230,7 +275,7 @@ const DashboardView = () => {
                     categories: categories,
                     axisBorder: { show: false },
                     axisTicks: { show: false },
-                    labels: { style: { colors: '#9ca3af', fontSize: '12px', fontFamily: 'Inter' } }
+                    labels: { style: { colors: '#9ca3af', fontSize: '10px', fontFamily: 'Inter' } } // Smaller font for daily dates
                 },
                 yaxis: {
                     labels: {
