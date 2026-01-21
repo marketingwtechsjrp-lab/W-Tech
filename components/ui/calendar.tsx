@@ -38,7 +38,7 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
 };
 
 interface CalendarProps {
-  events?: string[]; // Date strings in YYYY-MM-DD
+  events?: (string | { start: string; end?: string })[];
   className?: string;
 }
 
@@ -74,7 +74,12 @@ export function Calendar({ events = [], className }: CalendarProps) {
 
   const hasEvent = (day: number) => {
     const dayStr = `${currentYear}-${String(currentMonthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return events.some(e => e.startsWith(dayStr));
+    return events.some(e => {
+        if (typeof e === 'string') return e.startsWith(dayStr);
+        const start = e.start.split('T')[0];
+        const end = (e.end || e.start).split('T')[0];
+        return dayStr >= start && dayStr <= end;
+    });
   };
 
   const renderCalendarDays = () => {

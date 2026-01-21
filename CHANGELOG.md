@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.4.3 (2026-01-21) - Correção de Datas, Calendário Multi-dia e Leads Masculinos
+- FIX: Correção de datas com fuso horário em todo o site
+- FEAT: Suporte para marcação de intervalos de dias em cursos multi-dia
+- FIX: Nomes de alertas de inscrição fakes alterados para público masculino
+- VERSION: Atualização para v2.4.3
+
 ## v2.4.2 (2026-01-20) - LPs Lisboa, Fix RLS e Super Admin
 - FEAT: Atualizadas as datas das Landing Pages de Lisboa para Abril de 2026
 - FEAT: Renomeado Painel do Desenvolvedor para Super Admin

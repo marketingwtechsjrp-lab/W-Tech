@@ -8,8 +8,10 @@ interface CourseCardProps {
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
-  const eventDate = new Date(course.date);
-  const day = eventDate.getDate();
+  const datePart = course.date.split('T')[0];
+  const [year, m, d] = datePart.split('-').map(Number);
+  const eventDate = new Date(year, m - 1, d);
+  const day = d;
   const month = eventDate.toLocaleString('pt-BR', { month: 'short' }).toUpperCase();
 
   return (

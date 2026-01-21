@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { BlogPost } from '../types';
 import { Clock, ChevronRight, Search, Calendar, User, ArrowRight } from 'lucide-react';
 import SEO from '../components/SEO';
+import { formatDateLocal } from '../lib/utils';
 
 const Blog: React.FC = () => {
     const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -132,7 +133,7 @@ const Blog: React.FC = () => {
                                     </div>
                                     <div className="p-6 flex flex-col flex-grow">
                                         <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                                            <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(post.date).toLocaleDateString()}</span>
+                                            <span className="flex items-center gap-1"><Calendar size={12} /> {formatDateLocal(post.date)}</span>
                                             <span className="flex items-center gap-1"><Clock size={12} /> {calculateReadTime(post.content)} min</span>
                                         </div>
                                         <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-wtech-gold transition-colors">

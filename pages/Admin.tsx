@@ -40,6 +40,7 @@ import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
+import { formatDateLocal } from '../lib/utils';
 import changelogData from '../CHANGELOG.json';
 import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
 import { History } from 'lucide-react';
@@ -706,7 +707,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 <div style="font-family: Arial, sans-serif; color: #333;">
                     <h1 style="color: #D4AF37;">${course.title}</h1>
                     <p style="font-size: 16px;">${course.description || 'Confira os detalhes deste novo evento.'}</p>
-                    <p><strong>Data:</strong> ${new Date(course.date).toLocaleDateString()} às ${course.startTime}</p>
+                    <p><strong>Data:</strong> ${formatDateLocal(course.date)} às ${course.startTime}</p>
                     <p><strong>Local:</strong> ${course.location}</p>
                     <div style="margin-top: 20px;">
                         <a href="https://w-techbrasil.com.br/#/lp/${course.slug || course.id}" style="background-color: #000; color: #D4AF37; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">GARANTIR VAGA</a>
@@ -838,7 +839,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         // Texto IDÊNTICO ao oficial
         const message = `Olá *Aluno Exemplo*! Tudo bem? 🏍️\n\n` +
             `*Lembrete do curso: ${formData.title}*\n\n` +
-            `📅 *Data:* ${formData.date ? new Date(formData.date).toLocaleDateString('pt-BR') : '--/--/----'}\n` +
+            `📅 *Data:* ${formatDateLocal(formData.date) || '--/--/----'}\n` +
             `⏰ *Horário:* ${formData.startTime || '08:00'} - ${formData.endTime || '18:00'}\n` +
             `📍 *Endereço:* ${formData.address || formData.location || 'Não definido'}, ${formData.city || ''} - ${formData.state || ''}\n` +
             (mapsLink ? `🔗 *Ver no Mapa:* ${mapsLink}\n\n` : '\n') +
@@ -884,7 +885,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 const totalValue = (c.price || 0) * (c.registeredCount || 0);
                 return [
                     `"${c.title}"`,
-                    new Date(c.date).toLocaleDateString(),
+                    formatDateLocal(c.date),
                     `"${c.startTime} - ${c.endTime}"`,
                     `"${c.location} - ${c.city}/${c.state}"`,
                     c.registeredCount || 0,
@@ -947,7 +948,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             return `
                         <tr>
                             <td>${c.title}</td>
-                            <td>${new Date(c.date).toLocaleDateString()} ${c.startTime || ''}</td>
+                            <td>${formatDateLocal(c.date)} ${c.startTime || ''}</td>
                             <td>${c.location}</td>
                             <td>${c.registeredCount || 0}</td>
                             <td>${c.capacity || 0}</td>
@@ -1395,8 +1396,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {months.map((month, idx) => {
                     const monthEvents = courses.filter(c => {
-                        const d = new Date(c.date);
-                        return d.getMonth() === idx && d.getFullYear() === currentYear;
+                        const start = c.date.split('T')[0];
+                        const end = (c.dateEnd || c.date).split('T')[0];
+                        const firstDayOfMonth = new Date(currentYear, idx, 1).toISOString().split('T')[0];
+                        const lastDayOfMonth = new Date(currentYear, idx + 1, 0).toISOString().split('T')[0];
+                        return (start <= lastDayOfMonth && end >= firstDayOfMonth);
                     });
 
                     return (
@@ -1407,7 +1411,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     {monthEvents.map(e => (
                                         <li key={e.id} onClick={() => handleEdit(e)} className="text-xs bg-gray-50 p-2 rounded cursor-pointer hover:bg-yellow-50 border-l-2 border-wtech-gold">
                                             <div className="font-bold flex justify-between">
-                                                <span>{new Date(e.date).getDate()} - {e.title}</span>
+                                                <span>
+                                                    {parseInt(e.date.split('T')[0].split('-')[2])}
+                                                    {e.dateEnd && ` - ${parseInt(e.dateEnd.split('T')[0].split('-')[2])}`}
+                                                    {` - ${e.title}`}
+                                                </span>
                                             </div>
                                         </li>
                                     ))}
@@ -1438,7 +1446,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         return (
             <div className="grid grid-cols-7 gap-2 h-[600px]">
                 {upcomingDays.map(date => {
-                    const dayEvents = courses.filter(c => new Date(c.date).toDateString() === date.toDateString());
+                    const dayStr = date.toISOString().split('T')[0];
+                    const dayEvents = courses.filter(c => {
+                        const start = c.date.split('T')[0];
+                        const end = (c.dateEnd || c.date).split('T')[0];
+                        return dayStr >= start && dayStr <= end;
+                    });
                     const isToday = date.toDateString() === new Date().toDateString();
                     return (
                         <div key={date.toString()} className={`border rounded-lg p-2 flex flex-col ${isToday ? 'bg-yellow-50 border-yellow-200' : 'bg-white'}`}>
@@ -1516,7 +1529,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </button>
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white">Lista de Inscritos</h2>
-                        <p className="text-gray-500">{currentCourse.title} • {new Date(currentCourse.date).toLocaleDateString()}</p>
+                        <p className="text-gray-500">{currentCourse.title} • {formatDateLocal(currentCourse.date)}</p>
                         <div className="mt-2 text-sm flex gap-4">
                             <span className="text-green-600 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: R$ {totalPaid.toFixed(2)}</span>
                             <span className="text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: R$ {totalPotential.toFixed(2)}</span>
@@ -1823,8 +1836,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <div className="text-xs text-gray-400">{course.location}</div>
                                     </td>
                                     <td className="p-4 text-gray-800 dark:text-gray-300 font-bold">
-                                        {new Date(course.date).toLocaleDateString()}
-                                        <div className="text-xs text-gray-400 font-normal">{new Date(course.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                        {formatDateLocal(course.date)}
+                                        <div className="text-xs text-gray-400 font-normal">{course.startTime || '08:00'}</div>
                                     </td>
                                     <td className="p-4 text-center">
                                         <button
@@ -2247,11 +2260,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                         <div>
                             <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Data de Início</label>
-                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
                         </div>
                         <div>
                             <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Data de Fim (Opcional)</label>
-                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.dateEnd ? new Date(formData.dateEnd).toISOString().split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
+                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

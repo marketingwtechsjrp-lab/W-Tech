@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import SEO from '../components/SEO';
+import { formatDateLocal } from '../lib/utils';
 
 const BlogPostReader: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -226,7 +227,7 @@ const BlogPostReader: React.FC = () => {
             <div className="flex flex-wrap gap-4 mb-6 text-sm font-bold text-white/80">
               <span className="bg-wtech-gold text-black px-3 py-1 rounded uppercase tracking-wider">{post.category}</span>
               <span className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded backdrop-blur"><Clock size={16} className="text-wtech-gold" /> {calculateReadTime(post.content)} min de leitura</span>
-              <span className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded backdrop-blur"><Calendar size={16} className="text-wtech-gold" /> {new Date(post.date).toLocaleDateString()}</span>
+              <span className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded backdrop-blur"><Calendar size={16} className="text-wtech-gold" /> {formatDateLocal(post.date)}</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight drop-shadow-lg mb-6">
               {post.title}

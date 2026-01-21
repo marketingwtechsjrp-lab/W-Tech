@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CourseCard from '../components/CourseCard';
+import { formatDateLocal } from '../lib/utils';
 import { Search, Calendar as CalendarIcon, List, MapPin, Clock, ArrowRight } from 'lucide-react';
 
 import { supabase } from '../lib/supabaseClient';
@@ -71,14 +72,16 @@ const Courses: React.FC = () => {
 
         // Group courses by month (index 0-11)
         const coursesByMonth: { [key: number]: Course[] } = {};
-        courses.forEach(c => {
-            const d = new Date(c.date);
-            if (d.getFullYear() === displayYear) {
-                const m = d.getMonth();
-                if (!coursesByMonth[m]) coursesByMonth[m] = [];
-                coursesByMonth[m].push(c);
-            }
-        });
+        for (let m = 0; m < 12; m++) {
+            const firstDayOfMonth = new Date(displayYear, m, 1).toISOString().split('T')[0];
+            const lastDayOfMonth = new Date(displayYear, m + 1, 0).toISOString().split('T')[0];
+            
+            coursesByMonth[m] = courses.filter(c => {
+                const start = c.date.split('T')[0];
+                const end = (c.dateEnd || c.date).split('T')[0];
+                return (start <= lastDayOfMonth && end >= firstDayOfMonth);
+            });
+        }
 
         return (
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-300">
@@ -127,9 +130,11 @@ const Courses: React.FC = () => {
                                     {Array.from({ length: daysInMonth }).map((_, i) => {
                                         const day = i + 1;
                                         // Find events for this day
+                                        const dayStr = `${displayYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                         const dayEvents = monthEvents.filter(e => {
-                                            const ed = new Date(e.date);
-                                            return ed.getDate() === day;
+                                            const start = e.date.split('T')[0];
+                                            const end = (e.dateEnd || e.date).split('T')[0];
+                                            return dayStr >= start && dayStr <= end;
                                         });
                                         const hasEvent = dayEvents.length > 0;
                                         
@@ -156,7 +161,9 @@ const Courses: React.FC = () => {
                                 <div className="mt-4 space-y-2 min-h-[60px]">
                                     {monthEvents.slice(0, 3).map(ev => (
                                         <Link to={`/lp/${ev.slug || ev.id}`} key={ev.id} className="block text-xs bg-gray-50 p-2 rounded border border-gray-100 hover:bg-wtech-gold/10 hover:border-wtech-gold/30 transition-colors">
-                                            <div className="font-bold truncate text-wtech-black">{new Date(ev.date).getDate()} - {ev.title}</div>
+                                            <div className="font-bold truncate text-wtech-black">
+                                                {parseInt(ev.date.split('T')[0].split('-')[2])} - {ev.title}
+                                            </div>
                                         </Link>
                                     ))}
                                     {monthEvents.length > 3 && (

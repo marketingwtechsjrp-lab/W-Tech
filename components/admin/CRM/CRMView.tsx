@@ -784,7 +784,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         const { lead, targetStatus } = lostReasonModal;
 
         // 1. Update Internal Notes with Reason
-        const newNotes = `${lead.internalNotes || ''}\n\n[MOTIVO PERDA - ${new Date().toLocaleDateString()}]: ${lostReason}`;
+        const today = new Date();
+        const dateStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+        const newNotes = `${lead.internalNotes || ''}\n\n[MOTIVO PERDA - ${dateStr}]: ${lostReason}`;
 
         // 2. Execute Move with updated notes (Implicitly we want to save notes first or just update it all)
         // Since executeMove only updates status/updated_at, we need a separate update or modified executeMove.

@@ -8,6 +8,7 @@ import { distributeLead } from '../lib/leadDistribution';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
+import { formatDateLocal } from '../lib/utils';
 
 const LandingPageViewer: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -289,8 +290,8 @@ const LandingPageViewer: React.FC = () => {
                         <div className="text-sm font-bold text-white">
                             {lp.course?.date ? (
                                 lp.course.dateEnd ? 
-                                `${new Date(lp.course.date).toLocaleDateString()} - ${new Date(lp.course.dateEnd).toLocaleDateString()}` 
-                                : new Date(lp.course.date).toLocaleDateString()
+                                `${formatDateLocal(lp.course.date)} - ${formatDateLocal(lp.course.dateEnd)}` 
+                                : formatDateLocal(lp.course.date)
                             ) : 'A Definir'}
                         </div>
                     </div>

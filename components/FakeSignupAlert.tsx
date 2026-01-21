@@ -6,12 +6,12 @@ interface FakeSignupAlertProps {
 }
 
 const names = [
-    'Daniel Marques', 'Ricardo Silva', 'Ana Oliveira', 'Marcos Santos', 'Juliana Lima',
-    'Felipe Souza', 'Carla Mendes', 'Bruno Ferreira', 'Patrícia Costa', 'Rodrigo Alves',
-    'Amanda Rocha', 'Gustavo Pereira', 'Beatriz Gomes', 'Marcelo Vieira', 'Fernanda Martins',
-    'Thiago Barbosa', 'Luciana Castro', 'André Ribeiro', 'Camila Carvalho', 'Vinícius Santos',
-    'Gabriel Jesus', 'Lucas Moura', 'Rafael Cabral', 'Eduardo Paes', 'Mateus Solano',
-    'Paula Fernandes', 'Larissa Manoela', 'Mariana Ximenes', 'Débora Falabella', 'Cláudia Raia'
+    'Daniel Marques', 'Ricardo Silva', 'Marcos Santos', 'Felipe Souza', 'Bruno Ferreira', 
+    'Rodrigo Alves', 'Gustavo Pereira', 'Marcelo Vieira', 'Thiago Barbosa', 'André Ribeiro', 
+    'Vinícius Santos', 'Gabriel Jesus', 'Lucas Moura', 'Rafael Cabral', 'Eduardo Paes', 
+    'Mateus Solano', 'Paulo Andrade', 'Fernando Henrique', 'Cláudio Ferreira', 'José Souza',
+    'Antônio Carlos', 'João Pedro', 'Carlos Alberto', 'Luís Eduardo', 'Marcos Paulo',
+    'Sebastião Silva', 'Ronaldo Junior', 'Sérgio Santos', 'Márcio Oliveira', 'Roberto Carlos'
 ];
 
 const cities = [

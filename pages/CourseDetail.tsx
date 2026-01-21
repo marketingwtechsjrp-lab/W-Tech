@@ -5,6 +5,7 @@ import { Course } from '../types';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabaseClient';
 import SEO from '../components/SEO';
+import { formatDateLocal } from '../lib/utils';
 
 const CourseDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -110,7 +111,7 @@ const CourseDetail: React.FC = () => {
                                     <div>
                                         <span className="block text-xs text-gray-500 uppercase">Data</span>
                                         <span className="font-medium">
-                                            {new Date(course.date).toLocaleDateString('pt-BR')}
+                                            {formatDateLocal(course.date)}
                                             {course.startTime && ` • ${course.startTime}`}
                                             {course.endTime && ` às ${course.endTime}`}
                                         </span>

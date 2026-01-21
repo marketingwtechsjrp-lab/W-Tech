@@ -79,7 +79,8 @@ const Home = () => {
                         ...c,
                         locationType: c.location_type,
                         registeredCount: c.registered_count,
-                        hotelsInfo: c.hotels_info
+                        hotelsInfo: c.hotels_info,
+                        dateEnd: c.date_end
                     })));
                 }
 
@@ -374,7 +375,7 @@ const Home = () => {
                         {/* LEFT: VISUAL CALENDAR WIDGET */}
                         {/* LEFT: VISUAL CALENDAR WIDGET - NEW BENTO MODEL */}
                         <div className="lg:col-span-4 lg:sticky lg:top-32 h-fit">
-                             <BentoCalendar events={courses.map(c => c.date)} />
+                             <BentoCalendar events={courses.map(c => ({ start: c.date, end: c.dateEnd }))} />
                              
                              {/* Simple Legend below the bento card */}
                              <div className="mt-6 flex flex-wrap gap-6 px-4">
@@ -397,8 +398,13 @@ const Home = () => {
 
                                         {/* Date Badge */}
                                         <div className="flex-shrink-0 bg-white/5 rounded-xl p-4 text-center min-w-[90px] group-hover:bg-wtech-gold group-hover:text-black transition-all duration-300">
-                                            <span className="block text-3xl font-black text-white group-hover:text-black leading-none">{new Date(course.date).getDate()}</span>
-                                            <span className="block text-[10px] font-black text-gray-400 group-hover:text-black uppercase mt-1 tracking-widest">{new Date(course.date).toLocaleString('default', { month: 'short' })}</span>
+                                            <span className="block text-3xl font-black text-white group-hover:text-black leading-none">
+                                                {parseInt(course.date.split('T')[0].split('-')[2])}
+                                                {course.dateEnd && `-${parseInt(course.dateEnd.split('T')[0].split('-')[2])}`}
+                                            </span>
+                                            <span className="block text-[10px] font-black text-gray-400 group-hover:text-black uppercase mt-1 tracking-widest">
+                                                {new Date(course.date.split('T')[0].split('-')[0], parseInt(course.date.split('T')[0].split('-')[1]) - 1, parseInt(course.date.split('T')[0].split('-')[2])).toLocaleString('default', { month: 'short' })}
+                                            </span>
                                         </div>
 
                                         {/* Content */}
