@@ -1,16 +1,44 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { useSettings } from '../context/SettingsContext';
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
 export const AnalyticsTracker = () => {
     const location = useLocation();
+    const { get } = useSettings();
+    const gaId = get('ga_id');
+
+    // GA Injection
+    useEffect(() => {
+        if (gaId && !window.hasInjectedScripts) {
+            const script = document.createElement('script');
+            script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+            script.async = true;
+            document.head.appendChild(script);
+
+            (window as any).dataLayer = (window as any).dataLayer || [];
+            function gtag() { (window as any).dataLayer.push(arguments); }
+            (window as any).gtag = gtag;
+            (window as any).gtag('js', new Date());
+            (window as any).gtag('config', gaId);
+
+            window.hasInjectedScripts = true;
+        }
+    }, [gaId]);
 
     useEffect(() => {
         const trackPageView = async () => {
             try {
+                // GA Pageview
+                if (gaId && (window as any).gtag) {
+                    (window as any).gtag('config', gaId, {
+                        page_path: location.pathname + location.search
+                    });
+                }
+
                 // 1. Get/Set Visitor ID (Persistent)
                 let visitorId = localStorage.getItem('wtech_visitor_id');
                 if (!visitorId) {
@@ -46,7 +74,7 @@ export const AnalyticsTracker = () => {
         };
 
         trackPageView();
-    }, [location]); // Run on route change
+    }, [location, gaId]); // Run on route change + gaId load
 
     return null; // Invisible component
 };

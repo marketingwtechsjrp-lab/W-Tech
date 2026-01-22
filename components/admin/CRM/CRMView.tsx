@@ -195,6 +195,9 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
     );
 };
 
+// Import helper
+import { calculateCommercialTime, formatCommercialTime } from '../../../lib/businessTime';
+
 // Hook to calculate time spent
 const useTimeInStatus = (dateString: string) => {
     const [timeDisplay, setTimeDisplay] = useState('');
@@ -202,19 +205,15 @@ const useTimeInStatus = (dateString: string) => {
 
     useEffect(() => {
         const calculate = () => {
-            const start = new Date(dateString).getTime();
-            const now = new Date().getTime();
-            const diff = now - start;
+            const minutes = calculateCommercialTime(dateString);
+            setTimeDisplay(formatCommercialTime(minutes));
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-            if (days > 0) setTimeDisplay(`${days}d ${hours}h`);
-            else if (hours > 0) setTimeDisplay(`${hours}h ${minutes}m`);
-            else setTimeDisplay(`${minutes}m`);
-
-            if (days > 2 || (days === 0 && hours > 4)) setIsLongWait(true);
+            // Logic for Long Wait: > 2 commercial days (approx 20h) or > 4h
+            // User requirement: "timer so roda horario comercial". "Travar sabado e domingo".
+            // Let's keep the red alerta simple: > 8h commercial time? 
+            // Or stick to some logic.
+            // Let's say > 20h commercial (2 days) is long.
+            if (minutes > 1200) setIsLongWait(true); // 20 hours
         };
         calculate();
         const interval = setInterval(calculate, 60000); // Update every minute
@@ -223,6 +222,8 @@ const useTimeInStatus = (dateString: string) => {
 
     return { timeDisplay, isLongWait };
 };
+
+
 
 import { Badge } from '@/components/ui/badge';
 import { Edit } from 'lucide-react';
@@ -367,6 +368,24 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const handleCreateLead = async () => {
         if (!newLeadForm.name || !newLeadForm.phone) return alert("Nome e Telefone são obrigatórios.");
+
+        // 1. Check for duplicate phone
+        const { data: existingLead } = await supabase
+            .from('SITE_Leads')
+            .select('*')
+            .eq('phone', newLeadForm.phone)
+            .maybeSingle();
+
+        if (existingLead) {
+            alert("Este telefone já está cadastrado no CRM. Redirecionando para o lead existente.");
+            setIsCreateModalOpen(false);
+            setNewLeadForm({ name: '', email: '', phone: '' });
+            handleLeadClick(existingLead); // Open the existing lead details
+            if (notificationRef.current) {
+                notificationRef.current.createNotification('info', 'Lead Duplicado', `O lead ${existingLead.name} já existe.`);
+            }
+            return;
+        }
 
         const payload = {
             name: newLeadForm.name,

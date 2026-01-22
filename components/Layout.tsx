@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Menu, X, ShoppingCart, User as UserIcon, LogIn, Instagram, Facebook, Youtube, MessageCircle, Mail, Phone, MapPin, Home, GraduationCap, FileText, Calendar, ArrowRight } from 'lucide-react';
-import { ASSETS } from '../constants';
+import { ASSETS, APP_VERSION } from '../constants';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import CartDrawer from './CartDrawer';
@@ -121,7 +121,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
         <div className="container mx-auto px-4 mt-12 pt-8 border-t border-gray-800 text-center text-xs">
-          <p>&copy; {new Date().getFullYear()} {siteTitle}. Todos os direitos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} {siteTitle}. Todos os direitos reservados. v{APP_VERSION}</p>
         </div>
       </footer>
     </div>

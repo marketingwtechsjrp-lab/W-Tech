@@ -46,6 +46,9 @@ import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
 import { History } from 'lucide-react';
 import { Slider } from '../components/ui/slider-number-flow';
 import { ToggleTheme } from '../components/ui/toggle-theme';
+import { generateCertificatesPDF } from '../components/admin/Certificates/CertificateGenerator';
+import CertificateManagerView from '../components/admin/Certificates/CertificateManagerView';
+import type { CertificateLayout } from '../types';
 
 
 // --- Types for Local State ---
@@ -338,10 +341,67 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [formData, setFormData] = useState<Partial<Course>>({});
     const [generateLP, setGenerateLP] = useState(false);
-
+    const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
+    
     // Settle Modal State
     const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number }>({ isOpen: false, enrollment: null, amount: 0 });
     const [settleMethod, setSettleMethod] = useState('Pix');
+
+    // Fetch Layouts
+    useEffect(() => {
+        const loadLayouts = async () => {
+             const { data } = await supabase.from('SITE_CertificateLayouts').select('*');
+             if (data) setLayouts(data.map(l => ({ ...l, backgroundUrl: l.background_url })));
+        }
+        loadLayouts();
+    }, []);
+
+    const handleGenerateCertificates = async (isBadge = false) => {
+        if (!currentCourse) return;
+        const layoutId = isBadge ? currentCourse.badgeLayoutId : currentCourse.certificateLayoutId;
+        
+        if (!layoutId) {
+            alert(`Nenhum layout de ${isBadge ? 'Crachá' : 'Certificado'} selecionado para este curso.`);
+            return;
+        }
+        
+        const layout = layouts.find(l => l.id === layoutId);
+        if (!layout) {
+             alert('Layout não encontrado.');
+             return;
+        }
+
+        const validEnrollments = enrollments.filter(e => e.status === 'Confirmed' || e.status === 'CheckedIn');
+        if (validEnrollments.length === 0) {
+            alert('Nenhum aluno confirmado nesta turma.');
+            return;
+        }
+
+        if (confirm(`Gerar ${validEnrollments.length} ${isBadge ? 'crachás' : 'certificados'}?`)) {
+            await generateCertificatesPDF(layout, currentCourse, validEnrollments);
+        }
+    };
+
+    const handleGenerateSingleCertificate = async (enrollment: Enrollment, isBadge = false) => {
+        if (!currentCourse) return;
+        const layoutId = isBadge ? currentCourse.badgeLayoutId : currentCourse.certificateLayoutId;
+        
+        if (!layoutId) {
+            alert(`Nenhum layout de ${isBadge ? 'Crachá' : 'Certificado'} selecionado para este curso.`);
+            return;
+        }
+        
+        const layout = layouts.find(l => l.id === layoutId);
+        if (!layout) {
+             alert('Layout não encontrado.');
+             return;
+        }
+
+        if (confirm(`Gerar ${isBadge ? 'crachá' : 'certificado'} para ${enrollment.studentName}?`)) {
+            await generateCertificatesPDF(layout, currentCourse, [enrollment]);
+        }
+    };
+
 
     // Auto-Enrollment Effect
     useEffect(() => {
@@ -642,7 +702,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             reminder5dDays: c.reminder_5d_days,
             reminder1dDays: c.reminder_1d_days,
             whatToBring: c.what_to_bring,
-            type: c.type
+            type: c.type,
+            certificateLayoutId: c.certificate_layout_id,
+            badgeLayoutId: c.badge_layout_id
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
@@ -759,7 +821,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             reminder_1d_enabled: formData.reminder1dEnabled ?? true,
             reminder_5d_days: formData.reminder5dDays ?? 5,
             reminder_1d_days: formData.reminder1dDays ?? 1,
-            what_to_bring: formData.whatToBring || ''
+
+            what_to_bring: formData.whatToBring || '',
+            certificate_layout_id: formData.certificateLayoutId || null,
+            badge_layout_id: formData.badgeLayoutId || null
         };
 
         let error;
@@ -1542,6 +1607,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <button onClick={printList} className="bg-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800">
                             <Printer size={18} /> Imprimir Lista
                         </button>
+                         <button onClick={() => handleGenerateCertificates(false)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Certificados em PDF">
+                            <Award size={18} />
+                        </button>
+                         <button onClick={() => handleGenerateCertificates(true)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Crachás em PDF">
+                            <User size={18} />
+                        </button>
                     </div>
                 </div>
 
@@ -1735,6 +1806,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                                     <button onClick={() => handleSendManualReminder(enr)} title="Enviar Lembrete (WhatsApp)" className="p-1.5 text-green-500 hover:bg-green-50 rounded border border-green-100">
                                                         <Send size={16} />
+                                                    </button>
+
+                                                    <button onClick={() => handleGenerateSingleCertificate(enr, false)} title="Baixar Certificado" className="p-1.5 text-gray-700 hover:bg-gray-100 rounded border border-gray-200">
+                                                        <Award size={16} />
+                                                    </button>
+                                                    <button onClick={() => handleGenerateSingleCertificate(enr, true)} title="Baixar Crachá" className="p-1.5 text-gray-700 hover:bg-gray-100 rounded border border-gray-200">
+                                                        <User size={16} />
                                                     </button>
 
                                                     <button onClick={() => setEditingEnrollment(enr)} title="Editar" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
@@ -2367,6 +2445,35 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </div>
                             </div>
                         )}
+
+                        <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+                             <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><Award size={14}/> Layout do Certificado</label>
+                                <select 
+                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" 
+                                    value={formData.certificateLayoutId || ''} 
+                                    onChange={e => setFormData({ ...formData, certificateLayoutId: e.target.value })}
+                                >
+                                    <option value="">-- Selecione --</option>
+                                    {layouts.filter(l => l.type === 'Certificate').map(l => (
+                                        <option key={l.id} value={l.id}>{l.name}</option>
+                                    ))}
+                                </select>
+                             </div>
+                             <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><User size={14}/> Layout do Crachá</label>
+                                <select 
+                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" 
+                                    value={formData.badgeLayoutId || ''} 
+                                    onChange={e => setFormData({ ...formData, badgeLayoutId: e.target.value })}
+                                >
+                                    <option value="">-- Selecione --</option>
+                                    {layouts.filter(l => l.type === 'Badge').map(l => (
+                                        <option key={l.id} value={l.id}>{l.name}</option>
+                                    ))}
+                                </select>
+                             </div>
+                        </div>
 
                         <div className="md:col-span-2">
                             <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Imagem de Capa</label>
@@ -4139,6 +4246,26 @@ const SettingsView = () => {
                                         </div>
                                     </div>
                                 </div>
+                                 <div>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo URL (Dark Mode)</label>
+                                    <div className="flex gap-3">
+                                        <div className="w-16 h-16 bg-black rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden relative group">
+                                            {config.logo_dark_url ? <img src={config.logo_dark_url} className="w-full h-full object-contain" /> : <ImageIcon size={20} className="text-gray-600" />}
+                                        </div>
+                                        <div className="flex-1 flex gap-2">
+                                            <input
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                value={config.logo_dark_url || ''}
+                                                onChange={(e) => handleChange('logo_dark_url', e.target.value)}
+                                                placeholder="https://..."
+                                            />
+                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
+                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                                <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'logo_dark_url')} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Favicon URL (Ícone da Aba)</label>
                                     <div className="flex gap-3">
@@ -5508,81 +5635,25 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
             </AnimatePresence>
         </div>
     );
+
+
 };
 
 // --- Main Admin Layout ---
 
-const Admin: React.FC = () => {
-    const { user, loading, logout } = useAuth();
+const Admin = () => {
+    const { user, loading, logout, impersonateUser } = useAuth();
     const navigate = useNavigate();
     const { settings: config } = useSettings();
+    const [collapsed, setCollapsed] = useState(false);
+    
+    // State for View Switching
+    const [currentView, setCurrentView] = useState<View | 'marketing' | 'certificates'>('dashboard'); // Added 'certificates' type support
 
-    // --- WhatsApp Scheduler Polling ---
-    useEffect(() => {
-        const checkScheduledMessages = async () => {
-            const now = new Date().toISOString();
-
-            // 1. Find pending tasks due for WhatsApp sending
-            const { data: dueTasks } = await supabase
-                .from('SITE_Tasks')
-                .select('*, SITE_Leads(phone)')
-                .eq('is_whatsapp_schedule', true)
-                .eq('whatsapp_status', 'PENDING')
-                .lte('due_date', now);
-
-            if (dueTasks && dueTasks.length > 0) {
-                console.log(`Found ${dueTasks.length} WhatsApp messages to send.`);
-
-                for (const task of dueTasks) {
-                    const senderUserId = task.created_by;
-                    const targetPhone = task.SITE_Leads?.phone;
-                    const messageBody = task.whatsapp_message_body;
-
-                    if (senderUserId && targetPhone && messageBody) {
-                        try {
-                            const result = await sendWhatsAppMessage(targetPhone, messageBody, senderUserId);
-
-                            await supabase.from('SITE_Tasks').update({
-                                whatsapp_status: result.success ? 'SENT' : 'FAILED',
-                                status: result.success ? 'DONE' : task.status
-                            }).eq('id', task.id);
-
-                            console.log(`Msg Task ${task.id}: ${result.success ? 'Sent' : 'Failed'}`);
-
-                        } catch (e) {
-                            console.error(`Error processing task ${task.id}`, e);
-                            await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
-                        }
-                    } else {
-                        await supabase.from('SITE_Tasks').update({ whatsapp_status: 'FAILED' }).eq('id', task.id);
-                    }
-                }
-            }
-        };
-
-        const interval = setInterval(checkScheduledMessages, 60000); // 60s
-        checkScheduledMessages();
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Alert Dismissal State
-    const [alertDismissedAt, setAlertDismissedAt] = useState<number | null>(null);
-
-    useEffect(() => {
-        if (alertDismissedAt) {
-            const interval = setInterval(() => {
-                if (Date.now() - alertDismissedAt > 5 * 60 * 1000) { // 5 minutes
-                    setAlertDismissedAt(null);
-                }
-            }, 5000);
-            return () => clearInterval(interval);
-        }
-    }, [alertDismissedAt]);
-
-    // --- Global Task Notifications ---
+    // --- Global Task Notifications & State ---
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
     const notifiedTaskIds = useRef<Set<string>>(new Set());
+    const [alertDismissedAt, setAlertDismissedAt] = useState<number | null>(null);
 
     const handleCompleteTask = async (taskId: string) => {
         const { error } = await supabase.from('SITE_Tasks').update({ status: 'DONE' }).eq('id', taskId);
@@ -5593,6 +5664,7 @@ const Admin: React.FC = () => {
         }
     };
 
+    // --- WhatsApp Scheduler Polling ---
     useEffect(() => {
         if (!user) return;
 
@@ -5807,7 +5879,7 @@ const Admin: React.FC = () => {
 
 
 
-    const [currentView, setCurrentView] = useState<View>('dashboard');
+    // const [currentView, setCurrentView] = useState<View>('dashboard'); // Removed duplicate
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
 
     const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
@@ -6053,6 +6125,10 @@ const Admin: React.FC = () => {
                             <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
 
+                        {hasPermission('courses_view') && (
+                            <SidebarItem icon={Award} label="Certificados & Crachás" active={currentView === 'certificates'} onClick={() => { setCurrentView('certificates'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                        )}
+
                         {hasPermission('accredited_view') && (
                             <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                         )}
@@ -6187,6 +6263,7 @@ const Admin: React.FC = () => {
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
                         {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} initialCourseId={pendingCourseId} onConsumeInitialLead={() => { setPendingEnrollmentLead(null); setPendingCourseId(null); }} permissions={livePermissions} />}
+                        {currentView === 'certificates' && hasPermission('courses_view') && <CertificateManagerView />}
                         {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('manage_marketing')) && <MarketingView permissions={livePermissions} />}

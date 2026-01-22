@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.4.4",
+    "date": "2026-01-22",
+    "title": "Gestão Avançada de Certificados e QR Code",
+    "changes": [
+      "FEAT: Editor de Certificados com suporte a campos inteligentes (Data+Local)",
+      "FEAT: Public Page de Validação de Certificados via QR Code (/validar/:id)",
+      "FEAT: Geração individual de Certificados e Crachás na lista de alunos",
+      "FEAT: Formatação automática centralizada de textos no Certificado",
+      "FEAT: Rodapé do site exibindo versão atual do sistema"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.4.3",
     "date": "2026-01-21",
     "title": "Correção de Datas, Calendário Multi-dia e Leads Masculinos",

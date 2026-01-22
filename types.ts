@@ -33,6 +33,7 @@ export interface User {
   status: 'Active' | 'Inactive';
   password?: string;
   role_id?: string;
+  theme?: string;
 }
 
 export interface Course {
@@ -76,6 +77,34 @@ export interface Course {
   reminder5dDays?: number;
   reminder1dDays?: number;
   whatToBring?: string;
+  certificateLayoutId?: string; // Mapped from certificate_layout_id
+  badgeLayoutId?: string; // Mapped from badge_layout_id
+}
+
+export interface CertificateLayout {
+  id: string;
+  name: string;
+  type: 'Certificate' | 'Badge';
+  backgroundUrl: string; // Mapped from background_url
+  elements: CertificateElement[];
+  dimensions: { width: number, height: number };
+  createdAt: string;
+}
+
+export interface CertificateElement {
+  id: string;
+  type: 'Text' | 'Image' | 'QRCode';
+  label: string; // For UI identification
+  x: number;
+  y: number;
+  width?: number; // For images/QR
+  height?: number; // For images/QR
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  align?: 'left' | 'center' | 'right';
+  content: string; // Can contains {{student_name}}, {{course_name}}, etc.
+  isDynamic?: boolean;
 }
 
 export interface Enrollment {

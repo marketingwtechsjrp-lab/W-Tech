@@ -5,6 +5,8 @@ import { MonitorCog, Moon, Sun } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 
 const THEME_OPTIONS = [
 	{
@@ -29,6 +31,18 @@ export function ToggleTheme() {
 	React.useEffect(() => {
 		setIsMounted(true);
 	}, []);
+
+    const { user } = useAuth();
+
+
+
+
+    const handleThemeChange = async (newTheme: string) => {
+        setTheme(newTheme);
+        if (user?.id) {
+            await supabase.from('SITE_Users').update({ theme: newTheme }).eq('id', user.id);
+        }
+    };
 
 	if (!isMounted) {
 		return <div className="flex h-8 w-24" />;
@@ -55,7 +69,7 @@ export function ToggleTheme() {
 					role="radio"
 					aria-checked={theme === option.value}
 					aria-label={`Switch to ${option.value} theme`}
-					onClick={() => setTheme(option.value)}
+					onClick={() => handleThemeChange(option.value)}
 				>
 					{theme === option.value && (
 						<motion.div

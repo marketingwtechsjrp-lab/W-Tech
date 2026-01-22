@@ -29,6 +29,7 @@ const Termos = lazy(() => import('./pages/Termos'));
 const Privacidade = lazy(() => import('./pages/Privacidade'));
 const Cancelamento = lazy(() => import('./pages/Cancelamento'));
 const Suporte = lazy(() => import('./pages/Suporte'));
+const CertificateValidation = lazy(() => import('./pages/CertificateValidation'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 
@@ -53,6 +54,7 @@ import { AnalyticsTracker } from './components/AnalyticsTracker';
 const App = () => {
   return (
     <SettingsProvider>
+      {/* @ts-ignore - ThemeProvider types mismatch */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <Router>
           <AuthProvider>
@@ -87,6 +89,9 @@ const App = () => {
                     <Route path="/privacidade" element={<Privacidade />} />
                     <Route path="/cancelamento" element={<Cancelamento />} />
                     <Route path="/suporte" element={<Suporte />} />
+
+                    {/* Validation */}
+                    <Route path="/validar/:id" element={<CertificateValidation />} />
 
                     <Route path="*" element={<NotFound />} />
 

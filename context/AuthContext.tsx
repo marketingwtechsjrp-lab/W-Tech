@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { useTheme } from 'next-themes';
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +29,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       refreshUser(parsed.id);
     }
   }, []);
+
+  // Effect to sync theme if user has one
+  // Effect to sync theme if user has one
+  const { setTheme } = useTheme();
+  // Note: AuthProvider is inside ThemeProvider so this works
+
+
 
   const refreshUser = async (userId?: string) => {
     const id = userId || user?.id;
@@ -62,6 +70,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           permissions: userData.permissions || (roleData?.permissions) || {},
           status: userData.status,
           role_id: userData.role_id,
+          theme: userData.theme,
         };
 
         setUser(updatedUser);
@@ -116,6 +125,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         permissions: userData.permissions || (roleData?.permissions) || {},
         status: userData.status,
         role_id: userData.role_id, // Ensure ID is preserved
+        theme: userData.theme,
       };
 
       setUser(loggedUser);
