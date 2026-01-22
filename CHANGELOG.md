@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.4.7 (2026-01-22) - W-Intelligence: Filtros, Equipe e Receita Unificada
+- FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência
+- FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA
+- FEAT: Listagem completa de todos os atendentes dos sitema no W-Intelligence
+- FIX: Unificação do cálculo de faturamento total baseado nos leads do CRM
+- FIX: Melhoria no tratamento de erros para chaves Pde AI da OpenAI/Gemini
+
 ## v2.4.6 (2026-01-22) - W-Intelligence: Filtros, Equipe e Receita Unificada
 - FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência
 - FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA
