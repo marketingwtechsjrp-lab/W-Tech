@@ -1,5 +1,19 @@
 [
   {
+    "version": "2.4.5",
+    "date": "2026-01-22",
+    "title": "Integração de Analytics e Gestão de Certificados",
+    "changes": [
+      "FEAT: Injeção dinâmica de Google Analytics (GA4) e Facebook Pixel",
+      "FEAT: Rastreamento automático de Pageviews via AnalyticsTracker",
+      "FEAT: Novo módulo de Gestão de Certificados e Crachás",
+      "FEAT: Suporte a layouts customizados de certificados por curso",
+      "FIX: Tratamento de erros de injeção de scripts duplicados",
+      "FIX: Melhorias de performance no Painel Administrativo"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.4.4",
     "date": "2026-01-22",
     "title": "Gestão Avançada de Certificados e QR Code",
