@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, Loader2, Save, Edit, Trash2, CalendarClock, Globe, Download } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
-import { generateBlogPost } from '../../../lib/gemini';
+import { generateBlogPost } from '../../../lib/ai';
 import type { BlogPost, PostComment } from '../../../types';
 
 const BlogManagerView = ({ permissions }: { permissions?: any }) => {

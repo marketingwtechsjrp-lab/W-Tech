@@ -193,6 +193,9 @@ export interface Lead {
   assignedTo?: string; // Mapped from assigned_to
   internalNotes?: string; // Mapped from internal_notes
   tags?: string[];
+  conversion_value?: number;
+  conversion_summary?: string;
+  conversion_type?: string;
 }
 
 export interface Mechanic {

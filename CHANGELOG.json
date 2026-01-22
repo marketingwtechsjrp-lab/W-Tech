@@ -1,5 +1,19 @@
 [
   {
+    "version": "2.4.6",
+    "date": "2026-01-22",
+    "title": "W-Intelligence: Filtros, Equipe e Receita Unificada",
+    "changes": [
+      "FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência",
+      "FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA",
+      "FEAT: Listagem completa de todos os atendentes do sistema no W-Intelligence",
+      "FIX: Unificação do cálculo de faturamento total baseado nos leads do CRM",
+      "FIX: Melhoria no tratamento de erros para chaves de API da OpenAI/Gemini",
+      "FIX: Correção de bugs de sintaxe e fechamento de funções estruturais"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.4.5",
     "date": "2026-01-22",
     "title": "Integração de Analytics e Gestão de Certificados",

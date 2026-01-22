@@ -6,7 +6,7 @@ import {
     MoreVertical, ArrowRight, TrendingUp, Calendar as CalendarIcon,
     Layout, MapPin, Phone, Globe, Mail, Clock, Shield, Award, CheckCircle, XCircle, Filter, Package,
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
-    BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building,
+    BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
     Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon
 } from 'lucide-react';
@@ -17,7 +17,7 @@ import { supabase } from '../lib/supabaseClient';
 import { seedDatabase } from '../lib/seedData';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { generateBlogPost } from '../lib/gemini';
+
 import { LandingPageEditor } from './LandingPageEditor';
 import { useSettings } from '../context/SettingsContext';
 import MarketingView from '../components/admin/Marketing/MarketingView';
@@ -29,6 +29,7 @@ import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
 import DevUserSwitcher from '../components/admin/DevUserSwitcher';
 import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
 import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
+import IntelligenceView from '../components/admin/Intelligence/IntelligenceView';
 import InvoicesManagerView from '../components/admin/Financial/InvoicesManagerView';
 import { SplashedPushNotifications, SplashedPushNotificationsHandle } from '@/components/ui/splashed-push-notifications';
 import AdminIntegrations from '../components/admin/AdminIntegrations';
@@ -78,7 +79,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence';
 
 const SidebarItem = ({
     icon: Icon,
@@ -4103,6 +4104,7 @@ const SettingsView = () => {
                 { key: 'admin_access', label: 'Acesso Admin (Global)' },
                 { key: 'manage_users', label: 'Gerenciar Equipe' },
                 { key: 'manage_settings', label: 'Acesso Configurações' },
+                { key: 'intelligence_view', label: 'Visualizar Relatórios IA (W-Intelligence)' },
             ]
         }
     ];
@@ -4187,7 +4189,7 @@ const SettingsView = () => {
                             { id: 'Marketplace & ERP', icon: ShoppingBag, label: 'Integrações', color: 'bg-orange-500' },
                             { id: 'Modelos Msg', icon: MessageSquare, label: 'Modelos', color: 'bg-teal-500' },
                             { id: 'Categorias', icon: List, label: 'Categorias', color: 'bg-purple-500' },
-                            { id: 'Webhooks & API', icon: Code, label: 'API & Hooks', color: 'bg-pink-500' },
+                            { id: 'IA & Integrações', icon: BrainCircuit, label: 'GPT & Gemini', color: 'bg-pink-500' },
                             { id: 'Permissões & Cargos', icon: Shield, label: 'Permissões', color: 'bg-red-500' },
                             { id: 'Scripts Globais', icon: Code, label: 'Scripts', color: 'bg-yellow-500' },
                             { id: 'Layout Menu', icon: Layout, label: 'Layout Menu', color: 'bg-cyan-500' },
@@ -5141,50 +5143,149 @@ const SettingsView = () => {
                     </div>
                 )}
 
-                {/* Tab: Webhooks (New) */}
-                {activeTab === 'Webhooks & API' && (
-                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Webhooks do Sistema</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Notifique sistemas externos sobre eventos ocorridos na W-TECH.</p>
+                {/* Tab: IA & Integrations (Refactored) */}
+                {activeTab === 'IA & Integrações' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 space-y-8">
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            
+                            {/* Engine Selection Section */}
+                            <div className="md:col-span-2 bg-gradient-to-r from-black to-slate-900 text-white p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-wtech-gold/10 blur-[100px] rounded-full pointer-events-none"></div>
+                                
+                                <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+                                    <div>
+                                        <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
+                                            <Sparkles className="text-wtech-gold animate-pulse" /> Motor de Inteligência Artificial
+                                        </h3>
+                                        <p className="text-gray-400 text-sm mt-1">Este motor será utilizado para gerar o Blog, responder mensagens e analisar leads.</p>
+                                    </div>
+                                    
+                                    <div className="flex bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
+                                        {(['gemini', 'openai'] as const).map((provider) => (
+                                            <button
+                                                key={provider}
+                                                onClick={() => handleChange('preferred_ai_provider', provider)}
+                                                className={`px-8 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-2 ${config.preferred_ai_provider === provider ? 'bg-wtech-gold text-black shadow-lg shadow-yellow-500/20' : 'text-gray-400 hover:text-white'}`}
+                                            >
+                                                {provider === 'openai' ? 'OpenAI (GPT)' : 'Google (Gemini)'}
+                                                {config.preferred_ai_provider === provider && <CheckCircle size={14} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                            <button className="bg-wtech-black text-white px-4 py-2 rounded-lg text-xs font-bold uppercase hover:bg-gray-800" onClick={() => {
-                                const url = prompt("URL do Webhook:");
-                                const topic = prompt("Tópico (ex: lead.create):");
-                                if (url && topic) setWebhooks([...webhooks, { url, topic, secret: 'whsec_' + Math.random().toString(36).substr(2, 9) }]);
-                            }}>
-                                <Plus size={14} /> Adicionar Webhook
-                            </button>
+
+                            {/* OpenAI Config */}
+                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-3xl p-8 shadow-sm hover:border-blue-500/30 transition-colors">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white shadow-xl">
+                                        <Code size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-lg text-gray-900 dark:text-white leading-tight">OPENAI (GPT-4o)</h4>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Integração Direta</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">API Key do OpenAI</label>
+                                        <div className="relative">
+                                            <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
+                                            <input 
+                                                type="password" 
+                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-blue-500 outline-none transition-all" 
+                                                value={config.openai_api_key || ''} 
+                                                onChange={e => handleChange('openai_api_key', e.target.value)} 
+                                                placeholder="sk-..." 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/20">
+                                        <AlertCircle size={14} className="text-blue-500 shrink-0" />
+                                        <p className="text-[10px] text-blue-700 dark:text-blue-400 leading-tight">Recomendado para textos altamente criativos e humanizados no Blog.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Gemini Config */}
+                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-3xl p-8 shadow-sm hover:border-wtech-gold/30 transition-colors">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-wtech-gold to-yellow-600 rounded-2xl flex items-center justify-center text-black shadow-xl">
+                                        <Sparkles size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-lg text-gray-900 dark:text-white leading-tight">GOOGLE GEMINI</h4>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Tecnologia Google</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">API Key do Gemini</label>
+                                        <div className="relative">
+                                            <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
+                                            <input 
+                                                type="password" 
+                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-wtech-gold outline-none transition-all" 
+                                                value={config.gemini_api_key || ''} 
+                                                onChange={e => handleChange('gemini_api_key', e.target.value)} 
+                                                placeholder="..." 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-100 dark:border-yellow-900/20">
+                                        <AlertCircle size={14} className="text-wtech-gold shrink-0" />
+                                        <p className="text-[10px] text-yellow-700 dark:text-yellow-600 leading-tight">Excelente para análise de logs e velocidade de processamento de Big Data.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
-                        <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
-                            {webhooks.length === 0 ? (
-                                <div className="p-8 text-center text-gray-400">Nenhum webhook configurado.</div>
-                            ) : (
-                                <table className="w-full text-left">
-                                    <thead className="bg-gray-50 dark:bg-[#222] border-b border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
-                                        <tr>
-                                            <th className="p-4">Tópico</th>
-                                            <th className="p-4">URL de Destino</th>
-                                            <th className="p-4">Secret Key</th>
-                                            <th className="p-4 text-right">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
-                                        {webhooks.map((wh, idx) => (
-                                            <tr key={idx}>
-                                                <td className="p-4 font-bold"><span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded">{wh.topic}</span></td>
-                                                <td className="p-4 font-mono text-xs text-gray-600 dark:text-gray-300 truncate max-w-xs">{wh.url}</td>
-                                                <td className="p-4 font-mono text-xs text-gray-400">{wh.secret}</td>
-                                                <td className="p-4 text-right">
-                                                    <button onClick={() => setWebhooks(webhooks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
-                                                </td>
+                        {/* Webhooks Legacy */}
+                        <div className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-gray-800 mt-12">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Webhooks do Sistema</h3>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mt-1">Integrações Externas</p>
+                                </div>
+                                <button className="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl text-xs font-black uppercase hover:opacity-80 transition-opacity" onClick={() => {
+                                    const url = prompt("URL do Webhook:");
+                                    const topic = prompt("Tópico (ex: lead.create):");
+                                    if (url && topic) setWebhooks([...webhooks, { url, topic, secret: 'whsec_' + Math.random().toString(36).substr(2, 9) }]);
+                                }}>
+                                    <Plus size={14} /> Adicionar Webhook
+                                </button>
+                            </div>
+
+                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
+                                {webhooks.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-400">Nenhum webhook configurado.</div>
+                                ) : (
+                                    <table className="w-full text-left">
+                                        <thead className="bg-gray-50 dark:bg-[#222] border-b border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
+                                            <tr>
+                                                <th className="p-4">Tópico</th>
+                                                <th className="p-4">URL de Destino</th>
+                                                <th className="p-4">Secret Key</th>
+                                                <th className="p-4 text-right">Ações</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
+                                            {webhooks.map((wh, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="p-4 font-bold"><span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded">{wh.topic}</span></td>
+                                                    <td className="p-4 font-mono text-xs text-gray-600 dark:text-gray-300 truncate max-w-xs">{wh.url}</td>
+                                                    <td className="p-4 font-mono text-xs text-gray-400">{wh.secret}</td>
+                                                    <td className="p-4 text-right">
+                                                        <button onClick={() => setWebhooks(webhooks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -5648,7 +5749,7 @@ const Admin = () => {
     const [collapsed, setCollapsed] = useState(false);
     
     // State for View Switching
-    const [currentView, setCurrentView] = useState<View | 'marketing' | 'certificates'>('dashboard'); // Added 'certificates' type support
+    const [currentView, setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard'); // Added 'certificates' and 'intelligence' support
 
     // --- Global Task Notifications & State ---
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
@@ -6151,6 +6252,10 @@ const Admin = () => {
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
                                 <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
+                            
+                            {hasPermission('intelligence_view') && (
+                                <SidebarItem icon={Sparkles} label="W-Intelligence" active={currentView === 'intelligence'} onClick={() => { setCurrentView('intelligence'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
                         </div>
 
                         <div className="pt-4 mt-4 border-t border-gray-800">
@@ -6267,6 +6372,7 @@ const Admin = () => {
                         {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('manage_marketing')) && <MarketingView permissions={livePermissions} />}
+                        {currentView === 'intelligence' && hasPermission('intelligence_view') && <IntelligenceView permissions={livePermissions} />}
                         {currentView === 'tasks' && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
                         {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView permissions={livePermissions} />}

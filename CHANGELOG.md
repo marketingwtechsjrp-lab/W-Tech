@@ -1,6 +1,29 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.4.6 (2026-01-22) - W-Intelligence: Filtros, Equipe e Receita Unificada
+- FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência
+- FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA
+- FEAT: Listagem completa de todos os atendentes do sistema no W-Intelligence
+- FIX: Unificação do cálculo de faturamento total baseado nos leads do CRM
+- FIX: Melhoria no tratamento de erros para chaves de API da OpenAI/Gemini
+- FIX: Correção de bugs de sintaxe e fechamento de funções estruturais
+
+## v2.4.5 (2026-01-22) - Integração de Analytics e Gestão de Certificados
+- FEAT: Injeção dinâmica de Google Analytics (GA4) e Facebook Pixel
+- FEAT: Rastreamento automático de Pageviews via AnalyticsTracker
+- FEAT: Novo módulo de Gestão de Certificados e Crachás
+- FEAT: Suporte a layouts customizados de certificados por curso
+- FIX: Tratamento de erros de injeção de scripts duplicados
+- FIX: Melhorias de performance no Painel Administrativo
+
+## v2.4.4 (2026-01-22) - Gestão Avançada de Certificados e QR Code
+- FEAT: Editor de Certificados com suporte a campos inteligentes (Data+Local)
+- FEAT: Public Page de Validação de Certificados via QR Code (/validar/:id)
+- FEAT: Geração individual de Certificados e Crachás na lista de alunos
+- FEAT: Formatação automática centralizada de textos no Certificado
+- FEAT: Rodapé do site exibindo versão atual do sistema
+
 ## v2.4.3 (2026-01-21) - Correção de Datas, Calendário Multi-dia e Leads Masculinos
 - FIX: Correção de datas com fuso horário em todo o site
 - FEAT: Suporte para marcação de intervalos de dias em cursos multi-dia
