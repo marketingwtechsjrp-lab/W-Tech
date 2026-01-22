@@ -4046,7 +4046,8 @@ const SettingsView = () => {
                 { key: 'crm_export', label: 'Exportar Dados' },
                 { key: 'crm_distribute', label: 'Configurar Distribuição' },
                 { key: 'crm_view_team', label: 'Ver Leads da Equipe (Gestor)' },
-                { key: 'crm_view_all', label: 'Ver Todos os Leads (Igual Admin)' }
+                { key: 'crm_view_all', label: 'Ver Todos os Leads (Igual Admin)' },
+                { key: 'crm_move_back', label: 'Retornar Lead (Mover para trás)' }
             ]
         },
         {
@@ -6187,63 +6188,49 @@ const Admin = () => {
                         )}
                     </div>
 
-                    <div className="flex-1 flex flex-col justify-between overflow-hidden gap-0.5 pb-2 min-h-0">
-                        {hasPermission('dashboard_view') && (
-                            <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                    <div className="flex-1 flex flex-col justify-between overflow-hidden gap-0.5 pb-2 min-h-0 custom-scrollbar overflow-y-auto">
+                        <div className="flex flex-col gap-0.5">
+                            {hasPermission('dashboard_view') && (
+                                <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('dashboard_view') && (
-                            <SidebarItem icon={BarChart3} label="Analytics" active={currentView === 'analytics'} onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('crm_view') && (
+                                <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('crm_view') && (
-                            <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
 
-                        <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            {hasPermission('manage_orders') && (
+                                <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('manage_users') && (
-                            <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('accredited_view') && (
+                                <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('manage_orders') && (
-                            <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('manage_orders') && (
+                                <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('manage_orders') && (
-                            <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('courses_view') && (
+                                <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('manage_orders') && (
-                            <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('manage_orders') && (
+                                <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('financial_view') && (
-                            <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('financial_view') && (
+                                <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('courses_view') && (
-                            <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
+                            {hasPermission('courses_view') && (
+                                <SidebarItem icon={Award} label="Certificados & Crachás" active={currentView === 'certificates'} onClick={() => { setCurrentView('certificates'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                        {hasPermission('courses_view') && (
-                            <SidebarItem icon={Award} label="Certificados & Crachás" active={currentView === 'certificates'} onClick={() => { setCurrentView('certificates'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
-
-                        {hasPermission('accredited_view') && (
-                            <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
-
-                        {hasPermission('financial_view') && (
-                            <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
-
-                        {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && (
-                            <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                        )}
-
-                        <div className={`pt-4 mt-4 border-t border-gray-800 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
-                            {!isSidebarCollapsed && <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-3">Conteúdo & IA</p>}
+                            {hasPermission('financial_view') && (
+                                <SidebarItem icon={DollarSign} label="Fluxo de Caixa" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
                             {hasPermission('blog_view') && (
                                 <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
@@ -6252,13 +6239,23 @@ const Admin = () => {
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
                                 <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
-                            
+
+                            {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && (
+                                <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
+
+                            {hasPermission('dashboard_view') && (
+                                <SidebarItem icon={BarChart3} label="Analytics" active={currentView === 'analytics'} onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
+
                             {hasPermission('intelligence_view') && (
                                 <SidebarItem icon={Sparkles} label="W-Intelligence" active={currentView === 'intelligence'} onClick={() => { setCurrentView('intelligence'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
-                        </div>
 
-                        <div className="pt-4 mt-4 border-t border-gray-800">
+                            {hasPermission('manage_users') && (
+                                <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
+
                             {hasPermission('manage_settings') && (
                                 <SidebarItem icon={Settings} label="Configurações" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}

@@ -682,7 +682,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         const isAdm =
             (typeof user?.role === 'string' && (user.role === 'ADMIN' || user.role === 'Admin' || user.role === 'Super Admin')) ||
             (typeof user?.role !== 'string' && user?.role?.level >= 10) ||
-            hasPermission('crm_manage_all');
+            hasPermission('crm_manage_all') ||
+            hasPermission('crm_move_back');
 
         if (!isAdm && newIndex < currentIndex) {
             alert('Apenas administradores podem mover leads para trás no funil.');
