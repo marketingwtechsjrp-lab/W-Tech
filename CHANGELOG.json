@@ -1,5 +1,28 @@
 [
   {
+    "version": "2.4.9",
+    "date": "2026-01-25",
+    "title": "Redesign Hero, SEO e Navegação",
+    "changes": [
+      "DESIGN: Novo Hero Section com estilo 'Racing' (botões inclinados, texturas metálicas e efeitos de brilho)",
+      "SEO: Otimização completa da Home com Meta Descriptions focadas em mecânicos e pilotos",
+      "UX: Atalho de navegação direta 'Falar com Consultor' para o formulário de contato (#formulario)",
+      "NAV: Link direto para W-Tech Store no botão secundário do Hero",
+      "FIX: Correção de links quebrados na Home Page"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.8",
+    "date": "2026-01-25",
+    "title": "Redesign Hero e SEO - Release Candidate",
+    "changes": [
+      "DESIGN: Preparação do novo Hero Section",
+      "SEO: Ajustes estruturais de metadados"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.4.7",
     "date": "2026-01-22",
     "title": "W-Intelligence: Filtros, Equipe e Receita Unificada",
