@@ -5,7 +5,7 @@ import { Course } from '../types';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabaseClient';
 import SEO from '../components/SEO';
-import { formatDateLocal } from '../lib/utils';
+import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 
 const CourseDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -174,7 +174,7 @@ const CourseDetail: React.FC = () => {
                             <h2 className="text-2xl font-bold text-wtech-black mb-4">Localização</h2>
                             <div className="bg-gray-100 rounded-lg overflow-hidden h-[400px] shadow-sm border border-gray-200">
                                 {course.mapUrl.includes('iframe') ? (
-                                    <div dangerouslySetInnerHTML={{ __html: course.mapUrl.replace('width="600"', 'width="100%"').replace('height="450"', 'height="100%"') }} className="w-full h-full" />
+                                    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(course.mapUrl.replace('width="600"', 'width="100%"').replace('height="450"', 'height="100%"')) }} className="w-full h-full" />
                                 ) : (
                                     <iframe
                                         src={course.mapUrl}

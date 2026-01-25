@@ -1,7 +1,7 @@
 {
   "name": "w-tech-experience-portal",
   "private": true,
-  "version": "2.4.7",
+  "version": "2.4.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -44,7 +44,8 @@
     "react-use-measure": "^2.1.7",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

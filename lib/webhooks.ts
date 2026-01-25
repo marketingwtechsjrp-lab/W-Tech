@@ -4,7 +4,7 @@ export const triggerWebhook = async (triggerKey: 'webhook_lead' | 'webhook_order
   try {
     // 1. Get the URL from Settings
     const { data } = await supabase
-      .from('SITE_Settings')
+      .from('SITE_SystemSettings')
       .select('value')
       .eq('key', triggerKey)
       .single();

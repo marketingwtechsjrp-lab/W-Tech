@@ -51,3 +51,23 @@ export function formatDateRange(startStr: string, endStr?: string) {
     
     return `${d1} DE ${MONTHS[m1]} E ${d2} DE ${MONTHS[m2]} DE ${y2}`;
 }
+
+/**
+ * Simple sanitizer to allow only basic tags and strip scripts/events.
+ * Not as robust as DOMPurify but works without extra deps.
+ */
+export function sanitizeHtml(html: string): string {
+    if (!html) return '';
+    
+    // 1. Remove script tags and their content
+    let sanitized = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "");
+    
+    // 2. Remove on* event handlers (onclick, onload, etc)
+    sanitized = sanitized.replace(/on\w+="[^"]*"/gim, "");
+    sanitized = sanitized.replace(/on\w+='[^']*'/gim, "");
+    
+    // 3. Remove javascript: links
+    sanitized = sanitized.replace(/href="javascript:[^"]*"/gim, 'href="#"');
+    
+    return sanitized;
+}

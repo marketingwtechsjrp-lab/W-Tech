@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { MarketingList } from '../../../types';
-import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw, Eye, Mail, Phone } from 'lucide-react';
+import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw, Eye, Mail, Phone, Upload, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const ListsManager = ({ permissions }: { permissions?: any }) => {
     const hasPerm = (key: string) => {
@@ -29,6 +30,10 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
     const [allSelectableClients, setAllSelectableClients] = useState<any[]>([]);
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [showClientResults, setShowClientResults] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importData, setImportData] = useState<any[]>([]);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
 
     // Form State
     const [currentList, setCurrentList] = useState<Partial<MarketingList>>({
@@ -204,6 +209,90 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
         }
     };
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImportFile(file);
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+                setImportData(data);
+                
+                // Set a default name for the group if not set
+                if (!currentList.name) {
+                    const fileName = file.name.split('.')[0];
+                    setCurrentList(prev => ({ ...prev, name: `Importação: ${fileName}` }));
+                }
+            } catch (err) {
+                alert("Erro ao ler o arquivo XLS. Certifique-se de que é um formato válido.");
+                console.error(err);
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const handleConfirmImport = async () => {
+        if (!currentList.name) return alert('Dê um nome ao novo grupo.');
+        if (importData.length === 0) return alert('Nenhum dado para importar.');
+
+        setIsImporting(true);
+        try {
+            // 1. Create the list first
+            const ownerToSave = user?.id;
+            const { data: listData, error: listError } = await supabase.from('SITE_MarketingLists').insert([{
+                name: currentList.name,
+                description: currentList.description || 'Importado via XLS',
+                type: 'Static',
+                owner_id: ownerToSave
+            }]).select().single();
+
+            if (listError) throw listError;
+
+            // 2. Prepare members
+            // Cleaning logic for phone: remove non-numeric chars
+            const membersPayload = importData.map(row => {
+                const rawPhone = String(row['Telefone'] || row['Phone'] || row['telefone'] || row['phone'] || '');
+                const cleanPhone = rawPhone.replace(/\D/g, '');
+                
+                return {
+                    list_id: listData.id,
+                    name: String(row['Cliente'] || row['Name'] || row['cliente'] || row['nome'] || 'Sem Nome').trim(),
+                    email: String(row['E-mail'] || row['Email'] || row['email'] || row['e-mail'] || '').trim() || null,
+                    phone: cleanPhone
+                };
+            }).filter(m => m.name && m.phone);
+
+            if (membersPayload.length === 0) {
+                throw new Error("Nenhum contato válido encontrado. Verifique as colunas 'Cliente' e 'Telefone'.");
+            }
+
+            // 3. Batch insert members in chunks of 100 to avoid limits
+            const CHUNK_SIZE = 100;
+            for (let i = 0; i < membersPayload.length; i += CHUNK_SIZE) {
+                const chunk = membersPayload.slice(i, i + CHUNK_SIZE);
+                const { error: membersError } = await supabase.from('SITE_MarketingListMembers').insert(chunk);
+                if (membersError) throw membersError;
+            }
+
+            alert(`${membersPayload.length} contatos importados com sucesso para o grupo "${currentList.name}"!`);
+            setIsImportModalOpen(false);
+            setImportData([]);
+            setImportFile(null);
+            setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: '' });
+            fetchLists();
+        } catch (err: any) {
+            alert("Erro na importação: " + err.message);
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm('Excluir esta lista? (Os membros vinculados serão mantidos se pertencerem a outras listas)')) return;
         const { error } = await supabase.from('SITE_MarketingLists').delete().eq('id', id);
@@ -226,12 +315,25 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                     <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie grupos de contatos por usuário.</p>
                 </div>
                 {!isEditing && hasPerm('marketing_manage_lists') && (
-                    <button 
-                        onClick={() => { setIsEditing(true); setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: user?.id }); }}
-                        className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                    >
-                        <Plus size={16} /> Nova Lista
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => { 
+                                setIsImportModalOpen(true); 
+                                setImportFile(null);
+                                setImportData([]);
+                                setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: user?.id }); 
+                            }}
+                            className="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-green-700 shadow-lg transition-all"
+                        >
+                            <FileSpreadsheet size={16} /> Importar XLS
+                        </button>
+                        <button 
+                            onClick={() => { setIsEditing(true); setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: user?.id }); }}
+                            className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-lg"
+                        >
+                            <Plus size={16} /> Nova Lista
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -586,6 +688,131 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                 className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all active:scale-95 shadow-lg"
                             >
                                 Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* NEW: Import XLS Modal */}
+            {isImportModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col border border-gray-100 dark:border-gray-800">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#111]">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center">
+                                    <FileSpreadsheet size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase tracking-tight">Importar Contatos</h3>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">Crie um novo grupo via Excel (.xls, .xlsx)</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsImportModalOpen(false)} className="text-gray-400 hover:text-red-500">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-8 space-y-6">
+                            {/* Step 1: File Selection */}
+                            <div className="space-y-4">
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">1. Selecione o Arquivo</label>
+                                <div className={`relative border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center gap-4 ${importFile ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-gray-800 hover:border-blue-500 hover:bg-blue-50/5'}`}>
+                                    <input 
+                                        type="file" 
+                                        accept=".xlsx, .xls"
+                                        onChange={handleFileUpload}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                    />
+                                    {importFile ? (
+                                        <>
+                                            <div className="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                                                <Check size={32} />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-bold text-gray-900 dark:text-white">{importFile.name}</p>
+                                                <p className="text-xs text-green-600 font-bold uppercase">{importData.length} Contatos identificados</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={40} className="text-gray-300" />
+                                            <div className="text-center">
+                                                <p className="font-bold text-gray-700 dark:text-gray-200">Clique ou arraste seu arquivo XLS aqui</p>
+                                                <p className="text-xs text-gray-400 mt-1">Colunas esperadas: Cliente, Telefone, E-mail</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Step 2: Group Settings */}
+                            {importData.length > 0 && (
+                                <div className="space-y-4 animate-in slide-in-from-top-4">
+                                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">2. Configuração do Grupo</label>
+                                    <div className="grid gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase ml-1 mb-1">Nome do Grupo</label>
+                                            <input 
+                                                className="w-full bg-gray-50 dark:bg-[#222] border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                                                placeholder="Nome do grupo..."
+                                                value={currentList.name}
+                                                onChange={e => setCurrentList({...currentList, name: e.target.value})}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase ml-1 mb-1">Descrição (Opcional)</label>
+                                            <input 
+                                                className="w-full bg-gray-50 dark:bg-[#222] border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                                                placeholder="Ex: Importação lista de janeiro"
+                                                value={currentList.description || ''}
+                                                onChange={e => setCurrentList({...currentList, description: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Preview Table */}
+                                    <div className="mt-4 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden max-h-40 overflow-y-auto bg-gray-50/50">
+                                        <table className="w-full text-[10px]">
+                                            <thead className="bg-gray-100 dark:bg-[#222] text-gray-500 uppercase font-black">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left">Cliente</th>
+                                                    <th className="px-4 py-2 text-left">Telefone (Limpo)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                                {importData.slice(0, 5).map((row: any, i) => (
+                                                    <tr key={i} className="text-gray-600 dark:text-gray-400">
+                                                        <td className="px-4 py-2">{row['Cliente'] || row['Name'] || '-'}</td>
+                                                        <td className="px-4 py-2">{String(row['Telefone'] || row['Phone'] || '').replace(/\D/g, '')}</td>
+                                                    </tr>
+                                                ))}
+                                                {importData.length > 5 && (
+                                                    <tr>
+                                                        <td colSpan={2} className="px-4 py-2 text-center bg-gray-50 italic">e mais {importData.length - 5} contatos...</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111] flex justify-end gap-3">
+                            <button 
+                                onClick={() => setIsImportModalOpen(false)}
+                                className="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-700 font-bold"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={handleConfirmImport}
+                                disabled={!importFile || !currentList.name || isImporting}
+                                className="bg-green-600 text-white px-10 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition-all active:scale-95 shadow-xl disabled:opacity-50"
+                            >
+                                {isImporting ? <RefreshCw size={20} className="animate-spin" /> : <Check size={20} />}
+                                {isImporting ? 'Importando...' : 'Confirmar Importação'}
                             </button>
                         </div>
                     </div>

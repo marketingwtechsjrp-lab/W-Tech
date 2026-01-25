@@ -9,14 +9,16 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        display: ['Rajdhani', 'sans-serif'],
       },
       colors: {
         wtech: {
-          black: '#111111',
+          black: '#0A0A0A',
           gold: '#D4AF37',
           red: '#E60000',
-          gray: '#2A2A2A',
-          light: '#F5F5F5'
+          gray: '#1A1A1A',
+          light: '#F5F5F5',
+          dark: '#050505'
         }
       },
       animation: {

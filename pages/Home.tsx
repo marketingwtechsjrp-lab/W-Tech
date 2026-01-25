@@ -12,6 +12,8 @@ import { Mechanic } from '../types';
 
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
+
+import { sanitizeHtml } from '../lib/utils';
 import { HeroSection } from '../components/ui/hero-section-5';
 import { ContainerAnimated, ContainerInset, ContainerScroll, ContainerStagger } from '../components/ui/hero-video';
 
@@ -186,7 +188,7 @@ const Home = () => {
         <div className="bg-wtech-light min-h-screen font-sans text-gray-900 selection:bg-wtech-gold selection:text-white overflow-x-hidden">
             <SEO
                 title="W-TECH Brasil | Escola de Tecnologia Automotiva"
-                description="A W-Tech Brasil é a maior escola de tecnologia automotiva da América Latina. Cursos presenciais e online, rede de oficinas credenciadas e suporte técnico especializado."
+                description="Especialistas em Suspensão de Motocross, Enduro e Street. Cursos técnicos, peças especiais e a maior rede de oficinas credenciadas do Brasil."
                 schema={{
                     "@context": "https://schema.org",
                     "@type": "EducationalOrganization",
@@ -242,29 +244,27 @@ const Home = () => {
 
                         <div>
                             <span className="text-wtech-gold font-bold tracking-widest uppercase text-sm mb-4 block">Sobre a W-Tech</span>
-                            <h2 className="text-4xl lg:text-5xl font-black mb-8 leading-tight text-gray-900">
-                                A MAIOR ESTRUTURA <br /> INDEPENDENTE DO BRASIL.
+                            <h2 className="text-4xl lg:text-7xl font-display font-black mb-8 leading-tight text-gray-900 uppercase">
+                                A MAIOR ESTRUTURA <br /> <span className="text-wtech-red">INDEPENDENTE</span> DO BRASIL.
                             </h2>
                             <div className="space-y-6 text-gray-600 text-lg">
-                                <p>
-                                    Localizada estrategicamente, a sede da W-Tech Brasil conta com laboratórios de última geração,
-                                    salas de aula climatizadas e o maior acervo de ferramentas especiais do país.
+                                <p className="font-medium">
+                                    Localizada estrategicamente em São José do Rio Preto, a sede da W-Tech Brasil é o epicentro da alta performance em duas rodas na América Latina.
                                 </p>
                                 <p>
-                                    Aqui, o ensino é levado a sério. Não vendemos apenas cursos, entregamos carreiras transformadas.
-                                    Nossa metodologia une a teoria da engenharia com a prática do chão de oficina.
+                                    Nossa metodologia exclusiva une a teoria da engenharia com a prática extrema do <span className="font-bold text-black italic">Motocross, Enduro e Rally</span>. Não apenas ensinamos suspensão; entregamos a autoridade técnica que transforma oficinas comuns em centros de referência em preparação.
                                 </p>
 
                                 <ul className="grid sm:grid-cols-2 gap-4 pt-6">
                                     {[
                                         "Laboratório de Eletrônica",
-                                        "Área de Dinamômetro",
-                                        "Auditório Multimídia",
-                                        "Alojamento Próprio"
+                                        "Dinamômetro de Suspensão",
+                                        "Ferramentaria Especializada",
+                                        "Centro de Usinagem CNC"
                                     ].map((item, i) => (
                                         <li key={i} className="flex items-center gap-3">
                                             <div className="w-2 h-2 rounded-full bg-wtech-gold"></div>
-                                            <span className="font-bold text-black">{item}</span>
+                                            <span className="font-bold text-black uppercase text-sm tracking-tight">{item}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -286,13 +286,11 @@ const Home = () => {
             <section className="py-0 relative" id="network">
                 <div className="grid lg:grid-cols-2 min-h-[600px]">
                     {/* Text Side - CARBON BACKGROUND */}
-                    <div className="bg-[#111111] p-12 lg:p-24 flex flex-col justify-center text-white relative overflow-hidden">
-                        {/* Carbon Texture Pattern Overlay */}
-                        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #333 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+                    <div className="bg-carbon p-12 lg:p-24 flex flex-col justify-center text-white relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-black/80 to-transparent pointer-events-none"></div>
 
                         <div className="relative z-10">
-                            <h2 className="text-5xl font-black mb-8 leading-tight">POR QUE SOMOS <br /><span className="text-wtech-red">A AUTORIDADE?</span></h2>
+                            <h2 className="text-5xl lg:text-7xl font-display font-black mb-8 leading-tight uppercase">POR QUE SOMOS <br /><span className="text-wtech-red">A AUTORIDADE?</span></h2>
                             <div className="space-y-6 text-white/80 text-xl font-medium">
                                 <p>A W-Tech não é apenas uma escola. É um ecossistema. Conectamos o fabricante da peça, o engenheiro, o mecânico e o piloto.</p>
                                 <ul className="space-y-6 pt-6">
@@ -356,7 +354,7 @@ const Home = () => {
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-16 px-4">
                         <div>
-                            <h2 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight uppercase">AGENDA <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">OFICIAL</span></h2>
+                            <h2 className="text-4xl lg:text-5xl font-display font-black text-white mb-4 tracking-tight uppercase tracking-tighter">AGENDA <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">OFICIAL</span></h2>
                             <p className="text-gray-400 font-medium text-lg max-w-xl">
                                 Planeje sua especialização. Confira o calendário completo de treinamentos presenciais e online da W-Tech Brasil.
                             </p>
@@ -568,8 +566,8 @@ const Home = () => {
             <section id="blog" className="py-20 bg-white">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-black text-gray-900">Blog Tech</h2>
-                        <p className="text-gray-500 mt-2">Artigos técnicos e notícias do setor.</p>
+                        <h2 className="text-4xl font-display font-black text-gray-900 uppercase tracking-tighter">CONTEÚDO <span className="text-wtech-gold">TÉCNICO</span></h2>
+                        <p className="text-gray-500 mt-2 font-medium">Artigos, novidades e tecnologia do setor.</p>
                     </div>
 
                     <div className="flex overflow-x-auto pb-8 gap-8 snap-x snap-mandatory">
@@ -586,7 +584,7 @@ const Home = () => {
                                             <span className="text-xs text-gray-400">5 min</span>
                                         </div>
                                         <h3 className="text-xl font-bold mb-3 group-hover:text-wtech-gold transition-colors line-clamp-2">{post.title}</h3>
-                                        <div className="text-gray-500 text-sm mb-4 line-clamp-2" dangerouslySetInnerHTML={{ __html: post.excerpt || post.content.substring(0, 50) + '...' }} />
+                                        <div className="text-gray-500 text-sm mb-4 line-clamp-2" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.excerpt || post.content.substring(0, 50) + '...') }} />
                                         <Link to={`/blog/${post.slug || post.id}`} className="text-sm font-bold border-b-2 border-transparent group-hover:border-wtech-gold inline-block pb-1 transition-all">Ler Artigo</Link>
                                     </div>
                                 </div>
@@ -604,10 +602,10 @@ const Home = () => {
                     <div className="grid lg:grid-cols-12 gap-12">
                         {/* Info Side */}
                         <div className="lg:col-span-4">
-                            <span className="text-wtech-gold font-bold uppercase tracking-widest text-sm mb-2 block">Fale Conosco</span>
-                            <h2 className="text-4xl font-black text-gray-900 mb-8 leading-tight">ENTRE EM <br />CONTATO</h2>
-                            <p className="text-gray-500 mb-10 text-lg">
-                                Estamos prontos para atender você e sua oficina. Tire suas dúvidas sobre cursos, serviços e suporte.
+                            <span className="text-wtech-gold font-bold uppercase tracking-widest text-[10px] mb-2 block">Canais de Atendimento</span>
+                            <h2 className="text-5xl font-display font-black text-gray-900 mb-8 leading-tight tracking-tighter">FALE <br />CONOSCO</h2>
+                            <p className="text-gray-500 mb-10 text-lg font-medium">
+                                Nossa equipe técnica está pronta para atender você e sua oficina.
                             </p>
 
                             <div className="space-y-8">
@@ -617,7 +615,7 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-lg">Endereço</h4>
-                                        <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: address.replace(/\n/g, '<br/>') }} />
+                                        <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: sanitizeHtml(address.replace(/\n/g, '<br/>')) }} />
                                     </div>
                                 </div>
 
@@ -647,14 +645,14 @@ const Home = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-gray-900 text-lg">Horário de Atendimento</h4>
-                                        <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: hours.replace(/\n/g, '<br/>') }} />
+                                        <p className="text-gray-500" dangerouslySetInnerHTML={{ __html: sanitizeHtml(hours.replace(/\n/g, '<br/>')) }} />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Form Side */}
-                        <div className="lg:col-span-8 group/form [perspective:2000px]">
+                        <div id="formulario" className="lg:col-span-8 group/form [perspective:2000px]">
                             <motion.div 
                                 className="relative w-full h-full [transform-style:preserve-3d]"
                                 animate={{ rotateY: isSubmitted ? 180 : 0 }}

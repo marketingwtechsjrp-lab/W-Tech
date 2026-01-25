@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import SEO from '../components/SEO';
-import { formatDateLocal } from '../lib/utils';
+import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 
 const BlogPostReader: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -264,7 +264,7 @@ const BlogPostReader: React.FC = () => {
                 prose-img:rounded-xl prose-img:shadow-lg
                 prose-blockquote:border-l-wtech-gold prose-blockquote:bg-gray-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic
                 "
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
           />
 
           {/* Tags */}

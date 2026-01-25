@@ -8,7 +8,7 @@ import { distributeLead } from '../lib/leadDistribution';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
-import { formatDateLocal } from '../lib/utils';
+import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 
 const LandingPageViewer: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -428,7 +428,7 @@ const LandingPageViewer: React.FC = () => {
                      <div className="text-center md:text-left">
                          <h3 className="text-3xl font-bold text-white mb-2">{lp.instructorName}</h3>
                          <div className="w-12 h-1 bg-wtech-gold mx-auto md:mx-0 mb-6"></div>
-                         <div className="prose prose-invert prose-p:text-gray-400 text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: lp.instructorBio?.replace(/\n/g, '<br/>') || '' }} />
+                         <div className="prose prose-invert prose-p:text-gray-400 text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.instructorBio?.replace(/\n/g, '<br/>') || '') }} />
                      </div>
                  </div>
             </div>

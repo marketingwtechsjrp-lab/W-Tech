@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
 import { useSettings } from '../context/SettingsContext';
+import { sanitizeHtml } from '../lib/utils';
 import SEO from '../components/SEO';
 
 const Contact: React.FC = () => {
@@ -86,7 +87,7 @@ const Contact: React.FC = () => {
                                 <div className="bg-gray-100 p-3 rounded text-wtech-gold"><MapPin /></div>
                                 <div>
                                     <p className="font-bold">Endereço</p>
-                                    <p className="text-gray-600" dangerouslySetInnerHTML={{ __html: address.replace(/\n/g, '<br/>') }}></p>
+                                    <p className="text-gray-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(address.replace(/\n/g, '<br/>')) }}></p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">

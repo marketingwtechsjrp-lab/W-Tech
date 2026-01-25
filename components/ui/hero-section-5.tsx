@@ -76,26 +76,30 @@ export function HeroSection() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, delay: 0.4 }}
-                                className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start"
+                                className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row lg:justify-start"
                             >
-                                <Button
-                                    asChild
-                                    size="lg"
-                                    className="h-14 rounded-full pl-5 pr-3 text-base bg-wtech-gold text-black hover:bg-yellow-400 font-bold px-8"
-                                >
-                                    <Link to="/courses">
-                                        <span className="text-nowrap uppercase tracking-wide">Ver Próximos Cursos</span>
-                                        <ChevronRight className="ml-1" />
-                                    </Link>
-                                </Button>
+                                <Link to="/cursos" className="group relative">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-wtech-gold to-yellow-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200" />
+                                    <Button
+                                        asChild
+                                        size="lg"
+                                        className="relative h-14 rounded-none -skew-x-12 px-8 text-base bg-wtech-gold text-black hover:bg-white hover:text-black font-black border-2 border-transparent hover:border-wtech-gold transition-all duration-300"
+                                    >
+                                        <div className="flex items-center skew-x-12">
+                                            <span className="text-nowrap uppercase tracking-wider">Ver Próximos Cursos</span>
+                                            <ChevronRight className="ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </Button>
+                                </Link>
+
                                 <Button
                                     asChild
                                     size="lg"
                                     variant="ghost"
-                                    className="h-14 rounded-full px-8 text-base text-white hover:bg-white/10 font-bold uppercase tracking-wide border border-white/20 backdrop-blur-sm"
+                                    className="h-14 rounded-none -skew-x-12 px-8 text-base text-white hover:bg-white/5 font-bold uppercase tracking-wide border border-white/30 hover:border-wtech-gold backdrop-blur-sm transition-all duration-300"
                                 >
-                                    <a href="#leads">
-                                        <span className="text-nowrap">Falar com Consultor</span>
+                                    <a href="https://w-techstore.com.br/" target="_blank" rel="noopener noreferrer" className="flex items-center skew-x-12">
+                                        <span className="text-nowrap">Ir para Loja</span>
                                     </a>
                                 </Button>
                             </motion.div>
