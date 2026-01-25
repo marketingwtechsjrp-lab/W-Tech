@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.4.9 (2026-01-25) - Redesign Hero, SEO e Navegação
+- DESIGN: Novo Hero Section com estilo "Racing" (botões inclinados, texturas metálicas e efeitos de brilho)
+- SEO: Otimização completa da Home com Meta Descriptions focadas em mecânicos e pilotos
+- UX: Atalho de navegação direta "Falar com Consultor" para o formulário de contato (#formulario)
+- NAV: Link direto para W-Tech Store no botão secundário do Hero
+- FIX: Correção de links quebrados na Home Page
+
 ## v2.4.7 (2026-01-22) - W-Intelligence: Filtros, Equipe e Receita Unificada
 - FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência
 - FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA
