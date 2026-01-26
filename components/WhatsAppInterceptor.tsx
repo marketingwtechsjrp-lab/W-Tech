@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead } from '../lib/leadDistribution';
 import { useLocation } from 'react-router-dom';
+import { trackEvent } from './AnalyticsTracker';
 
 export const WhatsAppInterceptor = () => {
     const [config, setConfig] = useState<any>(null);
@@ -34,6 +35,8 @@ export const WhatsAppInterceptor = () => {
         setLoading(true);
         
         try {
+            trackEvent('WhatsApp', 'form_start_submit', 'Home Modal');
+
             const assignedTo = await distributeLead();
             const payload = {
                 name: form.name,
@@ -50,6 +53,8 @@ export const WhatsAppInterceptor = () => {
             await supabase.from('SITE_Leads').insert([payload]);
             await triggerWebhook('webhook_lead', payload);
 
+            trackEvent('WhatsApp', 'conversation_started', config.whatsapp_phone);
+
             // Redirect
             const cleanPhone = config.whatsapp_phone.replace(/\D/g, '');
             const msg = `Olá, me chamo ${form.name}. Gostaria de mais informações.`;
@@ -65,7 +70,10 @@ export const WhatsAppInterceptor = () => {
             {/* Floating Button (Left-Aligned) */}
             {!isOpen && (
                 <button 
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => {
+                        setIsOpen(true);
+                        trackEvent('WhatsApp', 'open_modal', 'Home Floating Button');
+                    }}
                     aria-label="Falar no WhatsApp"
                     className="fixed bottom-6 left-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl animate-bounce-custom flex items-center justify-center transition-all hover:scale-110"
                 >

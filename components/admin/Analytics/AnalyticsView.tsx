@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import ReactApexChart from 'react-apexcharts';
-import { Users, Eye, MousePointer, Smartphone, Monitor, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Users, Eye, MousePointer, Smartphone, Monitor, ArrowRight, Filter, Download, Activity, MessageCircle } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
-
 
 const AnalyticsView = () => {
     // State
@@ -13,58 +12,17 @@ const AnalyticsView = () => {
         totalViews: 0,
         uniqueVisitors: 0,
         totalEvents: 0,
-        bounceRate: 0 // Placeholder
+        whatsappClicks: 0,
+        conversionRate: 0
     });
     const [dailyVisits, setDailyVisits] = useState<{ categories: string[], data: number[] }>({ categories: [], data: [] });
     const [topPages, setTopPages] = useState<any[]>([]);
-    const [topSources, setTopSources] = useState<any[]>([]);
+    const [recentEvents, setRecentEvents] = useState<any[]>([]);
     const [deviceStats, setDeviceStats] = useState<{ mobile: number, desktop: number }>({ mobile: 0, desktop: 0 });
-    const { settings } = useSettings();
-    const [googleStatus, setGoogleStatus] = useState<'idle' | 'checking' | 'success' | 'error'>('idle');
-    const [statusMessage, setStatusMessage] = useState('');
-
 
     useEffect(() => {
         fetchData();
     }, [period]);
-
-    const verifyGoogleIntegration = async () => {
-        setGoogleStatus('checking');
-        setStatusMessage('Verificando integração...');
-
-        // Artificial delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        const gaId = settings.ga_id;
-        const gtagPresent = typeof (window as any).gtag === 'function';
-
-        if (!gaId) {
-            setGoogleStatus('error');
-            setStatusMessage('ID do Google Analytics (GA4) não configurado nas configurações do sistema.');
-            return;
-        }
-
-        if (!gtagPresent) {
-            setGoogleStatus('error');
-            setStatusMessage('Script do Google Analytics não detectado na página. Verifique se há bloqueadores de anúncios.');
-            return;
-        }
-
-        try {
-            // Tentativa de enviar um evento de teste
-            (window as any).gtag('event', 'integration_check', {
-                'event_category': 'admin_action',
-                'event_label': 'manual_verification'
-            });
-
-            setGoogleStatus('success');
-            setStatusMessage(`Integração Ativa! ID Detectado: ${gaId}. Script carregado e funcional.`);
-        } catch (error) {
-            setGoogleStatus('error');
-            setStatusMessage('Erro ao comunicar com o Google Analytics: ' + (error as Error).message);
-        }
-    };
-
 
     const fetchData = async () => {
         setLoading(true);
@@ -73,21 +31,35 @@ const AnalyticsView = () => {
         const startIso = startDate.toISOString();
 
         // 1. Fetch Page Views
-        const { data: views, error } = await supabase
+        const { data: views } = await supabase
             .from('SITE_Analytics_PageViews')
             .select('*')
             .gte('created_at', startIso);
 
-        if (views) {
-            // KPI: Total Views
-            const totalViews = views.length;
+        // 2. Fetch Events
+        const { data: events } = await supabase
+            .from('SITE_Analytics_Events')
+            .select('*')
+            .gte('created_at', startIso)
+            .order('created_at', { ascending: false });
 
-            // KPI: Unique Visitors
+        if (views && events) {
+            // KPI: Basics
+            const totalViews = views.length;
             const uniqueVisitors = new Set(views.map(v => v.visitor_id)).size;
+            const totalEvents = events.length;
+            
+            // KPI: Conversions (WhatsApp or Forms)
+            const whatsappClicks = events.filter(e => 
+                e.action === 'click_start_chat' || 
+                e.action === 'conversation_started' || 
+                e.category === 'WhatsApp'
+            ).length;
+
+            const conversionRate = totalViews > 0 ? ((whatsappClicks / totalViews) * 100).toFixed(1) : 0;
 
             // Chart: Daily Visits
             const daysMap: Record<string, number> = {};
-            // Init last 30 days
             for (let i = 0; i < period; i++) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
@@ -97,7 +69,6 @@ const AnalyticsView = () => {
             let mobile = 0;
             let desktop = 0;
             const pagesMap: Record<string, number> = {};
-            const referrersMap: Record<string, number> = {};
 
             views.forEach(v => {
                 const date = v.created_at.split('T')[0];
@@ -108,56 +79,34 @@ const AnalyticsView = () => {
                 else desktop++;
 
                 // Pages
-                const p = v.path.split('?')[0]; // simple path
+                const p = v.path.split('?')[0]; 
                 pagesMap[p] = (pagesMap[p] || 0) + 1;
-
-                // Referrer
-                let ref = 'Direto';
-                if (v.referrer && v.referrer !== 'direct') {
-                    try {
-                        const url = new URL(v.referrer);
-                        ref = url.hostname.replace('www.', '');
-                    } catch { ref = v.referrer; }
-                }
-                referrersMap[ref] = (referrersMap[ref] || 0) + 1;
             });
 
-            // Sort Chart Data
+            // Sort Chart
             const sortedDates = Object.keys(daysMap).sort();
             setDailyVisits({
-                categories: sortedDates.map(d => {
-                    const [y, m, day] = d.split('-');
-                    return `${day}/${m}`;
-                }),
+                categories: sortedDates.map(d => d.split('-').slice(1).join('/')),
                 data: sortedDates.map(d => daysMap[d])
             });
 
-            // Sort Top Pages
-            const sortedPages = Object.entries(pagesMap)
+            // Top Pages
+            setTopPages(Object.entries(pagesMap)
                 .map(([path, count]) => ({ path, count }))
                 .sort((a, b) => b.count - a.count)
-                .slice(0, 10);
-            setTopPages(sortedPages);
+                .slice(0, 10));
 
-            // Sort Top Sources
-            const sortedSources = Object.entries(referrersMap)
-                .map(([source, count]) => ({ source, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 10);
-            setTopSources(sortedSources);
+            // Recent Events
+            setRecentEvents(events.slice(0, 50));
 
-            setStats(prev => ({ ...prev, totalViews, uniqueVisitors }));
+            setStats({ 
+                totalViews, 
+                uniqueVisitors, 
+                totalEvents, 
+                whatsappClicks, 
+                conversionRate: Number(conversionRate) 
+            });
             setDeviceStats({ mobile, desktop });
-        }
-
-        // 2. Fetch Events
-        const { data: events } = await supabase
-            .from('SITE_Analytics_Events')
-            .select('id')
-            .gte('created_at', startIso);
-
-        if (events) {
-            setStats(prev => ({ ...prev, totalEvents: events.length }));
         }
 
         setLoading(false);
@@ -176,157 +125,152 @@ const AnalyticsView = () => {
         theme: { mode: 'dark' }
     };
 
-    const donutOptions: ApexCharts.ApexOptions = {
-        labels: ['Mobile', 'Desktop'],
-        colors: ['#D4AF37', '#3B82F6'],
-        legend: { position: 'bottom', labels: { colors: '#888' } },
-        stroke: { show: false },
-        dataLabels: { enabled: false },
-        plotOptions: { pie: { donut: { size: '70%' } } }
-    };
-
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in pb-20">
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Analytics Geral</h2>
-                    <p className="text-sm text-gray-500">Monitoramento interno de acessos e eventos.</p>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <Activity className="text-wtech-gold" /> Analytics 2.0
+                    </h2>
+                    <p className="text-sm text-gray-500">Monitoramento de tráfego e conversões em tempo real.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Google Verification Button */}
-                    <div className="flex flex-col items-end">
+                <div className="flex bg-gray-100 dark:bg-[#1A1A1A] p-1 rounded-lg border border-gray-200 dark:border-gray-800">
+                    {[7, 30, 90].map(d => (
                         <button
-                            onClick={verifyGoogleIntegration}
-                            disabled={googleStatus === 'checking'}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${googleStatus === 'success' ? 'bg-green-500/10 text-green-600 border border-green-200 dark:border-green-900/50' :
-                                googleStatus === 'error' ? 'bg-red-500/10 text-red-600 border border-red-200 dark:border-red-900/50' :
-                                    'bg-white dark:bg-[#1A1A1A] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:border-wtech-gold/50 shadow-sm'
-                                }`}
+                            key={d}
+                            onClick={() => setPeriod(d)}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${period === d ? 'bg-white dark:bg-[#333] shadow text-black dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                         >
-                            {googleStatus === 'checking' ? <RefreshCw size={16} className="animate-spin" /> :
-                                googleStatus === 'success' ? <CheckCircle size={16} /> :
-                                    googleStatus === 'error' ? <AlertCircle size={16} /> :
-                                        <img src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" className="w-4 h-4" alt="Google" />
-                            }
-                            {googleStatus === 'success' ? 'Google Integrado' :
-                                googleStatus === 'error' ? 'Erro na Integração' :
-                                    'Verificar Google API'}
+                            {d} dias
                         </button>
-                        {statusMessage && (
-                            <span className={`text-[10px] mt-1 font-medium ${googleStatus === 'success' ? 'text-green-500' :
-                                googleStatus === 'error' ? 'text-red-500' :
-                                    'text-gray-400'
-                                }`}>
-                                {statusMessage}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg">
-
-                        {[7, 30, 90].map(d => (
-                            <button
-                                key={d}
-                                onClick={() => setPeriod(d)}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${period === d ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-500'}`}
-                            >
-                                {d} dias
-                            </button>
-                        ))}
-                    </div>
+                    ))}
                 </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                        <Eye size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase">Visualizações</p>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white">{stats.totalViews}</h3>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-wtech-gold">
-                        <Users size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase">Visitantes Únicos</p>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white">{stats.uniqueVisitors}</h3>
-                    </div>
-                </div>
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                        <MousePointer size={24} />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase">Eventos / Cliques</p>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white">{stats.totalEvents}</h3>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <KPICard icon={Eye} label="Visualizações" value={stats.totalViews} color="blue" />
+                <KPICard icon={Users} label="Visitantes Únicos" value={stats.uniqueVisitors} color="purple" />
+                <KPICard icon={MessageCircle} label="Cliques WhatsApp" value={stats.whatsappClicks} color="green" />
+                <KPICard icon={Activity} label="Taxa de Conversão" value={`${stats.conversionRate}%`} color="yellow" />
             </div>
 
             {/* Main Chart */}
             <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                <h3 className="font-bold text-gray-800 dark:text-white mb-4">Tráfego no Período</h3>
+                <h3 className="font-bold text-gray-800 dark:text-white mb-6">Tráfego no Período</h3>
                 <div className="h-[300px]">
                     <ReactApexChart options={chartOptions} series={[{ name: 'Visitas', data: dailyVisits.data }]} type="area" height="100%" />
                 </div>
             </div>
 
-            {/* Lower Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Top Pages */}
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h3 className="font-bold text-gray-800 dark:text-white mb-4">Páginas Mais Acessadas</h3>
-                    <div className="space-y-3">
-                        {topPages.map((p, idx) => (
-                            <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 dark:border-gray-800 pb-2">
-                                <span className="text-gray-600 dark:text-gray-400 truncate w-3/4">{p.path}</span>
-                                <span className="font-bold text-gray-900 dark:text-white">{p.count}</span>
-                            </div>
-                        ))}
+                {/* Event Log (New) */}
+                <div className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col h-[500px]">
+                    <div className="p-6 border-b border-gray-100 dark:border-gray-800">
+                        <h3 className="font-bold text-gray-800 dark:text-white">Últimos Eventos</h3>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                        <table className="w-full text-sm">
+                            <thead className="text-xs text-gray-400 font-bold uppercase sticky top-0 bg-white dark:bg-[#1A1A1A]">
+                                <tr>
+                                    <th className="px-4 py-3 text-left">Hora</th>
+                                    <th className="px-4 py-3 text-left">Ação</th>
+                                    <th className="px-4 py-3 text-left">Categoria</th>
+                                    <th className="px-4 py-3 text-left">Label</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {recentEvents.map((e) => (
+                                    <tr key={e.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                        <td className="px-4 py-3 text-gray-500 font-mono text-xs">
+                                            {new Date(e.created_at).toLocaleTimeString()}
+                                        </td>
+                                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">{e.action}</td>
+                                        <td className="px-4 py-3">
+                                            <span className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-gray-100 dark:bg-gray-800 text-gray-500">
+                                                {e.category}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-500 truncate max-w-[150px]" title={e.label}>{e.label}</td>
+                                    </tr>
+                                ))}
+                                {recentEvents.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                                            Nenhum evento registrado ainda.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                {/* Top Sources */}
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h3 className="font-bold text-gray-800 dark:text-white mb-4">Origem do Tráfego</h3>
-                    <div className="space-y-3">
-                        {topSources.map((s, idx) => (
-                            <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 dark:border-gray-800 pb-2">
-                                <span className="text-gray-600 dark:text-gray-400 capitalize">{s.source || 'Direto / Desconhecido'}</span>
-                                <span className="font-bold text-gray-900 dark:text-white">{s.count}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Devices */}
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h3 className="font-bold text-gray-800 dark:text-white mb-4">Dispositivos</h3>
-                    <div className="h-[200px] flex items-center justify-center">
-                        <ReactApexChart
-                            options={donutOptions}
-                            series={[deviceStats.mobile, deviceStats.desktop]}
-                            type="donut"
-                            width="100%"
-                        />
-                    </div>
-                    <div className="flex justify-center gap-6 mt-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Smartphone size={16} /> Mobile: <strong className="text-gray-900 dark:text-white">{deviceStats.mobile}</strong>
+                {/* Top Pages & Devices */}
+                <div className="space-y-6">
+                    <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h3 className="font-bold text-gray-800 dark:text-white mb-4">Páginas Populares</h3>
+                        <div className="space-y-3">
+                            {topPages.map((p, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-50 dark:border-gray-800 pb-2 last:border-0">
+                                    <span className="text-gray-600 dark:text-gray-400 truncate w-3/4" title={p.path}>{p.path}</span>
+                                    <span className="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-xs">{p.count}</span>
+                                </div>
+                            ))}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Monitor size={16} /> Desktop: <strong className="text-gray-900 dark:text-white">{deviceStats.desktop}</strong>
+                    </div>
+
+                    <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h3 className="font-bold text-gray-800 dark:text-white mb-4">Dispositivos</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                    <Smartphone size={18} /> Mobile
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-wtech-gold" style={{ width: `${(deviceStats.mobile / (stats.totalViews || 1)) * 100}%` }}></div>
+                                    </div>
+                                    <span className="font-bold dark:text-white">{deviceStats.mobile}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                    <Monitor size={18} /> Desktop
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-blue-500" style={{ width: `${(deviceStats.desktop / (stats.totalViews || 1)) * 100}%` }}></div>
+                                    </div>
+                                    <span className="font-bold dark:text-white">{deviceStats.desktop}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
 
+const KPICard = ({ icon: Icon, label, value, color }: any) => {
+    const colors: any = {
+        blue: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400',
+        purple: 'text-purple-600 bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400',
+        green: 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400',
+        yellow: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400',
+    };
+
+    return (
+        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 hover:border-wtech-gold/30 transition-colors">
+            <div className={`p-4 rounded-full ${colors[color]}`}>
+                <Icon size={24} />
+            </div>
+            <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{label}</p>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1">{value}</h3>
             </div>
         </div>
     );

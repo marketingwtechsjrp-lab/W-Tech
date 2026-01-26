@@ -5,6 +5,7 @@ import { triggerWebhook } from '../lib/webhooks';
 import { useSettings } from '../context/SettingsContext';
 import { sanitizeHtml } from '../lib/utils';
 import SEO from '../components/SEO';
+import { trackEvent } from '../components/AnalyticsTracker';
 
 const Contact: React.FC = () => {
     const [loading, setLoading] = useState(false);
@@ -35,10 +36,13 @@ const Contact: React.FC = () => {
             // 2. Trigger Webhook
             await triggerWebhook('webhook_lead', payload);
 
+            trackEvent('Contact', 'form_submit', 'Contact Page');
+
             setSubmitted(true);
             setForm({ name: '', email: '', phone: '', message: '' });
         } catch (error) {
             console.error(error);
+            trackEvent('Contact', 'form_error', (error as Error).message);
             alert('Erro ao enviar. Tente novamente.');
         } finally {
             setLoading(false);

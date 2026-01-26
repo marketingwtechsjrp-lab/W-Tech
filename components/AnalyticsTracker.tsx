@@ -11,8 +11,9 @@ export const AnalyticsTracker = () => {
     const { get } = useSettings();
     const gaId = get('ga_id');
 
-    // GA Injection
+    // GA Intection & Global Click Listener
     useEffect(() => {
+        // 1. GA Injection
         if (gaId && !window.hasInjectedScripts) {
             const script = document.createElement('script');
             script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
@@ -27,8 +28,27 @@ export const AnalyticsTracker = () => {
 
             window.hasInjectedScripts = true;
         }
+
+        // 2. Global Click Listener for data-track attributes
+        const handleGlobalClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const trackable = target.closest('[data-track]');
+            
+            if (trackable) {
+                const action = trackable.getAttribute('data-track');
+                const label = trackable.getAttribute('data-track-label') || target.innerText || 'No Label';
+                const category = trackable.getAttribute('data-track-category') || 'UI Interaction';
+                
+                trackEvent(category, action || 'click', label);
+            }
+        };
+
+        document.addEventListener('click', handleGlobalClick);
+        return () => document.removeEventListener('click', handleGlobalClick);
+
     }, [gaId]);
 
+    // Page View Tracking
     useEffect(() => {
         const trackPageView = async () => {
             try {
@@ -53,12 +73,12 @@ export const AnalyticsTracker = () => {
                     sessionStorage.setItem('wtech_session_id', sessionId);
                 }
 
-                // 3. Determine Device Type (Simple check)
+                // 3. Determine Device Type
                 const ua = navigator.userAgent.toLowerCase();
                 const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
                 const deviceType = isMobile ? 'mobile' : 'desktop';
 
-                // 4. Track
+                // 4. Track to Supabase
                 await supabase.from('SITE_Analytics_PageViews').insert({
                     path: location.pathname + location.search,
                     referrer: document.referrer || 'direct',
@@ -69,14 +89,15 @@ export const AnalyticsTracker = () => {
                 });
 
             } catch (error) {
-                console.error("Analytics Error:", error); // Silent fail in prod usually
+                // Silent fail in prod
+                // console.error("Analytics Error:", error); 
             }
         };
 
         trackPageView();
-    }, [location, gaId]); // Run on route change + gaId load
+    }, [location, gaId]);
 
-    return null; // Invisible component
+    return null;
 };
 
 // Exportable Event Tracker
@@ -85,6 +106,7 @@ export const trackEvent = async (category: string, action: string, label?: strin
         const visitorId = localStorage.getItem('wtech_visitor_id');
         const sessionId = sessionStorage.getItem('wtech_session_id');
 
+        // 1. Send to Supabase
         await supabase.from('SITE_Analytics_Events').insert({
             category,
             action,
@@ -93,6 +115,14 @@ export const trackEvent = async (category: string, action: string, label?: strin
             visitor_id: visitorId,
             session_id: sessionId
         });
+
+        // 2. Send to GA4 (if available)
+        if ((window as any).gtag) {
+            (window as any).gtag('event', action, {
+                'event_category': category,
+                'event_label': label
+            });
+        }
     } catch (e) {
         console.error("Event Track Error", e);
     }

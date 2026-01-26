@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.5.0 (2026-01-26) - Analytics 2.0 & Controle de Permissões
+- FEAT: Analytics 2.0 com tracking automático de eventos e conversões.
+- FEAT: Dashboard de Analytics com gráficos em tempo real e log de atividades.
+- FEAT: Sistema de Permissões Granulares (controle individual por módulo no Admin).
+- FIX: Lógica de Upsert de Leads (evita duplicidade mantendo histórico).
+- FIX: Redirecionamento correto do Quiz para o WhatsApp global.
+- FIX: Scroll suave no botão de módulos das Landing Pages.
+
 ## v2.4.9 (2026-01-25) - Redesign Hero, SEO e Navegação
 - DESIGN: Novo Hero Section com estilo "Racing" (botões inclinados, texturas metálicas e efeitos de brilho)
 - SEO: Otimização completa da Home com Meta Descriptions focadas em mecânicos e pilotos

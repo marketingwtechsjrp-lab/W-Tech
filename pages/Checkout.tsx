@@ -4,6 +4,7 @@ import { Check, CreditCard, Lock, Smartphone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
+import { trackEvent } from '../components/AnalyticsTracker';
 
 const Checkout: React.FC = () => {
   const { items, total, clearCart } = useCart();
@@ -27,6 +28,8 @@ const Checkout: React.FC = () => {
     setLoading(true);
 
     try {
+        trackEvent('Ecommerce', 'purchase_attempt', `Total: ${total}`);
+
         // 1. Create Lead
         const { data: leadData, error: leadError } = await supabase
             .from('SITE_Leads')
@@ -78,12 +81,15 @@ const Checkout: React.FC = () => {
             context_id: `Order #${orderData.id.slice(0,8)}`
         });
 
+        trackEvent('Ecommerce', 'purchase_success', `Order: ${orderData.id}`);
+
         setOrderId(orderData.id.slice(0,8).toUpperCase());
         setStep(3); // Success
         clearCart();
 
     } catch (err) {
         console.error(err);
+        trackEvent('Ecommerce', 'purchase_error', (err as Error).message);
         alert('Erro ao processar pedido. Tente novamente.');
     } finally {
         setLoading(false);
@@ -160,13 +166,19 @@ const Checkout: React.FC = () => {
                         
                         <div className="flex gap-4 mb-6">
                             <button 
-                                onClick={() => setFormData({...formData, paymentMethod: 'Credit_Card'})}
+                                onClick={() => {
+                                    setFormData({...formData, paymentMethod: 'Credit_Card'});
+                                    trackEvent('Ecommerce', 'select_payment', 'Credit Card');
+                                }}
                                 className={`flex-1 py-3 px-4 rounded border flex items-center justify-center gap-2 font-bold ${formData.paymentMethod === 'Credit_Card' ? 'border-wtech-gold bg-yellow-50 text-black' : 'border-gray-200 text-gray-500'}`}
                             >
                                 <CreditCard size={20} /> Cartão de Crédito
                             </button>
                             <button 
-                                onClick={() => setFormData({...formData, paymentMethod: 'Pix'})}
+                                onClick={() => {
+                                    setFormData({...formData, paymentMethod: 'Pix'});
+                                    trackEvent('Ecommerce', 'select_payment', 'Pix');
+                                }}
                                 className={`flex-1 py-3 px-4 rounded border flex items-center justify-center gap-2 font-bold ${formData.paymentMethod === 'Pix' ? 'border-wtech-gold bg-yellow-50 text-black' : 'border-gray-200 text-gray-500'}`}
                             >
                                 <Smartphone size={20} /> Pix

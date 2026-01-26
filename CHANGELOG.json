@@ -1,5 +1,19 @@
 [
   {
+    "version": "2.5.0",
+    "date": "2026-01-26",
+    "title": "Analytics 2.0 & Controle de Permissões",
+    "changes": [
+      "FEAT: Analytics 2.0 com tracking automático de eventos e conversões",
+      "FEAT: Dashboard de Analytics com gráficos em tempo real e log de atividades",
+      "FEAT: Sistema de Permissões Granulares (controle individual por módulo no Admin)",
+      "FIX: Lógica de Upsert de Leads (evita duplicidade mantendo histórico)",
+      "FIX: Redirecionamento correto do Quiz para o WhatsApp global",
+      "FIX: Scroll suave no botão de módulos das Landing Pages"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.4.9",
     "date": "2026-01-25",
     "title": "Redesign Hero, SEO e Navegação",
