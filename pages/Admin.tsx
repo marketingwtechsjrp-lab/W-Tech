@@ -4034,7 +4034,7 @@ const SettingsView = () => {
                 { key: 'courses_add_student', label: 'Adicionar Aluno/Matrícula' },
                 { key: 'courses_print_list', label: 'Imprimir Listas' },
                 { key: 'courses_view_reports', label: 'Ver Relatórios Gerenciais' },
-                { key: 'courses_edit_lp', label: 'Editar Landing Pages' },
+                { key: 'certificates_view', label: 'Gerar Certificados & Crachás' },
             ]
         },
         {
@@ -4053,7 +4053,29 @@ const SettingsView = () => {
         {
             title: 'Loja Virtual',
             perms: [
-                { key: 'manage_orders', label: 'Gerenciar Pedidos' }
+                { key: 'orders_view', label: 'Visualizar Pedidos' },
+                { key: 'manage_orders', label: 'Gerenciar Pedidos (Status/Editar)' }
+            ]
+        },
+        {
+            title: 'Catálogo & Estoque',
+            perms: [
+                { key: 'catalog_view', label: 'Visualizar Catálogo' },
+                { key: 'catalog_manage', label: 'Gerenciar Produtos (Criar/Editar)' }
+            ]
+        },
+        {
+            title: 'Clientes',
+            perms: [
+                { key: 'clients_view', label: 'Visualizar Carteira de Clientes' },
+                { key: 'clients_manage', label: 'Editar Clientes' }
+            ]
+        },
+        {
+            title: 'Landing Pages',
+            perms: [
+                { key: 'landing_pages_view', label: 'Acessar Construtor de LPs' },
+                { key: 'landing_pages_manage', label: 'Criar/Editar Páginas' }
             ]
         },
         {
@@ -4084,7 +4106,8 @@ const SettingsView = () => {
         {
             title: 'Financeiro (Fluxo de Caixa)',
             perms: [
-                { key: 'financial_view', label: 'Visualizar Módulo' },
+                { key: 'financial_view', label: 'Visualizar Fluxo de Caixa' },
+                { key: 'invoices_view', label: 'Acessar Notas Fiscais' },
                 { key: 'financial_add_transaction', label: 'Lançar Transação' },
                 { key: 'financial_export', label: 'Exportar Relatórios' },
                 { key: 'financial_edit_transaction', label: 'Editar Transações (Risco)' },
@@ -4094,6 +4117,7 @@ const SettingsView = () => {
         {
             title: 'Gestão de Tarefas',
             perms: [
+                { key: 'tasks_view', label: 'Acessar Módulo de Tarefas' },
                 { key: 'tasks_view_team', label: 'Ver Tarefas da Equipe (Gestor)' },
                 { key: 'tasks_delete', label: 'Excluir Tarefas de Outros' },
             ]
@@ -4102,6 +4126,7 @@ const SettingsView = () => {
             title: 'Administração Geral',
             perms: [
                 { key: 'dashboard_view', label: 'Visualizar Dashboard (Visão Geral)' },
+                { key: 'analytics_view', label: 'Visualizar Analytics' },
                 { key: 'admin_access', label: 'Acesso Admin (Global)' },
                 { key: 'manage_users', label: 'Gerenciar Equipe' },
                 { key: 'manage_settings', label: 'Acesso Configurações' },
@@ -6198,9 +6223,11 @@ const Admin = () => {
                                 <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            {hasPermission('tasks_view') && (
+                                <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            )}
 
-                            {hasPermission('manage_orders') && (
+                            {hasPermission('clients_view') && (
                                 <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
@@ -6208,7 +6235,7 @@ const Admin = () => {
                                 <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('manage_orders') && (
+                            {hasPermission('orders_view') && (
                                 <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
@@ -6216,15 +6243,15 @@ const Admin = () => {
                                 <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('manage_orders') && (
+                            {hasPermission('catalog_view') && (
                                 <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('financial_view') && (
+                            {hasPermission('invoices_view') && (
                                 <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('courses_view') && (
+                            {hasPermission('certificates_view') && (
                                 <SidebarItem icon={Award} label="Certificados & Crachás" active={currentView === 'certificates'} onClick={() => { setCurrentView('certificates'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
@@ -6240,11 +6267,11 @@ const Admin = () => {
                                 <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && (
+                            {hasPermission('landing_pages_view') && (
                                 <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('dashboard_view') && (
+                            {hasPermission('analytics_view') && (
                                 <SidebarItem icon={BarChart3} label="Analytics" active={currentView === 'analytics'} onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
@@ -6304,19 +6331,20 @@ const Admin = () => {
 
                             <div className="grid grid-cols-3 gap-6 mb-auto overflow-y-auto">
                                 {hasPermission('dashboard_view') && <MobileMenuItem icon={LayoutDashboard} label="Visão Geral" onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('dashboard_view') && <MobileMenuItem icon={BarChart3} label="Analytics" onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('analytics_view') && <MobileMenuItem icon={BarChart3} label="Analytics" onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} />}
 
                                 {hasPermission('crm_view') && <MobileMenuItem icon={KanbanSquare} label="Leads & CRM" onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_users') && <MobileMenuItem icon={Users} label="Equipe" onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('manage_orders') && <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('manage_orders') && <MobileMenuItem icon={Plus} label="Catálogo" onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('orders_view') && <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('catalog_view') && <MobileMenuItem icon={Plus} label="Catálogo" onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('clients_view') && <MobileMenuItem icon={Users} label="Clientes" onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('courses_view') && <MobileMenuItem icon={GraduationCap} label="Cursos" onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('accredited_view') && <MobileMenuItem icon={Wrench} label="Oficinas" onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('financial_view') && <MobileMenuItem icon={DollarSign} label="Financeiro" onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} />}
-                                {(hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />}
-                                <MobileMenuItem icon={CheckCircle} label="Tarefas" onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} />
+                                {hasPermission('landing_pages_view') && <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('tasks_view') && <MobileMenuItem icon={CheckCircle} label="Tarefas" onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('blog_view') && <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('manage_marketing') && <MobileMenuItem icon={Megaphone} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('marketing_view') && <MobileMenuItem icon={Megaphone} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
 
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
@@ -6351,7 +6379,7 @@ const Admin = () => {
                         className="p-4 md:p-6 w-full min-h-full"
                     >
                         {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView />}
-                        {currentView === 'analytics' && hasPermission('dashboard_view') && <AnalyticsView />}
+                        {currentView === 'analytics' && hasPermission('analytics_view') && <AnalyticsView />}
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
                             if (conversionData?.type === 'course') {
                                 setPendingEnrollmentLead(lead);
@@ -6360,20 +6388,20 @@ const Admin = () => {
                             }
                         }} permissions={livePermissions} />}
                         {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} onOpenProfile={() => setIsProfileModalOpen(true)} />}
-                        {currentView === 'orders' && hasPermission('manage_orders') && <SalesManagerView />}
-                        {currentView === 'catalog_manager' && hasPermission('manage_orders') && <CatalogManagerView />}
+                        {currentView === 'orders' && hasPermission('orders_view') && <SalesManagerView />}
+                        {currentView === 'catalog_manager' && hasPermission('catalog_view') && <CatalogManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
                         {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} initialCourseId={pendingCourseId} onConsumeInitialLead={() => { setPendingEnrollmentLead(null); setPendingCourseId(null); }} permissions={livePermissions} />}
-                        {currentView === 'certificates' && hasPermission('courses_view') && <CertificateManagerView />}
-                        {currentView === 'lp_builder' && (hasPermission('courses_edit_lp') || hasPermission('manage_lp')) && <LandingPagesView permissions={livePermissions} />}
+                        {currentView === 'certificates' && hasPermission('certificates_view') && <CertificateManagerView />}
+                        {currentView === 'lp_builder' && hasPermission('landing_pages_view') && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
-                        {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('manage_marketing')) && <MarketingView permissions={livePermissions} />}
+                        {currentView === 'email_marketing' && hasPermission('marketing_view') && <MarketingView permissions={livePermissions} />}
                         {currentView === 'intelligence' && hasPermission('intelligence_view') && <IntelligenceView permissions={livePermissions} />}
-                        {currentView === 'tasks' && <TaskManagerView permissions={livePermissions} />}
+                        {currentView === 'tasks' && hasPermission('tasks_view') && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
-                        {currentView === 'clients' && hasPermission('manage_orders') && <ClientsManagerView permissions={livePermissions} />}
-                        {currentView === 'invoices' && hasPermission('financial_view') && <InvoicesManagerView />}
+                        {currentView === 'clients' && hasPermission('clients_view') && <ClientsManagerView permissions={livePermissions} />}
+                        {currentView === 'invoices' && hasPermission('invoices_view') && <InvoicesManagerView />}
                     </motion.div>
                 </AnimatePresence>
             </div>

@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ArrowRight, Check, ShieldCheck, Thermometer } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
-import { distributeLead } from '../lib/leadDistribution';
+import { distributeLead, handleLeadUpsert } from '../lib/leadDistribution';
 
 interface QuizProps {
     lp: any;
     onComplete: (data: any) => void;
+    whatsappGlobalNumber?: string;
 }
 
 const QUESTIONS = [
@@ -62,7 +63,7 @@ const QUESTIONS = [
     }
 ];
 
-export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete }) => {
+export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsappGlobalNumber }) => {
     const [step, setStep] = useState<'lead_capture' | 'quiz' | 'result'>('lead_capture');
     const [quizIndex, setQuizIndex] = useState(0);
     const [score, setScore] = useState(0);
@@ -76,9 +77,6 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            // const assignedTo = await distributeLead(); 
-            const assignedTo = null; // Temporarily force null to prevent FK error
-            
             const initialPayload = {
                 name: formData.name,
                 email: formData.email,
@@ -88,16 +86,13 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete }) => {
                 context_id: `Quiz Started: ${lp.title}`,
                 tags: ['quiz_started', lp.slug],
                 origin: window.location.href,
-                assigned_to: assignedTo
+                assigned_to: null // handleLeadUpsert handles logic
             };
 
-            const { data, error } = await supabase.from('SITE_Leads').insert([initialPayload]).select().single();
+            const result = await handleLeadUpsert(initialPayload);
             
-            if (error) throw error;
-            if (data) setLeadId(data.id);
+            if (result && result.id) setLeadId(result.id);
             
-            await triggerWebhook('webhook_lead_started', initialPayload);
-
             setStep('quiz');
         } catch (err: any) {
             console.error(err);
@@ -148,24 +143,21 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete }) => {
             if (leadId) {
                 // UPDATE existing lead
                 // Note: RLS must allow UPDATE for anon or we need a secure RPC.
-                // Trying direct update first.
+                // Using update logic from upsert is tricky here because we have ID.
+                // Simple update is fine if we have ID.
                 await supabase.from('SITE_Leads').update(resultPayload).eq('id', leadId);
                 await triggerWebhook('webhook_lead_completed', { ...resultPayload, id: leadId });
             } else {
                  // FALLBACK INSERT
-                 // const assignedTo = await distributeLead();
-                 const assignedTo = null; // FORCE NULL
                  const fallbackPayload = {
                     name: formData.name,
                     email: formData.email,
                     phone: formData.phone,
                     status: 'New',
                     origin: window.location.href,
-                    assigned_to: assignedTo,
                     ...resultPayload
                  };
-                 await supabase.from('SITE_Leads').insert([fallbackPayload]);
-                 await triggerWebhook('webhook_lead', fallbackPayload); 
+                 await handleLeadUpsert(fallbackPayload);
             }
             
             setStep('result');
@@ -212,6 +204,11 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete }) => {
     };
 
     const result = getResultContent();
+    
+    // Choose which phone to use: global prop > lp override > fallback
+    // If whatsappGlobalNumber is present (passed from viewer), prefer it if that matches user intent.
+    // User said: "use o numero ue esta em configuracoes whatsapp button".
+    const targetPhone = whatsappGlobalNumber || lp.whatsapp_number || '5511999999999';
 
     // --- VIEW: LEAD CAPTURE ---
     if (step === 'lead_capture') {
@@ -283,7 +280,7 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete }) => {
                 </div>
 
                 <a 
-                    href={`https://wa.me/${lp.whatsapp_number}?text=Olá, fiz o quiz W-Tech e meu resultado foi ${result.temp} (${score} pts). Gostaria de saber mais sobre: ${result.button}`}
+                    href={`https://wa.me/${targetPhone}?text=Olá, fiz o quiz W-Tech e meu resultado foi ${result.temp} (${score} pts). Gostaria de saber mais sobre: ${result.button}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full block bg-green-600 text-white font-black text-xl py-5 rounded-xl hover:bg-green-500 transition-all uppercase shadow-lg shadow-green-900/20"

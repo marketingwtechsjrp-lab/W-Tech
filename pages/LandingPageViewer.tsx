@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { LandingPage, Course } from '../types';
 import { CheckCircle, ShieldCheck, ArrowRight, Star, Play, MapPin, Calendar, Clock, Check, User, Users, AlertTriangle, Navigation } from 'lucide-react';
 import { triggerWebhook } from '../lib/webhooks';
-import { distributeLead } from '../lib/leadDistribution';
+import { distributeLead, handleLeadUpsert } from '../lib/leadDistribution';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
@@ -15,6 +15,7 @@ const LandingPageViewer: React.FC = () => {
     const { get } = useSettings();
     const systemLogo = get('logo_url');
     const siteTitle = get('site_title', 'W-TECH');
+    const whatsappGlobal = get('whatsapp_phone');
   
     interface LandingPageWithCourse extends LandingPage {
         course: Course;
@@ -136,8 +137,6 @@ const LandingPageViewer: React.FC = () => {
     if (!lp) return;
 
     try {
-        const assignedTo = await distributeLead(); // Get distributed user
-        
         const payload = {
             name: form.name,
             email: form.email,
@@ -147,17 +146,17 @@ const LandingPageViewer: React.FC = () => {
             context_id: `LP: ${lp.title} (${lp.slug})`,
             tags: ['landing_page', lp.slug ? String(lp.slug) : 'virtual_lp'],
             origin: window.location.href,
-            assigned_to: assignedTo // Add assignment
+            assigned_to: null // handleLeadUpsert will handle distribution if needed
         };
 
-        const { error } = await supabase.from('SITE_Leads').insert([payload]);
+        await handleLeadUpsert(payload);
         
-        if (error) {
-            console.error("Erro ao salvar lead:", error);
-            throw error;
-        }
-
-        await triggerWebhook('webhook_lead', payload);
+        // await triggerWebhook('webhook_lead', payload); // handleLeadUpsert already triggers specific webhook if new or updated? 
+        // Logic check: handleLeadUpsert triggers 'webhook_lead'. 
+        // Duplicate trigger? No, handleLeadUpsert triggers it. So we can remove duplicate call or keep if event type differs.
+        // The previous code had: await triggerWebhook('webhook_lead', payload);
+        // handleLeadUpsert also does that. So I will REMOVE this explicit call to avoid double webhook.
+        
         setSubmitted(true);
     } catch (err: any) {
         console.error(err);
@@ -167,6 +166,22 @@ const LandingPageViewer: React.FC = () => {
 
   const scrollToForm = () => {
       document.getElementById('enroll-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleScrollToModules = (e: React.MouseEvent) => {
+      e.preventDefault();
+      const element = document.getElementById('modules');
+      if (element) {
+          // Offset for fixed header approx 100px
+          const headerOffset = 100;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+          window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth"
+          });
+      }
   };
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-black text-white"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-wtech-gold"></div></div>;
@@ -249,7 +264,7 @@ const LandingPageViewer: React.FC = () => {
                         <button onClick={scrollToForm} className="bg-red-600 text-white px-10 py-5 rounded-lg font-black text-lg uppercase tracking-wider hover:bg-red-700 hover:scale-105 transition-all shadow-[0_10px_40px_-10px_rgba(220,38,38,0.5)] flex items-center justify-center gap-3 group">
                             Quero me Inscrever <ArrowRight className="group-hover:translate-x-1 transition-transform" strokeWidth={3} />
                         </button>
-                        <a href="#modules" className="px-8 py-5 border border-white/20 rounded-lg font-bold text-gray-300 uppercase tracking-widest hover:bg-white/5 transition-all text-center">
+                        <a href="#modules" onClick={handleScrollToModules} className="px-8 py-5 border border-white/20 rounded-lg font-bold text-gray-300 uppercase tracking-widest hover:bg-white/5 transition-all text-center">
                             Ver Programação
                         </a>
                      </div>
@@ -506,7 +521,7 @@ const LandingPageViewer: React.FC = () => {
                      <div className="absolute -inset-1 bg-gradient-to-r from-wtech-gold to-transparent opacity-20 rounded-3xl blur group-hover:opacity-40 transition-opacity duration-1000"></div>
                      <div className="relative">
                         {lp.quizEnabled ? (
-                            <QualificationQuiz lp={lp} onComplete={() => setSubmitted(true)} />
+                            <QualificationQuiz lp={lp} onComplete={() => setSubmitted(true)} whatsappGlobalNumber={whatsappGlobal} />
                         ) : (
                             submitted ? (
                                     <div className="text-center py-12 animate-fade-in bg-green-500/10 rounded-xl border border-green-500/20">
