@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.6.0",
+    "date": "2026-01-26",
+    "title": "Módulo Financeiro & Gestão Avançada de Vendas",
+    "changes": [
+      "FEAT: Refatoração completa do Módulo Financeiro com interface em abas (Fluxo vs Vendas)",
+      "FEAT: Controle de Privacidade Financeira (usuários veem apenas seus lançamentos por padrão)",
+      "FEAT: Filtro Multi-Equipe para gestores no Financeiro e Pedidos",
+      "FEAT: Módulo de Pedidos com Edição Completa (itens, valores, status e notas)",
+      "FEAT: Sistema de Exclusão de Pedidos com limpeza de estoque e dependências",
+      "FEAT: Novas permissões granulares: financial_view_all, orders_edit, orders_delete",
+      "FIX: Sincronização automática de reserva de estoque ao editar pedidos"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.5.0",
     "date": "2026-01-26",
     "title": "Analytics 2.0 & Controle de Permissões",

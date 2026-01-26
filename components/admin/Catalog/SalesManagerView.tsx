@@ -11,11 +11,16 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Product, StockMovement, ProductBOM, Sale, SaleItem, Shipment } from '../../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SalesManagerView: React.FC = () => {
+import { useAuth } from '../../../context/AuthContext';
+
+const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
+    const { user } = useAuth();
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [attendantFilter, setAttendantFilter] = useState<string>('all');
+    const [usersList, setUsersList] = useState<{id: string, name: string}[]>([]);
     
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Partial<Sale> | null>(null);
@@ -56,7 +61,13 @@ const SalesManagerView: React.FC = () => {
         fetchSales();
         fetchProducts();
         fetchClients();
-    }, []);
+        fetchUsers();
+    }, [attendantFilter]);
+
+    const fetchUsers = async () => {
+        const { data } = await supabase.from('SITE_Users').select('id, name');
+        if (data) setUsersList(data);
+    };
 
     const fetchClients = async () => {
         const { data: leads } = await supabase.from('SITE_Leads').select('id, name, phone, email').limit(100);
@@ -71,10 +82,16 @@ const SalesManagerView: React.FC = () => {
 
     const fetchSales = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('SITE_Sales')
-            .select('*')
-            .order('created_at', { ascending: false });
+        let query = supabase.from('SITE_Sales').select('*');
+
+        // Access Control: If not view_all, only show user's own sales
+        if (permissions && !permissions.orders_view_all && user) {
+            query = query.eq('seller_id', user.id);
+        } else if (attendantFilter !== 'all') {
+            query = query.eq('seller_id', attendantFilter);
+        }
+
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching sales:', error);
@@ -123,10 +140,99 @@ const SalesManagerView: React.FC = () => {
         setEditingSale({
             channel: 'Admin',
             status: 'pending',
-            totalValue: 0
+            totalValue: 0,
+            clientName: '',
+            clientPhone: '',
+            clientEmail: '',
+            notes: ''
         });
         setSaleItems([]);
         setIsSaleModalOpen(true);
+    };
+
+    const handleDeleteSale = async (saleId: string) => {
+        if (!confirm('Tem certeza que deseja excluir este pedido permanentemente? Esta ação não pode ser desfeita.')) return;
+        
+        setLoading(true);
+        try {
+            // First delete sale items
+            const { error: itemsError } = await supabase
+                .from('SITE_SaleItems')
+                .delete()
+                .eq('sale_id', saleId);
+
+            if (itemsError) throw itemsError;
+
+            // Delete stock movements related to this sale
+            const { error: movementsError } = await supabase
+                .from('SITE_StockMovements')
+                .delete()
+                .eq('reference_id', saleId);
+
+            if (movementsError) throw movementsError;
+
+            // Finally delete the sale
+            const { error: saleError } = await supabase
+                .from('SITE_Sales')
+                .delete()
+                .eq('id', saleId);
+
+            if (saleError) throw saleError;
+
+            alert('Pedido excluído com sucesso.');
+            fetchSales();
+        } catch (error: any) {
+            alert('Erro ao excluir pedido: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEditSale = async (saleId: string) => {
+        setLoading(true);
+        try {
+            const { data: saleData } = await supabase.from('SITE_Sales').select('*').eq('id', saleId).single();
+            const { data: itemsData } = await supabase.from('SITE_SaleItems').select('*, product:SITE_Products(*)').eq('sale_id', saleId);
+
+            if (saleData) {
+                setEditingSale({
+                    id: saleData.id,
+                    clientId: saleData.client_id,
+                    clientName: saleData.client_name,
+                    clientEmail: saleData.client_email,
+                    clientPhone: saleData.client_phone,
+                    channel: saleData.channel,
+                    status: saleData.status,
+                    totalValue: saleData.total_value,
+                    notes: saleData.notes
+                });
+
+                if (itemsData) {
+                    const mappedItems = itemsData.map((item: any) => ({
+                        id: item.id,
+                        saleId: item.sale_id,
+                        productId: item.product_id,
+                        quantity: item.quantity,
+                        unitPrice: item.unit_price,
+                        product: item.product ? {
+                            id: item.product.id,
+                            sku: item.product.sku,
+                            name: item.product.name,
+                            salePrice: item.product.sale_price,
+                            unit: item.product.unit,
+                            currentStock: item.product.current_stock
+                        } : undefined
+                    }));
+                    setSaleItems(mappedItems);
+                }
+
+                setIsSaleModalOpen(true);
+            }
+        } catch (error: any) {
+            alert('Erro ao carregar pedido para edição: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleUpdateStatus = async (saleId: string, newStatus: Sale['status']) => {
@@ -194,23 +300,54 @@ const SalesManagerView: React.FC = () => {
         setLoading(true);
         try {
             const totalValue = saleItems.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0);
-            const { data: saleData, error: saleError } = await supabase
-                .from('SITE_Sales')
-                .insert([{
-                    client_name: editingSale?.clientName || 'Cliente Balcão',
-                    client_phone: editingSale?.clientPhone,
-                    channel: editingSale?.channel || 'Admin',
-                    status: editingSale?.status || 'pending',
-                    total_value: totalValue,
-                    created_at: new Date().toISOString()
-                }])
-                .select()
-                .single();
+            const isEditing = !!editingSale?.id;
+            
+            let saleId = editingSale?.id;
 
-            if (saleError) throw saleError;
+            if (isEditing) {
+                // Update existing sale
+                const { error: saleError } = await supabase
+                    .from('SITE_Sales')
+                    .update({
+                        client_name: editingSale?.clientName || 'Cliente Balcão',
+                        client_phone: editingSale?.clientPhone,
+                        client_id: editingSale?.clientId,
+                        channel: editingSale?.channel || 'Admin',
+                        status: editingSale?.status || 'pending',
+                        total_value: totalValue,
+                        notes: editingSale?.notes
+                    })
+                    .eq('id', saleId);
+
+                if (saleError) throw saleError;
+
+                // Delete old items and movements to recreate
+                await supabase.from('SITE_SaleItems').delete().eq('sale_id', saleId);
+                await supabase.from('SITE_StockMovements').delete().eq('reference_id', saleId);
+            } else {
+                // Insert new sale
+                const { data: saleData, error: saleError } = await supabase
+                    .from('SITE_Sales')
+                    .insert([{
+                        client_name: editingSale?.clientName || 'Cliente Balcão',
+                        client_phone: editingSale?.clientPhone,
+                        client_id: editingSale?.clientId,
+                        channel: editingSale?.channel || 'Admin',
+                        status: editingSale?.status || 'pending',
+                        total_value: totalValue,
+                        seller_id: user?.id,
+                        created_at: new Date().toISOString(),
+                        notes: editingSale?.notes
+                    }])
+                    .select()
+                    .single();
+
+                if (saleError) throw saleError;
+                saleId = saleData.id;
+            }
 
             const itemsToInsert = saleItems.map(item => ({
-                sale_id: saleData.id,
+                sale_id: saleId,
                 product_id: item.productId,
                 quantity: item.quantity,
                 unit_price: item.unitPrice
@@ -222,6 +359,7 @@ const SalesManagerView: React.FC = () => {
 
             if (itemsError) throw itemsError;
 
+            // Handle stock movements
             for (const item of saleItems) {
                 const { data: bomData } = await supabase
                     .from('SITE_ProductBOM')
@@ -235,8 +373,8 @@ const SalesManagerView: React.FC = () => {
                             type: 'RESERVED',
                             quantity: component.quantity * item.quantity,
                             origin: 'Venda',
-                            reference_id: saleData.id,
-                            notes: `Reserva p/ Pedido #${saleData.id.slice(0,8)} (Comp. de ${item.product?.name})`
+                            reference_id: saleId,
+                            notes: `Reserva p/ Pedido #${saleId?.slice(0,8)} (Comp. de ${item.product?.name})`
                         }]);
                     }
                 } else {
@@ -245,15 +383,15 @@ const SalesManagerView: React.FC = () => {
                         type: 'RESERVED',
                         quantity: item.quantity,
                         origin: 'Venda',
-                        reference_id: saleData.id,
-                        notes: `Reserva p/ Pedido #${saleData.id.slice(0,8)}`
+                        reference_id: saleId,
+                        notes: `Reserva p/ Pedido #${saleId?.slice(0,8)}`
                     }]);
                 }
             }
 
             setIsSaleModalOpen(false);
             fetchSales();
-            alert('Pedido realizado com sucesso! Estoque reservado.');
+            alert(isEditing ? 'Pedido atualizado com sucesso!' : 'Pedido realizado com sucesso! Estoque reservado.');
         } catch (error: any) {
             alert('Erro ao salvar pedido: ' + error.message);
         } finally {
@@ -359,6 +497,18 @@ const SalesManagerView: React.FC = () => {
                         />
                     </div>
                     <div className="flex items-center gap-2">
+                        {permissions?.orders_view_all && (
+                            <select 
+                                value={attendantFilter}
+                                onChange={(e) => setAttendantFilter(e.target.value)}
+                                className="bg-gray-50 border-none rounded-2xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all"
+                            >
+                                <option value="all">Todos os Atendentes</option>
+                                {usersList.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        )}
                         <select 
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
@@ -688,6 +838,50 @@ const SalesManagerView: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
+                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ajustes do Pedido</h4>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Status</label>
+                                                <select 
+                                                    className="w-full bg-white border border-gray-200 rounded-xl p-2 text-xs font-bold outline-none focus:border-wtech-gold"
+                                                    value={editingSale?.status || 'pending'}
+                                                    onChange={e => setEditingSale({...editingSale, status: e.target.value as any})}
+                                                >
+                                                    <option value="pending">Pendente</option>
+                                                    <option value="paid">Pago</option>
+                                                    <option value="producing">Em Produção</option>
+                                                    <option value="shipped">Enviado</option>
+                                                    <option value="delivered">Entregue</option>
+                                                    <option value="cancelled">Cancelado</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Canal</label>
+                                                <select 
+                                                    className="w-full bg-white border border-gray-200 rounded-xl p-2 text-xs font-bold outline-none focus:border-wtech-gold"
+                                                    value={editingSale?.channel || 'Admin'}
+                                                    onChange={e => setEditingSale({...editingSale, channel: e.target.value as any})}
+                                                >
+                                                    <option value="Admin">Admin</option>
+                                                    <option value="Store">Loja</option>
+                                                    <option value="Course">Curso</option>
+                                                    <option value="Workshop">Oficina</option>
+                                                    <option value="CRM">CRM</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Observações Internas</label>
+                                            <textarea 
+                                                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-wtech-gold min-h-[80px]"
+                                                value={editingSale?.notes || ''}
+                                                onChange={e => setEditingSale({...editingSale, notes: e.target.value})}
+                                                placeholder="Notas internas sobre o pedido..."
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="bg-wtech-black p-6 rounded-3xl shadow-xl space-y-4 text-white">
                                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resumo Financeiro</h4>
                                         <div className="space-y-2">
@@ -736,10 +930,23 @@ const SalesManagerView: React.FC = () => {
                         <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'delivered'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-emerald-600 flex items-center gap-2 transition-colors">
                             <CheckCircle2 size={14}/> Entregue
                         </button>
+                        
+                        {(permissions?.orders_edit || permissions?.admin_access) && (
+                            <button onClick={() => { handleEditSale(activeMenu.saleId); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-gray-700 flex items-center gap-2 transition-colors">
+                                <Edit size={14}/> Editar Detalhes
+                            </button>
+                        )}
+
                         <div className="h-px bg-gray-100 my-1"></div>
-                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'cancelled'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-red-600 flex items-center gap-2 transition-colors">
+                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'cancelled'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-orange-600 flex items-center gap-2 transition-colors">
                             <Ban size={14}/> Cancelar
                         </button>
+
+                        {(permissions?.orders_delete || permissions?.admin_access) && (
+                            <button onClick={() => { handleDeleteSale(activeMenu.saleId); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-red-600 flex items-center gap-2 transition-colors">
+                                <Trash2 size={14}/> Excluir Registro
+                            </button>
+                        )}
                     </div>
                 </div>,
                 document.body

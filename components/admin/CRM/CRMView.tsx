@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -183,7 +183,7 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
             {/* Cards Container */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
                 {leads.map((lead: any) => (
-                    <LeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} usersMap={usersMap} />
+                    <LeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} onMove={onDropLead} usersMap={usersMap} />
                 ))}
                 {leads.length === 0 && (
                     <div className="text-center py-8 text-gray-400 dark:text-gray-600 text-xs italic">
@@ -228,7 +228,7 @@ const useTimeInStatus = (dateString: string) => {
 import { Badge } from '@/components/ui/badge';
 import { Edit } from 'lucide-react';
 
-const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<string, string> }> = ({ lead, onClick, usersMap }) => {
+const LeadCard: React.FC<{ lead: any, onClick: () => void, onMove?: any, usersMap: Record<string, string> }> = ({ lead, onClick, onMove, usersMap }) => {
     const { setDraggedId } = React.useContext(DragContext);
     const [isDragging, setIsDragging] = React.useState(false);
 
@@ -248,48 +248,73 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, usersMap: Record<stri
     };
 
     const accentColor = getAccentColor();
+
+    // Quick Move Logic
+    const nextStatusMap: Record<string, string> = {
+        'New': 'Contacted',
+        'Contacted': 'Qualified',
+        'Qualified': 'Converted', 
+        'Negotiating': 'Converted',
+        'Cold': 'New'
+    };
+
+    const handleNext = (e: any) => {
+        e.stopPropagation();
+        const next = nextStatusMap[lead.status];
+        if (next && onMove) {
+            onMove(lead.id, next, lead);
+        }
+    };
+
     const attendantName = lead.assignedTo && usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'S/ Atendente';
 
     return (
         <div
+            onClick={onClick}
             draggable
             onDragStart={() => { setDraggedId(lead.id); setIsDragging(true); }}
             onDragEnd={() => { setDraggedId(null); setIsDragging(false); }}
-            className={`transition-all bg-white dark:bg-[#1f1f1f] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg p-4 relative group active:scale-[0.98] cursor-grab ${isDragging ? 'opacity-50 scale-95' : ''}`}
-            style={{ borderLeft: `3px solid ${accentColor}` }}
-            onClick={onClick}
+            className={`
+                relative bg-white dark:bg-[#222]/80 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50 
+                hover:shadow-lg transition-all cursor-move group overflow-hidden
+                ${isLongWait ? 'ring-1 ring-red-500/20' : ''}
+                hover:border-wtech-gold/30
+            `}
         >
-            {/* Header: Attendant & Actions */}
-            <div className="flex justify-between items-center mb-1">
-                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">
-                    {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
-                </span>
+            {/* Left Accent Border */}
+            <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: accentColor }}></div>
 
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onClick(); }}
-                        className="p-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400 transition-colors"
-                        title="Histórico & Tarefas"
+            {/* Header / Name */}
+            <div className="flex justify-between items-start pl-3 mb-2">
+                <div>
+                     <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm line-clamp-1 pr-2">{lead.name}</h4>
+                     {/* Tags/badges if any */}
+                </div>
+                 {/* Quick Move Arrow */}
+                 {nextStatusMap[lead.status] && (
+                    <button 
+                        onClick={handleNext}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-green-500 transition-all transform hover:scale-110 active:scale-95 z-20"
+                        title={`Mover para ${nextStatusMap[lead.status]}`}
                     >
-                        <Clock size={14} />
+                        <ArrowRight size={16} />
                     </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onClick(); }}
-                        className="p-1.5 bg-wtech-gold/10 hover:bg-wtech-gold/20 rounded-lg text-wtech-gold transition-colors"
-                        title="Editar Detalhes"
-                    >
-                        <Edit size={14} />
-                    </button>
+                )}
+            </div>
+
+            {/* Contact Info */}
+            <div className="mb-2 pl-3">
+                <div className="flex flex-col gap-0.5">
+                    {lead.email && <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-1"><MessageCircle size={9} /> {lead.email}</span>}
+                    {lead.phone && <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono tracking-tight"><Phone size={9} /> {lead.phone}</span>}
                 </div>
             </div>
 
-            {/* Main Info */}
-            <div className="mb-2">
-                <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-tight truncate">{lead.name}</h4>
-                <div className="flex flex-col gap-0.5 mt-0.5">
-                    {lead.email && <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{lead.email}</span>}
-                    {lead.phone && <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono tracking-tight"><Phone size={9} /> {lead.phone}</span>}
-                </div>
+            {/* Attendant Info */}
+            <div className="mb-2 pl-3">
+                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">
+                    {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
+                </span>
             </div>
 
             {/* Tags */}
@@ -366,14 +391,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [editForm, setEditForm] = useState({ assignedTo: '', internalNotes: '', tags: [] as string[] });
     const [tagInput, setTagInput] = useState('');
 
-    const handleCreateLead = async () => {
-        if (!newLeadForm.name || !newLeadForm.phone) return alert("Nome e Telefone são obrigatórios.");
+    const handleCreateLead = async (formData?: any) => {
+        // Support both state-based (legacy) and argument-based (modal) calls
+        const dataToSave = formData || newLeadForm;
+        
+        if (!dataToSave.name || !dataToSave.phone) return alert("Nome e Telefone são obrigatórios.");
 
         // 1. Check for duplicate phone
         const { data: existingLead } = await supabase
             .from('SITE_Leads')
             .select('*')
-            .eq('phone', newLeadForm.phone)
+            .eq('phone', dataToSave.phone)
             .maybeSingle();
 
         if (existingLead) {
@@ -388,9 +416,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         }
 
         const payload = {
-            name: newLeadForm.name,
-            email: newLeadForm.email,
-            phone: newLeadForm.phone,
+            name: dataToSave.name,
+            email: dataToSave.email,
+            phone: dataToSave.phone,
+            value: Number(dataToSave.value) || 0, // ADDED: Value support
             status: 'New',
             context_id: 'Manual',
             assigned_to: user?.id, // Auto-assign to creator
@@ -652,21 +681,37 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [createdPaymentLink, setCreatedPaymentLink] = useState('');
     const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
+    // Catalog Products State
+    const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
+    const [selectedProductId, setSelectedProductId] = useState('');
+    const [orderQuantity, setOrderQuantity] = useState(1);
+
     // Lost Reason State
     const [lostReasonModal, setLostReasonModal] = useState<{ isOpen: boolean, lead: Lead | null, targetStatus: string }>({ isOpen: false, lead: null, targetStatus: '' });
     const [lostReason, setLostReason] = useState('');
 
     useEffect(() => {
-        if (conversionModal.isOpen && conversionType === 'Course') {
-            const fetchActiveCourses = async () => {
-                const { data } = await supabase.from('SITE_Courses')
-                    .select('id, title, date')
-                    .eq('status', 'Published')
-                    .gte('date', new Date().toISOString()) // Only future courses
-                    .order('date', { ascending: true });
-                if (data) setActiveCourses(data);
-            };
-            fetchActiveCourses();
+        if (conversionModal.isOpen) {
+            if (conversionType === 'Course') {
+                const fetchActiveCourses = async () => {
+                    const { data } = await supabase.from('SITE_Courses')
+                        .select('id, title, date')
+                        .eq('status', 'Published')
+                        .gte('date', new Date().toISOString()) // Only future courses
+                        .order('date', { ascending: true });
+                    if (data) setActiveCourses(data);
+                };
+                fetchActiveCourses();
+            } else if (conversionType === 'Product') {
+                const fetchProducts = async () => {
+                    const { data } = await supabase.from('SITE_Products')
+                        .select('id, title, price, status')
+                        .eq('status', 'Unrestricted') // Assuming this means active
+                        .order('title', { ascending: true });
+                    if (data) setCatalogProducts(data);
+                };
+                fetchProducts();
+            }
         }
     }, [conversionModal.isOpen, conversionType]);
 
@@ -703,9 +748,11 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             return;
         }
 
-        // Standard Move
+    // Standard Move
         await executeMove(leadId, newStatus, currentLead);
     };
+
+    const handleMoveLead = onDropLead;
 
     const executeMove = async (leadId: string, newStatus: string, currentLead: Lead) => {
         const now = new Date().toISOString();
@@ -740,30 +787,92 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 (onConvertLead as any)(lead, { type: 'course', courseId: selectedCourseId });
             }
         } else {
-            // Product Sale
+            // Product Sale (Refactored to Orders)
             const value = parseFloat(saleValue.replace('R$', '').replace('.', '').replace(',', '.').trim()) || 0;
+            const selectedProduct = catalogProducts.find(p => p.id === selectedProductId);
 
-            // Update Lead with conversion metadata - assuming columns exist or will be added
-            // Using a safe raw SQL query or check if columns exist? 
-            // We'll assume typical Supabase flexibility or that I will add columns.
-            // I'll add columns `conversion_value`, `conversion_summary`, `conversion_type` to Leads table later if errors arise.
-            // For now, I'll try to update.
-            const { error } = await supabase.from('SITE_Leads').update({
-                internal_notes: `${lead.internalNotes || ''}\n[CONVERSÃO PRODUTO]: R$${value} - ${productSummary}`,
+            // 1. Update Lead with conversion metadata
+            const { error: leadError } = await supabase.from('SITE_Leads').update({
+                internal_notes: `${lead.internalNotes || ''}\n[PEDIDO CRM]: R$${value} - ${productSummary || selectedProduct?.title || 'Venda de Produto'}`,
                 conversion_value: value,
-                conversion_summary: productSummary,
+                conversion_summary: productSummary || selectedProduct?.title || 'Venda de Produto',
                 conversion_type: 'Product'
             }).eq('id', lead.id);
 
-            if (error) console.error("Error saving conversion details:", error);
+            if (leadError) console.error("Error saving conversion details:", leadError);
 
-            notificationRef.current?.createNotification('success', 'Venda Registrada!', `Venda de R$ ${value.toLocaleString('pt-BR')} registrada.`);
+            // --- Create Sale in SITE_Sales ---
+            try {
+                // Correct payload matching SITE_Sales schema from create_stock_logistics_tables.sql
+                const saleData: any = {
+                    client_id: lead.id,
+                    client_name: lead.name,
+                    client_email: lead.email,
+                    client_phone: lead.phone,
+                    total_value: value,
+                    payment_method: paymentMethod === 'Manual' ? manualDetails : paymentMethod,
+                    status: 'paid',
+                    channel: 'CRM',
+                    notes: `Venda via CRM: ${selectedProduct?.title || productSummary || 'Item CRM'}`,
+                    seller_id: lead.assignedTo || user?.id,
+                    seller_name: usersMap[lead.assignedTo || user?.id || ''] || 'Vendedor',
+                    created_at: new Date().toISOString()
+                };
 
-            if (onConvertLead) {
-                (onConvertLead as any)(lead, { type: 'product', summary: productSummary, value });
+                const { data: saleResponse, error: saleError } = await supabase
+                    .from('SITE_Sales')
+                    .insert(saleData)
+                    .select()
+                    .single();
+
+                if (saleError) {
+                    console.error("Error creating sale:", saleError);
+                    notificationRef.current?.createNotification('error', 'Erro no Banco', `Não foi possível registrar a venda: ${saleError.message}`);
+                } else {
+                    console.log("✅ Sale created successfully:", saleResponse);
+
+                    // --- Create Sale Item in SITE_SaleItems ---
+                    if (selectedProductId || productSummary) {
+                        const { error: itemError } = await supabase.from('SITE_SaleItems').insert({
+                            sale_id: saleResponse.id,
+                            product_id: selectedProductId || null,
+                            quantity: orderQuantity || 1,
+                            unit_price: value / (orderQuantity || 1)
+                        });
+                        if (itemError) {
+                            console.error("Error creating sale item:", itemError);
+                            alert(`Erro CRM (SITE_SaleItems): ${itemError.message}`);
+                        }
+                    }
+                    
+                    // --- Create Transaction in SITE_Transactions for Cash Flow ---
+                    const { error: transError } = await supabase.from('SITE_Transactions').insert({
+                        description: `Venda CRM #${saleResponse?.id?.slice(0, 5) || ''}: ${lead.name} - ${selectedProduct?.title || productSummary || 'Produto/Serviço'}`,
+                        category: 'SALES',
+                        type: 'Income', // Capitalized to match check constraint
+                        amount: value,
+                        payment_method: saleData.payment_method,
+                        attendant_id: lead.assignedTo || user?.id,
+                        attendant_name: usersMap[lead.assignedTo || user?.id || ''] || 'Vendedor',
+                        created_at: new Date().toISOString()
+                    });
+
+                    if (transError) {
+                        console.error("Error creating transaction record:", transError);
+                        notificationRef.current?.createNotification('error', 'Erro Financeiro', `Venda registrada, mas falha no fluxo de caixa: ${transError.message}`);
+                    }
+                }
+            } catch (e: any) {
+                console.error("Failed to create sale record:", e);
+                alert(`Exceção CRM: ${e.message}`);
             }
 
-            // --- Asaas Integration ---
+            notificationRef.current?.createNotification('success', 'Pedido Gerado!', `Venda de R$ ${value.toLocaleString('pt-BR')} registrada com sucesso.`);
+
+            if (onConvertLead) {
+                (onConvertLead as any)(lead, { type: 'product', summary: productSummary || selectedProduct?.title, value });
+            }
+
             if (generatePaymentLink) {
                 setIsGeneratingLink(true);
                 try {
@@ -787,7 +896,6 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 setIsGeneratingLink(false);
             }
         }
-
         if (!generatePaymentLink) {
             setConversionModal({ isOpen: false, lead: null, targetStatus: '' });
             setProductSummary('');
@@ -835,22 +943,109 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         setLostReason('');
     };
 
-    const saveLeadUpdates = async () => {
+    const saveLeadUpdates = async (updatedForm?: any) => {
         if (!editingLead) return;
 
-        const { error } = await supabase.from('SITE_Leads').update({
-            assigned_to: editForm.assignedTo,
-            internal_notes: editForm.internalNotes,
-            tags: editForm.tags
-        }).eq('id', editingLead.id);
+        // Use the data passed from the modal, or fallback to state
+        const dataToSave = updatedForm || {
+            name: editingLead.name,
+            phone: editingLead.phone,
+            email: editingLead.email,
+            status: editingLead.status,
+            assigned_to: editingLead.assignedTo,
+            internal_notes: editingLead.internalNotes,
+            tags: editingLead.tags,
+            value: editingLead.value || 0
+        };
 
-        if (!error) {
-            setLeads(prev => prev.map(l => l.id === editingLead.id ? { ...l, assignedTo: editForm.assignedTo, internalNotes: editForm.internalNotes, tags: editForm.tags } : l));
-            setEditingLead(null);
-            setTagInput('');
-        } else {
-            alert('Erro ao salvar alterações.');
+        // Note: Field mapping for DB (assigned_to, internal_notes, etc)
+        const dbPayload = {
+            name: dataToSave.name,
+            phone: dataToSave.phone,
+            email: dataToSave.email,
+            status: dataToSave.status,
+            assigned_to: dataToSave.assigned_to || dataToSave.assignedTo,
+            internal_notes: dataToSave.internal_notes || dataToSave.internalNotes,
+            tags: dataToSave.tags,
+            value: dataToSave.value || 0
+        };
+
+        const { error } = await supabase.from('SITE_Leads').update(dbPayload).eq('id', editingLead.id);
+
+        if (error) {
+            console.error("Error updating lead:", error);
+            alert('Erro ao salvar alterações: ' + error.message);
+            return;
         }
+
+        // --- Create Sales Record if status is Converted/Won and has value ---
+        const isConvertedStatus = ['Converted', 'Matriculated', 'CheckedIn', 'Won'].includes(dbPayload.status);
+        const hasValue = dbPayload.value && dbPayload.value > 0;
+
+        if (isConvertedStatus && hasValue) {
+            try {
+                // Check if sale already exists for this lead
+                const { data: existingSale } = await supabase
+                    .from('SITE_Sales')
+                    .select('id')
+                    .eq('client_id', editingLead.id)
+                    .maybeSingle();
+
+                if (!existingSale) {
+                    // Create new sale record
+                    const saleData = {
+                        client_id: editingLead.id,
+                        client_name: dbPayload.name,
+                        client_email: dbPayload.email,
+                        client_phone: dbPayload.phone,
+                        total_value: dbPayload.value,
+                        payment_method: 'Manual (Edit)',
+                        status: 'paid',
+                        channel: 'CRM',
+                        notes: dbPayload.internal_notes?.match(/\[CONVERSÃO PRODUTO\]: R\$[\d,.]+ - (.+)/)?.[1] || 'Venda via CRM',
+                        seller_id: dbPayload.assigned_to || user?.id,
+                        seller_name: usersMap[dbPayload.assigned_to || user?.id || ''] || 'Vendedor',
+                        created_at: new Date().toISOString()
+                    };
+
+                    const { data: saleResponse, error: saleError } = await supabase
+                        .from('SITE_Sales')
+                        .insert(saleData)
+                        .select()
+                        .single();
+
+                    if (saleError) {
+                        console.error("Error creating sale from edit modal:", saleError);
+                        notificationRef.current?.createNotification('error', 'Erro na Venda', saleError.message);
+                    } else {
+                        console.log("✅ Sale created successfully from EditLeadModal");
+
+                        // --- ALSO Create Transaction in SITE_Transactions for Cash Flow ---
+                        const { error: transError } = await supabase.from('SITE_Transactions').insert({
+                            description: `Venda CRM (Manual): ${dbPayload.name} - ${saleData.notes}`,
+                            category: 'SALES',
+                            type: 'Income',
+                            amount: dbPayload.value,
+                            payment_method: 'Manual',
+                            attendant_id: dbPayload.assigned_to || user?.id,
+                            attendant_name: usersMap[dbPayload.assigned_to || user?.id || ''] || 'Vendedor',
+                            created_at: new Date().toISOString()
+                        });
+
+                        if (transError) console.error("Error creating transaction record:", transError);
+
+                        notificationRef.current?.createNotification('success', 'Venda Registrada!', `Venda de R$ ${dbPayload.value.toLocaleString('pt-BR')} registrada no Financeiro.`);
+                    }
+                }
+            } catch (e: any) {
+                console.error("Failed to create sale record from edit:", e);
+            }
+        }
+
+        notificationRef.current?.createNotification('success', 'Atualizado!', 'Lead atualizado com sucesso.');
+        setEditingLead(null);
+        setTagInput('');
+        fetchData();
     };
 
     const deleteLead = async () => {
@@ -1182,410 +1377,362 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
 
             <AnimatePresence>
+                {isCreateModalOpen && (
+                    <NewLeadModal 
+                        isOpen={isCreateModalOpen} 
+                        onClose={() => setIsCreateModalOpen(false)} 
+                        onSave={handleCreateLead} 
+                    />
+                )}
                 {editingLead && (
+                    <EditLeadModal
+                        lead={editingLead}
+                        isOpen={!!editingLead}
+                        onClose={() => setEditingLead(null)}
+                        onSave={saveLeadUpdates}
+                        onDelete={deleteLead}
+                        users={usersList}
+                    />
+                )}
+                {/* Conversion Modal */}
+                {conversionModal.isOpen && (
+                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl w-full max-w-md shadow-2xl space-y-4">
+                            <h3 className="text-xl font-bold dark:text-white">Confirmar Conversão</h3>
+                            <p className="text-sm text-gray-500">O lead <b>{conversionModal.lead?.name}</b> será marcado como <b>{conversionModal.targetStatus}</b>.</p>
+                            
+                            <div className="bg-gray-50 dark:bg-[#222] p-4 rounded-xl space-y-3">
+                                <label className="text-xs font-bold uppercase text-gray-500">Tipo de Venda</label>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setConversionType('Course')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${conversionType === 'Course' ? 'bg-white border-wtech-gold shadow' : 'border-transparent hover:bg-white/50'}`}>Curso/Evento</button>
+                                    <button onClick={() => setConversionType('Product')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${conversionType === 'Product' ? 'bg-white border-wtech-gold shadow' : 'border-transparent hover:bg-white/50'}`}>Produto/Serviço</button>
+                                </div>
+
+                                {conversionType === 'Course' ? (
+                                    <select className="w-full p-2 rounded-lg border border-gray-200" value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)}>
+                                        <option value="">Selecione o Curso...</option>
+                                        {activeCourses.map(c => <option key={c.id} value={c.id}>{c.title} ({new Date(c.date).toLocaleDateString()})</option>)}
+                                    </select>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Produto / Serviço</label>
+                                            <select 
+                                                className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1"
+                                                value={selectedProductId}
+                                                onChange={e => {
+                                                    const prod = catalogProducts.find(p => p.id === e.target.value);
+                                                    setSelectedProductId(e.target.value);
+                                                    if (prod) setSaleValue(prod.price.toString());
+                                                }}
+                                            >
+                                                <option value="">Personalizado / Outros</option>
+                                                {catalogProducts.map(p => (
+                                                    <option key={p.id} value={p.id}>{p.title} - R$ {p.price}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor Total (R$)</label>
+                                                <input 
+                                                    placeholder="0.00" 
+                                                    className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1" 
+                                                    value={saleValue} 
+                                                    onChange={e => setSaleValue(e.target.value)} 
+                                                />
+                                            </div>
+                                            <div className="w-24">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Qtd.</label>
+                                                <input 
+                                                    type="number" 
+                                                    className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1 text-center" 
+                                                    value={orderQuantity} 
+                                                    onChange={e => setOrderQuantity(Number(e.target.value))} 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Forma de Pagamento</label>
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                                {['Manual', 'Pix', 'Crédito', 'Boleto', 'Asaas', 'Stripe'].map(method => (
+                                                    <button 
+                                                        key={method}
+                                                        onClick={() => setPaymentMethod(method as any)}
+                                                        className={`py-2 text-[10px] font-black rounded-lg border uppercase ${paymentMethod === method ? 'bg-wtech-gold text-black border-wtech-gold' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
+                                                    >
+                                                        {method}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {paymentMethod === 'Manual' && (
+                                                <input 
+                                                    placeholder="Detalhes (Ex: Dinheiro, Cheque...)" 
+                                                    className="w-full p-2 rounded-lg border border-gray-200 text-xs mt-2" 
+                                                    value={manualDetails} 
+                                                    onChange={e => setManualDetails(e.target.value)} 
+                                                />
+                                            )}
+                                        </div>
+
+                                        {!selectedProductId && (
+                                            <div>
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Obs/Resumo do Pedido</label>
+                                                <input 
+                                                    placeholder="Ex: Peças X, Y..." 
+                                                    className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1" 
+                                                    value={productSummary} 
+                                                    onChange={e => setProductSummary(e.target.value)} 
+                                                />
+                                            </div>
+                                        )}
+
+                                        <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 mt-2">
+                                            <input type="checkbox" checked={generatePaymentLink} onChange={e => setGeneratePaymentLink(e.target.checked)} />
+                                            Gerar Link de Pagamento no Sistema
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                                <button onClick={() => setConversionModal({ ...conversionModal, isOpen: false })} className="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
+                                <button onClick={handleConfirmConversion} className="flex-1 py-3 font-bold bg-green-500 text-white rounded-xl hover:bg-green-600 shadow-lg shadow-green-500/20">Confirmar</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+                
+                {/* Lost Reason Modal */}
+                {lostReasonModal.isOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
-                        >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-gray-900">{editingLead.name}</h3>
-                                    <p className="text-sm text-gray-500">{editingLead.email}</p>
-                                </div>
-                                <div className="flex gap-2 items-center">
-                                    <button
-                                        onClick={() => setSelectedLeadForTasks(editingLead)}
-                                        className="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors flex items-center gap-2 text-xs font-bold uppercase"
-                                        title="Tarefas e Lembretes"
-                                    >
-                                        <Clock size={16} /> Tarefas
-                                    </button>
-                                    <button
-                                        onClick={() => setEditingLead(null)}
-                                        className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-2 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contato</span>
-                                <div className="flex items-center gap-2">
-                                    <Phone size={16} className="text-wtech-gold" />
-                                    <span className="font-bold text-lg text-gray-900 selection:bg-wtech-gold selection:text-black">
-                                        {editingLead.phone || 'Sem Telefone'}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-blue-600 font-medium hover:underline cursor-pointer flex items-center gap-1" onClick={() => window.open(`https://wa.me/55${editingLead.phone?.replace(/\D/g, '')}`, '_blank')}>
-                                    <MessageCircle size={12} /> Abrir no WhatsApp
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Colaborador Responsável</label>
-                                    <div className="relative">
-                                        <Users size={16} className="absolute left-3 top-3 text-gray-400" />
-                                        <select
-                                            className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm font-medium focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none appearance-none bg-white"
-                                            value={editForm.assignedTo || ''}
-                                            onChange={e => setEditForm({ ...editForm, assignedTo: e.target.value })}
-                                        >
-                                            <option value="">Sem Dono (Fila)</option>
-                                            {/* We need to reverse map usersMap or have a list of users. 
-                                                Since we only have usersMap (uuid -> Name), we might need to fetch full users list or reconstruct. 
-                                                Actually, let's use the usersMap to build options assuming we can iterate it.
-                                            */}
-                                            {Object.entries(usersMap).map(([id, name]) => (
-                                                <option key={id} value={id}>
-                                                    {name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notas Internas</label>
-                                    <textarea
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none min-h-[100px]"
-                                        placeholder="Observações sobre o lead..."
-                                        value={editForm.internalNotes}
-                                        onChange={e => setEditForm({ ...editForm, internalNotes: e.target.value })}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tags / Identificação</label>
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                        {editForm.tags?.map((tag, idx) => (
-                                            <span key={idx} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-gray-200">
-                                                {tag}
-                                                <button onClick={() => setEditForm(prev => ({ ...prev, tags: prev.tags.filter((_, i) => i !== idx) }))} className="hover:text-red-500"><X size={12} /></button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <input
-                                            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-wtech-gold"
-                                            placeholder="Adicionar tag... (Enter)"
-                                            value={tagInput}
-                                            onChange={e => setTagInput(e.target.value)}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    if (tagInput.trim()) {
-                                                        setEditForm(prev => ({ ...prev, tags: [...(prev.tags || []), tagInput.trim()] }));
-                                                        setTagInput('');
-                                                    }
-                                                }
-                                            }}
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                if (tagInput.trim()) {
-                                                    setEditForm(prev => ({ ...prev, tags: [...(prev.tags || []), tagInput.trim()] }));
-                                                    setTagInput('');
-                                                }
-                                            }}
-                                            className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                        >
-                                            <Plus size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 flex gap-3">
-                                    <button
-                                        onClick={deleteLead}
-                                        className="bg-red-50 text-red-600 font-bold py-3 px-4 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
-                                        title="Excluir Lead"
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                    <button
-                                        onClick={saveLeadUpdates}
-                                        className="flex-1 bg-wtech-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <Save size={16} /> Salvar Alterações
-                                    </button>
-                                </div>
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl w-full max-w-sm shadow-2xl space-y-4">
+                            <h3 className="text-lg font-bold text-red-600">Motivo da Perda</h3>
+                            <textarea
+                                autoFocus
+                                className="w-full p-3 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700 h-24 text-sm"
+                                placeholder="Por que o lead foi perdido?"
+                                value={lostReason}
+                                onChange={e => setLostReason(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={() => setLostReasonModal({ ...lostReasonModal, isOpen: false })} className="flex-1 py-2 font-bold text-gray-500">Voltar</button>
+                                <button onClick={handleConfirmLost} className="flex-1 py-2 font-bold bg-red-500 text-white rounded-lg">Confirmar</button>
                             </div>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
-
-            {/* Debug Info Removed */}
-
+            
             {/* Lead Task Sidebar */}
             {selectedLeadForTasks && (
                 <LeadTaskSidebar
                     lead={selectedLeadForTasks}
                     isOpen={!!selectedLeadForTasks}
                     onClose={() => setSelectedLeadForTasks(null)}
-                    onTaskCreated={(task) => {
+                    onTaskCreated={(task: any) => {
                         notificationRef.current?.createNotification('success', 'Agendado!', `Tarefa "${task.title}" criada.`);
                     }}
                 />
             )}
-            {/* NEW LEAD MODAL */}
-            <AnimatePresence>
-                {/* Reusing similar modal style */}
-                {showSettings /* reusing showSettings as createModal trigger for now or creating new state? lets create new state below */}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {isCreateModalOpen && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md"
-                        >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                                <h3 className="text-xl font-bold text-gray-900">Novo Lead</h3>
-                                <button
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome Completo *</label>
-                                    <input
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
-                                        placeholder="Ex: João Silva"
-                                        value={newLeadForm.name}
-                                        onChange={e => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
-                                        autoFocus
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
-                                    <input
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
-                                        placeholder="email@exemplo.com"
-                                        value={newLeadForm.email}
-                                        onChange={e => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefone / WhatsApp *</label>
-                                    <input
-                                        className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none"
-                                        placeholder="11999999999"
-                                        value={newLeadForm.phone}
-                                        onChange={e => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center gap-2 text-xs text-gray-600">
-                                    <Users size={14} className="text-wtech-gold" />
-                                    <span>Cadastrado por: <strong>{user?.name || 'Você'}</strong> (Auto-atribuído)</span>
-                                </div>
-
-                                <button
-                                    onClick={handleCreateLead}
-                                    disabled={!newLeadForm.name || !newLeadForm.phone}
-                                    className="w-full bg-wtech-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Plus size={16} /> Cadastrar Lead
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* --- Conversion Selection Modal --- */}
-            <AnimatePresence>
-                {conversionModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0.95 }}
-                            className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-transparent dark:border-gray-800"
-                        >
-                            <div className="p-6 bg-gradient-to-r from-gray-900 to-black text-white flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
-                                        <CheckCircle className="text-green-400" /> Lead Convertido!
-                                    </h2>
-                                    <p className="text-gray-400 text-sm mt-1">
-                                        Como devemos processar essa conversão de <strong>{conversionModal.lead?.name}</strong>?
-                                    </p>
-                                </div>
-                                <button onClick={() => setConversionModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-white">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="p-6">
-                                {/* Type Selector */}
-                                <div className="grid grid-cols-2 gap-4 mb-6">
-                                    <button
-                                        onClick={() => setConversionType('Course')}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Course' ? 'border-wtech-gold bg-yellow-50/50 dark:bg-wtech-gold/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-transparent'}`}
-                                    >
-                                        <GraduationCap size={32} className={conversionType === 'Course' ? 'text-wtech-gold' : 'text-gray-400'} />
-                                        <span className={`font-bold ${conversionType === 'Course' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>Matrícula em Curso</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => setConversionType('Product')}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${conversionType === 'Product' ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10' : 'border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 bg-transparent'}`}
-                                    >
-                                        <ShoppingBag size={32} className={conversionType === 'Product' ? 'text-blue-500' : 'text-gray-400'} />
-                                        <span className={`font-bold ${conversionType === 'Product' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500'}`}>Venda de Produtos</span>
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {conversionType === 'Course' ? (
-                                        <div className="animate-in fade-in slide-in-from-left-4">
-                                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Escolha o Curso</label>
-                                            <div className="relative">
-                                                <select
-                                                    className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-wtech-gold appearance-none"
-                                                    value={selectedCourseId}
-                                                    onChange={(e) => setSelectedCourseId(e.target.value)}
-                                                >
-                                                    <option value="">Selecione um curso ativo...</option>
-                                                    {activeCourses.map(c => (
-                                                        <option key={c.id} value={c.id}>
-                                                            {new Date(c.date).toLocaleDateString()} - {c.title}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <Calendar className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={16} />
-                                            </div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Você será redirecionado para a tela de inscrições.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Resumo do Pedido</label>
-                                                <textarea
-                                                    className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-blue-500 min-h-[80px]"
-                                                    placeholder="Ex: 2x Filtros, 1x Óleo 5W30..."
-                                                    value={productSummary}
-                                                    onChange={e => setProductSummary(e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Valor Total da Venda</label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-3 text-gray-500 dark:text-gray-400 font-bold">R$</span>
-                                                    <input
-                                                        className="w-full p-3 pl-10 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-blue-500 font-mono font-bold text-lg"
-                                                        placeholder="0,00"
-                                                        value={saleValue}
-                                                        onChange={e => setSaleValue(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <button
-                                    onClick={handleConfirmConversion}
-                                    disabled={conversionType === 'Course' ? !selectedCourseId : (!productSummary || !saleValue)}
-                                    className={`mt-8 w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
-                                        ${conversionType === 'Course' ? 'bg-wtech-gold hover:bg-yellow-500 text-black' : 'bg-blue-600 hover:bg-blue-500'}`}
-                                >
-                                    {conversionType === 'Course' ? (
-                                        <>Ir para Matrícula <ArrowRight size={18} /></>
-                                    ) : (
-                                        <>Registrar Venda <CheckCircle size={18} /></>
-                                    )}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* --- Lost Reason Modal --- */}
-            <AnimatePresence>
-                {lostReasonModal.isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0.95 }}
-                            className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800"
-                        >
-                            <div className="p-6 bg-gray-50 dark:bg-black/40 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                        <AlertTriangle className="text-orange-500" size={20} /> Motivo da Perda
-                                    </h2>
-                                    <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                                        Por que este lead está sendo marcado como "Perdido"?
-                                    </p>
-                                </div>
-                                <button onClick={() => setLostReasonModal(prev => ({ ...prev, isOpen: false }))} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="p-6">
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Descreva o motivo *</label>
-                                <textarea
-                                    className="w-full p-3 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 rounded-lg outline-none focus:border-orange-500 min-h-[100px] text-sm"
-                                    placeholder="Ex: Preço alto, optou pelo concorrente, sem interesse no momento..."
-                                    value={lostReason}
-                                    onChange={e => setLostReason(e.target.value)}
-                                    autoFocus
-                                />
-
-                                <div className="flex gap-3 mt-6">
-                                    <button
-                                        onClick={() => setLostReasonModal(prev => ({ ...prev, isOpen: false }))}
-                                        className="flex-1 py-3 rounded-xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        onClick={handleConfirmLost}
-                                        disabled={!lostReason.trim()}
-                                        className="flex-1 py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
-                                    >
-                                        Confirmar
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             <SplashedPushNotifications ref={notificationRef} />
 
-        </DragContext.Provider >
+        </DragContext.Provider>
     );
 };
+
+// Need to update EditLeadModal and NewLeadModal to include 'value' input field.
+
+const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
+    const [form, setForm] = useState({ name: '', phone: '', email: '', value: 0 }); // Added value
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold dark:text-white">Novo Lead</h3>
+                    <button onClick={onClose}><X className="dark:text-white" /></button>
+                </div>
+                <div className="space-y-4">
+                    <input autoFocus placeholder="Nome Completo" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                    <input placeholder="Telefone" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                    <input placeholder="Email (Opcional)" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                    
+                    {/* Value Input */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Valor Potencial (R$)</label>
+                        <input 
+                            type="number" 
+                            placeholder="0,00" 
+                            className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white font-mono" 
+                            value={form.value} 
+                            onChange={e => setForm({...form, value: Number(e.target.value)})} 
+                        />
+                    </div>
+                </div>
+                <button onClick={() => onSave(form)} className="w-full bg-wtech-gold text-black font-bold py-3 rounded-xl mt-6">
+                    Criar Lead
+                </button>
+            </motion.div>
+        </div>
+    );
+};
+
+const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, users }: any) => {
+    const [form, setForm] = useState({ ...lead });
+    // Tags Local State for Modal
+    const [tagInput, setTagInput] = useState('');
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white dark:bg-[#1A1A1A] rounded-2xl w-full max-w-2xl shadow-2xl h-[80vh] flex flex-col">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                    <div>
+                        <h3 className="text-xl font-black dark:text-white">{form.name}</h3>
+                        <p className="text-sm text-gray-500">Editando informações do lead.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => {
+                                if (window.confirm('Tem certeza que deseja excluir este lead?')) {
+                                    onDelete();
+                                }
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"
+                            title="Excluir Lead"
+                        >
+                            <Trash2 size={20} />
+                        </button>
+                        <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"><X size={24} className="dark:text-white" /></button>
+                    </div>
+                </div>
+                
+                <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                             <label className="text-xs font-bold text-gray-500 uppercase">Status</label>
+                             <select 
+                                className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white font-bold"
+                                value={form.status}
+                                onChange={e => setForm({...form, status: e.target.value})}
+                             >
+                                <option value="New">Novo</option>
+                                <option value="Contacted">Contactado</option>
+                                <option value="Qualified">Qualificado</option>
+                                <option value="Negotiating">Em Negociação</option>
+                                <option value="Converted">Ganhos / Pagar</option>
+                                <option value="Matriculated">Matriculado</option>
+                                <option value="Cold">Frio / Espera</option>
+                                <option value="Rejected">Perdido</option>
+                             </select>
+                        </div>
+                        
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Telefone</label>
+                            <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
+                            <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                        </div>
+
+                        <div className="col-span-2 bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
+                             <label className="text-xs font-black text-green-700 dark:text-green-400 uppercase flex items-center gap-2">
+                                <Banknote size={14}/> Valor da Venda (R$)
+                             </label>
+                             <input 
+                                type="number"
+                                className="w-full p-3 bg-white dark:bg-[#222] rounded-lg mt-1 dark:text-white font-mono text-lg font-bold" 
+                                value={form.value} 
+                                onChange={e => setForm({...form, value: Number(e.target.value)})} 
+                             />
+                             <p className="text-[10px] text-green-600 mt-1">
+                                * Ao mover para "Ganho" ou "Matriculado", este valor será lançado automaticamente no Fluxo de Caixa.
+                             </p>
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Responsável</label>
+                            <select 
+                                className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white"
+                                value={form.assigned_to || ''}
+                                onChange={e => setForm({...form, assigned_to: e.target.value || null})}
+                            >
+                                <option value="">Sem dono</option>
+                                {users.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notas Internas</label>
+                            <textarea
+                                className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none min-h-[100px]"
+                                placeholder="Observações sobre o lead..."
+                                value={form.internalNotes || ''}
+                                onChange={e => setForm({ ...form, internalNotes: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tags</label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {form.tags?.map((tag: string, idx: number) => (
+                                    <span key={idx} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-gray-200">
+                                        {tag}
+                                        <button onClick={() => setForm({...form, tags: form.tags.filter((_:any, i:any) => i !== idx)})} className="hover:text-red-500"><X size={12} /></button>
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                                    placeholder="Adicionar tag... (Enter)"
+                                    value={tagInput}
+                                    onChange={e => setTagInput(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (tagInput.trim()) {
+                                                setForm({...form, tags: [...(form.tags || []), tagInput.trim()]});
+                                                setTagInput('');
+                                            }
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (tagInput.trim()) {
+                                            setForm({...form, tags: [...(form.tags || []), tagInput.trim()]});
+                                            setTagInput('');
+                                        }
+                                    }}
+                                    className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    <Plus size={16}/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111] flex justify-end gap-3 rounded-b-2xl">
+                     <button onClick={onClose} className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400">Cancelar</button>
+                     <button onClick={() => onSave(form)} className="px-8 py-3 bg-wtech-black text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2">
+                        <Save size={18} /> Salvar Alterações
+                     </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
 
 export default CRMView;
