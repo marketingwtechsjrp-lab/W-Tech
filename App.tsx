@@ -65,7 +65,8 @@ const App = () => {
                 <AnalyticsTracker />
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    <Route path="/" element={<Layout><Home /></Layout>} />
+                    <Route path="/" element={<Layout><Home3 /></Layout>} />
+                    <Route path="/home-legacy" element={<Layout><Home /></Layout>} />
                     <Route path="/home-p2" element={<HomeP2 />} />
                     <Route path="/cursos" element={<Layout><Courses /></Layout>} />
                     <Route path="/cursos/:id" element={<Layout><CourseDetail /></Layout>} />
@@ -96,7 +97,7 @@ const App = () => {
 
                     <Route path="*" element={<NotFound />} />
 
-                    <Route path="/home3" element={<Layout><Home3 /></Layout>} />
+
                   </Routes>
                 </Suspense>
               </div>
