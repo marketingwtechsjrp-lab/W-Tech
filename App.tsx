@@ -21,6 +21,7 @@ const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const LandingPageViewer = lazy(() => import('./pages/LandingPageViewer'));
 const HomeP2 = lazy(() => import('./pages/HomeP2'));
+const Home3 = lazy(() => import('./pages/Home3'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
 const LPLisboaFev2026 = lazy(() => import('./pages/LPLisboaFev2026'));
 const LPWTechLisboa = lazy(() => import('./pages/LPWTechLisboa'));
@@ -95,6 +96,7 @@ const App = () => {
 
                     <Route path="*" element={<NotFound />} />
 
+                    <Route path="/home3" element={<Layout><Home3 /></Layout>} />
                   </Routes>
                 </Suspense>
               </div>
