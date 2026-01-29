@@ -535,11 +535,40 @@ const ClientPortal = () => {
                                                                 <ExternalLink size={12} />
                                                             </a>
                                                         )}
-                                                        <div className={`${isDarkMode ? 'bg-black/40 border-white/5' : 'bg-gray-50 border-gray-100'} border px-6 py-4 rounded-3xl text-right`}>
-                                                            <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} font-black uppercase tracking-widest`}>Valor Total</p>
-                                                            <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'} italic`}>
+                                                        <div className={`${isDarkMode ? 'bg-black/40 border-white/5' : 'bg-gray-50 border-gray-100'} border px-6 py-4 rounded-3xl text-right flex flex-col items-end`}>
+                                                            <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} font-black uppercase tracking-widest leading-none mb-1`}>Valor Total</p>
+                                                            <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'} italic leading-none`}>
                                                                 R$ {order.total_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                             </p>
+                                                            
+                                                            {(order.shipping_cost > 0 || order.insurance_cost > 0 || (order.discount_amount > 0) || order.payment_method) && (
+                                                                <div className={`mt-3 pt-3 border-t ${isDarkMode ? 'border-white/5' : 'border-gray-200'} w-full flex flex-col gap-1.5`}>
+                                                                    {order.shipping_cost > 0 && (
+                                                                        <div className="flex justify-between items-center gap-4">
+                                                                            <span className={`text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Frete</span>
+                                                                            <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>+ R$ {order.shipping_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.insurance_cost > 0 && (
+                                                                        <div className="flex justify-between items-center gap-4">
+                                                                            <span className={`text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Seguro (1%)</span>
+                                                                            <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>+ R$ {order.insurance_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.discount_amount > 0 && (
+                                                                        <div className="flex justify-between items-center gap-4">
+                                                                            <span className={`text-[8px] font-black uppercase tracking-tighter text-emerald-500`}>Desconto</span>
+                                                                            <span className={`text-[10px] font-bold text-emerald-500 italic`}>- R$ {order.discount_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {order.payment_method && (
+                                                                        <div className="flex justify-between items-center gap-4 mt-1">
+                                                                            <span className={`text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Pagamento</span>
+                                                                            <span className={`text-[10px] font-black uppercase italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{order.payment_method}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

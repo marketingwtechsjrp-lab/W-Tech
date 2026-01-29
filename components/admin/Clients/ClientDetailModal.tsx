@@ -18,21 +18,21 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
 
     // Form State
     const [formData, setFormData] = useState({
-        name: client.name || '',
-        email: client.email || '',
-        phone: client.phone || '',
-        address: client.address || '',
-        birth_date: client.birth_date || '',
-        t_shirt_size: client.t_shirt_size || '',
-        workshop_details: client.workshop_details || {},
-        assigned_to: client.assigned_to || '',
-        status: client.status || '',
-        is_accredited: client.isAccredited || false,
-        cpf: client.cpf || '',
-        rg: client.rg || '',
-        delivery_address: client.delivery_address || {},
-        client_code: client.client_code || '',
-        completed_courses: client.completed_courses || []
+        name: client?.name || '',
+        email: client?.email || '',
+        phone: client?.phone || '',
+        address: client?.address || '',
+        birth_date: client?.birth_date || '',
+        t_shirt_size: client?.t_shirt_size || '',
+        workshop_details: client?.workshop_details || {},
+        assigned_to: client?.assigned_to || '',
+        status: client?.status || '',
+        is_accredited: client?.isAccredited || false,
+        cpf: client?.cpf || '',
+        rg: client?.rg || '',
+        delivery_address: client?.delivery_address || {},
+        client_code: client?.client_code || '',
+        completed_courses: client?.completed_courses || []
     });
 
     const [newCourse, setNewCourse] = useState({ type: 'suspension', date: '' });
@@ -100,7 +100,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
     const handleSave = async () => {
         setLoading(true);
         try {
-            const updates = {
+            const updates: any = {
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
@@ -117,21 +117,28 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                 completed_courses: formData.completed_courses
             };
 
-            const table = (client.type === 'Credenciado' || client.type === 'Mechanic') ? 'SITE_Mechanics' : 'SITE_Leads';
+            const isNew = !client?.id;
+            const table = (client?.type === 'Credenciado' || client?.type === 'Mechanic') ? 'SITE_Mechanics' : 'SITE_Leads';
 
-            const { error } = await supabase
-                .from(table)
-                .update(updates)
-                .eq('id', client.id);
+            let result;
+            if (isNew) {
+                // If new Lead, set default status
+                if (table === 'SITE_Leads') {
+                    updates.status = 'New';
+                }
+                result = await supabase.from(table).insert([updates]);
+            } else {
+                result = await supabase.from(table).update(updates).eq('id', client.id);
+            }
 
-            if (error) throw error;
+            if (result.error) throw result.error;
             
             onUpdate();
             onClose();
-            alert('Cliente atualizado com sucesso!');
+            alert(isNew ? 'Cliente criado com sucesso!' : 'Cliente atualizado com sucesso!');
         } catch (error: any) {
             console.error(error);
-            alert('Erro ao atualizar: ' + error.message);
+            alert('Erro ao salvar: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -150,8 +157,12 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                             <User size={24} />
                         </div>
                         <div>
-                            <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase tracking-tight">{client.name}</h3>
-                            <p className="text-xs text-gray-400 font-bold uppercase">{client.type} • ID: {client.id.slice(0, 8)}</p>
+                            <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase tracking-tight">
+                                {client?.id ? client.name : 'Novo Cliente'}
+                            </h3>
+                            <p className="text-xs text-gray-400 font-bold uppercase">
+                                {client?.type || 'Lead'} {client?.id ? `• ID: ${client.id.slice(0, 8)}` : '• Novo Cadastro'}
+                            </p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-red-500">

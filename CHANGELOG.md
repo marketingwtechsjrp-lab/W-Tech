@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.6.2 (2026-01-29) - Gestão Logística & Itens Manuais
+- Adição de Itens Manuais no PDV
+- Cálculo automático de Seguro (1%)
+- Campo de Desconto Manual no fechamento
+- Resumo detalhado (Frete/Seguro/Desconto) no Portal do Cliente
+- Melhorias de Responsividade Mobile no PDV
+- Correção de travamento após salvamento de pedidos
+
 ## v2.5.0 (2026-01-26) - Analytics 2.0 & Controle de Permissões
 - FEAT: Analytics 2.0 com tracking automático de eventos e conversões.
 - FEAT: Dashboard de Analytics com gráficos em tempo real e log de atividades.

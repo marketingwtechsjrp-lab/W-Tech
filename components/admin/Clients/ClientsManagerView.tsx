@@ -333,7 +333,10 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                             Criar Grupo ({selectedClients.length})
                         </button>
                     )}
-                    <button className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-xl active:scale-95">
+                    <button 
+                        onClick={() => setSelectedClientForEdit({ type: 'Lead' })}
+                        className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-xl active:scale-95"
+                    >
                         <UserPlus size={20} /> Novo Cliente
                     </button>
                 </div>

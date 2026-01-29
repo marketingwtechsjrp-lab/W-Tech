@@ -399,6 +399,23 @@ const LandingPageViewer: React.FC = () => {
             </div>
         </section>
 
+        {/* SCHEDULE SECTION */}
+        {lp.course?.schedule && (
+            <section id="schedule" className="py-24 bg-black border-t border-white/5">
+                <div className="container mx-auto px-6">
+                    <div className="text-center mb-16">
+                         <span className="text-wtech-gold font-bold uppercase tracking-widest text-xs">Cronograma</span>
+                         <h2 className="text-4xl font-black text-white uppercase mt-2">Programação do Curso</h2>
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto bg-zinc-900/30 p-8 md:p-12 rounded-3xl border border-white/5">
+                        <div className="prose prose-invert prose-p:text-gray-400 prose-headings:text-white max-w-none" 
+                             dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
+                    </div>
+                </div>
+            </section>
+        )}
+
         {/* MODULES SECTION */}
         {lp.modules && lp.modules.length > 0 && (
             <section id="modules" className="py-24 bg-zinc-900 border-t border-white/5">

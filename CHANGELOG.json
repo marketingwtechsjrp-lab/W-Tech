@@ -1,5 +1,19 @@
 [
   {
+    "version": "2.6.2",
+    "date": "2026-01-29",
+    "title": "Gestão Logística & Itens Manuais",
+    "changes": [
+      "Adição de Itens Manuais no PDV",
+      "Cálculo automático de Seguro (1%)",
+      "Campo de Desconto Manual no fechamento",
+      "Resumo detalhado (Frete/Seguro/Desconto) no Portal do Cliente",
+      "Melhorias de Responsividade Mobile no PDV",
+      "Correção de travamento após salvamento de pedidos"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.6.1",
     "date": "2026-01-28",
     "title": "Sistema de Pedidos Aprimorado - Dashboard Analítico",
