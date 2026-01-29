@@ -1,5 +1,25 @@
 [
   {
+    "version": "2.6.1",
+    "date": "2026-01-28",
+    "title": "Sistema de Pedidos Aprimorado - Dashboard Analítico",
+    "changes": [
+      "FEAT: Dashboard analítico com 7 cards de métricas por status (Pendente → Entregue)",
+      "FEAT: Visualização de quantidade e valor total por etapa do funil de vendas",
+      "FEAT: Cards clicáveis para filtro rápido por status",
+      "FEAT: Filtros temporais avançados (Hoje, 7 dias, 30 dias, Período customizado)",
+      "FEAT: Botão de exclusão de pedidos no modal com confirmação de segurança",
+      "FEAT: Botão de atualização em tempo real no portal do cliente",
+      "FEAT: Acesso rápido ao portal via botão 'Área do Cliente' no hero e header",
+      "FIX: Sincronização de itens de pedidos de cursos no painel administrativo",
+      "FIX: Fallback inteligente para leitura de itens JSON quando SITE_SaleItems está vazia",
+      "FIX: Correção de links duplicados para área do cliente",
+      "UX: Interface responsiva com suporte completo a modo escuro",
+      "UX: Animações de hover e transições suaves nos cards de métricas"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.6.0",
     "date": "2026-01-26",
     "title": "Módulo Financeiro & Gestão Avançada de Vendas",
