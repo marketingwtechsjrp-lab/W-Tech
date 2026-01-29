@@ -502,6 +502,15 @@ export interface Sale {
     shippingStatus?: string;
     notes?: string;
     createdAt: string;
+    // New Fields
+    shipping_method?: string;
+    shipping_cost?: number;
+    insurance_cost?: number;
+    estimated_delivery_date?: string;
+    tracking_code?: string;
+    discount_code?: string;
+    discount_amount?: number;
+    items?: any | string; // JSONB or stringified JSON
 }
 
 export interface SaleItem {

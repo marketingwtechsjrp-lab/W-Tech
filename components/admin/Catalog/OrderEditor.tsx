@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield } from 'lucide-react';
+import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 
@@ -47,7 +47,6 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const canBypassLock = user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role === 'Manager' || 
                           (typeof user?.role === 'object' && (user.role.name === 'Admin' || user.role.name === 'Super Admin' || user.role.level >= 10));
 
-    // ---- Effects ----
     useEffect(() => {
         if (isOpen) {
             loadInitialData();
@@ -61,8 +60,10 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 discount_amount: 0
             });
             if (editingSale?.clientId) setClientSearchTerm(editingSale.clientName || '');
+            if (editingSale?.discount_code) setDiscountCode(editingSale.discount_code);
         }
-    }, [isOpen, editingSale, initialItems]);
+    }, [isOpen, editingSale?.id]); // Use editingSale.id to avoid unnecessary re-triggers from deep objects
+
 
     // ---- Data Loading ----
     const loadInitialData = async () => {
@@ -143,13 +144,29 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     };
 
     const handleSaveOrder = async () => {
-        if (!currentSale.clientId) return alert('Selecione um cliente.');
-        if (saleItems.length === 0) return alert('Adicione produtos ao pedido.');
-        if (loading) return;
+        console.log('🔵 handleSaveOrder CHAMADO');
+        console.log('Cliente ID:', currentSale.clientId);
+        console.log('Itens:', saleItems.length);
+        console.log('Loading:', loading);
         
+        if (!currentSale.clientId) {
+            console.log('❌ ERRO: Cliente não selecionado');
+            return alert('Selecione um cliente.');
+        }
+        if (saleItems.length === 0) {
+            console.log('❌ ERRO: Nenhum item no pedido');
+            return alert('Adicione produtos ao pedido.');
+        }
+        if (loading) {
+            console.log('❌ ERRO: Já está salvando');
+            return;
+        }
+        
+        console.log('✅ Validações OK - Iniciando salvamento...');
         setLoading(true);
         try {
             // Sanitize Payload
+            console.log('📦 Montando payload...');
             const salePayload = {
                 client_id: currentSale.clientId,
                 client_name: currentSale.clientName || '',
@@ -176,20 +193,29 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 estimated_delivery_date: currentSale.estimated_delivery_date ? currentSale.estimated_delivery_date : null,
                 tracking_code: currentSale.tracking_code || null
             };
+            
+            console.log('📦 Payload montado:', salePayload);
 
             let saleId = currentSale.id;
 
             if (saleId) {
+                console.log('📝 Atualizando pedido existente:', saleId);
                 const { error: updateError } = await supabase.from('SITE_Sales').update(salePayload).eq('id', saleId);
                 if (updateError) throw updateError;
+                console.log('✅ Pedido atualizado');
                 
                 // Wipe relational items
                 await supabase.from('SITE_SaleItems').delete().eq('sale_id', saleId);
                 await supabase.from('SITE_StockMovements').delete().eq('reference_id', saleId);
             } else {
+                console.log('➕ Criando novo pedido...');
                 const { data, error: insertError } = await supabase.from('SITE_Sales').insert([salePayload]).select().single();
-                if (insertError) throw insertError;
+                if (insertError) {
+                    console.error('❌ Erro ao inserir:', insertError);
+                    throw insertError;
+                }
                 saleId = data.id;
+                console.log('✅ Pedido criado com ID:', saleId);
             }
 
             // FILTER MANUAL ITEMS to prevent UUID errors in relational tables
@@ -224,14 +250,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 if (stockError) throw stockError;
             }
             
-            
-            // UX FIX: Close FIRST, then refresh data.
-            // This prevents the "stuck backdrop" issue caused by heavy re-renders during exit animation.
-            onClose();
-            
-            setTimeout(async () => {
-                await onSave();
-            }, 300);
+            // Save successful
+            console.log('🔄 Chamando onSave()...');
+            // We call onSave which typically unmounts this component
+            await onSave();
+            console.log('✅ Pedido salvo e refresh disparado');
 
         } catch (error: any) {
             console.error('Erro ao salvar pedido:', error);
@@ -239,7 +262,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
             const details = error.details || error.hint || '';
             alert(`Erro ao processar pedido: ${msg} ${details}`);
         } finally {
-            if (loading) setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -261,75 +284,70 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     };
 
     return (
-        <AnimatePresence mode="wait">
-            {isOpen && (
-                <motion.div 
-                    key="modal-backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                    className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-md cursor-pointer"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) onClose();
-                    }}
-                    role="dialog"
-                    aria-modal="true"
+        <div className="h-full w-full flex flex-col bg-[#F8F9FC] dark:bg-[#0A0A0A] overflow-hidden">
+            {/* Top Navigation Bar */}
+            <div className="bg-white dark:bg-[#1A1A1A] border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between shrink-0">
+                <button 
+                    onClick={onClose}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-bold"
                 >
-                    <motion.div 
-                        key="modal-content"
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20, transition: { duration: 0.2 } }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-[#F8F9FC] dark:bg-[#121212] w-full max-w-7xl h-full md:h-[95vh] md:max-h-[1000px] md:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative cursor-default border border-white/10"
+                    <ArrowLeft size={20} />
+                    <span className="hidden sm:inline">Voltar ao Kanban</span>
+                </button>
+                
+                <div className="text-center">
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic">
+                        {currentSale.id ? 'Editar Pedido' : 'Novo Pedido'}
+                    </h2>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                        Módulo de Gestão Logística v2.0
+                    </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    {currentSale.id && (
+                        <button 
+                            onClick={handleDelete}
+                            disabled={loading}
+                            className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all font-bold flex items-center gap-2"
+                        >
+                            <Trash2 size={18} />
+                            <span className="hidden sm:inline">Deletar</span>
+                        </button>
+                    )}
+                    <button 
+                        onClick={handleSaveOrder}
+                        disabled={loading || !currentSale.clientId || saleItems.length === 0}
+                        className="px-6 py-2 bg-wtech-red hover:bg-black text-white rounded-xl font-black transition-all flex items-center gap-2 disabled:opacity-30"
                     >
-                         {/* Header */}
-                         <div className="px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-[#1A1A1A] border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 z-10">
-                            <div>
-                                <h2 className="text-lg md:text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic underline decoration-wtech-red decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">Fluxo de Pedido <span className="text-wtech-red">W-Tech</span></h2>
-                                <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-widest mt-1 md:mt-3">Módulo de Gestão Logística v2.0</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {currentSale.id && (
-                                    <button 
-                                        onClick={handleDelete}
-                                        disabled={loading}
-                                        className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl transition-all border border-transparent"
-                                        title="Excluir Pedido"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
-                                )}
-                                 <button className="hidden sm:block px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-                                    Salvar Rascunho
-                                </button>
-                                <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors bg-gray-50 dark:bg-black/20 md:bg-transparent">
-                                    <X size={24} className="text-gray-400" />
-                                </button>
-                            </div>
-                        </div>
+                        <Check size={18} />
+                        {loading ? 'Salvando...' : 'Salvar Pedido'}
+                    </button>
+                </div>
+            </div>
 
-                        {/* Step Indicator */}
-                        <div className="bg-white dark:bg-[#1A1A1A] px-4 md:px-8 py-3 md:py-2 border-b border-gray-100 dark:border-gray-800 flex items-center justify-center gap-4 md:gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                            <button 
-                                onClick={() => setActiveStep('items')}
-                                className={`flex items-center gap-2 py-2 border-b-2 transition-all font-black text-[10px] md:text-xs uppercase tracking-widest ${activeStep === 'items' ? 'border-wtech-red text-wtech-red' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                            >
-                                <span className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] ${activeStep === 'items' ? 'bg-wtech-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>1</span>
-                                Carrinho
-                            </button>
-                            <div className="w-4 md:w-8 h-[1px] bg-gray-200 dark:bg-gray-800 shrink-0" />
-                            <button 
-                                onClick={() => { if (currentSale.clientId && saleItems.length > 0) setActiveStep('checkout'); }}
-                                disabled={!currentSale.clientId || saleItems.length === 0}
-                                className={`flex items-center gap-2 py-2 border-b-2 transition-all font-black text-[10px] md:text-xs uppercase tracking-widest ${activeStep === 'checkout' ? 'border-wtech-red text-wtech-red' : 'border-transparent text-gray-400 hover:text-gray-600'} disabled:opacity-30`}
-                            >
-                                <span className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] ${activeStep === 'checkout' ? 'bg-wtech-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>2</span>
-                                Finalizar
-                            </button>
-                        </div>
+            {/* Step Indicator */}
+            <div className="bg-white dark:bg-[#1A1A1A] px-8 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-center gap-8 shrink-0">
+                <button 
+                    onClick={() => setActiveStep('items')}
+                    className={`flex items-center gap-2 py-2 border-b-2 transition-all font-black text-xs uppercase tracking-widest ${activeStep === 'items' ? 'border-wtech-red text-wtech-red' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                >
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${activeStep === 'items' ? 'bg-wtech-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>1</span>
+                    Carrinho
+                </button>
+                <div className="w-8 h-[1px] bg-gray-200 dark:bg-gray-800" />
+                <button 
+                    onClick={() => { if (currentSale.clientId && saleItems.length > 0) setActiveStep('checkout'); }}
+                    disabled={!currentSale.clientId || saleItems.length === 0}
+                    className={`flex items-center gap-2 py-2 border-b-2 transition-all font-black text-xs uppercase tracking-widest ${activeStep === 'checkout' ? 'border-wtech-red text-wtech-red' : 'border-transparent text-gray-400 hover:text-gray-600'} disabled:opacity-30`}
+                >
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${activeStep === 'checkout' ? 'bg-wtech-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>2</span>
+                    Finalizar
+                </button>
+            </div>
 
-                        <div className="flex-1 overflow-hidden">
+            {/* Main Content Area */}
+            <div className="flex-1 overflow-hidden">
                             {activeStep === 'items' ? (
                                 <div className="h-full flex flex-col lg:flex-row bg-white dark:bg-[#1A1A1A] min-h-0">
                                     {/* Sidebar: Client Search */}
@@ -734,10 +752,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                 </div>
                             )}
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    </div>
     );
 };
 

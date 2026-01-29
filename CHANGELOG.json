@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.6.3",
+    "date": "2026-01-29",
+    "title": "Estabilidade na Navegação e Otimização do Editor",
+    "changes": [
+      "FIX: Resolução do deadlock de navegação entre módulos (transição popLayout)",
+      "FIX: Eliminação de loop infinito de re-renderização no Editor de Pedidos",
+      "FEAT: Otimização de hooks de estado e dependências no SalesManager",
+      "FEAT: Melhoria na performance global do Admin Portal v2.0",
+      "CLEANUP: Remoção de instrumentação diagnóstica e logs de debug"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.6.2",
     "date": "2026-01-29",
     "title": "Gestão Logística & Itens Manuais",

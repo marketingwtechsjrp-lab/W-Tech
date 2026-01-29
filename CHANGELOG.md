@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v2.6.3 (2026-01-29) - Estabilidade na Navegação e Otimização do Editor
+- FIX: Resolução do deadlock de navegação entre módulos (transição popLayout)
+- FIX: Eliminação de loop infinito de re-renderização no Editor de Pedidos
+- FEAT: Otimização de hooks de estado e dependências no SalesManager
+- FEAT: Melhoria na performance global do Admin Portal v2.0
+- CLEANUP: Remoção de instrumentação diagnóstica e logs de debug
 
 ## v2.6.2 (2026-01-29) - Gestão Logística & Itens Manuais
 - Adição de Itens Manuais no PDV

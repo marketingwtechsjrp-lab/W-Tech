@@ -6011,7 +6011,11 @@ const Admin = () => {
     const [collapsed, setCollapsed] = useState(false);
     
     // State for View Switching
-    const [currentView, setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard'); // Added 'certificates' and 'intelligence' support
+    const [currentView, _setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard');
+
+    const setCurrentView = (view: any) => {
+        _setCurrentView(view);
+    };
 
     // --- Global Task Notifications & State ---
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
@@ -6605,7 +6609,7 @@ const Admin = () => {
             {/* Main Content */}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
 
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="popLayout">
                     <motion.div
                         key={currentView}
                         initial={{ opacity: 0, x: 10 }}

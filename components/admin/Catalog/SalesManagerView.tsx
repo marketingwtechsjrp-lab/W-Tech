@@ -7,7 +7,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { OrdersKanbanBoard } from './OrdersKanbanBoard';
-import { NewOrderModal } from './NewOrderModal';
+import { NewOrderModal } from './OrderEditor';
 
 const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const { user } = useAuth();
@@ -22,8 +22,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const [usersList, setUsersList] = useState<{id: string, name: string}[]>([]);
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
     
-    // Modal State
-    const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [editingSale, setEditingSale] = useState<Partial<Sale> | null>(null);
     const [currentSaleItems, setCurrentSaleItems] = useState<(SaleItem & { product?: Product })[]>([]);
     
@@ -97,7 +96,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const handleCreateSale = () => {
         setEditingSale(null);
         setCurrentSaleItems([]);
-        setIsSaleModalOpen(true);
+        setIsEditMode(true);
     };
 
     const handleEditSale = async (saleId: string) => {
@@ -116,7 +115,16 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                     channel: saleData.channel,
                     status: saleData.status,
                     totalValue: saleData.total_value,
-                    notes: saleData.notes
+                    notes: saleData.notes,
+                    // Campos de logística e pagamento
+                    payment_method: saleData.payment_method,
+                    shipping_method: saleData.shipping_method,
+                    shipping_cost: saleData.shipping_cost,
+                    insurance_cost: saleData.insurance_cost,
+                    estimated_delivery_date: saleData.estimated_delivery_date,
+                    tracking_code: saleData.tracking_code,
+                    discount_code: saleData.discount_code,
+                    discount_amount: saleData.discount_amount
                 });
 
                 let mappedItems = [];
@@ -156,7 +164,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                 }
                 
                 setCurrentSaleItems(mappedItems);
-                setIsSaleModalOpen(true);
+                setIsEditMode(true);
             }
         } catch (error: any) {
             alert('Erro ao carregar pedido: ' + error.message);
@@ -283,280 +291,258 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header & Controls */}
-            {/* Futuristic Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-4">
-                <div className="flex items-center gap-5">
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-wtech-red to-red-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                        <div className="relative p-4 bg-wtech-red shadow-2xl rounded-2xl">
-                            <ShoppingCart className="text-white" size={32} />
-                        </div>
-                    </div>
-                    <div>
-                        <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
-                            Vendas & <span className="text-wtech-red">Fluxo</span>
-                        </h2>
-                        <div className="flex items-center gap-2 mt-1 px-2 py-0.5 bg-gray-100 dark:bg-white/5 rounded-full w-fit border border-gray-200 dark:border-gray-800">
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                            <span className="text-gray-500 dark:text-gray-400 font-black text-[9px] uppercase tracking-widest">{sales.length} Pedidos Ativos</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {/* View Switcher - Futuristic Style */}
-                    <div className="bg-gray-100 dark:bg-[#111] p-1.5 rounded-2xl flex gap-1 border border-gray-200 dark:border-gray-800 shadow-inner">
-                        <button 
-                            onClick={() => setViewMode('kanban')}
-                            className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                        >
-                            <LayoutGrid size={20} />
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('list')}
-                            className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'list' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                        >
-                            <List size={20} />
-                        </button>
-                    </div>
-
-                    <button 
-                        onClick={fetchSales}
-                        disabled={loading}
-                        className="bg-white dark:bg-[#111] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-800 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-[#222] transition-all shadow-sm active:scale-90 group relative"
-                        title="Sincronizar Pedidos"
-                    >
-                        <RefreshCcw size={20} className={`${loading ? 'animate-spin text-wtech-red' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
-                        {loading && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
-                    </button>
-
-                    <button 
-                        onClick={handleCreateSale}
-                        className="bg-wtech-red text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-black transition-all shadow-2xl shadow-red-600/20 active:scale-95 group relative overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                        <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 
-                        <span>Novo Pedido</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Comprehensive Status Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                {[
-                    { id: 'pending', label: 'Pendente', color: 'yellow', icon: Clock },
-                    { id: 'negotiation', label: 'Negociação', color: 'purple', icon: Clock },
-                    { id: 'approved', label: 'Aprovado', color: 'indigo', icon: CheckCircle2 },
-                    { id: 'paid', label: 'Pago', color: 'green', icon: CreditCard },
-                    { id: 'producing', label: 'Produção', color: 'blue', icon: Wrench },
-                    { id: 'shipped', label: 'Enviado', color: 'orange', icon: Truck },
-                    { id: 'delivered', label: 'Entregue', color: 'emerald', icon: CheckCircle2 }
-                ].map(status => {
-                    const Icon = status.icon;
-                    const statusSales = sales.filter(s => s.status === status.id);
-                    const count = statusSales.length;
-                    const total = statusSales.reduce((acc, s) => acc + s.totalValue, 0);
-                    
-                    return (
-                        <div 
-                            key={status.id}
-                            className="bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group cursor-pointer"
-                            onClick={() => setStatusFilter(status.id)}
-                        >
-                            <div className="flex items-center justify-between mb-3">
-                                <div className={`p-2 bg-${status.color}-50 dark:bg-${status.color}-900/20 text-${status.color}-600 rounded-xl group-hover:scale-110 transition-transform`}>
-                                    <Icon size={16} />
-                                </div>
-                                <span className="text-2xl font-black text-gray-900 dark:text-white">{count}</span>
-                            </div>
-                            <div>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{status.label}</p>
-                                <p className="text-sm font-black text-gray-900 dark:text-white">
-                                    R$ {(total / 1000).toFixed(1)}k
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 p-4 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800">
-                <div className="relative flex-1">
-                    <Search className="absolute left-4 top-3 text-gray-400" size={20} />
-                    <input 
-                        type="text"
-                        placeholder="Buscar por cliente ou ID..."
-                        className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 pl-12 pr-4 text-sm font-bold dark:text-white focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+        <div className="h-full w-full overflow-hidden flex flex-col">
+            {isEditMode ? (
+                // Order Editor View (inline, fits within module area)
+                <div className="flex-1 min-h-0 bg-white dark:bg-[#0A0A0A]">
+                    <NewOrderModal 
+                        isOpen={true}
+                        onClose={() => {
+                            setIsEditMode(false);
+                            setEditingSale(null);
+                            setCurrentSaleItems([]);
+                        }}
+                        onSave={() => {
+                            fetchSales();
+                            setIsEditMode(false);
+                            setEditingSale(null);
+                            setCurrentSaleItems([]);
+                        }}
+                        onDelete={handleDeleteSale}
+                        editingSale={editingSale}
+                        user={user}
+                        initialItems={currentSaleItems}
                     />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {/* Date Filter */}
-                    <select 
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value as any)}
-                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                    >
-                        <option value="all">Todos os Períodos</option>
-                        <option value="today">Hoje</option>
-                        <option value="7days">Últimos 7 dias</option>
-                        <option value="30days">Últimos 30 dias</option>
-                        <option value="custom">Período Customizado</option>
-                    </select>
-                    
-                    {dateFilter === 'custom' && (
-                        <>
-                            <input 
-                                type="date"
-                                value={customStartDate}
-                                onChange={(e) => setCustomStartDate(e.target.value)}
-                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                            />
-                            <input 
-                                type="date"
-                                value={customEndDate}
-                                onChange={(e) => setCustomEndDate(e.target.value)}
-                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                            />
-                        </>
-                    )}
-                    
-                    {permissions?.orders_view_all && (
-                        <select 
-                            value={attendantFilter}
-                            onChange={(e) => setAttendantFilter(e.target.value)}
-                            className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                        >
-                            <option value="all">Todos os Atendentes</option>
-                            {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                        </select>
-                    )}
-                    <select 
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                    >
-                        <option value="all">Todos os Status</option>
-                        <option value="negotiation">Negociação</option>
-                        <option value="approved">Aprovado</option>
-                        <option value="pending">Pendente</option>
-                        <option value="paid">Pago</option>
-                        <option value="producing">Em Produção</option>
-                        <option value="shipped">Enviado</option>
-                        <option value="delivered">Entregue</option>
-                    </select>
-                </div>
-            </div>
-
-            {/* Content Area */}
-            {viewMode === 'kanban' ? (
-                <OrdersKanbanBoard 
-                    sales={filteredSales} 
-                    onUpdateStatus={handleUpdateStatus} 
-                    onEditSale={handleEditSale} 
-                />
             ) : (
-                <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50/50 dark:bg-white/5">
-                                <tr>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">ID / Data</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Canal</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                                    <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                                {loading ? (
-                                    <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Carregando...</td></tr>
-                                ) : filteredSales.length === 0 ? (
-                                    <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Nenhum pedido encontrado.</td></tr>
-                                ) : filteredSales.map((sale) => (
-                                    <tr key={sale.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">#{sale.id.slice(0, 8)}</span>
-                                                <span className="text-xs font-bold text-gray-900 dark:text-white">{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm font-bold text-gray-900 dark:text-white">{sale.clientName || 'Cliente Direto'}</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500">
-                                                {sale.channel}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm font-black text-gray-900 dark:text-white">R$ {sale.totalValue.toLocaleString('pt-BR')}</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${getStatusColor(sale.status)}`}>
-                                                {getStatusLabel(sale.status)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right relative">
-                                            <button 
-                                                onClick={(e) => handleOpenMenu(e, sale.id)}
-                                                className="p-2 text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/10"
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
-                                            
-                                            {/* Action Menu Protal logic would go here, implemented simpler for now */}
-                                            {activeMenu && activeMenu.saleId === sale.id && (
-                                                <div 
-                                                    className="fixed z-50 bg-white dark:bg-[#222] rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 py-1 w-48"
-                                                    style={{ top: activeMenu.top, left: activeMenu.left }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <button onClick={() => handleEditSale(sale.id)} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 text-sm font-bold flex items-center gap-2">
-                                                        <Edit size={14} /> Editar
-                                                    </button>
-                                                    {['negotiation', 'approved', 'pending', 'paid', 'producing', 'shipped', 'delivered'].map(s => (
-                                                        <button 
-                                                            key={s}
-                                                            onClick={() => { handleUpdateStatus(sale.id, s as any); setActiveMenu(null); }}
-                                                            className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 text-xs text-gray-500 uppercase font-bold"
-                                                        >
-                                                            Marcar {getStatusLabel(s)}
-                                                        </button>
-                                                    ))}
-                                                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-1"></div>
-                                                    {(user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role === 'Manager' || 
-                                                      (typeof user?.role === 'object' && (user.role.name === 'Admin' || user.role.name === 'Super Admin' || user.role.level >= 10)) ||
-                                                      permissions?.admin_access) && (
-                                                        <button onClick={() => { handleDeleteSale(sale.id); setActiveMenu(null); }} className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-sm font-bold flex items-center gap-2">
-                                                            <Trash2 size={14} /> Excluir
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                // Dashboard View (Header + Metrics + List/Kanban)
+                <div className="p-6 space-y-6 overflow-y-auto">
+                    {/* Futuristic Header */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-4">
+                        <div className="flex items-center gap-5">
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-wtech-red to-red-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="relative p-4 bg-wtech-red shadow-2xl rounded-2xl">
+                                    <ShoppingCart className="text-white" size={32} />
+                                </div>
+                            </div>
+                            <div>
+                                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
+                                    Vendas & <span className="text-wtech-red">Fluxo</span>
+                                </h2>
+                                <div className="flex items-center gap-2 mt-1 px-2 py-0.5 bg-gray-100 dark:bg-white/5 rounded-full w-fit border border-gray-200 dark:border-gray-800">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                    <span className="text-gray-500 dark:text-gray-400 font-black text-[9px] uppercase tracking-widest">{sales.length} Pedidos Ativos</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {/* View Switcher - Futuristic Style */}
+                            <div className="bg-gray-100 dark:bg-[#111] p-1.5 rounded-2xl flex gap-1 border border-gray-200 dark:border-gray-800 shadow-inner">
+                                <button 
+                                    onClick={() => setViewMode('kanban')}
+                                    className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                                >
+                                    <LayoutGrid size={20} />
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'list' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                                >
+                                    <List size={20} />
+                                </button>
+                            </div>
+
+                            <button 
+                                onClick={fetchSales}
+                                disabled={loading}
+                                className="bg-white dark:bg-[#111] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-800 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-[#222] transition-all shadow-sm active:scale-90 group relative"
+                                title="Sincronizar Pedidos"
+                            >
+                                <RefreshCcw size={20} className={`${loading ? 'animate-spin text-wtech-red' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
+                                {loading && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
+                            </button>
+
+                            <button 
+                                onClick={handleCreateSale}
+                                className="bg-wtech-red text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-black transition-all shadow-2xl shadow-red-600/20 active:scale-95 group relative overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 
+                                <span>Novo Pedido</span>
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Comprehensive Status Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                        {[
+                            { id: 'pending', label: 'Pendente', color: 'yellow', icon: Clock },
+                            { id: 'negotiation', label: 'Negociação', color: 'purple', icon: Clock },
+                            { id: 'approved', label: 'Aprovado', color: 'indigo', icon: CheckCircle2 },
+                            { id: 'paid', label: 'Pago', color: 'green', icon: CreditCard },
+                            { id: 'producing', label: 'Produção', color: 'blue', icon: Wrench },
+                            { id: 'shipped', label: 'Enviado', color: 'orange', icon: Truck },
+                            { id: 'delivered', label: 'Entregue', color: 'emerald', icon: CheckCircle2 }
+                        ].map(status => {
+                            const Icon = status.icon;
+                            const statusSales = sales.filter(s => s.status === status.id);
+                            const count = statusSales.length;
+                            const total = statusSales.reduce((acc, s) => acc + s.totalValue, 0);
+                            
+                            return (
+                                <div 
+                                    key={status.id}
+                                    className="bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group cursor-pointer"
+                                    onClick={() => setStatusFilter(status.id)}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className={`p-2 bg-${status.color}-50 dark:bg-${status.color}-900/20 text-${status.color}-600 rounded-xl group-hover:scale-110 transition-transform`}>
+                                            <Icon size={16} />
+                                        </div>
+                                        <span className="text-2xl font-black text-gray-900 dark:text-white">{count}</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{status.label}</p>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white">
+                                            R$ {(total / 1000).toFixed(1)}k
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex flex-col md:flex-row gap-4 p-4 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-3 text-gray-400" size={20} />
+                            <input 
+                                type="text"
+                                placeholder="Buscar por cliente ou ID..."
+                                className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 pl-12 pr-4 text-sm font-bold dark:text-white focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {/* Date Filter */}
+                            <select 
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value as any)}
+                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                            >
+                                <option value="all">Todos os Períodos</option>
+                                <option value="today">Hoje</option>
+                                <option value="7days">Últimos 7 dias</option>
+                                <option value="30days">Últimos 30 dias</option>
+                                <option value="custom">Período Customizado</option>
+                            </select>
+                            
+                            {dateFilter === 'custom' && (
+                                <>
+                                    <input 
+                                        type="date"
+                                        value={customStartDate}
+                                        onChange={(e) => setCustomStartDate(e.target.value)}
+                                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                                    />
+                                    <input 
+                                        type="date"
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                                    />
+                                </>
+                            )}
+                            
+                            {permissions?.orders_view_all && (
+                                <select 
+                                    value={attendantFilter}
+                                    onChange={(e) => setAttendantFilter(e.target.value)}
+                                    className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                                >
+                                    <option value="all">Todos os Atendentes</option>
+                                    {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                </select>
+                            )}
+                            <select 
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                            >
+                                <option value="all">Todos os Status</option>
+                                <option value="negotiation">Negociação</option>
+                                <option value="approved">Aprovado</option>
+                                <option value="pending">Pendente</option>
+                                <option value="paid">Pago</option>
+                                <option value="producing">Em Produção</option>
+                                <option value="shipped">Enviado</option>
+                                <option value="delivered">Entregue</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Content Area (Kanban or List) */}
+                    {viewMode === 'kanban' ? (
+                        <OrdersKanbanBoard 
+                            sales={filteredSales}
+                            onEditSale={handleEditSale}
+                            onUpdateStatus={handleUpdateStatus}
+                            onDeleteSale={handleDeleteSale}
+                        />
+                    ) : (
+                        <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm overflow-hidden">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 dark:bg-black/20 border-b border-gray-200 dark:border-gray-800">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
+                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor</th>
+                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                                        <th className="px-6 py-4 text-right text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                                    {filteredSales.map(sale => (
+                                        <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="font-bold text-gray-900 dark:text-white">{sale.clientName}</div>
+                                                <div className="text-sm text-gray-500">{sale.clientPhone}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                    sale.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                                    sale.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                    sale.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {sale.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                                                R$ {sale.totalValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                {new Date(sale.createdAt).toLocaleDateString('pt-BR')}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => handleEditSale(sale.id)}
+                                                    className="text-blue-600 hover:text-blue-700 font-bold text-sm"
+                                                >
+                                                    Editar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             )}
-
-            <NewOrderModal 
-                isOpen={isSaleModalOpen}
-                onClose={() => setIsSaleModalOpen(false)}
-                onSave={fetchSales}
-                onDelete={handleDeleteSale}
-                editingSale={editingSale}
-                user={user}
-                initialItems={currentSaleItems}
-            />
         </div>
     );
 };
