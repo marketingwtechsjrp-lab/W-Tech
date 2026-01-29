@@ -196,6 +196,7 @@ export interface Lead {
   conversion_value?: number;
   conversion_summary?: string;
   conversion_type?: string;
+  completed_courses?: any[]; // JSONB array of completed courses
 }
 
 export interface Mechanic {
@@ -220,6 +221,7 @@ export interface Mechanic {
   district?: string;
   cpfCnpj?: string; // Mapped from cpf_cnpj
   group?: string; // Mapped from group
+  completed_courses?: any[]; // JSONB array of completed courses
 }
 
 export interface GlossaryTerm {
@@ -493,7 +495,7 @@ export interface Sale {
     clientEmail?: string;
     clientPhone?: string;
     channel: 'Store' | 'Admin' | 'Course' | 'Workshop';
-    status: 'pending' | 'paid' | 'producing' | 'shipped' | 'delivered' | 'cancelled';
+    status: 'negotiation' | 'approved' | 'pending' | 'paid' | 'producing' | 'shipped' | 'delivered' | 'cancelled';
     totalValue: number;
     paymentMethod?: string;
     paymentStatus?: string;

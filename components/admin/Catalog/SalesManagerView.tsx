@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { 
-    Search, Plus, Filter, Edit, Trash2, Package, 
-    ArrowUpRight, ArrowDownRight, History, Settings, 
-    PackageCheck, AlertTriangle, Layers, Wrench, X, Save,
-    ShoppingCart, User, Calendar, CreditCard, Truck, 
-    CheckCircle2, Clock, Ban, MoreVertical, Eye, UserPlus
+    Search, Plus, Filter, Edit, Trash2, Truck, CreditCard,
+    CheckCircle2, Clock, Wrench, Ban, MoreVertical, LayoutGrid, List, RefreshCcw, ShoppingCart
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
-import { Product, StockMovement, ProductBOM, Sale, SaleItem, Shipment } from '../../../types';
-import { motion, AnimatePresence } from 'framer-motion';
-
+import { Sale, SaleItem, Product } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import { OrdersKanbanBoard } from './OrdersKanbanBoard';
+import { NewOrderModal } from './NewOrderModal';
 
 const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const { user } = useAuth();
@@ -20,20 +16,17 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [attendantFilter, setAttendantFilter] = useState<string>('all');
+    const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
     const [usersList, setUsersList] = useState<{id: string, name: string}[]>([]);
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
     
+    // Modal State
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Partial<Sale> | null>(null);
-    const [saleItems, setSaleItems] = useState<(SaleItem & { product?: Product })[]>([]);
-    const [isAddingItem, setIsAddingItem] = useState(false);
-    const [itemSearch, setItemSearch] = useState('');
-    const [products, setProducts] = useState<Product[]>([]);
+    const [currentSaleItems, setCurrentSaleItems] = useState<(SaleItem & { product?: Product })[]>([]);
     
-    // Client Search
-    const [potentialClients, setPotentialClients] = useState<{id: string, name: string, type: string, phone: string, email?: string}[]>([]);
-    const [clientSearchTerm, setClientSearchTerm] = useState('');
-    const [showClientResults, setShowClientResults] = useState(false);
-
     // Portal Menu State
     const [activeMenu, setActiveMenu] = useState<{top: number, left: number, saleId: string} | null>(null);
 
@@ -42,7 +35,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         const rect = e.currentTarget.getBoundingClientRect();
         setActiveMenu({
             top: rect.bottom + 5 + window.scrollY,
-            left: rect.right - 192 + window.scrollX, // Align right edge (w-48 is approx 192px)
+            left: rect.right - 192 + window.scrollX,
             saleId
         });
     };
@@ -59,8 +52,6 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
     useEffect(() => {
         fetchSales();
-        fetchProducts();
-        fetchClients();
         fetchUsers();
     }, [attendantFilter]);
 
@@ -69,22 +60,10 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         if (data) setUsersList(data);
     };
 
-    const fetchClients = async () => {
-        const { data: leads } = await supabase.from('SITE_Leads').select('id, name, phone, email').limit(100);
-        const { data: mechanics } = await supabase.from('SITE_Mechanics').select('id, name, phone, email').limit(100);
-        
-        const combined = [
-            ...(leads || []).map((l: any) => ({ ...l, type: 'Lead' })),
-            ...(mechanics || []).map((m: any) => ({ ...m, type: 'Credenciado' }))
-        ];
-        setPotentialClients(combined);
-    };
-
     const fetchSales = async () => {
         setLoading(true);
         let query = supabase.from('SITE_Sales').select('*');
 
-        // Access Control: If not view_all, only show user's own sales
         if (permissions && !permissions.orders_view_all && user) {
             query = query.eq('seller_id', user.id);
         } else if (attendantFilter !== 'all') {
@@ -106,8 +85,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                 status: s.status,
                 totalValue: s.total_value,
                 paymentMethod: s.payment_method,
-                paymentStatus: s.payment_status,
-                shippingStatus: s.shipping_status,
+                itemsJson: s.items, // Keep raw items just in case
                 notes: s.notes,
                 createdAt: s.created_at
             }));
@@ -116,76 +94,10 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         setLoading(false);
     };
 
-    const fetchProducts = async () => {
-        const { data, error } = await supabase
-            .from('SITE_Products')
-            .select('*')
-            .eq('type', 'product');
-
-        if (!error && data) {
-            const mapped = data.map((p: any) => ({
-                id: p.id,
-                sku: p.sku,
-                name: p.name,
-                type: p.type,
-                unit: p.unit,
-                currentStock: p.current_stock,
-                salePrice: p.sale_price
-            })) as Product[];
-            setProducts(mapped);
-        }
-    };
-
     const handleCreateSale = () => {
-        setEditingSale({
-            channel: 'Admin',
-            status: 'pending',
-            totalValue: 0,
-            clientName: '',
-            clientPhone: '',
-            clientEmail: '',
-            notes: ''
-        });
-        setSaleItems([]);
+        setEditingSale(null);
+        setCurrentSaleItems([]);
         setIsSaleModalOpen(true);
-    };
-
-    const handleDeleteSale = async (saleId: string) => {
-        if (!confirm('Tem certeza que deseja excluir este pedido permanentemente? Esta ação não pode ser desfeita.')) return;
-        
-        setLoading(true);
-        try {
-            // First delete sale items
-            const { error: itemsError } = await supabase
-                .from('SITE_SaleItems')
-                .delete()
-                .eq('sale_id', saleId);
-
-            if (itemsError) throw itemsError;
-
-            // Delete stock movements related to this sale
-            const { error: movementsError } = await supabase
-                .from('SITE_StockMovements')
-                .delete()
-                .eq('reference_id', saleId);
-
-            if (movementsError) throw movementsError;
-
-            // Finally delete the sale
-            const { error: saleError } = await supabase
-                .from('SITE_Sales')
-                .delete()
-                .eq('id', saleId);
-
-            if (saleError) throw saleError;
-
-            alert('Pedido excluído com sucesso.');
-            fetchSales();
-        } catch (error: any) {
-            alert('Erro ao excluir pedido: ' + error.message);
-        } finally {
-            setLoading(false);
-        }
     };
 
     const handleEditSale = async (saleId: string) => {
@@ -207,8 +119,10 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                     notes: saleData.notes
                 });
 
-                if (itemsData) {
-                    const mappedItems = itemsData.map((item: any) => ({
+                let mappedItems = [];
+                
+                if (itemsData && itemsData.length > 0) {
+                    mappedItems = itemsData.map((item: any) => ({
                         id: item.id,
                         saleId: item.sale_id,
                         productId: item.product_id,
@@ -223,13 +137,29 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                             currentStock: item.product.current_stock
                         } : undefined
                     }));
-                    setSaleItems(mappedItems);
+                } else if (saleData.items) {
+                    // Fallback to JSON items if SITE_SaleItems is empty
+                    const jsonItems = typeof saleData.items === 'string' ? JSON.parse(saleData.items) : saleData.items;
+                    mappedItems = jsonItems.map((item: any) => ({
+                        id: Math.random().toString(),
+                        saleId: saleData.id,
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.price || item.unitPrice || 0,
+                        name: item.name, // Explicit name for display
+                        product: {
+                            id: item.productId,
+                            name: item.name,
+                            salePrice: item.price || item.unitPrice || 0,
+                        }
+                    }));
                 }
-
+                
+                setCurrentSaleItems(mappedItems);
                 setIsSaleModalOpen(true);
             }
         } catch (error: any) {
-            alert('Erro ao carregar pedido para edição: ' + error.message);
+            alert('Erro ao carregar pedido: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -238,18 +168,36 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const handleUpdateStatus = async (saleId: string, newStatus: Sale['status']) => {
         setLoading(true);
         try {
+             // Logic to handle stock deduction if moving to SHIPPED
             const { data: sale } = await supabase.from('SITE_Sales').select('status').eq('id', saleId).single();
             const shouldDeduct = newStatus === 'shipped' && (sale?.status !== 'shipped' && sale?.status !== 'delivered');
             
-            const { error } = await supabase
-                .from('SITE_Sales')
-                .update({ status: newStatus })
-                .eq('id', saleId);
-
+            const { error } = await supabase.from('SITE_Sales').update({ status: newStatus }).eq('id', saleId);
             if (error) throw error;
 
             if (shouldDeduct) {
-                await processStockDeduction(saleId);
+                // Fetch reserved movements and convert to OUT
+                const { data: movements } = await supabase.from('SITE_StockMovements').select('*').eq('reference_id', saleId).eq('type', 'RESERVED');
+                if (movements) {
+                    for (const mov of movements) {
+                        await supabase.from('SITE_StockMovements').insert([{
+                            product_id: mov.product_id,
+                            type: 'OUT',
+                            quantity: mov.quantity,
+                            origin: 'Venda (Enviada)',
+                            reference_id: saleId,
+                            notes: `Baixa automática Venda #${saleId.slice(0,8)}`
+                        }]);
+                        // Deduct actual stock
+                        // Note: Current stock logic usually deducts available stock. 
+                        // If we implement 'Available' vs 'Physical', this changes.
+                        // For now, simple deduction from current_stock.
+                         const { data: p } = await supabase.from('SITE_Products').select('current_stock').eq('id', mov.product_id).single();
+                         if(p) {
+                             await supabase.from('SITE_Products').update({ current_stock: p.current_stock - mov.quantity }).eq('id', mov.product_id);
+                         }
+                    }
+                }
             }
 
             fetchSales();
@@ -260,697 +208,355 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         }
     };
 
-    const processStockDeduction = async (saleId: string) => {
-        const { data: movements } = await supabase
-            .from('SITE_StockMovements')
-            .select('*')
-            .eq('reference_id', saleId)
-            .eq('type', 'RESERVED');
-
-        if (movements && movements.length > 0) {
-            for (const mov of movements) {
-                await supabase.from('SITE_StockMovements').insert([{
-                    product_id: mov.product_id,
-                    type: 'OUT',
-                    quantity: mov.quantity,
-                    origin: 'Venda (Enviada)',
-                    reference_id: saleId,
-                    notes: `Baixa automática de estoque para Venda #${saleId.slice(0,8)}`
-                }]);
-
-                const { data: product } = await supabase
-                    .from('SITE_Products')
-                    .select('current_stock')
-                    .eq('id', mov.product_id)
-                    .single();
-                
-                if (product) {
-                    await supabase
-                        .from('SITE_Products')
-                        .update({ current_stock: (product.current_stock || 0) - mov.quantity })
-                        .eq('id', mov.product_id);
-                }
-            }
-        }
-    };
-
-    const handleSaveSale = async () => {
-        if (saleItems.length === 0) return alert('Adicione pelo menos um item.');
-        
+    const handleDeleteSale = async (saleId: string) => {
+        if (!confirm('Tem certeza? Isso excluirá permanentemente o histórico.')) return;
         setLoading(true);
         try {
-            const totalValue = saleItems.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0);
-            const isEditing = !!editingSale?.id;
-            
-            let saleId = editingSale?.id;
-
-            if (isEditing) {
-                // Update existing sale
-                const { error: saleError } = await supabase
-                    .from('SITE_Sales')
-                    .update({
-                        client_name: editingSale?.clientName || 'Cliente Balcão',
-                        client_phone: editingSale?.clientPhone,
-                        client_id: editingSale?.clientId,
-                        channel: editingSale?.channel || 'Admin',
-                        status: editingSale?.status || 'pending',
-                        total_value: totalValue,
-                        notes: editingSale?.notes
-                    })
-                    .eq('id', saleId);
-
-                if (saleError) throw saleError;
-
-                // Delete old items and movements to recreate
-                await supabase.from('SITE_SaleItems').delete().eq('sale_id', saleId);
-                await supabase.from('SITE_StockMovements').delete().eq('reference_id', saleId);
-            } else {
-                // Insert new sale
-                const { data: saleData, error: saleError } = await supabase
-                    .from('SITE_Sales')
-                    .insert([{
-                        client_name: editingSale?.clientName || 'Cliente Balcão',
-                        client_phone: editingSale?.clientPhone,
-                        client_id: editingSale?.clientId,
-                        channel: editingSale?.channel || 'Admin',
-                        status: editingSale?.status || 'pending',
-                        total_value: totalValue,
-                        seller_id: user?.id,
-                        created_at: new Date().toISOString(),
-                        notes: editingSale?.notes
-                    }])
-                    .select()
-                    .single();
-
-                if (saleError) throw saleError;
-                saleId = saleData.id;
-            }
-
-            const itemsToInsert = saleItems.map(item => ({
-                sale_id: saleId,
-                product_id: item.productId,
-                quantity: item.quantity,
-                unit_price: item.unitPrice
-            }));
-
-            const { error: itemsError } = await supabase
-                .from('SITE_SaleItems')
-                .insert(itemsToInsert);
-
-            if (itemsError) throw itemsError;
-
-            // Handle stock movements
-            for (const item of saleItems) {
-                const { data: bomData } = await supabase
-                    .from('SITE_ProductBOM')
-                    .select('*')
-                    .eq('parent_product_id', item.productId);
-
-                if (bomData && bomData.length > 0) {
-                    for (const component of bomData) {
-                        await supabase.from('SITE_StockMovements').insert([{
-                            product_id: component.component_id,
-                            type: 'RESERVED',
-                            quantity: component.quantity * item.quantity,
-                            origin: 'Venda',
-                            reference_id: saleId,
-                            notes: `Reserva p/ Pedido #${saleId?.slice(0,8)} (Comp. de ${item.product?.name})`
-                        }]);
-                    }
-                } else {
-                    await supabase.from('SITE_StockMovements').insert([{
-                        product_id: item.productId,
-                        type: 'RESERVED',
-                        quantity: item.quantity,
-                        origin: 'Venda',
-                        reference_id: saleId,
-                        notes: `Reserva p/ Pedido #${saleId?.slice(0,8)}`
-                    }]);
-                }
-            }
-
-            setIsSaleModalOpen(false);
+            await supabase.from('SITE_SaleItems').delete().eq('sale_id', saleId);
+            await supabase.from('SITE_StockMovements').delete().eq('reference_id', saleId);
+            await supabase.from('SITE_Sales').delete().eq('id', saleId);
             fetchSales();
-            alert(isEditing ? 'Pedido atualizado com sucesso!' : 'Pedido realizado com sucesso! Estoque reservado.');
-        } catch (error: any) {
-            alert('Erro ao salvar pedido: ' + error.message);
-        } finally {
-            setLoading(false);
-        }
+        } catch(e) { console.error(e); }
+        setLoading(false);
     };
 
     const filteredSales = sales.filter(s => {
         const matchesSearch = s.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              s.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        
+        // Date filtering
+        let matchesDate = true;
+        if (dateFilter !== 'all') {
+            const saleDate = new Date(s.createdAt);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (dateFilter === 'today') {
+                matchesDate = saleDate >= today;
+            } else if (dateFilter === '7days') {
+                const sevenDaysAgo = new Date(today);
+                sevenDaysAgo.setDate(today.getDate() - 7);
+                matchesDate = saleDate >= sevenDaysAgo;
+            } else if (dateFilter === '30days') {
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+                matchesDate = saleDate >= thirtyDaysAgo;
+            } else if (dateFilter === 'custom' && customStartDate && customEndDate) {
+                const start = new Date(customStartDate);
+                const end = new Date(customEndDate);
+                end.setHours(23, 59, 59, 999);
+                matchesDate = saleDate >= start && saleDate <= end;
+            }
+        }
+        
+        return matchesSearch && matchesStatus && matchesDate;
     });
 
-    const getStatusColor = (status: Sale['status']) => {
+    const getStatusColor = (status: string) => {
         switch (status) {
+            case 'negotiation': return 'bg-purple-100 text-purple-700';
+            case 'approved': return 'bg-indigo-100 text-indigo-700';
             case 'pending': return 'bg-yellow-100 text-yellow-700';
             case 'paid': return 'bg-green-100 text-green-700';
             case 'producing': return 'bg-blue-100 text-blue-700';
-            case 'shipped': return 'bg-purple-100 text-purple-700';
+            case 'shipped': return 'bg-orange-100 text-orange-700';
             case 'delivered': return 'bg-emerald-100 text-emerald-700';
             case 'cancelled': return 'bg-red-100 text-red-700';
             default: return 'bg-gray-100 text-gray-700';
         }
     };
 
-    const getStatusLabel = (status: Sale['status']) => {
-        switch (status) {
-            case 'pending': return 'Pendente';
-            case 'paid': return 'Pago';
-            case 'producing': return 'Em Produção';
-            case 'shipped': return 'Enviado';
-            case 'delivered': return 'Entregue';
-            case 'cancelled': return 'Cancelado';
-            default: return status;
-        }
+    const getStatusLabel = (status: string) => {
+        const map: any = { 
+            negotiation: 'Negociação',
+            approved: 'Aprovado',
+            pending: 'Pendente', 
+            paid: 'Pago', 
+            producing: 'Em Produção', 
+            shipped: 'Enviado', 
+            delivered: 'Entregue', 
+            cancelled: 'Cancelado' 
+        };
+        return map[status] || status;
     };
+
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Vendas & Pedidos</h2>
-                    <p className="text-gray-500 font-medium">Gerencie suas vendas multicanal e acompanhe o status dos pedidos.</p>
+            {/* Header & Controls */}
+            {/* Futuristic Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-4">
+                <div className="flex items-center gap-5">
+                    <div className="relative group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-wtech-red to-red-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                        <div className="relative p-4 bg-wtech-red shadow-2xl rounded-2xl">
+                            <ShoppingCart className="text-white" size={32} />
+                        </div>
+                    </div>
+                    <div>
+                        <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
+                            Vendas & <span className="text-wtech-red">Fluxo</span>
+                        </h2>
+                        <div className="flex items-center gap-2 mt-1 px-2 py-0.5 bg-gray-100 dark:bg-white/5 rounded-full w-fit border border-gray-200 dark:border-gray-800">
+                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            <span className="text-gray-500 dark:text-gray-400 font-black text-[9px] uppercase tracking-widest">{sales.length} Pedidos Ativos</span>
+                        </div>
+                    </div>
                 </div>
-                <button 
-                    onClick={handleCreateSale}
-                    className="bg-wtech-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 transition-all shadow-xl active:scale-95"
-                >
-                    <Plus size={20} /> Novo Pedido
-                </button>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-yellow-50 text-yellow-600 rounded-xl">
-                            <Clock size={20} />
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pendentes</span>
-                    </div>
-                    <p className="text-2xl font-black text-gray-900">{sales.filter(s => s.status === 'pending').length}</p>
-                </div>
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                            <Layers size={20} />
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Em Produção</span>
-                    </div>
-                    <p className="text-2xl font-black text-gray-900">{sales.filter(s => s.status === 'producing').length}</p>
-                </div>
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
-                            <Truck size={20} />
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Enviados</span>
-                    </div>
-                    <p className="text-2xl font-black text-gray-900">{sales.filter(s => s.status === 'shipped').length}</p>
-                </div>
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-green-50 text-green-600 rounded-xl">
-                            <CheckCircle2 size={20} />
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Faturamento Total</span>
-                    </div>
-                    <p className="text-2xl font-black text-gray-900">R$ {sales.reduce((acc, s) => acc + s.totalValue, 0).toLocaleString('pt-BR')}</p>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-4 top-3 text-gray-400" size={20} />
-                        <input 
-                            type="text"
-                            placeholder="Buscar por cliente ou ID..."
-                            className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {permissions?.orders_view_all && (
-                            <select 
-                                value={attendantFilter}
-                                onChange={(e) => setAttendantFilter(e.target.value)}
-                                className="bg-gray-50 border-none rounded-2xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all"
-                            >
-                                <option value="all">Todos os Atendentes</option>
-                                {usersList.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                ))}
-                            </select>
-                        )}
-                        <select 
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="bg-gray-50 border-none rounded-2xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all"
+                <div className="flex items-center gap-3">
+                    {/* View Switcher - Futuristic Style */}
+                    <div className="bg-gray-100 dark:bg-[#111] p-1.5 rounded-2xl flex gap-1 border border-gray-200 dark:border-gray-800 shadow-inner">
+                        <button 
+                            onClick={() => setViewMode('kanban')}
+                            className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
                         >
-                            <option value="all">Todos os Status</option>
-                            <option value="pending">Pendente</option>
-                            <option value="paid">Pago</option>
-                            <option value="producing">Em Produção</option>
-                            <option value="shipped">Enviado</option>
-                            <option value="delivered">Entregue</option>
-                            <option value="cancelled">Cancelado</option>
-                        </select>
+                            <LayoutGrid size={20} />
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('list')}
+                            className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'list' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                        >
+                            <List size={20} />
+                        </button>
                     </div>
-                </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="bg-gray-50/50">
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">ID / Data</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Canal</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                                <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {loading ? (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Carregando pedidos...</td></tr>
-                            ) : filteredSales.length === 0 ? (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Nenhum pedido encontrado.</td></tr>
-                            ) : filteredSales.map((sale) => (
-                                <tr key={sale.id} className="hover:bg-gray-50/50 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">#{sale.id.slice(0, 8)}</span>
-                                            <span className="text-xs font-bold text-gray-900">{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                                <User size={14} className="text-gray-400" />
-                                            </div>
+                    <button 
+                        onClick={fetchSales}
+                        disabled={loading}
+                        className="bg-white dark:bg-[#111] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-800 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-[#222] transition-all shadow-sm active:scale-90 group relative"
+                        title="Sincronizar Pedidos"
+                    >
+                        <RefreshCcw size={20} className={`${loading ? 'animate-spin text-wtech-red' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
+                        {loading && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
+                    </button>
+
+                    <button 
+                        onClick={handleCreateSale}
+                        className="bg-wtech-red text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-black transition-all shadow-2xl shadow-red-600/20 active:scale-95 group relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 
+                        <span>Novo Pedido</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Comprehensive Status Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                {[
+                    { id: 'pending', label: 'Pendente', color: 'yellow', icon: Clock },
+                    { id: 'negotiation', label: 'Negociação', color: 'purple', icon: Clock },
+                    { id: 'approved', label: 'Aprovado', color: 'indigo', icon: CheckCircle2 },
+                    { id: 'paid', label: 'Pago', color: 'green', icon: CreditCard },
+                    { id: 'producing', label: 'Produção', color: 'blue', icon: Wrench },
+                    { id: 'shipped', label: 'Enviado', color: 'orange', icon: Truck },
+                    { id: 'delivered', label: 'Entregue', color: 'emerald', icon: CheckCircle2 }
+                ].map(status => {
+                    const Icon = status.icon;
+                    const statusSales = sales.filter(s => s.status === status.id);
+                    const count = statusSales.length;
+                    const total = statusSales.reduce((acc, s) => acc + s.totalValue, 0);
+                    
+                    return (
+                        <div 
+                            key={status.id}
+                            className="bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group cursor-pointer"
+                            onClick={() => setStatusFilter(status.id)}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <div className={`p-2 bg-${status.color}-50 dark:bg-${status.color}-900/20 text-${status.color}-600 rounded-xl group-hover:scale-110 transition-transform`}>
+                                    <Icon size={16} />
+                                </div>
+                                <span className="text-2xl font-black text-gray-900 dark:text-white">{count}</span>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{status.label}</p>
+                                <p className="text-sm font-black text-gray-900 dark:text-white">
+                                    R$ {(total / 1000).toFixed(1)}k
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col md:flex-row gap-4 p-4 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-3 text-gray-400" size={20} />
+                    <input 
+                        type="text"
+                        placeholder="Buscar por cliente ou ID..."
+                        className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 pl-12 pr-4 text-sm font-bold dark:text-white focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {/* Date Filter */}
+                    <select 
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value as any)}
+                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                    >
+                        <option value="all">Todos os Períodos</option>
+                        <option value="today">Hoje</option>
+                        <option value="7days">Últimos 7 dias</option>
+                        <option value="30days">Últimos 30 dias</option>
+                        <option value="custom">Período Customizado</option>
+                    </select>
+                    
+                    {dateFilter === 'custom' && (
+                        <>
+                            <input 
+                                type="date"
+                                value={customStartDate}
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                            />
+                            <input 
+                                type="date"
+                                value={customEndDate}
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                            />
+                        </>
+                    )}
+                    
+                    {permissions?.orders_view_all && (
+                        <select 
+                            value={attendantFilter}
+                            onChange={(e) => setAttendantFilter(e.target.value)}
+                            className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                        >
+                            <option value="all">Todos os Atendentes</option>
+                            {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
+                    )}
+                    <select 
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
+                    >
+                        <option value="all">Todos os Status</option>
+                        <option value="negotiation">Negociação</option>
+                        <option value="approved">Aprovado</option>
+                        <option value="pending">Pendente</option>
+                        <option value="paid">Pago</option>
+                        <option value="producing">Em Produção</option>
+                        <option value="shipped">Enviado</option>
+                        <option value="delivered">Entregue</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Content Area */}
+            {viewMode === 'kanban' ? (
+                <OrdersKanbanBoard 
+                    sales={filteredSales} 
+                    onUpdateStatus={handleUpdateStatus} 
+                    onEditSale={handleEditSale} 
+                />
+            ) : (
+                <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50/50 dark:bg-white/5">
+                                <tr>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">ID / Data</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Canal</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                {loading ? (
+                                    <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Carregando...</td></tr>
+                                ) : filteredSales.length === 0 ? (
+                                    <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">Nenhum pedido encontrado.</td></tr>
+                                ) : filteredSales.map((sale) => (
+                                    <tr key={sale.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group">
+                                        <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-gray-900">{sale.clientName || 'Cliente Direto'}</span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase">{sale.clientPhone || 'Sem telefone'}</span>
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">#{sale.id.slice(0, 8)}</span>
+                                                <span className="text-xs font-bold text-gray-900 dark:text-white">{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-gray-100 text-gray-500`}>
-                                            {sale.channel}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm font-black text-gray-900">R$ {sale.totalValue.toLocaleString('pt-BR')}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${getStatusColor(sale.status)}`}>
-                                            {getStatusLabel(sale.status)}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {/* Quick Status Actions */}
-                                            {sale.status === 'pending' && (
-                                                <button onClick={() => handleUpdateStatus(sale.id, 'paid')} className="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg" title="Marcar Pago">
-                                                    <CreditCard size={16} />
-                                                </button>
-                                            )}
-                                            {sale.status === 'paid' && (
-                                                <button onClick={() => handleUpdateStatus(sale.id, 'producing')} className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg" title="Iniciar Produção">
-                                                    <Wrench size={16} />
-                                                </button>
-                                            )}
-                                            {sale.status === 'producing' && (
-                                                <button onClick={() => handleUpdateStatus(sale.id, 'shipped')} className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg" title="Despachar">
-                                                    <Truck size={16} />
-                                                </button>
-                                            )}
-                                            
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-bold text-gray-900 dark:text-white">{sale.clientName || 'Cliente Direto'}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500">
+                                                {sale.channel}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-black text-gray-900 dark:text-white">R$ {sale.totalValue.toLocaleString('pt-BR')}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${getStatusColor(sale.status)}`}>
+                                                {getStatusLabel(sale.status)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right relative">
                                             <button 
                                                 onClick={(e) => handleOpenMenu(e, sale.id)}
-                                                className={`p-2 transition-colors duration-200 rounded-lg ${activeMenu?.saleId === sale.id ? 'text-black bg-gray-200' : 'text-gray-400 hover:text-black hover:bg-gray-100'}`}
+                                                className="p-2 text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/10"
                                             >
                                                 <MoreVertical size={18} />
                                             </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <AnimatePresence>
-                {isSaleModalOpen && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
-                        >
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                                <div>
-                                    <h3 className="text-xl font-black text-gray-900">{editingSale?.id ? 'Editar Pedido' : 'Lançar Novo Pedido'}</h3>
-                                    <p className="text-xs text-gray-500 font-medium tracking-tight">Venda Balcão / Administrativa</p>
-                                </div>
-                                <button onClick={() => setIsSaleModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors text-gray-400 hover:text-red-500">
-                                    <X size={24} />
-                                </button>
-                            </div>
-                            
-                            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[80vh] overflow-y-auto">
-                                <div className="md:col-span-2 space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Itens do Pedido</h4>
-                                            <button 
-                                                onClick={() => setIsAddingItem(!isAddingItem)}
-                                                className="text-xs font-bold text-wtech-gold hover:underline flex items-center gap-1"
-                                            >
-                                                {isAddingItem ? <X size={14} /> : <Plus size={14} />} Adicionar Item
-                                            </button>
-                                        </div>
-
-                                        {isAddingItem && (
-                                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-2">
-                                                <div className="relative mb-4">
-                                                    <Search className="absolute left-4 top-2.5 text-gray-400" size={18} />
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Buscar produto pelo nome ou SKU..." 
-                                                        className="w-full bg-white border border-gray-200 rounded-xl py-2 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
-                                                        value={itemSearch}
-                                                        onChange={(e) => setItemSearch(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="max-h-48 overflow-y-auto space-y-2">
-                                                    {products
-                                                        .filter(p => !saleItems.find(si => si.productId === p.id) && (p.name.toLowerCase().includes(itemSearch.toLowerCase()) || p.sku.toLowerCase().includes(itemSearch.toLowerCase())))
-                                                        .map(p => (
-                                                            <button 
-                                                                key={p.id}
-                                                                onClick={() => {
-                                                                    setSaleItems([...saleItems, {
-                                                                        id: Math.random().toString(),
-                                                                        saleId: '',
-                                                                        productId: p.id,
-                                                                        quantity: 1,
-                                                                        unitPrice: p.salePrice,
-                                                                        product: p
-                                                                    }]);
-                                                                    setIsAddingItem(false);
-                                                                    setItemSearch('');
-                                                                }}
-                                                                className="w-full text-left p-3 hover:bg-white rounded-xl flex justify-between items-center group transition-all"
-                                                            >
-                                                                <div>
-                                                                    <p className="text-sm font-bold text-gray-900">{p.name}</p>
-                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">{p.sku} | Estoque: {p.currentStock} {p.unit}</p>
-                                                                </div>
-                                                                <div className="text-right">
-                                                                    <p className="text-sm font-black text-gray-900">R$ {p.salePrice.toLocaleString('pt-BR')}</p>
-                                                                    <Plus size={16} className="text-wtech-gold ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                                </div>
-                                                            </button>
-                                                        ))
-                                                    }
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="space-y-2">
-                                            {saleItems.length === 0 ? (
-                                                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                                    <ShoppingCart className="mx-auto text-gray-300 mb-2" size={32} />
-                                                    <p className="text-gray-400 font-bold text-sm">Nenhum item adicionado ao pedido.</p>
-                                                </div>
-                                            ) : (
-                                                saleItems.map((item, idx) => (
-                                                    <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                                        <div className="flex-1">
-                                                            <p className="text-sm font-black text-gray-900">{item.product?.name}</p>
-                                                            <p className="text-[10px] text-gray-400 font-bold uppercase">{item.product?.sku}</p>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-1">
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        const newItems = [...saleItems];
-                                                                        if (newItems[idx].quantity > 1) {
-                                                                            newItems[idx].quantity--;
-                                                                            setSaleItems(newItems);
-                                                                        }
-                                                                    }}
-                                                                    className="w-8 h-8 flex items-center justify-center"
-                                                                >
-                                                                    <X size={14} className="text-gray-400" />
-                                                                </button>
-                                                                <input 
-                                                                    type="number" 
-                                                                    className="w-12 text-center text-sm font-black border-none focus:ring-0 p-0"
-                                                                    value={item.quantity}
-                                                                    onChange={(e) => {
-                                                                        const newItems = [...saleItems];
-                                                                        newItems[idx].quantity = parseInt(e.target.value) || 1;
-                                                                        setSaleItems(newItems);
-                                                                    }}
-                                                                />
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        const newItems = [...saleItems];
-                                                                        newItems[idx].quantity++;
-                                                                        setSaleItems(newItems);
-                                                                    }}
-                                                                    className="w-8 h-8 flex items-center justify-center"
-                                                                >
-                                                                    <Plus size={14} className="text-wtech-gold" />
-                                                                </button>
-                                                            </div>
-                                                            <div className="w-24 text-right">
-                                                                <p className="text-sm font-black text-gray-900">R$ {(item.unitPrice * item.quantity).toLocaleString('pt-BR')}</p>
-                                                            </div>
-                                                            <button 
-                                                                onClick={() => setSaleItems(saleItems.filter((_, i) => i !== idx))}
-                                                                className="text-red-400 hover:text-red-600"
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4 relative">
-                                        <div className="flex justify-between items-center">
-                                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Informações do Cliente</h4>
-                                            <button onClick={() => setShowClientResults(!showClientResults)} className="text-xs font-bold text-wtech-gold flex items-center gap-1">
-                                                <Search size={12} /> Buscar Cliente
-                                            </button>
-                                        </div>
-                                        
-                                        {/* Client Search Dropdown */}
-                                        {showClientResults && (
-                                            <div className="absolute top-12 left-0 w-full bg-white rounded-xl shadow-xl border border-gray-200 z-10 p-2 space-y-2">
-                                                <input 
-                                                    className="w-full p-2 text-xs bg-gray-50 rounded-lg border border-gray-200 outline-none focus:border-wtech-gold"
-                                                    placeholder="Digite o nome..."
-                                                    value={clientSearchTerm}
-                                                    onChange={e => setClientSearchTerm(e.target.value)}
-                                                    autoFocus
-                                                />
-                                                <div className="max-h-40 overflow-y-auto">
-                                                    {potentialClients
-                                                        .filter(c => c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()))
-                                                        .map(client => (
-                                                            <div 
-                                                                key={client.id}
-                                                                onClick={() => {
-                                                                    setEditingSale({
-                                                                        ...editingSale, 
-                                                                        clientId: client.id,
-                                                                        clientName: client.name,
-                                                                        clientPhone: client.phone,
-                                                                        clientEmail: client.email
-                                                                    });
-                                                                    setShowClientResults(false);
-                                                                }}
-                                                                className="p-2 hover:bg-blue-50 rounded-lg cursor-pointer flex justify-between items-center"
-                                                            >
-                                                                <div>
-                                                                    <p className="text-xs font-bold text-gray-900">{client.name}</p>
-                                                                    <p className="text-[10px] text-gray-400">{client.type}</p>
-                                                                </div>
-                                                                <UserPlus size={14} className="text-gray-400" />
-                                                            </div>
-                                                        ))
-                                                    }
-                                                    {clientSearchTerm && (
-                                                        <div 
-                                                            className="p-2 hover:bg-green-50 rounded-lg cursor-pointer text-center text-xs font-bold text-green-600"
-                                                            onClick={() => {
-                                                                setEditingSale({
-                                                                    ...editingSale,
-                                                                    clientName: clientSearchTerm,
-                                                                    clientId: undefined
-                                                                });
-                                                                setShowClientResults(false);
-                                                            }}
+                                            
+                                            {/* Action Menu Protal logic would go here, implemented simpler for now */}
+                                            {activeMenu && activeMenu.saleId === sale.id && (
+                                                <div 
+                                                    className="fixed z-50 bg-white dark:bg-[#222] rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 py-1 w-48"
+                                                    style={{ top: activeMenu.top, left: activeMenu.left }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <button onClick={() => handleEditSale(sale.id)} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 text-sm font-bold flex items-center gap-2">
+                                                        <Edit size={14} /> Editar
+                                                    </button>
+                                                    {['negotiation', 'approved', 'pending', 'paid', 'producing', 'shipped', 'delivered'].map(s => (
+                                                        <button 
+                                                            key={s}
+                                                            onClick={() => { handleUpdateStatus(sale.id, s as any); setActiveMenu(null); }}
+                                                            className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 text-xs text-gray-500 uppercase font-bold"
                                                         >
-                                                            Usar "{clientSearchTerm}" (Novo)
-                                                        </div>
+                                                            Marcar {getStatusLabel(s)}
+                                                        </button>
+                                                    ))}
+                                                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-1"></div>
+                                                    {(user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role === 'Manager' || 
+                                                      (typeof user?.role === 'object' && (user.role.name === 'Admin' || user.role.name === 'Super Admin' || user.role.level >= 10)) ||
+                                                      permissions?.admin_access) && (
+                                                        <button onClick={() => { handleDeleteSale(sale.id); setActiveMenu(null); }} className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-sm font-bold flex items-center gap-2">
+                                                            <Trash2 size={14} /> Excluir
+                                                        </button>
                                                     )}
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        <div className="space-y-3">
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Nome Completo</label>
-                                                <input 
-                                                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-wtech-gold"
-                                                    value={editingSale?.clientName || ''}
-                                                    onChange={e => setEditingSale({...editingSale, clientName: e.target.value})}
-                                                    placeholder="Cliente Balcão"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Telefone (WhatsApp)</label>
-                                                <input 
-                                                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-wtech-gold"
-                                                    value={editingSale?.clientPhone || ''}
-                                                    onChange={e => setEditingSale({...editingSale, clientPhone: e.target.value})}
-                                                    placeholder="11 99999-9999"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
-                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ajustes do Pedido</h4>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Status</label>
-                                                <select 
-                                                    className="w-full bg-white border border-gray-200 rounded-xl p-2 text-xs font-bold outline-none focus:border-wtech-gold"
-                                                    value={editingSale?.status || 'pending'}
-                                                    onChange={e => setEditingSale({...editingSale, status: e.target.value as any})}
-                                                >
-                                                    <option value="pending">Pendente</option>
-                                                    <option value="paid">Pago</option>
-                                                    <option value="producing">Em Produção</option>
-                                                    <option value="shipped">Enviado</option>
-                                                    <option value="delivered">Entregue</option>
-                                                    <option value="cancelled">Cancelado</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Canal</label>
-                                                <select 
-                                                    className="w-full bg-white border border-gray-200 rounded-xl p-2 text-xs font-bold outline-none focus:border-wtech-gold"
-                                                    value={editingSale?.channel || 'Admin'}
-                                                    onChange={e => setEditingSale({...editingSale, channel: e.target.value as any})}
-                                                >
-                                                    <option value="Admin">Admin</option>
-                                                    <option value="Store">Loja</option>
-                                                    <option value="Course">Curso</option>
-                                                    <option value="Workshop">Oficina</option>
-                                                    <option value="CRM">CRM</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Observações Internas</label>
-                                            <textarea 
-                                                className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm font-bold outline-none focus:border-wtech-gold min-h-[80px]"
-                                                value={editingSale?.notes || ''}
-                                                onChange={e => setEditingSale({...editingSale, notes: e.target.value})}
-                                                placeholder="Notas internas sobre o pedido..."
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-wtech-black p-6 rounded-3xl shadow-xl space-y-4 text-white">
-                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resumo Financeiro</h4>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between text-xs text-gray-400 font-bold">
-                                                <span>Subtotal</span>
-                                                <span>R$ {saleItems.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0).toLocaleString('pt-BR')}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-2 border-t border-gray-800 mt-2">
-                                                <span className="text-sm font-black">TOTAL</span>
-                                                <span className="text-xl font-black text-wtech-gold">R$ {saleItems.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0).toLocaleString('pt-BR')}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <button 
-                                            className="w-full py-4 bg-wtech-gold text-black rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-yellow-500 disabled:opacity-50"
-                                            onClick={handleSaveSale}
-                                            disabled={loading}
-                                        >
-                                            {loading ? 'Processando...' : 'Finalizar Pedido'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-            </AnimatePresence>
-
-            {activeMenu && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-start justify-start" onClick={() => setActiveMenu(null)}>
-                    {/* Backdrop is the div itself */}
-                    <div 
-                        className="fixed bg-white rounded-xl shadow-2xl border border-gray-100 py-2 w-48 animate-in fade-in zoom-in-95 duration-200"
-                        style={{ top: activeMenu.top, left: activeMenu.left }}
-                        onClick={e => e.stopPropagation()} // Prevent close when clicking inside menu
-                    >
-                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'paid'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-green-600 flex items-center gap-2 transition-colors">
-                            <CreditCard size={14}/> Marcar Pago
-                        </button>
-                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'producing'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-blue-600 flex items-center gap-2 transition-colors">
-                            <Wrench size={14}/> Em Produção
-                        </button>
-                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'shipped'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-purple-600 flex items-center gap-2 transition-colors">
-                            <Truck size={14}/> Despachar
-                        </button>
-                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'delivered'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-emerald-600 flex items-center gap-2 transition-colors">
-                            <CheckCircle2 size={14}/> Entregue
-                        </button>
-                        
-                        {(permissions?.orders_edit || permissions?.admin_access) && (
-                            <button onClick={() => { handleEditSale(activeMenu.saleId); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-gray-700 flex items-center gap-2 transition-colors">
-                                <Edit size={14}/> Editar Detalhes
-                            </button>
-                        )}
-
-                        <div className="h-px bg-gray-100 my-1"></div>
-                        <button onClick={() => { handleUpdateStatus(activeMenu.saleId, 'cancelled'); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-orange-600 flex items-center gap-2 transition-colors">
-                            <Ban size={14}/> Cancelar
-                        </button>
-
-                        {(permissions?.orders_delete || permissions?.admin_access) && (
-                            <button onClick={() => { handleDeleteSale(activeMenu.saleId); setActiveMenu(null); }} className="w-full text-left px-4 py-2 text-xs font-bold hover:bg-gray-50 text-red-600 flex items-center gap-2 transition-colors">
-                                <Trash2 size={14}/> Excluir Registro
-                            </button>
-                        )}
-                    </div>
-                </div>,
-                document.body
+                </div>
             )}
+
+            <NewOrderModal 
+                isOpen={isSaleModalOpen}
+                onClose={() => setIsSaleModalOpen(false)}
+                onSave={fetchSales}
+                onDelete={handleDeleteSale}
+                editingSale={editingSale}
+                user={user}
+                initialItems={currentSaleItems}
+            />
         </div>
     );
 };

@@ -17,6 +17,9 @@ import { supabase } from '../lib/supabaseClient';
 import { seedDatabase } from '../lib/seedData';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { PaymentMethodsManager } from '../components/admin/Financial/PaymentMethodsManager';
+import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
+import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
 
 
 import { LandingPageEditor } from './LandingPageEditor';
@@ -26,12 +29,10 @@ import DashboardView from '../components/admin/Dashboard/DashboardView';
 import CRMView from '../components/admin/CRM/CRMView';
 import BlogManagerView from '../components/admin/Blog/BlogManagerView';
 import CatalogManagerView from '../components/admin/Catalog/CatalogManagerView';
-import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
 import DevUserSwitcher from '../components/admin/DevUserSwitcher';
 import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
 import SalesHistoryView from '../components/admin/Financial/SalesHistoryView';
 
-import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
 import IntelligenceView from '../components/admin/Intelligence/IntelligenceView';
 import InvoicesManagerView from '../components/admin/Financial/InvoicesManagerView';
 import CashFlowView from '../components/admin/Financial/CashFlowView'; // Imported
@@ -3233,7 +3234,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     const [customRange, setCustomRange] = useState({ start: '', end: '' });
     const [attendantFilter, setAttendantFilter] = useState<string>('all');
     const [usersList, setUsersList] = useState<{ id: string, name: string }[]>([]);
-    const [activeTab, setActiveTab] = useState<'cashflow' | 'sales'>('cashflow');
+    const [activeTab, setActiveTab] = useState<'cashflow' | 'sales' | 'settings'>('cashflow');
     const [salesHistory, setSalesHistory] = useState<any[]>([]);
     const [salesLoading, setSalesLoading] = useState(false);
 
@@ -3502,6 +3503,14 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                     >
                         <TrendingUp size={14} /> Vendas
                     </button>
+                    {hasPermission('financial_view_all') && (
+                         <button 
+                            onClick={() => setActiveTab('settings')}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            <Settings size={14} /> Config
+                        </button>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap gap-2 items-center justify-end">
@@ -3629,7 +3638,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             <div className="absolute -right-2 -bottom-2 opacity-5 text-blue-500 group-hover:opacity-10 transition-opacity"><ShoppingBag size={80} /></div>
                         </div>
                     </>
-                ) : (
+                ) : activeTab === 'sales' ? (
                     <>
                         <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
                             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Volume de Vendas</div>
@@ -3649,7 +3658,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 R$ {salesHistory.length > 0 ? (salesHistory.reduce((acc, s) => acc + (s.total_value || 0), 0) / salesHistory.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
                             </div>
                         </div>
-                        <div className="bg-black p-6 rounded-2xl border border-white/10 shadow-xl">
+                         <div className="bg-black p-6 rounded-2xl border border-white/10 shadow-xl">
                             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Top Atendente</div>
                             <div className="text-xl font-black text-white truncate">
                                 {(() => {
@@ -3661,7 +3670,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             </div>
                         </div>
                     </>
-                )}
+                ) : null}
             </div>
 
             {/* Content Area */}
@@ -4293,6 +4302,7 @@ const SettingsView = () => {
             title: 'Clientes',
             perms: [
                 { key: 'clients_view', label: 'Visualizar Carteira de Clientes' },
+                { key: 'clients_view_all', label: 'Ver Todos os Clientes (Gestor/Admin)' },
                 { key: 'clients_manage', label: 'Editar Clientes' }
             ]
         },

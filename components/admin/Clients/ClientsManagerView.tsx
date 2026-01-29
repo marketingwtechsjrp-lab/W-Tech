@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Search, User, UserPlus, Phone, Mail, MapPin, Filter, MoreVertical, Shield, Users, Plus, X, Save, CheckCircle, PanelsTopLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, User, UserPlus, Phone, Mail, Filter, Shield, Users, Plus, X, Upload, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import ListsManager from '../Marketing/ListsManager';
+import { ClientDetailModal } from './ClientDetailModal';
+import * as XLSX from 'xlsx';
 
 const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
@@ -21,6 +23,11 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const [newListName, setNewListName] = useState('');
     const [isSavingGroup, setIsSavingGroup] = useState(false);
 
+    // Modal & Users
+    const [selectedClientForEdit, setSelectedClientForEdit] = useState<any>(null);
+    const [attendants, setAttendants] = useState<any[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     // Pagination
     const [itemsPerPage, setItemsPerPage] = useState(50);
     const [currentPage, setCurrentPage] = useState(1);
@@ -28,6 +35,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     useEffect(() => {
         if (user?.id) {
             fetchClients();
+            fetchAttendants();
         }
     }, [user?.id]);
 
@@ -37,11 +45,26 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
         }
     }, [isGroupModalOpen, user?.id, permissions]);
 
+    const fetchAttendants = async () => {
+        // Always fetch users to display their names/assignments
+        const { data } = await supabase.from('SITE_Users').select('id, name, email, role');
+        if (data) setAttendants(data);
+    };
+
     const fetchClients = async () => {
         setLoading(true);
-        // Fetch from Leads
-        const { data: leads } = await supabase.from('SITE_Leads').select('*').order('created_at', { ascending: false });
-        // Fetch from Mechanics (Credenciados)
+        // Fetch from Leads (RLS will filter what they can see)
+        const { data: leads, error } = await supabase
+            .from('SITE_Leads')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Error fetching leads:", error);
+            // Handle RLS error or just show empty
+        }
+
+        // Fetch from Mechanics (Credenciados) - Assuming these are public/global for now
         const { data: mechanics } = await supabase.from('SITE_Mechanics').select('*');
 
         const normalizedClients = [
@@ -53,6 +76,19 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 type: 'Lead',
                 origin: l.context_id || 'Lead',
                 status: l.status,
+                address: l.address,
+                birth_date: l.birth_date,
+                t_shirt_size: l.t_shirt_size,
+                workshop_details: l.workshop_details,
+                assigned_to: l.assigned_to,
+                lastPurchaseDate: l.last_purchase_date,
+                classification: l.classification || 'Novato',
+                isAccredited: l.is_accredited,
+                cpf: l.cpf,
+                rg: l.rg,
+                client_code: l.client_code,
+                delivery_address: l.delivery_address,
+                completed_courses: l.completed_courses || [],
                 createdAt: l.created_at
             })),
             ...(mechanics || []).map((m: any) => ({
@@ -63,6 +99,17 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 type: 'Credenciado',
                 origin: m.workshop_name || 'Oficina',
                 status: m.status,
+                address: m.address,
+                birth_date: m.birth_date,
+                t_shirt_size: m.t_shirt_size,
+                workshop_details: m.workshop_details,
+                assigned_to: m.assigned_to,
+                isAccredited: m.is_accredited ?? true,
+                cpf: m.cpf,
+                rg: m.rg,
+                client_code: m.client_code,
+                delivery_address: m.delivery_address,
+                completed_courses: m.completed_courses || [],
                 createdAt: m.joined_date
             }))
         ];
@@ -92,12 +139,83 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
         if (data) setStaticLists(data);
     };
 
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws);
+
+                if (data.length > 0) {
+                   await importLeads(data);
+                }
+            } catch (error) {
+                console.error("Import Error:", error);
+                alert("Erro ao importar arquivo. Verifique o formato.");
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const importLeads = async (data: any[]) => {
+        setLoading(true);
+        // Basic mapping - assumes columns like "Nome", "Email", "Telefone"
+        // Also supports "name", "email", "phone"
+        const leadsToInsert = data.map(row => ({
+            name: row['Nome'] || row['name'] || row['Cliente'] || 'Importado',
+            email: row['Email'] || row['email'] || null,
+            phone: row['Telefone'] || row['phone'] || row['Celular'] || null,
+            status: 'New',
+            assigned_to: user?.id, // Assign to current user by default
+            context_id: 'Import'
+        }));
+
+        const { error } = await supabase.from('SITE_Leads').insert(leadsToInsert);
+        if (error) {
+            alert("Erro ao salvar leads: " + error.message);
+        } else {
+            alert(`${leadsToInsert.length} clientes importados com sucesso!`);
+            fetchClients();
+        }
+        setLoading(false);
+    };
+
+    const canSeeAll = permissions?.admin_access || permissions?.clients_view_all;
+
     const filteredClients = clients.filter(client => {
+        // 1. Basic Type & Search Filters
         const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               client.phone?.includes(searchTerm);
         const matchesType = filterType === 'all' || client.type === filterType;
-        return matchesSearch && matchesType;
+        
+        if (!matchesSearch || !matchesType) return false;
+
+        // 2. Permission / Ownership Filters
+        if (canSeeAll) return true;
+
+        // Primarily see only assigned clients
+        const isAssignedToMe = client.assigned_to === user?.id;
+        
+        // Universal view for UNASSIGNED clients (clients that have NO attendant)
+        // NOT based on classification alone, but on assignment.
+        // If a client is "Novato" but assigned to Emerson, Chris should NOT see it.
+        const isUnassigned = !client.assigned_to;
+
+        // Optionally, if you still want ALL "Novatos" to be visible regardless of assignment (which is risky if claimed), keep classification check.
+        // But the user complaint is specifically about seeing other's clients.
+        // So we strictly enforce: Mine OR Nobody's.
+        return isAssignedToMe || isUnassigned;
     });
 
     // Pagination Logic
@@ -140,7 +258,6 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 }]).select().single();
 
                 if (error) throw error;
-                // Map snake_case to camelCase for the state if needed, or just use DB fields
                 targetListId = data.id;
             }
 
@@ -169,7 +286,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
             setSelectedClients([]);
             setNewListName('');
             setSelectedListId('');
-            fetchClients(); // Refresh to clear selection state if needed
+            fetchClients(); 
 
         } catch (error: any) {
             console.error(error);
@@ -179,9 +296,11 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
         }
     };
 
-    const totalClients = clients.length;
-    const leadsCount = clients.filter(c => c.type === 'Lead').length;
-    const mechanicsCount = clients.filter(c => c.type === 'Credenciado').length;
+    // Stats based on visibility
+    const visibleClients = canSeeAll ? clients : clients.filter(c => c.assigned_to === user?.id || !c.assigned_to);
+    const totalClientsCount = visibleClients.length;
+    const leadsCount = visibleClients.filter(c => c.type === 'Lead').length;
+    const mechanicsCount = visibleClients.filter(c => c.type === 'Credenciado').length;
 
     return (
         <div className="p-6 space-y-6">
@@ -191,13 +310,27 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                     <p className="text-gray-500 dark:text-gray-400 font-medium">Visualize Leads e Credenciados em um só lugar.</p>
                 </div>
                 <div className="flex gap-2">
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        accept=".xlsx,.xls,.csv" 
+                        className="hidden" 
+                    />
+                    <button 
+                        onClick={handleImportClick}
+                        className="bg-white dark:bg-[#222] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-700 px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95"
+                    >
+                        <Upload size={20} /> Importar Lista
+                    </button>
+
                     {activeTab === 'clients' && selectedClients.length > 0 && (
                         <button 
                             onClick={() => setIsGroupModalOpen(true)}
                             className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl active:scale-95 animate-in slide-in-from-right-4"
                         >
                             <Users size={20} /> 
-                            Criar Grupo / Adicionar ({selectedClients.length})
+                            Criar Grupo ({selectedClients.length})
                         </button>
                     )}
                     <button className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-xl active:scale-95">
@@ -215,7 +348,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         </div>
                     </div>
                     <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{totalClients}</h3>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{totalClientsCount}</h3>
                         <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Total de Clientes</p>
                     </div>
                 </div>
@@ -313,7 +446,10 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                                 <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Contato</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Tipo / Origem</th>
                                 <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                                <th className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Data</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Classificação</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Atendente</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Compra</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status / Data</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -322,7 +458,15 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                             ) : paginatedClients.length === 0 ? (
                                 <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Nenhum cliente encontrado.</td></tr>
                             ) : paginatedClients.map((client, idx) => (
-                                <tr key={`${client.type}-${client.id}-${idx}`} className={`hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors ${selectedClients.includes(client.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}>
+                                <tr 
+                                    key={`${client.type}-${client.id}-${idx}`} 
+                                    className={`hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer ${selectedClients.includes(client.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
+                                    onClick={(e) => {
+                                        // Don't trigger if clicking checkbox
+                                        if ((e.target as any).type === 'checkbox') return;
+                                        setSelectedClientForEdit(client);
+                                    }}
+                                >
                                      <td className="px-6 py-4">
                                         <input 
                                             type="checkbox" 
@@ -367,12 +511,42 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#222] px-2 py-1 rounded-lg border border-transparent dark:border-gray-800">
-                                            {client.status || 'Ativo'}
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${
+                                            client.classification === 'VIP' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                                            client.classification === 'Ouro' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                            client.classification === 'Prata' ? 'bg-gray-100 text-gray-700 border-gray-200' :
+                                            'bg-white text-gray-500 border-gray-100'
+                                        }`}>
+                                            {client.classification}
+                                        </span>
+                                        {client.isAccredited && (
+                                            <span className="ml-2 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-blue-100 text-blue-700 border border-blue-200">
+                                                Credenciado
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold">
+                                                <UserPlus size={12} />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                                                {attendants.find(u => u.id === client.assigned_to)?.name || 'Sem Atendente'}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                            {client.lastPurchaseDate ? new Date(client.lastPurchaseDate).toLocaleDateString('pt-BR') : '-'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className="text-xs font-medium text-gray-500">{new Date(client.createdAt).toLocaleDateString('pt-BR')}</span>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#222] px-2 py-1 rounded-lg border border-transparent dark:border-gray-800">
+                                                {client.status || 'Ativo'}
+                                            </span>
+                                            <span className="text-[10px] font-medium text-gray-400">{new Date(client.createdAt).toLocaleDateString('pt-BR')}</span>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -486,6 +660,17 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Edit Modal */}
+            {selectedClientForEdit && (
+                <ClientDetailModal 
+                    client={selectedClientForEdit} 
+                    onClose={() => setSelectedClientForEdit(null)}
+                    onUpdate={fetchClients}
+                    permissions={permissions}
+                    users={attendants}
+                />
             )}
         </div>
     );

@@ -32,6 +32,8 @@ const Cancelamento = lazy(() => import('./pages/Cancelamento'));
 const Suporte = lazy(() => import('./pages/Suporte'));
 const CertificateValidation = lazy(() => import('./pages/CertificateValidation'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const ClientPortal = lazy(() => import('./pages/meus-pedidos'));
+const OrderTracking = lazy(() => import('./pages/rastreio'));
 
 
 // Loading Fallback
@@ -94,6 +96,10 @@ const App = () => {
 
                     {/* Validation */}
                     <Route path="/validar/:id" element={<CertificateValidation />} />
+
+                    {/* Order Portals */}
+                    <Route path="/meus-pedidos" element={<ClientPortal />} />
+                    <Route path="/rastreio" element={<Layout><OrderTracking /></Layout>} />
 
                     <Route path="*" element={<NotFound />} />
 

@@ -229,10 +229,10 @@ export function HeroScrollAnimation() {
              </p>
              
              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Link to="/cursos" className="group">
+                <Link to="/meus-pedidos" className="group">
                     <Button size="lg" className="h-14 px-8 bg-wtech-gold hover:bg-white text-black font-black uppercase tracking-widest rounded-none -skew-x-12 transition-all duration-300 hover:scale-105">
                         <span className="skew-x-12 flex items-center gap-2">
-                           Ver Agenda <ChevronRight size={18} />
+                           Área do Cliente <ChevronRight size={18} />
                         </span>
                     </Button>
                 </Link>

@@ -126,7 +126,7 @@ export function Header() {
 						className="rounded-full bg-wtech-gold text-black hover:bg-yellow-400 font-bold uppercase tracking-widest text-[10px] px-6 ml-2"
 						size="sm"
 					>
-						<Link to="/cursos">Ver Agenda</Link>
+						<Link to="/meus-pedidos">Área do Cliente</Link>
 					</Button>
 				</div>
 
