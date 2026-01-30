@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.7.0",
+    "date": "2026-01-30",
+    "title": "Marketing Hub, Bio Page & UX Improvements",
+    "changes": [
+      "FEAT: Novo Módulo 'Campanhas' (Automação, Listas, Modelos)",
+      "FEAT: Novo Módulo 'Marketing' (Blog, LPs, Analytics, Certificados)",
+      "FEAT: Criador de Página Bio (/bio) com fundos dinâmicos (Vídeo/YouTube, Presets, Cor)",
+      "FEAT: Suporte a Vídeos do YouTube como background na Bio Page",
+      "UX: Refatoração completa da navegação Sidebar do Admin",
+      "UX: Ícones e layout aprimorados para melhor usabilidade mobile",
+      "FIX: Menu Financeiro restaurado na barra lateral"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.6.4",
     "date": "2026-01-30",
     "title": "Google OAuth Fix & Admin UX Improvements",
