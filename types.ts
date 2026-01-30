@@ -353,6 +353,7 @@ export interface Task {
     created_at: string; // Mapped from created_at
     leadId?: string; // Link to a Lead
     leadName?: string; // Mapped Lead Name
+    leadPhone?: string; // Mapped Lead Phone
     tags?: string[]; // Array of tags
     categoryId?: string; // Mapped from category_id
     category?: { name: string; color: string; }; // Joined category data

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { ChronicleButton } from "./chronicle-button";
-import { MoreVertical, Trash2, Bot } from "lucide-react";
+import { MoreVertical, Trash2, Bot, MessageCircle } from "lucide-react";
 
 const BAUHAUS_CARD_STYLES = `
 .bauhaus-card {
@@ -34,6 +34,7 @@ const BAUHAUS_CARD_STYLES = `
   height: 100%;
   border-radius: var(--card-radius, 20px);
   z-index: -1;
+  pointer-events: none;
   border: 0.155rem solid transparent;
   -webkit-mask-composite: destination-out;
   mask-composite: exclude;
@@ -48,6 +49,7 @@ const BAUHAUS_CARD_STYLES = `
   align-items: center;
   justify-content: space-between;
   padding: 0.8em 1.5em 0em 1.5em;
+  z-index: 20;
 }
 .bauhaus-button-container {
   display: flex;
@@ -168,6 +170,7 @@ export interface BauhausCardProps {
   onOutlinedButtonClick?: (id: string) => void;
   onMoreOptionsClick?: (id: string) => void;
   onDeleteClick?: (id: string) => void;
+  onWhatsappClick?: (id: string) => void;
   onCardClick?: (id: string) => void;
   headerIcon?: any;
   mirrored?: boolean;
@@ -210,6 +213,7 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
   onOutlinedButtonClick,
   onMoreOptionsClick,
   onDeleteClick,
+  onWhatsappClick,
   onCardClick,
   headerIcon: HeaderIcon = MoreVertical,
   mirrored = false,
@@ -296,7 +300,17 @@ export const BauhausCard: React.FC<BauhausCardProps> = ({
             />
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {onWhatsappClick && (
+            <div
+              onClick={(e) => { e.stopPropagation(); onWhatsappClick(id); }}
+              style={{ cursor: 'pointer' }}
+              className="text-[#25D366] hover:text-[#20ba5a] transition-colors p-1"
+              title="Chamar no WhatsApp"
+            >
+              <MessageCircle size={16} />
+            </div>
+          )}
           {onDeleteClick && (
             <div
               onClick={(e) => { e.stopPropagation(); onDeleteClick(id); }}

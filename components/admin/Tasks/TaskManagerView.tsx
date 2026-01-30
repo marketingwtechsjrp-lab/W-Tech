@@ -12,6 +12,7 @@ interface TaskCardProps {
     usersMap: any;
     onDelete: (id: string) => void;
     onEdit: (task: Task) => void;
+    onWhatsapp: (task: Task) => void;
     isOverdueStyle?: boolean;
     isDoneStyle?: boolean;
 }
@@ -22,6 +23,7 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
     usersMap,
     onDelete,
     onEdit,
+    onWhatsapp,
     onStatusToggle,
     isDoneStyle
 }) => {
@@ -34,11 +36,13 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
 
     const accentColor = task.priority ? priorityColors[task.priority] : '#3b82f6';
 
-    const formattedDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Sem prazo';
+    const d = task.dueDate ? new Date(task.dueDate) : null;
+    const isValidDate = d && !isNaN(d.getTime());
+    const formattedDate = isValidDate ? d!.toLocaleDateString() + ' ' + d!.toLocaleTimeString().slice(0, 5) : (task.dueDate ? 'Data Inválida' : 'Sem prazo');
     const progress = task.status === 'DONE' ? 100 : task.status === 'IN_PROGRESS' ? 60 : 20;
 
     const topText = usersMap[task.assignedTo] ? `Para: ${usersMap[task.assignedTo]}` : 'Sem responsável';
-    const subText = task.leadName ? `Lead: ${task.leadName}` : (task.description ? task.description.slice(0, 120) + (task.description.length > 120 ? '...' : '') : 'Sem descrição');
+    const subText = task.leadName ? `Lead: ${task.leadName}` : (task.description ? task.description.slice(0, 45) + (task.description.length > 45 ? '...' : '') : '');
 
     return (
         <div
@@ -69,6 +73,7 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
                 headerIcon={task.status === 'DONE' ? CheckCircle : Circle}
                 onMoreOptionsClick={() => onStatusToggle(task)}
                 onDeleteClick={() => onDelete(task.id)}
+                onWhatsappClick={task.leadPhone ? () => onWhatsapp(task) : undefined}
 
                 // Card Click: Open Details
                 onCardClick={() => onEdit(task)}
@@ -86,9 +91,9 @@ const TaskCard: React.FC<TaskCardProps & { onStatusToggle: (task: Task) => void 
                 chronicleButtonFg="#808080"
                 chronicleButtonHoverFg="#ffffff"
 
-                customButtonHeight="1.5rem"
-                customButtonFontSize="0.65rem"
-                customCardPadding="0.6rem 1.25rem"
+                customButtonHeight="1.2rem"
+                customButtonFontSize="0.6rem"
+                customCardPadding="0.4rem 0.8rem"
             />
         </div>
     );
@@ -368,23 +373,35 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
     const handleToggleStatus = async (task: Task) => {
         const newStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
+        
+        // Optimistic Update
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
+
         const { error } = await supabase.from('SITE_Tasks').update({ status: newStatus }).eq('id', task.id);
         if (error) {
             alert('Erro ao atualizar status: ' + error.message);
-        } else {
-            fetchTasks();
+            fetchTasks(); // Rollback
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Excluir tarefa?')) return;
+        
+        // Optimistic Update
+        setTasks(prev => prev.filter(t => t.id !== id));
+
         const { error } = await supabase.from('SITE_Tasks').delete().eq('id', id);
         if (error) {
             alert('Erro ao excluir tarefa: ' + error.message);
-            console.error(error);
-        } else {
-            fetchTasks();
+            fetchTasks(); // Rollback
         }
+    };
+
+    const handleWhatsapp = (task: Task) => {
+        if (!task.leadPhone) return alert('Lead sem telefone cadastrado.');
+        const phone = task.leadPhone.replace(/\D/g, '');
+        const message = encodeURIComponent(`Olá ${task.leadName}, referente à tarefa: ${task.title}`);
+        window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
     };
 
     const openEdit = (task: Task) => {
@@ -426,9 +443,22 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const doneTasks = filteredTasks.filter(t => t.status === 'DONE');
 
     const sortFn = (a: Task, b: Task) => {
+        // Primary sort: Date (ascending - closest first)
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        
+        const timeA = new Date(a.dueDate).getTime();
+        const timeB = new Date(b.dueDate).getTime();
+        
+        if (isNaN(timeA)) return 1;
+        if (isNaN(timeB)) return -1;
+        
+        if (timeA !== timeB) return timeA - timeB;
+
+        // Secondary sort: Priority
         const pMap: any = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
-        if (pMap[a.priority] !== pMap[b.priority]) return pMap[a.priority] - pMap[b.priority];
-        return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
+        return (pMap[a.priority] || 2) - (pMap[b.priority] || 2);
     };
 
     todoTasks.sort(sortFn);
@@ -534,9 +564,9 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     </div>
                                     <button onClick={() => { setFormData({ ...formData, status: 'TODO' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-blue-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                <div className="flex-1 md:overflow-y-auto space-y-2 custom-scrollbar pr-1 pb-4 md:pb-20">
                                     {todoTasks.map(task => (
-                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
+                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onWhatsapp={handleWhatsapp} onStatusToggle={handleToggleStatus} />
                                     ))}
                                     {todoTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa pendente</div>}
                                 </div>
@@ -551,9 +581,9 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     </div>
                                     <button onClick={() => { setFormData({ ...formData, status: 'IN_PROGRESS' }); setIsModalOpen(true); }} className="text-gray-300 hover:text-sky-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                <div className="flex-1 md:overflow-y-auto space-y-2 custom-scrollbar pr-1 pb-4 md:pb-20">
                                     {inProgressTasks.map(task => (
-                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} />
+                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onWhatsapp={handleWhatsapp} onStatusToggle={handleToggleStatus} />
                                     ))}
                                     {inProgressTasks.length === 0 && <div className="text-center text-xs text-gray-400 italic py-4">Nenhuma tarefa em andamento</div>}
                                 </div>
@@ -568,9 +598,9 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     </div>
                                     <button className="text-gray-300 hover:text-green-500 transition-colors w-6 h-6 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center pointer-events-none opacity-50"><Plus size={14} /></button>
                                 </div>
-                                <div className="flex-1 md:overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4 md:pb-20">
+                                <div className="flex-1 md:overflow-y-auto space-y-2 custom-scrollbar pr-1 pb-4 md:pb-20">
                                     {doneTasks.map(task => (
-                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onStatusToggle={handleToggleStatus} isDoneStyle />
+                                        <TaskCard key={task.id} task={task} usersMap={usersMap} onDelete={handleDelete} onEdit={openEdit} onWhatsapp={handleWhatsapp} onStatusToggle={handleToggleStatus} isDoneStyle />
                                     ))}
                                 </div>
                             </div>

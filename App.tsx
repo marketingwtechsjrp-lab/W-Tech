@@ -34,6 +34,7 @@ const CertificateValidation = lazy(() => import('./pages/CertificateValidation')
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ClientPortal = lazy(() => import('./pages/meus-pedidos'));
 const OrderTracking = lazy(() => import('./pages/rastreio'));
+const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 
 
 // Loading Fallback
@@ -100,6 +101,8 @@ const App = () => {
                     {/* Order Portals */}
                     <Route path="/meus-pedidos" element={<ClientPortal />} />
                     <Route path="/rastreio" element={<Layout><OrderTracking /></Layout>} />
+
+                    <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
                     <Route path="*" element={<NotFound />} />
 

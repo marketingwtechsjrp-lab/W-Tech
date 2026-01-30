@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import ReactApexChart from 'react-apexcharts';
-import { Users, Eye, MousePointer, Smartphone, Monitor, ArrowRight, Filter, Download, Activity, MessageCircle } from 'lucide-react';
+import { Users, Eye, MousePointer, Smartphone, Monitor, ArrowRight, Filter, Download, Activity, MessageCircle, Globe, Database, RefreshCw } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
+import { fetchGA4Data, GA4Metrics } from '../../../lib/googleAnalytics';
 
 const AnalyticsView = () => {
     // State
     const [loading, setLoading] = useState(true);
-    const [period, setPeriod] = useState(30); // days
+    const [period, setPeriod] = useState(30);
+    const [dataSource, setDataSource] = useState<'supabase' | 'google'>('supabase');
     const [stats, setStats] = useState({
         totalViews: 0,
         uniqueVisitors: 0,
@@ -26,6 +28,28 @@ const AnalyticsView = () => {
 
     const fetchData = async () => {
         setLoading(true);
+        
+        // Try Google Analytics 4 First
+        const googleData = await fetchGA4Data(period);
+        
+        if (googleData) {
+            setDataSource('google');
+            setStats({
+                totalViews: googleData.totalViews,
+                uniqueVisitors: googleData.activeUsers,
+                totalEvents: googleData.eventCount,
+                whatsappClicks: 0, // Need GA4 Event parsing
+                conversionRate: 0
+            });
+            setDailyVisits(googleData.dailyData);
+            setTopPages(googleData.topPages);
+            setDeviceStats(googleData.deviceStats);
+            setLoading(false);
+            return;
+        }
+
+        // Fallback to Supabase Internal Tracking
+        setDataSource('supabase');
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - period);
         const startIso = startDate.toISOString();
@@ -120,7 +144,7 @@ const AnalyticsView = () => {
         xaxis: { categories: dailyVisits.categories, labels: { style: { colors: '#888' } } },
         yaxis: { labels: { style: { colors: '#888' } } },
         grid: { borderColor: '#333', strokeDashArray: 4 },
-        colors: ['#D4AF37'],
+        colors: [dataSource === 'google' ? '#10b981' : '#D4AF37'],
         fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
         theme: { mode: 'dark' }
     };
@@ -133,7 +157,18 @@ const AnalyticsView = () => {
                     <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         <Activity className="text-wtech-gold" /> Analytics 2.0
                     </h2>
-                    <p className="text-sm text-gray-500">Monitoramento de tráfego e conversões em tempo real.</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-gray-500">Monitoramento de tráfego e conversões.</p>
+                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${dataSource === 'google' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                            {dataSource === 'google' ? <><Globe size={10} /> Google Analytics 4</> : <><Database size={10} /> Local Database</>}
+                        </span>
+                        {dataSource === 'supabase' && !loading && (
+                            <span className="text-[10px] text-gray-400 animate-pulse kur">
+                                (Conecte ao Google em Integrações para dados reais)
+                            </span>
+                        )}
+                        {loading && <RefreshCw size={12} className="animate-spin text-gray-400 ml-1" />}
+                    </div>
                 </div>
 
                 <div className="flex bg-gray-100 dark:bg-[#1A1A1A] p-1 rounded-lg border border-gray-200 dark:border-gray-800">
@@ -231,7 +266,7 @@ const AnalyticsView = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-24 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-wtech-gold" style={{ width: `${(deviceStats.mobile / (stats.totalViews || 1)) * 100}%` }}></div>
+                                        <div className="h-full bg-wtech-gold" style={{ width: `${(deviceStats.mobile / ((deviceStats.mobile + deviceStats.desktop) || 1)) * 100}%` }}></div>
                                     </div>
                                     <span className="font-bold dark:text-white">{deviceStats.mobile}</span>
                                 </div>
@@ -242,7 +277,7 @@ const AnalyticsView = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-24 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500" style={{ width: `${(deviceStats.desktop / (stats.totalViews || 1)) * 100}%` }}></div>
+                                        <div className="h-full bg-blue-500" style={{ width: `${(deviceStats.desktop / ((deviceStats.mobile + deviceStats.desktop) || 1)) * 100}%` }}></div>
                                     </div>
                                     <span className="font-bold dark:text-white">{deviceStats.desktop}</span>
                                 </div>
