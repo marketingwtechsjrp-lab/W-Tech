@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+
+## v2.6.4 (2026-01-30) - Google OAuth Fix & Admin UX Improvements
+- FIX: Resolução de erro 404 no Google OAuth para HashRouter
+- FEAT: Integração nativa do GA4 via Google OAuth no Dashboard
+- UX: Refatoração da interface de Tarefas com Ações Rápidas
+- SKILLS: Novas habilidades de Afiliados e Integração Google adicionadas
 ## v2.6.3 (2026-01-29) - Estabilidade na Navegação e Otimização do Editor
 - FIX: Resolução do deadlock de navegação entre módulos (transição popLayout)
 - FIX: Eliminação de loop infinito de re-renderização no Editor de Pedidos

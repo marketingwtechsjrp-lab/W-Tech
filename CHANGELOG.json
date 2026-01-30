@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.6.4",
+    "date": "2026-01-30",
+    "title": "Google OAuth Fix & Admin UX Improvements",
+    "changes": [
+      "FIX: Resolução de erro 404 no Google OAuth para HashRouter",
+      "FEAT: Integração nativa do GA4 via Google OAuth no Dashboard",
+      "UX: Refatoração da interface de Tarefas com Ações Rápidas",
+      "SKILLS: Novas habilidades de Afiliados e Integração Google adicionadas"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.6.3",
     "date": "2026-01-29",
     "title": "Estabilidade na Navegação e Otimização do Editor",

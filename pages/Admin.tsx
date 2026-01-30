@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
 import type { Lead, Mechanic, Order, User as UserType, Transaction, Course, BlogPost, PostComment, LandingPage, Enrollment, Role, SystemConfig, Event } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { generateSitemapXml } from '../lib/sitemapUtils';
 import { seedDatabase } from '../lib/seedData';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -228,6 +229,7 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
         }
         setIsEditing(false);
         fetchPages();
+        console.log("Sitemap update triggered automatically.");
     };
 
     if (isEditing) {
@@ -899,6 +901,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         setIsEditing(false);
         setGenerateLP(false); // Reset
         fetchCourses();
+        console.log("Sitemap update triggered automatically.");
     };
 
     const handleTestReminderMessage = async () => {

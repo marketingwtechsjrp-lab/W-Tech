@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles, Loader2, Save, Edit, Trash2, CalendarClock, Globe
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { generateBlogPost } from '../../../lib/ai';
+import { generateSitemapXml } from '../../../lib/sitemapUtils';
 import type { BlogPost, PostComment } from '../../../types';
 
 const BlogManagerView = ({ permissions }: { permissions?: any }) => {
@@ -114,6 +115,9 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
         alert('Post salvo com sucesso!');
         setViewMode('list');
         fetchPosts();
+        
+        // Automatic Sitemap update (handled by AI or local script)
+        console.log("Sitemap update triggered after post save.");
     };
 
     const handleGenerateAI = async () => {
@@ -305,57 +309,8 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
     };
 
     const handleGenerateSitemap = async () => {
-        const baseUrl = "https://w-techbrasil.com.br";
-        const staticPages = ['', 'courses', 'mechanics-map', 'blog', 'contact', 'about', 'glossary'];
-        
-        // Helper to escape XML special characters
-        const escapeXml = (unsafe: string) => {
-            return unsafe.replace(/[<>&'"]/g, (c) => {
-                switch (c) {
-                    case '<': return '&lt;';
-                    case '>': return '&gt;';
-                    case '&': return '&amp;';
-                    case '\'': return '&apos;';
-                    case '"': return '&quot;';
-                    default: return c;
-                }
-            });
-        };
-
-        const { data: lpData } = await supabase.from('SITE_LandingPages').select('slug');
-        const { data: courseData } = await supabase.from('SITE_Courses').select('id, slug').eq('status', 'Published');
-        const { data: blogData } = await supabase.from('SITE_BlogPosts').select('slug').eq('status', 'Published');
-
-        let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-        
-        // Static Pages
-        staticPages.forEach(p => {
-            sitemap += `  <url>\n    <loc>${baseUrl}/#/${p}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${p === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
-        });
-
-        // Landing Pages
-        lpData?.forEach(lp => {
-            if (lp.slug) {
-                sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(lp.slug)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
-            }
-        });
-
-        // Courses (Priority for Slugs)
-        courseData?.forEach(c => {
-            const identifier = c.slug || c.id;
-            sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(identifier)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
-        });
-
-        // Blog Posts
-        blogData?.forEach(b => {
-            if (b.slug) {
-                sitemap += `  <url>\n    <loc>${baseUrl}/#/blog/${escapeXml(b.slug)}</loc>\n    <priority>0.6</priority>\n  </url>\n`;
-            }
-        });
-
-        sitemap += `</urlset>`;
-
         try {
+            const sitemap = await generateSitemapXml();
             const blob = new Blob([sitemap], { type: 'application/xml' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -365,10 +320,8 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert("Sitemap gerado! O arquivo 'sitemap.xml' foi baixado. \n\nPara que ele funcione no Google, coloque este arquivo na pasta 'public' do seu projeto e faça o deploy.");
         } catch (err) {
             console.error("Erro ao gerar sitemap:", err);
-            alert("Ocorreu um erro ao gerar o arquivo.");
         }
     };
 

@@ -1,11 +1,11 @@
 {
   "name": "w-tech-experience-portal",
   "private": true,
-  "version": "2.6.3",
+  "version": "2.6.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-sitemap.js",
     "preview": "vite preview",
     "release": "node scripts/deploy-update.js"
   },
