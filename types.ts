@@ -511,6 +511,8 @@ export interface Sale {
     tracking_code?: string;
     discount_code?: string;
     discount_amount?: number;
+    delivery_address?: string;
+    delivery_cep?: string;
     items?: any | string; // JSONB or stringified JSON
 }
 

@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.7.0 (2026-01-30) - Marketing Hub, Bio Page & UX Improvements
+- FEAT: Novo Módulo "Campanhas" (Automação, Listas, Modelos)
+- FEAT: Novo Módulo "Marketing" (Blog, LPs, Analytics, Certificados)
+- FEAT: Criador de Página Bio (/bio) com fundos dinâmicos (Vídeo/YouTube, Presets, Cor)
+- FEAT: Suporte a Vídeos do YouTube como background na Bio Page
+- UX: Refatoração completa da navegação Sidebar do Admin
+- UX: Ícones e layout aprimorados para melhor usabilidade mobile
+- FIX: Menu Financeiro restaurado na barra lateral
+
 ## v2.6.4 (2026-01-30) - Google OAuth Fix & Admin UX Improvements
 - FIX: Resolução de erro 404 no Google OAuth para HashRouter
 - FEAT: Integração nativa do GA4 via Google OAuth no Dashboard

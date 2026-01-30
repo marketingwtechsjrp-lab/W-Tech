@@ -1,47 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
-import { Plus, Search, Calendar, Users, Mail, Trash2, Edit, Send, Play, Pause, BarChart2, Eye, MousePointer, Clock, ArrowDown, ArrowUp, AlertCircle, Save, X, Megaphone, FileText, Filter, MessageSquare } from 'lucide-react';
+import { 
+    BarChart2, BookOpen, Layout, Fingerprint, Award, Rocket
+} from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { MarketingList, MarketingCampaign, MessageTemplate } from '../../../types';
-import ListsManager from './ListsManager';
-import CampaignsManager from './CampaignsManager';
-import MessageTemplateManager from '../WhatsApp/MessageTemplateManager';
 
-// Sub-components (Will be extracted later if too large)
-const DashboardTab = () => (
-    <div className="p-8 text-center text-gray-500">
-        <BarChart2 size={48} className="mx-auto mb-4 opacity-20" />
-        <h3 className="text-lg font-bold text-gray-700">Visão Geral do Marketing</h3>
-        <p>Estatísticas e métricas de campanhas aparecerão aqui.</p>
-        {/* Future: Add aggregated stats here */}
-    </div>
-);
+// Imports for Integrated Marketing Center
+import BlogManagerView from '../Blog/BlogManagerView';
+import AnalyticsView from '../Analytics/AnalyticsView';
+import CertificateManagerView from '../Certificates/CertificateManagerView';
+import LandingPagesView from './LandingPagesView';
+import BioPageManager from './BioPageManager';
 
 const MarketingView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
     
+    // Permission check helper
     const hasPerm = (key: string) => {
-        if (!permissions) return true; // Default to true if not provided (fallback)
+        if (!permissions) return true; 
         if (permissions.admin_access) return true;
-        return !!permissions[key] || !!permissions['manage_marketing']; // manage_marketing is the legacy all-access
+        // Permissive check for marketing view entry point
+        if (key === 'marketing_general') {
+            return permissions.blog_view || permissions.landing_pages_view || permissions.analytics_view || permissions.certificates_view || permissions.marketing_view;
+        }
+        return !!permissions[key] || !!permissions['manage_marketing']; 
     };
 
     const tabs = [
-        { id: 'Dashboard', icon: BarChart2, label: 'Visão Geral', permission: 'marketing_view' },
-        { id: 'Lists', icon: Users, label: 'Listas Inteligentes', permission: 'marketing_manage_lists' },
-        { id: 'Campaigns', icon: Megaphone, label: 'Campanhas', permission: 'marketing_manage_campaigns' },
-        { id: 'Templates', icon: FileText, label: 'Modelos', permission: 'marketing_manage_templates' }
+        { id: 'Blog', icon: BookOpen, label: 'Blog', permission: 'blog_view' },
+        { id: 'LP', icon: Layout, label: 'Landing Pages', permission: 'landing_pages_view' },
+        { id: 'Bio', icon: Fingerprint, label: 'Bio Link', permission: 'marketing_view' },
+        { id: 'Analytics', icon: BarChart2, label: 'Analytics', permission: 'analytics_view' },
+        { id: 'Certificates', icon: Award, label: 'Certificados', permission: 'certificates_view' },
     ].filter(tab => hasPerm(tab.permission));
 
-    const [activeTab, setActiveTab] = useState<'Dashboard' | 'Lists' | 'Campaigns' | 'Templates'>(
-        tabs.length > 0 ? tabs[0].id as any : 'Dashboard'
+    const [activeTab, setActiveTab] = useState<string>(
+        tabs.length > 0 ? tabs[0].id : ''
     );
 
     useEffect(() => {
-        if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
-            setActiveTab(tabs[0].id as any);
+        if (tabs.length > 0 && (!activeTab || !tabs.find(t => t.id === activeTab))) {
+            setActiveTab(tabs[0].id);
         }
-    }, [permissions]);
+    }, [permissions, tabs]);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
@@ -49,22 +49,18 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
                 <div>
                     <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-                        <Megaphone className="text-wtech-gold" /> Marketing Center
+                        <Rocket className="text-wtech-gold" /> Marketing
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Central de campanhas, automação e listas inteligentes.</p>
-                </div>
-                {/* Global Actions */}
-                <div className="flex gap-2">
-                     {/* Add buttons here later */}
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Gestão de conteúdo, páginas, links e análise de dados.</p>
                 </div>
             </div>
 
             {/* Tabs Navigation */}
-            <div className="flex bg-white dark:bg-[#1A1A1A] p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 w-full md:w-auto overflow-x-auto">
+            <div className="flex bg-white dark:bg-[#1A1A1A] p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 w-full overflow-x-auto custom-scrollbar">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                             activeTab === tab.id 
                             ? 'bg-black text-white shadow-lg dark:bg-white dark:text-black' 
@@ -78,11 +74,19 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Content Area */}
-            <div className={`bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm min-h-[500px] ${activeTab === 'Dashboard' ? '' : 'p-6'}`}>
-                {activeTab === 'Dashboard' && <DashboardTab />}
-                {activeTab === 'Lists' && <ListsManager permissions={permissions} />}
-                {activeTab === 'Campaigns' && <CampaignsManager permissions={permissions} />}
-                {activeTab === 'Templates' && <MessageTemplateManager permissions={permissions} />}
+            <div className={`bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'LP', 'Bio'].includes(activeTab) ? '' : 'p-6'}`}>
+                {activeTab === 'Blog' && <BlogManagerView permissions={permissions} />}
+                {activeTab === 'LP' && <LandingPagesView permissions={permissions} />}
+                {activeTab === 'Bio' && <BioPageManager />}
+                {activeTab === 'Analytics' && <AnalyticsView permissions={permissions} />}
+                {activeTab === 'Certificates' && <CertificateManagerView />}
+                
+                {tabs.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-[400px] text-gray-500">
+                        <Rocket size={48} className="mb-4 opacity-20" />
+                        <p>Você não possui permissões para acessar os módulos de marketing.</p>
+                    </div>
+                )}
             </div>
         </div>
     );

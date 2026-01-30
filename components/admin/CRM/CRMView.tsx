@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2 } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -1587,6 +1587,25 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, users }: any) 
     // Tags Local State for Modal
     const [tagInput, setTagInput] = useState('');
 
+    const generateCode = (name: string) => {
+        const first = name.substring(0, 3).toUpperCase();
+        const nums = Math.floor(Math.random() * 90 + 10);
+        const letters = Array(3).fill(0).map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
+        return `${first}-${nums}${letters}`;
+    };
+
+    const handleCopyLink = () => {
+        const url = `${window.location.origin}/#/meus-pedidos?code=${form.client_code || lead.client_code}`;
+        navigator.clipboard.writeText(url);
+        alert('Link copiado! Envie para o cliente: ' + url);
+    };
+
+    const handleRegenerateCode = () => {
+        const newCode = generateCode(form.name || 'CLIENTE');
+        setForm(prev => ({ ...prev, client_code: newCode }));
+    };
+
+
     if (!isOpen) return null;
 
     return (
@@ -1641,6 +1660,41 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, users }: any) 
                             <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
                             <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
                         </div>
+
+                        {/* Client Portal Access Link */}
+                        <div className="col-span-2 bg-wtech-black/5 dark:bg-white/5 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Código de Acesso</h4>
+                                    <p className="text-[10px] text-gray-400 mt-1">Acesso ao portal (Meus Pedidos).</p>
+                                </div>
+                                <div className="text-right flex items-center gap-2">
+                                    <p className={`text-lg font-black font-mono tracking-wider ${form.client_code ? 'text-wtech-gold' : 'text-gray-400 italic text-sm'}`}>
+                                        {form.client_code || 'Não definido'}
+                                    </p>
+                                    <div className="flex gap-1">
+                                        <button 
+                                            onClick={handleRegenerateCode}
+                                            className="bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 px-2 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors flex items-center gap-2"
+                                            title="Gerar Novo Código"
+                                        >
+                                            <RefreshCw size={14} className={!form.client_code ? 'animate-pulse text-blue-500' : ''} />
+                                            {!form.client_code && <span className="text-[10px] font-bold">GERAR</span>}
+                                        </button>
+                                        {form.client_code && (
+                                            <button 
+                                                onClick={handleCopyLink}
+                                                className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
+                                                title="Copiar Link de Acesso"
+                                            >
+                                                <Share2 size={14} /> Link
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
 
                         <div className="col-span-2 bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
                              <label className="text-xs font-black text-green-700 dark:text-green-400 uppercase flex items-center gap-2">

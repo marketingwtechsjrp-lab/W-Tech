@@ -87,7 +87,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
     };
 
     const handleCopyLink = () => {
-        const url = `${window.location.origin}/meus-pedidos?code=${formData.client_code || client.client_code}`;
+        const url = `${window.location.origin}/#/meus-pedidos?code=${formData.client_code || client.client_code}`;
         navigator.clipboard.writeText(url);
         alert('Link copiado! Envie para o cliente: ' + url);
     };

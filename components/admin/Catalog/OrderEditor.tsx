@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, ArrowLeft } from 'lucide-react';
+import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, ArrowLeft, MapPin } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 
@@ -35,12 +35,43 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [manualItem, setManualItem] = useState({ name: '', quantity: 1, price: 0 });
     const [isManualMode, setIsManualMode] = useState(false);
 
-    // Calculated fields
     const subtotal = saleItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     const shippingCost = currentSale.shipping_cost || 0;
     const insuranceCost = (currentSale.shipping_method === 'sedex' || currentSale.shipping_method === 'pac') ? (subtotal * 0.01) : 0;
     const discountAmount = currentSale.discount_amount || 0;
     const total = subtotal + shippingCost + insuranceCost - discountAmount;
+
+    // Freight Calculation Logic
+    const calculateFreight = (cep: string, items: any[]) => {
+        if (!cep || items.length === 0) return 0;
+        // Mock logic: Base R$ 15 + R$ 2 per item + small random for ZIP variation
+        const base = 15.00;
+        const perItem = items.reduce((acc, i) => acc + i.quantity, 0) * 2.5;
+        const regionFactor = parseInt(cep.substring(0, 2)) / 5; // Variation based on state code
+        return Number((base + perItem + regionFactor).toFixed(2));
+    };
+
+    const handleCEPBlur = async () => {
+        const cep = currentSale.delivery_cep?.replace(/\D/g, '');
+        if (cep?.length === 8) {
+            try {
+                const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await res.json();
+                if (!data.erro) {
+                    const fullAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+                    const freight = calculateFreight(cep, saleItems);
+                    setCurrentSale(prev => ({ 
+                        ...prev, 
+                        delivery_address: fullAddress,
+                        shipping_cost: freight,
+                        shipping_method: 'Correios (Auto)'
+                    }));
+                }
+            } catch (e) {
+                console.error('Error fetching CEP:', e);
+            }
+        }
+    };
 
     // Locking Logic
     const isLocked = ['paid', 'producing', 'shipped', 'delivered'].includes(currentSale.status || '');
@@ -130,6 +161,16 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         handleUpdateQuantity(index, delta);
     };
 
+    // Auto-recalculate freight when items change
+    useEffect(() => {
+        if (currentSale.delivery_cep?.replace(/\D/g, '').length === 8) {
+            const newFreight = calculateFreight(currentSale.delivery_cep, saleItems);
+            if (newFreight !== currentSale.shipping_cost) {
+                setCurrentSale(prev => ({ ...prev, shipping_cost: newFreight }));
+            }
+        }
+    }, [saleItems.length, saleItems.reduce((acc, i) => acc + i.quantity, 0)]);
+
     const handleRemoveItem = (index: number) => {
          setSaleItems(saleItems.filter((_, i) => i !== index));
     };
@@ -191,7 +232,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 discount_code: discountCode || null,
                 discount_amount: Number(Number(discountAmount).toFixed(2)),
                 estimated_delivery_date: currentSale.estimated_delivery_date ? currentSale.estimated_delivery_date : null,
-                tracking_code: currentSale.tracking_code || null
+                tracking_code: currentSale.tracking_code || null,
+                delivery_address: currentSale.delivery_address || null,
+                delivery_cep: currentSale.delivery_cep || null
             };
             
             console.log('📦 Payload montado:', salePayload);
@@ -390,24 +433,59 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 )}
                                             </div>
 
-                                            {currentSale.clientId && (
-                                                <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selecionado</p>
-                                                        <p className="text-sm font-black text-gray-800 dark:text-white">{currentSale.clientName}</p>
-                                                    </div>
-                                                    <div className="flex gap-4">
-                                                        <div className="flex-1">
-                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">Fone</p>
-                                                            <p className="text-xs font-bold dark:text-gray-300">{currentSale.clientPhone || '-'}</p>
+                                                    {currentSale.clientId && (
+                                                        <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-4">
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="flex-1">
+                                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selecionado</p>
+                                                                    <p className="text-sm font-black text-gray-800 dark:text-white leading-tight">{currentSale.clientName}</p>
+                                                                </div>
+                                                                <div className="bg-blue-500/10 text-blue-500 p-1.5 rounded-lg">
+                                                                    <Check size={14} />
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800/50">
+                                                                <div>
+                                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">CEP de Entrega</label>
+                                                                    <input 
+                                                                        type="text"
+                                                                        placeholder="00000-000"
+                                                                        className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-2 px-3 text-xs font-bold dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                                                        value={currentSale.delivery_cep || ''}
+                                                                        onChange={e => setCurrentSale({...currentSale, delivery_cep: e.target.value})}
+                                                                        onBlur={handleCEPBlur}
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Endereço Confirmado</label>
+                                                                    <textarea 
+                                                                        className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-2 px-3 text-[10px] font-bold dark:text-white outline-none focus:ring-2 focus:ring-blue-500 h-16 resize-none"
+                                                                        placeholder="Rua, Número, Bairro, Cidade..."
+                                                                        value={currentSale.delivery_address || ''}
+                                                                        onChange={e => setCurrentSale({...currentSale, delivery_address: e.target.value})}
+                                                                    />
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => alert('Endereço confirmado para este pedido!')}
+                                                                    className="w-full bg-blue-600 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                                                >
+                                                                    <MapPin size={12} /> Confirmar Endereço
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="flex gap-4 pt-2 border-t border-gray-200 dark:border-gray-800/50">
+                                                                <div className="flex-1">
+                                                                    <p className="text-[9px] font-bold text-gray-400 uppercase">Fone</p>
+                                                                    <p className="text-xs font-bold dark:text-gray-300">{currentSale.clientPhone || '-'}</p>
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <p className="text-[9px] font-bold text-gray-400 uppercase">E-mail</p>
+                                                                    <p className="text-xs font-bold dark:text-gray-300 truncate w-32">{currentSale.clientEmail || '-'}</p>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">E-mail</p>
-                                                            <p className="text-xs font-bold dark:text-gray-300 truncate w-32">{currentSale.clientEmail || '-'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                    )}
                                         </section>
 
                                         <section className="pt-4">

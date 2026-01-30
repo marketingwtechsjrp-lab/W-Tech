@@ -35,6 +35,8 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const ClientPortal = lazy(() => import('./pages/meus-pedidos'));
 const OrderTracking = lazy(() => import('./pages/rastreio'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
+const Bio = lazy(() => import('./pages/bio'));
+
 
 
 // Loading Fallback
@@ -97,6 +99,8 @@ const App = () => {
 
                     {/* Validation */}
                     <Route path="/validar/:id" element={<CertificateValidation />} />
+                    <Route path="/bio" element={<Bio />} />
+
 
                     {/* Order Portals */}
                     <Route path="/meus-pedidos" element={<ClientPortal />} />

@@ -34,17 +34,29 @@ const ClientPortal = () => {
     const [orderStep, setOrderStep] = useState<1 | 2>(1);
     const [submittingOrder, setSubmittingOrder] = useState(false);
 
-    // Load session from local storage
+    // Load session from local storage or URL parameter
     useEffect(() => {
-        const cachedCode = localStorage.getItem('wtech_client_code');
-        if (cachedCode) {
-            setClientCode(cachedCode);
-            handleLogin(cachedCode);
+        // Handle code from URL (HashRouter format: #/meus-pedidos?code=ABC)
+        const hash = window.location.hash;
+        const queryPart = hash.split('?')[1];
+        const urlParams = new URLSearchParams(queryPart);
+        const urlCode = urlParams.get('code');
+
+        if (urlCode) {
+            setClientCode(urlCode);
+            handleLogin(urlCode);
+        } else {
+            const cachedCode = localStorage.getItem('wtech_client_code');
+            if (cachedCode) {
+                setClientCode(cachedCode);
+                handleLogin(cachedCode);
+            }
         }
         
         const cachedTheme = localStorage.getItem('wtech_theme');
         if (cachedTheme === 'light') setIsDarkMode(false);
     }, []);
+
 
     const toggleTheme = () => {
         setIsDarkMode(prev => {
@@ -549,12 +561,13 @@ const ClientPortal = () => {
                                                                             <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>+ R$ {order.shipping_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                                                         </div>
                                                                     )}
-                                                                    {order.insurance_cost > 0 && (
+                                                                    {/* Insurance hidden per client request */}
+                                                                    {/* {order.insurance_cost > 0 && (
                                                                         <div className="flex justify-between items-center gap-4">
                                                                             <span className={`text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Seguro (1%)</span>
                                                                             <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>+ R$ {order.insurance_cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                                                         </div>
-                                                                    )}
+                                                                    )} */}
                                                                     {order.discount_amount > 0 && (
                                                                         <div className="flex justify-between items-center gap-4">
                                                                             <span className={`text-[8px] font-black uppercase tracking-tighter text-emerald-500`}>Desconto</span>

@@ -173,14 +173,19 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         }
     };
 
-    const handleUpdateStatus = async (saleId: string, newStatus: Sale['status']) => {
+    const handleUpdateStatus = async (saleId: string, newStatus: Sale['status'], trackingCode?: string) => {
         setLoading(true);
         try {
              // Logic to handle stock deduction if moving to SHIPPED
             const { data: sale } = await supabase.from('SITE_Sales').select('status').eq('id', saleId).single();
             const shouldDeduct = newStatus === 'shipped' && (sale?.status !== 'shipped' && sale?.status !== 'delivered');
             
-            const { error } = await supabase.from('SITE_Sales').update({ status: newStatus }).eq('id', saleId);
+            const updatePayload: any = { status: newStatus };
+            if (trackingCode) {
+                updatePayload.tracking_code = trackingCode;
+            }
+
+            const { error } = await supabase.from('SITE_Sales').update(updatePayload).eq('id', saleId);
             if (error) throw error;
 
             if (shouldDeduct) {

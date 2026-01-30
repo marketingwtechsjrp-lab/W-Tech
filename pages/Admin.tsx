@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -26,10 +26,14 @@ import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
 import { LandingPageEditor } from './LandingPageEditor';
 import { useSettings } from '../context/SettingsContext';
 import MarketingView from '../components/admin/Marketing/MarketingView';
+import CampaignsView from '../components/admin/Marketing/CampaignsView';
 import DashboardView from '../components/admin/Dashboard/DashboardView';
+
 import CRMView from '../components/admin/CRM/CRMView';
 import BlogManagerView from '../components/admin/Blog/BlogManagerView';
+import LandingPagesView from '../components/admin/Marketing/LandingPagesView';
 import CatalogManagerView from '../components/admin/Catalog/CatalogManagerView';
+
 import DevUserSwitcher from '../components/admin/DevUserSwitcher';
 import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
 import SalesHistoryView from '../components/admin/Financial/SalesHistoryView';
@@ -177,164 +181,6 @@ const RevenueChart = () => {
 // --- View: Blog Manager (List & Edit + AI) ---
 
 // --- View: Landing Page Builder (New) ---
-const LandingPagesView = ({ permissions }: { permissions?: any }) => {
-    const [pages, setPages] = useState<LandingPage[]>([]);
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState<Partial<LandingPage>>({});
-
-    // Hardcoded System Links for easier access
-    const systemLinks = [
-        { label: 'Home (Início)', url: 'https://w-techbrasil.com.br/#/' },
-        { label: 'Cursos & Agenda', url: 'https://w-techbrasil.com.br/#/courses' },
-        { label: 'Mapa da Rede', url: 'https://w-techbrasil.com.br/#/mechanics-map' },
-        { label: 'Blog', url: 'https://w-techbrasil.com.br/#/blog' },
-        { label: 'Glossário Técnico', url: 'https://w-techbrasil.com.br/#/glossary' },
-        { label: 'Página de Contato', url: 'https://w-techbrasil.com.br/#/contact' },
-        { label: 'Cadastro de Mecânico', url: 'https://w-techbrasil.com.br/#/register-mechanic' },
-        { label: 'Painel Admin', url: 'https://w-techbrasil.com.br/#/admin' },
-    ];
-
-    useEffect(() => {
-        fetchPages();
-    }, []);
-
-    const fetchPages = async () => {
-        const { data } = await supabase.from('SITE_LandingPages').select('*').order('created_at', { ascending: false });
-        if (data) setPages(data.map((p: any) => ({
-            ...p,
-            heroHeadline: p.hero_headline,
-            heroSubheadline: p.hero_subheadline,
-            heroImage: p.hero_image,
-            viewCount: p.view_count,
-            conversionCount: p.conversion_count
-        })));
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const payload = {
-            title: formData.title,
-            slug: formData.slug,
-            hero_headline: formData.heroHeadline,
-            hero_subheadline: formData.heroSubheadline,
-            hero_image: formData.heroImage,
-            features: formData.features,
-            status: formData.status || 'Draft'
-        };
-
-        if (formData.id) {
-            await supabase.from('SITE_LandingPages').update(payload).eq('id', formData.id);
-        } else {
-            await supabase.from('SITE_LandingPages').insert([payload]);
-        }
-        setIsEditing(false);
-        fetchPages();
-        console.log("Sitemap update triggered automatically.");
-    };
-
-    if (isEditing) {
-        return (
-            <div className="bg-white p-6 rounded-lg shadow-sm text-gray-900">
-                <h2 className="text-xl font-bold mb-6 text-gray-900">{formData.id ? 'Editar LP' : 'Nova Landing Page'}</h2>
-                <form onSubmit={handleSave} className="grid grid-cols-2 gap-6 text-gray-900">
-                    <div>
-                        <label className="block text-sm font-bold mb-1 text-gray-700">Título Interno</label>
-                        <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold mb-1 text-gray-700">Slug (URL)</label>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">w-tech.com/#/lp/</span>
-                            <input className="flex-grow border border-gray-300 p-2 rounded text-gray-900" value={formData.slug || ''} onChange={e => setFormData({ ...formData, slug: e.target.value })} required />
-                        </div>
-                    </div>
-                    <div className="col-span-2">
-                        <label className="block text-sm font-bold mb-1 text-gray-700">Headline (Título Principal)</label>
-                        <input className="w-full border border-gray-300 p-2 rounded text-gray-900 font-bold text-lg" value={formData.heroHeadline || ''} onChange={e => setFormData({ ...formData, heroHeadline: e.target.value })} />
-                    </div>
-                    <div className="col-span-2">
-                        <label className="block text-sm font-bold mb-1 text-gray-700">Subheadline</label>
-                        <textarea className="w-full border border-gray-300 p-2 rounded text-gray-900" rows={2} value={formData.heroSubheadline || ''} onChange={e => setFormData({ ...formData, heroSubheadline: e.target.value })} />
-                    </div>
-                    <div className="col-span-2">
-                        <label className="block text-sm font-bold mb-1 text-gray-700">Imagem de Capa (URL)</label>
-                        <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.heroImage || ''} onChange={e => setFormData({ ...formData, heroImage: e.target.value })} />
-                    </div>
-                    <div className="col-span-2">
-                        <label className="block text-sm font-bold mb-1 text-gray-700">Lista de Benefícios (Features)</label>
-                        <p className="text-xs text-gray-500 mb-2">Separe itens por vírgula</p>
-                        <textarea
-                            className="w-full border border-gray-300 p-2 rounded text-gray-900"
-                            rows={4}
-                            value={Array.isArray(formData.features) ? formData.features.join(', ') : formData.features || ''}
-                            onChange={e => setFormData({ ...formData, features: e.target.value.split(',').map(s => s.trim()) })}
-                        />
-                    </div>
-                    <div className="col-span-2 flex justify-end gap-2">
-                        <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 border rounded text-gray-700">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 bg-wtech-gold font-bold rounded">Salvar LP</button>
-                    </div>
-                </form>
-            </div>
-        );
-    }
-
-    return (
-        <div className="text-gray-900">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-xl font-bold">Construtor de Landing Pages</h2>
-                    <p className="text-xs text-gray-500">Crie páginas de alta conversão para campanhas específicas.</p>
-                </div>
-                <button onClick={() => { setFormData({}); setIsEditing(true); }} className="bg-wtech-gold text-black px-4 py-2 rounded font-bold flex items-center gap-2">
-                    <Plus size={18} /> Nova LP
-                </button>
-            </div>
-
-
-
-            <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-gray-700 mb-2 text-sm uppercase">Links Internos do Sistema</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {systemLinks.map((link, idx) => (
-                        <div key={idx} className="flex flex-col text-xs">
-                            <span className="font-bold text-gray-900">{link.label}</span>
-                            <code className="bg-gray-200 p-1 rounded mt-1 truncate hover:text-clip select-all cursor-pointer" title="Clique para selecionar">{link.url}</code>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pages.map(page => (
-                    <div key={page.id} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                        <div className="h-32 bg-gray-200 relative">
-                            {page.heroImage && <img src={page.heroImage} className="w-full h-full object-cover" />}
-                            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold uppercase">
-                                {page.status}
-                            </div>
-                        </div>
-                        <div className="p-4 flex-grow">
-                            <h3 className="font-bold text-gray-900 mb-1">{page.title}</h3>
-                            <p className="text-xs text-gray-500 mb-4 truncate">/lp/{page.slug}</p>
-
-                            <div className="flex gap-4 text-xs text-gray-600 mb-4">
-                                <span className="flex items-center gap-1"><Eye size={12} /> {page.viewCount} views</span>
-                                <span className="flex items-center gap-1 text-green-600 font-bold"><TrendingUp size={12} /> {page.conversionCount} leads</span>
-                            </div>
-                        </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
-                            <button onClick={() => { setFormData(page); setIsEditing(true); }} className="flex-1 py-2 text-xs font-bold bg-white border border-gray-200 rounded hover:bg-gray-100 text-gray-700">Editar</button>
-                            <a href={`/#/lp/${page.slug}`} target="_blank" className="flex-1 py-2 text-xs font-bold bg-wtech-black text-white rounded hover:bg-gray-800 text-center flex items-center justify-center gap-1">
-                                Visualizar <ArrowUpRight size={10} />
-                            </a>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
 
 
 
@@ -6494,28 +6340,16 @@ const Admin = () => {
                                 <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('certificates_view') && (
-                                <SidebarItem icon={Award} label="Certificados & Crachás" active={currentView === 'certificates'} onClick={() => { setCurrentView('certificates'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
                             {hasPermission('financial_view') && (
                                 <SidebarItem icon={DollarSign} label="Financeiro" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
-                            {hasPermission('blog_view') && (
-                                <SidebarItem icon={BookOpen} label="Blog Manager" active={currentView === 'blog_manager'} onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
-                                <SidebarItem icon={Megaphone} label="Marketing Center" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                                <SidebarItem icon={Megaphone} label="Campanhas" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
-
-                            {hasPermission('landing_pages_view') && (
-                                <SidebarItem icon={Monitor} label="Landing Pages" active={currentView === 'lp_builder'} onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('analytics_view') && (
-                                <SidebarItem icon={BarChart3} label="Analytics" active={currentView === 'analytics'} onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
+                            
+                            {(hasPermission('marketing_view') || hasPermission('manage_marketing') || hasPermission('blog_view') || hasPermission('landing_pages_view')) && (
+                                <SidebarItem icon={Rocket} label="Marketing" active={currentView === 'marketing_hub'} onClick={() => { setCurrentView('marketing_hub'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
 
                             {hasPermission('intelligence_view') && (
@@ -6574,20 +6408,17 @@ const Admin = () => {
 
                             <div className="grid grid-cols-3 gap-6 mb-auto overflow-y-auto">
                                 {hasPermission('dashboard_view') && <MobileMenuItem icon={LayoutDashboard} label="Visão Geral" onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('analytics_view') && <MobileMenuItem icon={BarChart3} label="Analytics" onClick={() => { setCurrentView('analytics'); setIsMobileMenuOpen(false); }} />}
-
                                 {hasPermission('crm_view') && <MobileMenuItem icon={KanbanSquare} label="Leads & CRM" onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_users') && <MobileMenuItem icon={Users} label="Equipe" onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('orders_view') && <MobileMenuItem icon={ShoppingBag} label="Loja" onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('catalog_view') && <MobileMenuItem icon={Plus} label="Catálogo" onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('catalog_view') && <MobileMenuItem icon={Package} label="Catálogo" onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('clients_view') && <MobileMenuItem icon={Users} label="Clientes" onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('courses_view') && <MobileMenuItem icon={GraduationCap} label="Cursos" onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('accredited_view') && <MobileMenuItem icon={Wrench} label="Oficinas" onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('financial_view') && <MobileMenuItem icon={DollarSign} label="Financeiro" onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('landing_pages_view') && <MobileMenuItem icon={Monitor} label="Páginas" onClick={() => { setCurrentView('lp_builder'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('tasks_view') && <MobileMenuItem icon={CheckCircle} label="Tarefas" onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('blog_view') && <MobileMenuItem icon={BookOpen} label="Blog" onClick={() => { setCurrentView('blog_manager'); setIsMobileMenuOpen(false); }} />}
-                                {hasPermission('marketing_view') && <MobileMenuItem icon={Megaphone} label="Marketing" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('marketing_view') && <MobileMenuItem icon={Megaphone} label="Campanhas" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
+                                {(hasPermission('marketing_view') || hasPermission('blog_view')) && <MobileMenuItem icon={Rocket} label="Marketing" onClick={() => { setCurrentView('marketing_hub'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
 
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
@@ -6639,7 +6470,8 @@ const Admin = () => {
                         {currentView === 'certificates' && hasPermission('certificates_view') && <CertificateManagerView />}
                         {currentView === 'lp_builder' && hasPermission('landing_pages_view') && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
-                        {currentView === 'email_marketing' && hasPermission('marketing_view') && <MarketingView permissions={livePermissions} />}
+                        {currentView === 'email_marketing' && hasPermission('marketing_view') && <CampaignsView permissions={livePermissions} />}
+                        {currentView === 'marketing_hub' && <MarketingView permissions={livePermissions} />}
                         {currentView === 'intelligence' && hasPermission('intelligence_view') && <IntelligenceView permissions={livePermissions} />}
                         {currentView === 'tasks' && hasPermission('tasks_view') && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}

@@ -5,8 +5,9 @@ import { Clock, CreditCard, Wrench, Truck, CheckCircle2, MessageCircle, BadgeChe
 
 interface OrdersKanbanProps {
     sales: Sale[];
-    onUpdateStatus: (saleId: string, status: string) => void;
+    onUpdateStatus: (saleId: string, status: string, trackingCode?: string) => void;
     onEditSale: (saleId: string) => void;
+    onDeleteSale?: (saleId: string) => void;
 }
 
 const COLUMNS = [
@@ -22,6 +23,8 @@ const COLUMNS = [
 export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdateStatus, onEditSale }) => {
     const [draggedId, setDraggedId] = React.useState<string | null>(null);
     const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
+    const [trackingModal, setTrackingModal] = React.useState<{ saleId: string; status: string } | null>(null);
+    const [trackingCode, setTrackingCode] = React.useState('');
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
         setDraggedId(id);
@@ -43,8 +46,22 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
         e.preventDefault();
         setDragOverCol(null);
         const id = e.dataTransfer.getData('saleId');
-        if (id) onUpdateStatus(id, status);
+        if (id) {
+            if (status === 'shipped') {
+                setTrackingModal({ saleId: id, status });
+            } else {
+                onUpdateStatus(id, status);
+            }
+        }
         setDraggedId(null);
+    };
+
+    const confirmTracking = () => {
+        if (trackingModal) {
+            onUpdateStatus(trackingModal.saleId, trackingModal.status, trackingCode);
+            setTrackingModal(null);
+            setTrackingCode('');
+        }
     };
     
     const getNextStatus = (current: string) => {
@@ -59,6 +76,14 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
          const idx = order.indexOf(current);
          if (idx > 0) return order[idx - 1];
          return null;
+    };
+
+    const handleStatusChange = (id: string, status: string) => {
+        if (status === 'shipped') {
+            setTrackingModal({ saleId: id, status });
+        } else {
+            onUpdateStatus(id, status);
+        }
     };
 
     return (
@@ -124,7 +149,7 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black p-1 rounded-lg border border-gray-100 dark:border-gray-800 shadow-2xl z-10" onClick={e => e.stopPropagation()}>
                                         {getNextStatus(col.id) && (
                                             <button 
-                                                onClick={() => onUpdateStatus(sale.id, getNextStatus(col.id)!)}
+                                                onClick={() => handleStatusChange(sale.id, getNextStatus(col.id)!)}
                                                 className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded text-green-500 transition-colors"
                                             >
                                                 →
@@ -132,7 +157,7 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
                                         )}
                                         {getPrevStatus(col.id) && (
                                             <button 
-                                                onClick={() => onUpdateStatus(sale.id, getPrevStatus(col.id)!)}
+                                                onClick={() => handleStatusChange(sale.id, getPrevStatus(col.id)!)}
                                                 className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-gray-400 transition-colors"
                                             >
                                                 ←
@@ -150,6 +175,58 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
                     </div>
                 );
             })}
+
+            {/* Tracking Code Modal */}
+            {trackingModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <motion.div 
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white dark:bg-[#151515] w-full max-w-md rounded-3xl p-8 border border-gray-100 dark:border-gray-800 shadow-2xl"
+                    >
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-orange-100 dark:bg-orange-900/20 text-orange-600 rounded-2xl">
+                                <Truck size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">Código de Rastreio</h3>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Informa o código para o cliente acompanhar</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-8">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 px-1">Código da Encomenda</label>
+                            <input 
+                                autoFocus
+                                type="text"
+                                value={trackingCode}
+                                onChange={(e) => setTrackingCode(e.target.value)}
+                                placeholder="Ex: BR123456789XX"
+                                className="w-full bg-gray-50 dark:bg-[#0A0A0A] border-2 border-transparent focus:border-wtech-red rounded-2xl py-4 px-6 text-sm font-black dark:text-white outline-none transition-all placeholder:text-gray-300 dark:placeholder:text-gray-800"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button 
+                                onClick={() => {
+                                    onUpdateStatus(trackingModal.saleId, trackingModal.status);
+                                    setTrackingModal(null);
+                                    setTrackingCode('');
+                                }}
+                                className="py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-all"
+                            >
+                                Pular
+                            </button>
+                            <button 
+                                onClick={confirmTracking}
+                                className="py-4 bg-wtech-red text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-red-600/20"
+                            >
+                                Confirmar Envio
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };
