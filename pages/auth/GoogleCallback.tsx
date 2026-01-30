@@ -40,7 +40,7 @@ const GoogleCallback = () => {
                     code,
                     client_id: clientId,
                     client_secret: clientSecret,
-                    redirect_uri: `https://${window.location.host}/auth/google/callback`,
+                    redirect_uri: `https://${window.location.host}/google-auth.html`,
                     grant_type: 'authorization_code',
                 }),
             });

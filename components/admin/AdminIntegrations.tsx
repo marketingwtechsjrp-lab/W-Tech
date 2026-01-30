@@ -110,7 +110,7 @@ const AdminIntegrations = () => {
         
         const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
         const options = {
-            redirect_uri: `https://${window.location.host}/auth/google/callback`,
+            redirect_uri: `https://${window.location.host}/google-auth.html`,
             client_id: globalConfig.googleClientId,
             access_type: 'offline',
             response_type: 'code',
