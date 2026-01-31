@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.7.1 (2026-01-30) - Gestão de Pedidos e Permissões Avançadas
+- FEAT: Dedução automática de estoque ao marcar pedido como "Pago".
+- PERM: Nova permissão "Editar Pedidos Pagos (Restrito)" para segurança de dados.
+- FIX: Visualização global do Dashboard corrigida para Super Admins.
+- FIX: Layout do Módulo de Pedidos ajustado (scroll infinito corrigido).
+- FIX: Correção de tela branca na navegação entre módulos.
+
 ## v2.7.0 (2026-01-30) - Marketing Hub, Bio Page & UX Improvements
 - FEAT: Novo Módulo "Campanhas" (Automação, Listas, Modelos)
 - FEAT: Novo Módulo "Marketing" (Blog, LPs, Analytics, Certificados)

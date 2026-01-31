@@ -11,10 +11,11 @@ interface NewOrderModalProps {
     onDelete?: (id: string) => void;
     editingSale: Partial<Sale> | null;
     user: any;
+    permissions?: any;
     initialItems?: (SaleItem & { product?: Product })[];
 }
 
-export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, onSave, onDelete, editingSale, user, initialItems = [] }) => {
+export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, onSave, onDelete, editingSale, user, permissions, initialItems = [] }) => {
     // ---- State ----
     const [currentSale, setCurrentSale] = useState<Partial<any>>({}); // using any for flexibility with new fields for now
     const [saleItems, setSaleItems] = useState<(SaleItem & { product?: Product })[]>([]);
@@ -75,8 +76,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
 
     // Locking Logic
     const isLocked = ['paid', 'producing', 'shipped', 'delivered'].includes(currentSale.status || '');
-    const canBypassLock = user?.role === 'Admin' || user?.role === 'Super Admin' || user?.role === 'Manager' || 
-                          (typeof user?.role === 'object' && (user.role.name === 'Admin' || user.role.name === 'Super Admin' || user.role.level >= 10));
+    const canBypassLock = user?.role === 'Admin' || user?.role === 'Super Admin' || permissions?.orders_edit_paid ||
+                          (typeof user?.role === 'object' && (user.role.name === 'Admin' || user.role.name === 'Super Admin' || user.role.level >= 10 || user.role.permissions?.orders_edit_paid));
 
     useEffect(() => {
         if (isOpen) {
@@ -150,6 +151,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         setManualItem({ name: '', quantity: 1, price: 0 });
         setIsManualMode(false);
     };
+
+    // Helper for Disabled State
+    const isDisabled = isLocked && !canBypassLock;
 
     const handleUpdateQuantity = (index: number, delta: number) => {
         const newItems = [...saleItems];
@@ -495,7 +499,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 </h3>
                                                 <button 
                                                     onClick={() => setIsManualMode(!isManualMode)}
-                                                    className={`text-[9px] font-black uppercase px-2 py-1 rounded-md border transition-all ${isManualMode ? 'bg-wtech-red border-wtech-red text-white' : 'border-gray-200 text-gray-400 hover:border-gray-400'}`}
+                                                    disabled={isDisabled}
+                                                    className={`text-[9px] font-black uppercase px-2 py-1 rounded-md border transition-all ${isManualMode ? 'bg-wtech-red border-wtech-red text-white' : 'border-gray-200 text-gray-400 hover:border-gray-400'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 >
                                                     {isManualMode ? 'Voltar para Busca' : '+ Item Manual'}
                                                 </button>
@@ -549,7 +554,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         value={productSearchTerm}
                                                         onChange={e => setProductSearchTerm(e.target.value)}
                                                         onFocus={() => setIsAddingItem(true)}
-                                                        disabled={isLocked && !canBypassLock}
+                                                        disabled={isDisabled}
                                                     />
                                                     {isAddingItem && productSearchTerm && !isLocked && (
                                                          <div className="absolute top-12 left-0 w-full bg-white dark:bg-[#222] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-40 max-h-80 overflow-y-auto font-sans">
@@ -636,11 +641,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                             
                                                             <div className="flex flex-col items-end gap-2">
                                                                 <div className="flex items-center bg-gray-100 dark:bg-black rounded-xl p-1 shadow-inner border border-gray-200 dark:border-gray-800">
-                                                                    <button onClick={() => handleUpdateQuantity(index, -1)} className="px-2 py-1 hover:bg-white dark:hover:bg-white/10 rounded-lg text-lg font-bold transition-all">-</button>
+                                                                    <button onClick={() => !isDisabled && handleUpdateQuantity(index, -1)} className={`px-2 py-1 hover:bg-white dark:hover:bg-white/10 rounded-lg text-lg font-bold transition-all ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}>-</button>
                                                                     <span className="text-sm font-black px-3 min-w-[32px] text-center">{item.quantity}</span>
-                                                                    <button onClick={() => handleUpdateQuantity(index, 1)} className="px-2 py-1 hover:bg-white dark:hover:bg-white/10 rounded-lg text-lg font-bold transition-all">+</button>
+                                                                    <button onClick={() => !isDisabled && handleUpdateQuantity(index, 1)} className={`px-2 py-1 hover:bg-white dark:hover:bg-white/10 rounded-lg text-lg font-bold transition-all ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}>+</button>
                                                                 </div>
-                                                                <button onClick={() => handleRemoveItem(index)} className="text-[10px] font-black text-gray-300 hover:text-red-500 uppercase transition-colors">Remover</button>
+                                                                <button onClick={() => !isDisabled && handleRemoveItem(index)} className={`text-[10px] font-black text-gray-300 hover:text-red-500 uppercase transition-colors ${isDisabled ? 'hidden' : ''}`}>Remover</button>
                                                             </div>
                                                         </motion.div>
                                                     ))

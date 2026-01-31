@@ -9,7 +9,9 @@ import { useAuth } from '../../../context/AuthContext';
 import { OrdersKanbanBoard } from './OrdersKanbanBoard';
 import { NewOrderModal } from './OrderEditor';
 
-const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
+import type { Lead } from '../../../types'; // Import Lead type
+
+const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null, onConsumeInitialLead?: () => void }> = ({ permissions, initialLead, onConsumeInitialLead }) => {
     const { user } = useAuth();
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
@@ -58,6 +60,25 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         const { data } = await supabase.from('SITE_Users').select('id, name');
         if (data) setUsersList(data);
     };
+
+    // Handle Initial Lead from CRM
+    useEffect(() => {
+        if (initialLead) {
+             console.log("Opening new order for lead:", initialLead);
+             setIsEditMode(true);
+             setEditingSale({
+                 clientName: initialLead.name,
+                 clientEmail: initialLead.email,
+                 clientPhone: initialLead.phone,
+                 clientId: initialLead.id,
+                 channel: 'CRM',
+                 status: 'negotiation'
+             });
+             setCurrentSaleItems([]); // Clear previous items
+             
+             if (onConsumeInitialLead) onConsumeInitialLead();
+        }
+    }, [initialLead]);
 
     const fetchSales = async () => {
         setLoading(true);
@@ -176,9 +197,17 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const handleUpdateStatus = async (saleId: string, newStatus: Sale['status'], trackingCode?: string) => {
         setLoading(true);
         try {
-             // Logic to handle stock deduction if moving to SHIPPED
+             // 1. Stock Deduction Rule ("When passes to Paid")
             const { data: sale } = await supabase.from('SITE_Sales').select('status').eq('id', saleId).single();
-            const shouldDeduct = newStatus === 'shipped' && (sale?.status !== 'shipped' && sale?.status !== 'delivered');
+            
+            // Check if we should deduct stock (Trigger: Moving TO 'paid' OR 'shipped' from a non-deducted state)
+            // Ideally we only do this ONCE. 
+            // If it goes Pending -> Paid (Deduct). Then Paid -> Shipped (Do NOT Deduct again).
+            // Logic: Target is (paid|shipped|delivered) AND Origin was NOT (paid|shipped|delivered)
+            const wasDeducted = ['paid', 'shipped', 'delivered', 'producing'].includes(sale?.status || '');
+            const targetIsDeducted = ['paid', 'shipped', 'delivered', 'producing'].includes(newStatus);
+            
+            const shouldDeduct = targetIsDeducted && !wasDeducted;
             
             const updatePayload: any = { status: newStatus };
             if (trackingCode) {
@@ -197,7 +226,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                             product_id: mov.product_id,
                             type: 'OUT',
                             quantity: mov.quantity,
-                            origin: 'Venda (Enviada)',
+                            origin: `Venda (${getStatusLabel(newStatus)})`,
                             reference_id: saleId,
                             notes: `Baixa automática Venda #${saleId.slice(0,8)}`
                         }]);
@@ -296,7 +325,7 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
 
 
     return (
-        <div className="h-full w-full overflow-hidden flex flex-col">
+        <div className={`w-full flex flex-col ${isEditMode ? 'h-[85vh] overflow-hidden' : ''}`}>
             {isEditMode ? (
                 // Order Editor View (inline, fits within module area)
                 <div className="flex-1 min-h-0 bg-white dark:bg-[#0A0A0A]">
@@ -316,12 +345,13 @@ const SalesManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                         onDelete={handleDeleteSale}
                         editingSale={editingSale}
                         user={user}
+                        permissions={permissions}
                         initialItems={currentSaleItems}
                     />
                 </div>
             ) : (
                 // Dashboard View (Header + Metrics + List/Kanban)
-                <div className="p-6 space-y-6 overflow-y-auto">
+                <div className="p-6 space-y-6">
                     {/* Futuristic Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-4">
                         <div className="flex items-center gap-5">

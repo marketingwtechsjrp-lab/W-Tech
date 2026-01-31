@@ -4136,6 +4136,7 @@ const SettingsView = () => {
                 { key: 'orders_view', label: 'Visualizar Pedidos (Meus)' },
                 { key: 'orders_view_all', label: 'Visualizar Todos os Pedidos (Gestor)' },
                 { key: 'manage_orders', label: 'Gerenciar Pedidos (Status/Editar)' },
+                { key: 'orders_edit_paid', label: 'Editar Pedidos Pagos (Restrito)' },
                 { key: 'orders_edit', label: 'Editar Pedido (Admin)' },
                 { key: 'orders_delete', label: 'Excluir Pedido (Perigo)' }
             ]
@@ -4166,6 +4167,7 @@ const SettingsView = () => {
             title: 'Marketing Center',
             perms: [
                 { key: 'marketing_view', label: 'Acessar Central de Marketing' },
+                { key: 'campaigns_view', label: 'Acessar Módulo de Campanhas' },
                 { key: 'marketing_manage_campaigns', label: 'Gerenciar Campanhas' },
                 { key: 'marketing_manage_lists', label: 'Gerenciar Listas de Transmissão' },
                 { key: 'marketing_manage_templates', label: 'Gerenciar Modelos (WhatsApp)' },
@@ -4211,6 +4213,7 @@ const SettingsView = () => {
             title: 'Administração Geral',
             perms: [
                 { key: 'dashboard_view', label: 'Visualizar Dashboard (Visão Geral)' },
+                { key: 'dashboard_view_all', label: 'Visualizar Dados Globais (Dashboard/KPIs)' },
                 { key: 'analytics_view', label: 'Visualizar Analytics' },
                 { key: 'admin_access', label: 'Acesso Admin (Global)' },
                 { key: 'manage_users', label: 'Gerenciar Equipe' },
@@ -5533,7 +5536,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     // User Edit State
-    const [editingUser, setEditingUser] = useState<Partial<UserType> & { password?: string, receives_leads?: boolean }>({});
+    const [editingUser, setEditingUser] = useState<Partial<UserType> & { password?: string, receives_leads?: boolean, permissions?: any }>({});
 
     const { user } = useAuth();
 
@@ -5548,13 +5551,17 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
         }
 
         // Handle String Role
+        // Handle String Role
         if (typeof user.role === 'string') {
-            return user.role === 'Super Admin' || user.role === 'Admin';
+            const r = user.role.toLowerCase();
+            return r === 'super admin' || r === 'super_admin' || r === 'admin';
         }
 
         // Handle Object Role
+        // Handle Object Role
         // Super Admin Level 10 Override
-        if (user.role.level >= 10 || user.role.name === 'Super Admin') return true;
+        const rName = user.role.name?.toLowerCase() || '';
+        if (user.role.level >= 10 || rName === 'super admin' || rName === 'super_admin') return true;
 
         if (user.role.permissions && user.role.permissions.admin_access) return true;
         return !!(user.role.permissions && user.role.permissions[key]);
@@ -5610,7 +5617,8 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                 name: payload.name,
                 role_id: payload.role_id,
                 status: payload.status,
-                receives_leads: payload.receives_leads
+                receives_leads: payload.receives_leads,
+                permissions: editingUser.permissions
             }).eq('id', editingUser.id);
 
             if (stdError) {
@@ -5833,6 +5841,23 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                     <label htmlFor="receives_leads" className="text-sm font-bold text-blue-900 dark:text-blue-300 cursor-pointer">
                                         Apto a receber Leads (Atendimento)
                                         <p className="text-[10px] font-normal text-blue-700 dark:text-blue-400">Se marcado, receberá leads automaticamente.</p>
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-900/30 mt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="dashboard_view_all"
+                                        className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                                        checked={editingUser.permissions?.dashboard_view_all || false}
+                                        onChange={e => {
+                                            const current = editingUser.permissions || {};
+                                            setEditingUser({ ...editingUser, permissions: { ...current, dashboard_view_all: e.target.checked } });
+                                        }}
+                                    />
+                                    <label htmlFor="dashboard_view_all" className="text-sm font-bold text-purple-900 dark:text-purple-300 cursor-pointer">
+                                        Visualizar Todos os Dados (Dashboard)
+                                        <p className="text-[10px] font-normal text-purple-700 dark:text-purple-400">Permite ver KPIs de toda a empresa.</p>
                                     </label>
                                 </div>
 
@@ -6097,6 +6122,7 @@ const Admin = () => {
 
     // const [currentView, setCurrentView] = useState<View>('dashboard'); // Removed duplicate
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
+    const [pendingOrderLead, setPendingOrderLead] = useState<Lead | null>(null);
 
     const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -6181,7 +6207,8 @@ const Admin = () => {
 
         // 1. Super Admin / Admin String Override
         const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-        if (roleName === 'Super Admin' || roleName === 'ADMIN' || user.permissions?.admin_access) return true;
+        const rName = roleName?.toLowerCase() || '';
+        if (rName === 'super admin' || rName === 'super_admin' || rName === 'admin' || user.permissions?.admin_access) return true;
 
         // 2. Level 10 Override
         if (typeof user.role !== 'string' && user.role?.level >= 10) return true;
@@ -6450,9 +6477,9 @@ const Admin = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
                         transition={{ duration: 0.2 }}
-                        className="p-4 md:p-6 w-full min-h-full"
+                        className="p-4 md:p-6 w-full"
                     >
-                        {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView />}
+                        {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView permissions={livePermissions} />}
                         {currentView === 'analytics' && hasPermission('analytics_view') && <AnalyticsView />}
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
                             if (conversionData?.type === 'course') {
@@ -6460,9 +6487,13 @@ const Admin = () => {
                                 setPendingCourseId(conversionData.courseId);
                                 setCurrentView('courses_manager');
                             }
+                            if (conversionData?.type === 'product') {
+                                setPendingOrderLead(lead);
+                                setCurrentView('orders');
+                            }
                         }} permissions={livePermissions} />}
                         {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} onOpenProfile={() => setIsProfileModalOpen(true)} />}
-                        {currentView === 'orders' && hasPermission('orders_view') && <SalesManagerView permissions={livePermissions} />}
+                        {currentView === 'orders' && hasPermission('orders_view') && <SalesManagerView permissions={livePermissions} initialLead={pendingOrderLead} onConsumeInitialLead={() => setPendingOrderLead(null)} />}
                         {currentView === 'catalog_manager' && hasPermission('catalog_view') && <CatalogManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
@@ -6470,7 +6501,7 @@ const Admin = () => {
                         {currentView === 'certificates' && hasPermission('certificates_view') && <CertificateManagerView />}
                         {currentView === 'lp_builder' && hasPermission('landing_pages_view') && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
-                        {currentView === 'email_marketing' && hasPermission('marketing_view') && <CampaignsView permissions={livePermissions} />}
+                        {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('campaigns_view')) && <CampaignsView permissions={livePermissions} />}
                         {currentView === 'marketing_hub' && <MarketingView permissions={livePermissions} />}
                         {currentView === 'intelligence' && hasPermission('intelligence_view') && <IntelligenceView permissions={livePermissions} />}
                         {currentView === 'tasks' && hasPermission('tasks_view') && <TaskManagerView permissions={livePermissions} />}

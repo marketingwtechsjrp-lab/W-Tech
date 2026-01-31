@@ -787,122 +787,21 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 (onConvertLead as any)(lead, { type: 'course', courseId: selectedCourseId });
             }
         } else {
-            // Product Sale (Refactored to Orders)
-            const value = parseFloat(saleValue.replace('R$', '').replace('.', '').replace(',', '.').trim()) || 0;
-            const selectedProduct = catalogProducts.find(p => p.id === selectedProductId);
 
-            // 1. Update Lead with conversion metadata
-            const { error: leadError } = await supabase.from('SITE_Leads').update({
-                internal_notes: `${lead.internalNotes || ''}\n[PEDIDO CRM]: R$${value} - ${productSummary || selectedProduct?.title || 'Venda de Produto'}`,
-                conversion_value: value,
-                conversion_summary: productSummary || selectedProduct?.title || 'Venda de Produto',
-                conversion_type: 'Product'
-            }).eq('id', lead.id);
-
-            if (leadError) console.error("Error saving conversion details:", leadError);
-
-            // --- Create Sale in SITE_Sales ---
-            try {
-                // Correct payload matching SITE_Sales schema from create_stock_logistics_tables.sql
-                const saleData: any = {
-                    client_id: lead.id,
-                    client_name: lead.name,
-                    client_email: lead.email,
-                    client_phone: lead.phone,
-                    total_value: value,
-                    payment_method: paymentMethod === 'Manual' ? manualDetails : paymentMethod,
-                    status: 'paid',
-                    channel: 'CRM',
-                    notes: `Venda via CRM: ${selectedProduct?.title || productSummary || 'Item CRM'}`,
-                    seller_id: lead.assignedTo || user?.id,
-                    seller_name: usersMap[lead.assignedTo || user?.id || ''] || 'Vendedor',
-                    created_at: new Date().toISOString()
-                };
-
-                const { data: saleResponse, error: saleError } = await supabase
-                    .from('SITE_Sales')
-                    .insert(saleData)
-                    .select()
-                    .single();
-
-                if (saleError) {
-                    console.error("Error creating sale:", saleError);
-                    notificationRef.current?.createNotification('error', 'Erro no Banco', `Não foi possível registrar a venda: ${saleError.message}`);
-                } else {
-                    console.log("✅ Sale created successfully:", saleResponse);
-
-                    // --- Create Sale Item in SITE_SaleItems ---
-                    if (selectedProductId || productSummary) {
-                        const { error: itemError } = await supabase.from('SITE_SaleItems').insert({
-                            sale_id: saleResponse.id,
-                            product_id: selectedProductId || null,
-                            quantity: orderQuantity || 1,
-                            unit_price: value / (orderQuantity || 1)
-                        });
-                        if (itemError) {
-                            console.error("Error creating sale item:", itemError);
-                            alert(`Erro CRM (SITE_SaleItems): ${itemError.message}`);
-                        }
-                    }
-                    
-                    // --- Create Transaction in SITE_Transactions for Cash Flow ---
-                    const { error: transError } = await supabase.from('SITE_Transactions').insert({
-                        description: `Venda CRM #${saleResponse?.id?.slice(0, 5) || ''}: ${lead.name} - ${selectedProduct?.title || productSummary || 'Produto/Serviço'}`,
-                        category: 'SALES',
-                        type: 'Income', // Capitalized to match check constraint
-                        amount: value,
-                        payment_method: saleData.payment_method,
-                        attendant_id: lead.assignedTo || user?.id,
-                        attendant_name: usersMap[lead.assignedTo || user?.id || ''] || 'Vendedor',
-                        created_at: new Date().toISOString()
-                    });
-
-                    if (transError) {
-                        console.error("Error creating transaction record:", transError);
-                        notificationRef.current?.createNotification('error', 'Erro Financeiro', `Venda registrada, mas falha no fluxo de caixa: ${transError.message}`);
-                    }
-                }
-            } catch (e: any) {
-                console.error("Failed to create sale record:", e);
-                alert(`Exceção CRM: ${e.message}`);
-            }
-
-            notificationRef.current?.createNotification('success', 'Pedido Gerado!', `Venda de R$ ${value.toLocaleString('pt-BR')} registrada com sucesso.`);
-
+            // Product Sale (Delegated to Orders Module)
             if (onConvertLead) {
-                (onConvertLead as any)(lead, { type: 'product', summary: productSummary || selectedProduct?.title, value });
+                (onConvertLead as any)(lead, { type: 'product' });
             }
-
-            if (generatePaymentLink) {
-                setIsGeneratingLink(true);
-                try {
-                    const { success, invoiceUrl, error: paymentError } = await createPaymentLink({
-                        lead,
-                        value,
-                        description: `Venda: ${productSummary || 'Produto/Serviço'}`
-                    });
-
-                    if (success && invoiceUrl) {
-                        setCreatedPaymentLink(invoiceUrl);
-                        // Don't close modal yet, show the link
-                        setIsGeneratingLink(false);
-                        return;
-                    } else {
-                        alert(`Erro ao gerar link Asaas: ${paymentError}`);
-                    }
-                } catch (e: any) {
-                    alert(`Erro ao conectar Asaas: ${e.message}`);
-                }
-                setIsGeneratingLink(false);
-            }
+            
+            // Just move the lead status, don't create sale yet.
+            // The user will create the order in the next screen.
         }
-        if (!generatePaymentLink) {
-            setConversionModal({ isOpen: false, lead: null, targetStatus: '' });
-            setProductSummary('');
-            setSaleValue('');
-            setSelectedCourseId('');
-            setGeneratePaymentLink(false);
-        }
+
+        setConversionModal({ isOpen: false, lead: null, targetStatus: '' });
+        setProductSummary('');
+        setSaleValue('');
+        setSelectedCourseId('');
+        setGeneratePaymentLink(false);
     };
 
     const handleConfirmLost = async () => {
