@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.7.1",
+    "date": "2026-01-30",
+    "title": "Gestão de Pedidos e Permissões Avançadas",
+    "changes": [
+      "FEAT: Dedução automática de estoque ao marcar pedido como 'Pago'",
+      "PERM: Nova permissão 'Editar Pedidos Pagos (Restrito)'",
+      "FIX: Visualização global do Dashboard corrigida para Super Admins",
+      "FIX: Layout do Módulo de Pedidos ajustado (scroll infinito corrigido)",
+      "FIX: Correção de tela branca na navegação entre módulos"
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.7.0",
     "date": "2026-01-30",
     "title": "Marketing Hub, Bio Page & UX Improvements",
