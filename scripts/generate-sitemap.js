@@ -14,8 +14,8 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Error: Supabase URL or Key missing in .env.local');
-  process.exit(1);
+  console.warn('⚠️ Warning: Supabase URL or Key missing. Skipping sitemap generation.');
+  process.exit(0); // Success exit code to allow build to continue
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
