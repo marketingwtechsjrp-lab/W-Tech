@@ -4,7 +4,7 @@ import {
     Plus, Search, Filter, Edit, Trash2, Package, 
     ArrowUpRight, ArrowDownRight, History, Settings,
     PackageCheck, AlertTriangle, Layers, Wrench, X, Save,
-    ShoppingCart, Upload, Download
+    ShoppingCart, Upload, Download, RefreshCcw
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -41,6 +41,15 @@ const CatalogManagerView = () => {
     });
     const [isImporting, setIsImporting] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+    
+    // Mass pricing states
+    const [isMassAdjusting, setIsMassAdjusting] = useState(false);
+    const [massAdjustData, setMassAdjustData] = useState({
+        level: 'retail',
+        type: 'percentage',
+        value: 0,
+        direction: 'increase'
+    });
 
     useEffect(() => {
         fetchProducts();
@@ -58,6 +67,9 @@ const CatalogManagerView = () => {
                 ...p,
                 averageCost: Number(p.average_cost),
                 salePrice: Number(p.sale_price),
+                priceRetail: Number(p.price_retail || p.sale_price),
+                pricePartner: Number(p.price_partner || p.sale_price),
+                priceDistributor: Number(p.price_distributor || p.sale_price),
                 minStock: p.min_stock,
                 currentStock: p.current_stock,
                 productionTime: p.production_time,
@@ -138,6 +150,9 @@ const CatalogManagerView = () => {
             min_stock: editingProduct.minStock || 0,
             average_cost: editingProduct.averageCost || 0,
             sale_price: editingProduct.salePrice || 0,
+            price_retail: editingProduct.priceRetail || editingProduct.salePrice || 0,
+            price_partner: editingProduct.pricePartner || 0,
+            price_distributor: editingProduct.priceDistributor || 0,
             production_time: editingProduct.productionTime || 0,
             image_url: editingProduct.imageUrl || '',
             weight: editingProduct.weight || 0,
@@ -218,6 +233,51 @@ const CatalogManagerView = () => {
             setMovementData({ type: 'IN', quantity: 1, notes: '' });
             fetchProducts();
             if (activeModalTab === 'history') fetchHistory(editingProduct.id);
+        }
+    };
+
+    const handleMassAdjust = async () => {
+        if (massAdjustData.value <= 0) return alert("Insira um valor válido.");
+        const levelLabel = massAdjustData.level === 'retail' ? 'Final' : 
+                           massAdjustData.level === 'partner' ? 'Credenciados' : 'Distribuidor';
+        
+        if (!confirm(`Deseja realmente aplicar o reajuste de ${massAdjustData.value}% (${massAdjustData.direction === 'increase' ? 'Aumento' : 'Desconto'}) para o nível ${levelLabel}?`)) return;
+
+        setLoading(true);
+        try {
+            const field = massAdjustData.level === 'retail' ? 'price_retail' : 
+                          massAdjustData.level === 'partner' ? 'price_partner' : 'price_distributor';
+            
+            const multiplier = massAdjustData.direction === 'increase' 
+                ? (1 + massAdjustData.value / 100) 
+                : (1 - massAdjustData.value / 100);
+
+            // Using raw SQL via RPC if available, or fetch and update batch (safer for small-mid sets)
+            // Since we don't have a reliable RPC here, we do it via update with a calculated value
+            // but Supabase JS doesn't support relative updates easily without RPC.
+            // Let's use a simple loop or a single update if we had an RPC.
+            // Actually, we can use a single update if we are setting a fixed value, but here it's relative.
+            
+            // Fetch all columns to ensure we don't violate not-null constraints on upsert
+            const { data: prods } = await supabase.from('SITE_Products').select('*');
+            if (prods) {
+                const updates = prods.map(p => ({
+                    ...p,
+                    [field]: Number((p[field] * multiplier).toFixed(2))
+                }));
+
+                // Batch update (Supabase upsert with ID works as update)
+                const { error } = await supabase.from('SITE_Products').upsert(updates);
+                if (error) throw error;
+            }
+
+            alert("Reajuste concluído com sucesso!");
+            setIsMassAdjusting(false);
+            fetchProducts();
+        } catch (error: any) {
+            alert("Erro ao aplicar reajuste: " + error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -386,6 +446,12 @@ const CatalogManagerView = () => {
                         {isImporting ? 'Processando...' : 'Importar CSV'}
                         <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
                     </label>
+                    <button 
+                        onClick={() => setIsMassAdjusting(true)}
+                        className="flex-1 md:flex-none px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
+                    >
+                        <RefreshCcw size={20} className="text-blue-500" /> Reajuste em Massa
+                    </button>
                     <button 
                         onClick={() => { setEditingProduct({ type: 'product', unit: 'un' }); setIsProductModalOpen(true); }}
                         className="flex-1 md:flex-none px-6 py-3 bg-wtech-black dark:bg-white dark:text-black text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-lg active:scale-95"
@@ -691,27 +757,67 @@ const CatalogManagerView = () => {
                                             />
                                         </div>
 
-                                        <div className="bg-green-50/50 dark:bg-green-900/10 p-4 rounded-2xl border border-green-100 dark:border-green-900/20 flex flex-col gap-4 md:col-span-2">
-                                            <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-green-50/50 dark:bg-green-900/10 p-5 rounded-[2rem] border border-green-100 dark:border-green-900/20 flex flex-col gap-5 md:col-span-2">
+                                            <p className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-[0.2em] ml-1">Configuração de Preços & Níveis</p>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1 ml-1">Custo Médio (R$)</label>
-                                                    <input 
-                                                        type="number"
-                                                        step="0.01"
-                                                        className="w-full bg-white dark:bg-[#111] border border-green-200 dark:border-green-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-green-400 outline-none transition-all"
-                                                        value={editingProduct?.averageCost || 0}
-                                                        onChange={e => setEditingProduct({...editingProduct, averageCost: parseFloat(e.target.value)})}
-                                                    />
+                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Custo Médio (R$)</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-gray-400">R$</span>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                                                            value={editingProduct?.averageCost || 0}
+                                                            onChange={e => setEditingProduct({...editingProduct, averageCost: parseFloat(e.target.value)})}
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1 ml-1">Preço de Venda (R$)</label>
-                                                    <input 
-                                                        type="number"
-                                                        step="0.01"
-                                                        className="w-full bg-white dark:bg-[#111] border border-green-200 dark:border-green-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-green-400 outline-none transition-all"
-                                                        value={editingProduct?.salePrice || 0}
-                                                        onChange={e => setEditingProduct({...editingProduct, salePrice: parseFloat(e.target.value)})}
-                                                    />
+                                                    <label className="block text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 ml-1">Preço Final</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-blue-400">R$</span>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-black text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                            value={editingProduct?.priceRetail || editingProduct?.salePrice || 0}
+                                                            onChange={e => {
+                                                                const val = parseFloat(e.target.value);
+                                                                setEditingProduct({...editingProduct, priceRetail: val, salePrice: val});
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-green-100 dark:border-white/5">
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-1.5 ml-1">Credenciados</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-orange-400">R$</span>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full bg-white dark:bg-[#111] border border-orange-200 dark:border-orange-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                            value={editingProduct?.pricePartner || 0}
+                                                            onChange={e => setEditingProduct({...editingProduct, pricePartner: parseFloat(e.target.value)})}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1.5 ml-1">Distribuidor</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-purple-400">R$</span>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full bg-white dark:bg-[#111] border border-purple-200 dark:border-purple-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                                                            value={editingProduct?.priceDistributor || 0}
+                                                            onChange={e => setEditingProduct({...editingProduct, priceDistributor: parseFloat(e.target.value)})}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1057,6 +1163,102 @@ const CatalogManagerView = () => {
                                     className="flex-[2] py-3 bg-wtech-black text-white rounded-xl font-black shadow-xl hover:bg-gray-800 transition-all active:scale-95"
                                 >
                                     Confirmar Lançamento
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Mass Adjustment Modal */}
+            <AnimatePresence>
+                {isMassAdjusting && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white dark:bg-[#1A1A1A] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+                        >
+                            <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
+                                <div>
+                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight">Reajuste em Massa</h3>
+                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Atualize valores de múltiplos produtos</p>
+                                </div>
+                                <button onClick={() => setIsMassAdjusting(false)} className="p-3 bg-white dark:bg-gray-800 rounded-2xl text-gray-400 hover:text-red-500 shadow-sm transition-all shadow-gray-200/50">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            
+                            <div className="p-8 space-y-8">
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">1. Selecione o Nível de Preço</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {[
+                                            { id: 'retail', label: 'Final', color: 'blue', activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/30' },
+                                            { id: 'partner', label: 'Credenciados', color: 'orange', activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/30' },
+                                            { id: 'distributor', label: 'Distribuidor', color: 'purple', activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/30' }
+                                        ].map(level => (
+                                            <button
+                                                key={level.id}
+                                                onClick={() => setMassAdjustData({...massAdjustData, level: level.id})}
+                                                className={`py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all border-2 ${massAdjustData.level === level.id ? `${level.activeClass} text-white` : 'bg-gray-50 dark:bg-[#111] border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-200'}`}
+                                            >
+                                                {level.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">2. Tipo de Ajuste</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => setMassAdjustData({...massAdjustData, direction: 'increase'})}
+                                            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 ${massAdjustData.direction === 'increase' ? 'bg-green-600 border-green-600 text-white shadow-lg shadow-green-500/20' : 'bg-gray-50 dark:bg-[#111] border-transparent text-gray-400 dark:text-gray-600'}`}
+                                        >
+                                            <ArrowUpRight size={18} /> Aumento
+                                        </button>
+                                        <button
+                                            onClick={() => setMassAdjustData({...massAdjustData, direction: 'decrease'})}
+                                            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 ${massAdjustData.direction === 'decrease' ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-gray-50 dark:bg-[#111] border-transparent text-gray-400 dark:text-gray-600'}`}
+                                        >
+                                            <ArrowDownRight size={18} /> Desconto
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">3. Valor do Reajuste (%)</label>
+                                    <div className="relative group">
+                                        <input 
+                                            type="number"
+                                            className="w-full bg-gray-50 dark:bg-[#111] border-2 border-transparent focus:border-wtech-black dark:focus:border-white rounded-[1.5rem] py-5 px-6 text-3xl font-black text-center dark:text-white outline-none transition-all placeholder:text-gray-200"
+                                            placeholder="0"
+                                            value={massAdjustData.value || ''}
+                                            onChange={e => setMassAdjustData({...massAdjustData, value: parseFloat(e.target.value)})}
+                                        />
+                                        <span className="absolute right-8 top-6.5 text-2xl font-black text-gray-300">%</span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center mt-2 italic">
+                                        O reajuste será aplicado sobre o valor atual de cada produto.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="p-8 bg-gray-50 dark:bg-black/20 border-t border-gray-100 dark:border-gray-800 flex gap-4">
+                                <button 
+                                    onClick={() => setIsMassAdjusting(false)}
+                                    className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={handleMassAdjust}
+                                    disabled={loading || massAdjustData.value <= 0}
+                                    className="flex-[2] py-5 bg-wtech-black dark:bg-white text-white dark:text-black rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 italic"
+                                >
+                                    {loading ? 'Processando...' : <><Save size={20} /> Aplicar Reajuste Agora</>}
                                 </button>
                             </div>
                         </motion.div>

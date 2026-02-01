@@ -145,7 +145,13 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
                     estimated_delivery_date: saleData.estimated_delivery_date,
                     tracking_code: saleData.tracking_code,
                     discount_code: saleData.discount_code,
-                    discount_amount: saleData.discount_amount
+                    discount_amount: saleData.discount_amount,
+                    delivery_cep: saleData.delivery_cep,
+                    delivery_street: saleData.delivery_street,
+                    delivery_number: saleData.delivery_number,
+                    delivery_neighborhood: saleData.delivery_neighborhood,
+                    delivery_city: saleData.delivery_city,
+                    delivery_state: saleData.delivery_state
                 });
 
                 let mappedItems = [];
@@ -325,7 +331,7 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
 
 
     return (
-        <div className={`w-full flex flex-col ${isEditMode ? 'h-[85vh] overflow-hidden' : ''}`}>
+        <div className={`w-full flex flex-col ${isEditMode ? 'h-[calc(100vh-3.5rem)] overflow-hidden' : ''}`}>
             {isEditMode ? (
                 // Order Editor View (inline, fits within module area)
                 <div className="flex-1 min-h-0 bg-white dark:bg-[#0A0A0A]">

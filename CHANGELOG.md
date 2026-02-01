@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.7.2 (2026-02-01) - Correções de Scroll, PDF e Data de LP
+- FIX: Reset automático de scroll ao navegar entre módulos do Admin.
+- FEAT: Melhoria no PDF de Pedidos (Inclusão de número de pedido/ID e ajuste de layout).
+- UPDATE: Atualização da data do evento LP Lisboa Fev 2026 para 02 de Abril de 2026.
+- UPDATE: Correção das datas dos eventos W-Tech Lisboa (04-05/04/26) e ProRiders Lisboa (10-12/04/26).
+
 ## v2.7.1 (2026-01-30) - Gestão de Pedidos e Permissões Avançadas
 - FEAT: Dedução automática de estoque ao marcar pedido como "Pago".
 - PERM: Nova permissão "Editar Pedidos Pagos (Restrito)" para segurança de dados.

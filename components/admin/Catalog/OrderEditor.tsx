@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, ArrowLeft, MapPin } from 'lucide-react';
+import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, ArrowLeft, MapPin, RefreshCw } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { FileDown, Printer, Receipt } from 'lucide-react';
+import { useSettings } from '../../../context/SettingsContext';
 
 interface NewOrderModalProps {
     isOpen: boolean;
@@ -25,6 +29,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [products, setProducts] = useState<Product[]>([]);
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
     const [potentialClients, setPotentialClients] = useState<any[]>([]);
+    const [filteredClients, setFilteredClients] = useState<any[]>([]);
 
     // Search/UI State
     const [isSearchingClient, setIsSearchingClient] = useState(false);
@@ -35,6 +40,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [activeStep, setActiveStep] = useState<'items' | 'checkout'>('items');
     const [manualItem, setManualItem] = useState({ name: '', quantity: 1, price: 0 });
     const [isManualMode, setIsManualMode] = useState(false);
+    const [isChangingAddress, setIsChangingAddress] = useState(false);
+    const [showClientResults, setShowClientResults] = useState(false);
 
     const subtotal = saleItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     const shippingCost = currentSale.shipping_cost || 0;
@@ -43,34 +50,51 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const total = subtotal + shippingCost + insuranceCost - discountAmount;
 
     // Freight Calculation Logic
-    const calculateFreight = (cep: string, items: any[]) => {
-        if (!cep || items.length === 0) return 0;
-        // Mock logic: Base R$ 15 + R$ 2 per item + small random for ZIP variation
-        const base = 15.00;
-        const perItem = items.reduce((acc, i) => acc + i.quantity, 0) * 2.5;
-        const regionFactor = parseInt(cep.substring(0, 2)) / 5; // Variation based on state code
-        return Number((base + perItem + regionFactor).toFixed(2));
+    const calculateFreight = (destCep: string, items: any[]) => {
+        if (!destCep || items.length === 0) return 0;
+        
+        const cleanDest = destCep.replace(/\D/g, '');
+        const cleanOrig = '12242000'; // Wtech - São José dos Campos
+        
+        // Mock distance calculation based on ZIP code regions
+        const origRegion = parseInt(cleanOrig.substring(0, 2));
+        const destRegion = parseInt(cleanDest.substring(0, 2));
+        const distanceFactor = Math.abs(origRegion - destRegion) + 1;
+        
+        // Total Weight calculation
+        const totalWeight = items.reduce((acc, item) => {
+            const weight = item.product?.weight || 0.5; // Default 500g if missing
+            return acc + (weight * item.quantity);
+        }, 0);
+
+        const basePrice = 18.50;
+        const weightPrice = totalWeight * 4.20; // R$ 4,20 per kg
+        const distanceMarkup = distanceFactor * 2.50; // Distance multiplier
+
+        return Number((basePrice + weightPrice + distanceMarkup).toFixed(2));
     };
 
-    const handleCEPBlur = async () => {
-        const cep = currentSale.delivery_cep?.replace(/\D/g, '');
-        if (cep?.length === 8) {
-            try {
-                const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await res.json();
-                if (!data.erro) {
-                    const fullAddress = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
-                    const freight = calculateFreight(cep, saleItems);
-                    setCurrentSale(prev => ({ 
-                        ...prev, 
-                        delivery_address: fullAddress,
-                        shipping_cost: freight,
-                        shipping_method: 'Correios (Auto)'
-                    }));
-                }
-            } catch (e) {
-                console.error('Error fetching CEP:', e);
-            }
+    const handleCEPLookup = async (cep: string) => {
+        const cleanCEP = cep.replace(/\D/g, '');
+        if (cleanCEP.length !== 8) return;
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+            const data = await response.json();
+
+            if (data.erro) return;
+
+            setCurrentSale(prev => ({
+                ...prev,
+                delivery_cep: cleanCEP,
+                delivery_street: data.logradouro,
+                delivery_neighborhood: data.bairro,
+                delivery_city: data.localidade,
+                delivery_state: data.uf,
+                shipping_cost: calculateFreight(cleanCEP, saleItems)
+            }));
+        } catch (error) {
+            console.error('CEP Lookup error:', error);
         }
     };
 
@@ -89,7 +113,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 status: 'pending', 
                 shipping_method: '',
                 shipping_cost: 0,
-                discount_amount: 0
+                insurance_cost: 0,
+                discount_amount: 0,
+                order_number: `WT-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`
             });
             if (editingSale?.clientId) setClientSearchTerm(editingSale.clientName || '');
             if (editingSale?.discount_code) setDiscountCode(editingSale.discount_code);
@@ -101,29 +127,95 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const loadInitialData = async () => {
         // 1. Products
         const { data: prods } = await supabase.from('SITE_Products').select('*').eq('type', 'product');
-        if (prods) setProducts(prods.map((p: any) => ({ ...p, currentStock: p.current_stock, salePrice: p.sale_price })));
+        if (prods) setProducts(prods.map((p: any) => ({ 
+            ...p, 
+            currentStock: p.current_stock, 
+            salePrice: Number(p.sale_price),
+            priceRetail: Number(p.price_retail || p.sale_price),
+            pricePartner: Number(p.price_partner || p.sale_price),
+            priceDistributor: Number(p.price_distributor || p.sale_price)
+        })));
 
         // 2. Payment Methods
         const { data: pays } = await supabase.from('SITE_PaymentMethods').select('*').eq('is_active', true);
         if (pays) setPaymentMethods(pays);
 
-        // 3. Clients (Pre-load some or search dynamic? Pre-load 50 for speed now)
-        const { data: leads } = await supabase.from('SITE_Leads').select('id, name, phone, email, address').limit(50);
-        const { data: mechanics } = await supabase.from('SITE_Mechanics').select('id, name, phone, email').limit(50);
-        setPotentialClients([
+        // 3. Clients (Initial load - recent or alphabetical)
+        const { data: leads } = await supabase.from('SITE_Leads').select('id, name, phone, email, address, zip_code, address_street, address_number, address_neighborhood, address_city, address_state, pricing_level').order('name').limit(20);
+        const { data: mechanics } = await supabase.from('SITE_Mechanics').select('id, name, phone, email, zip_code, address_street, address_number, address_neighborhood, address_city, address_state, pricing_level').order('name').limit(20);
+        
+        const initialClients = [
             ...(leads || []).map((l: any) => ({ ...l, type: 'Lead' })), 
             ...(mechanics || []).map((m: any) => ({ ...m, type: 'Credenciado' }))
-        ]);
+        ];
+        setPotentialClients(initialClients);
+        setFilteredClients(initialClients);
+    };
+
+    const handleClientSearch = async (term: string) => {
+        setClientSearchTerm(term);
+        if (term.length <= 1) {
+            setFilteredClients(potentialClients);
+            return;
+        }
+
+        setIsSearchingClient(true);
+        setShowClientResults(true);
+        try {
+            // Search in both tables
+            const [leadsRes, mechanicsRes] = await Promise.all([
+                supabase.from('SITE_Leads').select('id, name, phone, email, address, zip_code, address_street, address_number, address_neighborhood, address_city, address_state, pricing_level').ilike('name', `%${term}%`).limit(20),
+                supabase.from('SITE_Mechanics').select('id, name, phone, email, zip_code, address_street, address_number, address_neighborhood, address_city, address_state, pricing_level').ilike('name', `%${term}%`).limit(20)
+            ]);
+
+            const searchResults = [
+                ...(leadsRes.data || []).map((l: any) => ({ ...l, type: 'Lead' })),
+                ...(mechanicsRes.data || []).map((m: any) => ({ ...m, type: 'Credenciado' }))
+            ].sort((a, b) => a.name.localeCompare(b.name));
+
+            setFilteredClients(searchResults);
+        } catch (error) {
+            console.error('Error searching clients:', error);
+        } finally {
+            setIsSearchingClient(false);
+        }
     };
 
     // ---- Handlers ----
+    const handleUpdatePricingLevel = (level: 'retail' | 'partner' | 'distributor') => {
+        setCurrentSale(prev => ({ ...prev, pricing_level: level }));
+        
+        // Update prices of all items already in the cart
+        setSaleItems(prevItems => prevItems.map(item => {
+            if (item.productId === 'manual') return item;
+            
+            const product = item.product;
+            if (!product) return item;
+
+            let newPrice = product.salePrice;
+            if (level === 'partner') newPrice = product.pricePartner || product.salePrice;
+            else if (level === 'distributor') newPrice = product.priceDistributor || product.salePrice;
+            else if (level === 'retail') newPrice = product.priceRetail || product.salePrice;
+
+            return { ...item, unitPrice: newPrice };
+        }));
+    };
+
     const handleAddProduct = (product: Product) => {
+        // Determine correct price based on client's pricing level
+        let selectedPrice = product.salePrice;
+        const level = currentSale.pricing_level;
+        
+        if (level === 'partner') selectedPrice = product.pricePartner || product.salePrice;
+        else if (level === 'distributor') selectedPrice = product.priceDistributor || product.salePrice;
+        else if (level === 'retail') selectedPrice = product.priceRetail || product.salePrice;
+
         setSaleItems(prev => [...prev, {
             id: Math.random().toString(),
             saleId: '',
             productId: product.id,
             quantity: 1,
-            unitPrice: product.salePrice,
+            unitPrice: selectedPrice,
             product: product
         }]);
         setIsAddingItem(false);
@@ -238,7 +330,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 estimated_delivery_date: currentSale.estimated_delivery_date ? currentSale.estimated_delivery_date : null,
                 tracking_code: currentSale.tracking_code || null,
                 delivery_address: currentSale.delivery_address || null,
-                delivery_cep: currentSale.delivery_cep || null
+                delivery_cep: currentSale.delivery_cep || null,
+                delivery_street: currentSale.delivery_street || null,
+                delivery_number: currentSale.delivery_number || null,
+                delivery_neighborhood: currentSale.delivery_neighborhood || null,
+                delivery_city: currentSale.delivery_city || null,
+                delivery_state: currentSale.delivery_state || null,
+                pricing_level: currentSale.pricing_level || null,
+                order_number: currentSale.order_number || null
             };
             
             console.log('📦 Payload montado:', salePayload);
@@ -313,6 +412,189 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         }
     };
 
+    const { settings } = useSettings();
+
+    const handleExportPDF = () => {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        
+        // Styling Constants
+        const primaryColor = [184, 21, 21]; // WTech Red
+        const darkColor = [26, 26, 26];
+
+        // --- HEADER ---
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, pageWidth, 40, 'F');
+        
+        // Logo / Title
+        if (settings.logo_url) {
+             try {
+                 // Try to use logo if format is supported (JPEG/PNG)
+                 // Note: jsPDF addImage requires base64 or raw data usually, passing URL usually works if CORS allows
+                 // For now, we'll assume the URL implies the brand, but we'll stick to text if image fails or for safety
+                 // We will prioritize Text for reliability unless we implement image fetching
+             } catch (e) {}
+        }
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text(settings.site_title?.toUpperCase() || 'W-TECH', 15, 25);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('PERFORMANCE & TECNOLOGIA', 15, 32);
+
+        // Order Info Header
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        const orderLabel = currentSale.order_number 
+            ? `PEDIDO: ${currentSale.order_number}` 
+            : `ORÇAMENTO ${currentSale.id ? '#' + currentSale.id.slice(0, 6).toUpperCase() : ''}`;
+        doc.text(orderLabel, pageWidth - 15, 20, { align: 'right' });
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 15, 28, { align: 'right' });
+        doc.text(`Atendente: ${user?.name || 'Equipe W-Tech'}`, pageWidth - 15, 33, { align: 'right' });
+
+        // --- COMPANY INFO (Top Left below header) ---
+        // Optional: If we want to show company info at the very top, we can. 
+        // But design typically puts it in footer or main block.
+        // Let's stick to user request: "Logo, Endereço, Telefone"
+        
+        // --- CLIENT & DELIVERY SECTION ---
+        let yPos = 55;
+        
+        doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DADOS DO CLIENTE', 15, yPos);
+        doc.text('ENDEREÇO DE ENTREGA', 110, yPos);
+        
+        yPos += 7;
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        
+        // Client Data
+        doc.text(`Nome: ${currentSale.clientName || 'N/A'}`, 15, yPos);
+        doc.text(`E-mail: ${currentSale.clientEmail || 'N/A'}`, 15, yPos + 5);
+        doc.text(`WhatsApp: ${currentSale.clientPhone || 'N/A'}`, 15, yPos + 10);
+        
+        // Delivery Data
+        const addressText = currentSale.delivery_street 
+            ? `${currentSale.delivery_street}, ${currentSale.delivery_number || 'SN'}\n${currentSale.delivery_neighborhood || ''}\n${currentSale.delivery_city || ''} - ${currentSale.delivery_state || ''}\nCEP: ${currentSale.delivery_cep || ''}`
+            : 'Endereço não informado / Retirada';
+            
+        const addrLines = doc.splitTextToSize(addressText, 85);
+        doc.text(addrLines, 110, yPos);
+
+        // --- ITEMS TABLE ---
+        const tableBody = saleItems.map(item => [
+            { content: item.product?.sku || '-', styles: { fontStyle: 'bold' } },
+            item.product?.name || 'Item Manual',
+            `${item.quantity}`,
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.unitPrice),
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.unitPrice * item.quantity)
+        ]);
+
+        autoTable(doc, {
+            startY: 85,
+            head: [['SKU', 'PRODUTO', 'QTD', 'VALOR UN', 'SUBTOTAL']],
+            body: tableBody,
+            headStyles: { fillColor: primaryColor as [number, number, number], textColor: 255, fontStyle: 'bold', fontSize: 9, halign: 'center' },
+            bodyStyles: { fontSize: 8, textColor: 50, halign: 'center' },
+            columnStyles: {
+                1: { halign: 'left' } // Product name left aligned
+            },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            margin: { left: 15, right: 15 }
+        });
+
+        // --- SUMMARY ---
+        const finalY = (doc as any).lastAutoTable.finalY + 10;
+        const summaryX = pageWidth - 90;
+        let summaryY = finalY;
+
+        // Gray Box for Numbers
+        doc.setFillColor(248, 248, 248);
+        doc.rect(pageWidth - 95, summaryY - 5, 80, 60, 'F');
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80);
+        
+        const addSummaryLine = (label: string, value: number, isBold = false, color: any = null) => {
+            if (color) doc.setTextColor(color[0], color[1], color[2]);
+            else doc.setTextColor(80);
+            
+            if (isBold) doc.setFont('helvetica', 'bold');
+            else doc.setFont('helvetica', 'normal');
+            
+            doc.text(label, summaryX, summaryY);
+            doc.text(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value), pageWidth - 20, summaryY, { align: 'right' });
+            summaryY += 6;
+        };
+
+        addSummaryLine('Subtotal:', subtotal);
+        addSummaryLine(`Frete (${currentSale.shipping_method || '-'}):`, shippingCost);
+        if (insuranceCost > 0) addSummaryLine('Seguro:', insuranceCost);
+        if (discountAmount > 0) addSummaryLine('Descontos:', discountAmount, false, primaryColor);
+
+        // Divider
+        summaryY += 2;
+        doc.setDrawColor(200);
+        doc.line(summaryX, summaryY - 4, pageWidth - 20, summaryY - 4);
+        summaryY += 2;
+
+        // Total
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+        doc.text('TOTAL:', summaryX, summaryY);
+        doc.text(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total), pageWidth - 20, summaryY, { align: 'right' });
+
+        // --- PARTNERSHIP SAVINGS ---
+        const subtotalRetail = saleItems.reduce((acc, i) => acc + ((i.product?.priceRetail || i.unitPrice) * i.quantity), 0);
+        const totalSavings = subtotalRetail - subtotal;
+        
+        if (totalSavings > 0) {
+            doc.setFillColor(34, 197, 94, 0.1); 
+            doc.rect(15, finalY - 5, 80, 25, 'F');
+            doc.setTextColor(21, 128, 61); // Green-700
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text('ECONOMIA DA PARCERIA', 20, finalY + 5);
+            doc.setFontSize(12);
+            doc.text(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalSavings), 20, finalY + 15);
+        }
+
+        // --- FOOTER ---
+        const footerY = pageHeight - 30;
+        doc.setDrawColor(230);
+        doc.line(15, footerY, pageWidth - 15, footerY);
+        
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.setFont('helvetica', 'normal');
+        
+        // Company Data from Config
+        const companyInfo = [];
+        if (settings.address) companyInfo.push(settings.address);
+        if (settings.phone) companyInfo.push(`Tel: ${settings.phone}`);
+        if (settings.email) companyInfo.push(settings.email);
+        if (settings.website_url) companyInfo.push(settings.website_url);
+
+        const footerText = companyInfo.join(' | ');
+        const brandText = `${settings.site_title || 'W-TECH'} - ${settings.site_description || 'Performance & Tecnologia'}`;
+        
+        doc.text(brandText, pageWidth / 2, footerY + 8, { align: 'center' });
+        doc.text(footerText, pageWidth / 2, footerY + 14, { align: 'center' });
+
+        doc.save(`${currentSale.order_number || 'Orcamento'}_${currentSale.clientName || 'Cliente'}.pdf`);
+    };
+
     const handleDelete = async () => {
         if (!currentSale.id) return;
         if (!confirm('Tem certeza que deseja excluir permanentemente este pedido? Esta ação não pode ser desfeita.')) return;
@@ -352,6 +634,16 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 </div>
                 
                 <div className="flex items-center gap-3">
+                    {currentSale.id && (
+                        <button 
+                            onClick={handleExportPDF}
+                            className="px-4 py-2 border border-blue-100 dark:border-blue-900/30 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-xl transition-all font-bold flex items-center gap-2"
+                            title="Exportar Orçamento / Pedido"
+                        >
+                            <FileDown size={18} />
+                            <span className="hidden sm:inline">Exportar PDF</span>
+                        </button>
+                    )}
                     {currentSale.id && (
                         <button 
                             onClick={handleDelete}
@@ -405,91 +697,216 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                             </h3>
                                             <div className="relative mb-4">
                                                 <Search className="absolute left-4 top-3 text-gray-400" size={16} />
-                                                <input 
-                                                    className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                                                    placeholder="Buscar cliente..."
-                                                    value={clientSearchTerm}
-                                                    onChange={(e) => {
-                                                        setClientSearchTerm(e.target.value);
-                                                        setIsSearchingClient(true);
-                                                    }}
-                                                />
-                                                {isSearchingClient && clientSearchTerm.length > 1 && (
-                                                    <div className="absolute top-12 left-0 w-full bg-white dark:bg-[#222] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-50 max-h-60 overflow-y-auto font-sans">
-                                                        {potentialClients
-                                                            .filter(c => c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()))
-                                                            .map(c => (
+                                                    <input 
+                                                        className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                                        placeholder="Buscar cliente..."
+                                                        value={clientSearchTerm}
+                                                        onChange={(e) => handleClientSearch(e.target.value)}
+                                                        onFocus={() => clientSearchTerm.length > 1 && setShowClientResults(true)}
+                                                    />
+                                                    {showClientResults && clientSearchTerm.length > 1 && (
+                                                        <div className="absolute top-12 left-0 w-full bg-white dark:bg-[#222] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-50 max-h-60 overflow-y-auto font-sans">
+                                                            {filteredClients.length > 0 ? (
+                                                                filteredClients.map(c => (
                                                                 <div 
                                                                     key={c.id} 
                                                                     onClick={() => {
-                                                                        setCurrentSale({...currentSale, clientId: c.id, clientName: c.name, clientPhone: c.phone, clientEmail: c.email});
+                                                                        setCurrentSale({
+                                                                            ...currentSale, 
+                                                                            clientId: c.id, 
+                                                                            clientName: c.name, 
+                                                                            clientPhone: c.phone, 
+                                                                            clientEmail: c.email,
+                                                                            delivery_cep: c.zip_code,
+                                                                            delivery_street: c.address_street,
+                                                                            delivery_number: c.address_number,
+                                                                            delivery_neighborhood: c.address_neighborhood,
+                                                                            delivery_city: c.address_city,
+                                                                            delivery_state: c.address_state,
+                                                                            pricing_level: (c.pricing_level && c.pricing_level !== 'retail') ? c.pricing_level : (c.type === 'Credenciado' ? 'partner' : 'retail')
+                                                                        });
+                                                                        setIsChangingAddress(false);
                                                                         setClientSearchTerm(c.name);
                                                                         setIsSearchingClient(false);
+                                                                        setShowClientResults(false);
                                                                     }}
                                                                     className="p-3 hover:bg-blue-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-50 dark:border-gray-800 last:border-0"
                                                                 >
-                                                                    <p className="font-bold text-gray-900 dark:text-white text-xs">{c.name}</p>
+                                                                    <div className="flex justify-between items-center">
+                                                                        <p className="font-bold text-gray-900 dark:text-white text-xs">{c.name}</p>
+                                                                        <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase ${c.type === 'Credenciado' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                                            {c.type}
+                                                                        </span>
+                                                                    </div>
                                                                     <p className="text-[10px] text-gray-500">{c.phone}</p>
                                                                 </div>
                                                             ))
-                                                        }
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                                    {currentSale.clientId && (
-                                                        <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-4">
-                                                            <div className="flex justify-between items-start">
-                                                                <div className="flex-1">
-                                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selecionado</p>
-                                                                    <p className="text-sm font-black text-gray-800 dark:text-white leading-tight">{currentSale.clientName}</p>
+                                                            ) : (
+                                                                <div className="p-4 text-center text-xs text-gray-400">
+                                                                    {isSearchingClient ? 'Buscando...' : 'Nenhum cliente encontrado'}
                                                                 </div>
-                                                                <div className="bg-blue-500/10 text-blue-500 p-1.5 rounded-lg">
-                                                                    <Check size={14} />
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800/50">
-                                                                <div>
-                                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">CEP de Entrega</label>
-                                                                    <input 
-                                                                        type="text"
-                                                                        placeholder="00000-000"
-                                                                        className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-2 px-3 text-xs font-bold dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-                                                                        value={currentSale.delivery_cep || ''}
-                                                                        onChange={e => setCurrentSale({...currentSale, delivery_cep: e.target.value})}
-                                                                        onBlur={handleCEPBlur}
-                                                                    />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Endereço Confirmado</label>
-                                                                    <textarea 
-                                                                        className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-2 px-3 text-[10px] font-bold dark:text-white outline-none focus:ring-2 focus:ring-blue-500 h-16 resize-none"
-                                                                        placeholder="Rua, Número, Bairro, Cidade..."
-                                                                        value={currentSale.delivery_address || ''}
-                                                                        onChange={e => setCurrentSale({...currentSale, delivery_address: e.target.value})}
-                                                                    />
-                                                                </div>
-                                                                <button 
-                                                                    onClick={() => alert('Endereço confirmado para este pedido!')}
-                                                                    className="w-full bg-blue-600 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                                                                >
-                                                                    <MapPin size={12} /> Confirmar Endereço
-                                                                </button>
-                                                            </div>
-
-                                                            <div className="flex gap-4 pt-2 border-t border-gray-200 dark:border-gray-800/50">
-                                                                <div className="flex-1">
-                                                                    <p className="text-[9px] font-bold text-gray-400 uppercase">Fone</p>
-                                                                    <p className="text-xs font-bold dark:text-gray-300">{currentSale.clientPhone || '-'}</p>
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <p className="text-[9px] font-bold text-gray-400 uppercase">E-mail</p>
-                                                                    <p className="text-xs font-bold dark:text-gray-300 truncate w-32">{currentSale.clientEmail || '-'}</p>
-                                                                </div>
-                                                            </div>
+                                                            )}
                                                         </div>
                                                     )}
+                                            </div>
+
+                                            {currentSale.clientId && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    className="p-6 bg-white dark:bg-[#1A1A1A] rounded-[2rem] border-2 border-blue-500/20 shadow-xl space-y-5 relative overflow-hidden group"
+                                                >
+                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full translate-x-12 -translate-y-12"></div>
+                                                    
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Selecionado</p>
+                                                            <div className="flex items-center gap-3">
+                                                                <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter uppercase">{currentSale.clientName}</p>
+                                                                {currentSale.pricing_level && (
+                                                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest italic border ${
+                                                                        currentSale.pricing_level === 'retail' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                                        currentSale.pricing_level === 'partner' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                                                        'bg-purple-50 text-purple-600 border-purple-100'
+                                                                    }`}>
+                                                                        {currentSale.pricing_level === 'retail' ? 'Final' : 
+                                                                         currentSale.pricing_level === 'partner' ? 'Credenciados' : 'Distribuidor'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 border border-blue-200 dark:border-blue-800">
+                                                            <Check size={16} />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        {/* Nível de Preço Selector */}
+                                                        <div className="p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 space-y-3">
+                                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                                <Tag size={12} className="text-blue-500" /> Tabela de Preços Ativa:
+                                                            </p>
+                                                            <div className="grid grid-cols-3 gap-2">
+                                                                {[
+                                                                    { id: 'retail', label: 'Final', color: 'blue', activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/20' },
+                                                                    { id: 'partner', label: 'Credenc.', color: 'orange', activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/20' },
+                                                                    { id: 'distributor', label: 'Distrib.', color: 'purple', activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/20' }
+                                                                ].map(lvl => (
+                                                                    <button
+                                                                        key={lvl.id}
+                                                                        onClick={() => handleUpdatePricingLevel(lvl.id as any)}
+                                                                        className={`py-2 px-1 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border ${currentSale.pricing_level === lvl.id ? `${lvl.activeClass} text-white shadow-lg` : 'bg-white dark:bg-[#222] border-gray-100 dark:border-white/10 text-gray-400 hover:border-gray-200'}`}
+                                                                    >
+                                                                        {lvl.label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {!isChangingAddress ? (
+                                                            <div className="space-y-3 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/20">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="space-y-1">
+                                                                        <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">Endereço de Entrega</label>
+                                                                        <p className="text-xs font-bold leading-relaxed text-gray-700 dark:text-gray-300">
+                                                                            {currentSale.delivery_street ? (
+                                                                                <>
+                                                                                    {currentSale.delivery_street}, {currentSale.delivery_number || 'SN'}<br/>
+                                                                                    {currentSale.delivery_neighborhood} — {currentSale.delivery_city}/{currentSale.delivery_state}
+                                                                                </>
+                                                                            ) : (
+                                                                                <span className="italic text-gray-400">Endereço não cadastrado</span>
+                                                                            )}
+                                                                        </p>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => setIsChangingAddress(true)}
+                                                                        className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all"
+                                                                        title="Mudar Endereço"
+                                                                    >
+                                                                        <RefreshCw size={16} />
+                                                                    </button>
+                                                                </div>
+
+                                                                <button 
+                                                                    onClick={() => setActiveStep('checkout')}
+                                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-3 active:scale-95 mt-2"
+                                                                >
+                                                                    <MapPin size={16} /> Confirmar Endereço
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                                                <div className="flex justify-between items-center px-1">
+                                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Novo Endereço (CEP)</label>
+                                                                    <button 
+                                                                        onClick={() => setIsChangingAddress(false)}
+                                                                        className="text-[9px] font-black text-blue-500 hover:underline uppercase"
+                                                                    >
+                                                                        Cancelar
+                                                                    </button>
+                                                                </div>
+                                                                <div className="grid grid-cols-3 gap-3">
+                                                                    <div className="col-span-2 space-y-1.5">
+                                                                        <div className="relative">
+                                                                            <input 
+                                                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-300"
+                                                                                value={currentSale.delivery_cep || ''}
+                                                                                placeholder="00000-000"
+                                                                                autoFocus
+                                                                                onChange={e => {
+                                                                                    const val = e.target.value;
+                                                                                    setCurrentSale({...currentSale, delivery_cep: val});
+                                                                                    if (val.replace(/\D/g, '').length === 8) handleCEPLookup(val);
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1.5">
+                                                                        <input 
+                                                                            className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-3 px-2 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-center"
+                                                                            value={currentSale.delivery_number || ''}
+                                                                            placeholder="Nº"
+                                                                            onChange={e => setCurrentSale({...currentSale, delivery_number: e.target.value})}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-1.5">
+                                                                    <textarea 
+                                                                        rows={2}
+                                                                        className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-2xl py-3 px-4 text-xs font-bold leading-relaxed dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                                                                        placeholder="Rua, Bairro, Cidade..."
+                                                                        value={`${currentSale.delivery_street || ''}${currentSale.delivery_neighborhood ? ' - ' + currentSale.delivery_neighborhood : ''}${currentSale.delivery_city ? '\n' + currentSale.delivery_city : ''}${currentSale.delivery_state ? ' / ' + currentSale.delivery_state : ''}`}
+                                                                        readOnly
+                                                                    />
+                                                                </div>
+
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setIsChangingAddress(false);
+                                                                        setActiveStep('checkout');
+                                                                    }}
+                                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+                                                                >
+                                                                    <Check size={16} /> Usar Este Endereço
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="pt-4 border-t border-gray-50 dark:border-gray-800 grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Fone</p>
+                                                                    <p className="text-[11px] font-black text-gray-900 dark:text-white tracking-tight">{currentSale.clientPhone || 'N/A'}</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">E-mail</p>
+                                                                    <p className="text-[11px] font-black text-gray-900 dark:text-white tracking-tight truncate lowercase">{currentSale.clientEmail || 'N/A'}</p>
+                                                                </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
                                         </section>
 
                                         <section className="pt-4">

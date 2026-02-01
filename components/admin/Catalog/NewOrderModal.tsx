@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield } from 'lucide-react';
+import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, MapPin, RefreshCw } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 
@@ -34,6 +34,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [activeStep, setActiveStep] = useState<'items' | 'checkout'>('items');
     const [manualItem, setManualItem] = useState({ name: '', quantity: 1, price: 0 });
     const [isManualMode, setIsManualMode] = useState(false);
+    const [isChangingAddress, setIsChangingAddress] = useState(false);
 
     // Calculated fields
     const subtotal = saleItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
@@ -74,13 +75,39 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         const { data: pays } = await supabase.from('SITE_PaymentMethods').select('*').eq('is_active', true);
         if (pays) setPaymentMethods(pays);
 
-        // 3. Clients (Pre-load some or search dynamic? Pre-load 50 for speed now)
-        const { data: leads } = await supabase.from('SITE_Leads').select('id, name, phone, email, address').limit(50);
-        const { data: mechanics } = await supabase.from('SITE_Mechanics').select('id, name, phone, email').limit(50);
+        // 3. Clients
+        const { data: leads } = await supabase.from('SITE_Leads').select('id, name, phone, email, address, zip_code, address_street, address_number, address_neighborhood, address_city, address_state').limit(50);
+        const { data: mechanics } = await supabase.from('SITE_Mechanics').select('id, name, phone, email, zip_code, address_street, address_number, address_neighborhood, address_city, address_state').limit(50);
         setPotentialClients([
             ...(leads || []).map((l: any) => ({ ...l, type: 'Lead' })), 
             ...(mechanics || []).map((m: any) => ({ ...m, type: 'Credenciado' }))
         ]);
+    };
+
+    const handleCEPLookup = async (cep: string) => {
+        const cleanCEP = cep.replace(/\D/g, '');
+        if (cleanCEP.length !== 8) return;
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+            const data = await response.json();
+
+            if (data.erro) {
+                alert('CEP não encontrado.');
+                return;
+            }
+
+            setCurrentSale(prev => ({
+                ...prev,
+                delivery_cep: cleanCEP,
+                delivery_street: data.logradouro,
+                delivery_neighborhood: data.bairro,
+                delivery_city: data.localidade,
+                delivery_state: data.uf
+            }));
+        } catch (error) {
+            console.error('CEP Lookup error:', error);
+        }
     };
 
     // ---- Handlers ----
@@ -174,7 +201,13 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 discount_code: discountCode || null,
                 discount_amount: Number(Number(discountAmount).toFixed(2)),
                 estimated_delivery_date: currentSale.estimated_delivery_date ? currentSale.estimated_delivery_date : null,
-                tracking_code: currentSale.tracking_code || null
+                tracking_code: currentSale.tracking_code || null,
+                delivery_cep: currentSale.delivery_cep || null,
+                delivery_street: currentSale.delivery_street || null,
+                delivery_number: currentSale.delivery_number || null,
+                delivery_neighborhood: currentSale.delivery_neighborhood || null,
+                delivery_city: currentSale.delivery_city || null,
+                delivery_state: currentSale.delivery_state || null
             };
 
             let saleId = currentSale.id;
@@ -357,7 +390,20 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 <div 
                                                                     key={c.id} 
                                                                     onClick={() => {
-                                                                        setCurrentSale({...currentSale, clientId: c.id, clientName: c.name, clientPhone: c.phone, clientEmail: c.email});
+                                                                        setCurrentSale({
+                                                                            ...currentSale, 
+                                                                            clientId: c.id, 
+                                                                            clientName: c.name, 
+                                                                            clientPhone: c.phone, 
+                                                                            clientEmail: c.email,
+                                                                            delivery_cep: c.zip_code,
+                                                                            delivery_street: c.address_street,
+                                                                            delivery_number: c.address_number,
+                                                                            delivery_neighborhood: c.address_neighborhood,
+                                                                            delivery_city: c.address_city,
+                                                                            delivery_state: c.address_state
+                                                                        });
+                                                                        setIsChangingAddress(false);
                                                                         setClientSearchTerm(c.name);
                                                                         setIsSearchingClient(false);
                                                                     }}
@@ -373,22 +419,127 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                             </div>
 
                                             {currentSale.clientId && (
-                                                <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selecionado</p>
-                                                        <p className="text-sm font-black text-gray-800 dark:text-white">{currentSale.clientName}</p>
-                                                    </div>
-                                                    <div className="flex gap-4">
-                                                        <div className="flex-1">
-                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">Fone</p>
-                                                            <p className="text-xs font-bold dark:text-gray-300">{currentSale.clientPhone || '-'}</p>
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    className="p-6 bg-white dark:bg-[#1A1A1A] rounded-[2rem] border-2 border-blue-500/20 shadow-xl space-y-5 relative overflow-hidden group"
+                                                >
+                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full translate-x-12 -translate-y-12"></div>
+                                                    
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Selecionado</p>
+                                                            <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter uppercase">{currentSale.clientName}</p>
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-[9px] font-bold text-gray-400 uppercase">E-mail</p>
-                                                            <p className="text-xs font-bold dark:text-gray-300 truncate w-32">{currentSale.clientEmail || '-'}</p>
+                                                        <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 border border-blue-200 dark:border-blue-800">
+                                                            <Check size={16} />
                                                         </div>
                                                     </div>
-                                                </div>
+
+                                                    <div className="space-y-4">
+                                                        {!isChangingAddress ? (
+                                                            <div className="space-y-3 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/20">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="space-y-1">
+                                                                        <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">Endereço de Entrega</label>
+                                                                        <p className="text-xs font-bold leading-relaxed text-gray-700 dark:text-gray-300">
+                                                                            {currentSale.delivery_street ? (
+                                                                                <>
+                                                                                    {currentSale.delivery_street}, {currentSale.delivery_number || 'SN'}<br/>
+                                                                                    {currentSale.delivery_neighborhood} — {currentSale.delivery_city}/{currentSale.delivery_state}
+                                                                                </>
+                                                                            ) : (
+                                                                                <span className="italic text-gray-400">Endereço não cadastrado</span>
+                                                                            )}
+                                                                        </p>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => setIsChangingAddress(true)}
+                                                                        className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all"
+                                                                        title="Mudar Endereço"
+                                                                    >
+                                                                        <RefreshCw size={16} />
+                                                                    </button>
+                                                                </div>
+
+                                                                <button 
+                                                                    onClick={() => setActiveStep('checkout')}
+                                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-3 active:scale-95 mt-2"
+                                                                >
+                                                                    <MapPin size={16} /> Confirmar Endereço
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                                                <div className="flex justify-between items-center px-1">
+                                                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Novo Endereço (CEP)</label>
+                                                                    <button 
+                                                                        onClick={() => setIsChangingAddress(false)}
+                                                                        className="text-[9px] font-black text-blue-500 hover:underline uppercase"
+                                                                    >
+                                                                        Cancelar
+                                                                    </button>
+                                                                </div>
+                                                                <div className="grid grid-cols-3 gap-3">
+                                                                    <div className="col-span-2 space-y-1.5">
+                                                                        <div className="relative">
+                                                                            <input 
+                                                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-300"
+                                                                                value={currentSale.delivery_cep || ''}
+                                                                                placeholder="00000-000"
+                                                                                autoFocus
+                                                                                onChange={e => {
+                                                                                    const val = e.target.value;
+                                                                                    setCurrentSale({...currentSale, delivery_cep: val});
+                                                                                    if (val.replace(/\D/g, '').length === 8) handleCEPLookup(val);
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1.5">
+                                                                        <input 
+                                                                            className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-3 px-2 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-center"
+                                                                            value={currentSale.delivery_number || ''}
+                                                                            placeholder="Nº"
+                                                                            onChange={e => setCurrentSale({...currentSale, delivery_number: e.target.value})}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-1.5">
+                                                                    <textarea 
+                                                                        rows={2}
+                                                                        className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-2xl py-3 px-4 text-xs font-bold leading-relaxed dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                                                                        placeholder="Rua, Bairro, Cidade..."
+                                                                        value={`${currentSale.delivery_street || ''}${currentSale.delivery_neighborhood ? ' - ' + currentSale.delivery_neighborhood : ''}${currentSale.delivery_city ? '\n' + currentSale.delivery_city : ''}${currentSale.delivery_state ? ' / ' + currentSale.delivery_state : ''}`}
+                                                                        readOnly
+                                                                    />
+                                                                </div>
+
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setIsChangingAddress(false);
+                                                                        setActiveStep('checkout');
+                                                                    }}
+                                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+                                                                >
+                                                                    <Check size={16} /> Usar Este Endereço
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="pt-4 border-t border-gray-50 dark:border-gray-800 grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Fone</p>
+                                                            <p className="text-[11px] font-black text-gray-900 dark:text-white tracking-tight">{currentSale.clientPhone || 'N/A'}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">E-mail</p>
+                                                            <p className="text-[11px] font-black text-gray-900 dark:text-white tracking-tight truncate lowercase">{currentSale.clientEmail || 'N/A'}</p>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
                                             )}
                                         </section>
 
@@ -627,6 +778,83 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         </div>
                                                     </div>
                                                 )}
+
+                                                <div className="md:col-span-2 space-y-4 bg-gray-50/50 dark:bg-white/5 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 mt-4">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <MapPin size={20} className="text-wtech-red" />
+                                                        <div>
+                                                            <h4 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Endereço de Entrega</h4>
+                                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Confirme o local de destino deste pedido</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                                        <div className="md:col-span-2 space-y-1">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">CEP</label>
+                                                            <div className="relative">
+                                                                <input 
+                                                                    className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                    value={currentSale.delivery_cep || ''}
+                                                                    placeholder="00000-000"
+                                                                    onChange={e => {
+                                                                        const val = e.target.value;
+                                                                        setCurrentSale({...currentSale, delivery_cep: val});
+                                                                        if (val.replace(/\D/g, '').length === 8) handleCEPLookup(val);
+                                                                    }}
+                                                                />
+                                                                {currentSale.delivery_cep?.replace(/\D/g, '').length === 8 && (
+                                                                    <button 
+                                                                        onClick={() => handleCEPLookup(currentSale.delivery_cep)}
+                                                                        className="absolute right-2 top-2 p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-lg transition-all hover:bg-blue-100"
+                                                                    >
+                                                                        <RefreshCw size={14} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="md:col-span-3 space-y-1">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Rua / Logradouro</label>
+                                                            <input 
+                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                value={currentSale.delivery_street || ''}
+                                                                onChange={e => setCurrentSale({...currentSale, delivery_street: e.target.value})}
+                                                            />
+                                                        </div>
+                                                        <div className="md:col-span-1 space-y-1">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nº</label>
+                                                            <input 
+                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-wtech-red text-center"
+                                                                value={currentSale.delivery_number || ''}
+                                                                onChange={e => setCurrentSale({...currentSale, delivery_number: e.target.value})}
+                                                            />
+                                                        </div>
+                                                        <div className="md:col-span-2 space-y-1">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Bairro</label>
+                                                            <input 
+                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                value={currentSale.delivery_neighborhood || ''}
+                                                                onChange={e => setCurrentSale({...currentSale, delivery_neighborhood: e.target.value})}
+                                                            />
+                                                        </div>
+                                                        <div className="md:col-span-3 space-y-1">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Cidade</label>
+                                                            <input 
+                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                value={currentSale.delivery_city || ''}
+                                                                onChange={e => setCurrentSale({...currentSale, delivery_city: e.target.value})}
+                                                            />
+                                                        </div>
+                                                        <div className="md:col-span-1 space-y-1">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">UF</label>
+                                                            <input 
+                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-wtech-red text-center uppercase"
+                                                                maxLength={2}
+                                                                value={currentSale.delivery_state || ''}
+                                                                onChange={e => setCurrentSale({...currentSale, delivery_state: e.target.value.toUpperCase()})}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </section>
 

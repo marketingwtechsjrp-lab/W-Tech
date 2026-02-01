@@ -35,8 +35,8 @@ const LPLisboaFev2026: React.FC = () => {
                 phone: form.phone,
                 type: 'Lecture_Registration',
                 status: 'New',
-                context_id: `LP LISBOA FEV 2026${form.bike ? ': ' + form.bike : ''}`,
-                tags: ['LISBOA_FEV_2026', 'LECTURE_FREE'],
+                context_id: `LP LISBOA ABRIL 2026${form.bike ? ': ' + form.bike : ''}`,
+                tags: ['LISBOA_ABRIL_2026', 'LECTURE_FREE'],
                 assigned_to: assignedTo
             };
 
@@ -165,7 +165,7 @@ const LPLisboaFev2026: React.FC = () => {
                         <div className="text-left">
                             <Calendar className="text-wtech-red mb-2" size={20} />
                             <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Data</div>
-                            <div className="text-sm md:text-base font-bold text-white">19 de Fevereiro, 2026</div>
+                            <div className="text-sm md:text-base font-bold text-white">02 de Abril, 2026</div>
                         </div>
                         <div className="text-left">
                             <Clock className="text-wtech-red mb-2" size={20} />
@@ -465,7 +465,7 @@ const LPLisboaFev2026: React.FC = () => {
                                     </div>
                                     <div>
                                         <div className="text-[10px] uppercase tracking-widest text-gray-500">Data do Evento</div>
-                                        <div className="font-black text-xl">19 DE FEVEREIRO</div>
+                                        <div className="font-black text-xl">02 DE ABRIL</div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 text-white">

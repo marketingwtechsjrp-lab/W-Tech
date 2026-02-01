@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, MapPin, Calendar, Shirt, Wrench, Save, ShoppingBag, History, UserCheck, Shield, Share2, RefreshCw, GraduationCap, Plus, Trash2 } from 'lucide-react';
+import { X, User, MapPin, Calendar, Shirt, Wrench, Save, ShoppingBag, History, UserCheck, Shield, Share2, RefreshCw, GraduationCap, Plus, Trash2, Truck, CreditCard } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 
 interface ClientDetailModalProps {
@@ -32,7 +32,14 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
         rg: client?.rg || '',
         delivery_address: client?.delivery_address || {},
         client_code: client?.client_code || '',
-        completed_courses: client?.completed_courses || []
+        completed_courses: client?.completed_courses || [],
+        zip_code: client?.zip_code || '',
+        address_street: client?.address_street || '',
+        address_number: client?.address_number || '',
+        address_neighborhood: client?.address_neighborhood || '',
+        address_city: client?.address_city || '',
+        address_state: client?.address_state || '',
+        pricing_level: client?.pricing_level || (client?.type === 'Credenciado' ? 'partner' : 'retail')
     });
 
     const [newCourse, setNewCourse] = useState({ type: 'suspension', date: '' });
@@ -59,22 +66,74 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
 
     const fetchSalesHistory = async () => {
         setLoadingSales(true);
-        // Try to find sales by email or lead_id
-        let query = supabase.from('SITE_Sales').select('*').order('sale_date', { ascending: false });
+        // Use the actual columns: client_email, client_id, and created_at
+        let query = supabase.from('SITE_Sales').select('*').order('created_at', { ascending: false });
         
-        if (client.email) {
-            query = query.eq('customer_email', client.email);
-        } else if (client.id) {
-            query = query.eq('lead_id', client.id);
+        if (client.id) {
+            // Find by client_id OR email to be sure
+            if (client.email) {
+                query = query.or(`client_id.eq.${client.id},client_email.eq.${client.email}`);
+            } else {
+                query = query.eq('client_id', client.id);
+            }
+        } else if (client.email) {
+            query = query.eq('client_email', client.email);
         } else {
             setSales([]);
             setLoadingSales(false);
             return;
         }
 
-        const { data } = await query;
+        const { data, error } = await query;
+        if (error) {
+            console.error("Error fetching sales history:", error);
+        }
         if (data) setSales(data);
         setLoadingSales(false);
+    };
+
+    const handleCEPLookup = async (cep: string, target: 'main' | 'delivery') => {
+        const cleanCEP = cep.replace(/\D/g, '');
+        if (cleanCEP.length !== 8) return;
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+            const data = await response.json();
+
+            if (data.erro) {
+                alert('CEP não encontrado.');
+                return;
+            }
+
+            if (target === 'main') {
+                setFormData(prev => ({
+                    ...prev,
+                    zip_code: cleanCEP,
+                    address_street: data.logradouro,
+                    address_neighborhood: data.bairro,
+                    address_city: data.localidade,
+                    address_state: data.uf,
+                    // Auto-format full address for legacy/display column
+                    address: `${data.logradouro}, ${data.bairro} - ${data.localidade}/${data.uf}`
+                }));
+            } else {
+                setFormData(prev => ({
+                    ...prev,
+                    delivery_address: {
+                        ...(prev.delivery_address as any),
+                        cep: cleanCEP,
+                        street: data.logradouro,
+                        neighborhood: data.bairro,
+                        city: data.localidade,
+                        state: data.uf,
+                        full_address: `${data.logradouro}, ${data.bairro} - ${data.localidade}/${data.uf}`
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('CEP Lookup error:', error);
+            alert('Erro ao buscar CEP. Verifique sua conexão.');
+        }
     };
 
     // Generate code logic moved to button only or explicit creation
@@ -114,7 +173,14 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                 rg: formData.rg,
                 delivery_address: formData.delivery_address,
                 client_code: formData.client_code,
-                completed_courses: formData.completed_courses
+                completed_courses: formData.completed_courses,
+                zip_code: formData.zip_code,
+                address_street: formData.address_street,
+                address_number: formData.address_number,
+                address_neighborhood: formData.address_neighborhood,
+                address_city: formData.address_city,
+                address_state: formData.address_state,
+                pricing_level: formData.pricing_level
             };
 
             const isNew = !client?.id;
@@ -230,24 +296,93 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                             <input type="date" value={formData.birth_date} onChange={(e) => handleChange('birth_date', e.target.value)} className="w-full p-3 pl-10 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2 space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Endereço Principal</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-3 text-gray-400" size={16} />
-                                            <input type="text" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} className="w-full p-3 pl-10 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                    <div className="md:col-span-2 space-y-4 bg-gray-100/50 dark:bg-white/5 p-4 rounded-2xl border border-gray-200 dark:border-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <MapPin size={16} className="text-wtech-gold" />
+                                            <h5 className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Endereço Principal</h5>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                            <div className="md:col-span-2 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">CEP</label>
+                                                <div className="relative">
+                                                    <input 
+                                                        type="text" 
+                                                        value={formData.zip_code} 
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            handleChange('zip_code', val);
+                                                            if (val.replace(/\D/g, '').length === 8) handleCEPLookup(val, 'main');
+                                                        }} 
+                                                        placeholder="00000-000"
+                                                        className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
+                                                    />
+                                                    {formData.zip_code?.replace(/\D/g, '').length === 8 && (
+                                                        <button 
+                                                            onClick={() => handleCEPLookup(formData.zip_code, 'main')}
+                                                            className="absolute right-2 top-2 p-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg"
+                                                            title="Recarregar CEP"
+                                                        >
+                                                            <RefreshCw size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="md:col-span-3 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Rua / Logradouro</label>
+                                                <input type="text" value={formData.address_street} onChange={(e) => handleChange('address_street', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                            </div>
+                                            <div className="md:col-span-1 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Nº</label>
+                                                <input type="text" value={formData.address_number} onChange={(e) => handleChange('address_number', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all text-center" />
+                                            </div>
+                                            <div className="md:col-span-2 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Bairro</label>
+                                                <input type="text" value={formData.address_neighborhood} onChange={(e) => handleChange('address_neighborhood', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                            </div>
+                                            <div className="md:col-span-3 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Cidade</label>
+                                                <input type="text" value={formData.address_city} onChange={(e) => handleChange('address_city', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                            </div>
+                                            <div className="md:col-span-1 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">UF</label>
+                                                <input type="text" value={formData.address_state} onChange={(e) => handleChange('address_state', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all text-center uppercase" maxLength={2} />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2 space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Endereço de Entrega (Opcional)</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-3 text-gray-400" size={16} />
-                                            <input 
-                                                type="text" 
-                                                value={(formData.delivery_address as any)?.full_address || ''} 
-                                                onChange={(e) => handleChange('delivery_address', { ...formData.delivery_address as any, full_address: e.target.value })} 
-                                                placeholder="Se diferente do principal..."
-                                                className="w-full p-3 pl-10 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
-                                            />
+
+                                    <div className="md:col-span-2 space-y-4 bg-blue-50/30 dark:bg-blue-900/5 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Truck size={16} className="text-blue-500" />
+                                            <h5 className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Endereço de Entrega (Opcional)</h5>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                            <div className="md:col-span-2 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">CEP Entrega</label>
+                                                <div className="relative">
+                                                    <input 
+                                                        type="text" 
+                                                        value={(formData.delivery_address as any)?.cep || ''} 
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            handleCEPLookup(val, 'delivery');
+                                                        }} 
+                                                        placeholder="00000-000"
+                                                        className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="md:col-span-4 space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Endereço de Entrega Completo</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={(formData.delivery_address as any)?.full_address || ''} 
+                                                    onChange={(e) => handleChange('delivery_address', { ...formData.delivery_address as any, full_address: e.target.value })} 
+                                                    placeholder="Rua, Número, Bairro, Cidade - UF"
+                                                    className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -285,6 +420,35 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         </div>
                                     </div>
                                 </div>
+                            </section>
+
+                            {/* Pricing Level Selection */}
+                            <section className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                                <h4 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <CreditCard size={14} /> Nível de Preço no Catálogo
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {[
+                                        { id: 'retail', label: 'Final', desc: 'Preço Balcão / E-commerce', color: 'blue' },
+                                        { id: 'partner', label: 'Credenciados', desc: 'Tabela para Parceiros', color: 'orange' },
+                                        { id: 'distributor', label: 'Distribuidor', desc: 'Preço Atacado / Distribuidor', color: 'purple' }
+                                    ].map(level => (
+                                        <button
+                                            key={level.id}
+                                            onClick={() => handleChange('pricing_level', level.id)}
+                                            className={`p-4 rounded-xl border-2 text-left transition-all ${formData.pricing_level === level.id ? `border-${level.color}-500 bg-${level.color}-50/50 dark:bg-${level.color}-900/10` : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-transparent hover:border-gray-200'}`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.pricing_level === level.id ? `text-${level.color}-600` : 'text-gray-400'}`}>{level.label}</span>
+                                                {formData.pricing_level === level.id && <div className={`w-2 h-2 rounded-full bg-${level.color}-500 shadow-lg shadow-${level.color}-500/50`} />}
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 font-medium leading-tight">{level.desc}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-3 italic font-medium">
+                                    * Este nível define qual preço será sugerido automaticamente ao criar um novo pedido para este cliente.
+                                </p>
                             </section>
 
                             {/* Attendant Assignment */}
@@ -419,12 +583,12 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                             </div>
                                             <div>
                                                 <p className="font-bold text-gray-900 dark:text-white">{sale.sale_summary || 'Venda'}</p>
-                                                <p className="text-xs text-gray-400">{new Date(sale.sale_date).toLocaleDateString('pt-BR')} • {sale.payment_method}</p>
+                                                <p className="text-xs text-gray-400">{new Date(sale.created_at || sale.sale_date).toLocaleDateString('pt-BR')} • {sale.payment_method || 'PIX'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-black text-lg text-green-600 dark:text-green-400">
-                                                R$ {Number(sale.total_value || 0).toLocaleString('pt-BR')}
+                                                R$ {Number(sale.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                             </p>
                                             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
                                                 sale.status === 'paid' ? 'bg-green-100 text-green-700' : 

@@ -197,6 +197,23 @@ export interface Lead {
   conversion_summary?: string;
   conversion_type?: string;
   completed_courses?: any[]; // JSONB array of completed courses
+  // Enhanced Address Fields
+  zip_code?: string;
+  address_street?: string;
+  address_number?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
+  delivery_address?: any;
+  delivery_cep?: string;
+  client_code?: string;
+  is_accredited?: boolean;
+  cpf?: string;
+  rg?: string;
+  birth_date?: string;
+  t_shirt_size?: string;
+  workshop_details?: any;
+  pricing_level?: 'retail' | 'partner' | 'distributor';
 }
 
 export interface Mechanic {
@@ -222,6 +239,7 @@ export interface Mechanic {
   cpfCnpj?: string; // Mapped from cpf_cnpj
   group?: string; // Mapped from group
   completed_courses?: any[]; // JSONB array of completed courses
+  pricing_level?: 'retail' | 'partner' | 'distributor';
 }
 
 export interface GlossaryTerm {
@@ -463,6 +481,9 @@ export interface Product {
     currentStock: number;
     productionTime?: number;
     imageUrl?: string;
+    priceRetail?: number;
+    pricePartner?: number;
+    priceDistributor?: number;
     weight?: number;
     length?: number;
     width?: number;
@@ -513,7 +534,14 @@ export interface Sale {
     discount_amount?: number;
     delivery_address?: string;
     delivery_cep?: string;
+    delivery_street?: string;
+    delivery_number?: string;
+    delivery_neighborhood?: string;
+    delivery_city?: string;
+    delivery_state?: string;
+    pricing_level?: 'retail' | 'partner' | 'distributor';
     items?: any | string; // JSONB or stringified JSON
+    order_number?: string;
 }
 
 export interface SaleItem {

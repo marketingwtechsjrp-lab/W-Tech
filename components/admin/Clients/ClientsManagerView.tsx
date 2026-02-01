@@ -89,7 +89,13 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 client_code: l.client_code,
                 delivery_address: l.delivery_address,
                 completed_courses: l.completed_courses || [],
-                createdAt: l.created_at
+                createdAt: l.created_at,
+                zip_code: l.zip_code,
+                address_street: l.address_street,
+                address_number: l.address_number,
+                address_neighborhood: l.address_neighborhood,
+                address_city: l.address_city,
+                address_state: l.address_state
             })),
             ...(mechanics || []).map((m: any) => ({
                 id: m.id,
@@ -110,7 +116,13 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 client_code: m.client_code,
                 delivery_address: m.delivery_address,
                 completed_courses: m.completed_courses || [],
-                createdAt: m.joined_date
+                createdAt: m.joined_date,
+                zip_code: m.zip_code,
+                address_street: m.address_street,
+                address_number: m.address_number,
+                address_neighborhood: m.address_neighborhood,
+                address_city: m.address_city,
+                address_state: m.address_state
             }))
         ];
 

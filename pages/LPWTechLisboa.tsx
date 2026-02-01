@@ -115,7 +115,7 @@ const LPWTechLisboa: React.FC = () => {
                         className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-8"
                     >
                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Portugal.svg/255px-Flag_of_Portugal.svg.png" className="w-4 h-auto rounded-sm" alt="PT" />
-                         <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Lisboa | 18 e 19 de Abril 2026</span>
+                         <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Lisboa | 04 e 05 de Abril 2026</span>
                     </motion.div>
                     
                     <motion.h1 
@@ -175,7 +175,7 @@ const LPWTechLisboa: React.FC = () => {
                     <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10">
                         <div className="py-12 md:px-8 text-center">
                             <Calendar className="mx-auto text-wtech-red mb-4" size={32} />
-                            <h3 className="text-xl font-black uppercase mb-2">18 e 19 Abril</h3>
+                            <h3 className="text-xl font-black uppercase mb-2">04 e 05 Abril</h3>
                             <p className="text-gray-500 text-sm">Dois dias de imersão total</p>
                         </div>
                         <div className="py-12 md:px-8 text-center">

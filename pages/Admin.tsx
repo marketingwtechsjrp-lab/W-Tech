@@ -5879,6 +5879,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 // --- Main Admin Layout ---
 
 const Admin = () => {
+    const mainContentRef = useRef<HTMLDivElement>(null);
     const { user, loading, logout, impersonateUser } = useAuth();
     const navigate = useNavigate();
     const { settings: config } = useSettings();
@@ -5886,6 +5887,13 @@ const Admin = () => {
     
     // State for View Switching
     const [currentView, _setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard');
+
+    // Reset scroll on view change
+    useEffect(() => {
+        if (mainContentRef.current) {
+            mainContentRef.current.scrollTop = 0;
+        }
+    }, [currentView]);
 
     const setCurrentView = (view: any) => {
         _setCurrentView(view);
@@ -6468,7 +6476,7 @@ const Admin = () => {
             </AnimatePresence>
 
             {/* Main Content */}
-            <div className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
+            <div ref={mainContentRef} className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
 
                 <AnimatePresence mode="popLayout">
                     <motion.div
