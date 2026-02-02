@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../../lib/whatsapp';
-import { X, Calendar, Plus, MessageCircle, Phone, Tag, CheckSquare, Clock, AlertCircle, Image as ImageIcon, Upload } from 'lucide-react';
+import { X, Calendar, Plus, MessageCircle, Phone, Tag, CheckSquare, Clock, AlertCircle, Image as ImageIcon, Upload, Bot } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { Lead, Task, TaskCategory } from '../../../types';
@@ -76,7 +76,9 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
                     createdBy: t.created_by,
                     createdAt: t.created_at,
                     leadId: t.lead_id,
-                    category: t.SITE_TaskCategories
+                    isWhatsappSchedule: t.is_whatsapp_schedule,
+                    whatsappMessageBody: t.whatsapp_message_body,
+                    category: Array.isArray(t.SITE_TaskCategories) ? t.SITE_TaskCategories[0] : t.SITE_TaskCategories
                 })));
             }
         } catch (error) {

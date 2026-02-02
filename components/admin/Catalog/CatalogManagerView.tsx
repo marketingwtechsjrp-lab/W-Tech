@@ -69,6 +69,7 @@ const CatalogManagerView = () => {
                 salePrice: Number(p.sale_price),
                 priceRetail: Number(p.price_retail || p.sale_price),
                 pricePartner: Number(p.price_partner || p.sale_price),
+                priceMechanic: Number(p.price_mechanic || (p.price_retail || p.sale_price) * 0.9),
                 priceDistributor: Number(p.price_distributor || p.sale_price),
                 minStock: p.min_stock,
                 currentStock: p.current_stock,
@@ -152,6 +153,7 @@ const CatalogManagerView = () => {
             sale_price: editingProduct.salePrice || 0,
             price_retail: editingProduct.priceRetail || editingProduct.salePrice || 0,
             price_partner: editingProduct.pricePartner || 0,
+            price_mechanic: editingProduct.priceMechanic || 0,
             price_distributor: editingProduct.priceDistributor || 0,
             production_time: editingProduct.productionTime || 0,
             image_url: editingProduct.imageUrl || '',
@@ -239,14 +241,16 @@ const CatalogManagerView = () => {
     const handleMassAdjust = async () => {
         if (massAdjustData.value <= 0) return alert("Insira um valor válido.");
         const levelLabel = massAdjustData.level === 'retail' ? 'Final' : 
-                           massAdjustData.level === 'partner' ? 'Credenciados' : 'Distribuidor';
+                           massAdjustData.level === 'partner' ? 'Credenciados' : 
+                           massAdjustData.level === 'mechanic' ? 'Mec sem curso' : 'Distribuidor';
         
         if (!confirm(`Deseja realmente aplicar o reajuste de ${massAdjustData.value}% (${massAdjustData.direction === 'increase' ? 'Aumento' : 'Desconto'}) para o nível ${levelLabel}?`)) return;
 
         setLoading(true);
         try {
             const field = massAdjustData.level === 'retail' ? 'price_retail' : 
-                          massAdjustData.level === 'partner' ? 'price_partner' : 'price_distributor';
+                          massAdjustData.level === 'partner' ? 'price_partner' : 
+                          massAdjustData.level === 'mechanic' ? 'price_mechanic' : 'price_distributor';
             
             const multiplier = massAdjustData.direction === 'increase' 
                 ? (1 + massAdjustData.value / 100) 
@@ -819,6 +823,19 @@ const CatalogManagerView = () => {
                                                         />
                                                     </div>
                                                 </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-[10px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest mb-1.5 ml-1">Mecânico sem curso</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-cyan-400">R$</span>
+                                                        <input 
+                                                            type="number"
+                                                            step="0.01"
+                                                            className="w-full bg-white dark:bg-[#111] border border-cyan-200 dark:border-cyan-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
+                                                            value={editingProduct?.priceMechanic || 0}
+                                                            onChange={e => setEditingProduct({...editingProduct, priceMechanic: parseFloat(e.target.value)})}
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -1193,12 +1210,13 @@ const CatalogManagerView = () => {
                             <div className="p-8 space-y-8">
                                 <div className="space-y-3">
                                     <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">1. Selecione o Nível de Preço</label>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {[
-                                            { id: 'retail', label: 'Final', color: 'blue', activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/30' },
-                                            { id: 'partner', label: 'Credenciados', color: 'orange', activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/30' },
-                                            { id: 'distributor', label: 'Distribuidor', color: 'purple', activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/30' }
-                                        ].map(level => (
+                                    <div className="grid grid-cols-2 gap-3">
+                                            {[
+                                                { id: 'retail', label: 'Final', color: 'blue', activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/30' },
+                                                { id: 'partner', label: 'Credenciados', color: 'orange', activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/30' },
+                                                { id: 'mechanic', label: 'Mec sem curso', color: 'cyan', activeClass: 'bg-cyan-600 border-cyan-600 shadow-cyan-500/30' },
+                                                { id: 'distributor', label: 'Distribuidor', color: 'purple', activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/30' }
+                                            ].map(level => (
                                             <button
                                                 key={level.id}
                                                 onClick={() => setMassAdjustData({...massAdjustData, level: level.id})}

@@ -213,7 +213,7 @@ export interface Lead {
   birth_date?: string;
   t_shirt_size?: string;
   workshop_details?: any;
-  pricing_level?: 'retail' | 'partner' | 'distributor';
+  pricing_level?: 'retail' | 'partner' | 'distributor' | 'mechanic';
 }
 
 export interface Mechanic {
@@ -239,7 +239,7 @@ export interface Mechanic {
   cpfCnpj?: string; // Mapped from cpf_cnpj
   group?: string; // Mapped from group
   completed_courses?: any[]; // JSONB array of completed courses
-  pricing_level?: 'retail' | 'partner' | 'distributor';
+  pricing_level?: 'retail' | 'partner' | 'distributor' | 'mechanic';
 }
 
 export interface GlossaryTerm {
@@ -483,6 +483,7 @@ export interface Product {
     imageUrl?: string;
     priceRetail?: number;
     pricePartner?: number;
+    priceMechanic?: number;
     priceDistributor?: number;
     weight?: number;
     length?: number;
@@ -539,7 +540,7 @@ export interface Sale {
     delivery_neighborhood?: string;
     delivery_city?: string;
     delivery_state?: string;
-    pricing_level?: 'retail' | 'partner' | 'distributor';
+    pricing_level?: 'retail' | 'partner' | 'distributor' | 'mechanic';
     items?: any | string; // JSONB or stringified JSON
     order_number?: string;
 }

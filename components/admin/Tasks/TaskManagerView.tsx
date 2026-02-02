@@ -126,8 +126,30 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, usersMap, onDelete, onEdit, o
 
 const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const { user } = useAuth();
+
+    // --- Helpers ---
+    const formatDateForInput = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '';
+            const pad = (n: number) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        } catch (e) {
+            return '';
+        }
+    };
+
+    const hasPermission = (key: string) => {
+        if (!user) return false;
+        if (permissions) return !!permissions[key];
+        return user.role === 'Super Admin' || user.role === 'ADMIN';
+    };
+
+    // --- State ---
     const [tasks, setTasks] = useState<Task[]>([]);
     const [leads, setLeads] = useState<any[]>([]);
+    const [categories, setCategories] = useState<TaskCategory[]>([]);
     const [usersMap, setUsersMap] = useState<Record<string, string>>({});
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [filterStatus, setFilterStatus] = useState('ALL');
@@ -138,6 +160,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const [formData, setFormData] = useState({
         title: '', description: '', assignedTo: '', priority: 'MEDIUM', 
         dueDate: '', status: 'TODO', leadId: '', 
+        categoryId: '',
         isWhatsappSchedule: false, whatsappMessageBody: ''
     });
 
@@ -146,7 +169,8 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             Promise.all([
                 fetchUsers(),
                 fetchTasks(),
-                fetchLeads()
+                fetchLeads(),
+                fetchCategories()
             ]);
         }
     }, [user]);
@@ -165,13 +189,30 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
         if(data) setLeads(data);
     };
 
+    const fetchCategories = async () => {
+        const { data } = await supabase.from('SITE_TaskCategories').select('*').order('name');
+        if(data) setCategories(data);
+    };
+
     const fetchTasks = async () => {
-        const { data } = await supabase.from('SITE_Tasks').select('*, SITE_Leads(name, phone)').order('created_at', { ascending: false });
+        const { data } = await supabase.from('SITE_Tasks').select('*, SITE_Leads(name, phone), SITE_TaskCategories(name, color)').order('created_at', { ascending: false });
         if(data) {
             setTasks(data.map((t: any) => ({
-                ...t,
+                id: t.id,
+                title: t.title,
+                description: t.description,
+                status: t.status,
+                priority: t.priority,
+                created_at: t.created_at,
+                dueDate: t.due_date,
+                assignedTo: t.assigned_to,
+                leadId: t.lead_id,
                 leadName: t.SITE_Leads?.name,
-                leadPhone: t.SITE_Leads?.phone
+                leadPhone: t.SITE_Leads?.phone,
+                isWhatsappSchedule: t.is_whatsapp_schedule,
+                whatsappMessageBody: t.whatsapp_message_body,
+                categoryId: t.category_id,
+                category: Array.isArray(t.SITE_TaskCategories) ? t.SITE_TaskCategories[0] : t.SITE_TaskCategories
             })));
         }
     };
@@ -183,9 +224,10 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             description: formData.description,
             assigned_to: formData.assignedTo || user?.id,
             priority: formData.priority,
-            due_date: formData.dueDate || null,
+            due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
             status: formData.status,
             lead_id: formData.leadId || null,
+            category_id: formData.categoryId || null,
             is_whatsapp_schedule: formData.isWhatsappSchedule,
             whatsapp_message_body: formData.whatsappMessageBody
         };
@@ -232,7 +274,7 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                 </div>
                 <div className="flex gap-3">
                      <button 
-                        onClick={() => { setEditingTask(null); setFormData({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '', status: 'TODO', leadId: '', isWhatsappSchedule: false, whatsappMessageBody: '' }); setIsModalOpen(true); }}
+                        onClick={() => { setEditingTask(null); setFormData({ title: '', description: '', assignedTo: '', priority: 'MEDIUM', dueDate: '', status: 'TODO', leadId: '', categoryId: '', isWhatsappSchedule: false, whatsappMessageBody: '' }); setIsModalOpen(true); }}
                         className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 transform hover:scale-105 active:scale-95"
                      >
                         <Plus size={18} strokeWidth={3} /> Nova Tarefa
@@ -261,13 +303,36 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     onEdit={(t) => { 
                                         setEditingTask(t); 
                                         setFormData({ 
-                                            ...t, 
-                                            leadId: (t as any).lead_id || (t as any).leadId || '' 
-                                        } as any); 
+                                            title: t.title || '',
+                                            description: t.description || '',
+                                            assignedTo: t.assignedTo || '',
+                                            priority: t.priority || 'MEDIUM',
+                                            dueDate: formatDateForInput(t.dueDate),
+                                            status: t.status || 'TODO',
+                                            leadId: t.leadId || '',
+                                            categoryId: t.categoryId || '',
+                                            isWhatsappSchedule: !!t.isWhatsappSchedule,
+                                            whatsappMessageBody: t.whatsappMessageBody || ''
+                                        }); 
                                         setIsModalOpen(true); 
                                     }} 
                                     onStatusToggle={handleToggleStatus} 
-                                    onWhatsapp={() => {}} 
+                                    onWhatsapp={(t) => {
+                                        setEditingTask(t);
+                                        setFormData({
+                                            title: t.title || '',
+                                            description: t.description || '',
+                                            assignedTo: t.assignedTo || '',
+                                            priority: t.priority || 'MEDIUM',
+                                            dueDate: formatDateForInput(t.dueDate),
+                                            status: t.status || 'TODO',
+                                            leadId: t.leadId || '',
+                                            categoryId: t.categoryId || '',
+                                            isWhatsappSchedule: true,
+                                            whatsappMessageBody: t.whatsappMessageBody || ''
+                                        });
+                                        setIsModalOpen(true);
+                                    }} 
                                 />
                              ))}
                         </div>
@@ -290,13 +355,36 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                     onEdit={(t) => { 
                                         setEditingTask(t); 
                                         setFormData({ 
-                                            ...t, 
-                                            leadId: (t as any).lead_id || (t as any).leadId || '' 
-                                        } as any); 
+                                            title: t.title || '',
+                                            description: t.description || '',
+                                            assignedTo: t.assignedTo || '',
+                                            priority: t.priority || 'MEDIUM',
+                                            dueDate: formatDateForInput(t.dueDate),
+                                            status: t.status || 'TODO',
+                                            leadId: t.leadId || '',
+                                            categoryId: t.categoryId || '',
+                                            isWhatsappSchedule: !!t.isWhatsappSchedule,
+                                            whatsappMessageBody: t.whatsappMessageBody || ''
+                                        }); 
                                         setIsModalOpen(true); 
                                     }} 
                                     onStatusToggle={handleToggleStatus} 
-                                    onWhatsapp={() => {}} 
+                                    onWhatsapp={(t) => {
+                                        setEditingTask(t);
+                                        setFormData({
+                                            title: t.title || '',
+                                            description: t.description || '',
+                                            assignedTo: t.assignedTo || '',
+                                            priority: t.priority || 'MEDIUM',
+                                            dueDate: formatDateForInput(t.dueDate),
+                                            status: t.status || 'TODO',
+                                            leadId: t.leadId || '',
+                                            categoryId: t.categoryId || '',
+                                            isWhatsappSchedule: true,
+                                            whatsappMessageBody: t.whatsappMessageBody || ''
+                                        });
+                                        setIsModalOpen(true);
+                                    }} 
                                 />
                              ))}
                         </div>
@@ -325,14 +413,42 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
                                         <option value="DONE">Concluído</option>
                                      </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                 <div className="grid grid-cols-2 gap-3">
                                     <input type="datetime-local" className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-sm outline-none" value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} />
-                                    <select className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-sm outline-none" value={formData.leadId} onChange={e => setFormData({ ...formData, leadId: e.target.value })}>
-                                        <option value="">Sem Lead</option>
-                                        {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                    <select className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-sm outline-none" value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })}>
+                                        <option value="">Sem Categoria</option>
+                                        {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                                     </select>
                                 </div>
-                                <textarea placeholder="Descrição (opcional)" className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-sm h-24 outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                                <select className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-sm outline-none" value={formData.leadId} onChange={e => setFormData({ ...formData, leadId: e.target.value })}>
+                                    <option value="">Sem Lead (Privado)</option>
+                                    {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </select>
+
+                                <div className="bg-green-500/5 border border-green-500/20 p-4 rounded-xl space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="checkbox" 
+                                            id="wa_schedule"
+                                            className="w-4 h-4 text-green-500 rounded border-gray-300 focus:ring-green-500"
+                                            checked={formData.isWhatsappSchedule}
+                                            onChange={e => setFormData({...formData, isWhatsappSchedule: e.target.checked})} 
+                                        />
+                                        <label htmlFor="wa_schedule" className="text-xs font-bold text-green-600 uppercase tracking-widest cursor-pointer">
+                                            Automatizar Disparo WhatsApp
+                                        </label>
+                                    </div>
+                                    {formData.isWhatsappSchedule && (
+                                        <textarea 
+                                            placeholder="Mensagem Automática..." 
+                                            className="w-full bg-white dark:bg-black/20 border border-green-500/10 rounded-xl p-3 text-xs h-20 outline-none focus:border-green-500" 
+                                            value={formData.whatsappMessageBody} 
+                                            onChange={e => setFormData({...formData, whatsappMessageBody: e.target.value})} 
+                                        />
+                                    )}
+                                </div>
+
+                                <textarea placeholder="Descrição/Notas (opcional)" className="w-full bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-sm h-20 outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                                 
                                 <div className="flex justify-end gap-3 pt-2">
                                     <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 font-bold text-sm">Cancelar</button>

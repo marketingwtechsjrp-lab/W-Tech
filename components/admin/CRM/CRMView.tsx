@@ -116,7 +116,7 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
 };
 
 
-const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, usersMap }: any) => {
+const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, onTasks, usersMap }: any) => {
     const { draggedId } = React.useContext(DragContext);
 
     const handleDrop = (e: React.DragEvent) => {
@@ -183,7 +183,7 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, u
             {/* Cards Container */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
                 {leads.map((lead: any) => (
-                    <LeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} onMove={onDropLead} usersMap={usersMap} />
+                    <LeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} onMove={onDropLead} onTasks={onTasks} usersMap={usersMap} />
                 ))}
                 {leads.length === 0 && (
                     <div className="text-center py-8 text-gray-400 dark:text-gray-600 text-xs italic">
@@ -228,7 +228,7 @@ const useTimeInStatus = (dateString: string) => {
 import { Badge } from '@/components/ui/badge';
 import { Edit } from 'lucide-react';
 
-const LeadCard: React.FC<{ lead: any, onClick: () => void, onMove?: any, usersMap: Record<string, string> }> = ({ lead, onClick, onMove, usersMap }) => {
+const LeadCard: React.FC<{ lead: any, onClick: () => void, onMove?: any, onTasks: (lead: any) => void, usersMap: Record<string, string> }> = ({ lead, onClick, onMove, onTasks, usersMap }) => {
     const { setDraggedId } = React.useContext(DragContext);
     const [isDragging, setIsDragging] = React.useState(false);
 
@@ -291,15 +291,24 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, onMove?: any, usersMa
                      {/* Tags/badges if any */}
                 </div>
                  {/* Quick Move Arrow */}
-                 {nextStatusMap[lead.status] && (
+                <div className="flex gap-1">
                     <button 
-                        onClick={handleNext}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-green-500 transition-all transform hover:scale-110 active:scale-95 z-20"
-                        title={`Mover para ${nextStatusMap[lead.status]}`}
+                        onClick={(e) => { e.stopPropagation(); onTasks(lead); }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95 z-20"
+                        title="Ver Tarefas / Agendar WhatsApp"
                     >
-                        <ArrowRight size={16} />
+                        <Clock size={16} />
                     </button>
-                )}
+                    {nextStatusMap[lead.status] && (
+                        <button 
+                            onClick={handleNext}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-green-500 transition-all transform hover:scale-110 active:scale-95 z-20"
+                            title={`Mover para ${nextStatusMap[lead.status]}`}
+                        >
+                            <ArrowRight size={16} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Contact Info */}
@@ -508,7 +517,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const fetchData = async () => {
         setLeads([]); // Clear before fetch to show loading state if desired
-        let query = supabase.from('SITE_Leads').select('*').order('created_at', { ascending: false });
+        let query = supabase.from('SITE_Leads').select('*').neq('context_id', 'Import').order('created_at', { ascending: false });
 
         // Privacy Logic
         const hasFullAccess =
@@ -597,8 +606,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     });
 
                     if (eventType === 'INSERT') {
-                        // Only add if user has access
-                        if (hasFullAccess || newRecord.assigned_to === user?.id || !newRecord.assigned_to) {
+                        // Only add if user has access AND it's NOT an import
+                        if ((hasFullAccess || newRecord.assigned_to === user?.id || !newRecord.assigned_to) && newRecord.context_id !== 'Import') {
                             setLeads(prev => {
                                 // Prevent duplicates just in case
                                 if (prev.some(l => l.id === newRecord.id)) return prev;
@@ -611,7 +620,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     } else if (eventType === 'UPDATE') {
                         const mapped = mapLead(newRecord);
 
-                        if (hasFullAccess || newRecord.assigned_to === user?.id) {
+                        if ((hasFullAccess || newRecord.assigned_to === user?.id) && newRecord.context_id !== 'Import') {
                             setLeads(prev => {
                                 const exists = prev.find(l => l.id === newRecord.id);
                                 if (exists) {
@@ -1146,6 +1155,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
+                            onTasks={setSelectedLeadForTasks}
                             usersMap={usersMap}
                         />
                         <KanbanColumn
@@ -1155,6 +1165,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
+                            onTasks={setSelectedLeadForTasks}
                             usersMap={usersMap}
                         />
                         <KanbanColumn
@@ -1164,6 +1175,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
+                            onTasks={setSelectedLeadForTasks}
                             usersMap={usersMap}
                         />
                         <KanbanColumn
@@ -1173,6 +1185,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
+                            onTasks={setSelectedLeadForTasks}
                             usersMap={usersMap}
                         />
                         <KanbanColumn
@@ -1182,6 +1195,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
+                            onTasks={setSelectedLeadForTasks}
                             usersMap={usersMap}
                         />
                     </div>
@@ -1290,6 +1304,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         onClose={() => setEditingLead(null)}
                         onSave={saveLeadUpdates}
                         onDelete={deleteLead}
+                        onTasks={(lead: any) => {
+                            setEditingLead(null);
+                            setSelectedLeadForTasks(lead);
+                        }}
                         users={usersList}
                     />
                 )}
@@ -1481,7 +1499,7 @@ const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
     );
 };
 
-const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, users }: any) => {
+const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users }: any) => {
     const [form, setForm] = useState({ ...lead });
     // Tags Local State for Modal
     const [tagInput, setTagInput] = useState('');
@@ -1516,6 +1534,12 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, users }: any) 
                         <p className="text-sm text-gray-500">Editando informações do lead.</p>
                     </div>
                     <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => onTasks(form)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition-colors text-xs font-bold"
+                        >
+                            <Clock size={16} /> Tarefas
+                        </button>
                         <button 
                             onClick={() => {
                                 if (window.confirm('Tem certeza que deseja excluir este lead?')) {

@@ -1,6 +1,16 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.7.3 (2026-02-02) - Preçário Mecânico e Gestão Unificada
+- FEAT: Novo nível de preço "Mecânico sem curso" no Catálogo e Pedidos.
+- FEAT: Gestão Unificada de Clientes com Deduplicação automática na importação.
+- FEAT: Novo recurso "Sincronizar & Limpar" para unificar duplicatas via telefone (merge de dados + tarefas).
+- FEAT: Exclusão em Massa de contatos com limpeza automática de dependências (tasks/grupos).
+- FEAT: Automação de WhatsApp e Categorias restauradas no Gerenciador de Tarefas.
+- UX: Atalho rápido para tarefas (ícone relógio) diretamente nos cards do Kanban (CRM).
+- FIX: Correção crítica no carregamento de datas e categorias no modal de tarefas.
+- FIX: Resolução de erro "ON CONFLICT" em importações com dados redundantes no Excel.
+
 ## v2.7.2 (2026-02-01) - Correções de Scroll, PDF e Data de LP
 - FIX: Reset automático de scroll ao navegar entre módulos do Admin.
 - FEAT: Melhoria no PDF de Pedidos (Inclusão de número de pedido/ID e ajuste de layout).

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, User, UserPlus, Phone, Mail, Filter, Shield, Users, Plus, X, Upload, FileSpreadsheet } from 'lucide-react';
+import { Search, User, UserPlus, Phone, Mail, Filter, Shield, Users, Plus, X, Upload, FileSpreadsheet, Trash2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
@@ -181,25 +181,81 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
 
     const importLeads = async (data: any[]) => {
         setLoading(true);
-        // Basic mapping - assumes columns like "Nome", "Email", "Telefone"
-        // Also supports "name", "email", "phone"
-        const leadsToInsert = data.map(row => ({
-            name: row['Nome'] || row['name'] || row['Cliente'] || 'Importado',
-            email: row['Email'] || row['email'] || null,
-            phone: row['Telefone'] || row['phone'] || row['Celular'] || null,
-            status: 'New',
-            assigned_to: user?.id, // Assign to current user by default
-            context_id: 'Import'
-        }));
+        try {
+            // 1. Fetch existing leads for deduplication
+            const { data: existingLeads } = await supabase
+                .from('SITE_Leads')
+                .select('id, name, phone');
 
-        const { error } = await supabase.from('SITE_Leads').insert(leadsToInsert);
-        if (error) {
-            alert("Erro ao salvar leads: " + error.message);
-        } else {
-            alert(`${leadsToInsert.length} clientes importados com sucesso!`);
+            const existingLeadsMap = new Map();
+            existingLeads?.forEach(l => {
+                const normName = l.name?.toLowerCase().trim();
+                const normPhone = l.phone?.replace(/\D/g, '');
+                if (normName && normPhone) {
+                    existingLeadsMap.set(`${normName}-${normPhone}`, l.id);
+                }
+            });
+
+            const toInsert: any[] = [];
+            const toUpdateMap = new Map<string, any>(); // Map to prevent duplicate updates for same ID
+            const newLeadsProcessed = new Set<string>(); // Set to prevent duplicate inserts in same batch
+
+            data.forEach(row => {
+                const name = row['Nome'] || row['name'] || row['Cliente'] || 'Importado';
+                const email = row['Email'] || row['email'] || null;
+                const phone = row['Telefone'] || row['phone'] || row['Celular'] || null;
+                const normalizedPhone = phone ? String(phone).replace(/\D/g, '') : '';
+                const key = `${String(name).toLowerCase().trim()}-${normalizedPhone}`;
+
+                const leadData: any = {
+                    name,
+                    email,
+                    phone: String(phone || ''),
+                    updated_at: new Date().toISOString()
+                };
+
+                if (existingLeadsMap.has(key)) {
+                    const existingId = existingLeadsMap.get(key);
+                    // Only keep the most recent occurrence from the file
+                    toUpdateMap.set(existingId, { 
+                        id: existingId, 
+                        ...leadData 
+                    });
+                } else {
+                    if (!newLeadsProcessed.has(key)) {
+                        toInsert.push({
+                            ...leadData,
+                            status: 'New',
+                            assigned_to: user?.id,
+                            context_id: 'Import'
+                        });
+                        newLeadsProcessed.add(key);
+                    }
+                }
+            });
+
+            // 2. Execute Updates
+            const toUpdate = Array.from(toUpdateMap.values());
+            if (toUpdate.length > 0) {
+                // Upsert with ID updates existing records
+                const { error: updateError } = await supabase.from('SITE_Leads').upsert(toUpdate);
+                if (updateError) throw updateError;
+            }
+
+            // 3. Execute Inserts
+            if (toInsert.length > 0) {
+                const { error: insertError } = await supabase.from('SITE_Leads').insert(toInsert);
+                if (insertError) throw insertError;
+            }
+
+            alert(`${toInsert.length} novos leads inseridos e ${toUpdate.length} atualizados com sucesso!`);
             fetchClients();
+        } catch (error: any) {
+            console.error("Import Error:", error);
+            alert("Erro na importação: " + error.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const canSeeAll = permissions?.admin_access || permissions?.clients_view_all;
@@ -248,6 +304,61 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
             setSelectedClients(prev => [...prev, id]);
         } else {
             setSelectedClients(prev => prev.filter(cid => cid !== id));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedClients.length === 0) return;
+        
+        const count = selectedClients.length;
+        if (!confirm(`Deseja excluir permanentemente ${count} contatos selecionados? Esta ação irá remover também o histórico de tarefas e participações em grupos.`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const selectedLeads = clients
+                .filter(c => selectedClients.includes(c.id) && c.type === 'Lead')
+                .map(c => c.id);
+            
+            const selectedMechanics = clients
+                .filter(c => selectedClients.includes(c.id) && c.type === 'Credenciado')
+                .map(c => c.id);
+
+            // Function to process in batches
+            const batchProcess = async (ids: string[], table: string) => {
+                const BATCH_SIZE = 100;
+                for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+                    const batch = ids.slice(i, i + BATCH_SIZE);
+                    
+                    // 1. Clean dependencies for Leads
+                    if (table === 'SITE_Leads') {
+                        await supabase.from('SITE_Tasks').delete().in('lead_id', batch);
+                        await supabase.from('SITE_MarketingListMembers').delete().in('lead_id', batch);
+                    }
+
+                    // 2. Delete the actual record
+                    const { error } = await supabase.from(table).delete().in('id', batch);
+                    if (error) throw error;
+                }
+            };
+
+            if (selectedLeads.length > 0) {
+                await batchProcess(selectedLeads, 'SITE_Leads');
+            }
+
+            if (selectedMechanics.length > 0) {
+                await batchProcess(selectedMechanics, 'SITE_Mechanics');
+            }
+
+            alert(`${count} contatos e suas dependências excluídos com sucesso!`);
+            setSelectedClients([]);
+            fetchClients();
+        } catch (error: any) {
+            console.error("Bulk Delete Error:", error);
+            alert("Erro ao excluir contatos: " + (error.message || "Erro desconhecido"));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -308,6 +419,85 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
         }
     };
 
+    const handleSyncDeduplication = async () => {
+        if (!confirm("Deseja sincronizar e unir cadastros com o mesmo telefone? Esta ação irá mesclar as informações e atualizar o histórico de tarefas.")) return;
+        
+        setLoading(true);
+        try {
+            // 1. Fetch all leads
+            const { data: allLeads, error: fetchError } = await supabase
+                .from('SITE_Leads')
+                .select('*');
+            
+            if (fetchError) throw fetchError;
+            if (!allLeads || allLeads.length === 0) return;
+
+            // 2. Group by normalized phone
+            const groups = new Map<string, any[]>();
+            allLeads.forEach(lead => {
+                const phone = lead.phone?.replace(/\D/g, '');
+                if (phone && phone.length >= 8) {
+                    if (!groups.has(phone)) groups.set(phone, []);
+                    groups.get(phone)?.push(lead);
+                }
+            });
+
+            let mergedCount = 0;
+            let updatedTasksCount = 0;
+
+            for (const [phone, records] of groups.entries()) {
+                if (records.length <= 1) continue;
+
+                // Sort by creation date (keep the oldest)
+                records.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                
+                const survivor = records[0];
+                const duplicates = records.slice(1);
+
+                // Build merged data
+                const updates: any = {};
+                duplicates.forEach(dup => {
+                    if (!survivor.email && dup.email) updates.email = dup.email;
+                    if (!survivor.cpf && dup.cpf) updates.cpf = dup.cpf;
+                    if (!survivor.rg && dup.rg) updates.rg = dup.rg;
+                    if (!survivor.address && dup.address) updates.address = dup.address;
+                });
+
+                // Update survivor if needed
+                if (Object.keys(updates).length > 0) {
+                    await supabase.from('SITE_Leads').update(updates).eq('id', survivor.id);
+                }
+
+                // Relink Tasks
+                const duplicateIds = duplicates.map(d => d.id);
+                const { data: affectedTasks } = await supabase
+                    .from('SITE_Tasks')
+                    .update({ lead_id: survivor.id })
+                    .in('lead_id', duplicateIds)
+                    .select('id');
+                
+                updatedTasksCount += (affectedTasks?.length || 0);
+
+                // Delete Duplicates
+                const { error: delError } = await supabase
+                    .from('SITE_Leads')
+                    .delete()
+                    .in('id', duplicateIds);
+                
+                if (delError) console.error("Error deleting dups for phone", phone, delError);
+                else mergedCount += duplicateIds.length;
+            }
+
+            alert(`Sincronização concluída!\n- ${mergedCount} cadastros duplicados unidos.\n- ${updatedTasksCount} tarefas atualizadas.`);
+            fetchClients();
+        } catch (error: any) {
+            console.error("Sync Error:", error);
+            alert("Erro na sincronização: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Stats based on visibility
     const visibleClients = canSeeAll ? clients : clients.filter(c => c.assigned_to === user?.id || !c.assigned_to);
     const totalClientsCount = visibleClients.length;
@@ -330,6 +520,14 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         className="hidden" 
                     />
                     <button 
+                        onClick={handleSyncDeduplication}
+                        className="bg-white dark:bg-[#222] text-wtech-gold border border-wtech-gold/20 px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-wtech-gold/5 transition-all shadow-sm active:scale-95"
+                        title="Unir cadastros com o mesmo telefone"
+                    >
+                        <Users size={20} className="text-wtech-gold" /> Sincronizar & Limpar
+                    </button>
+
+                    <button 
                         onClick={handleImportClick}
                         className="bg-white dark:bg-[#222] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-700 px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95"
                     >
@@ -337,13 +535,22 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                     </button>
 
                     {activeTab === 'clients' && selectedClients.length > 0 && (
-                        <button 
-                            onClick={() => setIsGroupModalOpen(true)}
-                            className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl active:scale-95 animate-in slide-in-from-right-4"
-                        >
-                            <Users size={20} /> 
-                            Criar Grupo ({selectedClients.length})
-                        </button>
+                        <div className="flex gap-2 animate-in slide-in-from-right-4">
+                            <button 
+                                onClick={() => setIsGroupModalOpen(true)}
+                                className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl active:scale-95"
+                            >
+                                <Users size={20} /> 
+                                Criar Grupo ({selectedClients.length})
+                            </button>
+                            <button 
+                                onClick={handleBulkDelete}
+                                className="bg-red-500 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-red-600 transition-all shadow-xl active:scale-95"
+                            >
+                                <Trash2 size={20} /> 
+                                Excluir Seleção
+                            </button>
+                        </div>
                     )}
                     <button 
                         onClick={() => setSelectedClientForEdit({ type: 'Lead' })}

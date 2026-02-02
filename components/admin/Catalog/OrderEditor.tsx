@@ -133,6 +133,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
             salePrice: Number(p.sale_price),
             priceRetail: Number(p.price_retail || p.sale_price),
             pricePartner: Number(p.price_partner || p.sale_price),
+            priceMechanic: Number(p.price_mechanic || (p.price_retail || p.sale_price) * 0.9),
             priceDistributor: Number(p.price_distributor || p.sale_price)
         })));
 
@@ -182,7 +183,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     };
 
     // ---- Handlers ----
-    const handleUpdatePricingLevel = (level: 'retail' | 'partner' | 'distributor') => {
+    const handleUpdatePricingLevel = (level: 'retail' | 'partner' | 'distributor' | 'mechanic') => {
         setCurrentSale(prev => ({ ...prev, pricing_level: level }));
         
         // Update prices of all items already in the cart
@@ -194,6 +195,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
 
             let newPrice = product.salePrice;
             if (level === 'partner') newPrice = product.pricePartner || product.salePrice;
+            else if (level === 'mechanic') newPrice = product.priceMechanic || product.salePrice;
             else if (level === 'distributor') newPrice = product.priceDistributor || product.salePrice;
             else if (level === 'retail') newPrice = product.priceRetail || product.salePrice;
 
@@ -207,6 +209,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         const level = currentSale.pricing_level;
         
         if (level === 'partner') selectedPrice = product.pricePartner || product.salePrice;
+        else if (level === 'mechanic') selectedPrice = product.priceMechanic || product.salePrice;
         else if (level === 'distributor') selectedPrice = product.priceDistributor || product.salePrice;
         else if (level === 'retail') selectedPrice = product.priceRetail || product.salePrice;
 
@@ -770,7 +773,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                         'bg-purple-50 text-purple-600 border-purple-100'
                                                                     }`}>
                                                                         {currentSale.pricing_level === 'retail' ? 'Final' : 
-                                                                         currentSale.pricing_level === 'partner' ? 'Credenciados' : 'Distribuidor'}
+                                                                         currentSale.pricing_level === 'partner' ? 'Credenciados' : 
+                                                                         currentSale.pricing_level === 'mechanic' ? 'Mec sem curso' : 'Distribuidor'}
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -786,10 +790,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                                                 <Tag size={12} className="text-blue-500" /> Tabela de Preços Ativa:
                                                             </p>
-                                                            <div className="grid grid-cols-3 gap-2">
+                                                            <div className="grid grid-cols-2 gap-2">
                                                                 {[
                                                                     { id: 'retail', label: 'Final', color: 'blue', activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/20' },
                                                                     { id: 'partner', label: 'Credenc.', color: 'orange', activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/20' },
+                                                                    { id: 'mechanic', label: 'Mec sem curso', color: 'cyan', activeClass: 'bg-cyan-600 border-cyan-600 shadow-cyan-500/20' },
                                                                     { id: 'distributor', label: 'Distrib.', color: 'purple', activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/20' }
                                                                 ].map(lvl => (
                                                                     <button
