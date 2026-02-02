@@ -1,5 +1,21 @@
 [
   {
+    "version": "2.7.3",
+    "date": "2026-02-02",
+    "title": "Preçário Mecânico e Gestão Unificada",
+    "changes": [
+      "FEAT: Novo nível de preço 'Mecânico sem curso' no Catálogo e Pedidos.",
+      "FEAT: Gestão Unificada de Clientes com Deduplicação automática na importação.",
+      "FEAT: Novo recurso 'Sincronizar & Limpar' para unificar duplicatas via telefone (merge de dados + tarefas).",
+      "FEAT: Exclusão em Massa de contatos com limpeza automática de dependências (tasks/grupos).",
+      "FEAT: Automação de WhatsApp e Categorias restauradas no Gerenciador de Tarefas.",
+      "UX: Atalho rápido para tarefas (ícone relógio) diretamente nos cards do Kanban (CRM).",
+      "FIX: Correção crítica no carregamento de datas e categorias no modal de tarefas.",
+      "FIX: Resolução de erro 'ON CONFLICT' em importações com dados redundantes no Excel."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.7.2",
     "date": "2026-02-01",
     "title": "Correções de Scroll, PDF e Data de LP",
