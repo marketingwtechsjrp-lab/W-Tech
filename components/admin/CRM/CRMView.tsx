@@ -292,6 +292,22 @@ const LeadCard: React.FC<{ lead: any, onClick: () => void, onMove?: any, onTasks
                 </div>
                  {/* Quick Move Arrow */}
                 <div className="flex gap-1">
+                    {/* WhatsApp Action */}
+                    {lead.phone && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const clean = String(lead.phone).replace(/\D/g, '');
+                                const val = clean.length <= 11 ? `55${clean}` : clean;
+                                window.open(`https://wa.me/${val}`, '_blank');
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg text-gray-400 hover:text-green-600 transition-all transform hover:scale-110 active:scale-95 z-20"
+                            title="Chamar no WhatsApp"
+                        >
+                            <MessageCircle size={16} />
+                        </button>
+                    )}
+
                     <button 
                         onClick={(e) => { e.stopPropagation(); onTasks(lead); }}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95 z-20"
