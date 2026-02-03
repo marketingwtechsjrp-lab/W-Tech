@@ -276,7 +276,7 @@ const UserWhatsAppConnection = () => {
                         >
                             <RefreshCw size={16} />
                         </button>
-                        {(userInstance.status === 'open' || userInstance.status === 'connecting') && (
+                        {userInstance.instanceName && (
                             <button 
                                 onClick={handleDeleteInstance} 
                                 className="p-2 hover:bg-red-50 text-red-500 rounded-full" 
@@ -294,11 +294,18 @@ const UserWhatsAppConnection = () => {
                         <input 
                             className="flex-1 border border-gray-300 rounded p-2 text-sm bg-gray-50" 
                             value={userInstance.instanceName}
-                            // onChange={e => setUserInstance({...userInstance, instanceName: e.target.value})} // Prevent easy accidental change of instance name
-                            readOnly
+                            onChange={e => setUserInstance(prev => ({...prev, instanceName: e.target.value}))}
                         />
-                         <button onClick={handleCreateUserInstance} disabled={loading || !globalConfig.serverUrl || userInstance.status === 'open'} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:bg-gray-300">
+                        <button onClick={handleCreateUserInstance} disabled={loading || !globalConfig.serverUrl || userInstance.status === 'open'} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:bg-gray-300">
                             <QrCode size={16} /> {userInstance.status === 'open' ? 'Conectado' : 'Conectar / Gerar QR'}
+                        </button>
+                        <button 
+                            onClick={handleDeleteInstance}
+                            disabled={loading}
+                            className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold hover:bg-red-700 disabled:opacity-50"
+                            title="Excluir Instância e Tentar Novamente"
+                        >
+                            <Trash2 size={16} />
                         </button>
                     </div>
                     {!globalConfig.serverUrl && <p className="text-xs text-red-500 mt-1">Servidor não configurado pelo Admin.</p>}
