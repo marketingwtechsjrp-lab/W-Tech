@@ -40,7 +40,8 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
              const isAdmin = permissions?.admin_access || permissions?.manage_marketing;
              
              let listQuery = supabase.from('SITE_MarketingLists').select('*');
-             if (!isAdmin && user?.id) {
+             // Filter lists to show ONLY the user's own lists, per request
+             if (user?.id) {
                  listQuery = listQuery.eq('owner_id', user.id);
              }
              const { data: l } = await listQuery;

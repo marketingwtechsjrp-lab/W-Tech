@@ -387,20 +387,40 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
             if (!targetListId) return alert("Selecione um grupo.");
 
             // 2. Prepare Members Payload
+            // 2. Prepare Members Payload
             const clientsToAdd = clients.filter(c => selectedClients.includes(c.id));
             
-            const membersPayload = clientsToAdd.map(c => ({
-                list_id: targetListId,
-                name: c.name,
-                email: c.email?.trim() || null,
-                phone: c.phone || '',
-                lead_id: c.type === 'Lead' ? c.id : null,
-            }));
+            // Deduplicate by phone locally to prevent batch errors
+            const uniquePhones = new Set<string>();
+            const membersPayload: any[] = [];
 
-            // 3. Insert Members
+            clientsToAdd.forEach(c => {
+                const phone = c.phone ? String(c.phone).trim() : '';
+                // Skip if no phone or if already processed in this batch
+                if (!phone) return;
+                
+                if (!uniquePhones.has(phone)) {
+                    uniquePhones.add(phone);
+                    membersPayload.push({
+                        list_id: targetListId,
+                        name: c.name,
+                        email: c.email?.trim() || null,
+                        phone: phone,
+                        lead_id: c.type === 'Lead' ? c.id : null,
+                    });
+                }
+            });
+
+            if (membersPayload.length === 0) {
+                alert("Nenhum contato com telefone válido selecionado.");
+                setIsSavingGroup(false);
+                return;
+            }
+
+            // 3. Insert Members using Upsert to ignore existing
             const { error: membersError } = await supabase
                 .from('SITE_MarketingListMembers')
-                .insert(membersPayload);
+                .upsert(membersPayload, { onConflict: 'list_id, phone', ignoreDuplicates: true });
 
             if (membersError) throw membersError;
 
