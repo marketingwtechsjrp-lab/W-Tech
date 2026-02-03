@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
-import { distributeLead } from '../lib/leadDistribution';
 import { triggerWebhook } from '../lib/webhooks';
 import { 
   CheckCircle, 
@@ -31,7 +30,7 @@ const LPWTechLisboa: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const assignedTo = await distributeLead();
+            const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
             const payload = {
                 name: form.name,
                 email: form.email,
@@ -323,6 +322,108 @@ const LPWTechLisboa: React.FC = () => {
                              💡 Nada de teoria rasa. Aqui o conhecimento é aplicado.
                         </p>
                      </div>
+                </div>
+            </section>
+
+            {/* LEARNING SCHEDULE */}
+            <section className="py-24 bg-zinc-950 border-y border-white/5 relative overflow-hidden">
+                <div className="container mx-auto px-6 relative z-10">
+                    <div className="text-center mb-20">
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mb-4 tracking-tighter italic">🛠️ Cronograma de <span className="text-wtech-red">Aprendizado</span></h2>
+                        <p className="text-gray-500 uppercase tracking-[0.3em] text-xs">Curso de Suspensão On-Road e Off-Road</p>
+                    </div>
+
+                    <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+                        {/* Modules column 1 */}
+                        <div className="space-y-8">
+                            {[
+                                {
+                                    num: "01",
+                                    title: "Fundamentos das Suspensões",
+                                    subtitle: "Base Técnica",
+                                    desc: "Entenda o papel da suspensão na segurança e performance. Diferenças entre sistemas convencionais, invertidos e eletrônicos e como cada um reage a impactos no asfalto e off-road."
+                                },
+                                {
+                                    num: "02",
+                                    title: "Molas, Cargas e Geometria",
+                                    subtitle: "A Base Mecânica",
+                                    desc: "Função real da mola, taxa de mola, compressão e afundamento (SAG estático e dinâmico). Saiba quando ajustar, substituir ou customizar considerando carga e piloto."
+                                },
+                                {
+                                    num: "03",
+                                    title: "Mecânica dos Fluidos",
+                                    subtitle: "Coração Hidráulico",
+                                    desc: "Viscosidade, cavitação e espumação. Como o fluido se comporta sob pressão e altas temperaturas, e a relação direta com a estabilidade da mota."
+                                }
+                            ].map((module, i) => (
+                                <div key={i} className="group relative pl-16 pb-8 border-b border-white/5 last:border-0">
+                                    <div className="absolute left-0 top-0 text-3xl font-black text-white/10 group-hover:text-wtech-red/40 transition-colors uppercase">M{module.num}</div>
+                                    <h3 className="text-xl font-black text-white uppercase mb-2 group-hover:text-wtech-red transition-colors">{module.title}</h3>
+                                    <p className="text-wtech-gold text-[10px] font-black uppercase tracking-widest mb-3 mb-4">{module.subtitle}</p>
+                                    <p className="text-gray-400 text-sm leading-relaxed">{module.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                         {/* Modules column 2 */}
+                         <div className="space-y-8">
+                            {[
+                                {
+                                    num: "04",
+                                    title: "Ajustes e Configuração",
+                                    subtitle: "Fim do Achismo",
+                                    desc: "Regulagem de Pré-carga, Rebound (Retorno) e Damping (Compressão). Aprenda a configurar para uso urbano, viagem, trilha ou pista com critério técnico."
+                                },
+                                {
+                                    num: "05",
+                                    title: "Seleção de Óleo e Viscosidade",
+                                    subtitle: "Performance Máxima",
+                                    desc: "Diferença entre viscosidade nominal e real (cSt). Como escolher o óleo correto pelo projeto da suspensão e compatibilidade com retentores."
+                                },
+                                {
+                                    num: "06",
+                                    title: "Otimização Avançada",
+                                    subtitle: "Nível Profissional",
+                                    desc: "Funcionamento das válvulas de controle de fluxo e como levar a resposta da suspensão ao limite da eficiência técnica."
+                                }
+                            ].map((module, i) => (
+                                <div key={i} className="group relative pl-16 pb-8 border-b border-white/5 last:border-0">
+                                    <div className="absolute left-0 top-0 text-3xl font-black text-white/10 group-hover:text-wtech-red/40 transition-colors uppercase">M{module.num}</div>
+                                    <h3 className="text-xl font-black text-white uppercase mb-2 group-hover:text-wtech-red transition-colors">{module.title}</h3>
+                                    <p className="text-wtech-gold text-[10px] font-black uppercase tracking-widest mb-3 mb-4">{module.subtitle}</p>
+                                    <p className="text-gray-400 text-sm leading-relaxed">{module.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Routine Bar */}
+                    <div className="mt-20 bg-zinc-900 border border-white/5 p-8 rounded-3xl max-w-5xl mx-auto shadow-2xl relative overflow-hidden group">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
+                            <div className="w-full md:w-1/3">
+                                <h4 className="text-2xl font-black text-white uppercase mb-4">Rotina de <span className="text-wtech-red">Imersão</span></h4>
+                                <p className="text-gray-500 text-sm leading-relaxed mb-6">Processo padronizado para sábado e domingo.</p>
+                                <div className="inline-flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10 text-xs font-bold text-gray-400">
+                                    <Settings className="animate-spin-slow" size={14} /> Almoço livre (por conta do participante)
+                                </div>
+                            </div>
+
+                            <div className="w-full md:w-2/3 grid grid-cols-2 sm:grid-cols-4 gap-6">
+                                {[
+                                    { t: "08:30", l: "Coffee Break" },
+                                    { t: "09:00", l: "Início Aula" },
+                                    { t: "12:00", l: "Almoço (1h)" },
+                                    { t: "16:00", l: "Coffee Break" },
+                                    { t: "18:00", l: "Encerramento" }
+                                ].map((step, i) => (
+                                    <div key={i} className="text-center md:text-left border-l border-white/10 pl-6">
+                                        <div className="text-2xl font-black text-white mb-1 tracking-tighter">{step.t}</div>
+                                        <div className="text-[10px] font-black uppercase text-wtech-red tracking-widest">{step.l}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 

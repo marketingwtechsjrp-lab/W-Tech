@@ -426,7 +426,21 @@ const Home3 = () => {
 
                                         {/* Action */}
                                         <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                            <button onClick={() => navigate(`/lp/${course.id}`)} className="w-full md:w-auto px-6 py-3 bg-white text-black text-sm font-bold rounded-lg hover:bg-wtech-gold transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]">
+                                            <button 
+                                                onClick={() => {
+                                                    const tags = course.tags || [];
+                                                    if (tags.includes('LISBOA_ABRIL_2026')) {
+                                                        navigate('/lp-lisboa-fev-2026');
+                                                    } else if (tags.includes('WTECH_EUROPA_2026')) {
+                                                        navigate('/lp-wtech-lisboa');
+                                                    } else if (tags.includes('PRORIDERS_EUROPA_2026')) {
+                                                        navigate('/lp-proriders-lisboa');
+                                                    } else {
+                                                        navigate(`/lp/${course.id}`);
+                                                    }
+                                                }} 
+                                                className="w-full md:w-auto px-6 py-3 bg-white text-black text-sm font-bold rounded-lg hover:bg-wtech-gold transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
+                                            >
                                                 Mais Detalhes <ArrowRight size={16} />
                                             </button>
                                         </div>

@@ -61,7 +61,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
             {course.type !== 'Event' && (
                 <div className="pt-4 border-t border-gray-100 mt-4">
                     <Link 
-                        to={`/lp/${course.slug || course.id}`}
+                        to={
+                            course.tags?.includes('LISBOA_ABRIL_2026') ? '/lp-lisboa-fev-2026' :
+                            course.tags?.includes('WTECH_EUROPA_2026') ? '/lp-wtech-lisboa' :
+                            course.tags?.includes('PRORIDERS_EUROPA_2026') ? '/lp-proriders-lisboa' :
+                            `/lp/${course.slug || course.id}`
+                        }
                         className="w-full bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95"
                     >
                         {course.type === 'Event' ? 'MAIS DETALHES' : 'CONHECER CURSO'} <ArrowRight size={16} className="ml-2 animate-pulse" />

@@ -29,6 +29,13 @@ const Courses: React.FC = () => {
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
 
+    const getCourseLink = (course: Course) => {
+        const tags = course.tags || [];
+        if (tags.includes('LISBOA_ABRIL_2026')) return '/lp-lisboa-fev-2026';
+        if (tags.includes('WTECH_EUROPA_2026')) return '/lp-wtech-lisboa';
+        if (tags.includes('PRORIDERS_EUROPA_2026')) return '/lp-proriders-lisboa';
+        return `/lp/${course.slug || course.id}`;
+    };
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -142,7 +149,7 @@ const Courses: React.FC = () => {
                                             <div key={day} className="relative aspect-square flex items-center justify-center">
                                                 {hasEvent ? (
                                                     <Link 
-                                                        to={`/lp/${dayEvents[0].slug || dayEvents[0].id}`}
+                                                        to={getCourseLink(dayEvents[0])}
                                                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors bg-wtech-gold text-black font-bold hover:scale-110`}
                                                         title={dayEvents.map(e => e.title).join(', ')}
                                                     >
@@ -160,7 +167,7 @@ const Courses: React.FC = () => {
                                 {/* Event List Below */}
                                 <div className="mt-4 space-y-2 min-h-[60px]">
                                     {monthEvents.slice(0, 3).map(ev => (
-                                        <Link to={`/lp/${ev.slug || ev.id}`} key={ev.id} className="block text-xs bg-gray-50 p-2 rounded border border-gray-100 hover:bg-wtech-gold/10 hover:border-wtech-gold/30 transition-colors">
+                                        <Link to={getCourseLink(ev)} key={ev.id} className="block text-xs bg-gray-50 p-2 rounded border border-gray-100 hover:bg-wtech-gold/10 hover:border-wtech-gold/30 transition-colors">
                                             <div className="font-bold truncate text-wtech-black">
                                                 {parseInt(ev.date.split('T')[0].split('-')[2])} - {ev.title}
                                             </div>

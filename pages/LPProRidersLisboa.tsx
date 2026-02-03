@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
-import { distributeLead } from '../lib/leadDistribution';
 import { triggerWebhook } from '../lib/webhooks';
 import { 
   CheckCircle, 
@@ -31,7 +30,7 @@ const LPProRidersLisboa: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const assignedTo = await distributeLead();
+            const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
             const payload = {
                 name: form.name,
                 email: form.email,
@@ -447,6 +446,140 @@ const LPProRidersLisboa: React.FC = () => {
                             </div>
                         ))}
                      </div>
+                </div>
+            </section>
+
+            {/* SCHEDULE SECTION */}
+            <section className="py-24 bg-[#080808] relative overflow-hidden">
+                <div className="container mx-auto px-6 relative z-10">
+                    <div className="text-center mb-20">
+                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-xs">A Experiência</span>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">Cronograma <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Detalhado</span></h2>
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                        {/* Day 1 */}
+                        <div className="bg-zinc-900/50 border border-white/5 p-8 rounded-2xl hover:border-wtech-red transition-all">
+                            <div className="flex items-center justify-between mb-8">
+                                <span className="text-4xl font-black text-white/10">01</span>
+                                <div className="bg-wtech-red px-4 py-1 text-[10px] font-black uppercase tracking-widest italic">Sexta-feira</div>
+                            </div>
+                            <h3 className="text-2xl font-black uppercase text-white mb-6">Diagnóstico e Desmontagem</h3>
+                            <ul className="space-y-4">
+                                {[
+                                    "Introdução ao recebimento da moto",
+                                    "Aplicação do Checklist de Recebimento",
+                                    "Lista da Manutenção Programada",
+                                    "TEXA - Diagnóstico Global",
+                                    "Aferição e Diagnóstico para orçamento corretivo",
+                                    "DESMONTAGEM DA MOTO: Injeção, Admissão, Cardan, Embreagem, Válvulas e Rodas"
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3 group">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-wtech-red mt-2 shrink-0 group-hover:scale-150 transition-transform"></div>
+                                        <span className="text-gray-400 text-sm font-medium leading-tight">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Day 2 */}
+                        <div className="bg-zinc-900/50 border border-white/5 p-8 rounded-2xl hover:border-wtech-red transition-all">
+                            <div className="flex items-center justify-between mb-8">
+                                <span className="text-4xl font-black text-white/10">02</span>
+                                <div className="bg-zinc-800 px-4 py-1 text-[10px] font-black uppercase tracking-widest italic">Sábado</div>
+                            </div>
+                            <h3 className="text-2xl font-black uppercase text-white mb-6">Processo de Revisão (Parte I)</h3>
+                            <ul className="space-y-4">
+                                {[
+                                    "Montagem do Sistema de Embreagem",
+                                    "Troca do Fluído Acionador de Embreagem",
+                                    "Montagem do Sistema de Transmissão (Cardan, Balança e Diferencial)",
+                                    "Revisão e Montagem das Rodas",
+                                    "Enquadramento de Comando e Folgas no Sistema",
+                                    "Sistema de Arrefecimento"
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3 group">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-wtech-red mt-2 shrink-0 group-hover:scale-150 transition-transform"></div>
+                                        <span className="text-gray-400 text-sm font-medium leading-tight">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Day 3 */}
+                        <div className="bg-zinc-900/50 border border-white/5 p-8 rounded-2xl hover:border-wtech-red transition-all">
+                            <div className="flex items-center justify-between mb-8">
+                                <span className="text-4xl font-black text-white/10">03</span>
+                                <div className="bg-zinc-800 px-4 py-1 text-[10px] font-black uppercase tracking-widest italic text-wtech-gold border border-wtech-gold/30">Domingo</div>
+                            </div>
+                            <h3 className="text-2xl font-black uppercase text-white mb-6">Processo de Revisão (Parte II)</h3>
+                            <ul className="space-y-4">
+                                {[
+                                    "Montagem do Sistema de Injeção",
+                                    "Revisão do Sistema de Freios e ABS",
+                                    "TEXA - Atualização de Tempo de Serviço e Reset",
+                                    "Montagem das Carenagens e Protetores",
+                                    "Passagem no Dinamômetro",
+                                    "Ajustes Ergonômicos Personalizados"
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3 group">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-wtech-gold mt-2 shrink-0 group-hover:scale-150 transition-transform"></div>
+                                        <span className="text-gray-400 text-sm font-medium leading-tight">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Routine Bar */}
+                    <div className="mt-16 bg-zinc-900 border border-white/5 p-8 rounded-2xl max-w-5xl mx-auto shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-full bg-wtech-red/5 -skew-x-12 translate-x-12"></div>
+                        
+                        <div className="grid md:grid-cols-4 gap-8 relative z-10">
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-widest text-wtech-red mb-4">Início (Sex/Sáb/Dom)</h4>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="text-gray-500" size={16} />
+                                    <span className="text-xl font-black text-white">08:30 <span className="text-[10px] uppercase text-gray-500 font-bold ml-1">Coffee Break</span></span>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Aula</h4>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="text-gray-500" size={16} />
+                                    <span className="text-xl font-black text-white">09:00 <span className="text-[10px] uppercase text-gray-500 font-bold ml-1">Start</span></span>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Intervalo</h4>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="text-gray-500" size={16} />
+                                    <span className="text-xl font-black text-white">12:00 <span className="text-[10px] uppercase text-gray-500 font-bold ml-1">às 13:00</span></span>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Encerramento</h4>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="text-gray-500" size={16} />
+                                    <span className="text-xl font-black text-white">18:00 <span className="text-[10px] uppercase text-wtech-gold font-bold ml-1">*(Dom: 15h)</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-10 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-wtech-gold/10 flex items-center justify-center text-wtech-gold">
+                                    <Settings className="animate-spin-slow" size={20} />
+                                </div>
+                                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                                    Almoço por conta do participante
+                                </p>
+                            </div>
+                            <div className="bg-wtech-red/10 border border-wtech-red/20 px-6 py-2 rounded-full">
+                                <span className="text-[10px] font-black text-wtech-red uppercase tracking-widest">Coffee Break às 16:00 (Sexta e Sábado)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
