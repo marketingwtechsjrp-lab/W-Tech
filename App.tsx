@@ -36,6 +36,7 @@ const ClientPortal = lazy(() => import('./pages/meus-pedidos'));
 const OrderTracking = lazy(() => import('./pages/rastreio'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const Bio = lazy(() => import('./pages/bio'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 
 
 
@@ -100,6 +101,7 @@ const App = () => {
                     {/* Validation */}
                     <Route path="/validar/:id" element={<CertificateValidation />} />
                     <Route path="/bio" element={<Bio />} />
+                    <Route path="/pagamento-sucesso" element={<PaymentSuccess />} />
 
 
                     {/* Order Portals */}

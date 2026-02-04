@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.8.0",
+    "date": "2026-02-04",
+    "title": "Suporte Internacional e Multi-Moeda",
+    "changes": [
+      "FEAT: Suporte nativo a múltiplas moedas (BRL, EUR, USD) em Cursos e Alunos.",
+      "FEAT: Dashboards financeiros agora separam saldos por moeda (Evita soma de Reais com Euros).",
+      "FEAT: Novo seletor de moeda no lançamento manual de transações.",
+      "FEAT: Transações Virtuais de matrículas agora herdam automaticamente a moeda do curso.",
+      "FIX: Símbolos de moeda dinâmicos em toda a interface administrativa (tabelas, modais e botões).",
+      "FIX: Relatórios de Impressão e Listas de Presença atualizados para exibir a moeda correta do curso.",
+      "FIX: Quitação de saldos agora respeita a moeda de origem do curso internacional."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.7.3",
     "date": "2026-02-02",
     "title": "Preçário Mecânico e Gestão Unificada",

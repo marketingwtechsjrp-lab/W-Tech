@@ -5,7 +5,7 @@ import {
     KanbanSquare, FileText, Settings, Bell, Search,
     MoreVertical, ArrowRight, TrendingUp, Calendar as CalendarIcon,
     Layout, MapPin, Phone, Globe, Mail, Clock, Shield, Award, CheckCircle, XCircle, Filter, Package,
-    ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu,
+    ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu, Link,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
     Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket
@@ -198,8 +198,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
     
     // Settle Modal State
-    const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number }>({ isOpen: false, enrollment: null, amount: 0 });
+    const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number, linkAmount: number }>({ isOpen: false, enrollment: null, amount: 0, linkAmount: 0 });
     const [settleMethod, setSettleMethod] = useState('Pix');
+    const [generatedLink, setGeneratedLink] = useState('');
+    const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
     // Fetch Layouts
     useEffect(() => {
@@ -558,7 +560,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             whatToBring: c.what_to_bring,
             type: c.type,
             certificateLayoutId: c.certificate_layout_id,
-            badgeLayoutId: c.badge_layout_id
+            badgeLayoutId: c.badge_layout_id,
+            isInternational: c.is_international,
+            currency: c.currency || 'BRL'
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
@@ -678,7 +682,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             what_to_bring: formData.whatToBring || '',
             certificate_layout_id: formData.certificateLayoutId || null,
-            badge_layout_id: formData.badgeLayoutId || null
+            badge_layout_id: formData.badgeLayoutId || null,
+            is_international: formData.isInternational || false,
+            currency: formData.currency || 'BRL'
         };
 
         let error;
@@ -873,7 +879,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <td>${c.registeredCount || 0}</td>
                             <td>${c.capacity || 0}</td>
                             <td className="status-${c.status?.toLowerCase()}">${c.status}</td>
-                            <td>R$ ${expected.toFixed(2)}</td>
+                            <td>${c.currency === 'EUR' ? '€' : c.currency === 'USD' ? '$' : 'R$'} ${expected.toFixed(2)}</td>
                             <td>-</td> 
                         </tr>
                         `;
@@ -943,18 +949,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             <div class="kpi-grid">
                 <div class="kpi-card">
                     <div class="kpi-label">Receita Bruta</div>
-                    <div class="kpi-value text-blue">R$ ${reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div class="kpi-value text-blue">${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                     <div class="kpi-sub">${reportData.enrollmentsCount} vendas confirmadas</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Despesas Totais</div>
-                    <div class="kpi-value text-red">R$ ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div class="kpi-value text-red">${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                     <div class="kpi-sub">${reportData.expenseList?.length || 0} lançamentos</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Resultado Líquido</div>
                     <div class="kpi-value ${(reportData.netResult || 0) >= 0 ? 'text-green' : 'text-red'}">
-                        R$ ${(reportData.netResult || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        ${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${(reportData.netResult || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
                     <div class="kpi-sub">Lucro final da operação</div>
                 </div>
@@ -993,12 +999,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <td>${new Date(e.date).toLocaleDateString()}</td>
                         <td>${e.description}</td>
                         <td>${e.category}</td>
-                        <td style="color: #991b1b; font-weight: bold;">- R$ ${Number(e.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td style="color: #991b1b; font-weight: bold;">- ${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${Number(e.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     `).join('')}
                     <tr style="background-color: #fcebeb;">
                         <td colspan="3" style="text-align: right; font-weight: bold;">TOTAL DESPESAS:</td>
-                        <td style="color: #991b1b; font-weight: bold;">R$ ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td style="color: #991b1b; font-weight: bold;">${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                 </tbody>
             </table>
@@ -1022,12 +1028,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <td>${s.email}</td>
                         <td>${s.phone}</td>
                         <td>${s.status}</td>
-                        <td>R$ ${s.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td>${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${s.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     `).join('')}
                     <tr style="background-color: #f0fdf4;">
                         <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL RECEITA:</td>
-                        <td style="color: #166534; font-weight: bold;">R$ ${reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td style="color: #166534; font-weight: bold;">${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                 </tbody>
             </table>
@@ -1085,8 +1091,48 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     };
 
     const handleSettleBalance = (enrollment: Enrollment, amount: number) => {
-        setSettleModal({ isOpen: true, enrollment, amount });
+        setSettleModal({ isOpen: true, enrollment, amount, linkAmount: amount });
         setSettleMethod('Pix');
+        setGeneratedLink('');
+    };
+
+    const handleGeneratePaymentLink = async () => {
+        if (!settleModal.enrollment || !currentCourse) return;
+        setIsGeneratingLink(true);
+        try {
+            let result;
+            if (settleMethod === 'Stripe') {
+                const { createStripePaymentLink } = await import('../lib/stripe');
+                result = await createStripePaymentLink({
+                    title: `${currentCourse.title} - ${settleModal.enrollment.studentName}`,
+                    price: settleModal.linkAmount,
+                    currency: currentCourse.currency || 'USD',
+                    email: settleModal.enrollment.studentEmail,
+                    enrollmentId: settleModal.enrollment.id
+                });
+            } else if (settleMethod === 'Asaas') {
+                const { createPaymentLink } = await import('../lib/asaas');
+                result = await createPaymentLink({
+                    lead: {
+                        name: settleModal.enrollment.studentName,
+                        email: settleModal.enrollment.studentEmail,
+                        phone: settleModal.enrollment.studentPhone
+                    },
+                    value: settleModal.linkAmount,
+                    description: `Curso: ${currentCourse.title}`
+                });
+            }
+
+            if (result?.success) {
+                setGeneratedLink(result.url || result.invoiceUrl);
+            } else {
+                alert('Erro ao gerar link: ' + result?.error);
+            }
+        } catch (err: any) {
+            alert('Erro: ' + err.message);
+        } finally {
+            setIsGeneratingLink(false);
+        }
     };
 
     const confirmSettle = async () => {
@@ -1114,7 +1160,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             amount: amount,
             date: new Date().toISOString(), // Payment Date = Now
             payment_method: settleMethod,
-            enrollment_id: enrollment.id
+            enrollment_id: enrollment.id,
+            currency: currentCourse?.currency || 'BRL'
         }]);
 
         if (err2) {
@@ -1167,7 +1214,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 <tbody>
                     ${enrollments.map((enr, i) => {
             const balance = (currentCourse?.price || 0) - (enr.amountPaid || 0);
-            const paymentStatus = balance > 0 ? `Restam R$ ${balance.toFixed(2)}` : 'QUITADO';
+            const paymentStatus = balance > 0 ? `Restam ${currentCourse?.currency === 'EUR' ? '€' : currentCourse?.currency === 'USD' ? '$' : 'R$'} ${balance.toFixed(2)}` : 'QUITADO';
             return `
                         <tr>
                             <td class="check-col"><div class="check-box"></div></td>
@@ -1449,10 +1496,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </button>
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white">Lista de Inscritos</h2>
-                        <p className="text-gray-500">{currentCourse.title} • {formatDateLocal(currentCourse.date)}</p>
+                        <p className="text-gray-500">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
                         <div className="mt-2 text-sm flex gap-4">
-                            <span className="text-green-600 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: R$ {totalPaid.toFixed(2)}</span>
-                            <span className="text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: R$ {totalPotential.toFixed(2)}</span>
+                            <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded dark:text-blue-400">Moeda: {currentCourse.currency || 'BRL'}</span>
+                            <span className="text-green-600 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</span>
+                            <span className="text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1518,14 +1566,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, totalAmount: currentCourse.price || 0 })}
                                                 className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.price ? 'bg-blue-100 border-blue-300 text-blue-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
                                             >
-                                                <span>Normal</span> <span>R$ {currentCourse.price}</span>
+                                                <span>Normal</span> <span>{currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {currentCourse.price}</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, totalAmount: currentCourse.recyclingPrice || 0 })}
                                                 className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.recyclingPrice ? 'bg-green-100 border-green-300 text-green-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
                                             >
-                                                <span>Reciclagem</span> <span>R$ {currentCourse.recyclingPrice}</span>
+                                                <span>Reciclagem</span> <span>{currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {currentCourse.recyclingPrice}</span>
                                             </button>
                                         </div>
                                     )}
@@ -1534,10 +1582,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Valor Pago</label>
                                     <input type="number" step="0.01" className="w-full p-2 border rounded font-bold text-green-700" value={editingEnrollment.amountPaid || 0} onChange={e => setEditingEnrollment({ ...editingEnrollment, amountPaid: parseFloat(e.target.value) })} />
                                 </div>
-                                <div>
+                                 <div>
                                     <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Saldo a Pagar</label>
                                     <div className="text-lg font-bold text-red-600">
-                                        R$ {((editingEnrollment.totalAmount ?? currentCourse.price ?? 0) - (editingEnrollment.amountPaid || 0)).toFixed(2)}
+                                        {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {((editingEnrollment.totalAmount ?? currentCourse.price ?? 0) - (editingEnrollment.amountPaid || 0)).toFixed(2)}
                                     </div>
                                 </div>
                                 <div className="col-span-3">
@@ -1639,9 +1687,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-green-700">Pago: R$ {enr.amountPaid?.toFixed(2)}</div>
+                                                <div className="font-bold text-green-700">Pago: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {enr.amountPaid?.toFixed(2)}</div>
                                                 {balance > 0 ? (
-                                                    <div className="text-xs text-red-600 font-bold">Resta: R$ {balance.toFixed(2)}</div>
+                                                    <div className="text-xs text-red-600 font-bold">Resta: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {balance.toFixed(2)}</div>
                                                 ) : (
                                                     <div className="text-xs text-blue-600 font-bold bg-blue-50 inline-block px-1 rounded">Quitado</div>
                                                 )}
@@ -1654,7 +1702,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     </button>
 
                                                     {balance > 0 && (
-                                                        <button onClick={() => handleSettleBalance(enr, balance)} title={`Quitar Saldo (R$ ${balance.toFixed(2)})`} className="p-1.5 text-green-600 hover:bg-green-50 rounded bg-green-50/50 border border-green-200">
+                                                        <button onClick={() => handleSettleBalance(enr, balance)} title={`Quitar Saldo (${currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} ${balance.toFixed(2)})`} className="p-1.5 text-green-600 hover:bg-green-50 rounded bg-green-50/50 border border-green-200">
                                                             <DollarSign size={16} />
                                                         </button>
                                                     )}
@@ -1692,52 +1740,97 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 </div>
 
                 {/* Settle Modal */}
-                {
+                 {
                     settleModal.isOpen && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
-                            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
-                                <h3 className="text-xl font-black text-gray-900 mb-2">Quitar Saldo Restante</h3>
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                            <div className="bg-white dark:bg-[#1A1A1A] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Quitar Saldo Restante</h3>
                                 <p className="text-gray-500 mb-6">Confirmar recebimento do valor pendente.</p>
 
-                                <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
+                                <div className="bg-gray-50 dark:bg-[#222] p-4 rounded-lg mb-6 border border-gray-100 dark:border-gray-800">
                                     <div className="flex justify-between mb-2">
                                         <span className="text-sm font-bold text-gray-500">Aluno</span>
-                                        <span className="font-bold">{settleModal.enrollment?.studentName}</span>
+                                        <span className="font-bold dark:text-white">{settleModal.enrollment?.studentName}</span>
                                     </div>
                                     <div className="flex justify-between mb-2">
-                                        <span className="text-sm font-bold text-gray-500">Valor a Pagar</span>
-                                        <span className="font-bold text-green-600 text-lg">R$ {settleModal.amount.toFixed(2)}</span>
+                                        <span className="text-sm font-bold text-gray-500">Saldo Atual</span>
+                                        <span className="font-bold text-red-600 text-lg">
+                                            {currentCourse?.currency === 'EUR' ? '€' : currentCourse?.currency === 'USD' ? '$' : 'R$'} {settleModal.amount.toFixed(2)}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="mb-6">
-                                    <label className="block text-sm font-bold mb-2 text-gray-700">Forma de Pagamento</label>
-                                    <select
-                                        className="w-full p-3 border border-gray-300 rounded-lg font-bold text-gray-800 focus:ring-2 focus:ring-wtech-gold focus:border-transparent outline-none"
-                                        value={settleMethod}
-                                        onChange={e => setSettleMethod(e.target.value)}
-                                    >
-                                        <option value="Pix">Pix</option>
-                                        <option value="Cartão Crédito">Cartão de Crédito</option>
-                                        <option value="Cartão Débito">Cartão de Débito</option>
-                                        <option value="Dinheiro">Dinheiro</option>
-                                        <option value="Boleto">Boleto</option>
-                                    </select>
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Forma de Pagamento</label>
+                                        <select
+                                            className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
+                                            value={settleMethod}
+                                            onChange={e => setSettleMethod(e.target.value)}
+                                        >
+                                            <option value="Pix">Pix</option>
+                                            <option value="Cartão Crédito">Cartão de Crédito</option>
+                                            <option value="Asaas">Asaas (Link/Boleto)</option>
+                                            <option value="Stripe">Stripe (Internacional)</option>
+                                            <option value="Dinheiro">Dinheiro</option>
+                                        </select>
+                                    </div>
+
+                                    {(settleMethod === 'Stripe' || settleMethod === 'Asaas') && (
+                                        <div className="animate-in slide-in-from-top-2">
+                                            <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor para o Link ({currentCourse?.currency})</label>
+                                            <input
+                                                type="number"
+                                                className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
+                                                value={settleModal.linkAmount}
+                                                onChange={e => setSettleModal({ ...settleModal, linkAmount: parseFloat(e.target.value) })}
+                                            />
+                                            <button
+                                                onClick={handleGeneratePaymentLink}
+                                                disabled={isGeneratingLink}
+                                                className="w-full mt-3 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2"
+                                            >
+                                                {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <Link size={18} />}
+                                                Gerar Link de Pagamento
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {generatedLink && (
+                                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-in fade-in">
+                                            <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase mb-2">Link Gerado:</p>
+                                            <div className="flex gap-2">
+                                                <input readOnly className="flex-1 text-xs p-2 border rounded bg-white dark:bg-[#111] dark:text-white dark:border-gray-700" value={generatedLink} />
+                                                <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} className="p-2 bg-white dark:bg-[#333] border rounded hover:bg-gray-50"><Copy size={14} /></button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setSettleModal({ ...settleModal, isOpen: false })}
-                                        className="flex-1 py-3 border border-gray-200 rounded-lg font-bold text-gray-600 hover:bg-gray-50"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        onClick={confirmSettle}
-                                        className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-lg shadow-green-200"
-                                    >
-                                        Confirmar Pagamento
-                                    </button>
+                                    {generatedLink ? (
+                                        <button
+                                            onClick={() => setSettleModal({ ...settleModal, isOpen: false })}
+                                            className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 shadow-lg transition-all"
+                                        >
+                                            Fechar e Aguardar Retorno
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => setSettleModal({ ...settleModal, isOpen: false })}
+                                                className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={confirmSettle}
+                                                className="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-lg shadow-green-200 dark:shadow-none transition-all active:scale-95"
+                                            >
+                                                Confirmar Manualmente
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -2284,22 +2377,69 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
 
-                        {(!formData.type || formData.type === 'Course') && (
-                            <div className="grid grid-cols-3 gap-4 md:col-span-2 bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-100 dark:border-yellow-900/40">
-                                <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Valor (R$)</label>
-                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Reciclagem (R$)</label>
-                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Vagas / Cotas</label>
-                                    <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
+                            <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Tipo de Faturamento</label>
+                                <div className="flex bg-white dark:bg-[#111] p-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, isInternational: false, currency: 'BRL' })}
+                                        className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${!formData.isInternational ? 'bg-wtech-black text-white' : 'text-gray-500'}`}
+                                    >
+                                        🇧🇷 Nacional
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, isInternational: true })}
+                                        className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${formData.isInternational ? 'bg-indigo-600 text-white' : 'text-gray-500'}`}
+                                    >
+                                        🌍 Internacional
+                                    </button>
                                 </div>
                             </div>
-                        )}
+
+                            {formData.isInternational && (
+                                <div className="animate-in fade-in slide-in-from-left-2">
+                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Moeda</label>
+                                    <select
+                                        className="w-full border border-gray-300 dark:border-gray-700 p-2.5 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-bold"
+                                        value={formData.currency || 'USD'}
+                                        onChange={e => setFormData({ ...formData, currency: e.target.value as any })}
+                                    >
+                                        <option value="USD">Dólar ($)</option>
+                                        <option value="EUR">Euro (€)</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            <div className={!formData.isInternational ? 'md:col-span-2' : ''}>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                                    Vagas / Cotas
+                                </label>
+                                <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2.5 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
+                            </div>
+
+                            <div className="md:col-span-3 grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                                        Valor do Curso ({formData.currency || 'BRL'})
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-3 text-gray-400 font-bold">{formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : 'R$'}</span>
+                                        <input type="number" step="0.01" className="w-full border border-gray-300 dark:border-gray-700 p-2.5 pl-10 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-black" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                                        Reciclagem ({formData.currency || 'BRL'})
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-3 text-gray-400 font-bold">{formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : 'R$'}</span>
+                                        <input type="number" step="0.01" className="w-full border border-gray-300 dark:border-gray-700 p-2.5 pl-10 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-black" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
                              <div>
@@ -3187,7 +3327,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
             let pending = 0;
 
             if (canSeeVirtual) {
-                const { data: enrollments } = await supabase.from('SITE_Enrollments').select('*, course:SITE_Courses(title, price)');
+                const { data: enrollments } = await supabase.from('SITE_Enrollments').select('*, course:SITE_Courses(title, price, currency)');
 
                 enrollments?.forEach((e: any) => {
                     const paidTotal = e.amount_paid || 0;
@@ -3214,7 +3354,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             payment_method: e.payment_method || 'Indefinido',
                             enrollment_id: e.id,
                             course_id: e.course_id, // Link virtual transaction to course automatically
-                            status: 'Completed'
+                            status: 'Completed',
+                            currency: e.course?.currency || 'BRL'
                         });
                     }
                 });
@@ -3321,10 +3462,25 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
         return matchesDate && matchesRef;
     });
 
-    // Summary Calcs
-    const income = filteredTransactions.filter(t => t.type === 'Income').reduce((acc, curr) => acc + curr.amount, 0);
-    const expense = filteredTransactions.filter(t => t.type === 'Expense').reduce((acc, curr) => acc + curr.amount, 0);
-    const balance = income - expense;
+    // Summary Calcs grouped by currency
+    const totalsByCurrency = filteredTransactions.reduce((acc, curr) => {
+        const currency = curr.currency || 'BRL';
+        if (!acc[currency]) acc[currency] = { income: 0, expense: 0 };
+        if (curr.type === 'Income') acc[currency].income += (curr.amount || 0);
+        else acc[currency].expense += (curr.amount || 0);
+        return acc;
+    }, {} as Record<string, { income: number, expense: number }>);
+
+    const mainBRL = totalsByCurrency['BRL'] || { income: 0, expense: 0 };
+    const balance = mainBRL.income - mainBRL.expense;
+
+    const formatCurr = (val: number, cur: string) => {
+        return new Intl.NumberFormat('pt-BR', { 
+            style: 'currency', 
+            currency: cur,
+            minimumFractionDigits: 2
+        }).format(val);
+    };
 
     return (
         <div className="text-gray-900 dark:text-gray-100 animate-fade-in space-y-6 pb-20">
@@ -3458,7 +3614,12 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-green-500">Receitas</span>
                                 <div className="p-2 bg-green-500/10 rounded-xl text-green-500"><TrendingUp size={20} /></div>
                             </div>
-                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">R$ {income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">{formatCurr(mainBRL.income, 'BRL')}</h3>
+                            {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
+                                <p key={c} className="text-[10px] font-bold text-green-600 dark:text-green-400">
+                                    + {formatCurr(totalsByCurrency[c].income, c)}
+                                </p>
+                            ))}
                             <div className="absolute -right-2 -bottom-2 opacity-5 text-green-500 group-hover:opacity-10 transition-opacity"><TrendingUp size={80} /></div>
                         </div>
                         <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group hover:border-red-500/30 transition-all">
@@ -3466,7 +3627,12 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-red-500">Despesas</span>
                                 <div className="p-2 bg-red-500/10 rounded-xl text-red-500"><TrendingDown size={20} /></div>
                             </div>
-                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">R$ {expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">{formatCurr(mainBRL.expense, 'BRL')}</h3>
+                            {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
+                                <p key={c} className="text-[10px] font-bold text-red-600 dark:text-red-400">
+                                    - {formatCurr(totalsByCurrency[c].expense, c)}
+                                </p>
+                            ))}
                             <div className="absolute -right-2 -bottom-2 opacity-5 text-red-500 group-hover:opacity-10 transition-opacity"><TrendingDown size={80} /></div>
                         </div>
                         <div className="bg-black p-6 rounded-2xl shadow-xl shadow-black/20 relative overflow-hidden group border border-white/5 transition-all">
@@ -3474,7 +3640,12 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Saldo Disponível</span>
                                 <div className={`p-2 rounded-xl ${balance >= 0 ? 'bg-wtech-gold/20 text-wtech-gold' : 'bg-red-500/20 text-red-500'}`}><Wallet size={20} /></div>
                             </div>
-                            <h3 className={`text-2xl font-black mt-2 ${balance >= 0 ? 'text-white' : 'text-red-400'}`}>R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                            <h3 className={`text-2xl font-black mt-2 ${mainBRL.income - mainBRL.expense >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurr(mainBRL.income - mainBRL.expense, 'BRL')}</h3>
+                            {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
+                                <p key={c} className="text-[10px] font-bold text-wtech-gold mt-1">
+                                    {formatCurr(totalsByCurrency[c].income - totalsByCurrency[c].expense, c)}
+                                </p>
+                            ))}
                             <div className="absolute -right-4 -bottom-4 bg-wtech-gold/10 w-32 h-32 rounded-full blur-3xl group-hover:bg-wtech-gold/20 transition-all"></div>
                         </div>
                         <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group hover:border-blue-500/30 transition-all">
@@ -3482,7 +3653,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-blue-500">Previsão</span>
                                 <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500"><CalendarIcon size={20} /></div>
                             </div>
-                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">R$ {receivables.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">{formatCurr(receivables, 'BRL')}</h3>
                             <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mt-1">Saldos Alunos</p>
                             <div className="absolute -right-2 -bottom-2 opacity-5 text-blue-500 group-hover:opacity-10 transition-opacity"><ShoppingBag size={80} /></div>
                         </div>
@@ -3571,7 +3742,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t.payment_method}</div>
                                         </td>
                                         <td className={`px-6 py-5 text-right font-black text-xl tracking-tighter ${t.type === 'Income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                            {t.type === 'Expense' ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            {t.type === 'Expense' ? '-' : '+'} {formatCurr(t.amount, t.currency || 'BRL')}
                                         </td>
                                         {hasPermission('financial_delete_transaction') && (
                                             <td className="px-6 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
@@ -3713,12 +3884,20 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
+                                <div className="col-span-2">
                                     <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Data</label>
                                     <input type="date" required className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.date} onChange={e => setNewTrans({ ...newTrans, date: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Valor (R$)</label>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Moeda</label>
+                                    <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 font-bold" value={newTrans.currency || 'BRL'} onChange={e => setNewTrans({ ...newTrans, currency: e.target.value as any })}>
+                                        <option value="BRL">BRL (R$)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                        <option value="USD">USD ($)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Valor</label>
                                     <input type="number" step="0.01" required className="w-full p-2 border rounded-lg font-bold dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.amount || ''} onChange={e => setNewTrans({ ...newTrans, amount: parseFloat(e.target.value) })} />
                                 </div>
                             </div>

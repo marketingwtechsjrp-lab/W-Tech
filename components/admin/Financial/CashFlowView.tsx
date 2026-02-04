@@ -52,10 +52,25 @@ const CashFlowView = () => {
         setLoading(false);
     };
 
-    // Calculate Totals
-    const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const balance = totalIncome - totalExpense;
+    // Calculate Totals grouped by currency
+    const totalsByCurrency = transactions.reduce((acc, curr) => {
+        const currency = curr.currency || 'BRL';
+        if (!acc[currency]) acc[currency] = { income: 0, expense: 0 };
+        if (curr.type === 'income') acc[currency].income += (curr.amount || 0);
+        else acc[currency].expense += (curr.amount || 0);
+        return acc;
+    }, {} as Record<string, { income: number, expense: number }>);
+
+    const formatValue = (val: number, cur: string) => {
+        return new Intl.NumberFormat('pt-BR', { 
+            style: 'currency', 
+            currency: cur,
+            minimumFractionDigits: 2
+        }).format(val);
+    };
+
+    // For the main cards, we show BRL as primary, but list others if present
+    const mainBRL = totalsByCurrency['BRL'] || { income: 0, expense: 0 };
 
     return (
         <div className="p-6 space-y-8 animate-fade-in pb-20">
@@ -79,9 +94,16 @@ const CashFlowView = () => {
                         </div>
                         <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Entradas</p>
                     </div>
-                    <h3 className="text-3xl font-black text-gray-900 dark:text-white">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalIncome)}
-                    </h3>
+                    <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">
+                            {formatValue(mainBRL.income, 'BRL')}
+                        </h3>
+                        {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
+                            <p key={c} className="text-xs font-bold text-green-600 dark:text-green-400 mt-1">
+                                + {formatValue(totalsByCurrency[c].income, c)}
+                            </p>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
@@ -91,17 +113,29 @@ const CashFlowView = () => {
                         </div>
                         <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Saídas</p>
                     </div>
-                    <h3 className="text-3xl font-black text-gray-900 dark:text-white">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalExpense)}
-                    </h3>
+                    <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">
+                            {formatValue(mainBRL.expense, 'BRL')}
+                        </h3>
+                        {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
+                            <p key={c} className="text-xs font-bold text-red-600 dark:text-red-400 mt-1">
+                                - {formatValue(totalsByCurrency[c].expense, c)}
+                            </p>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="bg-wtech-black p-6 rounded-2xl shadow-lg shadow-black/20 text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-wtech-gold/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2 relative z-10">Saldo Atual</p>
                     <h3 className="text-4xl font-black relative z-10">
-                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(balance)}
+                         {formatValue(mainBRL.income - mainBRL.expense, 'BRL')}
                     </h3>
+                    {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
+                        <p key={c} className="text-sm font-bold text-wtech-gold mt-1 relative z-10">
+                            {formatValue(totalsByCurrency[c].income - totalsByCurrency[c].expense, c)}
+                        </p>
+                    ))}
                 </div>
             </div>
 
@@ -184,7 +218,7 @@ const CashFlowView = () => {
                                     </td>
                                     <td className={`px-6 py-4 text-right text-sm font-black ${t.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                         {t.type === 'expense' ? '- ' : '+ '}
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}
+                                        {formatValue(t.amount, t.currency || 'BRL')}
                                     </td>
                                 </tr>
                             ))}

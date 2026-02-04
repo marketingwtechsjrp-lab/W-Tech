@@ -79,6 +79,8 @@ export interface Course {
   whatToBring?: string;
   certificateLayoutId?: string; // Mapped from certificate_layout_id
   badgeLayoutId?: string; // Mapped from badge_layout_id
+  isInternational?: boolean; // Mapped from is_international
+  currency?: 'BRL' | 'USD' | 'EUR';
 }
 
 export interface CertificateLayout {
@@ -128,6 +130,7 @@ export interface Enrollment {
   totalAmount?: number; // Mapped from total_amount
   reminder5dSent?: boolean;
   reminder1dSent?: boolean;
+  currency?: 'BRL' | 'USD' | 'EUR';
 }
 
 export interface PostComment {
@@ -281,6 +284,7 @@ export interface Transaction {
   enrollment_id?: string; // Optional link to enrollment
   course_id?: string; // Optional link to course
   event_id?: string; // Optional link to event
+  currency?: 'BRL' | 'USD' | 'EUR';
 }
 
 export interface Event {
