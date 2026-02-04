@@ -121,7 +121,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             ] = await Promise.all([
                 supabase.from('SITE_Transactions').select('*'),
                 supabase.from('SITE_Leads').select('*'),
-                supabase.from('SITE_Order').select('*'),
+                supabase.from('SITE_Sales').select('*'), // Consistent with Admin financial tab
                 supabase.from('SITE_Enrollments').select('*'),
                 supabase.from('SITE_Courses').select('*'),
                 supabase.from('SITE_Tasks').select('*'),
@@ -206,6 +206,19 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                     const dateKey = t.date ? t.date.split('T')[0] : '';
                     if (daysMap[dateKey]) daysMap[dateKey].revenue += (Number(t.amount) || 0);
                 });
+
+                // Add Enrollments (Direct Course Purchases)
+                (enrollments || []).forEach((e: any) => {
+                    const dateKey = e.created_at ? e.created_at.split('T')[0] : '';
+                    if (daysMap[dateKey]) daysMap[dateKey].revenue += (Number(e.amount_paid) || 0);
+                });
+
+                // Add CRM Conversions (Leads marked as Won/Converted)
+                myWonLeads.forEach((l: any) => {
+                    const dateKey = l.created_at ? l.created_at.split('T')[0] : '';
+                    if (daysMap[dateKey]) daysMap[dateKey].revenue += (Number(l.conversion_value) || 0);
+                });
+
                 if(isAdminView) {
                     (expensesDTO || []).filter((t:any) => t.type === 'Expense').forEach((ex: any) => {
                          const dateKey = ex.date ? ex.date.split('T')[0] : '';
@@ -224,16 +237,29 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                  const historyMap: Record<number, { revenue: number, expenses: number }> = {};
                  for (let i = 0; i < 12; i++) historyMap[i] = { revenue: 0, expenses: 0 };
                  
-                 myRevenueTransactions.forEach((t: any) => {
-                    const month = t.date ? new Date(t.date).getMonth() : 0;
-                    historyMap[month].revenue += (Number(t.amount) || 0);
-                });
-                 if(isAdminView) {
-                    (expensesDTO || []).filter((t:any) => t.type === 'Expense').forEach((ex: any) => {
-                        const month = ex.date ? new Date(ex.date).getMonth() : 0;
-                        historyMap[month].expenses += Number(ex.amount || 0);
-                    });
-                }
+                  myRevenueTransactions.forEach((t: any) => {
+                     const month = t.date ? new Date(t.date).getMonth() : 0;
+                     historyMap[month].revenue += (Number(t.amount) || 0);
+                 });
+
+                 // Add Enrollments
+                 (enrollments || []).forEach((e: any) => {
+                    const month = e.created_at ? new Date(e.created_at).getMonth() : 0;
+                    historyMap[month].revenue += (Number(e.amount_paid) || 0);
+                 });
+
+                 // Add CRM Won
+                 myWonLeads.forEach((l: any) => {
+                    const month = l.created_at ? new Date(l.created_at).getMonth() : 0;
+                    historyMap[month].revenue += (Number(l.conversion_value) || 0);
+                 });
+
+                  if(isAdminView) {
+                     (expensesDTO || []).filter((t:any) => t.type === 'Expense').forEach((ex: any) => {
+                         const month = ex.date ? new Date(ex.date).getMonth() : 0;
+                         historyMap[month].expenses += Number(ex.amount || 0);
+                     });
+                 }
                 
                 processedFinancialData = months.map((m, i) => ({
                     name: m,

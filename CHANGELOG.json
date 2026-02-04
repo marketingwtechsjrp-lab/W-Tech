@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.8.1",
+    "date": "2026-02-04",
+    "title": "Correção do Dashboard Financeiro",
+    "changes": [
+      "FIX: Gráfico de Fluxo Financeiro agora consolida as vendas do CRM e Matrículas automaticamente.",
+      "FIX: Sincronização da tabela de vendas entre os módulos de Dashboard e Financeiro.",
+      "PERF: Otimização no carregamento de KPIs corporativos."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.8.0",
     "date": "2026-02-04",
     "title": "Suporte Internacional e Multi-Moeda",
