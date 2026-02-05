@@ -1,5 +1,19 @@
 [
   {
+    "version": "2.9.0",
+    "date": "2026-02-05",
+    "title": "Creative Hub Studio v3.0 & Stripe Live",
+    "changes": [
+      "FEAT: Creative Hub Studio v3.0 com estúdio de criação avançado",
+      "FEAT: Edição dinâmica de escalas, cores e textos por template",
+      "FEAT: Sistema de persistência inteligente de design (LocalStorage)",
+      "FEAT: Migração para ambiente de produção (Stripe Live Key)",
+      "FIX: Resolução crítica de CORS na exportação de imagens (Tainted Canvas fix)",
+      "FIX: Ajuste de responsividade no menu administrativo do Creative Hub"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.8.1",
     "date": "2026-02-04",
     "title": "Correção do Dashboard Financeiro",

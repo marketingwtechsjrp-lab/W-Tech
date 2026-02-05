@@ -24,6 +24,7 @@ import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
 
 
 import { LandingPageEditor } from './LandingPageEditor';
+import { CreativeHub } from '../components/admin/Courses/CreativeHub';
 import { useSettings } from '../context/SettingsContext';
 import MarketingView from '../components/admin/Marketing/MarketingView';
 import CampaignsView from '../components/admin/Marketing/CampaignsView';
@@ -195,6 +196,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
     const [formData, setFormData] = useState<Partial<Course>>({});
     const [generateLP, setGenerateLP] = useState(false);
+    const [showCreativeHub, setShowCreativeHub] = useState(false);
+    const [creativeHubCourse, setCreativeHubCourse] = useState<Course | null>(null);
     const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
     
     // Settle Modal State
@@ -1903,6 +1906,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         {hasPermission('courses_edit_lp') && (
                                             <button onClick={() => setEditingLandingPage(course)} title="Gerenciar Landing Page" className="p-2 text-purple-600 hover:bg-purple-50 rounded transition-colors"><Globe size={16} /></button>
                                         )}
+                                        {hasPermission('courses_edit_lp') && (
+                                            <button 
+                                                onClick={() => {
+                                                    setCreativeHubCourse(course);
+                                                    setShowCreativeHub(true);
+                                                }} 
+                                                title="Gerar Criativo Social Media" 
+                                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                            >
+                                                <Wand2 size={16} />
+                                            </button>
+                                        )}
                                         {hasPermission('courses_add_student') && (
                                             <button onClick={() => handleQuickAddStudent(course)} title="Adicionar Aluno Rápido" className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"><UserPlus size={16} /></button>
                                         )}
@@ -2143,6 +2158,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showCreativeHub && creativeHubCourse && (
+                <CreativeHub 
+                    course={creativeHubCourse} 
+                    onClose={() => setShowCreativeHub(false)} 
+                />
             )}
         </>
     );

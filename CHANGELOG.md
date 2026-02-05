@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.9.0 (2026-02-05) - Creative Hub Studio v3.0 & Stripe Live
+- FEAT: Creative Hub Studio v3.0 com estúdio de criação avançado
+- FEAT: Edição dinâmica de escalas, cores e textos por template
+- FEAT: Sistema de persistência inteligente de design (LocalStorage)
+- FEAT: Migração para ambiente de produção (Stripe Live Key)
+- FIX: Resolução crítica de CORS na exportação de imagens (Tainted Canvas fix)
+- FIX: Ajuste de responsividade no menu administrativo do Creative Hub
+
 ## v2.7.3 (2026-02-02) - Preçário Mecânico e Gestão Unificada
 - FEAT: Novo nível de preço "Mecânico sem curso" no Catálogo e Pedidos.
 - FEAT: Gestão Unificada de Clientes com Deduplicação automática na importação.
