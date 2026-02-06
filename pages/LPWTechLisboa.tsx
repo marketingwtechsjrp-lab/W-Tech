@@ -457,78 +457,7 @@ const LPWTechLisboa: React.FC = () => {
                 </div>
             </section>
 
-            {/* TARGET AUDIENCE */}
-            <section className="py-32 bg-zinc-950 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-red/50 to-transparent"></div>
-                
-                <div className="container mx-auto px-6 relative z-10">
-                    <div className="text-center mb-20">
-                         <h2 className="text-3xl md:text-5xl font-black uppercase mb-4">Perfil do <span className="text-wtech-red">Participante</span></h2>
-                         <p className="text-gray-500 uppercase tracking-widest text-sm">Alinhamento de expectativas para máxima performance</p>
-                    </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 lg:gap-16 max-w-5xl mx-auto">
-                        {/* Positive */}
-                        <motion.div 
-                            initial={{ x: -50, opacity: 0 }}
-                            whileInView={{ x: 0, opacity: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
-                            className="bg-gradient-to-br from-zinc-900 to-black p-8 rounded-2xl border border-green-500/20 shadow-[0_0_50px_rgba(34,197,94,0.05)] hover:shadow-[0_0_50px_rgba(34,197,94,0.1)] transition-all group"
-                        >
-                             <h3 className="text-2xl font-black uppercase text-white mb-8 flex items-center gap-4">
-                                <div className="p-3 bg-green-500/10 rounded-full text-green-500 group-hover:scale-110 transition-transform">
-                                     <CheckCircle size={28} />
-                                </div>
-                                <span>Para quem é</span>
-                             </h3>
-                             <ul className="space-y-6">
-                                {[
-                                    "Mecânicos e Oficinas Especializadas",
-                                    "Preparadores de Motas de Competição",
-                                    "Profissionais de Suspensão",
-                                    "Pilotos e Entusiastas Avançados",
-                                    "Quem quer atingir nível Internacional"
-                                ].map((item, i) => (
-                                    <li key={i} className="flex items-start gap-4 text-gray-300 group-hover:text-white transition-colors">
-                                        <div className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e]"></div>
-                                        <span className="font-medium text-lg">{item}</span>
-                                    </li>
-                                ))}
-                             </ul>
-                        </motion.div>
-
-                        {/* Negative */}
-                        <motion.div 
-                            initial={{ x: 50, opacity: 0 }}
-                            whileInView={{ x: 0, opacity: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
-                            className="bg-gradient-to-br from-zinc-900 to-black p-8 rounded-2xl border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.05)] hover:shadow-[0_0_50px_rgba(239,68,68,0.1)] transition-all group"
-                        >
-                             <h3 className="text-2xl font-black uppercase text-white mb-8 flex items-center gap-4">
-                                <div className="p-3 bg-red-500/10 rounded-full text-red-500 group-hover:scale-110 transition-transform">
-                                     <AlertOctagon size={28} />
-                                </div>
-                                <span className="text-red-500">Não é para</span>
-                             </h3>
-                             <ul className="space-y-6">
-                                {[
-                                    "Curiosos sem compromisso profissional",
-                                    "Quem procura curso básico introdutório",
-                                    "Quem procura atalhos ou fórmulas mágicas",
-                                    "Quem não quer investir em conhecimento real"
-                                ].map((item, i) => (
-                                    <li key={i} className="flex items-start gap-4 text-gray-400 group-hover:text-gray-300 transition-colors">
-                                        <div className="mt-1.5 w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                                        <span className="font-medium text-lg">{item}</span>
-                                    </li>
-                                ))}
-                             </ul>
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
 
             {/* INSTRUCTORS */}
             <section className="py-24 bg-black">
