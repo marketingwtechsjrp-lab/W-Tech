@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.9.3",
+    "date": "2026-02-09",
+    "title": "Refinamento UX: Remoção de CPF",
+    "changes": [
+      "FEAT: Removido campo 'CPF' da Landing Page W-Tech Lisboa.",
+      "UX: Ajuste de layout no formulário."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.9.2",
     "date": "2026-02-09",
     "title": "Refinamento de Formulários & Correções CRM",

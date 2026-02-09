@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.9.3 (2026-02-09) - Refinamento UX: Remoção de CPF
+- FEAT: Removido campo "CPF" da Landing Page W-Tech Lisboa para reduzir fricção no cadastro inicial.
+- UX: Ajuste de layout no formulário para melhor adaptação mobile.
+
 ## v2.9.2 (2026-02-09) - Refinamento de Formulários & Correções CRM
 - FEAT: Removido campo de "Tamanho de Camiseta" das Landing Pages públicas para simplificar o cadastro.
 - MAINT: Campo de Camiseta mantido exclusivamente em painéis internos (Admin/CRM) para controle operacional.
