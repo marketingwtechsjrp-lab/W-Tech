@@ -287,6 +287,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     studentName: initialLead.name,
                     studentEmail: initialLead.email,
                     studentPhone: initialLead.phone,
+                    studentCpf: initialLead.cpf,
+                    tShirtSize: initialLead.t_shirt_size,
                     // Try to guess address from lead if available? Lead doesn't have address usually.
                 });
 
@@ -408,6 +410,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 email: e.student_email,
                 phone: e.student_phone,
                 status: e.status,
+                tShirtSize: e.t_shirt_size,
                 paid: e.amount_paid || 0
             })) || [];
 
@@ -1020,6 +1023,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <th>Aluno</th>
                         <th>Email</th>
                         <th>Telefone</th>
+                        <th>Camiseta</th>
                         <th>Status</th>
                         <th>Valor Pago</th>
                     </tr>
@@ -1030,12 +1034,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <td><strong>${s.name}</strong></td>
                         <td>${s.email}</td>
                         <td>${s.phone}</td>
+                        <td>${s.tShirtSize || '-'}</td>
                         <td>${s.status}</td>
                         <td>${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${s.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     `).join('')}
                     <tr style="background-color: #f0fdf4;">
-                        <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL RECEITA:</td>
+                        <td colspan="5" style="text-align: right; font-weight: bold;">TOTAL RECEITA:</td>
                         <td style="color: #166534; font-weight: bold;">${reportCourse.currency === 'EUR' ? '€' : reportCourse.currency === 'USD' ? '$' : 'R$'} ${reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                 </tbody>
@@ -1210,6 +1215,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <th class="check-col">Presença</th>
                         <th>Nome do Aluno</th>
                         <th>Contato</th>
+                        <th>Camiseta</th>
                         <th>Status Pagamento</th>
                         <th>Assinatura</th>
                     </tr>
@@ -1223,6 +1229,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <td class="check-col"><div class="check-box"></div></td>
                             <td><b>${i + 1}.</b> ${enr.studentName}</td>
                             <td>${enr.studentPhone || '-'}</td>
+                            <td>${enr.tShirtSize || '-'}</td>
                             <td>${paymentStatus}</td>
                             <td></td> 
                         </tr>
@@ -1270,7 +1277,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 state: e.state,
                 zipCode: e.zip_code,
                 isCredentialed: e.is_credentialed,
-                totalAmount: e.total_amount
+                totalAmount: e.total_amount,
+                studentCpf: e.student_cpf,
+                tShirtSize: e.t_shirt_size
             })));
         }
     };
@@ -1305,7 +1314,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             state: editingEnrollment.state,
             zip_code: editingEnrollment.zipCode,
             is_credentialed: editingEnrollment.isCredentialed,
-            total_amount: editingEnrollment.totalAmount
+            total_amount: editingEnrollment.totalAmount,
+            student_cpf: editingEnrollment.studentCpf,
+            t_shirt_size: editingEnrollment.tShirtSize
         };
 
         if (editingEnrollment.id) {
@@ -1322,7 +1333,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     city: payload.city,
                     state: payload.state,
                     zipCode: payload.zip_code,
-                    isCredentialed: payload.is_credentialed
+                    isCredentialed: payload.is_credentialed,
+                    studentCpf: payload.student_cpf,
+                    tShirtSize: payload.t_shirt_size
                 } as Enrollment : enr));
                 setEditingEnrollment(null);
             } else {
@@ -1347,7 +1360,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     state: data.state,
                     zipCode: data.zip_code,
                     isCredentialed: data.is_credentialed,
-                    totalAmount: data.total_amount
+                    totalAmount: data.total_amount,
+                    studentCpf: data.student_cpf,
+                    tShirtSize: data.t_shirt_size
                 };
                 setEnrollments(prev => [...prev, newEnrollment]);
                 setEditingEnrollment(null);
@@ -1542,6 +1557,21 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <div>
                                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Telefone/WhatsApp</label>
                                 <input className="w-full p-2 border rounded" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">CPF</label>
+                                <input className="w-full p-2 border rounded" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Tamanho da Camiseta</label>
+                                <select className="w-full p-2 border rounded" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
+                                    <option value="">Selecione...</option>
+                                    <option value="P">P</option>
+                                    <option value="M">M</option>
+                                    <option value="G">G</option>
+                                    <option value="GG">GG</option>
+                                    <option value="EXG">EXG</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Status</label>

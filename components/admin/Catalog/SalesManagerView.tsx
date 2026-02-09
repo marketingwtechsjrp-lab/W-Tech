@@ -107,6 +107,7 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
                 paymentMethod: s.payment_method,
                 itemsJson: s.items, // Keep raw items just in case
                 notes: s.notes,
+                seller_id: s.seller_id,
                 createdAt: s.created_at
             }));
             setSales(mappedSales);
@@ -428,9 +429,41 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
                             { id: 'delivered', label: 'Entregue', color: 'emerald', icon: CheckCircle2 }
                         ].map(status => {
                             const Icon = status.icon;
-                            const statusSales = sales.filter(s => s.status === status.id);
+                            // Apply date and attendant filters to the status metrics
+                            const baseFilteredForMetrics = sales.filter(s => {
+                                // Attendant filter
+                                const matchesAttendant = attendantFilter === 'all' || s.seller_id === attendantFilter;
+                                
+                                // Date filtering
+                                let matchesDate = true;
+                                if (dateFilter !== 'all') {
+                                    const saleDate = new Date(s.createdAt);
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    
+                                    if (dateFilter === 'today') {
+                                        matchesDate = saleDate >= today;
+                                    } else if (dateFilter === '7days') {
+                                        const sevenDaysAgo = new Date(today);
+                                        sevenDaysAgo.setDate(today.getDate() - 7);
+                                        matchesDate = saleDate >= sevenDaysAgo;
+                                    } else if (dateFilter === '30days') {
+                                        const thirtyDaysAgo = new Date(today);
+                                        thirtyDaysAgo.setDate(today.getDate() - 30);
+                                        matchesDate = saleDate >= thirtyDaysAgo;
+                                    } else if (dateFilter === 'custom' && customStartDate && customEndDate) {
+                                        const start = new Date(customStartDate);
+                                        const end = new Date(customEndDate);
+                                        end.setHours(23, 59, 59, 999);
+                                        matchesDate = saleDate >= start && saleDate <= end;
+                                    }
+                                }
+                                return matchesAttendant && matchesDate;
+                            });
+
+                            const statusSales = baseFilteredForMetrics.filter(s => s.status === status.id);
                             const count = statusSales.length;
-                            const total = statusSales.reduce((acc, s) => acc + s.totalValue, 0);
+                            const total = statusSales.reduce((acc, s) => acc + (s.totalValue || 0), 0);
                             
                             return (
                                 <div 

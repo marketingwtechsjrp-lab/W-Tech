@@ -135,12 +135,43 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             const courseMap = new Map((courses || []).map((c: any) => [c.id, c.title]));
 
             // Filtering based on User Role (Use calculated isAdminView)
-            const myLeads = isAdminView ? (allLeads || []) : (allLeads || []).filter(l => l.assigned_to === effectiveUserId);
-            const myTasks = isAdminView ? (allTasks || []) : (allTasks || []).filter(t => t.assigned_to === effectiveUserId);
+            const baseLeads = isAdminView ? (allLeads || []) : (allLeads || []).filter(l => l.assigned_to === effectiveUserId);
+            const baseTasks = isAdminView ? (allTasks || []) : (allTasks || []).filter(t => t.assigned_to === effectiveUserId);
+
+            // Filter by Period
+            const isInPeriod = (dateInput: any) => {
+                if (filterPeriod === 'YYYY') return true;
+                const d = new Date(dateInput);
+                const now = new Date();
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                if (filterPeriod === 'today') return d >= startOfToday;
+                
+                if (filterPeriod === '7d') {
+                    const sevenDaysAgo = new Date(startOfToday);
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    return d >= sevenDaysAgo;
+                }
+                if (filterPeriod === '30d') {
+                    const thirtyDaysAgo = new Date(startOfToday);
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    return d >= thirtyDaysAgo;
+                }
+                if (filterPeriod === '90d') {
+                    const ninetyDaysAgo = new Date(startOfToday);
+                    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                    return d >= ninetyDaysAgo;
+                }
+                return true;
+            };
+
+            const myLeads = baseLeads.filter(l => isInPeriod(l.created_at));
+            const myTasks = baseTasks.filter(t => isInPeriod(t.due_date || t.created_at));
 
             // Revenue (Financial + CRM Won)
             const incomeTransactions = (expensesDTO || []).filter((t: any) => 
-                t.type === 'Income' || t.type === 'Revenue' || (t.amount > 0 && t.type !== 'Expense')
+                (t.type === 'Income' || t.type === 'Revenue' || (t.amount > 0 && t.type !== 'Expense')) &&
+                isInPeriod(t.date || t.created_at)
             );
 
             const myRevenueTransactions = isAdminView ? incomeTransactions : incomeTransactions.filter((t: any) => t.attendant_id === effectiveUserId);
@@ -151,21 +182,27 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             const crmWonValue = myWonLeads.reduce((acc, lead) => acc + (Number(lead.conversion_value) || 0), 0);
             totalRevenue += crmWonValue;
 
+            // Sales Revenue (Paid Orders)
+            const paidSales = (allSales || []).filter(s => ['paid', 'shipped', 'delivered', 'producing'].includes(s.status) && isInPeriod(s.created_at));
+            const myPaidSales = isAdminView ? paidSales : paidSales.filter(s => s.seller_id === effectiveUserId);
+            const salesValue = myPaidSales.reduce((acc, s) => acc + (Number(s.total_value) || 0), 0);
+            totalRevenue += salesValue;
+
             // Expenses (Admin Only)
-            const totalExpenses = isAdminView ? ((expensesDTO || []).filter((t:any) => t.type === 'Expense').reduce((acc: any, curr: any) => acc + Number(curr.amount || 0), 0) || 0) : 0;
+            const totalExpenses = isAdminView ? ((expensesDTO || []).filter((t:any) => t.type === 'Expense' && isInPeriod(t.date || t.created_at)).reduce((acc: any, curr: any) => acc + Number(curr.amount || 0), 0) || 0) : 0;
 
             // Sales Volume
-            const mySales = isAdminView ? (allSales || []) : (allSales || []).filter(s => {
+            const mySales = (isAdminView ? (allSales || []) : (allSales || []).filter(s => {
                 const ownerId = leadOwnerMap.get(s.client_id);
                 return ownerId === effectiveUserId;
-            });
+            })).filter(s => isInPeriod(s.created_at));
             const totalOrdersCreated = mySales.length;
 
             // Stats
             const totalLeads = myLeads.length;
             const convertedLeads = myLeads.filter(l => ['Converted', 'Matriculated', 'Fechamento', 'Ganho', 'Won'].includes(l.status)).length;
             const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
-            const totalStudents = enrollments?.filter(e => e.status !== 'Cancelled').length || 0;
+            const totalStudents = (enrollments || [])?.filter(e => e.status !== 'Cancelled' && isInPeriod(e.created_at)).length || 0;
             const activeCoursesCount = courses?.filter(c => c.status === 'Published').length || 0;
             const totalAttendances = myTasks.length;
             const completedTasks = myTasks.filter(t => t.status === 'DONE').length;
@@ -193,9 +230,13 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             const daysMap: Record<string, { revenue: number, expenses: number }> = {};
             const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             
-            if (filterPeriod === '30d') {
-                // Last 30 Days
-                for (let i = 29; i >= 0; i--) {
+            if (filterPeriod === '30d' || filterPeriod === '7d' || filterPeriod === 'today') {
+                // Determine range
+                let daysToFetch = 30;
+                if (filterPeriod === '7d') daysToFetch = 7;
+                if (filterPeriod === 'today') daysToFetch = 1;
+
+                for (let i = daysToFetch - 1; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
                     const key = d.toISOString().split('T')[0];
@@ -205,6 +246,12 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                 myRevenueTransactions.forEach((t: any) => {
                     const dateKey = t.date ? t.date.split('T')[0] : '';
                     if (daysMap[dateKey]) daysMap[dateKey].revenue += (Number(t.amount) || 0);
+                });
+
+                // Add SITE_Sales (Paid)
+                myPaidSales.forEach((s: any) => {
+                    const dateKey = s.created_at ? s.created_at.split('T')[0] : '';
+                    if (daysMap[dateKey]) daysMap[dateKey].revenue += (Number(s.total_value) || 0);
                 });
 
                 // Add Enrollments (Direct Course Purchases)
@@ -248,8 +295,13 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                     historyMap[month].revenue += (Number(e.amount_paid) || 0);
                  });
 
-                 // Add CRM Won
-                 myWonLeads.forEach((l: any) => {
+                  // Add SITE_Sales (Paid)
+                  myPaidSales.forEach((s: any) => {
+                    const month = s.created_at ? new Date(s.created_at).getMonth() : 0;
+                    historyMap[month].revenue += (Number(s.total_value) || 0);
+                  });
+
+                  myWonLeads.forEach((l: any) => {
                     const month = l.created_at ? new Date(l.created_at).getMonth() : 0;
                     historyMap[month].revenue += (Number(l.conversion_value) || 0);
                  });
@@ -361,16 +413,16 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                      </h2>
                 </div>
                 
-                <div className="flex p-1 bg-gray-100 dark:bg-black/40 rounded-xl border border-gray-200 dark:border-white/10">
-                     {['30d', '90d', 'YYYY'].map((key) => (
+                <div className="flex p-1 bg-gray-100 dark:bg-black/40 rounded-xl border border-gray-200 dark:border-white/10 overflow-x-auto max-w-full">
+                     {['today', '7d', '30d', '90d', 'YYYY'].map((key) => (
                          <button 
                             key={key} 
                             onClick={() => setFilterPeriod(key)}
-                            className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${filterPeriod === key ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterPeriod === key ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
                          >
-                             {key === 'YYYY' ? 'Anual' : key === '30d' ? 'Mensal' : 'Trimestral'}
+                             {key === 'YYYY' ? 'Anual' : key === '30d' ? 'Mensal' : key === 'today' ? 'Hoje' : key === '7d' ? '7 Dias' : 'Trimestral'}
                          </button>
-                     ))}
+                      ))}
                 </div>
             </div>
 

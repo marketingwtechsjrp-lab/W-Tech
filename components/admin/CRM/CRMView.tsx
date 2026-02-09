@@ -444,6 +444,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             name: dataToSave.name,
             email: dataToSave.email,
             phone: dataToSave.phone,
+            cpf: dataToSave.cpf,
+            t_shirt_size: dataToSave.t_shirt_size,
             value: Number(dataToSave.value) || 0, // ADDED: Value support
             status: 'New',
             context_id: 'Manual',
@@ -875,6 +877,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             name: editingLead.name,
             phone: editingLead.phone,
             email: editingLead.email,
+            cpf: editingLead.cpf,
+            t_shirt_size: editingLead.t_shirt_size,
             status: editingLead.status,
             assigned_to: editingLead.assignedTo,
             internal_notes: editingLead.internalNotes,
@@ -887,6 +891,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             name: dataToSave.name,
             phone: dataToSave.phone,
             email: dataToSave.email,
+            cpf: dataToSave.cpf,
+            t_shirt_size: dataToSave.t_shirt_size,
             status: dataToSave.status,
             assigned_to: dataToSave.assigned_to || dataToSave.assignedTo,
             internal_notes: dataToSave.internal_notes || dataToSave.internalNotes,
@@ -1479,7 +1485,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 // Need to update EditLeadModal and NewLeadModal to include 'value' input field.
 
 const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
-    const [form, setForm] = useState({ name: '', phone: '', email: '', value: 0 }); // Added value
+    const [form, setForm] = useState({ name: '', phone: '', email: '', cpf: '', t_shirt_size: '', value: 0 }); // Added value
 
     if (!isOpen) return null;
 
@@ -1495,6 +1501,18 @@ const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
                     <input placeholder="Telefone" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
                     <input placeholder="Email (Opcional)" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
                     
+                    <div className="grid grid-cols-2 gap-4">
+                        <input placeholder="CPF" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.cpf} onChange={e => setForm({...form, cpf: e.target.value})} />
+                        <select className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.t_shirt_size} onChange={e => setForm({...form, t_shirt_size: e.target.value})}>
+                            <option value="">Tamanho Camiseta</option>
+                            <option value="P">P</option>
+                            <option value="M">M</option>
+                            <option value="G">G</option>
+                            <option value="GG">GG</option>
+                            <option value="EXG">EXG</option>
+                        </select>
+                    </div>
+
                     {/* Value Input */}
                     <div>
                         <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Valor Potencial (R$)</label>
@@ -1598,6 +1616,22 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
                             <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                        </div>
+                        
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">CPF</label>
+                            <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.cpf || ''} onChange={e => setForm({...form, cpf: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase">Tamanho Camiseta</label>
+                            <select className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.t_shirt_size || ''} onChange={e => setForm({...form, t_shirt_size: e.target.value})}>
+                                <option value="">Não informado</option>
+                                <option value="P">P</option>
+                                <option value="M">M</option>
+                                <option value="G">G</option>
+                                <option value="GG">GG</option>
+                                <option value="EXG">EXG</option>
+                            </select>
                         </div>
 
                         {/* Client Portal Access Link */}

@@ -131,6 +131,8 @@ export interface Enrollment {
   reminder5dSent?: boolean;
   reminder1dSent?: boolean;
   currency?: 'BRL' | 'USD' | 'EUR';
+  studentCpf?: string;
+  tShirtSize?: string;
 }
 
 export interface PostComment {

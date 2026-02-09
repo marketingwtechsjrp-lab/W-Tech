@@ -5,7 +5,7 @@ import { triggerWebhook } from '../lib/webhooks';
 import { CheckCircle, ArrowRight, User, ShieldCheck, MapPin, Calendar, Clock, Star, Play } from 'lucide-react';
 
 const LPEuropa: React.FC = () => {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', location: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', cpf: '', tShirtSize: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -18,6 +18,8 @@ const LPEuropa: React.FC = () => {
             name: form.name,
             email: form.email,
             phone: form.phone,
+            cpf: form.cpf,
+            t_shirt_size: form.tShirtSize,
             type: 'Course_Registration', // Or specific type for Europa
             status: 'New',
             context_id: `LP EUROPA: ${form.location}`,
@@ -250,13 +252,32 @@ const LPEuropa: React.FC = () => {
                                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email Profissional</label>
                                 <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]" placeholder="seu@email.com" />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">WhatsApp</label>
-                                <input required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]" placeholder="+xx (xx) xxxxx-xxxx" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">WhatsApp</label>
+                                    <input required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]" placeholder="+xx (xx) xxxxx-xxxx" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">CPF (Obrigatório)</label>
+                                    <input required value={form.cpf} onChange={e => setForm({...form, cpf: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]" placeholder="CPF..." />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">País / Cidade</label>
-                                <input required value={form.location} onChange={e => setForm({...form, location: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]" placeholder="Ex: Portugal, Lisboa" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">País / Cidade</label>
+                                    <input required value={form.location} onChange={e => setForm({...form, location: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]" placeholder="Ex: Portugal, Lisboa" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Tamanho Camiseta</label>
+                                    <select required value={form.tShirtSize} onChange={e => setForm({...form, tShirtSize: e.target.value})} className="w-full bg-gray-100 border-none p-4 font-bold focus:ring-2 focus:ring-[#d40000]">
+                                        <option value="">Selecione...</option>
+                                        <option value="P">P</option>
+                                        <option value="M">M</option>
+                                        <option value="G">G</option>
+                                        <option value="GG">GG</option>
+                                        <option value="EXG">EXG</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <button disabled={loading} className="w-full bg-[#d40000] text-white font-black text-xl py-5 uppercase tracking-wide hover:bg-black transition-colors shadow-lg mt-4 disabled:opacity-50">

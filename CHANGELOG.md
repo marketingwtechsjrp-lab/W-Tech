@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.9.1 (2026-02-09) - Gestão de Alunos (CPF & Camisetas)
+- FEAT: Captura automática de CPF e Tamanho de Camiseta em todas as LPs de Lisboa.
+- FEAT: Coluna "Camiseta" adicionada à Lista de Presença para impressão PDF.
+- FEAT: Relatório Gerencial de Cursos agora inclui o tamanho da camiseta do aluno.
+- FEAT: Sincronização de dados CPF/Camiseta na conversão de Lead para Aluno.
+- DB: Nova migração SQL para campos `student_cpf` e `t_shirt_size` em SITE_Enrollments.
+
 ## v2.9.0 (2026-02-05) - Creative Hub Studio v3.0 & Stripe Live
 - FEAT: Creative Hub Studio v3.0 com estúdio de criação avançado
 - FEAT: Edição dinâmica de escalas, cores e textos por template
