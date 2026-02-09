@@ -560,14 +560,14 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
         if (data) {
             console.log("Leads fetched:", data.length);
-            const mapped = data.map((l: any) => ({
+            const mapped = data.map(({ context_id, created_at, assigned_to, internal_notes, ...l }: any) => ({
                 ...l,
-                contextId: l.context_id,
-                createdAt: l.created_at,
+                contextId: context_id,
+                createdAt: created_at,
                 // Ensure updated_at exists or fallback to created_at
-                updated_at: l.updated_at || l.created_at,
-                assignedTo: l.assigned_to,
-                internalNotes: l.internal_notes,
+                updated_at: l.updated_at || created_at,
+                assignedTo: assigned_to,
+                internalNotes: internal_notes,
                 quiz_data: l.quiz_data,
                 conversion_value: l.conversion_value,
                 conversion_summary: l.conversion_summary,
@@ -610,13 +610,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     const { eventType, new: newRecord, old: oldRecord } = payload;
 
                     // Helper to map record to frontend structure
-                    const mapLead = (r: any) => ({
+                    const mapLead = ({ context_id, created_at, assigned_to, internal_notes, ...r }: any) => ({
                         ...r,
-                        contextId: r.context_id,
-                        createdAt: r.created_at,
-                        updated_at: r.updated_at || r.created_at,
-                        assignedTo: r.assigned_to,
-                        internalNotes: r.internal_notes,
+                        contextId: context_id,
+                        createdAt: created_at,
+                        updated_at: r.updated_at || created_at,
+                        assignedTo: assigned_to,
+                        internalNotes: internal_notes,
                         quiz_data: r.quiz_data,
                         conversion_value: r.conversion_value,
                         conversion_summary: r.conversion_summary,
@@ -894,8 +894,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             cpf: dataToSave.cpf,
             t_shirt_size: dataToSave.t_shirt_size,
             status: dataToSave.status,
-            assigned_to: dataToSave.assigned_to || dataToSave.assignedTo,
-            internal_notes: dataToSave.internal_notes || dataToSave.internalNotes,
+            assigned_to: dataToSave.assignedTo,
+            internal_notes: dataToSave.internalNotes,
             tags: dataToSave.tags,
             value: dataToSave.value || 0
         };
@@ -1688,8 +1688,8 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                             <label className="text-xs font-bold text-gray-500 uppercase">Responsável</label>
                             <select 
                                 className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white"
-                                value={form.assigned_to || ''}
-                                onChange={e => setForm({...form, assigned_to: e.target.value || null})}
+                                value={form.assignedTo || ''}
+                                onChange={e => setForm({...form, assignedTo: e.target.value || null})}
                             >
                                 <option value="">Sem dono</option>
                                 {users.map((u: any) => (

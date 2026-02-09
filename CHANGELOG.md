@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.9.2 (2026-02-09) - Refinamento de Formulários & Correções CRM
+- FEAT: Removido campo de "Tamanho de Camiseta" das Landing Pages públicas para simplificar o cadastro.
+- MAINT: Campo de Camiseta mantido exclusivamente em painéis internos (Admin/CRM) para controle operacional.
+- FIX: Resolvido bug no CRM que impedia salvar Notas Internas e trocar Responsável devido a conflitos de nomenclatura de campos.
+- FIX: Padronização completa de mapeamento de Leads entre Frontend e Banco de Dados.
+
 ## v2.9.1 (2026-02-09) - Gestão de Alunos (CPF & Camisetas)
 - FEAT: Captura automática de CPF e Tamanho de Camiseta em todas as LPs de Lisboa.
 - FEAT: Coluna "Camiseta" adicionada à Lista de Presença para impressão PDF.

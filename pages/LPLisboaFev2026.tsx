@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 const LPLisboaFev2026: React.FC = () => {
-    const [form, setForm] = useState({ name: '', email: '', phone: '', bike: '', cpf: '', tShirtSize: '' });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', bike: '', cpf: '' });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -34,7 +34,6 @@ const LPLisboaFev2026: React.FC = () => {
                 email: form.email,
                 phone: form.phone,
                 cpf: form.cpf,
-                t_shirt_size: form.tShirtSize,
                 type: 'Lecture_Registration',
                 status: 'New',
                 context_id: `LP LISBOA ABRIL 2026${form.bike ? ': ' + form.bike : ''}`,
@@ -559,22 +558,7 @@ const LPLisboaFev2026: React.FC = () => {
                                             />
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase text-gray-400 tracking-widest mb-2">Tamanho da Camiseta</label>
-                                        <select 
-                                            required
-                                            value={form.tShirtSize} 
-                                            onChange={e => setForm({...form, tShirtSize: e.target.value})}
-                                            className="w-full bg-gray-50 border-transparent border-b-black p-4 text-lg font-bold focus:ring-0 focus:border-wtech-red transition-colors"
-                                        >
-                                            <option value="">Selecione...</option>
-                                            <option value="P">P</option>
-                                            <option value="M">M</option>
-                                            <option value="G">G</option>
-                                            <option value="GG">GG</option>
-                                            <option value="EXG">EXG</option>
-                                        </select>
-                                    </div>
+
                                     
                                     <button 
                                         disabled={loading}

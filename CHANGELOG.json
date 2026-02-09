@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.9.2",
+    "date": "2026-02-09",
+    "title": "Refinamento de Formulários & Correções CRM",
+    "changes": [
+      "FEAT: Removido campo de 'Tamanho de Camiseta' das Landing Pages públicas.",
+      "MAINT: Campo de Camiseta mantido exclusivamente em painéis internos (Admin/CRM).",
+      "FIX: Resolvido bug no CRM que impedia salvar Notas Internas e Responsável.",
+      "FIX: Padronização de mapeamento de Leads (camelCase vs snake_case)."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.9.1",
     "date": "2026-02-09",
     "title": "Gestão de Alunos (CPF & Camisetas)",

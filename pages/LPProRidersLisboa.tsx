@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 const LPProRidersLisboa: React.FC = () => {
-    const [form, setForm] = useState({ name: '', email: '', phone: '', reason: '', cpf: '', tShirtSize: '' });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', reason: '', cpf: '' });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -36,7 +36,6 @@ const LPProRidersLisboa: React.FC = () => {
                 email: form.email,
                 phone: form.phone,
                 cpf: form.cpf,
-                t_shirt_size: form.tShirtSize,
                 type: 'Course_Waitlist',
                 status: 'New',
                 context_id: `PRORIDERS EUROPA LISBOA 2026`,
@@ -705,17 +704,6 @@ const LPProRidersLisboa: React.FC = () => {
                                             <label className="block text-xs font-black uppercase text-gray-500 mb-1">CPF (Obrigatório)</label>
                                             <input required value={form.cpf} onChange={e => setForm({...form, cpf: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="CPF..." />
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-black uppercase text-gray-500 mb-1">Tamanho da Camiseta</label>
-                                        <select required value={form.tShirtSize} onChange={e => setForm({...form, tShirtSize: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black">
-                                            <option value="">Selecione...</option>
-                                            <option value="P">P</option>
-                                            <option value="M">M</option>
-                                            <option value="G">G</option>
-                                            <option value="GG">GG</option>
-                                            <option value="EXG">EXG</option>
-                                        </select>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">Motivo da Inscrição (Opcional)</label>
