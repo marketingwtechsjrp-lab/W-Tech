@@ -25,7 +25,9 @@ const Home3 = lazy(() => import('./pages/Home3'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
 const LPLisboaFev2026 = lazy(() => import('./pages/LPLisboaFev2026'));
 const LPWTechLisboa = lazy(() => import('./pages/LPWTechLisboa'));
+const WTechLisboa = lazy(() => import('./pages/WTechLisboa'));
 const LPProRidersLisboa = lazy(() => import('./pages/LPProRidersLisboa'));
+const ObrigadoLisboa = lazy(() => import('./pages/ObrigadoLisboa'));
 const Termos = lazy(() => import('./pages/Termos'));
 const Privacidade = lazy(() => import('./pages/Privacidade'));
 const Cancelamento = lazy(() => import('./pages/Cancelamento'));
@@ -89,7 +91,9 @@ const App = () => {
                     <Route path="/lp/europa" element={<LPEuropa />} />
                     <Route path="/lp-lisboa-fev-2026" element={<LPLisboaFev2026 />} />
                     <Route path="/lp-wtech-lisboa" element={<LPWTechLisboa />} />
+                    <Route path="/wtech-lisboa" element={<WTechLisboa />} />
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
+                    <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
 
                     {/* Legal Pages */}

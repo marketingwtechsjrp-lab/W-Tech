@@ -13,13 +13,15 @@ export const createStripePaymentLink = async ({
     price, // Amount in normal currency unit (e.g. 100.00)
     currency = 'usd',
     email,
-    enrollmentId
+    enrollmentId,
+    successUrl
 }: {
     title: string,
     price: number,
     currency?: string,
     email?: string,
-    enrollmentId?: string
+    enrollmentId?: string,
+    successUrl?: string
 }) => {
     const apiKey = await getStripeConfig();
     if (!apiKey) throw new Error('Stripe API Key não configurada.');
@@ -36,7 +38,9 @@ export const createStripePaymentLink = async ({
         params.append('line_items[0][price_data][unit_amount]', unitAmount.toString());
         params.append('line_items[0][quantity]', '1');
         params.append('mode', 'payment');
-        params.append('success_url', window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`);
+        
+        const finalSuccessUrl = successUrl || (window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`);
+        params.append('success_url', finalSuccessUrl);
         params.append('cancel_url', window.location.origin + '/admin/dashboard?payment=cancel');
         if (email) params.append('customer_email', email);
         if (enrollmentId) params.append('metadata[enrollmentId]', enrollmentId);
