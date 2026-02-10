@@ -163,7 +163,7 @@ const LPProRidersLisboa: React.FC = () => {
                         className="flex flex-wrap justify-center gap-6 mt-16 text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500"
                     >
                         <span className="flex items-center gap-2"><Clock size={14} className="text-wtech-red" /> 3 Dias de Imersão Total</span>
-                        <span className="flex items-center gap-2"><MapPin size={14} className="text-wtech-gold" /> Sede Oficial LIQUI MOLY</span>
+                        <span className="flex items-center gap-2 tracking-tighter"><MapPin size={14} className="text-wtech-gold" /> Sintra Business Park - Edifício 01</span>
                         <span className="flex items-center gap-2"><Award size={14} className="text-wtech-red" /> Vagas Limitadas</span>
                     </motion.div>
                 </div>
@@ -354,12 +354,23 @@ const LPProRidersLisboa: React.FC = () => {
                         >
                              <div className="flex items-start gap-4 mb-6">
                                 <MapPin className="text-blue-500 shrink-0 mt-1" size={32} />
-                                <div>
+                                <div className="text-left">
                                     <h3 className="text-xl font-bold uppercase text-white mb-2">Endereço Exclusivo</h3>
-                                    <p className="text-gray-400 text-sm mb-2">Sintra Business Park, Zona Industrial da Abrunheira, Edifício 5, Armazém D, 2710-089 Sintra – Portugal</p>
-                                    <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
-                                        <Instagram size={16} /> @liquimolyiberia
-                                    </a>
+                                    <p className="text-gray-400 text-sm mb-4 italic">Sintra Business Park - Edifício 01 - 1º P, 2710-089 Sintra, Portugal</p>
+                                    
+                                    <div className="flex flex-wrap gap-4 mb-2">
+                                        <a 
+                                            href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9" 
+                                            target="_blank" 
+                                            rel="noreferrer" 
+                                            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-white hover:text-blue-600 text-white px-4 py-2 rounded font-black text-[10px] uppercase tracking-widest transition-all shadow-lg"
+                                        >
+                                            <MapPin size={14} /> Abrir no Google Maps
+                                        </a>
+                                        <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
+                                            <Instagram size={16} /> @liquimolyiberia
+                                        </a>
+                                    </div>
                                 </div>
                              </div>
                              

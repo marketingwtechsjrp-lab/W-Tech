@@ -161,7 +161,7 @@ const LPWTechLisboa: React.FC = () => {
                         transition={{ delay: 0.8 }}
                         className="flex flex-wrap justify-center gap-6 mt-16 text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-500"
                     >
-                        <span className="flex items-center gap-2"><MapPin size={14} className="text-wtech-red" /> Sede Oficial LIQUI MOLY</span>
+                        <span className="flex items-center gap-2 tracking-tighter"><MapPin size={14} className="text-wtech-red" /> Sintra Business Park - Edifício 01</span>
                         <span className="flex items-center gap-2"><Award size={14} className="text-wtech-gold" /> Certificação Internacional</span>
                         <span className="flex items-center gap-2"><AlertOctagon size={14} className="text-wtech-red" /> Vagas Limitadas</span>
                     </motion.div>
@@ -259,9 +259,17 @@ const LPWTechLisboa: React.FC = () => {
                              
                              <address className="not-italic text-lg text-gray-300 space-y-2 border-t border-white/10 pt-6 mt-2">
                                 <strong className="block text-white text-xl uppercase tracking-wider mb-2">Sintra Business Park</strong>
-                                <span className="block">Zona Industrial da Abrunheira</span>
-                                <span className="block">Edifício 5, Armazém D</span>
-                                <span className="block text-blue-400 font-bold mb-4">2710-089 Sintra – Portugal</span>
+                                <span className="block border-l-2 border-blue-600 pl-4 py-1 mb-4 italic text-gray-400">Edifício 01 - 1º P</span>
+                                <span className="block text-blue-400 font-bold mb-6 italic tracking-tight underline underline-offset-4 decoration-blue-600/30">2710-089 Sintra – Portugal</span>
+
+                                <a 
+                                    href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9" 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    className="inline-flex items-center gap-3 bg-blue-600 hover:bg-white hover:text-blue-600 text-white px-8 py-4 rounded-sm font-black text-xs uppercase tracking-[0.2em] transition-all mb-8 shadow-[0_15px_30px_rgba(37,99,235,0.3)] group/map"
+                                >
+                                    <MapPin size={18} className="group-hover/map:animate-bounce" /> Abrir no Google Maps
+                                </a>
                                 
                                 <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
                                     <Instagram size={16} /> @liquimolyiberia
