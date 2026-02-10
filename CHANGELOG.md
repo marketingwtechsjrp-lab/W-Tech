@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v2.9.4 (2026-02-10) - Atualização de Endereço - W-Tech Lisboa
+- Atualização do endereço para Sintra Business Park - Edifício 01
+- Inclusão de botão para localização via Google Maps
+
 ## v2.9.3 (2026-02-09) - Refinamento UX: Remoção de CPF
 - FEAT: Removido campo "CPF" da Landing Page W-Tech Lisboa para reduzir fricção no cadastro inicial.
 - UX: Ajuste de layout no formulário para melhor adaptação mobile.

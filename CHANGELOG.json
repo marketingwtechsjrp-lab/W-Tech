@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.9.4",
+    "date": "2026-02-10",
+    "title": "Atualização de Endereço - W-Tech Lisboa",
+    "changes": [
+      "Atualização do endereço para Sintra Business Park - Edifício 01",
+      "Inclusão de botão para localização via Google Maps"
+    ],
+    "author": "Novo usuário"
+  },
+  {
     "version": "2.9.3",
     "date": "2026-02-09",
     "title": "Refinamento UX: Remoção de CPF",
