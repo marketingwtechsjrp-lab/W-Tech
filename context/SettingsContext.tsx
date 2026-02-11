@@ -76,6 +76,65 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     if (link) link.href = config.logo_url;
                 }
 
+                // --- SEO Meta Injection ---
+                const setMeta = (attr: string, attrValue: string, content: string) => {
+                    if (!content) return;
+                    let el = document.querySelector(`meta[${attr}="${attrValue}"]`);
+                    if (!el) {
+                        el = document.createElement('meta');
+                        el.setAttribute(attr, attrValue);
+                        document.head.appendChild(el);
+                    }
+                    el.setAttribute('content', content);
+                };
+
+                // Global description & keywords
+                if (config.seo_description) setMeta('name', 'description', config.seo_description);
+                if (config.seo_keywords) setMeta('name', 'keywords', config.seo_keywords);
+                if (config.seo_robots) setMeta('name', 'robots', config.seo_robots);
+
+                // Open Graph
+                if (config.seo_og_image) setMeta('property', 'og:image', config.seo_og_image);
+                if (config.seo_site_name || config.site_title) setMeta('property', 'og:site_name', config.seo_site_name || config.site_title);
+                if (config.seo_og_type) setMeta('property', 'og:type', config.seo_og_type);
+
+                // Canonical
+                if (config.seo_canonical_url) {
+                    let canonical: HTMLLinkElement | null = document.querySelector("link[rel='canonical']");
+                    if (!canonical) {
+                        canonical = document.createElement('link');
+                        canonical.rel = 'canonical';
+                        document.head.appendChild(canonical);
+                    }
+                    canonical.href = config.seo_canonical_url;
+                }
+
+                // Google / Bing Verification
+                if (config.seo_google_verification) setMeta('name', 'google-site-verification', config.seo_google_verification);
+                if (config.seo_bing_verification) setMeta('name', 'msvalidate.01', config.seo_bing_verification);
+
+                // JSON-LD Organization Schema
+                if (config.seo_schema_name || config.site_title) {
+                    let schemaScript: HTMLScriptElement | null = document.querySelector('#global-org-schema');
+                    if (!schemaScript) {
+                        schemaScript = document.createElement('script');
+                        schemaScript.id = 'global-org-schema';
+                        schemaScript.type = 'application/ld+json';
+                        document.head.appendChild(schemaScript);
+                    }
+                    schemaScript.textContent = JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": config.seo_schema_type || "EducationalOrganization",
+                        "name": config.seo_schema_name || config.site_title || "W-TECH Brasil",
+                        "url": config.seo_canonical_url || "https://w-techbrasil.com.br",
+                        "logo": config.seo_schema_logo || config.logo_url || "",
+                        "telephone": config.seo_schema_phone || "",
+                        "email": config.seo_schema_email || "",
+                        "address": config.seo_schema_address || "",
+                        "sameAs": [config.instagram, config.facebook, config.linkedin].filter(Boolean)
+                    });
+                }
+
                 // Inject Analytics (Facebook Pixel)
                 if (config.pixel_id && !window.hasInjectedScripts) {
                     const script = document.createElement('script');

@@ -15,6 +15,7 @@ import { UserRole } from '../types';
 import type { Lead, Mechanic, Order, User as UserType, Transaction, Course, BlogPost, PostComment, LandingPage, Enrollment, Role, SystemConfig, Event } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { generateSitemapXml } from '../lib/sitemapUtils';
+import { generateSEOContent } from '../lib/ai';
 import { seedDatabase } from '../lib/seedData';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -4214,6 +4215,7 @@ const SettingsView = () => {
     const [partnerBrands, setPartnerBrands] = useState<{ name: string, logo: string }[]>([]);
     const [testEmail, setTestEmail] = useState('');
     const [isTestingEmail, setIsTestingEmail] = useState(false);
+    const [isGeneratingSEO, setIsGeneratingSEO] = useState(false);
 
     useEffect(() => {
         fetchConfig();
@@ -4536,6 +4538,7 @@ const SettingsView = () => {
                             { id: 'Categorias', icon: List, label: 'Categorias', color: 'bg-purple-500' },
                             { id: 'IA & Integrações', icon: BrainCircuit, label: 'GPT & Gemini', color: 'bg-pink-500' },
                             { id: 'Permissões & Cargos', icon: Shield, label: 'Permissões', color: 'bg-red-500' },
+                            { id: 'SEO', icon: Globe, label: 'SEO', color: 'bg-emerald-500' },
                             { id: 'Scripts Globais', icon: Code, label: 'Scripts', color: 'bg-yellow-500' },
                             { id: 'Layout Menu', icon: Layout, label: 'Layout Menu', color: 'bg-cyan-500' },
                             { id: 'Histórico de Versões', icon: History, label: 'Versões', color: 'bg-gray-500' },
@@ -4876,6 +4879,327 @@ const SettingsView = () => {
                                 </div>
                             </div>
 
+
+                        </div>
+                    </div>
+                )}
+
+                {/* Tab: SEO - Complete SEO Management */}
+                {activeTab === 'SEO' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+
+                        {/* AI SEO Auto-Fill Button */}
+                        <div className="mb-8 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                        <Sparkles size={20} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">Preencher com IA Especialista em SEO</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">Nossa IA analisa o contexto do site e gera configurações SEO otimizadas automaticamente</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        setIsGeneratingSEO(true);
+                                        try {
+                                            const existingSeo: Record<string, string> = {};
+                                            ['seo_title','seo_description','seo_keywords','seo_canonical_url','seo_og_type','seo_site_name','seo_robots','seo_schema_name','seo_schema_type','seo_schema_phone','seo_schema_email','seo_schema_address'].forEach(k => {
+                                                if (config[k]) existingSeo[k] = config[k];
+                                            });
+
+                                            const result = await generateSEOContent({
+                                                site_title: config.site_title,
+                                                site_description: config.site_description || config.seo_description,
+                                                canonical_url: config.seo_canonical_url || 'https://w-techbrasil.com.br',
+                                                logo_url: config.logo_url,
+                                                existing_seo: existingSeo
+                                            });
+
+                                            // Apply all returned SEO values
+                                            Object.entries(result).forEach(([key, value]) => {
+                                                if (key.startsWith('seo_') && value) {
+                                                    handleChange(key, value);
+                                                }
+                                            });
+
+                                            alert('✅ SEO preenchido com sucesso pela IA! Revise os campos e clique em "Salvar Alterações".');
+                                        } catch (err: any) {
+                                            alert('❌ Erro ao gerar SEO: ' + (err.message || 'Verifique se a API Key da IA está configurada em Configurações > GPT & Gemini'));
+                                        } finally {
+                                            setIsGeneratingSEO(false);
+                                        }
+                                    }}
+                                    disabled={isGeneratingSEO}
+                                    className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-105 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                >
+                                    {isGeneratingSEO ? (
+                                        <><Loader2 size={16} className="animate-spin" /> Analisando...</>
+                                    ) : (
+                                        <><Sparkles size={16} /> Gerar com IA</>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                            {/* --- 1. SEO Global --- */}
+                            <div className="space-y-6 lg:col-span-2">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Globe size={18} className="text-emerald-500" /> SEO Global</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">Configurações padrão de SEO aplicadas em todas as páginas. Páginas individuais podem sobrescrever estes valores.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Título SEO (Title Tag)</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_title || ''}
+                                            onChange={(e) => handleChange('seo_title', e.target.value)}
+                                            placeholder="W-TECH Brasil | Autoridade em Suspensões"
+                                            maxLength={60}
+                                        />
+                                        <span className={`text-[10px] mt-1 block ${(config.seo_title || '').length > 60 ? 'text-red-500' : 'text-gray-400'}`}>{(config.seo_title || '').length}/60 caracteres</span>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">URL Canônica Base</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_canonical_url || ''}
+                                            onChange={(e) => handleChange('seo_canonical_url', e.target.value)}
+                                            placeholder="https://w-techbrasil.com.br"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Meta Descrição</label>
+                                        <textarea
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white resize-none"
+                                            rows={3}
+                                            value={config.seo_description || ''}
+                                            onChange={(e) => handleChange('seo_description', e.target.value)}
+                                            placeholder="A maior escola de tecnologia automotiva da América Latina..."
+                                            maxLength={160}
+                                        />
+                                        <span className={`text-[10px] mt-1 block ${(config.seo_description || '').length > 160 ? 'text-red-500' : 'text-gray-400'}`}>{(config.seo_description || '').length}/160 caracteres</span>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Keywords (separadas por vírgula)</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_keywords || ''}
+                                            onChange={(e) => handleChange('seo_keywords', e.target.value)}
+                                            placeholder="suspensão moto, curso mecânica, enduro, motocross"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- 2. Open Graph / Redes Sociais --- */}
+                            <div className="space-y-6">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><ImageIcon size={18} className="text-blue-500" /> Open Graph & Redes Sociais</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Imagem OG (compartilhamento)</label>
+                                        <div className="flex gap-3">
+                                            <div className="w-24 h-14 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden">
+                                                {config.seo_og_image ? <img src={config.seo_og_image} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-400" />}
+                                            </div>
+                                            <div className="flex-1 flex gap-2">
+                                                <input
+                                                    className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                    value={config.seo_og_image || ''}
+                                                    onChange={(e) => handleChange('seo_og_image', e.target.value)}
+                                                    placeholder="https://... (1200x630px recomendado)"
+                                                />
+                                                <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
+                                                    <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'seo_og_image')} />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Nome do Site (og:site_name)</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_site_name || ''}
+                                            onChange={(e) => handleChange('seo_site_name', e.target.value)}
+                                            placeholder="W-TECH Brasil"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Tipo OG</label>
+                                        <select
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_og_type || 'website'}
+                                            onChange={(e) => handleChange('seo_og_type', e.target.value)}
+                                        >
+                                            <option value="website">Website</option>
+                                            <option value="business.business">Business</option>
+                                            <option value="article">Article</option>
+                                            <option value="product">Product</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Twitter / X Handle</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_twitter_handle || ''}
+                                            onChange={(e) => handleChange('seo_twitter_handle', e.target.value)}
+                                            placeholder="@wtechbrasil"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- 3. Indexação & Rastreamento --- */}
+                            <div className="space-y-6">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Search size={18} className="text-yellow-500" /> Indexação & Rastreamento</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Meta Robots</label>
+                                        <select
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_robots || 'index, follow'}
+                                            onChange={(e) => handleChange('seo_robots', e.target.value)}
+                                        >
+                                            <option value="index, follow">index, follow (Recomendado)</option>
+                                            <option value="index, nofollow">index, nofollow</option>
+                                            <option value="noindex, follow">noindex, follow</option>
+                                            <option value="noindex, nofollow">noindex, nofollow</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Google Search Console (Verification)</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white font-mono text-xs"
+                                            value={config.seo_google_verification || ''}
+                                            onChange={(e) => handleChange('seo_google_verification', e.target.value)}
+                                            placeholder="Código de verificação do Google"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Bing Webmaster (Verification)</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white font-mono text-xs"
+                                            value={config.seo_bing_verification || ''}
+                                            onChange={(e) => handleChange('seo_bing_verification', e.target.value)}
+                                            placeholder="Código de verificação do Bing"
+                                        />
+                                    </div>
+                                    <div className="pt-2">
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const sitemapXml = await generateSitemapXml();
+                                                    const blob = new Blob([sitemapXml], { type: 'application/xml' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = 'sitemap.xml';
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                    alert('Sitemap gerado com sucesso! Faça upload do arquivo no seu servidor.');
+                                                } catch (err) {
+                                                    alert('Erro ao gerar sitemap: ' + (err as Error).message);
+                                                }
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-emerald-300 dark:border-emerald-700 rounded-lg text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-bold text-xs uppercase transition-colors"
+                                        >
+                                            <Download size={16} /> Regenerar & Baixar Sitemap.xml
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- 4. Schema Markup (JSON-LD) --- */}
+                            <div className="space-y-6 lg:col-span-2">
+                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Code size={18} className="text-purple-500" /> Schema Markup (JSON-LD Organization)</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">Dados estruturados da organização que ajudam o Google a exibir informações completas nos resultados de busca.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Nome da Organização</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_schema_name || ''}
+                                            onChange={(e) => handleChange('seo_schema_name', e.target.value)}
+                                            placeholder="W-TECH Brasil"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo da Organização (URL)</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white text-sm"
+                                            value={config.seo_schema_logo || ''}
+                                            onChange={(e) => handleChange('seo_schema_logo', e.target.value)}
+                                            placeholder="https://... (logo quadrado recomendado)"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Telefone</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_schema_phone || ''}
+                                            onChange={(e) => handleChange('seo_schema_phone', e.target.value)}
+                                            placeholder="+55 17 99999-9999"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Email de Contato</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_schema_email || ''}
+                                            onChange={(e) => handleChange('seo_schema_email', e.target.value)}
+                                            placeholder="contato@w-techbrasil.com.br"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Endereço</label>
+                                        <input
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_schema_address || ''}
+                                            onChange={(e) => handleChange('seo_schema_address', e.target.value)}
+                                            placeholder="São José do Rio Preto - SP, Brasil"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Tipo de Negócio</label>
+                                        <select
+                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            value={config.seo_schema_type || 'EducationalOrganization'}
+                                            onChange={(e) => handleChange('seo_schema_type', e.target.value)}
+                                        >
+                                            <option value="EducationalOrganization">Organização Educacional</option>
+                                            <option value="Organization">Organização</option>
+                                            <option value="LocalBusiness">Negócio Local</option>
+                                            <option value="AutomotiveBusiness">Negócio Automotivo</option>
+                                            <option value="ProfessionalService">Serviço Profissional</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* JSON-LD Preview */}
+                                <div className="mt-4">
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Preview JSON-LD</label>
+                                    <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-x-auto max-h-48 font-mono">
+                                        {JSON.stringify({
+                                            "@context": "https://schema.org",
+                                            "@type": config.seo_schema_type || "EducationalOrganization",
+                                            "name": config.seo_schema_name || config.site_title || "W-TECH Brasil",
+                                            "url": config.seo_canonical_url || "https://w-techbrasil.com.br",
+                                            "logo": config.seo_schema_logo || config.logo_url || "",
+                                            "telephone": config.seo_schema_phone || "",
+                                            "email": config.seo_schema_email || "",
+                                            "address": config.seo_schema_address || "",
+                                            "sameAs": [
+                                                config.instagram || "",
+                                                config.facebook || "",
+                                                config.linkedin || ""
+                                            ].filter(Boolean)
+                                        }, null, 2)}
+                                    </pre>
+                                </div>
+                            </div>
 
                         </div>
                     </div>

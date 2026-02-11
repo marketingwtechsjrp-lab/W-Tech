@@ -332,10 +332,10 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
 
 
     return (
-        <div className={`w-full flex flex-col ${isEditMode ? 'h-[calc(100vh-3.5rem)] overflow-hidden' : ''}`}>
+        <div className="w-full h-full flex flex-col relative">
             {isEditMode ? (
-                // Order Editor View (inline, fits within module area)
-                <div className="flex-1 min-h-0 bg-white dark:bg-[#0A0A0A]">
+                // Order Editor View — absolute positioned to fill parent without overflowing
+                <div className="absolute inset-0 z-10 bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
                     <NewOrderModal 
                         isOpen={true}
                         onClose={() => {
@@ -358,7 +358,7 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
                 </div>
             ) : (
                 // Dashboard View (Header + Metrics + List/Kanban)
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 overflow-auto flex-1">
                     {/* Futuristic Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-4">
                         <div className="flex items-center gap-5">
