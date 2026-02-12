@@ -116,12 +116,14 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
     };
 
     const handleCreateSale = () => {
+        window.alert('Criando nova venda...');
         setEditingSale(null);
         setCurrentSaleItems([]);
         setIsEditMode(true);
     };
 
     const handleEditSale = async (saleId: string) => {
+        window.alert('Editando venda ID: ' + saleId);
         setLoading(true);
         try {
             const { data: saleData } = await supabase.from('SITE_Sales').select('*').eq('id', saleId).single();
@@ -334,8 +336,8 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
     return (
         <div className="w-full h-full flex flex-col relative">
             {isEditMode ? (
-                // Order Editor View — absolute positioned to fill parent without overflowing
-                <div className="absolute inset-0 z-10 bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
+                // Order Editor View — fixed to ensure it covers everything and is visible
+                <div className="fixed inset-0 z-[9999] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
                     <NewOrderModal 
                         isOpen={true}
                         onClose={() => {

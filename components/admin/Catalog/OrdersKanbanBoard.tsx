@@ -20,6 +20,77 @@ const COLUMNS = [
     { id: 'delivered', label: 'Entregue', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' }
 ];
 
+const OrderCard: React.FC<{
+    sale: Sale;
+    draggedId: string | null;
+    handleDragStart: (e: React.DragEvent, id: string) => void;
+    onEditSale: (id: string) => void;
+    onStatusChange: (id: string, status: string) => void;
+    nextStatus?: string | null;
+    prevStatus?: string | null;
+}> = ({ sale, draggedId, handleDragStart, onEditSale, onStatusChange, nextStatus, prevStatus }) => {
+    // UseRef to maintain consistent pointer start position across re-renders
+    const pointerStart = React.useRef({ x: 0, y: 0 });
+
+    return (
+        <div
+            draggable
+            onDragStart={(e) => handleDragStart(e, sale.id)}
+            onPointerDown={(e) => { pointerStart.current = { x: e.clientX, y: e.clientY }; }}
+            onPointerUp={(e) => {
+                const dx = Math.abs(e.clientX - pointerStart.current.x);
+                const dy = Math.abs(e.clientY - pointerStart.current.y);
+                // Threshold of 5px to distinguish between click and drag
+                if (dx < 5 && dy < 5) {
+                    window.alert('Card clicado! ID: ' + sale.id);
+                    onEditSale(sale.id);
+                }
+            }}
+            className={`bg-white dark:bg-[#151515] p-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800/50 hover:shadow-md hover:scale-[1.01] transition-all cursor-pointer active:cursor-grabbing group relative ${draggedId === sale.id ? 'opacity-30' : 'opacity-100'}`}
+        >
+            <div className="flex justify-between items-start mb-1">
+                <span className="text-[8px] font-bold text-gray-400 dark:text-gray-600 uppercase">#{sale.id.slice(0, 6)}</span>
+                <span className="text-[9px] font-black text-gray-900 dark:text-white">
+                    R$ {Math.floor(sale.totalValue).toLocaleString('pt-BR')}
+                </span>
+            </div>
+            
+            <h4 className="font-bold text-gray-800 dark:text-gray-200 text-[10px] line-clamp-1 mb-2 leading-tight">{sale.clientName || 'Cliente Balcão'}</h4>
+            
+            <div className="flex items-center justify-between text-[8px] text-gray-400 font-medium">
+                <div className="flex items-center gap-1">
+                    <Clock size={8} />
+                    <span>{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 dark:bg-white/5 rounded-full border border-gray-100 dark:border-gray-800">
+                    <span className="w-1 h-1 rounded-full bg-wtech-red animate-pulse"></span>
+                    <span className="text-[7px] font-black uppercase tracking-tighter text-gray-500">{sale.channel || 'Admin'}</span>
+                </div>
+            </div>
+
+            {/* Action Overlays / Hover Buttons */}
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black p-1 rounded-lg border border-gray-100 dark:border-gray-800 shadow-2xl z-10" onPointerUp={e => e.stopPropagation()} onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
+                {nextStatus && (
+                    <button 
+                        onClick={() => onStatusChange(sale.id, nextStatus)}
+                        className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded text-green-500 transition-colors"
+                    >
+                        →
+                    </button>
+                )}
+                {prevStatus && (
+                    <button 
+                        onClick={() => onStatusChange(sale.id, prevStatus)}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-gray-400 transition-colors"
+                    >
+                        ←
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdateStatus, onEditSale }) => {
     const [draggedId, setDraggedId] = React.useState<string | null>(null);
     const [dragOverCol, setDragOverCol] = React.useState<string | null>(null);
@@ -29,8 +100,7 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
     const handleDragStart = (e: React.DragEvent, id: string) => {
         setDraggedId(id);
         e.dataTransfer.setData('saleId', id);
-        // Set a transparent drag image to allow custom ghost if needed, 
-        // but default is fine for now.
+        // Set a transparent drag image if needed
     };
 
     const handleDragOver = (e: React.DragEvent, colId: string) => {
@@ -115,56 +185,16 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
                         {/* Cards Container */}
                         <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                             {colSales.map(sale => (
-                                <motion.div
-                                    layoutId={sale.id}
+                                <OrderCard 
                                     key={sale.id}
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, sale.id)}
-                                    onDragEnd={() => { setDraggedId(null); setDragOverCol(null); }}
-                                    className={`bg-white dark:bg-[#151515] p-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800/50 hover:shadow-md transition-all cursor-grab active:cursor-grabbing group relative ${draggedId === sale.id ? 'opacity-30' : 'opacity-100'}`}
-                                    onClick={() => onEditSale(sale.id)}
-                                    whileHover={{ scale: 1.01 }}
-                                >
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className="text-[8px] font-bold text-gray-400 dark:text-gray-600 uppercase">#{sale.id.slice(0, 6)}</span>
-                                        <span className="text-[9px] font-black text-gray-900 dark:text-white">
-                                            R$ {Math.floor(sale.totalValue).toLocaleString('pt-BR')}
-                                        </span>
-                                    </div>
-                                    
-                                    <h4 className="font-bold text-gray-800 dark:text-gray-200 text-[10px] line-clamp-1 mb-2 leading-tight">{sale.clientName || 'Cliente Balcão'}</h4>
-                                    
-                                    <div className="flex items-center justify-between text-[8px] text-gray-400 font-medium">
-                                        <div className="flex items-center gap-1">
-                                            <Clock size={8} />
-                                            <span>{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 dark:bg-white/5 rounded-full border border-gray-100 dark:border-gray-800">
-                                            <span className="w-1 h-1 rounded-full bg-wtech-red animate-pulse"></span>
-                                            <span className="text-[7px] font-black uppercase tracking-tighter text-gray-500">{sale.channel || 'Admin'}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Overlays / Hover Buttons */}
-                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-black p-1 rounded-lg border border-gray-100 dark:border-gray-800 shadow-2xl z-10" onClick={e => e.stopPropagation()}>
-                                        {getNextStatus(col.id) && (
-                                            <button 
-                                                onClick={() => handleStatusChange(sale.id, getNextStatus(col.id)!)}
-                                                className="p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded text-green-500 transition-colors"
-                                            >
-                                                →
-                                            </button>
-                                        )}
-                                        {getPrevStatus(col.id) && (
-                                            <button 
-                                                onClick={() => handleStatusChange(sale.id, getPrevStatus(col.id)!)}
-                                                className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded text-gray-400 transition-colors"
-                                            >
-                                                ←
-                                            </button>
-                                        )}
-                                    </div>
-                                </motion.div>
+                                    sale={sale}
+                                    draggedId={draggedId}
+                                    handleDragStart={handleDragStart}
+                                    onEditSale={onEditSale}
+                                    onStatusChange={handleStatusChange}
+                                    nextStatus={getNextStatus(col.id)}
+                                    prevStatus={getPrevStatus(col.id)}
+                                />
                             ))}
                             {colSales.length === 0 && (
                                 <div className="text-center py-4 border border-dashed border-gray-100 dark:border-gray-800/20 rounded-xl">
