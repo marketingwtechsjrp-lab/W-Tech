@@ -17,10 +17,10 @@ interface CreativeHubProps {
 
 type TemplateId = 'performance' | 'experience' | 'technical';
 
-const LOGO_PRO_RIDERS = 'https://raw.githubusercontent.com/Danielsjcampos/sitewtech/main/public/logos/pro-riders-logo.png'; 
+const LOGO_PRO_RIDERS = 'https://raw.githubusercontent.com/marketingwtechsjrp-lab/W-Tech/main/public/logos/pro-riders-logo.png'; 
 const LOGO_LIQUI_MOLY = 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Liqui_Moly_logo.svg/1200px-Liqui_Moly_logo.svg.png';
 const LOGO_MOTUL = 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Motul_logo.svg/2560px-Motul_logo.svg.png';
-const LOGO_ART_ON_WHEELS = 'https://raw.githubusercontent.com/Danielsjcampos/sitewtech/main/public/logos/art-on-wheels.png';
+const LOGO_ART_ON_WHEELS = 'https://raw.githubusercontent.com/marketingwtechsjrp-lab/W-Tech/main/public/logos/art-on-wheels.png';
 
 export const CreativeHub: React.FC<CreativeHubProps> = ({ course, onClose }) => {
     const [template, setTemplate] = useState<TemplateId>('performance');
