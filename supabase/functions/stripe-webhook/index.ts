@@ -14,6 +14,26 @@ const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
 const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
+// Helper for currency conversion with error protection
+async function getExchangeRate(from: string, to: string = 'BRL'): Promise<number> {
+    if (from.toUpperCase() === to.toUpperCase()) return 1.0;
+    
+    try {
+        console.log(`Fetching exchange rate for ${from}-${to}...`);
+        const res = await fetch(`https://economia.awesomeapi.com.br/last/${from}-${to}`);
+        const data = await res.json();
+        const pair = `${from}${to}`;
+        
+        if (data && data[pair] && data[pair].bid) {
+            return parseFloat(data[pair].bid);
+        }
+        throw new Error(`Invalid API response for ${pair}`);
+    } catch (err) {
+        console.error(`Erro ao converter moeda (${from}->${to}), usando valor original:`, err.message);
+        return 1.0; // Fallback to 1:1 if API fails
+    }
+}
+
 serve(async (req) => {
   const signature = req.headers.get('stripe-signature')
 
@@ -35,16 +55,20 @@ serve(async (req) => {
     return new Response(`Webhook Error: ${err.message}`, { status: 400 })
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object
-    const enrollmentId = session.metadata?.enrollmentId
-    const amountPaid = session.amount_total / 100 // Stripe matches decimals by cents
-    const currency = session.currency?.toUpperCase() || 'BRL'
+  if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
+    // Note: Stripe sends different objects for different events. 
+    // We handle session (checkout) or intent (direct API)
+    const session = event.data.object as any;
+    const enrollmentId = session.metadata?.enrollmentId;
+    
+    // session.amount_total is in cents
+    const amountPaidRaw = (session.amount_total || session.amount || 0) / 100;
+    const currency = (session.currency || 'eur').toUpperCase();
 
     if (enrollmentId) {
-      console.log(`Processing payment for enrollment ${enrollmentId}...`)
+      console.log(`Processing ${currency} payment for enrollment ${enrollmentId}...`);
 
-      // 1. Get existing enrollment to calculate new total
+      // 1. Get existing enrollment
       const { data: enrollment, error: fetchError } = await supabase
         .from('SITE_Enrollments')
         .select('*')
@@ -56,9 +80,15 @@ serve(async (req) => {
           return new Response('Enrollment not found', { status: 404 })
       }
 
-      const newTotalPaid = (enrollment.amount_paid || 0) + amountPaid
+      // 2. Conversion logic (Safe)
+      // If payment is EUR and course is BRL, we might want to convert for the financial dashboard
+      // But usually we store the paid amount in the currency of the course.
+      const rate = await getExchangeRate(currency, 'EUR'); // Example: normalizing to EUR if needed, adjust as per your business logic
+      const amountInCourseCurrency = amountPaidRaw; // For now keeping raw, since multi-currency is supported in DB
 
-      // 2. Update Enrollment
+      const newTotalPaid = (enrollment.amount_paid || 0) + amountInCourseCurrency;
+
+      // 3. Update Enrollment
       const { error: updateError } = await supabase
         .from('SITE_Enrollments')
         .update({
@@ -72,12 +102,12 @@ serve(async (req) => {
           return new Response('Update error', { status: 500 })
       }
 
-      // 3. Insert Transaction
+      // 4. Insert Transaction
       const { error: transError } = await supabase
         .from('SITE_Transactions')
         .insert([{
-          description: `Pagamento Stripe: Session ${session.id.slice(-8)}`,
-          amount: amountPaid,
+          description: `Pagamento Stripe: ${session.id.slice(-12)}`,
+          amount: amountPaidRaw,
           type: 'Income',
           category: 'Sales',
           status: 'Completed',
@@ -89,7 +119,7 @@ serve(async (req) => {
 
       if (transError) console.error('Transaction insert error', transError)
 
-      console.log(`Payment confirmed for ${enrollment.student_name}!`)
+      console.log(`Payment confirmed for ${enrollment.student_name}!`);
     }
   }
 

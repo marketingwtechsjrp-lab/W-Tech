@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu, Link,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -206,6 +206,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [settleMethod, setSettleMethod] = useState('Pix');
     const [generatedLink, setGeneratedLink] = useState('');
     const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+    const [stripeReconcileModal, setStripeReconcileModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, stripeId: string, amount: number }>({ isOpen: false, enrollment: null, stripeId: '', amount: 0 });
 
     // Fetch Layouts
     useEffect(() => {
@@ -1144,6 +1145,44 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
     };
 
+    const confirmStripeReconcile = async () => {
+        const { enrollment, stripeId, amount } = stripeReconcileModal;
+        if (!enrollment || !stripeId || !amount) return;
+
+        // 1. Update Enrollment
+        const newTotal = (enrollment.amountPaid || 0) + amount;
+        const { error: err1 } = await supabase.from('SITE_Enrollments').update({
+            amount_paid: newTotal,
+            status: 'Confirmed'
+        }).eq('id', enrollment.id);
+
+        if (err1) {
+            alert('Erro ao atualizar aluno: ' + err1.message);
+            return;
+        }
+
+        // 2. Insert Transaction
+        const { error: err2 } = await supabase.from('SITE_Transactions').insert([{
+            description: `Conciliação Stripe: ${stripeId}`,
+            category: 'Sales',
+            type: 'Income',
+            amount: amount,
+            date: new Date().toISOString(),
+            payment_method: 'Stripe',
+            enrollment_id: enrollment.id,
+            currency: currentCourse?.currency || 'BRL'
+        }]);
+
+        if (err2) {
+            console.error(err2);
+        }
+
+        // Update Local State
+        setEnrollments(prev => prev.map(e => e.id === enrollment.id ? { ...e, amountPaid: newTotal, status: 'Confirmed' } : e));
+        setStripeReconcileModal({ isOpen: false, enrollment: null, stripeId: '', amount: 0 });
+        alert('Pagamento Stripe conciliado com sucesso!');
+    };
+
     const confirmSettle = async () => {
         const { enrollment, amount } = settleModal;
         if (!enrollment || !amount) return;
@@ -1735,6 +1774,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         <CheckCircle size={16} />
                                                     </button>
 
+                                                    <button onClick={() => setStripeReconcileModal({ isOpen: true, enrollment: enr, stripeId: '', amount: balance })} title="Conciliar Pagamento Stripe" className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded border border-indigo-100">
+                                                        <CreditCard size={16} />
+                                                    </button>
+
                                                     {balance > 0 && (
                                                         <button onClick={() => handleSettleBalance(enr, balance)} title={`Quitar Saldo (${currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} ${balance.toFixed(2)})`} className="p-1.5 text-green-600 hover:bg-green-50 rounded bg-green-50/50 border border-green-200">
                                                             <DollarSign size={16} />
@@ -1772,6 +1815,55 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </tbody>
                     </table>
                 </div>
+
+                {/* Stripe Reconciliation Modal */}
+                {
+                    stripeReconcileModal.isOpen && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                            <div className="bg-white dark:bg-[#1A1A1A] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Conciliação Stripe</h3>
+                                <p className="text-gray-500 mb-6">Vincular ID de transação para confirmar pagamento.</p>
+
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Stripe ID (ch_... ou pi_...)</label>
+                                        <input 
+                                            className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            placeholder="Ex: ch_3SzzWkJcoez..."
+                                            value={stripeReconcileModal.stripeId || ''}
+                                            onChange={e => setStripeReconcileModal({ ...stripeReconcileModal, stripeId: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor Confirmado ({currentCourse?.currency})</label>
+                                        <input 
+                                            type="number"
+                                            className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
+                                            value={stripeReconcileModal.amount || 0}
+                                            onChange={e => setStripeReconcileModal({ ...stripeReconcileModal, amount: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setStripeReconcileModal({ isOpen: false, enrollment: null })}
+                                        className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={confirmStripeReconcile}
+                                        disabled={!stripeReconcileModal.stripeId || !stripeReconcileModal.amount}
+                                        className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 shadow-lg transition-all"
+                                    >
+                                        Confirmar Pagamento
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
 
                 {/* Settle Modal */}
                  {
