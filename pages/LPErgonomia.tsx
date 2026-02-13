@@ -265,10 +265,12 @@ const LPErgonomia: React.FC = () => {
                         transition={{ duration: shouldAnimate ? 1.2 : 0, ease: 'easeOut' }}
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-[url('/images/hero-ergonomia-mobile.png')] md:bg-[url('/images/hero-ergonomia.png')]"
                     />
+                    {/* Stronger overlay requested by user */}
+                    <div className="absolute inset-0 bg-black/70 z-10" />
                 </div>
 
                 <div className="container mx-auto px-6 relative z-20 pt-20 pb-16">
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="max-w-4xl">
                         {/* Text */}
                         <motion.div initial="hidden" animate="visible" variants={stagger}>
                             <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6">
@@ -276,26 +278,26 @@ const LPErgonomia: React.FC = () => {
                                 <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Curso Online — W-Tech Brasil</span>
                             </motion.div>
 
-                            <motion.h1 variants={v} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] mb-6">
+                            <motion.h1 variants={v} className="text-4xl md:text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.95] mb-6 drop-shadow-lg">
                                 Pilote com<br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-500 to-amber-600">Conforto, Controle</span><br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-500 to-amber-600 drop-shadow-none">Conforto, Controle</span><br />
                                 e Performance
                             </motion.h1>
 
-                            <motion.p variants={v} className="text-lg md:text-xl text-gray-300 leading-relaxed mb-4 max-w-xl">
+                            <motion.p variants={v} className="text-lg md:text-2xl text-gray-100 leading-relaxed mb-8 max-w-2xl drop-shadow-md">
                                 Curso online de <strong className="text-white">Ergonomia para Pilotagem e Preparação de Motos</strong> com Alex Crepaldi e participação especial do piloto Paschoalin.
                             </motion.p>
 
-                            <motion.p variants={v} className="text-sm text-gray-500 mb-8 max-w-lg">
+                            <motion.p variants={v} className="text-sm md:text-base text-gray-300 mb-10 max-w-xl drop-shadow-sm">
                                 Descubra como o ajuste correto da posição, guidão, pedaleiras e suspensão transforma sua pilotagem — menos dor, mais controle, mais segurança.
                             </motion.p>
 
-                            <motion.div variants={v} className="flex flex-col sm:flex-row gap-4">
+                            <motion.div variants={v} className="flex flex-col sm:flex-row gap-4 justify-start">
                                 <motion.button
                                     onClick={() => scrollTo('cta-final')}
                                     whileHover={shouldAnimate ? ctaHover : undefined}
                                     whileTap={shouldAnimate ? ctaTap : undefined}
-                                    className="bg-wtech-gold hover:bg-yellow-600 text-black px-8 py-4 rounded-lg font-black text-sm uppercase tracking-widest transition-colors flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(212,175,55,0.25)]"
+                                    className="bg-wtech-gold hover:bg-yellow-600 text-black px-10 py-5 rounded-lg font-black text-sm md:text-base uppercase tracking-widest transition-colors flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(212,175,55,0.25)]"
                                 >
                                     Quero Ajustar Minha Posição <ArrowRight strokeWidth={3} size={18} />
                                 </motion.button>
@@ -303,67 +305,11 @@ const LPErgonomia: React.FC = () => {
                                     onClick={() => scrollTo('modulos')}
                                     whileHover={shouldAnimate ? { scale: 1.02, borderColor: 'rgba(212,175,55,0.5)' } : undefined}
                                     whileTap={shouldAnimate ? ctaTap : undefined}
-                                    className="border border-white/20 text-white px-8 py-4 rounded-lg font-bold text-sm uppercase tracking-widest transition-colors flex items-center justify-center gap-3 hover:bg-white/5"
+                                    className="border border-white/20 text-white px-8 py-5 rounded-lg font-bold text-sm md:text-base uppercase tracking-widest transition-colors flex items-center justify-center gap-3 hover:bg-white/5 backdrop-blur-sm"
                                 >
                                     Ver o Que Vou Aprender <ArrowDown size={18} />
                                 </motion.button>
                             </motion.div>
-                        </motion.div>
-
-                        {/* Mockup */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 40, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            transition={{ delay: shouldAnimate ? 0.3 : 0, duration: shouldAnimate ? 0.5 : 0, ease: [0.25, 0.46, 0.45, 0.94] }}
-                            className="relative hidden lg:block"
-                        >
-                            <motion.div
-                                whileHover={shouldAnimate ? { y: -4, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' } : undefined}
-                                transition={{ duration: 0.2 }}
-                                className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/50"
-                            >
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                                    <span className="text-[10px] text-gray-600 ml-2 font-mono">wtech.com.br/ergonomia</span>
-                                </div>
-                                <div className="bg-black rounded-xl p-5 space-y-3">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-wtech-gold/20 flex items-center justify-center">
-                                            <BookOpen size={18} className="text-wtech-gold" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-white">Ergonomia na Pilotagem</p>
-                                            <p className="text-[10px] text-gray-500">7 módulos • Alex Crepaldi</p>
-                                        </div>
-                                    </div>
-                                    {modules.slice(0, 5).map((m, i) => (
-                                        <motion.div
-                                            key={i}
-                                            initial={{ opacity: 0, x: 12 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: shouldAnimate ? 0.5 + i * 0.07 : 0, duration: shouldAnimate ? 0.2 : 0 }}
-                                            className="flex items-center gap-3 p-3 bg-zinc-900/80 rounded-lg border border-white/5 group hover:border-wtech-gold/30 transition-all duration-150"
-                                        >
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${i < 2 ? 'bg-wtech-gold/20 text-wtech-gold' : 'bg-white/5 text-gray-500'}`}>
-                                                {i < 2 ? <CheckCircle size={14} /> : <Play size={12} />}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-gray-300 truncate">{m.title}</p>
-                                                <p className="text-[10px] text-gray-600">{m.desc.slice(0, 40)}…</p>
-                                            </div>
-                                            <Lock size={12} className={`${i < 2 ? 'text-wtech-gold' : 'text-gray-700'}`} />
-                                        </motion.div>
-                                    ))}
-                                    <div className="text-center pt-2">
-                                        <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">+ 2 módulos adicionais</span>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Glow */}
-                            <div className="absolute -inset-4 bg-wtech-gold/5 rounded-3xl blur-3xl -z-10" />
                         </motion.div>
                     </div>
                 </div>
