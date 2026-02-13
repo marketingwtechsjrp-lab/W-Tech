@@ -39,6 +39,7 @@ const OrderTracking = lazy(() => import('./pages/rastreio'));
 const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const Bio = lazy(() => import('./pages/bio'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const LPErgonomia = lazy(() => import('./pages/LPErgonomia'));
 
 
 
@@ -94,6 +95,7 @@ const App = () => {
                     <Route path="/wtech-lisboa" element={<WTechLisboa />} />
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
+                    <Route path="/lp-ergonomia" element={<LPErgonomia />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
 
                     {/* Legal Pages */}
