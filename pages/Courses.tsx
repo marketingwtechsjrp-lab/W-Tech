@@ -56,24 +56,7 @@ const Courses: React.FC = () => {
                 features: c.features || []
             })) : [];
 
-            // Static Ergonomia Course
-            const ergoCourse: any = {
-                id: 'ergonomia-online',
-                title: 'Curso de Ergonomia de Pilotagem',
-                description: 'Domine o ajuste da sua moto. Menos dor, mais controle e performance. Com Alex Crepaldi e Paschoalin.',
-                date: '2026-03-01T10:00:00Z',
-                location: 'Plataforma Online',
-                locationType: 'Online',
-                status: 'Published',
-                capacity: 1000,
-                registeredCount: 342,
-                instructor: 'Alex Crepaldi',
-                image: '/images/hero-ergonomia.png',
-                tags: ['ERGONOMIA_ONLINE', 'ONLINE'],
-                features: ['Acesso Vitalício', 'Certificado']
-            };
-
-            setCourses([...dbCourses, ergoCourse]);
+            setCourses(dbCourses);
             setLoading(false);
         };
         fetchCourses();

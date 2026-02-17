@@ -200,7 +200,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [showCreativeHub, setShowCreativeHub] = useState(false);
     const [creativeHubCourse, setCreativeHubCourse] = useState<Course | null>(null);
     const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
-    
+
     // Settle Modal State
     const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number, linkAmount: number }>({ isOpen: false, enrollment: null, amount: 0, linkAmount: 0 });
     const [settleMethod, setSettleMethod] = useState('Pix');
@@ -211,8 +211,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     // Fetch Layouts
     useEffect(() => {
         const loadLayouts = async () => {
-             const { data } = await supabase.from('SITE_CertificateLayouts').select('*');
-             if (data) setLayouts(data.map(l => ({ ...l, backgroundUrl: l.background_url })));
+            const { data } = await supabase.from('SITE_CertificateLayouts').select('*');
+            if (data) setLayouts(data.map(l => ({ ...l, backgroundUrl: l.background_url })));
         }
         loadLayouts();
     }, []);
@@ -220,16 +220,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const handleGenerateCertificates = async (isBadge = false) => {
         if (!currentCourse) return;
         const layoutId = isBadge ? currentCourse.badgeLayoutId : currentCourse.certificateLayoutId;
-        
+
         if (!layoutId) {
             alert(`Nenhum layout de ${isBadge ? 'Crachá' : 'Certificado'} selecionado para este curso.`);
             return;
         }
-        
+
         const layout = layouts.find(l => l.id === layoutId);
         if (!layout) {
-             alert('Layout não encontrado.');
-             return;
+            alert('Layout não encontrado.');
+            return;
         }
 
         const validEnrollments = enrollments.filter(e => e.status === 'Confirmed' || e.status === 'CheckedIn');
@@ -246,16 +246,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const handleGenerateSingleCertificate = async (enrollment: Enrollment, isBadge = false) => {
         if (!currentCourse) return;
         const layoutId = isBadge ? currentCourse.badgeLayoutId : currentCourse.certificateLayoutId;
-        
+
         if (!layoutId) {
             alert(`Nenhum layout de ${isBadge ? 'Crachá' : 'Certificado'} selecionado para este curso.`);
             return;
         }
-        
+
         const layout = layouts.find(l => l.id === layoutId);
         if (!layout) {
-             alert('Layout não encontrado.');
-             return;
+            alert('Layout não encontrado.');
+            return;
         }
 
         if (confirm(`Gerar ${isBadge ? 'crachá' : 'certificado'} para ${enrollment.studentName}?`)) {
@@ -1549,16 +1549,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 <div className="flex justify-between items-start mb-8 print:hidden">
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-gray-500 hover:text-black dark:hover:text-white flex items-center gap-1">
+                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-1">
                                 <ArrowRight className="rotate-180" size={14} /> Voltar
                             </button>
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 dark:text-white">Lista de Inscritos</h2>
-                        <p className="text-gray-500">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
+                        <p className="text-gray-500 dark:text-gray-400">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
                         <div className="mt-2 text-sm flex gap-4">
-                            <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded dark:text-blue-400">Moeda: {currentCourse.currency || 'BRL'}</span>
-                            <span className="text-green-600 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</span>
-                            <span className="text-gray-600 dark:text-gray-300 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
+                            <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-blue-700 dark:text-blue-400">Moeda: {currentCourse.currency || 'BRL'}</span>
+                            <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</span>
+                            <span className="text-gray-600 dark:text-gray-400 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1568,10 +1568,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <button onClick={printList} className="bg-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800">
                             <Printer size={18} /> Imprimir Lista
                         </button>
-                         <button onClick={() => handleGenerateCertificates(false)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Certificados em PDF">
+                        <button onClick={() => handleGenerateCertificates(false)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Certificados em PDF">
                             <Award size={18} />
                         </button>
-                         <button onClick={() => handleGenerateCertificates(true)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Crachás em PDF">
+                        <button onClick={() => handleGenerateCertificates(true)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Crachás em PDF">
                             <User size={18} />
                         </button>
                     </div>
@@ -1579,7 +1579,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                 {/* Enrollment Edit Form */}
                 {editingEnrollment && (
-                    <div className="mb-6 bg-gray-50 p-6 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 print:hidden">
+                    <div className="mb-6 bg-gray-50 dark:bg-[#222] p-6 rounded-lg border border-gray-200 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 print:hidden">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingEnrollment.id ? 'Editar Aluno' : 'Novo Aluno'}</h3>
                             <button onClick={() => setEditingEnrollment(null)}><X size={18} /></button>
@@ -1587,24 +1587,24 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <form onSubmit={handleSaveEnrollment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* ... Fields ... reuse previous fields ... */}
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Nome Completo</label>
-                                <input required className="w-full p-2 border rounded" value={editingEnrollment.studentName || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentName: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Nome Completo</label>
+                                <input required className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentName || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentName: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email</label>
-                                <input type="email" className="w-full p-2 border rounded" value={editingEnrollment.studentEmail || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentEmail: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Email</label>
+                                <input type="email" className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentEmail || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentEmail: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Telefone/WhatsApp</label>
-                                <input className="w-full p-2 border rounded" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Telefone/WhatsApp</label>
+                                <input className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">CPF</label>
-                                <input className="w-full p-2 border rounded" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">CPF</label>
+                                <input className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Tamanho da Camiseta</label>
-                                <select className="w-full p-2 border rounded" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Tamanho da Camiseta</label>
+                                <select className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
                                     <option value="">Selecione...</option>
                                     <option value="P">P</option>
                                     <option value="M">M</option>
@@ -1614,8 +1614,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Status</label>
-                                <select className="w-full p-2 border rounded" value={editingEnrollment.status || 'Confirmed'} onChange={e => setEditingEnrollment({ ...editingEnrollment, status: e.target.value as any })}>
+                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                                <select className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.status || 'Confirmed'} onChange={e => setEditingEnrollment({ ...editingEnrollment, status: e.target.value as any })}>
                                     <option value="Pending">Pendente</option>
                                     <option value="Confirmed">Confirmado</option>
                                     <option value="CheckedIn">Presente (Check-in)</option>
@@ -1655,7 +1655,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Valor Pago</label>
                                     <input type="number" step="0.01" className="w-full p-2 border rounded font-bold text-green-700" value={editingEnrollment.amountPaid || 0} onChange={e => setEditingEnrollment({ ...editingEnrollment, amountPaid: parseFloat(e.target.value) })} />
                                 </div>
-                                 <div>
+                                <div>
                                     <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Saldo a Pagar</label>
                                     <div className="text-lg font-bold text-red-600">
                                         {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {((editingEnrollment.totalAmount ?? currentCourse.price ?? 0) - (editingEnrollment.amountPaid || 0)).toFixed(2)}
@@ -1731,7 +1731,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 {/* ... Table ... */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-800 uppercase font-bold text-xs border-b border-gray-200">
+                        <thead className="bg-gray-50 dark:bg-[#111] text-gray-800 dark:text-gray-200 uppercase font-bold text-xs border-b border-gray-200 dark:border-gray-800">
                             <tr>
                                 <th className="px-6 py-3">Nome do Aluno</th>
                                 <th className="px-6 py-3">Contato</th>
@@ -1741,18 +1741,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <th className="px-6 py-3 hidden print:table-cell">Assinatura</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 text-gray-900">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-100">
                             {enrollments.length > 0 ? (
                                 enrollments.map((enr, idx) => {
                                     const balance = (enr.totalAmount ?? currentCourse.price ?? 0) - (enr.amountPaid || 0);
                                     return (
-                                        <tr key={enr.id} className="group hover:bg-gray-50">
+                                        <tr key={enr.id} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                             <td className="px-6 py-4 font-bold">
                                                 {idx + 1}. {enr.studentName}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div>{enr.studentEmail}</div>
-                                                <div className="text-xs text-gray-500">{enr.studentPhone}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">{enr.studentPhone}</div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${enr.status === 'CheckedIn' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
@@ -1760,13 +1760,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="font-bold text-green-700">Pago: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {enr.amountPaid?.toFixed(2)}</div>
+                                                <div className="font-bold text-green-700 dark:text-green-400">Pago: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {enr.amountPaid?.toFixed(2)}</div>
                                                 {balance > 0 ? (
-                                                    <div className="text-xs text-red-600 font-bold">Resta: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {balance.toFixed(2)}</div>
+                                                    <div className="text-xs text-red-600 dark:text-red-400 font-bold">Resta: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {balance.toFixed(2)}</div>
                                                 ) : (
-                                                    <div className="text-xs text-blue-600 font-bold bg-blue-50 inline-block px-1 rounded">Quitado</div>
+                                                    <div className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 inline-block px-1 rounded">Quitado</div>
                                                 )}
-                                                <div className="text-[10px] text-gray-400 mt-1">{enr.paymentMethod || '-'}</div>
+                                                <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{enr.paymentMethod || '-'}</div>
                                             </td>
                                             <td className="px-6 py-4 print:hidden">
                                                 <div className="flex items-center gap-2">
@@ -1827,7 +1827,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <div className="space-y-4 mb-6">
                                     <div>
                                         <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Stripe ID (ch_... ou pi_...)</label>
-                                        <input 
+                                        <input
                                             className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                                             placeholder="Ex: ch_3SzzWkJcoez..."
                                             value={stripeReconcileModal.stripeId || ''}
@@ -1836,7 +1836,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor Confirmado ({currentCourse?.currency})</label>
-                                        <input 
+                                        <input
                                             type="number"
                                             className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
                                             value={stripeReconcileModal.amount || 0}
@@ -1866,7 +1866,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 }
 
                 {/* Settle Modal */}
-                 {
+                {
                     settleModal.isOpen && (
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                             <div className="bg-white dark:bg-[#1A1A1A] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
@@ -2013,8 +2013,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: newStatus as any } : c));
                                             }}
                                             className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' :
-                                                    course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                        'bg-gray-100 text-gray-600 border-gray-200'
+                                                course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                    'bg-gray-100 text-gray-600 border-gray-200'
                                                 }`}
                                         >
                                             <option value="Draft">Rascunho</option>
@@ -2030,12 +2030,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             <button onClick={() => setEditingLandingPage(course)} title="Gerenciar Landing Page" className="p-2 text-purple-600 hover:bg-purple-50 rounded transition-colors"><Globe size={16} /></button>
                                         )}
                                         {hasPermission('courses_edit_lp') && (
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     setCreativeHubCourse(course);
                                                     setShowCreativeHub(true);
-                                                }} 
-                                                title="Gerar Criativo Social Media" 
+                                                }}
+                                                title="Gerar Criativo Social Media"
                                                 className="p-2 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                                             >
                                                 <Wand2 size={16} />
@@ -2208,9 +2208,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     </div>
 
                                     {/* Student List Table */}
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                        <div className="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                                            <h4 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
+                                    <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                                        <div className="p-4 bg-gray-50 dark:bg-[#111] border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                                            <h4 className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
                                             <button
                                                 onClick={() => {
                                                     const csv = [
@@ -2231,13 +2231,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     a.download = `Relatorio_${reportCourse.title}.csv`;
                                                     a.click();
                                                 }}
-                                                className="text-xs bg-white border border-gray-300 px-3 py-1 rounded font-bold hover:bg-gray-50 flex items-center gap-1"
+                                                className="text-xs bg-white dark:bg-[#333] border border-gray-300 dark:border-gray-700 px-3 py-1 rounded font-bold hover:bg-gray-50 dark:hover:bg-[#444] flex items-center gap-1 dark:text-gray-300"
                                             >
                                                 <Download size={12} /> CSV
                                             </button>
                                         </div>
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-gray-100 text-gray-500 font-bold text-xs uppercase">
+                                            <thead className="bg-gray-100 dark:bg-[#111] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase">
                                                 <tr>
                                                     <th className="px-4 py-3">Aluno</th>
                                                     <th className="px-4 py-3">Contato</th>
@@ -2245,11 +2245,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     <th className="px-4 py-3 text-right">Pago</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-100">
+                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                                 {reportData.studentsList?.map((student: any, idx: number) => (
-                                                    <tr key={idx} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 font-bold text-gray-800">{student.name}</td>
-                                                        <td className="px-4 py-3 text-gray-500">
+                                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                                                        <td className="px-4 py-3 font-bold text-gray-800 dark:text-gray-100">{student.name}</td>
+                                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                                                             <div className="text-xs">{student.email}</div>
                                                             <div className="text-xs">{student.phone}</div>
                                                         </td>
@@ -2258,7 +2258,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                                 {student.status}
                                                             </span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-right font-bold text-gray-700">
+                                                        <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-200">
                                                             R$ {student.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                         </td>
                                                     </tr>
@@ -2284,9 +2284,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             )}
 
             {showCreativeHub && creativeHubCourse && (
-                <CreativeHub 
-                    course={creativeHubCourse} 
-                    onClose={() => setShowCreativeHub(false)} 
+                <CreativeHub
+                    course={creativeHubCourse}
+                    onClose={() => setShowCreativeHub(false)}
                 />
             )}
         </>
@@ -2587,11 +2587,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
-                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><Award size={14}/> Layout do Certificado</label>
-                                <select 
-                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" 
-                                    value={formData.certificateLayoutId || ''} 
+                            <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><Award size={14} /> Layout do Certificado</label>
+                                <select
+                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]"
+                                    value={formData.certificateLayoutId || ''}
                                     onChange={e => setFormData({ ...formData, certificateLayoutId: e.target.value })}
                                 >
                                     <option value="">-- Selecione --</option>
@@ -2599,12 +2599,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <option key={l.id} value={l.id}>{l.name}</option>
                                     ))}
                                 </select>
-                             </div>
-                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><User size={14}/> Layout do Crachá</label>
-                                <select 
-                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" 
-                                    value={formData.badgeLayoutId || ''} 
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><User size={14} /> Layout do Crachá</label>
+                                <select
+                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]"
+                                    value={formData.badgeLayoutId || ''}
                                     onChange={e => setFormData({ ...formData, badgeLayoutId: e.target.value })}
                                 >
                                     <option value="">-- Selecione --</option>
@@ -2612,7 +2612,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <option key={l.id} value={l.id}>{l.name}</option>
                                     ))}
                                 </select>
-                             </div>
+                            </div>
                         </div>
 
                         <div className="md:col-span-2">
@@ -3410,14 +3410,14 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
     useEffect(() => {
         const fetchReferenceData = async () => {
-             // Fetch Reference Data
-             const { data: coursesData } = await supabase.from('SITE_Courses').select('id, title');
-             const { data: eventsData } = await supabase.from('SITE_Events').select('id, title');
-             const { data: usersData } = await supabase.from('SITE_Users').select('id, name');
+            // Fetch Reference Data
+            const { data: coursesData } = await supabase.from('SITE_Courses').select('id, title');
+            const { data: eventsData } = await supabase.from('SITE_Events').select('id, title');
+            const { data: usersData } = await supabase.from('SITE_Users').select('id, name');
 
-             setCourses(coursesData || []);
-             setEvents(eventsData || []);
-             setUsersList(usersData || []);
+            setCourses(coursesData || []);
+            setEvents(eventsData || []);
+            setUsersList(usersData || []);
         };
         fetchReferenceData();
     }, []);
@@ -3428,7 +3428,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
             setSalesLoading(true);
             try {
                 let query = supabase.from('SITE_Sales').select('*');
-                
+
                 // Access Control
                 if (permissions && !permissions.financial_view_all && user) {
                     query = query.eq('seller_id', user.id);
@@ -3467,7 +3467,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
             const realTransactions = trans || [];
 
             const canSeeVirtual = hasPermission('financial_view_all');
-            
+
             let virtualTransactions: Transaction[] = [];
             let pending = 0;
 
@@ -3620,8 +3620,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     const balance = mainBRL.income - mainBRL.expense;
 
     const formatCurr = (val: number, cur: string) => {
-        return new Intl.NumberFormat('pt-BR', { 
-            style: 'currency', 
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
             currency: cur,
             minimumFractionDigits: 2
         }).format(val);
@@ -3641,20 +3641,20 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                 {/* Tab Navigation */}
                 <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl h-12 w-full md:w-auto">
-                    <button 
+                    <button
                         onClick={() => setActiveTab('cashflow')}
                         className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'cashflow' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
                     >
                         <Wallet size={14} /> Fluxo
                     </button>
-                    <button 
+                    <button
                         onClick={() => setActiveTab('sales')}
                         className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'sales' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
                     >
                         <TrendingUp size={14} /> Vendas
                     </button>
                     {hasPermission('financial_view_all') && (
-                         <button 
+                        <button
                             onClick={() => setActiveTab('settings')}
                             className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
                         >
@@ -3823,7 +3823,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 R$ {salesHistory.length > 0 ? (salesHistory.reduce((acc, s) => acc + (s.total_value || 0), 0) / salesHistory.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
                             </div>
                         </div>
-                         <div className="bg-black p-6 rounded-2xl border border-white/10 shadow-xl">
+                        <div className="bg-black p-6 rounded-2xl border border-white/10 shadow-xl">
                             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Top Atendente</div>
                             <div className="text-xl font-black text-white truncate">
                                 {(() => {
@@ -3872,11 +3872,11 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                     <motion.tr key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group">
                                         <td className="px-6 py-5 whitespace-nowrap">
                                             <div className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase">{formatDateLocal(t.date)}</div>
-                                            <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tight opacity-50">{new Date(t.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</div>
+                                            <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tight opacity-50">{new Date(t.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
                                         </td>
                                         <td className="px-6 py-5">
                                             <div className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none">{t.description}</div>
-                                            {t.enrollment_id && <div className="text-[9px] text-blue-500 font-black tracking-widest mt-1.5 flex items-center gap-1"><Sparkles size={10}/> INTEGRAÇÃO SISTEMA</div>}
+                                            {t.enrollment_id && <div className="text-[9px] text-blue-500 font-black tracking-widest mt-1.5 flex items-center gap-1"><Sparkles size={10} /> INTEGRAÇÃO SISTEMA</div>}
                                         </td>
                                         <td className="px-6 py-5">
                                             <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase bg-gray-100 dark:bg-black/40 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/5 tracking-widest">
@@ -3891,7 +3891,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                         </td>
                                         {hasPermission('financial_delete_transaction') && (
                                             <td className="px-6 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
+                                                <button
                                                     onClick={() => handleDeleteTransaction(t.id)}
                                                     className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-lg shadow-red-500/10"
                                                     title="Excluir Definitivamente"
@@ -4688,7 +4688,7 @@ const SettingsView = () => {
                                         </div>
                                     </div>
                                 </div>
-                                 <div>
+                                <div>
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo URL (Dark Mode)</label>
                                     <div className="flex gap-3">
                                         <div className="w-16 h-16 bg-black rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden relative group">
@@ -4997,7 +4997,7 @@ const SettingsView = () => {
                                         setIsGeneratingSEO(true);
                                         try {
                                             const existingSeo: Record<string, string> = {};
-                                            ['seo_title','seo_description','seo_keywords','seo_canonical_url','seo_og_type','seo_site_name','seo_robots','seo_schema_name','seo_schema_type','seo_schema_phone','seo_schema_email','seo_schema_address'].forEach(k => {
+                                            ['seo_title', 'seo_description', 'seo_keywords', 'seo_canonical_url', 'seo_og_type', 'seo_site_name', 'seo_robots', 'seo_schema_name', 'seo_schema_type', 'seo_schema_phone', 'seo_schema_email', 'seo_schema_address'].forEach(k => {
                                                 if (config[k]) existingSeo[k] = config[k];
                                             });
 
@@ -5907,13 +5907,13 @@ const SettingsView = () => {
                 {/* Tab: IA & Integrations (Refactored) */}
                 {activeTab === 'IA & Integrações' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4 space-y-8">
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            
+
                             {/* Engine Selection Section */}
                             <div className="md:col-span-2 bg-gradient-to-r from-black to-slate-900 text-white p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-wtech-gold/10 blur-[100px] rounded-full pointer-events-none"></div>
-                                
+
                                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
                                     <div>
                                         <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
@@ -5921,7 +5921,7 @@ const SettingsView = () => {
                                         </h3>
                                         <p className="text-gray-400 text-sm mt-1">Este motor será utilizado para gerar o Blog, responder mensagens e analisar leads.</p>
                                     </div>
-                                    
+
                                     <div className="flex bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
                                         {(['gemini', 'openai'] as const).map((provider) => (
                                             <button
@@ -5953,12 +5953,12 @@ const SettingsView = () => {
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">API Key do OpenAI</label>
                                         <div className="relative">
                                             <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
-                                            <input 
-                                                type="password" 
-                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-blue-500 outline-none transition-all" 
-                                                value={config.openai_api_key || ''} 
-                                                onChange={e => handleChange('openai_api_key', e.target.value)} 
-                                                placeholder="sk-..." 
+                                            <input
+                                                type="password"
+                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-blue-500 outline-none transition-all"
+                                                value={config.openai_api_key || ''}
+                                                onChange={e => handleChange('openai_api_key', e.target.value)}
+                                                placeholder="sk-..."
                                             />
                                         </div>
                                     </div>
@@ -5985,12 +5985,12 @@ const SettingsView = () => {
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">API Key do Gemini</label>
                                         <div className="relative">
                                             <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
-                                            <input 
-                                                type="password" 
-                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-wtech-gold outline-none transition-all" 
-                                                value={config.gemini_api_key || ''} 
-                                                onChange={e => handleChange('gemini_api_key', e.target.value)} 
-                                                placeholder="..." 
+                                            <input
+                                                type="password"
+                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-wtech-gold outline-none transition-all"
+                                                value={config.gemini_api_key || ''}
+                                                onChange={e => handleChange('gemini_api_key', e.target.value)}
+                                                placeholder="..."
                                             />
                                         </div>
                                     </div>
@@ -6531,7 +6531,7 @@ const Admin = () => {
     const navigate = useNavigate();
     const { settings: config } = useSettings();
     const [collapsed, setCollapsed] = useState(false);
-    
+
     // State for View Switching
     const [currentView, _setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard');
 
@@ -7029,7 +7029,7 @@ const Admin = () => {
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
                                 <SidebarItem icon={Megaphone} label="Campanhas" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
-                            
+
                             {(hasPermission('marketing_view') || hasPermission('manage_marketing') || hasPermission('blog_view') || hasPermission('landing_pages_view')) && (
                                 <SidebarItem icon={Rocket} label="Marketing" active={currentView === 'marketing_hub'} onClick={() => { setCurrentView('marketing_hub'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
                             )}
