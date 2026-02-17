@@ -273,12 +273,12 @@ const LPErgonomia: React.FC = () => {
                     <div className="max-w-4xl">
                         {/* Text */}
                         <motion.div initial="hidden" animate="visible" variants={stagger}>
-                            <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6">
+                            <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-8">
                                 <Zap size={14} className="text-wtech-gold" />
-                                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Curso Online — W-Tech Brasil</span>
+                                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-wtech-gold">Curso Online — W-Tech Brasil</span>
                             </motion.div>
 
-                            <motion.h1 variants={v} className="text-4xl md:text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.95] mb-6 drop-shadow-lg">
+                            <motion.h1 variants={v} className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-[0.85] mb-8 drop-shadow-lg">
                                 Pilote com<br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-500 to-amber-600 drop-shadow-none">Conforto, Controle</span><br />
                                 e Performance
@@ -335,8 +335,8 @@ const LPErgonomia: React.FC = () => {
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-gold/40 to-transparent" />
                 <div className="container mx-auto px-6 relative z-10">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.2em] text-xs">Identifique-se</motion.span>
-                        <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4 mb-4">
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Identifique-se</motion.span>
+                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
                             Para Quem é <span className="text-wtech-gold">Este Curso</span>
                         </motion.h2>
                         <motion.p variants={v} className="text-gray-500 max-w-2xl mx-auto">
@@ -374,8 +374,8 @@ const LPErgonomia: React.FC = () => {
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         {/* Text */}
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-                            <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.2em] text-xs">Entenda o conceito</motion.span>
-                            <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4 mb-8">
+                            <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Entenda o conceito</motion.span>
+                            <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-8 tracking-tighter">
                                 O que é <span className="text-wtech-gold">Ergonomia</span> na Moto?
                             </motion.h2>
                             <motion.p variants={v} className="text-gray-300 text-lg leading-relaxed mb-4">
@@ -426,9 +426,9 @@ const LPErgonomia: React.FC = () => {
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-red/40 to-transparent" />
                 <div className="container mx-auto px-6 relative z-10">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-8">
-                        <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.2em] text-xs">O Curso</motion.span>
-                        <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4 mb-4">
-                            Sobre o Curso <span className="text-wtech-gold">Online</span>
+                        <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">O Conteúdo</motion.span>
+                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
+                            Ementa do <span className="text-wtech-gold">Curso Online</span>
                         </motion.h2>
                     </motion.div>
 
@@ -493,8 +493,8 @@ const LPErgonomia: React.FC = () => {
             <section className="py-24 bg-black border-t border-white/5">
                 <div className="container mx-auto px-6">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.2em] text-xs">Quem ensina</motion.span>
-                        <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4">
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Autoridade Técnica</motion.span>
+                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">
                             Seus <span className="text-wtech-gold">Instrutores</span>
                         </motion.h2>
                     </motion.div>
@@ -578,8 +578,8 @@ const LPErgonomia: React.FC = () => {
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-gold/40 to-transparent" />
                 <div className="container mx-auto px-6 relative z-10">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.2em] text-xs">Resultados</motion.span>
-                        <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4 mb-4">
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Transformação Real</motion.span>
+                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
                             O Que Você Vai <span className="text-wtech-gold">Conquistar</span>
                         </motion.h2>
                     </motion.div>
@@ -623,8 +623,8 @@ const LPErgonomia: React.FC = () => {
             <section className="py-24 bg-black">
                 <div className="container mx-auto px-6">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.2em] text-xs">Prova social</motion.span>
-                        <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4">
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Prova Social</motion.span>
+                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">
                             O Que Dizem <span className="text-wtech-gold">Nossos Alunos</span>
                         </motion.h2>
                     </motion.div>
@@ -683,8 +683,8 @@ const LPErgonomia: React.FC = () => {
             <section className="py-24 bg-zinc-950 border-t border-white/5">
                 <div className="container mx-auto px-6">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.2em] text-xs">Dúvidas</motion.span>
-                        <motion.h2 variants={v} className="text-3xl md:text-5xl font-black uppercase mt-4">
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Dúvidas Frequentes</motion.span>
+                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">
                             Perguntas <span className="text-wtech-gold">Frequentes</span>
                         </motion.h2>
                     </motion.div>

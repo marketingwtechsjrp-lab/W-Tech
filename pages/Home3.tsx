@@ -78,13 +78,32 @@ const Home3 = () => {
                     .limit(3);
 
                 if (coursesData) {
-                    setCourses(coursesData.map((c: any) => ({
+                    const dbCourses = coursesData.map((c: any) => ({
                         ...c,
                         locationType: c.location_type,
                         registeredCount: c.registered_count,
                         hotelsInfo: c.hotels_info,
-                        dateEnd: c.date_end
-                    })));
+                        dateEnd: c.date_end,
+                        tags: c.tags || []
+                    }));
+
+                    const ergoCourse: any = {
+                        id: 'ergonomia-online',
+                        title: 'Curso de Ergonomia de Pilotagem',
+                        description: 'Domine o ajuste da sua moto. Menos dor, mais controle e performance. Com Alex Crepaldi e Paschoalin.',
+                        date: '2026-03-01T10:00:00Z',
+                        location: 'Plataforma Online',
+                        locationType: 'Online',
+                        status: 'Published',
+                        capacity: 1000,
+                        registeredCount: 342,
+                        instructor: 'Alex Crepaldi',
+                        image: '/images/hero-ergonomia.png',
+                        tags: ['ERGONOMIA_ONLINE', 'ONLINE'],
+                        features: ['Acesso Vitalício', 'Certificado']
+                    };
+
+                    setCourses([...dbCourses, ergoCourse]);
                 }
 
                 // Fetch Blog Posts (Latest 3)
@@ -219,7 +238,7 @@ const Home3 = () => {
                     }
                 }}
             />
-            
+
             {/* NEW HERO SCROLL ANIMATION */}
             <HeroScrollAnimation />
 
@@ -342,10 +361,10 @@ const Home3 = () => {
             <section id="agenda" className="py-24 bg-black relative selection:bg-wtech-red selection:text-white overflow-hidden">
                 {/* Background Image with Overlay */}
                 <div className="absolute inset-0 z-0">
-                    <img 
-                        src="https://media.jornaldooeste.com.br/2022/03/79b31d1f-bissinhozavatti_hondaracing_rallyminasbrasil2022_creditoricardoleizer_mundopress_4028-scaled-1.jpg" 
-                        alt="Piloto de Rally Bissinho Zavatti representando a parceria técnica da W-Tech" 
-                        className="w-full h-full object-cover opacity-40" 
+                    <img
+                        src="https://media.jornaldooeste.com.br/2022/03/79b31d1f-bissinhozavatti_hondaracing_rallyminasbrasil2022_creditoricardoleizer_mundopress_4028-scaled-1.jpg"
+                        alt="Piloto de Rally Bissinho Zavatti representando a parceria técnica da W-Tech"
+                        className="w-full h-full object-cover opacity-40"
                         width="1920"
                         height="1280"
                         loading="lazy"
@@ -363,7 +382,7 @@ const Home3 = () => {
                             </p>
                         </div>
                         <div className="hidden md:block">
-                            <button 
+                            <button
                                 onClick={downloadCourseList}
                                 className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/10 text-white font-bold rounded-lg hover:bg-wtech-gold hover:text-black transition-all shadow-sm flex items-center gap-2 uppercase text-sm"
                             >
@@ -376,10 +395,10 @@ const Home3 = () => {
                         {/* LEFT: VISUAL CALENDAR WIDGET */}
                         {/* LEFT: VISUAL CALENDAR WIDGET - NEW BENTO MODEL */}
                         <div className="lg:col-span-4 lg:sticky lg:top-32 h-fit">
-                             <BentoCalendar events={courses.map(c => ({ start: c.date, end: c.dateEnd }))} />
-                             
-                             {/* Simple Legend below the bento card */}
-                             <div className="mt-6 flex flex-wrap gap-6 px-4">
+                            <BentoCalendar events={courses.map(c => ({ start: c.date, end: c.dateEnd }))} />
+
+                            {/* Simple Legend below the bento card */}
+                            <div className="mt-6 flex flex-wrap gap-6 px-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-3 h-3 rounded-full bg-wtech-gold shadow-[0_0_10px_rgba(212,175,55,0.4)]"></div>
                                     <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none">Cursos Presenciais</span>
@@ -388,7 +407,7 @@ const Home3 = () => {
                                     <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]"></div>
                                     <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest leading-none">Eventos Online</span>
                                 </div>
-                             </div>
+                            </div>
                         </div>
 
                         {/* RIGHT: EVENT LIST */}
@@ -426,7 +445,7 @@ const Home3 = () => {
 
                                         {/* Action */}
                                         <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     const tags = course.tags || [];
                                                     if (tags.includes('LISBOA_ABRIL_2026')) {
@@ -435,10 +454,12 @@ const Home3 = () => {
                                                         navigate('/lp-wtech-lisboa');
                                                     } else if (tags.includes('PRORIDERS_EUROPA_2026')) {
                                                         navigate('/lp-proriders-lisboa');
+                                                    } else if (tags.includes('ERGONOMIA_ONLINE')) {
+                                                        navigate('/curso-suspensao-piloto');
                                                     } else {
                                                         navigate(`/lp/${course.id}`);
                                                     }
-                                                }} 
+                                                }}
                                                 className="w-full md:w-auto px-6 py-3 bg-white text-black text-sm font-bold rounded-lg hover:bg-wtech-gold transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
                                             >
                                                 Mais Detalhes <ArrowRight size={16} />
@@ -460,7 +481,7 @@ const Home3 = () => {
                                     <p className="text-gray-400">Acesse nossa plataforma EAD e estude de onde estiver.</p>
                                 </div>
                                 <div className="relative z-10">
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/cursos')}
                                         className="px-8 py-4 bg-wtech-gold text-black font-bold rounded-lg hover:scale-105 transition-transform uppercase tracking-widest text-xs"
                                     >
@@ -481,13 +502,13 @@ const Home3 = () => {
                     <ContainerAnimated animation="top" className="mb-2">
                         <span className="text-wtech-gold font-bold tracking-[0.3em] uppercase text-xs">W-TECH BRASIL</span>
                     </ContainerAnimated>
-                    
+
                     <ContainerAnimated animation="blur">
                         <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white uppercase tracking-tighter leading-none">
                             EXPERIÊNCIA
                         </h2>
                     </ContainerAnimated>
-                    
+
                     <ContainerAnimated animation="blur" transition={{ delay: 0.1 }}>
                         <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white uppercase tracking-tighter leading-none -mt-2 md:-mt-6">
                             IMERSIVA
@@ -496,14 +517,14 @@ const Home3 = () => {
 
                     <ContainerAnimated animation="bottom" className="mt-8">
                         <p className="text-white/40 font-medium text-center uppercase tracking-[0.3em] text-[10px] animate-pulse">
-                             ↓ SCROLLE PARA EXPANDIR
+                            ↓ SCROLLE PARA EXPANDIR
                         </p>
                     </ContainerAnimated>
                 </ContainerStagger>
 
-                <ContainerInset 
-                    insetXRange={[isMobile ? 20 : 35, 0]} 
-                    insetYRange={[isMobile ? 15 : 25, 0]} 
+                <ContainerInset
+                    insetXRange={[isMobile ? 20 : 35, 0]}
+                    insetYRange={[isMobile ? 15 : 25, 0]}
                     progressRange={[0, isMobile ? 0.25 : 0.45]}
                     translateYRange={["0%", "2%"]}
                     className="mx-4 md:mx-8 shadow-2xl"
@@ -522,7 +543,7 @@ const Home3 = () => {
                             loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
-                        
+
                         {/* Audio Controls */}
                         <div className="absolute bottom-8 right-8 z-50">
                             <button
@@ -549,10 +570,10 @@ const Home3 = () => {
                         <ContainerAnimated animation="left">
                             <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tighter">O Próximo Nível da Suspensão</h2>
                         </ContainerAnimated>
-                        
+
                         <ContainerAnimated animation="left" transition={{ delay: 0.2 }}>
                             <p className="text-xl text-gray-400 mb-10 font-medium leading-relaxed">
-                                Mais do que um treinamento, uma imersão completa no mundo da alta performance. 
+                                Mais do que um treinamento, uma imersão completa no mundo da alta performance.
                                 Na W-Tech, combinamos tecnologia de ponta com a experiência prática dos melhores especialistas do mercado para entregar um conhecimento que não existe em livros.
                             </p>
                         </ContainerAnimated>
@@ -670,14 +691,14 @@ const Home3 = () => {
 
                         {/* Form Side */}
                         <div id="formulario" className="lg:col-span-8 group/form [perspective:2000px]">
-                            <motion.div 
+                            <motion.div
                                 className="relative w-full h-full [transform-style:preserve-3d]"
                                 animate={{ rotateY: isSubmitted ? 180 : 0 }}
                                 transition={{ duration: 0.8, ease: "circOut" }}
                             >
                                 {/* Glowing Background Blur */}
                                 <div className="absolute -inset-1 bg-gradient-to-r from-wtech-gold to-yellow-600 rounded-[2.5rem] blur opacity-25 group-hover/form:opacity-50 transition duration-1000"></div>
-                                
+
                                 {/* FRONT SIDE: THE FORM */}
                                 <div className="relative bg-[#0a0a0a] backdrop-blur-2xl p-8 lg:p-12 rounded-[2.5rem] border border-white/10 shadow-2xl [backface-visibility:hidden]">
                                     <div className="absolute top-0 right-0 p-8">
@@ -688,13 +709,13 @@ const Home3 = () => {
 
                                     <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tight">Envie uma mensagem</h3>
                                     <p className="text-gray-400 mb-10 font-medium">Preencha o formulário e nossa equipe técnica entrará em contato.</p>
-                                    
+
                                     <form onSubmit={async (e) => {
                                         e.preventDefault();
                                         const formEl = e.target as HTMLFormElement;
                                         const btn = formEl.querySelector('button');
-                                        if(btn) btn.disabled = true;
-                                        
+                                        if (btn) btn.disabled = true;
+
                                         const formData = new FormData(formEl);
                                         const payload = {
                                             name: formData.get('name'),
@@ -705,19 +726,19 @@ const Home3 = () => {
                                             context_id: `Assunto: ${formData.get('subject')} | Msg: ${formData.get('message')}`,
                                             tags: ['home_contact', 'website'],
                                             origin: window.location.href,
-                                            assigned_to: null 
+                                            assigned_to: null
                                         };
 
                                         try {
                                             await supabase.from('SITE_Leads').insert([payload]);
-                                            try { await triggerWebhook('webhook_lead', payload); } catch(e) {}
+                                            try { await triggerWebhook('webhook_lead', payload); } catch (e) { }
                                             setIsSubmitted(true);
                                             formEl.reset();
                                         } catch (err) {
                                             console.error(err);
                                             alert('Erro ao enviar mensagem.');
                                         } finally {
-                                            if(btn) btn.disabled = false;
+                                            if (btn) btn.disabled = false;
                                         }
                                     }} className="space-y-6">
                                         <div className="grid md:grid-cols-2 gap-8">
@@ -750,7 +771,7 @@ const Home3 = () => {
                                             <textarea name="message" required rows={4} className="w-full px-5 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:outline-none focus:border-wtech-gold focus:bg-white/10 transition-all placeholder:text-gray-600 resize-none" placeholder="Descreva brevemente sua dúvida ou necessidade..."></textarea>
                                         </div>
 
-                                        <button 
+                                        <button
                                             type="submit"
                                             className="w-full md:w-auto px-12 py-5 bg-wtech-gold text-black font-black uppercase tracking-widest text-xs rounded-xl hover:bg-white transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.2)]"
                                         >
@@ -760,24 +781,24 @@ const Home3 = () => {
                                 </div>
 
                                 {/* BACK SIDE: SUCCESS MESSAGE */}
-                                <div 
+                                <div
                                     className="absolute inset-0 bg-[#0a0a0a] backdrop-blur-2xl p-8 lg:p-12 rounded-[2.5rem] border border-wtech-gold/30 shadow-2xl [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center text-center"
                                 >
                                     <div className="mb-6 px-4 py-1 bg-wtech-gold/10 border border-wtech-gold/20 rounded-full">
                                         <span className="text-[10px] font-black text-wtech-gold uppercase tracking-[0.2em]">Cadastro Concluído</span>
                                     </div>
-                                    
+
                                     <div className="w-24 h-24 rounded-full bg-wtech-gold/20 flex items-center justify-center text-wtech-gold mb-8 shadow-[0_0_50px_rgba(212,175,55,0.3)]">
                                         <CheckCircle size={52} className="animate-in zoom-in duration-500" />
                                     </div>
-                                    
-                                    <h3 className="text-4xl font-black text-white mb-4 uppercase tracking-tighter">SOLICITAÇÃO <br/> ENVIADA!</h3>
+
+                                    <h3 className="text-4xl font-black text-white mb-4 uppercase tracking-tighter">SOLICITAÇÃO <br /> ENVIADA!</h3>
                                     <p className="text-gray-400 text-lg max-w-sm leading-relaxed font-medium">
-                                        Sua mensagem foi recebida pela nossa central técnica em São José do Rio Preto. <br/>
+                                        Sua mensagem foi recebida pela nossa central técnica em São José do Rio Preto. <br />
                                         <span className="text-white">Retornaremos em breve.</span>
                                     </p>
-                                    
-                                    <button 
+
+                                    <button
                                         onClick={() => setIsSubmitted(false)}
                                         className="mt-12 px-8 py-3 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white border border-white/10 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest"
                                     >

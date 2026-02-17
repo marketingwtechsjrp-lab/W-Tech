@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
-import { 
-  CheckCircle, 
-  ArrowRight, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  ShieldCheck, 
-  Settings, 
-  Zap, 
-  Award,
-  Users,
-  Target,
-  Smartphone,
-  Mail,
-  User,
-  AlertOctagon,
-  Instagram
+import {
+    CheckCircle,
+    ArrowRight,
+    MapPin,
+    Calendar,
+    Clock,
+    ShieldCheck,
+    Settings,
+    Zap,
+    Award,
+    Users,
+    Target,
+    Smartphone,
+    Mail,
+    User,
+    AlertOctagon,
+    Instagram
 } from 'lucide-react';
 
 const LPProRidersLisboa: React.FC = () => {
@@ -46,11 +46,11 @@ const LPProRidersLisboa: React.FC = () => {
 
             const { error } = await supabase.from('SITE_Leads').insert([payload]);
             if (error) throw error;
-            
+
             await triggerWebhook('webhook_lead', payload);
-            
-             // Specific Webhook for Lisbon Course (Reusing endpoint but with distinct page ID)
-             await fetch('https://webhook.2b.app.br/webhook/lisboa-curso', {
+
+            // Specific Webhook for Lisbon Course (Reusing endpoint but with distinct page ID)
+            await fetch('https://webhook.2b.app.br/webhook/lisboa-curso', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +81,7 @@ const LPProRidersLisboa: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
-            
+
             {/* TOP BAR */}
             <div className="bg-wtech-red text-white text-[10px] md:text-xs font-black uppercase tracking-widest text-center py-2 px-4">
                 🇵🇹 Lisboa 2026: Formação Presencial Definitiva em Manutenção BMW GS
@@ -98,37 +98,37 @@ const LPProRidersLisboa: React.FC = () => {
             {/* HERO SECTION */}
             <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
                 {/* Background */}
-                    <div className="absolute inset-0 z-0 overflow-hidden">
-                        <div className="absolute inset-0 bg-black/60 z-10"></div>
-                        <iframe 
-                            src="https://www.youtube.com/embed/yWofinvE0Xg?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=yWofinvE0Xg" 
-                            className="absolute top-1/2 left-1/2 w-[350%] h-[350%] md:w-full md:h-full md:scale-150 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        ></iframe>
-                    </div>
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 z-10"></div>
+                    <iframe
+                        src="https://www.youtube.com/embed/yWofinvE0Xg?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=yWofinvE0Xg"
+                        className="absolute top-1/2 left-1/2 w-[350%] h-[350%] md:w-full md:h-full md:scale-150 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    ></iframe>
+                </div>
 
                 <div className="container mx-auto px-6 relative z-20 text-center">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-8"
                     >
-                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Portugal.svg/255px-Flag_of_Portugal.svg.png" className="w-4 h-auto rounded-sm" alt="PT" />
-                         <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Lisboa | 1, 2 e 3 de Maio 2026</span>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Portugal.svg/255px-Flag_of_Portugal.svg.png" className="w-4 h-auto rounded-sm" alt="PT" />
+                        <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Lisboa | 1, 2 e 3 de Maio 2026</span>
                     </motion.div>
-                    
-                    <motion.h1 
+
+                    <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                         className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.9] mb-8"
                     >
-                        Curso Avançado<br/>
+                        Curso Avançado<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red to-red-800">BMW GS & Suspensões Premium</span>
                     </motion.h1>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.4 }}
@@ -142,13 +142,13 @@ const LPProRidersLisboa: React.FC = () => {
                         </p>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.6 }}
                         className="flex flex-col md:flex-row gap-4 justify-center items-center"
                     >
-                        <button 
+                        <button
                             onClick={scrollToForm}
                             className="bg-wtech-red hover:bg-black text-white px-10 py-5 rounded-sm font-black text-lg uppercase tracking-widest transition-all hover:scale-105 flex items-center gap-3 shadow-[0_0_40px_rgba(230,0,0,0.3)]"
                         >
@@ -156,7 +156,7 @@ const LPProRidersLisboa: React.FC = () => {
                         </button>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.8 }}
@@ -194,9 +194,9 @@ const LPProRidersLisboa: React.FC = () => {
 
             {/* WARNING - NOT FOR BEGINNERS */}
             <section className="py-24 bg-black relative">
-                 <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+                <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
                     <div>
-                        <span className="text-wtech-red font-black uppercase tracking-[0.2em] text-xs">Para Exigentes</span>
+                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Para Exigentes</span>
                         <h2 className="text-3xl md:text-5xl font-black uppercase mt-4 mb-8">
                             Este curso <span className="text-wtech-red">não exige experiência prévia</span>
                         </h2>
@@ -208,41 +208,41 @@ const LPProRidersLisboa: React.FC = () => {
                                 Este curso foi desenhado para quem não aceita o básico. Você vai aprender a diagnosticar, manter e entender sua máquina em nível de engenharia, mas com linguagem prática.
                             </p>
                         </div>
-                         
-                         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             {[
-                                 "Economize em Manutenções",
-                                 "Evite Diagnósticos Errados",
-                                 "Viaje com Autonomia",
-                                 "Domine sua Máquina"
-                             ].map((item, i) => (
-                                 <div key={i} className="flex items-center gap-3 text-wtech-red font-bold uppercase text-xs tracking-wide">
-                                     <CheckCircle size={16} /> {item}
-                                 </div>
-                             ))}
-                         </div>
+
+                        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {[
+                                "Economize em Manutenções",
+                                "Evite Diagnósticos Errados",
+                                "Viaje com Autonomia",
+                                "Domine sua Máquina"
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center gap-3 text-wtech-red font-bold uppercase text-xs tracking-wide">
+                                    <CheckCircle size={16} /> {item}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div className="relative">
-                        <img 
-                            src="https://w-techstore.com.br/wp-content/uploads/2025/12/fernando-alex.png" 
-                            alt="ProRiders & W-Tech Team" 
-                            className="relative w-full rounded-sm border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-700" 
+                        <img
+                            src="https://w-techstore.com.br/wp-content/uploads/2025/12/fernando-alex.png"
+                            alt="ProRiders & W-Tech Team"
+                            className="relative w-full rounded-sm border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
                         />
-                         <div className="absolute bottom-6 right-6 bg-wtech-red text-white p-4 font-black uppercase text-xs tracking-widest shadow-lg">
+                        <div className="absolute bottom-6 right-6 bg-wtech-red text-white p-4 font-black uppercase text-xs tracking-widest shadow-lg">
                             Mecânicos & Entusiastas
                         </div>
                     </div>
-                 </div>
+                </div>
             </section>
 
             {/* TARGET AUDIENCE */}
             <section className="py-24 bg-zinc-950 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-red/50 to-transparent"></div>
-                
+
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="text-center mb-20">
-                         <h2 className="text-3xl md:text-5xl font-black uppercase mb-4">Para quem é esta <span className="text-wtech-red">Formação</span></h2>
-                         <p className="text-gray-500 uppercase tracking-widest text-sm">Profissionais, Entusiastas e Proprietários</p>
+                        <h2 className="text-3xl md:text-5xl font-black uppercase mb-4">Para quem é esta <span className="text-wtech-red">Formação</span></h2>
+                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Identifique-se</span>
                     </div>
 
                     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
@@ -259,7 +259,7 @@ const LPProRidersLisboa: React.FC = () => {
                             ))}
                         </div>
                         <div className="space-y-4">
-                             {[
+                            {[
                                 "Entusiastas apaixonados por mecânica",
                                 "Quem busca conhecimento técnico real e validado",
                                 "Quem não aceita manutenção superficial"
@@ -279,7 +279,7 @@ const LPProRidersLisboa: React.FC = () => {
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-black uppercase mb-4">Por que este Curso <span className="text-wtech-red">Funciona</span></h2>
-                        <p className="text-gray-500 uppercase tracking-widest text-sm">Metodologia validada no Brasil, agora na Europa</p>
+                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Metodologia</span>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
@@ -289,27 +289,27 @@ const LPProRidersLisboa: React.FC = () => {
                                 title: "Domínio Técnico Real",
                                 desc: "Você passa a entender profundamente o funcionamento da sua moto, seja para consertar ou pilotar melhor."
                             },
-                             {
+                            {
                                 icon: <Settings size={32} className="text-blue-500" />,
                                 title: "Acesso a Condições Exclusivas",
                                 desc: "Acesso a ferramentas e conhecimentos que antes eram restritos a concessionárias e equipes de corrida."
                             },
-                             {
+                            {
                                 icon: <Users size={32} className="text-green-500" />,
                                 title: "Suporte Técnico Pós-Curso",
                                 desc: "Suporte técnico especializado por mensagem. Chega de depender apenas de fóruns e vídeos soltos."
                             },
-                             {
+                            {
                                 icon: <Zap size={32} className="text-yellow-500" />,
                                 title: "Metodologia Validada",
                                 desc: "Método testado em oficinas reais, com base na experiência da W-Tech Suspensões e da ProRiders."
                             },
-                             {
+                            {
                                 icon: <Smartphone size={32} className="text-purple-500" />,
                                 title: "Aprendizado Prático",
                                 desc: "Nada de teoria desnecessária. Você aprende, coloca a mão na graxa e entende como tudo funciona."
                             },
-                             {
+                            {
                                 icon: <ShieldCheck size={32} className="text-wtech-red" />,
                                 title: "Certificação Oficial",
                                 desc: "Certificado W-Tech + ProRiders, agregando valor imediato ao seu currículo e parede da oficina."
@@ -327,7 +327,7 @@ const LPProRidersLisboa: React.FC = () => {
                 </div>
             </section>
 
-             {/* LOCATION DETAILS */}
+            {/* LOCATION DETAILS */}
             <section className="py-24 relative bg-zinc-900 overflow-hidden">
                 <div className="absolute inset-0 z-0">
                     <img src="https://liquimoly.cloudimg.io/v7/https://w-techstore.com.br/wp-content/uploads/2025/12/3.png?func=vis&w=1920" className="w-full h-full object-cover opacity-10 blur-sm" alt="Liqui Moly Background" />
@@ -335,7 +335,7 @@ const LPProRidersLisboa: React.FC = () => {
                 </div>
 
                 <div className="container mx-auto px-6 text-center relative z-10">
-                    <motion.div 
+                    <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         whileInView={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.8 }}
@@ -344,25 +344,25 @@ const LPProRidersLisboa: React.FC = () => {
                         <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-20 mx-auto mb-10 bg-white p-4 rounded shadow-[0_0_30px_rgba(255,255,255,0.2)]" />
                         <h2 className="text-3xl font-black uppercase mb-12 tracking-wide">Liqui Moly Iberia <span className="text-blue-500">Experience Center</span></h2>
                     </motion.div>
-                    
+
                     <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-                        <motion.div 
+                        <motion.div
                             initial={{ x: -50, opacity: 0 }}
                             whileInView={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.8 }}
                             className="bg-black/80 backdrop-blur-md p-10 border-l-4 border-blue-600 rounded-r-xl text-left shadow-2xl"
                         >
-                             <div className="flex items-start gap-4 mb-6">
+                            <div className="flex items-start gap-4 mb-6">
                                 <MapPin className="text-blue-500 shrink-0 mt-1" size={32} />
                                 <div className="text-left">
                                     <h3 className="text-xl font-bold uppercase text-white mb-2">Endereço Exclusivo</h3>
                                     <p className="text-gray-400 text-sm mb-4 italic">Sintra Business Park - Edifício 01 - 1º P, 2710-089 Sintra, Portugal</p>
-                                    
+
                                     <div className="flex flex-wrap gap-4 mb-2">
-                                        <a 
-                                            href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9" 
-                                            target="_blank" 
-                                            rel="noreferrer" 
+                                        <a
+                                            href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9"
+                                            target="_blank"
+                                            rel="noreferrer"
                                             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-white hover:text-blue-600 text-white px-4 py-2 rounded font-black text-[10px] uppercase tracking-widest transition-all shadow-lg"
                                         >
                                             <MapPin size={14} /> Abrir no Google Maps
@@ -372,34 +372,34 @@ const LPProRidersLisboa: React.FC = () => {
                                         </a>
                                     </div>
                                 </div>
-                             </div>
-                             
+                            </div>
+
                             {/* MAP */}
-                             <div className="w-full h-64 rounded-md overflow-hidden border border-white/10 filter grayscale hover:grayscale-0 transition-all">
-                                <iframe 
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3111.455242767936!2d-9.352458023472064!3d38.75323215516017!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd1ecf04506821e9%3A0x6e8a4a58b293157!2sLiqui%20Moly%20Portugal!5e0!3m2!1sen!2spt!4v1703865432123!5m2!1sen!2spt" 
-                                    width="100%" 
-                                    height="100%" 
-                                    style={{ border: 0 }} 
-                                    allowFullScreen={true} 
-                                    loading="lazy" 
+                            <div className="w-full h-64 rounded-md overflow-hidden border border-white/10 filter grayscale hover:grayscale-0 transition-all">
+                                <iframe
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3111.455242767936!2d-9.352458023472064!3d38.75323215516017!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd1ecf04506821e9%3A0x6e8a4a58b293157!2sLiqui%20Moly%20Portugal!5e0!3m2!1sen!2spt!4v1703865432123!5m2!1sen!2spt"
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: 0 }}
+                                    allowFullScreen={true}
+                                    loading="lazy"
                                     referrerPolicy="no-referrer-when-downgrade"
                                 ></iframe>
-                             </div>
+                            </div>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                             initial={{ x: 50, opacity: 0 }}
                             whileInView={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.8 }}
                             className="relative group rounded-xl overflow-hidden border border-white/10 hover:border-blue-500 transition-colors shadow-2xl"
                         >
                             <div className="aspect-video relative">
-                                <iframe 
-                                    className="w-full h-full" 
-                                    src="https://www.youtube.com/embed/JqDGXUdsSrQ?rel=0" 
-                                    title="Sede Liqui Moly" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                <iframe
+                                    className="w-full h-full"
+                                    src="https://www.youtube.com/embed/JqDGXUdsSrQ?rel=0"
+                                    title="Sede Liqui Moly"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </div>
@@ -418,12 +418,12 @@ const LPProRidersLisboa: React.FC = () => {
                     </div>
 
                     <div className="max-w-5xl mx-auto">
-                         <div className="aspect-video relative rounded-xl overflow-hidden shadow-[0_0_50px_rgba(230,0,0,0.1)] border border-white/10 group">
-                             <iframe 
-                                className="w-full h-full" 
-                                src="https://www.youtube.com/embed/3LqrvfmuUME?rel=0" 
+                        <div className="aspect-video relative rounded-xl overflow-hidden shadow-[0_0_50px_rgba(230,0,0,0.1)] border border-white/10 group">
+                            <iframe
+                                className="w-full h-full"
+                                src="https://www.youtube.com/embed/3LqrvfmuUME?rel=0"
                                 title="Preview Curso Lisboa"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
                             ></iframe>
                         </div>
@@ -434,12 +434,12 @@ const LPProRidersLisboa: React.FC = () => {
             {/* CURRICULUM */}
             <section className="py-24 bg-black">
                 <div className="container mx-auto px-6">
-                     <div className="text-center mb-16">
+                    <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-black uppercase">O Que Você Vai <span className="text-wtech-red">Aprender</span> (Na Prática)</h2>
                         <p className="text-gray-500 mt-4 text-lg">Conteúdo Focado em Resultado e Faturamento</p>
-                     </div>
+                    </div>
 
-                     <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
                         {[
                             "Revisão e diagnóstico avançado de motores BMW GS",
                             "Diagnóstico profissional de eletrônica embarcada",
@@ -457,7 +457,7 @@ const LPProRidersLisboa: React.FC = () => {
                                 <h3 className="text-lg font-bold text-gray-200">{item}</h3>
                             </div>
                         ))}
-                     </div>
+                    </div>
                 </div>
             </section>
 
@@ -546,7 +546,7 @@ const LPProRidersLisboa: React.FC = () => {
                     {/* Routine Bar */}
                     <div className="mt-16 bg-zinc-900 border border-white/5 p-8 rounded-2xl max-w-5xl mx-auto shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-24 h-full bg-wtech-red/5 -skew-x-12 translate-x-12"></div>
-                        
+
                         <div className="grid md:grid-cols-4 gap-8 relative z-10">
                             <div>
                                 <h4 className="text-xs font-black uppercase tracking-widest text-wtech-red mb-4">Início (Sex/Sáb/Dom)</h4>
@@ -597,55 +597,55 @@ const LPProRidersLisboa: React.FC = () => {
 
             {/* INSTRUCTORS */}
             <section className="py-24 bg-zinc-950 border-t border-white/5">
-                 <div className="container mx-auto px-6">
-                     <div className="text-center mb-16">
+                <div className="container mx-auto px-6">
+                    <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-black uppercase">Quem Vai Te <span className="text-wtech-red">Ensinar</span></h2>
                         <p className="text-gray-500 mt-4 text-lg tracking-widest">As maiores autoridades do setor</p>
-                     </div>
+                    </div>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start max-w-5xl mx-auto mt-12 bg-zinc-900/50 border border-white/5 p-8 md:p-12">
-                         <div className="md:w-1/3 shrink-0">
-                             <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/2.png" alt="Fernando Macedo" className="w-full rounded shadow-xl" />
-                         </div>
-                         <div>
-                             <div className="inline-block bg-wtech-red text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Instrutor Principal</div>
-                             <h3 className="text-3xl font-black uppercase text-white mb-2">Fernando Macedo</h3>
-                             <p className="text-gray-400 text-sm mb-6 font-medium">Fundador ProRiders</p>
-                             
-                             <p className="text-gray-300 leading-relaxed mb-6">
-                                Uma das maiores autoridades em manutenção e diagnóstico BMW GS. Mais de 20 anos de experiência prática, especialista em motores boxer e eletrônica embarcada. Consultor técnico de oficinas premium e expedições internacionais.
-                             </p>
+                        <div className="md:w-1/3 shrink-0">
+                            <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/2.png" alt="Fernando Macedo" className="w-full rounded shadow-xl" />
+                        </div>
+                        <div>
+                            <div className="inline-block bg-wtech-red text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Instrutor Principal</div>
+                            <h3 className="text-3xl font-black uppercase text-white mb-2">Fernando Macedo</h3>
+                            <p className="text-gray-400 text-sm mb-6 font-medium">Fundador ProRiders</p>
 
-                             <div className="p-4 bg-black/50 border-l-4 border-wtech-red text-sm text-gray-400">
+                            <p className="text-gray-300 leading-relaxed mb-6">
+                                Uma das maiores autoridades em manutenção e diagnóstico BMW GS. Mais de 20 anos de experiência prática, especialista em motores boxer e eletrônica embarcada. Consultor técnico de oficinas premium e expedições internacionais.
+                            </p>
+
+                            <div className="p-4 bg-black/50 border-l-4 border-wtech-red text-sm text-gray-400">
                                 👉 Responsável pela revisão avançada de motores, diagnóstico e processos BMW GS.
-                             </div>
-                         </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-8 items-center max-w-5xl mx-auto mt-8 p-8 md:p-12 border border-wtech-gold/20 bg-wtech-gold/5">
-                         <div className="md:w-1/4 shrink-0 order-1 md:order-2">
-                             <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/1.png" alt="Alex Crepaldi" className="w-full rounded shadow-xl grayscale hover:grayscale-0 transition-all" />
-                         </div>
-                         <div className="order-2 md:order-1 text-right md:flex-1">
-                             <div className="inline-block bg-zinc-800 text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Especialista em Suspensões</div>
-                             <h3 className="text-2xl font-black uppercase text-white mb-2">Alex Crepaldi</h3>
-                             <p className="text-gray-400 text-sm mb-4 font-medium">Fundador W-Tech Suspensões</p>
-                             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                                 Referência internacional em suspensões on-road e off-road. Responsável por mais de 3.000 profissionais capacitados e consultor de equipes e oficinas.
-                             </p>
-                             <div className="p-4 bg-black/50 border-r-4 border-wtech-gold text-sm text-gray-400 inline-block">
+                        <div className="md:w-1/4 shrink-0 order-1 md:order-2">
+                            <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/1.png" alt="Alex Crepaldi" className="w-full rounded shadow-xl grayscale hover:grayscale-0 transition-all" />
+                        </div>
+                        <div className="order-2 md:order-1 text-right md:flex-1">
+                            <div className="inline-block bg-zinc-800 text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Especialista em Suspensões</div>
+                            <h3 className="text-2xl font-black uppercase text-white mb-2">Alex Crepaldi</h3>
+                            <p className="text-gray-400 text-sm mb-4 font-medium">Fundador W-Tech Suspensões</p>
+                            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+                                Referência internacional em suspensões on-road e off-road. Responsável por mais de 3.000 profissionais capacitados e consultor de equipes e oficinas.
+                            </p>
+                            <div className="p-4 bg-black/50 border-r-4 border-wtech-gold text-sm text-gray-400 inline-block">
                                 👉 Responsável por toda a parte de suspensões premium do curso.
-                             </div>
-                         </div>
+                            </div>
+                        </div>
                     </div>
-                 </div>
+                </div>
             </section>
 
-             {/* WHAT YOU GET */}
-             <section className="py-24 bg-zinc-900 border-t border-white/5">
+            {/* WHAT YOU GET */}
+            <section className="py-24 bg-zinc-900 border-t border-white/5">
                 <div className="container mx-auto px-6 max-w-4xl text-center">
                     <h2 className="text-3xl font-black uppercase mb-12">O que você leva após a experiência</h2>
-                     <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-3 gap-6">
                         {["Pilotagem mais segura", "Confiança real", "Leitura clara da moto", "Consciência corporal", "Evolução técnica", "Networking"].map((item, i) => (
                             <div key={i} className="flex items-center gap-3 justify-center p-4 bg-black border border-white/10 rounded">
                                 <CheckCircle size={20} className="text-green-500 shrink-0" />
@@ -654,7 +654,7 @@ const LPProRidersLisboa: React.FC = () => {
                         ))}
                     </div>
                 </div>
-             </section>
+            </section>
 
             {/* FORM */}
             <section id="registration-form" className="py-24 relative text-white">
@@ -670,7 +670,7 @@ const LPProRidersLisboa: React.FC = () => {
                             <p className="text-gray-400 text-lg mb-8 leading-relaxed">
                                 As vagas são limitadas pela segurança e personalização do acompanhamento.
                             </p>
-                            
+
                             <ul className="space-y-4 mb-8">
                                 <li className="flex items-center gap-3 font-bold"><CheckCircle size={20} className="text-wtech-red" /> 3 Dias de Imersão</li>
                                 <li className="flex items-center gap-3 font-bold"><CheckCircle size={20} className="text-wtech-red" /> Turma Reduzida</li>
@@ -680,7 +680,7 @@ const LPProRidersLisboa: React.FC = () => {
 
                             <div className="bg-white/5 backdrop-blur-sm p-6 rounded-lg border-l-4 border-wtech-red">
                                 <p className="text-sm font-bold text-gray-300 uppercase tracking-wide">
-                                    ⚠️ AVISO IMPORTANTE:<br/>
+                                    ⚠️ AVISO IMPORTANTE:<br />
                                     Sem lista extra e sem nova data confirmada.
                                 </p>
                             </div>
@@ -700,31 +700,31 @@ const LPProRidersLisboa: React.FC = () => {
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">Nome Completo</label>
-                                        <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="O seu nome" />
+                                        <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="O seu nome" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">E-mail Profissional</label>
-                                        <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="email@exemplo.com" />
+                                        <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="email@exemplo.com" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-black uppercase text-gray-500 mb-1">Telemóvel / WhatsApp</label>
-                                            <input required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="+351 ..." />
+                                            <input required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="+351 ..." />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-black uppercase text-gray-500 mb-1">CPF (Obrigatório)</label>
-                                            <input required value={form.cpf} onChange={e => setForm({...form, cpf: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="CPF..." />
+                                            <input required value={form.cpf} onChange={e => setForm({ ...form, cpf: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="CPF..." />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">Motivo da Inscrição (Opcional)</label>
-                                        <textarea value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-medium focus:ring-2 focus:ring-wtech-red outline-none h-24 resize-none text-black" placeholder="Sou mecânico, piloto, entusiasta..." />
+                                        <textarea value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-medium focus:ring-2 focus:ring-wtech-red outline-none h-24 resize-none text-black" placeholder="Sou mecânico, piloto, entusiasta..." />
                                     </div>
 
                                     <button disabled={loading} className="w-full bg-wtech-red hover:bg-black text-white font-black text-lg py-4 uppercase tracking-wide transition-all shadow-lg mt-4 disabled:opacity-50">
                                         {loading ? 'A Enviar...' : 'QUERO PARTICIPAR DO PRO-RIDERS EUROPA'}
                                     </button>
-                                    
+
                                     <p className="text-center text-[10px] text-gray-400 mt-4 uppercase font-bold">
                                         <ShieldCheck size={12} className="inline mr-1" /> Dados seguros. Entraremos em contacto.
                                     </p>

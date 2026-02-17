@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
-import { 
-  CheckCircle, 
-  ArrowRight, 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  ShieldCheck, 
-  Settings, 
-  Zap, 
-  Award,
-  Users,
-  Target,
-  Smartphone,
-  Mail,
-  User,
-  AlertOctagon,
-  Instagram
+import {
+    CheckCircle,
+    ArrowRight,
+    MapPin,
+    Calendar,
+    Clock,
+    ShieldCheck,
+    Settings,
+    Zap,
+    Award,
+    Users,
+    Target,
+    Smartphone,
+    Mail,
+    User,
+    AlertOctagon,
+    Instagram
 } from 'lucide-react';
 
 const LPWTechLisboa: React.FC = () => {
@@ -45,11 +45,11 @@ const LPWTechLisboa: React.FC = () => {
 
             const { error } = await supabase.from('SITE_Leads').insert([payload]);
             if (error) throw error;
-            
+
             await triggerWebhook('webhook_lead', payload);
-            
-             // Specific Webhook for Lisbon Course
-             await fetch('https://webhook.2b.app.br/webhook/lisboa-curso', {
+
+            // Specific Webhook for Lisbon Course
+            await fetch('https://webhook.2b.app.br/webhook/lisboa-curso', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -80,7 +80,7 @@ const LPWTechLisboa: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
-            
+
             {/* TOP BAR */}
             <div className="bg-wtech-red text-white text-[10px] md:text-xs font-black uppercase tracking-widest text-center py-2 px-4">
                 🇵🇹 Lisboa 2026: A Formação Definitiva em Suspensão de Motas
@@ -97,37 +97,37 @@ const LPWTechLisboa: React.FC = () => {
             {/* HERO SECTION */}
             <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
                 {/* Background */}
-                    <div className="absolute inset-0 z-0 overflow-hidden">
-                        <div className="absolute inset-0 bg-black/60 z-10"></div>
-                        <iframe 
-                            src="https://www.youtube.com/embed/yWofinvE0Xg?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=yWofinvE0Xg" 
-                            className="w-full h-full object-cover scale-150 pointer-events-none"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        ></iframe>
-                    </div>
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-black/60 z-10"></div>
+                    <iframe
+                        src="https://www.youtube.com/embed/yWofinvE0Xg?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=yWofinvE0Xg"
+                        className="w-full h-full object-cover scale-150 pointer-events-none"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    ></iframe>
+                </div>
 
                 <div className="container mx-auto px-6 relative z-20 text-center">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-8"
                     >
-                         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Portugal.svg/255px-Flag_of_Portugal.svg.png" className="w-4 h-auto rounded-sm" alt="PT" />
-                         <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Lisboa | 25 e 26 de Abril 2026</span>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Portugal.svg/255px-Flag_of_Portugal.svg.png" className="w-4 h-auto rounded-sm" alt="PT" />
+                        <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-wtech-gold">Lisboa | 25 e 26 de Abril 2026</span>
                     </motion.div>
-                    
-                    <motion.h1 
+
+                    <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                         className="text-4xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter leading-[0.9] mb-8"
                     >
-                        W-Tech Europa<br/>
+                        W-Tech Europa<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red to-red-800">Lisboa 2026</span>
                     </motion.h1>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.4 }}
@@ -141,13 +141,13 @@ const LPWTechLisboa: React.FC = () => {
                         </p>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.6 }}
                         className="flex flex-col md:flex-row gap-4 justify-center items-center"
                     >
-                        <button 
+                        <button
                             onClick={scrollToForm}
                             className="bg-wtech-red hover:bg-black text-white px-10 py-5 rounded-sm font-black text-lg uppercase tracking-widest transition-all hover:scale-105 flex items-center gap-3 shadow-[0_0_40px_rgba(230,0,0,0.3)]"
                         >
@@ -155,7 +155,7 @@ const LPWTechLisboa: React.FC = () => {
                         </button>
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.8 }}
@@ -193,11 +193,11 @@ const LPWTechLisboa: React.FC = () => {
 
             {/* HISTORIC MARK */}
             <section className="py-24 bg-black relative">
-                 <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+                <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
                     <div>
-                        <span className="text-wtech-gold font-black uppercase tracking-[0.2em] text-xs">Exclusividade Europeia</span>
-                        <h2 className="text-3xl md:text-5xl font-black uppercase mt-4 mb-8">
-                            Um Marco Histórico<br/> para a Europa
+                        <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Exclusividade Europeia</span>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4 mb-8 tracking-tighter">
+                            Um Marco Histórico<br /> para a Europa
                         </h2>
                         <div className="space-y-6 text-gray-400 text-lg leading-relaxed">
                             <p>
@@ -212,16 +212,16 @@ const LPWTechLisboa: React.FC = () => {
                         </div>
                     </div>
                     <div className="relative">
-                        <img 
-                            src="https://w-techstore.com.br/wp-content/uploads/2025/12/alex-fernando-web.webp" 
-                            alt="W-Tech Team in Europe" 
-                            className="relative w-full rounded-sm border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-700" 
+                        <img
+                            src="https://w-techstore.com.br/wp-content/uploads/2025/12/alex-fernando-web.webp"
+                            alt="W-Tech Team in Europe"
+                            className="relative w-full rounded-sm border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
                         />
                         <div className="absolute bottom-6 right-6 bg-wtech-red text-white p-4 font-black uppercase text-xs tracking-widest shadow-lg">
                             Localização Premium
                         </div>
                     </div>
-                 </div>
+                </div>
             </section>
 
             {/* LOCATION DETAILS */}
@@ -232,7 +232,7 @@ const LPWTechLisboa: React.FC = () => {
                 </div>
 
                 <div className="container mx-auto px-6 text-center relative z-10">
-                    <motion.div 
+                    <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         whileInView={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.8 }}
@@ -241,54 +241,54 @@ const LPWTechLisboa: React.FC = () => {
                         <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-20 mx-auto mb-10 bg-white p-4 rounded shadow-[0_0_30px_rgba(255,255,255,0.2)]" />
                         <h2 className="text-3xl font-black uppercase mb-12 tracking-wide">Liqui Moly Iberia <span className="text-blue-500">Experience Center</span></h2>
                     </motion.div>
-                    
+
                     <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-                        <motion.div 
+                        <motion.div
                             initial={{ x: -50, opacity: 0 }}
                             whileInView={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.8 }}
                             className="bg-black/80 backdrop-blur-md p-10 border-l-4 border-blue-600 rounded-r-xl text-left shadow-2xl"
                         >
-                             <div className="flex items-start gap-4 mb-6">
+                            <div className="flex items-start gap-4 mb-6">
                                 <MapPin className="text-blue-500 shrink-0 mt-1" size={32} />
                                 <div>
                                     <h3 className="text-xl font-bold uppercase text-white mb-2">Endereço Exclusivo</h3>
                                     <p className="text-gray-400 text-sm">O curso acontecerá dentro das instalações oficiais, garantindo imersão total.</p>
                                 </div>
-                             </div>
-                             
-                             <address className="not-italic text-lg text-gray-300 space-y-2 border-t border-white/10 pt-6 mt-2">
+                            </div>
+
+                            <address className="not-italic text-lg text-gray-300 space-y-2 border-t border-white/10 pt-6 mt-2">
                                 <strong className="block text-white text-xl uppercase tracking-wider mb-2">Sintra Business Park</strong>
                                 <span className="block border-l-2 border-blue-600 pl-4 py-1 mb-4 italic text-gray-400">Edifício 01 - 1º P</span>
                                 <span className="block text-blue-400 font-bold mb-6 italic tracking-tight underline underline-offset-4 decoration-blue-600/30">2710-089 Sintra – Portugal</span>
 
-                                <a 
-                                    href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9" 
-                                    target="_blank" 
-                                    rel="noreferrer" 
+                                <a
+                                    href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9"
+                                    target="_blank"
+                                    rel="noreferrer"
                                     className="inline-flex items-center gap-3 bg-blue-600 hover:bg-white hover:text-blue-600 text-white px-8 py-4 rounded-sm font-black text-xs uppercase tracking-[0.2em] transition-all mb-8 shadow-[0_15px_30px_rgba(37,99,235,0.3)] group/map"
                                 >
                                     <MapPin size={18} className="group-hover/map:animate-bounce" /> Abrir no Google Maps
                                 </a>
-                                
+
                                 <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
                                     <Instagram size={16} /> @liquimolyiberia
                                 </a>
-                             </address>
+                            </address>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                             initial={{ x: 50, opacity: 0 }}
                             whileInView={{ x: 0, opacity: 1 }}
                             transition={{ duration: 0.8 }}
                             className="relative group rounded-xl overflow-hidden border border-white/10 hover:border-blue-500 transition-colors shadow-2xl"
                         >
                             <div className="aspect-video relative">
-                                <iframe 
-                                    className="w-full h-full" 
-                                    src="https://www.youtube.com/embed/JqDGXUdsSrQ?rel=0" 
-                                    title="Sede Liqui Moly" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                <iframe
+                                    className="w-full h-full"
+                                    src="https://www.youtube.com/embed/JqDGXUdsSrQ?rel=0"
+                                    title="Sede Liqui Moly"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
                                 ></iframe>
                             </div>
@@ -301,12 +301,12 @@ const LPWTechLisboa: React.FC = () => {
             {/* CURRICULUM */}
             <section className="py-24 bg-black">
                 <div className="container mx-auto px-6">
-                     <div className="text-center mb-16">
+                    <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-black uppercase">Por que é que este curso é diferente?</h2>
                         <p className="text-gray-500 mt-4 text-lg">A maioria dos cursos fala sobre ajustes. <span className="text-white font-bold">Nós ensinamos o porquê dos ajustes.</span></p>
-                     </div>
+                    </div>
 
-                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
                             { title: 'Funcionamento Interno', desc: 'Entenda a física e hidráulica real da suspensão.' },
                             { title: 'Leitura de Desgaste', desc: 'Identifique falhas críticas em óleos e componentes.' },
@@ -323,13 +323,13 @@ const LPWTechLisboa: React.FC = () => {
                                 <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
                             </div>
                         ))}
-                     </div>
+                    </div>
 
-                     <div className="mt-12 text-center">
+                    <div className="mt-12 text-center">
                         <p className="inline-block bg-white/10 px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest text-gray-300">
-                             💡 Nada de teoria rasa. Aqui o conhecimento é aplicado.
+                            💡 Nada de teoria rasa. Aqui o conhecimento é aplicado.
                         </p>
-                     </div>
+                    </div>
                 </div>
             </section>
 
@@ -337,8 +337,8 @@ const LPWTechLisboa: React.FC = () => {
             <section className="py-24 bg-zinc-950 border-y border-white/5 relative overflow-hidden">
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="text-center mb-20">
-                        <h2 className="text-4xl md:text-6xl font-black uppercase mb-4 tracking-tighter italic">🛠️ Cronograma de <span className="text-wtech-red">Aprendizado</span></h2>
-                        <p className="text-gray-500 uppercase tracking-[0.3em] text-xs">Curso de Suspensão On-Road e Off-Road</p>
+                        <h2 className="text-4xl md:text-7xl font-black uppercase mb-4 tracking-tighter italic">🛠️ Cronograma de <span className="text-wtech-red">Aprendizado</span></h2>
+                        <p className="text-gray-500 font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Curso de Suspensão On-Road e Off-Road</p>
                     </div>
 
                     <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
@@ -373,8 +373,8 @@ const LPWTechLisboa: React.FC = () => {
                             ))}
                         </div>
 
-                         {/* Modules column 2 */}
-                         <div className="space-y-8">
+                        {/* Modules column 2 */}
+                        <div className="space-y-8">
                             {[
                                 {
                                     num: "04",
@@ -439,10 +439,10 @@ const LPWTechLisboa: React.FC = () => {
             <section className="py-24 bg-[#0a0a0a] border-y border-white/5">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-black uppercase">O Que Dizem os <span className="text-wtech-red">Profissionais</span></h2>
-                        <p className="text-gray-500 mt-4 text-base uppercase tracking-widest">Veja a experiência de quem já passou pela formação</p>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">O Que Dizem os <span className="text-wtech-red">Profissionais</span></h2>
+                        <p className="text-gray-500 mt-4 text-[10px] md:text-xs font-black uppercase tracking-[0.3em]">Veja a experiência de quem já passou pela formação</p>
                     </div>
-                    
+
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
                             "0aX-BfEn8Rg",
@@ -451,11 +451,11 @@ const LPWTechLisboa: React.FC = () => {
                         ].map((videoId, index) => (
                             <div key={index} className="bg-black border border-white/10 p-2 group hover:border-wtech-red transition-all duration-500">
                                 <div className="aspect-video relative overflow-hidden">
-                                    <iframe 
-                                        className="w-full h-full" 
-                                        src={`https://www.youtube.com/embed/${videoId}?rel=0`} 
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={`https://www.youtube.com/embed/${videoId}?rel=0`}
                                         title={`Depoimento ${index + 1}`}
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                     ></iframe>
                                 </div>
@@ -469,41 +469,41 @@ const LPWTechLisboa: React.FC = () => {
 
             {/* INSTRUCTORS */}
             <section className="py-24 bg-black">
-                 <div className="container mx-auto px-6">
+                <div className="container mx-auto px-6">
                     <div className="flex flex-col md:flex-row gap-8 items-start max-w-5xl mx-auto mt-12 bg-zinc-900/50 border border-white/5 p-8 md:p-12">
-                         <div className="md:w-1/3 shrink-0">
-                             <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/1.png" alt="Alex Crepaldi" className="w-full rounded shadow-xl" />
-                         </div>
-                         <div>
-                             <div className="inline-block bg-wtech-red text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Instrutor Principal</div>
-                             <h3 className="text-3xl font-black uppercase text-white mb-2">Alex Crepaldi</h3>
-                             <p className="text-gray-400 text-sm mb-6 font-medium">Fundador W-Tech Suspensões</p>
-                             
-                             <p className="text-gray-300 leading-relaxed mb-6">
-                                Responsável direto pelo desenvolvimento de sistemas, metodologias e soluções técnicas W-Tech. Todo o conteúdo do curso será ministrado pelo Alex.
-                             </p>
+                        <div className="md:w-1/3 shrink-0">
+                            <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/1.png" alt="Alex Crepaldi" className="w-full rounded shadow-xl" />
+                        </div>
+                        <div>
+                            <div className="inline-block bg-wtech-red text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Instrutor Principal</div>
+                            <h3 className="text-3xl font-black uppercase text-white mb-2">Alex Crepaldi</h3>
+                            <p className="text-gray-400 text-sm mb-6 font-medium">Fundador W-Tech Suspensões</p>
 
-                             <div className="grid grid-cols-2 gap-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
-                                 <div>Hidráulica Avançada</div>
-                                 <div>Diagnóstico Profissional</div>
-                                 <div>Sistemas W-Tech</div>
-                                 <div>Performance</div>
-                             </div>
-                         </div>
+                            <p className="text-gray-300 leading-relaxed mb-6">
+                                Responsável direto pelo desenvolvimento de sistemas, metodologias e soluções técnicas W-Tech. Todo o conteúdo do curso será ministrado pelo Alex.
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                                <div>Hidráulica Avançada</div>
+                                <div>Diagnóstico Profissional</div>
+                                <div>Sistemas W-Tech</div>
+                                <div>Performance</div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-8 items-center max-w-5xl mx-auto mt-8 p-8 md:p-12 border border-wtech-gold/20 bg-wtech-gold/5">
-                         <div className="md:w-1/4 shrink-0 order-1 md:order-2">
-                             <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/2.png" alt="Fernando Macedo" className="w-full rounded shadow-xl grayscale hover:grayscale-0 transition-all" />
-                         </div>
-                         <div className="order-2 md:order-1 text-right md:flex-1">
-                             <div className="inline-block bg-zinc-800 text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Participação Especial</div>
-                             <h3 className="text-2xl font-black uppercase text-white mb-2">Fernando Macedo</h3>
-                             <p className="text-gray-400 text-sm mb-4 font-medium">Instrutor ProRiders</p>
-                             <p className="text-gray-400 text-sm leading-relaxed">
-                                 Estará presente para enriquecer a experiência, trazendo a visão prática da pilotagem e a aplicação real dos ajustes no comportamento da mota.
-                             </p>
-                         </div>
+                        <div className="md:w-1/4 shrink-0 order-1 md:order-2">
+                            <img src="https://w-techstore.com.br/wp-content/uploads/2025/12/2.png" alt="Fernando Macedo" className="w-full rounded shadow-xl grayscale hover:grayscale-0 transition-all" />
+                        </div>
+                        <div className="order-2 md:order-1 text-right md:flex-1">
+                            <div className="inline-block bg-zinc-800 text-white text-[10px] font-black uppercase px-2 py-0.5 mb-4">Participação Especial</div>
+                            <h3 className="text-2xl font-black uppercase text-white mb-2">Fernando Macedo</h3>
+                            <p className="text-gray-400 text-sm mb-4 font-medium">Instrutor ProRiders</p>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                                Estará presente para enriquecer a experiência, trazendo a visão prática da pilotagem e a aplicação real dos ajustes no comportamento da mota.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="max-w-3xl mx-auto text-center mt-16 p-8 border border-white/10 bg-zinc-900">
@@ -511,7 +511,7 @@ const LPWTechLisboa: React.FC = () => {
                             “Este curso não é uma coletânea de opiniões. É a metodologia W-Tech explicada por quem a desenvolveu, testou e aplica profissionalmente.”
                         </p>
                     </div>
-                 </div>
+                </div>
             </section>
 
             {/* FORM */}
@@ -528,7 +528,7 @@ const LPWTechLisboa: React.FC = () => {
                             <p className="text-gray-400 text-lg mb-8 leading-relaxed">
                                 As vagas são limitadas pela estrutura técnica e acompanhamento individual. Quando as inscrições fecharem, não haverá lista extra.
                             </p>
-                            
+
                             <ul className="space-y-4 mb-8">
                                 <li className="flex items-center gap-3 font-bold"><CheckCircle size={20} className="text-wtech-red" /> Domínio técnico real</li>
                                 <li className="flex items-center gap-3 font-bold"><CheckCircle size={20} className="text-wtech-red" /> Visão profissional de diagnóstico</li>
@@ -538,7 +538,7 @@ const LPWTechLisboa: React.FC = () => {
 
                             <div className="bg-white/5 backdrop-blur-sm p-6 rounded-lg border-l-4 border-wtech-red">
                                 <p className="text-sm font-bold text-gray-300 uppercase tracking-wide">
-                                    ⚠️ AVISO IMPORTANTE:<br/>
+                                    ⚠️ AVISO IMPORTANTE:<br />
                                     As vagas são preenchidas por ordem de inscrição validada.
                                 </p>
                             </div>
@@ -558,25 +558,25 @@ const LPWTechLisboa: React.FC = () => {
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">Nome Completo</label>
-                                        <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="O seu nome" />
+                                        <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="O seu nome" />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">E-mail Profissional</label>
-                                        <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="email@exemplo.com" />
+                                        <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="email@exemplo.com" />
                                     </div>
-                                     <div>
-                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">Telemóvel / WhatsApp</label>
-                                         <input required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="+351 ..." />
-                                     </div>
+                                    <div>
+                                        <label className="block text-xs font-black uppercase text-gray-500 mb-1">Telemóvel / WhatsApp</label>
+                                        <input required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-bold focus:ring-2 focus:ring-wtech-red outline-none text-black" placeholder="+351 ..." />
+                                    </div>
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-500 mb-1">Motivo da Inscrição (Opcional)</label>
-                                        <textarea value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-gray-100 border border-gray-300 p-3 font-medium focus:ring-2 focus:ring-wtech-red outline-none h-24 resize-none text-black" placeholder="Sou mecânico, piloto, entusiasta..." />
+                                        <textarea value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} className="w-full bg-gray-100 border border-gray-300 p-3 font-medium focus:ring-2 focus:ring-wtech-red outline-none h-24 resize-none text-black" placeholder="Sou mecânico, piloto, entusiasta..." />
                                     </div>
 
                                     <button disabled={loading} className="w-full bg-wtech-red hover:bg-black text-white font-black text-lg py-4 uppercase tracking-wide transition-all shadow-lg mt-4 disabled:opacity-50">
                                         {loading ? 'A Enviar...' : 'QUERO PARTICIPAR DO W-TECH EUROPA'}
                                     </button>
-                                    
+
                                     <p className="text-center text-[10px] text-gray-400 mt-4 uppercase font-bold">
                                         <ShieldCheck size={12} className="inline mr-1" /> Dados seguros. Entraremos em contacto.
                                     </p>
@@ -597,7 +597,7 @@ const LPWTechLisboa: React.FC = () => {
                     </div>
                     <p className="text-gray-600 text-[10px] font-bold uppercase tracking-[0.4em] mb-4">W-Tech Europa | Lisboa 2026</p>
                     <p className="text-gray-700 text-[10px] uppercase tracking-widest">
-                        Lisboa não será apenas o local.<br/>Será o início de um novo padrão técnico.
+                        Lisboa não será apenas o local.<br />Será o início de um novo padrão técnico.
                     </p>
                 </div>
             </footer>

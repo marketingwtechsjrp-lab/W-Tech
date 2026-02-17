@@ -95,7 +95,7 @@ const App = () => {
                     <Route path="/wtech-lisboa" element={<WTechLisboa />} />
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
-                    <Route path="/lp-ergonomia" element={<LPErgonomia />} />
+                    <Route path="/curso-suspensao-piloto" element={<LPErgonomia />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
 
                     {/* Legal Pages */}

@@ -34,6 +34,7 @@ const Courses: React.FC = () => {
         if (tags.includes('LISBOA_ABRIL_2026')) return '/lp-lisboa-fev-2026';
         if (tags.includes('WTECH_EUROPA_2026')) return '/lp-wtech-lisboa';
         if (tags.includes('PRORIDERS_EUROPA_2026')) return '/lp-proriders-lisboa';
+        if (tags.includes('ERGONOMIA_ONLINE')) return '/curso-suspensao-piloto';
         return `/lp/${course.slug || course.id}`;
     };
 
@@ -46,16 +47,33 @@ const Courses: React.FC = () => {
                 .eq('status', 'Published')
                 .order('date', { ascending: true });
 
-            if (data) {
-                setCourses(data.map((c: any) => ({
-                    ...c,
-                    locationType: c.location_type,
-                    registeredCount: c.registered_count,
-                    type: c.type,
-                    tags: c.tags || [],
-                    features: c.features || []
-                })));
-            }
+            const dbCourses = data ? data.map((c: any) => ({
+                ...c,
+                locationType: c.location_type,
+                registeredCount: c.registered_count,
+                type: c.type,
+                tags: c.tags || [],
+                features: c.features || []
+            })) : [];
+
+            // Static Ergonomia Course
+            const ergoCourse: any = {
+                id: 'ergonomia-online',
+                title: 'Curso de Ergonomia de Pilotagem',
+                description: 'Domine o ajuste da sua moto. Menos dor, mais controle e performance. Com Alex Crepaldi e Paschoalin.',
+                date: '2026-03-01T10:00:00Z',
+                location: 'Plataforma Online',
+                locationType: 'Online',
+                status: 'Published',
+                capacity: 1000,
+                registeredCount: 342,
+                instructor: 'Alex Crepaldi',
+                image: '/images/hero-ergonomia.png',
+                tags: ['ERGONOMIA_ONLINE', 'ONLINE'],
+                features: ['Acesso Vitalício', 'Certificado']
+            };
+
+            setCourses([...dbCourses, ergoCourse]);
             setLoading(false);
         };
         fetchCourses();
@@ -82,7 +100,7 @@ const Courses: React.FC = () => {
         for (let m = 0; m < 12; m++) {
             const firstDayOfMonth = new Date(displayYear, m, 1).toISOString().split('T')[0];
             const lastDayOfMonth = new Date(displayYear, m + 1, 0).toISOString().split('T')[0];
-            
+
             coursesByMonth[m] = courses.filter(c => {
                 const start = c.date.split('T')[0];
                 const end = (c.dateEnd || c.date).split('T')[0];
@@ -94,16 +112,16 @@ const Courses: React.FC = () => {
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-300">
                 <div className="bg-wtech-black text-white p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                     <h2 className="text-2xl font-black uppercase tracking-wider">Calendário Anual</h2>
-                    
+
                     <div className="flex items-center bg-white/10 p-1 rounded-lg backdrop-blur-sm">
-                        <button 
+                        <button
                             onClick={() => setCalendarYear(prev => prev - 1)}
                             className="p-2 hover:bg-white/10 rounded-md transition-colors"
                         >
                             <ArrowRight size={20} className="rotate-180" />
                         </button>
                         <span className="px-6 font-black text-xl min-w-[100px] text-center">{calendarYear}</span>
-                        <button 
+                        <button
                             onClick={() => setCalendarYear(prev => prev + 1)}
                             className="p-2 hover:bg-white/10 rounded-md transition-colors"
                         >
@@ -111,7 +129,7 @@ const Courses: React.FC = () => {
                         </button>
                     </div>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6 bg-gray-50">
 
                     {months.map((monthName, monthIndex) => {
@@ -129,7 +147,7 @@ const Courses: React.FC = () => {
                                     {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => (
                                         <div key={d} className="text-[10px] text-gray-400 font-bold">{d}</div>
                                     ))}
-                                    
+
                                     {/* Empty */}
                                     {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`}></div>)}
 
@@ -144,11 +162,11 @@ const Courses: React.FC = () => {
                                             return dayStr >= start && dayStr <= end;
                                         });
                                         const hasEvent = dayEvents.length > 0;
-                                        
+
                                         return (
                                             <div key={day} className="relative aspect-square flex items-center justify-center">
                                                 {hasEvent ? (
-                                                    <Link 
+                                                    <Link
                                                         to={getCourseLink(dayEvents[0])}
                                                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors bg-wtech-gold text-black font-bold hover:scale-110`}
                                                         title={dayEvents.map(e => e.title).join(', ')}
@@ -203,8 +221,8 @@ const Courses: React.FC = () => {
                 <div className="container mx-auto px-4 relative z-10 text-center">
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">Agenda Oficial</h1>
                     <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">Confira os próximos treinamentos, workshops e eventos técnicos da Rede W-Tech.</p>
-                    
-                    <button 
+
+                    <button
                         onClick={handleDownloadPDF}
                         className="inline-flex items-center gap-2 px-8 py-3 bg-wtech-gold text-black font-black rounded-xl hover:bg-yellow-500 transition-all shadow-xl shadow-wtech-gold/20 uppercase text-sm tracking-widest"
                     >
