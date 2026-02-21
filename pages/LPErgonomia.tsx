@@ -952,7 +952,7 @@ const LPErgonomia: React.FC = () => {
 
                     {/* Imagem Mobile (Escondida no Desktop) */}
                     <div className="lg:hidden w-full h-[400px] sm:h-[500px] relative -mx-0 mb-0 px-6">
-                        <img src="http://w-techbrasil.com.br/wp-content/uploads/2026/02/backgound-alex-crepaldi.png" alt="Alex Crepaldi" loading="lazy" className="w-full h-full object-cover object-top rounded-t-3xl" />
+                        <img src="http://w-techbrasil.com.br/wp-content/uploads/2026/02/backgound-alex-crepaldi.png" alt="Alex Crepaldi" loading="lazy" className="w-full h-full object-cover object-left-top rounded-t-3xl" />
                         <div className="absolute inset-x-6 bottom-0 top-1/2 bg-gradient-to-t from-zinc-950 to-transparent" />
                     </div>
 
