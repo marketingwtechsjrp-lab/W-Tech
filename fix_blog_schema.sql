@@ -1,0 +1,38 @@
+-- 1. Ensure Table Exists
+CREATE TABLE IF NOT EXISTS "SITE_BlogPosts" (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    title TEXT,
+    content TEXT,
+    author TEXT
+);
+
+-- 2. Add Missing Columns (Idempotent)
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS slug TEXT;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS excerpt TEXT;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS image TEXT;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Draft';
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS date TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- SEO Fields
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS seo_title TEXT;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS seo_description TEXT;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS keywords TEXT[]; -- Array of strings
+
+-- Analytics
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 0;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS clicks INTEGER DEFAULT 0;
+ALTER TABLE "SITE_BlogPosts" ADD COLUMN IF NOT EXISTS seo_score INTEGER DEFAULT 0;
+
+-- 3. Fix RLS Policies
+ALTER TABLE "SITE_BlogPosts" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public Read BlogPosts" ON "SITE_BlogPosts";
+DROP POLICY IF EXISTS "Admin Manage BlogPosts" ON "SITE_BlogPosts";
+DROP POLICY IF EXISTS "Enable all for everyone" ON "SITE_BlogPosts";
+
+CREATE POLICY "Enable all for everyone" ON "SITE_BlogPosts"
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);

@@ -1,0 +1,1 @@
+ALTER TABLE "SITE_Enrollments" ADD COLUMN IF NOT EXISTS "total_amount" DECIMAL(10,2);

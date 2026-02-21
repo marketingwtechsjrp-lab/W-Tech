@@ -1,0 +1,506 @@
+[
+  {
+    "version": "2.9.4",
+    "date": "2026-02-10",
+    "title": "Atualização de Endereço - W-Tech Lisboa",
+    "changes": [
+      "Atualização do endereço para Sintra Business Park - Edifício 01",
+      "Inclusão de botão para localização via Google Maps"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.9.3",
+    "date": "2026-02-09",
+    "title": "Refinamento UX: Remoção de CPF",
+    "changes": [
+      "FEAT: Removido campo 'CPF' da Landing Page W-Tech Lisboa.",
+      "UX: Ajuste de layout no formulário."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.9.2",
+    "date": "2026-02-09",
+    "title": "Refinamento de Formulários & Correções CRM",
+    "changes": [
+      "FEAT: Removido campo de 'Tamanho de Camiseta' das Landing Pages públicas.",
+      "MAINT: Campo de Camiseta mantido exclusivamente em painéis internos (Admin/CRM).",
+      "FIX: Resolvido bug no CRM que impedia salvar Notas Internas e Responsável.",
+      "FIX: Padronização de mapeamento de Leads (camelCase vs snake_case)."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.9.1",
+    "date": "2026-02-09",
+    "title": "Gestão de Alunos (CPF & Camisetas)",
+    "changes": [
+      "FEAT: Captura automática de CPF e Tamanho de Camiseta em todas as LPs de Lisboa.",
+      "FEAT: Coluna 'Camiseta' adicionada à Lista de Presença para impressão PDF.",
+      "FEAT: Relatório Gerencial de Cursos agora inclui o tamanho da camiseta do aluno.",
+      "FEAT: Sincronização de dados CPF/Camiseta na conversão de Lead para Aluno.",
+      "DB: Nova migração SQL para campos `student_cpf` e `t_shirt_size` em SITE_Enrollments."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.9.0",
+    "date": "2026-02-05",
+    "title": "Creative Hub Studio v3.0 & Stripe Live",
+    "changes": [
+      "FEAT: Creative Hub Studio v3.0 com estúdio de criação avançado",
+      "FEAT: Edição dinâmica de escalas, cores e textos por template",
+      "FEAT: Sistema de persistência inteligente de design (LocalStorage)",
+      "FEAT: Migração para ambiente de produção (Stripe Live Key)",
+      "FIX: Resolução crítica de CORS na exportação de imagens (Tainted Canvas fix)",
+      "FIX: Ajuste de responsividade no menu administrativo do Creative Hub"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.8.1",
+    "date": "2026-02-04",
+    "title": "Correção do Dashboard Financeiro",
+    "changes": [
+      "FIX: Gráfico de Fluxo Financeiro agora consolida as vendas do CRM e Matrículas automaticamente.",
+      "FIX: Sincronização da tabela de vendas entre os módulos de Dashboard e Financeiro.",
+      "PERF: Otimização no carregamento de KPIs corporativos."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.8.0",
+    "date": "2026-02-04",
+    "title": "Suporte Internacional e Multi-Moeda",
+    "changes": [
+      "FEAT: Suporte nativo a múltiplas moedas (BRL, EUR, USD) em Cursos e Alunos.",
+      "FEAT: Dashboards financeiros agora separam saldos por moeda (Evita soma de Reais com Euros).",
+      "FEAT: Novo seletor de moeda no lançamento manual de transações.",
+      "FEAT: Transações Virtuais de matrículas agora herdam automaticamente a moeda do curso.",
+      "FIX: Símbolos de moeda dinâmicos em toda a interface administrativa (tabelas, modais e botões).",
+      "FIX: Relatórios de Impressão e Listas de Presença atualizados para exibir a moeda correta do curso.",
+      "FIX: Quitação de saldos agora respeita a moeda de origem do curso internacional."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.7.3",
+    "date": "2026-02-02",
+    "title": "Preçário Mecânico e Gestão Unificada",
+    "changes": [
+      "FEAT: Novo nível de preço 'Mecânico sem curso' no Catálogo e Pedidos.",
+      "FEAT: Gestão Unificada de Clientes com Deduplicação automática na importação.",
+      "FEAT: Novo recurso 'Sincronizar & Limpar' para unificar duplicatas via telefone (merge de dados + tarefas).",
+      "FEAT: Exclusão em Massa de contatos com limpeza automática de dependências (tasks/grupos).",
+      "FEAT: Automação de WhatsApp e Categorias restauradas no Gerenciador de Tarefas.",
+      "UX: Atalho rápido para tarefas (ícone relógio) diretamente nos cards do Kanban (CRM).",
+      "FIX: Correção crítica no carregamento de datas e categorias no modal de tarefas.",
+      "FIX: Resolução de erro 'ON CONFLICT' em importações com dados redundantes no Excel."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.7.2",
+    "date": "2026-02-01",
+    "title": "Correções de Scroll, PDF e Data de LP",
+    "changes": [
+      "FIX: Reset automático de scroll ao navegar entre módulos do Admin.",
+      "FEAT: Melhoria no PDF de Pedidos (Inclusão de número de pedido/ID e ajuste de layout).",
+      "UPDATE: Atualização da data do evento LP Lisboa Fev 2026 para 02 de Abril de 2026.",
+      "UPDATE: Correção das datas dos eventos W-Tech Lisboa (04-05/04/26) e ProRiders Lisboa (10-12/04/26)."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.7.1",
+    "date": "2026-01-30",
+    "title": "Gestão de Pedidos e Permissões Avançadas",
+    "changes": [
+      "FEAT: Dedução automática de estoque ao marcar pedido como 'Pago'",
+      "PERM: Nova permissão 'Editar Pedidos Pagos (Restrito)'",
+      "FIX: Visualização global do Dashboard corrigida para Super Admins",
+      "FIX: Layout do Módulo de Pedidos ajustado (scroll infinito corrigido)",
+      "FIX: Correção de tela branca na navegação entre módulos"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.7.0",
+    "date": "2026-01-30",
+    "title": "Marketing Hub, Bio Page & UX Improvements",
+    "changes": [
+      "FEAT: Novo Módulo 'Campanhas' (Automação, Listas, Modelos)",
+      "FEAT: Novo Módulo 'Marketing' (Blog, LPs, Analytics, Certificados)",
+      "FEAT: Criador de Página Bio (/bio) com fundos dinâmicos (Vídeo/YouTube, Presets, Cor)",
+      "FEAT: Suporte a Vídeos do YouTube como background na Bio Page",
+      "UX: Refatoração completa da navegação Sidebar do Admin",
+      "UX: Ícones e layout aprimorados para melhor usabilidade mobile",
+      "FIX: Menu Financeiro restaurado na barra lateral"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.6.4",
+    "date": "2026-01-30",
+    "title": "Google OAuth Fix & Admin UX Improvements",
+    "changes": [
+      "FIX: Resolução de erro 404 no Google OAuth para HashRouter",
+      "FEAT: Integração nativa do GA4 via Google OAuth no Dashboard",
+      "UX: Refatoração da interface de Tarefas com Ações Rápidas",
+      "SKILLS: Novas habilidades de Afiliados e Integração Google adicionadas"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.6.3",
+    "date": "2026-01-29",
+    "title": "Estabilidade na Navegação e Otimização do Editor",
+    "changes": [
+      "FIX: Resolução do deadlock de navegação entre módulos (transição popLayout)",
+      "FIX: Eliminação de loop infinito de re-renderização no Editor de Pedidos",
+      "FEAT: Otimização de hooks de estado e dependências no SalesManager",
+      "FEAT: Melhoria na performance global do Admin Portal v2.0",
+      "CLEANUP: Remoção de instrumentação diagnóstica e logs de debug"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.6.2",
+    "date": "2026-01-29",
+    "title": "Gestão Logística & Itens Manuais",
+    "changes": [
+      "Adição de Itens Manuais no PDV",
+      "Cálculo automático de Seguro (1%)",
+      "Campo de Desconto Manual no fechamento",
+      "Resumo detalhado (Frete/Seguro/Desconto) no Portal do Cliente",
+      "Melhorias de Responsividade Mobile no PDV",
+      "Correção de travamento após salvamento de pedidos"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.6.1",
+    "date": "2026-01-28",
+    "title": "Sistema de Pedidos Aprimorado - Dashboard Analítico",
+    "changes": [
+      "FEAT: Dashboard analítico com 7 cards de métricas por status (Pendente → Entregue)",
+      "FEAT: Visualização de quantidade e valor total por etapa do funil de vendas",
+      "FEAT: Cards clicáveis para filtro rápido por status",
+      "FEAT: Filtros temporais avançados (Hoje, 7 dias, 30 dias, Período customizado)",
+      "FEAT: Botão de exclusão de pedidos no modal com confirmação de segurança",
+      "FEAT: Botão de atualização em tempo real no portal do cliente",
+      "FEAT: Acesso rápido ao portal via botão 'Área do Cliente' no hero e header",
+      "FIX: Sincronização de itens de pedidos de cursos no painel administrativo",
+      "FIX: Fallback inteligente para leitura de itens JSON quando SITE_SaleItems está vazia",
+      "FIX: Correção de links duplicados para área do cliente",
+      "UX: Interface responsiva com suporte completo a modo escuro",
+      "UX: Animações de hover e transições suaves nos cards de métricas"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.6.0",
+    "date": "2026-01-26",
+    "title": "Módulo Financeiro & Gestão Avançada de Vendas",
+    "changes": [
+      "FEAT: Refatoração completa do Módulo Financeiro com interface em abas (Fluxo vs Vendas)",
+      "FEAT: Controle de Privacidade Financeira (usuários veem apenas seus lançamentos por padrão)",
+      "FEAT: Filtro Multi-Equipe para gestores no Financeiro e Pedidos",
+      "FEAT: Módulo de Pedidos com Edição Completa (itens, valores, status e notas)",
+      "FEAT: Sistema de Exclusão de Pedidos com limpeza de estoque e dependências",
+      "FEAT: Novas permissões granulares: financial_view_all, orders_edit, orders_delete",
+      "FIX: Sincronização automática de reserva de estoque ao editar pedidos"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.5.0",
+    "date": "2026-01-26",
+    "title": "Analytics 2.0 & Controle de Permissões",
+    "changes": [
+      "FEAT: Analytics 2.0 com tracking automático de eventos e conversões",
+      "FEAT: Dashboard de Analytics com gráficos em tempo real e log de atividades",
+      "FEAT: Sistema de Permissões Granulares (controle individual por módulo no Admin)",
+      "FIX: Lógica de Upsert de Leads (evita duplicidade mantendo histórico)",
+      "FIX: Redirecionamento correto do Quiz para o WhatsApp global",
+      "FIX: Scroll suave no botão de módulos das Landing Pages"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.9",
+    "date": "2026-01-25",
+    "title": "Redesign Hero, SEO e Navegação",
+    "changes": [
+      "DESIGN: Novo Hero Section com estilo 'Racing' (botões inclinados, texturas metálicas e efeitos de brilho)",
+      "SEO: Otimização completa da Home com Meta Descriptions focadas em mecânicos e pilotos",
+      "UX: Atalho de navegação direta 'Falar com Consultor' para o formulário de contato (#formulario)",
+      "NAV: Link direto para W-Tech Store no botão secundário do Hero",
+      "FIX: Correção de links quebrados na Home Page"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.8",
+    "date": "2026-01-25",
+    "title": "Redesign Hero e SEO - Release Candidate",
+    "changes": [
+      "DESIGN: Preparação do novo Hero Section",
+      "SEO: Ajustes estruturais de metadados"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.7",
+    "date": "2026-01-22",
+    "title": "W-Intelligence: Filtros, Equipe e Receita Unificada",
+    "changes": [
+      "FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência",
+      "FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA",
+      "FEAT: Listagem completa de todos os atendentes dos sitema no W-Intelligence",
+      "FIX: Unificação do cálculo de faturamento total baseado nos leads do CRM",
+      "FIX: Melhoria no tratamento de erros para chaves Pde AI da OpenAI/Gemini"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.4.6",
+    "date": "2026-01-22",
+    "title": "W-Intelligence: Filtros, Equipe e Receita Unificada",
+    "changes": [
+      "FEAT: Sistema de filtros de data (7d, 30d, Mês, Geral) no Painel de Inteligência",
+      "FEAT: Nova aba 'Equipe' com diagnóstico estratégico gerado por IA",
+      "FEAT: Listagem completa de todos os atendentes do sistema no W-Intelligence",
+      "FIX: Unificação do cálculo de faturamento total baseado nos leads do CRM",
+      "FIX: Melhoria no tratamento de erros para chaves de API da OpenAI/Gemini",
+      "FIX: Correção de bugs de sintaxe e fechamento de funções estruturais"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.5",
+    "date": "2026-01-22",
+    "title": "Integração de Analytics e Gestão de Certificados",
+    "changes": [
+      "FEAT: Injeção dinâmica de Google Analytics (GA4) e Facebook Pixel",
+      "FEAT: Rastreamento automático de Pageviews via AnalyticsTracker",
+      "FEAT: Novo módulo de Gestão de Certificados e Crachás",
+      "FEAT: Suporte a layouts customizados de certificados por curso",
+      "FIX: Tratamento de erros de injeção de scripts duplicados",
+      "FIX: Melhorias de performance no Painel Administrativo"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.4",
+    "date": "2026-01-22",
+    "title": "Gestão Avançada de Certificados e QR Code",
+    "changes": [
+      "FEAT: Editor de Certificados com suporte a campos inteligentes (Data+Local)",
+      "FEAT: Public Page de Validação de Certificados via QR Code (/validar/:id)",
+      "FEAT: Geração individual de Certificados e Crachás na lista de alunos",
+      "FEAT: Formatação automática centralizada de textos no Certificado",
+      "FEAT: Rodapé do site exibindo versão atual do sistema"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.3",
+    "date": "2026-01-21",
+    "title": "Correção de Datas, Calendário Multi-dia e Leads Masculinos",
+    "changes": [
+      "FIX: Correção de datas com fuso horário em todo o site",
+      "FEAT: Suporte para marcação de intervalos de dias em cursos multi-dia",
+      "FIX: Nomes de alertas de inscrição fakes alterados para público masculino",
+      "VERSION: Atualização para v2.4.3"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.4.2",
+    "date": "2026-01-20",
+    "title": "LPs Lisboa, Fix RLS e Super Admin",
+    "changes": [
+      "FEAT: Atualizadas as datas das Landing Pages de Lisboa para Abril de 2026",
+      "FEAT: Renomeado Painel do Desenvolvedor para Super Admin",
+      "FIX: Novo script de correção RLS para o sistema de tarefas (SITE_Tasks v5)"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.4.1",
+    "date": "2026-01-19",
+    "title": "Correções de Tarefas e Fila de Marketing",
+    "changes": [
+      "FIX: Conclusão de tarefas na visualização em lista corrigida",
+      "FIX: Botão de check nos cards de tarefa agora sincronizado com o status",
+      "DB: Script de correção de permissões SITE_Users vs auth.users (Marketing)"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.4.0",
+    "date": "2026-01-19",
+    "title": "Sistema de Notificações de Conversão (Prova Social)",
+    "changes": [
+      "FEAT: Sistema de popups aleatórios de inscrição para Landing Pages",
+      "FEAT: Toggle de controle (ON/OFF) integrado no Editor de Landing Pages",
+      "FEAT: Componente FakeSignupAlert com 30 nomes e cidades brasileiras",
+      "FEAT: Configuração dinâmica por curso e cronômetro inteligente (10-15s)",
+      "DB: Nova coluna fake_alerts_enabled na tabela SITE_LandingPages"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.3.3",
+    "date": "2026-01-17",
+    "title": "Fix Partners Display",
+    "changes": [
+      "Fixed partner brands parsing logic in Hero section"
+    ],
+    "author": "danielmarques"
+  },
+  {
+    "version": "2.3.2",
+    "date": "2026-01-17",
+    "title": "Release v2.3.2",
+    "changes": [
+      "General system updates",
+      "Release automation"
+    ],
+    "author": "danielmarques"
+  },
+  {
+    "version": "2.3.1",
+    "date": "2026-01-17",
+    "title": "Correções e Documentação Técnica",
+    "changes": [
+      "FIX: Script SQL para correção de permissões em listas de marketing",
+      "FEAT: Documentação técnica completa do sistema de automação WhatsApp",
+      "FIX: Ajustes de permissões RLS no banco de dados"
+    ],
+    "author": "danielmarques"
+  },
+  {
+    "version": "2.3.0",
+    "date": "2026-01-17",
+    "title": "Módulo de Analytics e Integração GA4",
+    "changes": [
+      "FEAT: Novo módulo de Analytics Interno (PageViews, Visitantes Únicos, Eventos)",
+      "FEAT: Integração automática com Google Analytics 4 (GA4) via Configurações",
+      "FEAT: Integração automática com Facebook Pixel (Meta) via Configurações",
+      "FEAT: Dashboard de Analytics com gráficos de visitas diárias e fontes de tráfego",
+      "FEAT: Configurações Globais de Tracking centralizadas no Admin"
+    ],
+    "author": "danielmarques"
+  },
+  {
+    "version": "2.2.6",
+    "date": "2026-01-15",
+    "title": "Melhorias no Gerenciador de Tarefas e Dark Mode",
+    "changes": [
+      "FEAT: Cards de tarefas redesenhados - sempre escuros com textos claros",
+      "FEAT: Tags de categoria visíveis em cada card de tarefa",
+      "FEAT: Indicador de automação WhatsApp (ícone de robô pulsante)",
+      "FEAT: Cards totalmente clicáveis para abrir detalhes",
+      "FEAT: Ícone de conclusão rápida no header do card",
+      "FEAT: Removidos botões inferiores para design mais limpo",
+      "FIX: Modal de edição de tarefas totalmente adaptado para dark mode",
+      "FIX: Gestão de Cursos com suporte completo a dark mode",
+      "FIX: Gestão de Clientes com suporte completo a dark mode",
+      "FEAT: Toggle de tema integrado no sidebar do Admin"
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.2.5",
+    "date": "2026-01-16",
+    "title": "Adiciona Customização de Menu",
+    "changes": [
+      "Adicionado coluna menu_styles na tabela SITE_Config",
+      "DONEy",
+      "y",
+      "y"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.2.4",
+    "date": "2026-01-15",
+    "title": "Fix WhatsApp Duplicates, Variables, Lead Deletion and UI Improvements",
+    "changes": [
+      "- Corrigido duplicidade no envio de WhatsApp (Reserva Atômica)",
+      "- Suporte a variáveis {{nome}}, {{telefone}}, {{email}}, {{status}} e {{origem}}",
+      "- Implementado envio sequencial (Texto -> Imagem t-> Texo)",
+      "- Corrigido erro de exclusão de Leads no CRM (RLS e Cascata)",
+      "- Nova interface de Campanhas com Filtros, Busca e Barra de Progresso Real-time",
+      "- Corrigido erro de data inválida na listagem de hcampanas",
+      "- Adicionado vídeo padrão no Editor de Landing Pages"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.2.3",
+    "date": "2026-01-15",
+    "title": "Tab System in Clients & Marketing Permissions",
+    "changes": [
+      "Added Sub-Tabs to Clients Manager (Clients/Groups)",
+      "Integrated ListsManager into Clients View",
+      "Improved DB instructions for marketing permissions"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.2.2",
+    "date": "2026-01-15",
+    "title": "Deploy Script Improvement",
+    "changes": [
+      "Improved deploy script to enforce git operations",
+      "Updated SYSTEM_MAP to reflect mandatory routine"
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.2.0",
+    "date": "2026-01-15",
+    "title": "Módulos Marketing e Clientes",
+    "changes": [
+      "FEAT: Paginação na listagem de clientes (50/100/300 itens).",
+      "FEAT: Grupos de Marketing agora podem ter dono específico (owner_id)."
+    ],
+    "author": "Novo usuário"
+  },
+  {
+    "version": "2.1.0",
+    "date": "2026-01-15",
+    "title": "Correções Críticas e Otimização do Dash",
+    "changes": [
+      "FIX: Corrigido bug no upload de imagens (Erro de RLS/Bucket inexistente).",
+      "FIX: KPIs do Dashboard agora priorizam vendas CRM vs Matrículas.",
+      "FIX: Ranking de Atendentes corrigido para usar 'assigned_to'.",
+      "FEAT: Adicionada documentação SYSTEM_MAP.md.",
+      "FEAT: Removido widget de debug visual do CRM."
+    ],
+    "author": "Antigravity"
+  },
+  {
+    "version": "2.0.5",
+    "date": "2026-01-14",
+    "title": "Integração Horos e Ajustes de CRM",
+    "changes": [
+      "FEAT: Integração com visualizador DICOM (Horos).",
+      "FIX: Ajustes na renderização do CRM e permissões de usuários."
+    ]
+  },
+  {
+    "version": "2.0.0",
+    "date": "2026-01-01",
+    "title": "Lançamento da Versão 2.0",
+    "changes": [
+      "Reescrita completa do frontend em React/Vite.",
+      "Novo Dashboard Administrativo.",
+      "Integração completa com Supabase."
+    ]
+  }
+]
