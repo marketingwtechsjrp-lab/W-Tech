@@ -330,7 +330,7 @@ const PronelloImmersion = () => {
                         >
                             <video 
                                 ref={videoRef}
-                                src="/images/Pronello.mov" 
+                                src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/Video/Pronello%20.mov" 
                                 controls={isPlaying}
                                 playsInline
                                 loop
