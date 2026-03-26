@@ -52,7 +52,7 @@ const RegistrationForm = () => {
                     },
                     body: JSON.stringify({
                         number: formattedPhone,
-                        text: `Olá ${formData.name}! Confirmamos sua inscrição para a Imersão Pronello na W-Tech no dia 10 de Abril. O evento é 100% gratuito e restam poucas vagas. Fique atento, nossa equipe confirmará os próximos passos.`
+                        text: `Olá ${formData.name}! Tudo bem? Aqui é da equipe da W-Tech. Vi que você demonstrou interesse na Imersão Pronello que vai acontecer no dia 10 de Abril. O evento é 100% gratuito, mas as nossas vagas são limitadas. Gostaria de entender um pouco mais sobre você, podemos seguir por aqui para confirmar o seu lugar?`
                     })
                 });
                 
