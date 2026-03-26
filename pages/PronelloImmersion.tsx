@@ -228,7 +228,7 @@ const PronelloImmersion = () => {
                             </h1>
                             
                             <p className="text-lg md:text-xl text-gray-300 leading-relaxed max-w-2xl">
-                                Uma oportunidade única de aprender com a equipe da Pronello da Argentina. Vagas extremamente limitadas.
+                                Uma oportunidade única de aprender diretamente com o <strong className="text-white">Dono da Pronello (Argentina)</strong> e sua equipe técnica oficial, que virão exclusivamente para ministrar esta imersão. Vagas extremamente limitadas.
                             </p>
 
                             <div className="grid grid-cols-2 gap-6 pt-4">
@@ -414,7 +414,7 @@ const PronelloImmersion = () => {
                         <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tight">Última Chance</h2>
                         <p className="text-xl text-gray-300">
                             A Imersão é <strong className="text-wtech-red">100% Gratuita</strong> e exclusiva para até 20 participantes. 
-                            Preencha agora para garantir seu lugar no dia 10 de Abril, das 08h às 17h.
+                            Preencha agora para garantir seu lugar no dia 10 de Abril, das 08h às 17h, e tenha a chance única de aprender diretamente com o <strong>dono e criador da Pronello</strong> (vindo da Argentina) e sua equipe técnica.
                         </p>
                     </div>
 
