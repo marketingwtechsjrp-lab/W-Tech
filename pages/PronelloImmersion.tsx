@@ -371,9 +371,9 @@ const PronelloImmersion = () => {
                                     <div>
                                         <h4 className="text-xl font-bold mb-2 text-white">Endereço (Sede W-Tech)</h4>
                                         <p className="text-gray-400 leading-relaxed text-lg">
-                                            Rua Projetada A, 215<br/>
-                                            Distrito Industrial I<br/>
-                                            São José do Rio Preto - SP - Brasil
+                                            R. Zumbi dos Palmares, 410<br/>
+                                            Jardim Paulista<br/>
+                                            São José do Rio Preto - SP, 15060-190
                                         </p>
                                     </div>
                                 </div>
