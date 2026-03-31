@@ -63,8 +63,16 @@ export const generateAgendaPDF = async (siteTitle: string = 'W-TECH BRASIL', log
         doc.setFont('helvetica', 'bold');
         doc.text(`AGENDA OFICIAL DE TREINAMENTOS - ${new Date().getFullYear()}`, 15, 55);
 
+        // Parse date directly from string to avoid timezone offset issues (same as formatDateLocal)
+        const parseDateSafe = (dateStr: string) => {
+            if (!dateStr) return '';
+            const parts = dateStr.split('T')[0].split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        };
+
         const tableData = courses.map((c: any) => [
-            new Date(c.date).toLocaleDateString('pt-BR'),
+            parseDateSafe(c.date),
             c.title,
             c.location,
             c.instructor || 'Especialista W-Tech',

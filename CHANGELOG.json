@@ -1,5 +1,17 @@
 [
   {
+    "version": "2.9.7",
+    "date": "2026-03-31",
+    "title": "Gestão de Matrículas & Migrações de Dados",
+    "changes": [
+      "FEAT: Novo campo 'enrolled_by' para rastreamento de quem realizou a matrícula.",
+      "FEAT: Melhorias nos componentes administrativos de Marketing e campanhas Meta.",
+      "FIX: Scripts de migração SQL para correção de permissões e colunas faltantes.",
+      "UX: Refatoração do Dashboard para exibição consolidada de métricas de vendas."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.9.6",
     "date": "2026-03-11",
     "title": "Módulo FlowUp & Inteligência de Leads",

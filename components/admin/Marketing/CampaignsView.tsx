@@ -9,7 +9,6 @@ import CampaignsManager from './CampaignsManager';
 import MessageTemplateManager from '../WhatsApp/MessageTemplateManager';
 import EmailFlowsView from './EmailFlowsView';
 import FlowUpView from './FlowUpView';
-import MetaAdsView from './MetaAds/MetaAdsView.tsx';
 
 // Sub-components
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -302,7 +301,6 @@ const CampaignsView = ({ permissions }: { permissions?: any }) => {
         { id: 'Templates', icon: FileText, label: 'Modelos', permission: 'marketing_manage_templates' },
         { id: 'Flows', icon: GitBranch, label: 'Fluxos Automáticos', permission: 'marketing_manage_campaigns' },
         { id: 'FlowUp', icon: RefreshCw, label: 'FlowUp', permission: 'marketing_manage_campaigns' },
-        { id: 'MetaAds', icon: Megaphone, label: 'Meta Ads', permission: 'marketing_manage_campaigns' },
     ].filter(tab => hasPerm(tab.permission));
 
     const [activeTab, setActiveTab] = useState<string>(
@@ -353,7 +351,6 @@ const CampaignsView = ({ permissions }: { permissions?: any }) => {
                 {activeTab === 'Templates' && <MessageTemplateManager permissions={permissions} />}
                 {activeTab === 'Flows' && <EmailFlowsView permissions={permissions} />}
                 {activeTab === 'FlowUp' && <FlowUpView />}
-                {activeTab === 'MetaAds' && <MetaAdsView />}
             </div>
         </div>
     );

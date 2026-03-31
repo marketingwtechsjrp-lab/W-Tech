@@ -1,5 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v2.9.7 (2026-03-31) - Gestão de Matrículas & Migrações de Dados
+- FEAT: Novo campo 'enrolled_by' para rastreamento de quem realizou a matrícula.
+- FEAT: Melhorias nos componentes administrativos de Marketing e campanhas Meta.
+- FIX: Scripts de migração SQL para correção de permissões e colunas faltantes.
+- UX: Refatoração do Dashboard para exibição consolidada de métricas de vendas.
 
 ## v2.9.6 (2026-03-11) - Módulo FlowUp & Inteligência de Leads
 - FEAT: Novo módulo "FlowUp" para reengajamento inteligente de leads perdidos/esfriados.

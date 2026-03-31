@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# Large Media Files
+*.mov
+public/images/Pronello.mov

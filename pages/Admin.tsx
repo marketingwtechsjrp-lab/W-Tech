@@ -1312,6 +1312,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 amountPaid: e.amount_paid,
                 paymentMethod: e.payment_method,
                 createdAt: e.created_at,
+                enrolledByName: e.enrolled_by_name,
                 // NEW FIELDS
                 address: e.address,
                 city: e.city,
@@ -1341,7 +1342,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         e.preventDefault();
         if (!editingEnrollment || !currentCourse) return;
 
-        const payload = {
+        const payload: any = {
             course_id: currentCourse.id,
             student_name: editingEnrollment.studentName,
             student_email: editingEnrollment.studentEmail,
@@ -1359,10 +1360,17 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             student_cpf: editingEnrollment.studentCpf,
             t_shirt_size: editingEnrollment.tShirtSize
         };
+        // Save attendant name only on new enrollments (not on edits)
+        if (!editingEnrollment.id && user?.name) {
+            payload.enrolled_by_name = user.name;
+        }
 
         if (editingEnrollment.id) {
             // Update
-            const { error } = await supabase.from('SITE_Enrollments').update(payload).eq('id', editingEnrollment.id);
+            const { error } = await supabase.from('SITE_Enrollments').update({
+                ...payload,
+                enrolled_by_name: editingEnrollment.enrolledByName ?? payload.enrolled_by_name
+            }).eq('id', editingEnrollment.id);
             if (!error) {
                 setEnrollments(prev => prev.map(enr => enr.id === editingEnrollment.id ? {
                     ...enr,
@@ -1716,7 +1724,22 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         </div>
                                     </div>
 
-
+                                    {/* Attendant Edit Field - Permission Gated */}
+                                    {hasPermission('courses_edit_attendant') && (
+                                        <div className="md:col-span-2 mt-2 p-3 rounded-lg border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800">
+                                            <label className="block text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase mb-1 flex items-center gap-1">
+                                                <User size={12} /> Atendente Responsável
+                                                <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-800 text-indigo-600 dark:text-indigo-300 text-[9px] rounded font-bold uppercase tracking-wider">Restrito</span>
+                                            </label>
+                                            <input
+                                                className="w-full p-2 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-[#1a1a2e] dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-400 outline-none"
+                                                placeholder="Nome do atendente..."
+                                                value={editingEnrollment.enrolledByName || ''}
+                                                onChange={e => setEditingEnrollment({ ...editingEnrollment, enrolledByName: e.target.value })}
+                                            />
+                                            <p className="text-[10px] text-indigo-500 dark:text-indigo-400 mt-1">Somente usuários com permissão de nível gerencial podem editar este campo.</p>
+                                        </div>
+                                    )}
 
                                 </div>
                             </div>
@@ -1738,6 +1761,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <th className="px-6 py-3">Contato</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3">Financeiro</th>
+                                <th className="px-6 py-3">Atendente</th>
                                 <th className="px-6 py-3 print:hidden">Ações</th>
                                 <th className="px-6 py-3 hidden print:table-cell">Assinatura</th>
                             </tr>
@@ -1768,6 +1792,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     <div className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 inline-block px-1 rounded">Quitado</div>
                                                 )}
                                                 <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{enr.paymentMethod || '-'}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {enr.enrolledByName ? (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold">
+                                                        <User size={11} />
+                                                        {enr.enrolledByName}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 print:hidden">
                                                 <div className="flex items-center gap-2">
@@ -1810,7 +1844,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Nenhum aluno inscrito ainda.</td>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Nenhum aluno inscrito ainda.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -4441,6 +4475,7 @@ const SettingsView = () => {
                 { key: 'courses_print_list', label: 'Imprimir Listas' },
                 { key: 'courses_view_reports', label: 'Ver Relatórios Gerenciais' },
                 { key: 'certificates_view', label: 'Gerar Certificados & Crachás' },
+                { key: 'courses_edit_attendant', label: 'Editar Atendente da Inscrição' },
             ]
         },
         {
