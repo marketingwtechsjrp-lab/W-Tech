@@ -41,6 +41,7 @@ const Bio = lazy(() => import('./pages/bio'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const LPErgonomia = lazy(() => import('./pages/LPErgonomia'));
 const PronelloImmersion = lazy(() => import('./pages/PronelloImmersion'));
+const WaitlistSuspension = lazy(() => import('./pages/WaitlistSuspension'));
 
 
 
@@ -98,6 +99,7 @@ const App = () => {
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
                     <Route path="/curso-suspensao-piloto" element={<LPErgonomia />} />
                     <Route path="/imersao-pronello" element={<PronelloImmersion />} />
+                    <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
 
                     {/* Legal Pages */}

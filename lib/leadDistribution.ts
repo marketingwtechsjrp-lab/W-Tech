@@ -11,7 +11,7 @@ export const distributeLead = async () => {
 
 interface LeadPayload {
     name: string;
-    email: string;
+    email?: string;
     phone: string;
     type?: string;
     status?: string;
