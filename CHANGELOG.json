@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.0.0a",
+    "date": "2026-04-07",
+    "title": "Alpha v3 Release",
+    "changes": [
+      "FEAT: Início da transição para a versão 3.0.",
+      "VERSION: Atualização para v3.0.0a."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.9.8",
     "date": "2026-04-07",
     "title": "Stripe Integration & SEO Dynamic Optimization",

@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.0.0a (2026-04-07) - Alpha v3 Release
+- FEAT: Início da transição para a versão 3.0.
+- VERSION: Atualização para v3.0.0a.
+
 ## v2.9.8 (2026-04-07) - Stripe Integration & SEO Dynamic Optimization
 - FEAT: Integração do Stripe no Módulo de Pedidos (Geração de links de pagamento, cópia e abertura direta).
 - FEAT: Automação de status: pedidos agora atualizam para 'Pago' automaticamente via Webhook Stripe.
