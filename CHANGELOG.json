@@ -1,5 +1,18 @@
 [
   {
+    "version": "2.9.8",
+    "date": "2026-04-07",
+    "title": "Stripe Integration & SEO Dynamic Optimization",
+    "changes": [
+      "FEAT: Integração do Stripe no Módulo de Pedidos (Geração de links de pagamento, cópia e abertura direta).",
+      "FEAT: Automação de status: pedidos agora atualizam para 'Pago' automaticamente via Webhook Stripe.",
+      "FEAT: Sincronização de pagamentos no Editor de Pedidos (OrderEditor) e Novo Pedido (NewOrderModal).",
+      "SEO: Otimização dinâmica de títulos SEO controlados via Painel Administrativo.",
+      "VERSION: Atualização interna do sistema para v2.9.8."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "2.9.7",
     "date": "2026-03-31",
     "title": "Gestão de Matrículas & Migrações de Dados",
@@ -327,7 +340,8 @@
       "FEAT: Novo módulo de Gestão de Certificados e Crachás",
       "FEAT: Suporte a layouts customizados de certificados por curso",
       "FIX: Tratamento de erros de injeção de scripts duplicados",
-      "FIX: Melhorias de performance no Painel Administrativo"
+      "FIX: Melhorias de performance no Painel Administrativo",
+      "LOG: Módulo de Gestão Logística v2.9.8"
     ],
     "author": "Antigravity"
   },
@@ -417,7 +431,8 @@
     "changes": [
       "FIX: Script SQL para correção de permissões em listas de marketing",
       "FEAT: Documentação técnica completa do sistema de automação WhatsApp",
-      "FIX: Ajustes de permissões RLS no banco de dados"
+      "FIX: Ajustes de permissões RLS no banco de dados",
+      "LOG: W-TECH PLATFORM v2.9.8 • Sistema de Gestão de Leads & Automação"
     ],
     "author": "danielmarques"
   },

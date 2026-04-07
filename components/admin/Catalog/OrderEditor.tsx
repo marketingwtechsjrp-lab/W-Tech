@@ -5,8 +5,9 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { FileDown, Printer, Receipt } from 'lucide-react';
+import { FileDown, Printer, Receipt, Zap, Loader2, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
+import { createStripePaymentLink } from '../../../lib/stripe';
 
 interface NewOrderModalProps {
     isOpen: boolean;
@@ -42,6 +43,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [isManualMode, setIsManualMode] = useState(false);
     const [isChangingAddress, setIsChangingAddress] = useState(false);
     const [showClientResults, setShowClientResults] = useState(false);
+    const [isGeneratingStripeLink, setIsGeneratingStripeLink] = useState(false);
+    const [stripePaymentUrl, setStripePaymentUrl] = useState<string | null>(null);
+    const [stripeLinkCopied, setStripeLinkCopied] = useState(false);
 
     const subtotal = saleItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     const shippingCost = currentSale.shipping_cost || 0;
@@ -96,6 +100,56 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         } catch (error) {
             console.error('CEP Lookup error:', error);
         }
+    };
+
+    const handleGenerateStripeLink = async () => {
+        if (!currentSale.clientName || total <= 0) return;
+        
+        setIsGeneratingStripeLink(true);
+        try {
+            const result = await createStripePaymentLink({
+                title: `Pedido ${currentSale.order_number || 'Novo'} - W-Tech`,
+                price: total,
+                email: currentSale.clientEmail,
+                orderId: currentSale.id // If editing, we have an ID
+            });
+
+            if (result.success && result.url) {
+                setStripePaymentUrl(result.url);
+                
+                // Update the sale with the Stripe link and session ID
+                if (currentSale.id) {
+                    await supabase
+                        .from('SITE_Sales')
+                        .update({ 
+                            stripe_payment_url: result.url,
+                            stripe_session_id: result.sessionId,
+                            payment_method: 'Stripe'
+                        })
+                        .eq('id', currentSale.id);
+                }
+                
+                setCurrentSale(prev => ({ 
+                    ...prev, 
+                    stripe_payment_url: result.url,
+                    stripe_session_id: result.sessionId,
+                    payment_method: 'Stripe'
+                }));
+            } else {
+                alert('Erro ao gerar link do Stripe: ' + result.error);
+            }
+        } catch (error: any) {
+            alert('Erro: ' + error.message);
+        } finally {
+            setIsGeneratingStripeLink(false);
+        }
+    };
+
+    const handleCopyStripeLink = () => {
+        if (!stripePaymentUrl) return;
+        navigator.clipboard.writeText(stripePaymentUrl);
+        setStripeLinkCopied(true);
+        setTimeout(() => setStripeLinkCopied(false), 2000);
     };
 
     // Locking Logic
@@ -632,7 +686,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                         {currentSale.id ? 'Editar Pedido' : 'Novo Pedido'}
                     </h2>
                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                        Módulo de Gestão Logística v2.0
+                        Módulo de Gestão Logística v2.9.8
                     </p>
                 </div>
                 
@@ -1124,16 +1178,104 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 <div className="md:col-span-2 space-y-2">
                                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Condição de Pagamento</label>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                        {/* Stripe option — always visible */}
+                                                        <button
+                                                            onClick={() => setCurrentSale({...currentSale, payment_method: 'Stripe'})}
+                                                            className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border flex items-center justify-center gap-1.5 ${currentSale.payment_method === 'Stripe' ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-violet-400 hover:text-violet-600'}`}
+                                                        >
+                                                            <Zap size={12} /> Stripe
+                                                        </button>
                                                         {paymentMethods.map(pm => (
                                                             <button
                                                                 key={pm.id}
-                                                                onClick={() => setCurrentSale({...currentSale, payment_method: pm.name})}
+                                                                onClick={() => {
+                                                                    setCurrentSale({...currentSale, payment_method: pm.name});
+                                                                    setStripePaymentUrl(null); // clear Stripe link if switching away
+                                                                }}
                                                                 className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border ${currentSale.payment_method === pm.name ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-gray-400'}`}
                                                             >
                                                                 {pm.name}
                                                             </button>
                                                         ))}
                                                     </div>
+
+                                                    {/* Stripe Link Generator — shown when Stripe is selected */}
+                                                    {currentSale.payment_method === 'Stripe' && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            className="mt-4 p-5 bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800/40 rounded-2xl space-y-4"
+                                                        >
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="text-xs font-black text-violet-700 dark:text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                                                                        <Zap size={14} /> Link de Pagamento Stripe
+                                                                    </p>
+                                                                    <p className="text-[10px] text-gray-500 mt-0.5">Gere um link seguro e envie ao cliente para ele pagar online.</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Total</p>
+                                                                    <p className="text-lg font-black text-violet-600 dark:text-violet-400">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            {!stripePaymentUrl ? (
+                                                                <button
+                                                                    onClick={handleGenerateStripeLink}
+                                                                    disabled={isGeneratingStripeLink || total <= 0}
+                                                                    className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                >
+                                                                    {isGeneratingStripeLink ? (
+                                                                        <><Loader2 size={16} className="animate-spin" /> Gerando Link...</>
+                                                                    ) : (
+                                                                        <><Zap size={16} /> Gerar Link de Pagamento</>
+                                                                    )}
+                                                                </button>
+                                                            ) : (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                    className="space-y-3"
+                                                                >
+                                                                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                                                        <CheckCircle2 size={16} />
+                                                                        <span className="text-xs font-black uppercase tracking-wide">Link gerado com sucesso!</span>
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <input
+                                                                            readOnly
+                                                                            value={stripePaymentUrl}
+                                                                            className="flex-1 bg-white dark:bg-black/30 border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-300 outline-none truncate"
+                                                                        />
+                                                                        <button
+                                                                            onClick={handleCopyStripeLink}
+                                                                            className={`px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all ${
+                                                                                stripeLinkCopied
+                                                                                    ? 'bg-emerald-500 text-white'
+                                                                                    : 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 hover:bg-violet-200'
+                                                                            }`}
+                                                                            title="Copiar link"
+                                                                        >
+                                                                            {stripeLinkCopied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                                                            {stripeLinkCopied ? 'Copiado!' : 'Copiar'}
+                                                                        </button>
+                                                                        <a
+                                                                            href={stripePaymentUrl}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-violet-600 transition-colors"
+                                                                            title="Abrir link"
+                                                                        >
+                                                                            <ExternalLink size={14} />
+                                                                        </a>
+                                                                    </div>
+                                                                    <p className="text-[10px] text-gray-400">
+                                                                        O pedido será atualizado automaticamente para <strong>"Pago"</strong> quando o cliente concluir o pagamento.
+                                                                    </p>
+                                                                </motion.div>
+                                                            )}
+                                                        </motion.div>
+                                                    )}
                                                 </div>
                                                 
                                                 {(currentSale.status === 'shipped' || currentSale.status === 'delivered') && (

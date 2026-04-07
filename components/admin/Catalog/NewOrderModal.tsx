@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ShoppingCart, Plus, Trash2, UserPlus, AlertTriangle, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, MapPin, RefreshCw } from 'lucide-react';
+import { X, Search, ShoppingCart, Trash2, UserPlus, Truck, CreditCard, Calendar, Check, Tag, ArrowRight, Shield, MapPin, RefreshCw, Copy, ExternalLink, Loader2, CheckCircle2, Zap } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
+import { createStripePaymentLink } from '../../../lib/stripe';
 import { Sale, SaleItem, Product } from '../../../types';
 
 interface NewOrderModalProps {
@@ -35,6 +36,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [manualItem, setManualItem] = useState({ name: '', quantity: 1, price: 0 });
     const [isManualMode, setIsManualMode] = useState(false);
     const [isChangingAddress, setIsChangingAddress] = useState(false);
+
+    // Stripe State
+    const [stripePaymentUrl, setStripePaymentUrl] = useState<string | null>(null);
+    const [isGeneratingStripeLink, setIsGeneratingStripeLink] = useState(false);
+    const [stripeLinkCopied, setStripeLinkCopied] = useState(false);
 
     // Calculated fields
     const subtotal = saleItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
@@ -176,7 +182,6 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         
         setLoading(true);
         try {
-            // Sanitize Payload
             const salePayload = {
                 client_id: currentSale.clientId,
                 client_name: currentSale.clientName || '',
@@ -185,10 +190,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 channel: currentSale.channel || 'Admin',
                 status: currentSale.status || 'pending',
                 total_value: Number(total.toFixed(2)),
-                payment_method: currentSale.payment_method || null, 
+                payment_method: currentSale.payment_method || null,
                 notes: currentSale.notes || '',
                 seller_id: user?.id,
-                // A COLUNA 'items' (JSON) É A FONTE DA VERDADE PARA ITENS MANUAIS
                 items: JSON.stringify(saleItems.map(i => ({ 
                     productId: i.productId, 
                     name: i.product?.name, 
@@ -207,7 +211,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 delivery_number: currentSale.delivery_number || null,
                 delivery_neighborhood: currentSale.delivery_neighborhood || null,
                 delivery_city: currentSale.delivery_city || null,
-                delivery_state: currentSale.delivery_state || null
+                delivery_state: currentSale.delivery_state || null,
+                // Persist Stripe link if already generated before saving
+                stripe_payment_url: stripePaymentUrl || currentSale.stripe_payment_url || null,
             };
 
             let saleId = currentSale.id;
@@ -215,21 +221,18 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
             if (saleId) {
                 const { error: updateError } = await supabase.from('SITE_Sales').update(salePayload).eq('id', saleId);
                 if (updateError) throw updateError;
-                
-                // Wipe relational items
                 await supabase.from('SITE_SaleItems').delete().eq('sale_id', saleId);
                 await supabase.from('SITE_StockMovements').delete().eq('reference_id', saleId);
             } else {
                 const { data, error: insertError } = await supabase.from('SITE_Sales').insert([salePayload]).select().single();
                 if (insertError) throw insertError;
                 saleId = data.id;
+                // Update internal state with generated saleId for Stripe link generation
+                setCurrentSale(prev => ({ ...prev, id: saleId }));
             }
 
-            // FILTER MANUAL ITEMS to prevent UUID errors in relational tables
-            // Manuais são salvos apenas no JSON 'items' da tabela SITE_Sales por enquanto
             const validItems = saleItems.filter(item => !item.productId.toString().startsWith('manual-'));
 
-            // Insert Items (Batch)
             const itemsToInsert = validItems.map(item => ({
                 sale_id: saleId,
                 product_id: item.productId,
@@ -242,7 +245,6 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 if (itemsError) throw itemsError;
             }
 
-            // Stock Reservation Logic (Batch Optimized)
             const stockMovementsToInsert = validItems.map(item => ({
                 product_id: item.productId,
                 type: 'RESERVED',
@@ -256,15 +258,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 const { error: stockError } = await supabase.from('SITE_StockMovements').insert(stockMovementsToInsert);
                 if (stockError) throw stockError;
             }
-            
-            
-            // UX FIX: Close FIRST, then refresh data.
-            // This prevents the "stuck backdrop" issue caused by heavy re-renders during exit animation.
+
             onClose();
-            
-            setTimeout(async () => {
-                await onSave();
-            }, 300);
+            setTimeout(async () => { await onSave(); }, 300);
 
         } catch (error: any) {
             console.error('Erro ao salvar pedido:', error);
@@ -274,6 +270,84 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         } finally {
             if (loading) setLoading(false);
         }
+    };
+
+    const handleGenerateStripeLink = async () => {
+        if (!currentSale.clientId) return alert('Selecione um cliente antes de gerar o link.');
+        if (saleItems.length === 0) return alert('Adicione itens ao pedido antes de gerar o link.');
+        if (total <= 0) return alert('O valor total do pedido deve ser maior que zero.');
+
+        setIsGeneratingStripeLink(true);
+        try {
+            // Step 1: If no orderId yet, save the order first to get a database ID
+            let orderId = currentSale.id;
+            if (!orderId) {
+                const salePayload = {
+                    client_id: currentSale.clientId,
+                    client_name: currentSale.clientName || '',
+                    client_email: currentSale.clientEmail || null,
+                    client_phone: currentSale.clientPhone || null,
+                    channel: currentSale.channel || 'Admin',
+                    status: 'pending',
+                    total_value: Number(total.toFixed(2)),
+                    payment_method: 'Stripe',
+                    notes: currentSale.notes || '',
+                    seller_id: user?.id,
+                    items: JSON.stringify(saleItems.map(i => ({ productId: i.productId, name: i.product?.name, quantity: i.quantity, price: i.unitPrice }))),
+                    shipping_method: currentSale.shipping_method || null,
+                    shipping_cost: Number(Number(shippingCost).toFixed(2)),
+                    insurance_cost: Number(Number(insuranceCost).toFixed(2)),
+                    discount_amount: Number(Number(discountAmount).toFixed(2)),
+                    delivery_cep: currentSale.delivery_cep || null,
+                    delivery_street: currentSale.delivery_street || null,
+                    delivery_number: currentSale.delivery_number || null,
+                    delivery_neighborhood: currentSale.delivery_neighborhood || null,
+                    delivery_city: currentSale.delivery_city || null,
+                    delivery_state: currentSale.delivery_state || null,
+                };
+                const { data: saved, error: saveErr } = await supabase.from('SITE_Sales').insert([salePayload]).select().single();
+                if (saveErr) throw saveErr;
+                orderId = saved.id;
+                setCurrentSale(prev => ({ ...prev, id: orderId, payment_method: 'Stripe' }));
+            }
+
+            // Step 2: Generate Stripe Checkout Session
+            const itemNames = saleItems.map(i => i.product?.name).join(', ');
+            const result = await createStripePaymentLink({
+                title: `Pedido W-Tech — ${itemNames.slice(0, 120)}`,
+                price: total,
+                currency: 'brl',
+                email: currentSale.clientEmail || undefined,
+                orderId: orderId,
+            });
+
+            if (!result.success || !result.url) {
+                throw new Error(result.error || 'Falha ao gerar link Stripe');
+            }
+
+            const paymentUrl = result.url;
+            setStripePaymentUrl(paymentUrl);
+
+            // Step 3: Persist the Stripe URL and session ID on the order record
+            await supabase.from('SITE_Sales').update({
+                stripe_payment_url: paymentUrl,
+                stripe_session_id: result.sessionId || null,
+                payment_method: 'Stripe',
+            }).eq('id', orderId);
+
+        } catch (err: any) {
+            console.error('Stripe link error:', err);
+            alert('❌ Erro ao gerar link Stripe: ' + (err.message || 'Verifique se a Stripe API Key está configurada.'));
+        } finally {
+            setIsGeneratingStripeLink(false);
+        }
+    };
+
+    const handleCopyStripeLink = () => {
+        if (!stripePaymentUrl) return;
+        navigator.clipboard.writeText(stripePaymentUrl);
+        setStripeLinkCopied(true);
+        setTimeout(() => setStripeLinkCopied(false), 2500);
     };
 
     const handleDelete = async () => {
@@ -320,8 +394,10 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                          <div className="px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-[#1A1A1A] border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 z-10">
                             <div>
                                 <h2 className="text-lg md:text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic underline decoration-wtech-red decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">Fluxo de Pedido <span className="text-wtech-red">W-Tech</span></h2>
-                                <p className="text-[10px] md:text-sm text-gray-400 font-bold uppercase tracking-widest mt-1 md:mt-3">Módulo de Gestão Logística v2.0</p>
-                            </div>
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                        Módulo de Gestão Logística v2.9.8
+                    </p>
+        </div>
                             <div className="flex items-center gap-3">
                                 {currentSale.id && (
                                     <button 
@@ -750,19 +826,107 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 </div>
 
                                                 <div className="md:col-span-2 space-y-2">
-                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Condição de Pagamento</label>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                        {paymentMethods.map(pm => (
-                                                            <button
-                                                                key={pm.id}
-                                                                onClick={() => setCurrentSale({...currentSale, payment_method: pm.name})}
-                                                                className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border ${currentSale.payment_method === pm.name ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-gray-400'}`}
-                                                            >
-                                                                {pm.name}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
+                                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Forma de Pagamento</label>
+                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                         {/* Stripe option — always visible */}
+                                                         <button
+                                                             onClick={() => setCurrentSale({...currentSale, payment_method: 'Stripe'})}
+                                                             className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border flex items-center justify-center gap-1.5 ${currentSale.payment_method === 'Stripe' ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-violet-400 hover:text-violet-600'}`}
+                                                         >
+                                                             <Zap size={12} /> Stripe
+                                                         </button>
+                                                         {paymentMethods.map(pm => (
+                                                             <button
+                                                                 key={pm.id}
+                                                                 onClick={() => {
+                                                                     setCurrentSale({...currentSale, payment_method: pm.name});
+                                                                     setStripePaymentUrl(null); // clear Stripe link if switching away
+                                                                 }}
+                                                                 className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border ${currentSale.payment_method === pm.name ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-gray-400'}`}
+                                                             >
+                                                                 {pm.name}
+                                                             </button>
+                                                         ))}
+                                                     </div>
+
+                                                     {/* Stripe Link Generator — shown when Stripe is selected */}
+                                                     {currentSale.payment_method === 'Stripe' && (
+                                                         <motion.div
+                                                             initial={{ opacity: 0, y: -8 }}
+                                                             animate={{ opacity: 1, y: 0 }}
+                                                             className="mt-4 p-5 bg-violet-50 dark:bg-violet-900/10 border border-violet-200 dark:border-violet-800/40 rounded-2xl space-y-4"
+                                                         >
+                                                             <div className="flex items-center justify-between">
+                                                                 <div>
+                                                                     <p className="text-xs font-black text-violet-700 dark:text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                                                                         <Zap size={14} /> Link de Pagamento Stripe
+                                                                     </p>
+                                                                     <p className="text-[10px] text-gray-500 mt-0.5">Gere um link seguro e envie ao cliente para ele pagar online.</p>
+                                                                 </div>
+                                                                 <div className="text-right">
+                                                                     <p className="text-[9px] text-gray-400 uppercase font-bold">Total</p>
+                                                                     <p className="text-lg font-black text-violet-600 dark:text-violet-400">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                 </div>
+                                                             </div>
+
+                                                             {!stripePaymentUrl ? (
+                                                                 <button
+                                                                     onClick={handleGenerateStripeLink}
+                                                                     disabled={isGeneratingStripeLink || total <= 0}
+                                                                     className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                 >
+                                                                     {isGeneratingStripeLink ? (
+                                                                         <><Loader2 size={16} className="animate-spin" /> Gerando Link...</>
+                                                                     ) : (
+                                                                         <><Zap size={16} /> Gerar Link de Pagamento</>
+                                                                     )}
+                                                                 </button>
+                                                             ) : (
+                                                                 <motion.div
+                                                                     initial={{ opacity: 0, scale: 0.95 }}
+                                                                     animate={{ opacity: 1, scale: 1 }}
+                                                                     className="space-y-3"
+                                                                 >
+                                                                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                                                         <CheckCircle2 size={16} />
+                                                                         <span className="text-xs font-black uppercase tracking-wide">Link gerado com sucesso!</span>
+                                                                     </div>
+                                                                     <div className="flex gap-2">
+                                                                         <input
+                                                                             readOnly
+                                                                             value={stripePaymentUrl}
+                                                                             className="flex-1 bg-white dark:bg-black/30 border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-300 outline-none truncate"
+                                                                         />
+                                                                         <button
+                                                                             onClick={handleCopyStripeLink}
+                                                                             className={`px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-1.5 transition-all ${
+                                                                                 stripeLinkCopied
+                                                                                     ? 'bg-emerald-500 text-white'
+                                                                                     : 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 hover:bg-violet-200'
+                                                                             }`}
+                                                                             title="Copiar link"
+                                                                         >
+                                                                             {stripeLinkCopied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                                                             {stripeLinkCopied ? 'Copiado!' : 'Copiar'}
+                                                                         </button>
+                                                                         <a
+                                                                             href={stripePaymentUrl}
+                                                                             target="_blank"
+                                                                             rel="noopener noreferrer"
+                                                                             className="px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-violet-600 transition-colors"
+                                                                             title="Abrir link"
+                                                                         >
+                                                                             <ExternalLink size={14} />
+                                                                         </a>
+                                                                     </div>
+                                                                     <p className="text-[10px] text-gray-400">
+                                                                         O pedido será atualizado automaticamente para <strong>"Pago"</strong> quando o cliente concluir o pagamento.
+                                                                     </p>
+                                                                 </motion.div>
+                                                             )}
+                                                         </motion.div>
+                                                     )}
+                                                 </div>
                                                 
                                                 {(currentSale.status === 'shipped' || currentSale.status === 'delivered') && (
                                                     <div className="md:col-span-2 p-6 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-900/30 rounded-3xl space-y-3">

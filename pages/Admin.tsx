@@ -4764,6 +4764,27 @@ const SettingsView = () => {
                                         </div>
                                     </div>
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Imagem de Destaque (SEO OG Image)</label>
+                                    <div className="flex gap-3">
+                                        <div className="w-16 h-12 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden">
+                                            {config.seo_og_image ? <img src={config.seo_og_image} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-400" />}
+                                        </div>
+                                        <div className="flex-1 flex gap-2">
+                                            <input
+                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                value={config.seo_og_image || ''}
+                                                onChange={(e) => handleChange('seo_og_image', e.target.value)}
+                                                placeholder="https://... (1200x630 recomendado)"
+                                            />
+                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
+                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                                <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'seo_og_image')} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1">Esta imagem aparece ao compartilhar o link no WhatsApp/Redes Sociais.</p>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Cor Primária</label>
@@ -5242,7 +5263,46 @@ const SettingsView = () => {
 
                             {/* --- 4. Schema Markup (JSON-LD) --- */}
                             <div className="space-y-6 lg:col-span-2">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Code size={18} className="text-purple-500" /> Schema Markup (JSON-LD Organization)</h3>
+                                <div className="flex items-center justify-between border-b dark:border-gray-800 pb-2 flex-wrap gap-2">
+                                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2"><Code size={18} className="text-purple-500" /> Schema Markup (JSON-LD Organization)</h3>
+                                    <button
+                                        disabled={isGeneratingSEO}
+                                        onClick={async () => {
+                                            setIsGeneratingSEO(true);
+                                            try {
+                                                const result = await generateSEOContent({
+                                                    site_title: config.site_title,
+                                                    site_description: config.site_description || config.seo_description,
+                                                    canonical_url: config.seo_canonical_url,
+                                                    logo_url: config.logo_url,
+                                                    existing_seo: {
+                                                        seo_schema_name: config.seo_schema_name,
+                                                        seo_schema_type: config.seo_schema_type,
+                                                        seo_schema_phone: config.seo_schema_phone,
+                                                        seo_schema_email: config.seo_schema_email,
+                                                        seo_schema_address: config.seo_schema_address
+                                                    }
+                                                });
+
+                                                if (result.seo_schema_name) handleChange('seo_schema_name', result.seo_schema_name);
+                                                if (result.seo_schema_type) handleChange('seo_schema_type', result.seo_schema_type);
+                                                if (result.seo_schema_phone) handleChange('seo_schema_phone', result.seo_schema_phone);
+                                                if (result.seo_schema_email) handleChange('seo_schema_email', result.seo_schema_email);
+                                                if (result.seo_schema_address) handleChange('seo_schema_address', result.seo_schema_address);
+
+                                                alert('✨ Schema atualizado com sucesso pela IA!');
+                                            } catch (err: any) {
+                                                alert('❌ Erro ao gerar Schema: ' + err.message);
+                                            } finally {
+                                                setIsGeneratingSEO(false);
+                                            }
+                                        }}
+                                        className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-full font-bold uppercase hover:bg-purple-500/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {isGeneratingSEO ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                        Gerar Schema com IA
+                                    </button>
+                                </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">Dados estruturados da organização que ajudam o Google a exibir informações completas nos resultados de busca.</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -5958,14 +6018,14 @@ const SettingsView = () => {
                                         <p className="text-gray-400 text-sm mt-1">Este motor será utilizado para gerar o Blog, responder mensagens e analisar leads.</p>
                                     </div>
 
-                                    <div className="flex bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
-                                        {(['gemini', 'openai'] as const).map((provider) => (
+                                    <div className="flex bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md overflow-x-auto scrollbar-hide max-w-full">
+                                        {(['gemini', 'openai', 'openrouter'] as const).map((provider) => (
                                             <button
                                                 key={provider}
                                                 onClick={() => handleChange('preferred_ai_provider', provider)}
-                                                className={`px-8 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-2 ${config.preferred_ai_provider === provider ? 'bg-wtech-gold text-black shadow-lg shadow-yellow-500/20' : 'text-gray-400 hover:text-white'}`}
+                                                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 whitespace-nowrap ${config.preferred_ai_provider === provider ? 'bg-wtech-gold text-black shadow-lg shadow-yellow-500/20' : 'text-gray-400 hover:text-white'}`}
                                             >
-                                                {provider === 'openai' ? 'OpenAI (GPT)' : 'Google (Gemini)'}
+                                                {provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Google' : 'OpenRouter'}
                                                 {config.preferred_ai_provider === provider && <CheckCircle size={14} />}
                                             </button>
                                         ))}
@@ -6033,6 +6093,52 @@ const SettingsView = () => {
                                     <div className="flex items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-100 dark:border-yellow-900/20">
                                         <AlertCircle size={14} className="text-wtech-gold shrink-0" />
                                         <p className="text-[10px] text-yellow-700 dark:text-yellow-600 leading-tight">Excelente para análise de logs e velocidade de processamento de Big Data.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* OpenRouter Config */}
+                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-3xl p-8 shadow-sm hover:border-purple-500/30 transition-colors md:col-span-2">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
+                                        <Globe size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-lg text-gray-900 dark:text-white leading-tight">OPENROUTER</h4>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Multi-Model Gateway</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">API Key do OpenRouter</label>
+                                            <div className="relative">
+                                                <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
+                                                <input
+                                                    type="password"
+                                                    className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-purple-500 outline-none transition-all"
+                                                    value={config.openrouter_api_key || ''}
+                                                    onChange={e => handleChange('openrouter_api_key', e.target.value)}
+                                                    placeholder="sk-or-v1-..."
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-900/20">
+                                            <AlertCircle size={14} className="text-purple-500 shrink-0" />
+                                            <p className="text-[10px] text-purple-700 dark:text-purple-400 leading-tight">Acesso a centenas de modelos (Claude, Llama, Gemini) com uma única chave.</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Modelo AI (OpenRouter)</label>
+                                            <input
+                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-purple-500 outline-none transition-all"
+                                                value={config.openrouter_model || ''}
+                                                onChange={e => handleChange('openrouter_model', e.target.value)}
+                                                placeholder="google/gemini-2.0-flash-001"
+                                            />
+                                            <p className="text-[9px] text-gray-400 mt-1">Ex: anthropic/claude-3.5-sonnet, meta-llama/llama-3-70b</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
