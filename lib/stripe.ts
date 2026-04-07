@@ -11,9 +11,10 @@ const STRIPE_URL = 'https://api.stripe.com/v1';
 export const createStripePaymentLink = async ({
     title,
     price, // Amount in normal currency unit (e.g. 100.00)
-    currency = 'usd',
+    currency = 'brl',
     email,
     enrollmentId,
+    orderId,
     successUrl
 }: {
     title: string,
@@ -21,6 +22,7 @@ export const createStripePaymentLink = async ({
     currency?: string,
     email?: string,
     enrollmentId?: string,
+    orderId?: string,
     successUrl?: string
 }) => {
     const apiKey = await getStripeConfig();
@@ -30,7 +32,6 @@ export const createStripePaymentLink = async ({
     const unitAmount = Math.round(price * 100);
 
     try {
-        // Create Checkout Session using URL Encoded Form Data (standard for Stripe API)
         const params = new URLSearchParams();
         params.append('payment_method_types[]', 'card');
         params.append('line_items[0][price_data][currency]', currency.toLowerCase());
@@ -38,12 +39,24 @@ export const createStripePaymentLink = async ({
         params.append('line_items[0][price_data][unit_amount]', unitAmount.toString());
         params.append('line_items[0][quantity]', '1');
         params.append('mode', 'payment');
-        
-        const finalSuccessUrl = successUrl || (window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`);
+
+        // Determine success URL based on context (order vs enrollment)
+        let finalSuccessUrl: string;
+        if (successUrl) {
+            finalSuccessUrl = successUrl;
+        } else if (orderId) {
+            finalSuccessUrl = window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}&oid=${orderId}`;
+        } else {
+            finalSuccessUrl = window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`;
+        }
+
         params.append('success_url', finalSuccessUrl);
         params.append('cancel_url', window.location.origin + '/admin/dashboard?payment=cancel');
         if (email) params.append('customer_email', email);
+
+        // Attach relevant metadata for webhook processing
         if (enrollmentId) params.append('metadata[enrollmentId]', enrollmentId);
+        if (orderId) params.append('metadata[orderId]', orderId);
 
         const res = await fetch(`${STRIPE_URL}/checkout/sessions`, {
             method: 'POST',
@@ -62,11 +75,12 @@ export const createStripePaymentLink = async ({
 
         return {
             success: true,
-            url: data.url // The hosted checkout page
+            url: data.url,       // The hosted checkout page URL
+            sessionId: data.id   // Stripe session ID for reference
         };
 
     } catch (error: any) {
-        console.error("Stripe Error:", error);
+        console.error('Stripe Error:', error);
         return { success: false, error: error.message };
     }
 };

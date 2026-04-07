@@ -1,5 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v2.9.8 (2026-04-07) - Stripe Integration & SEO Dynamic Optimization
+- FEAT: Integração do Stripe no Módulo de Pedidos (Geração de links de pagamento, cópia e abertura direta).
+- FEAT: Automação de status: pedidos agora atualizam para 'Pago' automaticamente via Webhook Stripe.
+- FEAT: Sincronização de pagamentos no Editor de Pedidos (OrderEditor) e Novo Pedido (NewOrderModal).
+- SEO: Otimização dinâmica de títulos SEO controlados via Painel Administrativo.
+- VERSION: Atualização interna do sistema para v2.9.8.
+
 ## v2.9.7 (2026-03-31) - Gestão de Matrículas & Migrações de Dados
 - FEAT: Novo campo 'enrolled_by' para rastreamento de quem realizou a matrícula.
 - FEAT: Melhorias nos componentes administrativos de Marketing e campanhas Meta.

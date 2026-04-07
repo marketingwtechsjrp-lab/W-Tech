@@ -187,7 +187,7 @@ const Home = () => {
     return (
         <div className="bg-wtech-light min-h-screen font-sans text-gray-900 selection:bg-wtech-gold selection:text-white overflow-x-hidden">
             <SEO
-                title="W-TECH Brasil | Escola de Tecnologia Automotiva"
+                title="Escola de Tecnologia Automotiva"
                 description="Especialistas em Suspensão de Motocross, Enduro e Street. Cursos técnicos, peças especiais e a maior rede de oficinas credenciadas do Brasil."
                 schema={{
                     "@context": "https://schema.org",
