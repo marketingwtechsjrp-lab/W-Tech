@@ -1,5 +1,20 @@
 [
   {
+    "version": "3.0.1",
+    "date": "2026-04-09",
+    "title": "Course Status & Waitlist Intelligence",
+    "changes": [
+      "FEAT: Gestão de Status de Cursos (Lotado, Realizado/Concluído) no Admin.",
+      "FEAT: Sistema de Lista de Espera integrado nas Landing Pages para cursos cheios.",
+      "FEAT: Tag automática 'lista_espera_curso' para leads nessas condições.",
+      "UX: Sincronização em tempo real de vagas (Live Count via SITE_Enrollments).",
+      "UX: Gatilhos de Urgência visual ('Últimas Vagas') com animações de pulsação.",
+      "UX: Calendário Anual sincronizado com cores por status de curso.",
+      "VERSION: Atualização para v3.0.1."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "3.0.0a",
     "date": "2026-04-07",
     "title": "Alpha v3 Release",

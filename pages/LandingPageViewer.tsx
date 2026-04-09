@@ -41,13 +41,13 @@ const LandingPageViewer: React.FC = () => {
 
       if (isUUID) {
           // 1. Try to find LP linked to this Course ID
-          const { data: linkedLP } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*)').eq('course_id', slug).single();
+          const { data: linkedLP } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*, SITE_Enrollments(count))').eq('course_id', slug).single();
           
           if (linkedLP) {
               lpData = linkedLP; 
           } else {
               // 2. No LP found? Fetch Course and Generate Virtual LP
-              const { data: courseData } = await supabase.from('SITE_Courses').select('*').eq('id', slug).single();
+              const { data: courseData } = await supabase.from('SITE_Courses').select('*, SITE_Enrollments(count)').eq('id', slug).single();
               if (courseData) {
                   // Create Virtual LP from Course Data
                   lpData = {
@@ -75,7 +75,7 @@ const LandingPageViewer: React.FC = () => {
           }
       } else {
           // Standard Slug Fetch
-          const { data } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*)').eq('slug', slug).single();
+          const { data } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*, SITE_Enrollments(count))').eq('slug', slug).single();
           lpData = data;
       }
       
@@ -86,7 +86,7 @@ const LandingPageViewer: React.FC = () => {
         const mappedCourse = rawCourse ? {
             ...rawCourse,
             locationType: rawCourse.location_type,
-            registeredCount: 0, // Placeholder
+            registeredCount: rawCourse.SITE_Enrollments?.[0]?.count || 0,
             hotelsInfo: rawCourse.hotels_info,
             startTime: rawCourse.start_time,
             endTime: rawCourse.end_time,
@@ -121,8 +121,9 @@ const LandingPageViewer: React.FC = () => {
         // Calculate Scarcity logic...
         if (mappedCourse) {
             const total = mappedCourse.capacity || 20;
-            const remaining = Math.max(0, total - 0); // Mock registered=0 for now
-            setSpotsLeft(remaining > 5 ? 5 : remaining);
+            const enrolled = mappedCourse.registeredCount || 0;
+            const realRemaining = Math.max(0, total - enrolled);
+            setSpotsLeft(realRemaining);
         }
       } else {
           console.error("LP not found");
@@ -144,7 +145,11 @@ const LandingPageViewer: React.FC = () => {
             type: 'Course_Registration',
             status: 'New',
             context_id: `LP: ${lp.title} (${lp.slug})`,
-            tags: ['landing_page', lp.slug ? String(lp.slug) : 'virtual_lp'],
+            tags: [
+                'landing_page', 
+                lp.slug ? String(lp.slug) : 'virtual_lp',
+                (lp.course?.status === 'Full' || lp.course?.status === 'Completed') ? 'lista_espera_curso' : ''
+            ].filter(Boolean),
             origin: window.location.href,
             assigned_to: null // handleLeadUpsert will handle distribution if needed
         };
@@ -247,22 +252,36 @@ const LandingPageViewer: React.FC = () => {
                          {lp.subtitle}
                      </p>
                      
-                     {/* Scarcity Bar */}
+                     {/* Scarcity OR Status Bar */}
                      <div className="bg-white/5 border border-white/10 p-4 rounded-xl backdrop-blur-md max-w-md">
-                        <div className="flex justify-between text-xs font-bold uppercase text-gray-400 mb-2">
-                            <span>Vagas Preenchidas</span>
-                            <span className="text-red-500 animate-pulse">Restam apenas {spotsLeft} vagas</span>
-                        </div>
-                        <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
-                            <div className="bg-gradient-to-r from-red-600 to-red-500 h-full rounded-full w-[85%] relative overflow-hidden">
-                                <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                        {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? (
+                            <div className="flex flex-col gap-1">
+                                <div className="flex justify-between text-xs font-bold uppercase text-orange-500">
+                                    <span>Inscrições Encerradas</span>
+                                    <span className="flex items-center gap-1"><AlertTriangle size={12}/> Vagas Esgotadas</span>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">Inscreva-se abaixo para entrar na lista de espera da próxima turma em sua região.</p>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="flex justify-between text-xs font-bold uppercase text-gray-400 mb-2">
+                                    <span>Inscrições Abertas</span>
+                                    <span className={`flex items-center gap-1 ${spotsLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-wtech-gold'}`}>
+                                        {spotsLeft <= 10 ? `🔥 ÚLTIMAS ${spotsLeft} VAGAS!` : 'VAGAS LIMITADAS'}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                                    <div className="bg-gradient-to-r from-red-600 to-red-500 h-full rounded-full w-[85%] relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                      </div>
 
                      <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                        <button onClick={scrollToForm} className="bg-red-600 text-white px-10 py-5 rounded-lg font-black text-lg uppercase tracking-wider hover:bg-red-700 hover:scale-105 transition-all shadow-[0_10px_40px_-10px_rgba(220,38,38,0.5)] flex items-center justify-center gap-3 group">
-                            Quero me Inscrever <ArrowRight className="group-hover:translate-x-1 transition-transform" strokeWidth={3} />
+                        <button onClick={scrollToForm} className={`${lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'} text-white px-10 py-5 rounded-lg font-black text-lg uppercase tracking-wider hover:scale-105 transition-all shadow-[0_10px_40px_-10px_rgba(220,38,38,0.5)] flex items-center justify-center gap-3 group`}>
+                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Entrar na Lista de Espera' : 'Quero me Inscrever'} <ArrowRight className="group-hover:translate-x-1 transition-transform" strokeWidth={3} />
                         </button>
                         <a href="#modules" onClick={handleScrollToModules} className="px-8 py-5 border border-white/20 rounded-lg font-bold text-gray-300 uppercase tracking-widest hover:bg-white/5 transition-all text-center">
                             Ver Programação
@@ -335,7 +354,9 @@ const LandingPageViewer: React.FC = () => {
                     </div>
                     <div>
                         <div className="text-xs text-gray-500 uppercase font-bold">Vagas</div>
-                        <div className="text-sm font-bold text-white">Limitadas ({spotsLeft} Restantes)</div>
+                        <div className="text-sm font-bold text-white">
+                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Lista de Espera' : `Limitadas (${spotsLeft} Restantes)`}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -528,9 +549,13 @@ const LandingPageViewer: React.FC = () => {
             
             <div className="container mx-auto px-6 relative z-10">
                 <div className="max-w-2xl mx-auto text-center mb-12">
-                     <h2 className="text-4xl md:text-5xl font-black uppercase mb-4 text-white">Garanta Sua Vaga</h2>
+                     <h2 className="text-4xl md:text-5xl font-black uppercase mb-4 text-white">
+                        {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Lista de Espera' : 'Garanta Sua Vaga'}
+                     </h2>
                      <p className="text-xl text-gray-400">
-                        Junte-se à elite da mecânica de suspensões. Preencha o formulário abaixo para iniciar sua inscrição.
+                        {lp.course?.status === 'Full' || lp.course?.status === 'Completed' 
+                            ? 'Este curso já preencheu todas as vagas ou já foi realizado, mas você pode deixar seus dados para a próxima turma na sua região.' 
+                            : 'Junte-se à elite da mecânica de suspensões. Preencha o formulário abaixo para iniciar sua inscrição.'}
                     </p>
                 </div>
 
@@ -591,8 +616,8 @@ const LandingPageViewer: React.FC = () => {
                                             </div>
                                         </div>
                                         
-                                        <button className="w-full bg-wtech-gold text-black font-black text-xl py-5 rounded-xl hover:bg-white hover:scale-[1.02] transition-all uppercase tracking-wide shadow-xl flex items-center justify-center gap-3">
-                                            Fazer Pré-Inscrição <ArrowRight strokeWidth={3} />
+                                        <button className={`w-full ${lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'bg-orange-600' : 'bg-wtech-gold'} text-black font-black text-xl py-5 rounded-xl hover:bg-white hover:scale-[1.02] transition-all uppercase tracking-wide shadow-xl flex items-center justify-center gap-3`}>
+                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Entrar na Lista de Espera' : 'Fazer Pré-Inscrição'} <ArrowRight strokeWidth={3} />
                                         </button>
                                         
                                         <div className="text-center text-xs text-gray-600 flex items-center justify-center gap-2">

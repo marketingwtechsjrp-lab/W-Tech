@@ -48,9 +48,25 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
 
         <div className="mt-auto space-y-3">
           {course.type !== 'Event' && (
-            <div className="flex items-center text-gray-500 text-sm">
-              <Users size={16} className="mr-2 text-wtech-gold" />
-              <span>{course.capacity - course.registeredCount} vagas restantes</span>
+            <div className={`flex items-center text-sm font-bold ${
+              (course.capacity - course.registeredCount) <= 5 && (course.capacity - course.registeredCount) > 0 
+              ? 'text-red-600 animate-pulse' 
+              : 'text-gray-500'
+            }`}>
+              <Users size={16} className={`mr-2 ${
+                (course.capacity - course.registeredCount) <= 5 && (course.capacity - course.registeredCount) > 0 
+                ? 'text-red-600' 
+                : 'text-wtech-gold'
+              }`} />
+              {course.status === 'Full' ? (
+                <span className="text-orange-600 uppercase">Entrar na Lista de Espera</span>
+              ) : course.status === 'Completed' ? (
+                <span className="text-gray-400 uppercase italic">Evento Realizado</span>
+              ) : (course.capacity - course.registeredCount) <= 5 ? (
+                <span className="uppercase">🔥 ÚLTIMAS {course.capacity - course.registeredCount} VAGAS!</span>
+              ) : (
+                <span>{course.capacity - course.registeredCount} VAGAS RESTANTES</span>
+              )}
             </div>
           )}
           <div className="flex items-center text-gray-500 text-sm">
@@ -58,22 +74,26 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
             <span className="truncate">{course.location}</span>
           </div>
 
-          {course.type !== 'Event' && (
-            <div className="pt-4 border-t border-gray-100 mt-4">
-              <Link
-                to={
-                  course.tags?.includes('LISBOA_ABRIL_2026') ? '/lp-lisboa-fev-2026' :
-                    course.tags?.includes('WTECH_EUROPA_2026') ? '/lp-wtech-lisboa' :
-                      course.tags?.includes('PRORIDERS_EUROPA_2026') ? '/lp-proriders-lisboa' :
-                        course.tags?.includes('ERGONOMIA_ONLINE') ? '/curso-suspensao-piloto' :
-                          `/lp/${course.slug || course.id}`
-                }
-                className="w-full bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95"
-              >
-                {course.type === 'Event' ? 'MAIS DETALHES' : 'CONHECER CURSO'} <ArrowRight size={16} className="ml-2 animate-pulse" />
-              </Link>
-            </div>
-          )}
+          <div className="pt-4 border-t border-gray-100 mt-4">
+            <Link
+              to={
+                course.tags?.includes('LISBOA_ABRIL_2026') ? '/lp-lisboa-fev-2026' :
+                  course.tags?.includes('WTECH_EUROPA_2026') ? '/lp-wtech-lisboa' :
+                    course.tags?.includes('PRORIDERS_EUROPA_2026') ? '/lp-proriders-lisboa' :
+                      course.tags?.includes('ERGONOMIA_ONLINE') ? '/curso-suspensao-piloto' :
+                        `/lp/${course.slug || course.id}`
+              }
+              className={`w-full py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95 ${
+                course.status === 'Full' ? 'bg-orange-600 text-white hover:bg-orange-700' :
+                course.status === 'Completed' ? 'bg-gray-400 text-white cursor-not-allowed opacity-80' :
+                'bg-wtech-black text-white hover:bg-wtech-gold hover:text-wtech-black'
+              }`}
+            >
+              {course.status === 'Full' ? 'LISTA DE ESPERA' : 
+               course.status === 'Completed' ? 'VER DETALHES' :
+               course.type === 'Event' ? 'MAIS DETALHES' : 'CONHECER CURSO'} <ArrowRight size={16} className="ml-2" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>

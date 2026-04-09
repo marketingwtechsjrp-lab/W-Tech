@@ -61,7 +61,7 @@ export interface Course {
   image: string;
   tags: string[];
   features: string[];
-  status: 'Published' | 'Draft';
+  status: 'Published' | 'Draft' | 'Full' | 'Completed' | 'Cancelled';
   hotelsInfo?: string; // Mapped from hotels_info
   // New Fields
   startTime?: string; // Mapped from start_time

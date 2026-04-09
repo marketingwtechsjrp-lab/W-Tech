@@ -43,14 +43,14 @@ const Courses: React.FC = () => {
             setLoading(true);
             const { data } = await supabase
                 .from('SITE_Courses')
-                .select('*')
-                .eq('status', 'Published')
+                .select('*, SITE_Enrollments(count)')
+                .in('status', ['Published', 'Full', 'Completed'])
                 .order('date', { ascending: true });
 
             const dbCourses = data ? data.map((c: any) => ({
                 ...c,
                 locationType: c.location_type,
-                registeredCount: c.registered_count,
+                registeredCount: c.SITE_Enrollments?.[0]?.count || 0,
                 type: c.type,
                 tags: c.tags || [],
                 features: c.features || []
@@ -151,7 +151,11 @@ const Courses: React.FC = () => {
                                                 {hasEvent ? (
                                                     <Link
                                                         to={getCourseLink(dayEvents[0])}
-                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors bg-wtech-gold text-black font-bold hover:scale-110`}
+                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors font-bold hover:scale-110 ${
+                                                            dayEvents[0].status === 'Full' ? 'bg-orange-600 text-white' :
+                                                            dayEvents[0].status === 'Completed' ? 'bg-gray-400 text-white' :
+                                                            'bg-wtech-gold text-black'
+                                                        }`}
                                                         title={dayEvents.map(e => e.title).join(', ')}
                                                     >
                                                         {day}
@@ -169,8 +173,10 @@ const Courses: React.FC = () => {
                                 <div className="mt-4 space-y-2 min-h-[60px]">
                                     {monthEvents.slice(0, 3).map(ev => (
                                         <Link to={getCourseLink(ev)} key={ev.id} className="block text-xs bg-gray-50 p-2 rounded border border-gray-100 hover:bg-wtech-gold/10 hover:border-wtech-gold/30 transition-colors">
-                                            <div className="font-bold truncate text-wtech-black">
-                                                {parseInt(ev.date.split('T')[0].split('-')[2])} - {ev.title}
+                                            <div className="font-bold truncate text-wtech-black flex justify-between items-center">
+                                                <span>{parseInt(ev.date.split('T')[0].split('-')[2])} - {ev.title}</span>
+                                                {ev.status === 'Full' && <span className="text-[8px] bg-orange-100 text-orange-800 px-1 rounded ml-1">LOTADO</span>}
+                                                {ev.status === 'Completed' && <span className="text-[8px] bg-gray-200 text-gray-800 px-1 rounded ml-1">OK</span>}
                                             </div>
                                         </Link>
                                     ))}

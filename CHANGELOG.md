@@ -1,5 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.0.1 (2026-04-09) - Course Status & Waitlist Intelligence
+- FEAT: Gestão de Status de Cursos (Lotado, Realizado/Concluído) no Admin.
+- FEAT: Sistema de Lista de Espera integrado nas Landing Pages para cursos cheios.
+- FEAT: Tag automática 'lista_espera_curso' para leads nessas condições.
+- UX: Sincronização em tempo real de vagas (Live Count via SITE_Enrollments).
+- UX: Gatilhos de Urgência visual ("Últimas Vagas") com animações de pulsação.
+- UX: Calendário Anual sincronizado com cores por status de curso.
+- VERSION: Atualização para v3.0.1.
+
 ## v3.0.0a (2026-04-07) - Alpha v3 Release
 - FEAT: Início da transição para a versão 3.0.
 - VERSION: Atualização para v3.0.0a.

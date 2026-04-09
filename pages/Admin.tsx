@@ -2047,13 +2047,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 // Optimistic Update
                                                 setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: newStatus as any } : c));
                                             }}
-                                            className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' :
+                                            className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${
+                                                course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' :
+                                                course.status === 'Full' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                                                course.status === 'Completed' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                                                 course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                    'bg-gray-100 text-gray-600 border-gray-200'
+                                                'bg-gray-100 text-gray-600 border-gray-200'
                                                 }`}
                                         >
                                             <option value="Draft">Rascunho</option>
                                             <option value="Published">Publicado (Ativo)</option>
+                                            <option value="Full">Lotado</option>
+                                            <option value="Completed">Realizado</option>
                                             <option value="Archived">Desativado</option>
                                         </select>
                                     </td>
