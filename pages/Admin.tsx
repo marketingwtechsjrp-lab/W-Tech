@@ -57,6 +57,7 @@ import { formatDateLocal } from '../lib/utils';
 import changelogData from '../CHANGELOG.json';
 import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
 import { History } from 'lucide-react';
+import { getExchangeRates, convertBRLTo, ExchangeRates } from '../lib/currency';
 import { Slider } from '../components/ui/slider-number-flow';
 import { ToggleTheme } from '../components/ui/toggle-theme';
 import { generateCertificatesPDF } from '../components/admin/Certificates/CertificateGenerator';
@@ -202,19 +203,35 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
 
     // Settle Modal State
-    const [settleModal, setSettleModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, amount: number, linkAmount: number }>({ isOpen: false, enrollment: null, amount: 0, linkAmount: 0 });
+    const [settleModal, setSettleModal] = useState<{ 
+        isOpen: boolean, 
+        enrollment: Enrollment | null, 
+        amount: number, 
+        linkAmount: number,
+        targetCurrency?: 'BRL' | 'USD' | 'EUR',
+        originalAmountBRL?: number
+    }>({ 
+        isOpen: false, 
+        enrollment: null, 
+        amount: 0, 
+        linkAmount: 0 
+    });
     const [settleMethod, setSettleMethod] = useState('Pix');
     const [generatedLink, setGeneratedLink] = useState('');
     const [isGeneratingLink, setIsGeneratingLink] = useState(false);
     const [stripeReconcileModal, setStripeReconcileModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, stripeId: string, amount: number }>({ isOpen: false, enrollment: null, stripeId: '', amount: 0 });
+    const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
 
-    // Fetch Layouts
+    // Fetch Layouts & Exchange Rates
     useEffect(() => {
-        const loadLayouts = async () => {
+        const loadInitialData = async () => {
             const { data } = await supabase.from('SITE_CertificateLayouts').select('*');
             if (data) setLayouts(data.map(l => ({ ...l, backgroundUrl: l.background_url })));
+            
+            const rates = await getExchangeRates();
+            setExchangeRates(rates);
         }
-        loadLayouts();
+        loadInitialData();
     }, []);
 
     const handleGenerateCertificates = async (isBadge = false) => {
@@ -1100,10 +1117,23 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         setEnrollments(prev => prev.map(e => e.id === enrollmentId ? { ...e, status: newStatus as any } : e));
     };
 
-    const handleSettleBalance = (enrollment: Enrollment, amount: number) => {
-        setSettleModal({ isOpen: true, enrollment, amount, linkAmount: amount });
+    const handleSettleBalance = async (enrollment: Enrollment, amount: number) => {
+        setSettleModal({ 
+            isOpen: true, 
+            enrollment, 
+            amount, 
+            linkAmount: amount, 
+            targetCurrency: (currentCourse?.currency as any) || 'BRL' ,
+            originalAmountBRL: amount
+        });
         setSettleMethod('Pix');
         setGeneratedLink('');
+        
+        // Refresh rates if they are old or missing
+        if (!exchangeRates) {
+            const rates = await getExchangeRates();
+            setExchangeRates(rates);
+        }
     };
 
     const handleGeneratePaymentLink = async () => {
@@ -1116,7 +1146,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 result = await createStripePaymentLink({
                     title: `${currentCourse.title} - ${settleModal.enrollment.studentName}`,
                     price: settleModal.linkAmount,
-                    currency: currentCourse.currency || 'USD',
+                    currency: settleModal.targetCurrency || 'USD',
                     email: settleModal.enrollment.studentEmail,
                     enrollmentId: settleModal.enrollment.id
                 });
@@ -1938,18 +1968,63 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     </div>
 
                                     {(settleMethod === 'Stripe' || settleMethod === 'Asaas') && (
-                                        <div className="animate-in slide-in-from-top-2">
-                                            <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor para o Link ({currentCourse?.currency})</label>
-                                            <input
-                                                type="number"
-                                                className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
-                                                value={settleModal.linkAmount}
-                                                onChange={e => setSettleModal({ ...settleModal, linkAmount: parseFloat(e.target.value) })}
-                                            />
+                                        <div className="animate-in slide-in-from-top-2 space-y-3">
+                                            {settleMethod === 'Stripe' && (
+                                                <div>
+                                                    <label className="block text-xs font-black uppercase text-gray-500 mb-2 italic">Moeda do Link</label>
+                                                    <div className="flex gap-2">
+                                                        {['BRL', 'USD', 'EUR'].map((curr) => (
+                                                            <button
+                                                                key={curr}
+                                                                onClick={async () => {
+                                                                    let newAmount = settleModal.amount;
+                                                                    if (curr !== 'BRL' && exchangeRates) {
+                                                                        const conv = await convertBRLTo(settleModal.amount, curr as any, exchangeRates);
+                                                                        newAmount = conv.value;
+                                                                    }
+                                                                    setSettleModal({ 
+                                                                        ...settleModal, 
+                                                                        targetCurrency: curr as any, 
+                                                                        linkAmount: newAmount 
+                                                                    });
+                                                                }}
+                                                                className={`flex-1 py-2 rounded-lg font-bold text-xs border transition-all ${
+                                                                    settleModal.targetCurrency === curr 
+                                                                    ? 'bg-wtech-gold border-wtech-gold text-black shadow-lg shadow-yellow-500/20' 
+                                                                    : 'bg-white dark:bg-[#333] border-gray-200 dark:border-gray-700 dark:text-gray-400'
+                                                                }`}
+                                                            >
+                                                                {curr}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    {settleModal.targetCurrency !== 'BRL' && exchangeRates && (
+                                                        <p className="text-[10px] text-gray-500 mt-2 italic flex items-center gap-1">
+                                                            <TrendingUp size={10} /> 
+                                                            Cotação: 1 {settleModal.targetCurrency} = R$ {(settleModal.targetCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR).toFixed(2)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            <div>
+                                                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor para o Link ({settleModal.targetCurrency || currentCourse?.currency})</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        className="w-full p-3 pl-10 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
+                                                        value={settleModal.linkAmount}
+                                                        onChange={e => setSettleModal({ ...settleModal, linkAmount: parseFloat(e.target.value) })}
+                                                    />
+                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                                                        {settleModal.targetCurrency === 'EUR' ? '€' : settleModal.targetCurrency === 'USD' ? '$' : 'R$'}
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <button
                                                 onClick={handleGeneratePaymentLink}
                                                 disabled={isGeneratingLink}
-                                                className="w-full mt-3 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2"
+                                                className="w-full mt-3 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
                                             >
                                                 {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <Link size={18} />}
                                                 Gerar Link de Pagamento

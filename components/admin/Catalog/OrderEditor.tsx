@@ -8,6 +8,8 @@ import autoTable from 'jspdf-autotable';
 import { FileDown, Printer, Receipt, Zap, Loader2, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { createStripePaymentLink } from '../../../lib/stripe';
+import { getExchangeRates, convertBRLTo, ExchangeRates } from '../../../lib/currency';
+import { TrendingUp } from 'lucide-react';
 
 interface NewOrderModalProps {
     isOpen: boolean;
@@ -46,6 +48,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const [isGeneratingStripeLink, setIsGeneratingStripeLink] = useState(false);
     const [stripePaymentUrl, setStripePaymentUrl] = useState<string | null>(null);
     const [stripeLinkCopied, setStripeLinkCopied] = useState(false);
+    const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
+    const [targetCurrency, setTargetCurrency] = useState<'BRL' | 'USD' | 'EUR'>('BRL');
+    const [linkAmount, setLinkAmount] = useState(0);
 
     const subtotal = saleItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     const shippingCost = currentSale.shipping_cost || 0;
@@ -107,9 +112,19 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
         
         setIsGeneratingStripeLink(true);
         try {
+            // If target currency is not BRL, we need to ensure we have the correct link amount
+            let finalPrice = total;
+            let finalCurrency = targetCurrency;
+
+            if (targetCurrency !== 'BRL' && exchangeRates) {
+                const conv = await convertBRLTo(total, targetCurrency as any, exchangeRates);
+                finalPrice = conv.value;
+            }
+
             const result = await createStripePaymentLink({
                 title: `Pedido ${currentSale.order_number || 'Novo'} - W-Tech`,
-                price: total,
+                price: finalPrice,
+                currency: finalCurrency,
                 email: currentSale.clientEmail,
                 orderId: currentSale.id // If editing, we have an ID
             });
@@ -160,6 +175,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     useEffect(() => {
         if (isOpen) {
             loadInitialData();
+            const fetchRates = async () => {
+                const rates = await getExchangeRates();
+                setExchangeRates(rates);
+            };
+            fetchRates();
             setSaleItems(initialItems);
             // Default State
             setCurrentSale(editingSale || { 
@@ -1214,8 +1234,48 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                     <p className="text-[10px] text-gray-500 mt-0.5">Gere um link seguro e envie ao cliente para ele pagar online.</p>
                                                                 </div>
                                                                 <div className="text-right">
-                                                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Total</p>
+                                                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Total (BRL)</p>
                                                                     <p className="text-lg font-black text-violet-600 dark:text-violet-400">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex flex-col gap-3">
+                                                                <div>
+                                                                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 italic">Moeda do Link</label>
+                                                                    <div className="flex gap-2">
+                                                                        {['BRL', 'USD', 'EUR'].map((curr) => (
+                                                                            <button
+                                                                                key={curr}
+                                                                                onClick={async () => {
+                                                                                    setTargetCurrency(curr as any);
+                                                                                    if (curr !== 'BRL' && exchangeRates) {
+                                                                                        const conv = await convertBRLTo(total, curr as any, exchangeRates);
+                                                                                        setLinkAmount(conv.value);
+                                                                                    } else {
+                                                                                        setLinkAmount(total);
+                                                                                    }
+                                                                                }}
+                                                                                className={`flex-1 py-1.5 rounded-lg font-bold text-[10px] border transition-all ${
+                                                                                    targetCurrency === curr 
+                                                                                    ? 'bg-violet-600 border-violet-600 text-white shadow-md' 
+                                                                                    : 'bg-white dark:bg-black/20 border-gray-200 dark:border-gray-800 text-gray-500'
+                                                                                }`}
+                                                                            >
+                                                                                {curr}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                    {targetCurrency !== 'BRL' && exchangeRates && (
+                                                                        <div className="mt-2 p-2 bg-white/50 dark:bg-black/20 rounded-lg flex items-center justify-between">
+                                                                            <p className="text-[9px] text-gray-500 italic flex items-center gap-1">
+                                                                                <TrendingUp size={10} /> 
+                                                                                Cotação: 1 {targetCurrency} = R$ {(targetCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR).toFixed(2)}
+                                                                            </p>
+                                                                            <p className="text-[10px] font-black text-violet-600 whitespace-nowrap">
+                                                                                Valor: {targetCurrency === 'EUR' ? '€' : '$'} {linkAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
 
