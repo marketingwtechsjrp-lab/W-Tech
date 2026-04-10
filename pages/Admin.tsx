@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { PaymentMethodsManager } from '../components/admin/Financial/PaymentMethodsManager';
 import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
 import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
+import { syncStudentToLeads } from '../lib/leads';
 
 
 import { LandingPageEditor } from './LandingPageEditor';
@@ -189,7 +190,7 @@ const RevenueChart = () => {
 
 // --- View: Courses Manager (List/Calendar) ---
 
-const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead, permissions }: { initialLead?: Lead | null, initialCourseId?: string | null, onConsumeInitialLead?: () => void, permissions?: any }) => {
+const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead, onSetPendingOrderLead, permissions }: { initialLead?: Lead | null, initialCourseId?: string | null, onConsumeInitialLead?: () => void, onSetPendingOrderLead?: (lead: Lead) => void, permissions?: any }) => {
     const [courses, setCourses] = useState<Course[]>([]);
     const { user } = useAuth();
     const [leadsCount, setLeadsCount] = useState<Record<string, number>>({});
@@ -1417,6 +1418,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     tShirtSize: payload.t_shirt_size
                 } as Enrollment : enr));
                 setEditingEnrollment(null);
+                // SYNC TO UNIFIED LEADS
+                await syncStudentToLeads(editingEnrollment as Enrollment);
             } else {
                 alert('Erro ao atualizar: ' + error.message);
             }
@@ -1445,9 +1448,26 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 };
                 setEnrollments(prev => [...prev, newEnrollment]);
                 setEditingEnrollment(null);
+                
+                // SYNC TO UNIFIED LEADS
+                await syncStudentToLeads(newEnrollment);
             } else {
                 alert('Erro ao cadastrar: ' + (error?.message || 'Erro desconhecido'));
             }
+        }
+    };
+
+    const handleCreateOrderForStudent = async (enr: Enrollment) => {
+        // 1. Ensure they are synced as a lead (and get the lead record)
+        const lead = await syncStudentToLeads(enr);
+        if (lead) {
+            if (onSetPendingOrderLead) {
+                onSetPendingOrderLead(lead);
+            } else {
+                alert('Função de pedidos não disponível neste contexto.');
+            }
+        } else {
+            alert('Erro ao preparar cliente para o pedido.');
         }
     };
 
@@ -1862,6 +1882,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                                     <button onClick={() => setEditingEnrollment(enr)} title="Editar" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
                                                         <Edit size={16} />
+                                                    </button>
+                                                    <button onClick={() => handleCreateOrderForStudent(enr)} title="Tirar Pedido (Venda Direta)" className="p-1.5 text-wtech-gold hover:bg-yellow-50 rounded border border-wtech-gold/20 shadow-sm">
+                                                        <ShoppingBag size={16} />
                                                     </button>
                                                     <button onClick={() => handleDeleteEnrollment(enr.id)} title="Excluir" className="p-1.5 text-red-600 hover:bg-red-50 rounded">
                                                         <Trash2 size={16} />
@@ -6774,6 +6797,7 @@ const Admin = () => {
 
     // State for View Switching
     const [currentView, _setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard');
+    const [pendingOrderLead, setPendingOrderLead] = useState<Lead | null>(null);
 
     // Reset scroll on view change
     useEffect(() => {
@@ -7017,7 +7041,6 @@ const Admin = () => {
 
     // const [currentView, setCurrentView] = useState<View>('dashboard'); // Removed duplicate
     const [pendingEnrollmentLead, setPendingEnrollmentLead] = useState<Lead | null>(null);
-    const [pendingOrderLead, setPendingOrderLead] = useState<Lead | null>(null);
 
     const [pendingCourseId, setPendingCourseId] = useState<string | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -7388,11 +7411,25 @@ const Admin = () => {
                             }
                         }} permissions={livePermissions} />}
                         {currentView === 'team' && hasPermission('manage_users') && <TeamView permissions={livePermissions} onOpenProfile={() => setIsProfileModalOpen(true)} />}
-                        {currentView === 'orders' && hasPermission('orders_view') && <SalesManagerView permissions={livePermissions} initialLead={pendingOrderLead} onConsumeInitialLead={() => setPendingOrderLead(null)} />}
+                        {currentView === 'orders' && hasPermission('orders_view') && (
+                            <SalesManagerView 
+                                permissions={livePermissions} 
+                                initialLead={pendingOrderLead} 
+                                onConsumeInitialLead={() => setPendingOrderLead(null)} 
+                            />
+                        )}
                         {currentView === 'catalog_manager' && hasPermission('catalog_view') && <CatalogManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
-                        {currentView === 'courses_manager' && hasPermission('courses_view') && <CoursesManagerView initialLead={pendingEnrollmentLead} initialCourseId={pendingCourseId} onConsumeInitialLead={() => { setPendingEnrollmentLead(null); setPendingCourseId(null); }} permissions={livePermissions} />}
+                        {currentView === 'courses_manager' && hasPermission('courses_view') && (
+                            <CoursesManagerView 
+                                initialLead={pendingEnrollmentLead} 
+                                initialCourseId={pendingCourseId} 
+                                onConsumeInitialLead={() => { setPendingEnrollmentLead(null); setPendingCourseId(null); }} 
+                                onSetPendingOrderLead={(lead) => { setPendingOrderLead(lead); setCurrentView('orders'); }}
+                                permissions={livePermissions} 
+                            />
+                        )}
                         {currentView === 'certificates' && hasPermission('certificates_view') && <CertificateManagerView />}
                         {currentView === 'lp_builder' && hasPermission('landing_pages_view') && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
