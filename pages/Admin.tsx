@@ -1953,70 +1953,88 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                 <div className="space-y-4 mb-6">
                                     <div>
-                                        <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Forma de Pagamento</label>
-                                        <select
-                                            className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
-                                            value={settleMethod}
-                                            onChange={e => setSettleMethod(e.target.value)}
-                                        >
-                                            <option value="Pix">Pix</option>
-                                            <option value="Cartão Crédito">Cartão de Crédito</option>
-                                            <option value="Asaas">Asaas (Link/Boleto)</option>
-                                            <option value="Stripe">Stripe (Internacional)</option>
-                                            <option value="Dinheiro">Dinheiro</option>
-                                        </select>
+                                        <label className="block text-xs font-black uppercase text-gray-400 mb-3 tracking-widest italic">Forma de Pagamento</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[
+                                                { id: 'Pix', icon: <Zap size={14} />, label: 'Pix' },
+                                                { id: 'Cartão Crédito', icon: <CreditCard size={14} />, label: 'Cartão' },
+                                                { id: 'Stripe', icon: <Globe size={14} />, label: 'Stripe' },
+                                                { id: 'Asaas', icon: <ArrowRight size={14} />, label: 'Asaas' }
+                                            ].map((method) => (
+                                                <button
+                                                    key={method.id}
+                                                    onClick={() => setSettleMethod(method.id)}
+                                                    className={`flex items-center gap-2 p-3 rounded-xl border transition-all font-bold text-xs ${
+                                                        settleMethod === method.id 
+                                                        ? 'bg-wtech-gold border-wtech-gold text-black shadow-lg shadow-yellow-500/10' 
+                                                        : 'bg-white dark:bg-[#222] border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                                                    }`}
+                                                >
+                                                    <span className={settleMethod === method.id ? 'text-black' : 'text-gray-400'}>{method.icon}</span>
+                                                    {method.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
 
                                     {(settleMethod === 'Stripe' || settleMethod === 'Asaas') && (
                                         <div className="animate-in slide-in-from-top-2 space-y-3">
                                             {settleMethod === 'Stripe' && (
-                                                <div>
-                                                    <label className="block text-xs font-black uppercase text-gray-500 mb-2 italic">Moeda do Link</label>
-                                                    <div className="flex gap-2">
-                                                        {['BRL', 'USD', 'EUR'].map((curr) => (
-                                                            <button
-                                                                key={curr}
-                                                                onClick={async () => {
-                                                                    let newAmount = settleModal.amount;
-                                                                    if (curr !== 'BRL' && exchangeRates) {
-                                                                        const conv = await convertBRLTo(settleModal.amount, curr as any, exchangeRates);
-                                                                        newAmount = conv.value;
-                                                                    }
-                                                                    setSettleModal({ 
-                                                                        ...settleModal, 
-                                                                        targetCurrency: curr as any, 
-                                                                        linkAmount: newAmount 
-                                                                    });
-                                                                }}
-                                                                className={`flex-1 py-2 rounded-lg font-bold text-xs border transition-all ${
-                                                                    settleModal.targetCurrency === curr 
-                                                                    ? 'bg-wtech-gold border-wtech-gold text-black shadow-lg shadow-yellow-500/20' 
-                                                                    : 'bg-white dark:bg-[#333] border-gray-200 dark:border-gray-700 dark:text-gray-400'
-                                                                }`}
-                                                            >
-                                                                {curr}
-                                                            </button>
-                                                        ))}
+                                                <div className="p-4 bg-violet-500/5 dark:bg-violet-500/10 border border-violet-500/20 rounded-2xl space-y-3">
+                                                    <div>
+                                                        <label className="block text-[10px] font-black uppercase text-violet-500 mb-2 tracking-widest italic">Câmbio Seguro Stripe</label>
+                                                        <div className="flex gap-2">
+                                                            {['BRL', 'USD', 'EUR'].map((curr) => (
+                                                                <button
+                                                                    key={curr}
+                                                                    onClick={async () => {
+                                                                        let newAmount = settleModal.amount;
+                                                                        if (curr !== 'BRL' && exchangeRates) {
+                                                                            const conv = await convertBRLTo(settleModal.amount, curr as any, exchangeRates);
+                                                                            newAmount = conv.value;
+                                                                        }
+                                                                        setSettleModal({ 
+                                                                            ...settleModal, 
+                                                                            targetCurrency: curr as any, 
+                                                                            linkAmount: newAmount 
+                                                                        });
+                                                                    }}
+                                                                    className={`flex-1 py-2 rounded-lg font-black text-xs border transition-all ${
+                                                                        settleModal.targetCurrency === curr 
+                                                                        ? 'bg-violet-600 border-violet-600 text-white shadow-lg' 
+                                                                        : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-400'
+                                                                    }`}
+                                                                >
+                                                                    {curr}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        {settleModal.targetCurrency !== 'BRL' && exchangeRates && (
+                                                            <div className="mt-2 flex items-center justify-between">
+                                                                <p className="text-[9px] text-violet-500/80 italic flex items-center gap-1">
+                                                                    <TrendingUp size={10} /> 
+                                                                    Cotação: R$ {(settleModal.targetCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR).toFixed(2)}
+                                                                </p>
+                                                                <p className="text-[10px] font-black text-violet-600">
+                                                                    {settleModal.targetCurrency === 'EUR' ? '€' : '$'} {settleModal.linkAmount.toFixed(2)}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    {settleModal.targetCurrency !== 'BRL' && exchangeRates && (
-                                                        <p className="text-[10px] text-gray-500 mt-2 italic flex items-center gap-1">
-                                                            <TrendingUp size={10} /> 
-                                                            Cotação: 1 {settleModal.targetCurrency} = R$ {(settleModal.targetCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR).toFixed(2)}
-                                                        </p>
-                                                    )}
                                                 </div>
                                             )}
 
                                             <div>
-                                                <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor para o Link ({settleModal.targetCurrency || currentCourse?.currency})</label>
-                                                <div className="relative">
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Valor Final do Link ({settleModal.targetCurrency || currentCourse?.currency})</label>
+                                                <div className="relative group">
+                                                    <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
                                                     <input
                                                         type="number"
-                                                        className="w-full p-3 pl-10 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
+                                                        className="w-full p-4 pl-12 bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl font-black text-lg relative focus:ring-0 outline-none"
                                                         value={settleModal.linkAmount}
                                                         onChange={e => setSettleModal({ ...settleModal, linkAmount: parseFloat(e.target.value) })}
                                                     />
-                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg italic">
                                                         {settleModal.targetCurrency === 'EUR' ? '€' : settleModal.targetCurrency === 'USD' ? '$' : 'R$'}
                                                     </div>
                                                 </div>
@@ -2024,9 +2042,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             <button
                                                 onClick={handleGeneratePaymentLink}
                                                 disabled={isGeneratingLink}
-                                                className="w-full mt-3 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+                                                className="w-full mt-3 py-4 bg-black dark:bg-wtech-gold dark:text-black text-white rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                                             >
-                                                {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <Link size={18} />}
+                                                {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
                                                 Gerar Link de Pagamento
                                             </button>
                                         </div>

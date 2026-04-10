@@ -1239,9 +1239,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex flex-col gap-3">
-                                                                <div>
-                                                                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 italic">Moeda do Link</label>
+                                                            <div className="flex flex-col gap-4">
+                                                                <div className="p-4 bg-violet-500/5 dark:bg-violet-500/10 border border-violet-500/20 rounded-2xl space-y-3">
+                                                                    <label className="block text-[10px] font-black uppercase text-violet-500 tracking-widest italic">Câmbio Seguro Stripe</label>
                                                                     <div className="flex gap-2">
                                                                         {['BRL', 'USD', 'EUR'].map((curr) => (
                                                                             <button
@@ -1255,10 +1255,10 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                                         setLinkAmount(total);
                                                                                     }
                                                                                 }}
-                                                                                className={`flex-1 py-1.5 rounded-lg font-bold text-[10px] border transition-all ${
+                                                                                className={`flex-1 py-2 rounded-lg font-black text-[10px] border transition-all ${
                                                                                     targetCurrency === curr 
-                                                                                    ? 'bg-violet-600 border-violet-600 text-white shadow-md' 
-                                                                                    : 'bg-white dark:bg-black/20 border-gray-200 dark:border-gray-800 text-gray-500'
+                                                                                    ? 'bg-violet-600 border-violet-600 text-white shadow-lg' 
+                                                                                    : 'bg-white dark:bg-black/20 border-gray-200 dark:border-gray-800 text-gray-400'
                                                                                 }`}
                                                                             >
                                                                                 {curr}
@@ -1266,13 +1266,13 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                         ))}
                                                                     </div>
                                                                     {targetCurrency !== 'BRL' && exchangeRates && (
-                                                                        <div className="mt-2 p-2 bg-white/50 dark:bg-black/20 rounded-lg flex items-center justify-between">
-                                                                            <p className="text-[9px] text-gray-500 italic flex items-center gap-1">
+                                                                        <div className="flex items-center justify-between pt-1">
+                                                                            <p className="text-[9px] text-violet-500/80 italic flex items-center gap-1">
                                                                                 <TrendingUp size={10} /> 
-                                                                                Cotação: 1 {targetCurrency} = R$ {(targetCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR).toFixed(2)}
+                                                                                Cotação: R$ {(targetCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR).toFixed(2)}
                                                                             </p>
                                                                             <p className="text-[10px] font-black text-violet-600 whitespace-nowrap">
-                                                                                Valor: {targetCurrency === 'EUR' ? '€' : '$'} {linkAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                                                Total: {targetCurrency === 'EUR' ? '€' : '$'} {linkAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                                             </p>
                                                                         </div>
                                                                     )}
@@ -1283,7 +1283,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 <button
                                                                     onClick={handleGenerateStripeLink}
                                                                     disabled={isGeneratingStripeLink || total <= 0}
-                                                                    className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                    className="w-full bg-violet-600 hover:bg-violet-700 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all shadow-xl shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-95"
                                                                 >
                                                                     {isGeneratingStripeLink ? (
                                                                         <><Loader2 size={16} className="animate-spin" /> Gerando Link...</>
