@@ -706,7 +706,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                         {currentSale.id ? 'Editar Pedido' : 'Novo Pedido'}
                     </h2>
                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                        Módulo de Gestão Logística v2.9.8
+                        Módulo de Gestão Logística v3.0.2
                     </p>
                 </div>
                 

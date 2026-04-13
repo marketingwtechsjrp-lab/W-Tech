@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.0.2",
+    "date": "2026-04-13",
+    "title": "Stripe Fixes & Currency Intelligence",
+    "changes": [
+      "FIX: Resolvido erro de 'tela branca' ao gerar links de pagamento (Importação faltante lucide-react).",
+      "FIX: Inteligência Multi-Moeda na quitação de saldos (Conversão automática BRL/EUR/USD).",
+      "FIX: Padronização de moedas no Checkout Stripe para evitar erros de API.",
+      "VERSION: Atualização para v3.0.2."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "3.0.1",
     "date": "2026-04-09",
     "title": "Course Status & Waitlist Intelligence",

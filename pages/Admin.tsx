@@ -8,7 +8,7 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu, Link,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -1146,8 +1146,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 const { createStripePaymentLink } = await import('../lib/stripe');
                 result = await createStripePaymentLink({
                     title: `${currentCourse.title} - ${settleModal.enrollment.studentName}`,
-                    price: settleModal.linkAmount,
-                    currency: settleModal.targetCurrency || 'USD',
+                    price: Number(settleModal.linkAmount),
+                    currency: (settleModal.targetCurrency || currentCourse.currency || 'BRL').toLowerCase(),
                     email: settleModal.enrollment.studentEmail,
                     enrollmentId: settleModal.enrollment.id
                 });
@@ -2012,10 +2012,28 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                                     key={curr}
                                                                     onClick={async () => {
                                                                         let newAmount = settleModal.amount;
-                                                                        if (curr !== 'BRL' && exchangeRates) {
-                                                                            const conv = await convertBRLTo(settleModal.amount, curr as any, exchangeRates);
-                                                                            newAmount = conv.value;
+                                                                        const courseCurrency = currentCourse?.currency || 'BRL';
+                                                                        
+                                                                        // Only convert if target currency is different from course currency
+                                                                        if (curr !== courseCurrency && exchangeRates) {
+                                                                            if (courseCurrency === 'BRL') {
+                                                                                // BRL -> USD/EUR
+                                                                                const conv = await convertBRLTo(settleModal.amount, curr as any, exchangeRates);
+                                                                                newAmount = conv.value;
+                                                                            } else {
+                                                                                // USD/EUR -> BRL (Simplified: use inverse rate)
+                                                                                const rate = courseCurrency === 'USD' ? exchangeRates.USD : exchangeRates.EUR;
+                                                                                if (curr === 'BRL') {
+                                                                                    newAmount = parseFloat((settleModal.amount * rate).toFixed(2));
+                                                                                } else {
+                                                                                    // EUR -> USD or USD -> EUR (BRL as bridge)
+                                                                                    const brlValue = settleModal.amount * rate;
+                                                                                    const conv = await convertBRLTo(brlValue, curr as any, exchangeRates);
+                                                                                    newAmount = conv.value;
+                                                                                }
+                                                                            }
                                                                         }
+                                                                        
                                                                         setSettleModal({ 
                                                                             ...settleModal, 
                                                                             targetCurrency: curr as any, 

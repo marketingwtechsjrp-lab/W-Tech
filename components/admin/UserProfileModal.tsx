@@ -308,7 +308,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
 
                     <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
                         <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">
-                            W-TECH PLATFORM v2.9.8 • Sistema de Gestão de Leads & Automação
+                            W-TECH PLATFORM v3.0.2 • Sistema de Gestão de Leads & Automação
                         </p>
                     </div>
                 </motion.div>

@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.0.2 (2026-04-13) - Stripe Fixes & Currency Intelligence
+- FIX: Resolvido erro de 'tela branca' ao gerar links de pagamento (Importação faltante lucide-react).
+- FIX: Inteligência Multi-Moeda na quitação de saldos (Conversão automática BRL/EUR/USD).
+- FIX: Padronização de moedas no Checkout Stripe para evitar erros de API.
+- VERSION: Atualização para v3.0.2.
+
 ## v3.0.1 (2026-04-09) - Course Status & Waitlist Intelligence
 - FEAT: Gestão de Status de Cursos (Lotado, Realizado/Concluído) no Admin.
 - FEAT: Sistema de Lista de Espera integrado nas Landing Pages para cursos cheios.

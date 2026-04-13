@@ -395,7 +395,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                             <div>
                                 <h2 className="text-lg md:text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic underline decoration-wtech-red decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">Fluxo de Pedido <span className="text-wtech-red">W-Tech</span></h2>
                                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                        Módulo de Gestão Logística v2.9.8
+                        Módulo de Gestão Logística v3.0.2
                     </p>
         </div>
                             <div className="flex items-center gap-3">
