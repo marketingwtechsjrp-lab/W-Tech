@@ -214,6 +214,12 @@ When user's prompt is NOT in English:
 
 > 🔴 **Edit mode:** If multi-file or structural change → Offer to create `{task-slug}.md`. For single-file fixes → Proceed directly.
 
+### 🔄 Maintenance Rules (Project Specific)
+
+- **Sincronização do Guia**: Sempre que realizar alterações estruturais, novos módulos ou mudanças no banco de dados, certifique-se de atualizar o `guia.md`.
+- **GitHub Sync**: O `guia.md` é atualizado automaticamente em cada push via GitHub Actions. Garanta que o arquivo `scripts/update-guide-action.js` permaneça funcional.
+- **Relatórios de Bug**: Se um bug for corrigido, adicione a correção na seção de "Últimas Atualizações" do `guia.md` se for relevante para o funcionamento geral.
+
 ---
 
 ## TIER 2: DESIGN RULES (Reference)

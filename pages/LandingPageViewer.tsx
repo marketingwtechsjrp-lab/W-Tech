@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { LandingPage, Course } from '../types';
 import { CheckCircle, ShieldCheck, ArrowRight, Star, Play, MapPin, Calendar, Clock, Check, User, Users, AlertTriangle, Navigation } from 'lucide-react';
@@ -12,6 +12,7 @@ import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 
 const LandingPageViewer: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
+    const navigate = useNavigate();
     const { get } = useSettings();
     const systemLogo = get('logo_url');
     const siteTitle = get('site_title', 'W-TECH');
@@ -23,13 +24,18 @@ const LandingPageViewer: React.FC = () => {
   
     const [lp, setLp] = useState<LandingPageWithCourse | null>(null);
     const [loading, setLoading] = useState(true);
-  
+    const [checkoutDiretoEnabled, setCheckoutDiretoEnabled] = useState(false);
+
     // Form State
     const [form, setForm] = useState({ name: '', email: '', phone: '' });
     const [submitted, setSubmitted] = useState(false);
     const [spotsLeft, setSpotsLeft] = useState<number>(5); // Default simulated scarcity
 
     useEffect(() => {
+    // Busca a config do checkout junto com a LP
+    supabase.from('SITE_Config').select('value').eq('key', 'checkout_direto_habilitado').single()
+        .then(({ data }) => setCheckoutDiretoEnabled(data?.value === 'true'));
+
     const fetchLP = async () => {
       if (!slug) return;
       setLoading(true);
@@ -114,7 +120,8 @@ const LandingPageViewer: React.FC = () => {
             heroSecondaryImage: (lpData as any).hero_secondary_image,
             quizEnabled: (lpData as any).quiz_enabled,
             fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
-            course: mappedCourse
+            course: mappedCourse,
+            courseId: (lpData as any).course_id  // garante disponibilidade para redirect ao checkout
         };
         setLp(mappedData);
 
@@ -138,6 +145,9 @@ const LandingPageViewer: React.FC = () => {
     if (!lp) return;
 
     try {
+        const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
+        const checkoutAtivoParaLP = checkoutDiretoEnabled && !isInternationalCourse;
+
         const payload = {
             name: form.name,
             email: form.email,
@@ -146,22 +156,25 @@ const LandingPageViewer: React.FC = () => {
             status: 'New',
             context_id: `LP: ${lp.title} (${lp.slug})`,
             tags: [
-                'landing_page', 
+                'landing_page',
                 lp.slug ? String(lp.slug) : 'virtual_lp',
-                (lp.course?.status === 'Full' || lp.course?.status === 'Completed') ? 'lista_espera_curso' : ''
+                (lp.course?.status === 'Full' || lp.course?.status === 'Completed') ? 'lista_espera_curso' : '',
+                checkoutAtivoParaLP ? 'checkout_direto' : ''  // Marca desde o início que seguiu o fluxo automático
             ].filter(Boolean),
             origin: window.location.href,
-            assigned_to: null // handleLeadUpsert will handle distribution if needed
+            assigned_to: null
         };
 
-        await handleLeadUpsert(payload);
-        
-        // await triggerWebhook('webhook_lead', payload); // handleLeadUpsert already triggers specific webhook if new or updated? 
-        // Logic check: handleLeadUpsert triggers 'webhook_lead'. 
-        // Duplicate trigger? No, handleLeadUpsert triggers it. So we can remove duplicate call or keep if event type differs.
-        // The previous code had: await triggerWebhook('webhook_lead', payload);
-        // handleLeadUpsert also does that. So I will REMOVE this explicit call to avoid double webhook.
-        
+        const leadResult = await handleLeadUpsert(payload);
+
+        // Redireciona ao checkout se: habilitado + curso nacional + tem course_id
+        const courseIdForCheckout = (lp as any).courseId || (lp as any).course_id;
+        if (checkoutAtivoParaLP && courseIdForCheckout && leadResult?.id) {
+            navigate(`/checkout-curso/${courseIdForCheckout}?lid=${leadResult.id}`);
+            return;
+        }
+
+        // Fallback: obrigado (checkout desabilitado, LP sem curso ou curso internacional)
         setSubmitted(true);
     } catch (err: any) {
         console.error(err);

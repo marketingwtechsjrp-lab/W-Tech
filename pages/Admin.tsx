@@ -1162,6 +1162,27 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     value: settleModal.linkAmount,
                     description: `Curso: ${currentCourse.title}`
                 });
+            } else if (settleMethod === 'Mercado_Pago') {
+                const { createMercadoPagoPreference } = await import('../lib/mercadopago');
+                const mpResult = await createMercadoPagoPreference({
+                    course: {
+                        id: currentCourse.id,
+                        title: currentCourse.title,
+                        price: settleModal.linkAmount
+                    },
+                    customer: {
+                        name: settleModal.enrollment.studentName,
+                        email: settleModal.enrollment.studentEmail,
+                        cpf: (settleModal.enrollment as any).studentCpf || '',
+                        phone: settleModal.enrollment.studentPhone || ''
+                    },
+                    enrollmentId: settleModal.enrollment.id
+                });
+                if (mpResult.success) {
+                    result = { success: true, url: mpResult.init_point, invoiceUrl: mpResult.init_point };
+                } else {
+                    result = { success: false, error: mpResult.error };
+                }
             }
 
             if (result?.success) {
@@ -1977,12 +1998,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <div className="space-y-4 mb-6">
                                     <div>
                                         <label className="block text-xs font-black uppercase text-gray-400 mb-3 tracking-widest italic">Forma de Pagamento</label>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-3 gap-2">
                                             {[
                                                 { id: 'Pix', icon: <Zap size={14} />, label: 'Pix' },
                                                 { id: 'Cartão Crédito', icon: <CreditCard size={14} />, label: 'Cartão' },
                                                 { id: 'Stripe', icon: <Globe size={14} />, label: 'Stripe' },
-                                                { id: 'Asaas', icon: <ArrowRight size={14} />, label: 'Asaas' }
+                                                { id: 'Asaas', icon: <ArrowRight size={14} />, label: 'Asaas' },
+                                                { id: 'Mercado_Pago', icon: <Wallet size={14} />, label: 'Mercado Pago' }
                                             ].map((method) => (
                                                 <button
                                                     key={method.id}
@@ -2000,7 +2022,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         </div>
                                     </div>
 
-                                    {(settleMethod === 'Stripe' || settleMethod === 'Asaas') && (
+                                    {(settleMethod === 'Stripe' || settleMethod === 'Asaas' || settleMethod === 'Mercado_Pago') && (
                                         <div className="animate-in slide-in-from-top-2 space-y-3">
                                             {settleMethod === 'Stripe' && (
                                                 <div className="p-4 bg-violet-500/5 dark:bg-violet-500/10 border border-violet-500/20 rounded-2xl space-y-3">

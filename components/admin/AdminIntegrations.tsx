@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe } from 'lucide-react';
+import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart } from 'lucide-react';
 import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
 import { getAsaasConfig } from '../../lib/asaas';
 import { getStripeConfig } from '../../lib/stripe';
@@ -15,6 +15,8 @@ const AdminIntegrations = () => {
         apiKey: '',
         asaasKey: '',
         stripeKey: '',
+        mercadoPagoKey: '',
+        checkoutDiretoEnabled: false,
         googleClientId: '',
         googleClientSecret: '',
         ga4PropertyId: ''
@@ -45,6 +47,8 @@ const AdminIntegrations = () => {
                 apiKey: configMap['evolution_api_key'] || '',
                 asaasKey: configMap['asaas_api_key'] || '',
                 stripeKey: configMap['stripe_api_key'] || '',
+                mercadoPagoKey: configMap['mercadopago_access_token'] || '',
+                checkoutDiretoEnabled: configMap['checkout_direto_habilitado'] === 'true',
                 googleClientId: configMap['google_oauth_client_id'] || '',
                 googleClientSecret: configMap['google_oauth_client_secret'] || '',
                 ga4PropertyId: configMap['ga4_property_id'] || ''
@@ -88,6 +92,8 @@ const AdminIntegrations = () => {
                 { key: 'evolution_api_key', value: globalConfig.apiKey },
                 { key: 'asaas_api_key', value: globalConfig.asaasKey },
                 { key: 'stripe_api_key', value: globalConfig.stripeKey },
+                { key: 'mercadopago_access_token', value: globalConfig.mercadoPagoKey },
+                { key: 'checkout_direto_habilitado', value: String(globalConfig.checkoutDiretoEnabled) },
                 { key: 'google_oauth_client_id', value: globalConfig.googleClientId },
                 { key: 'google_oauth_client_secret', value: globalConfig.googleClientSecret },
                 { key: 'ga4_property_id', value: globalConfig.ga4PropertyId }
@@ -103,6 +109,15 @@ const AdminIntegrations = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleToggleCheckoutDireto = async () => {
+        const newValue = !globalConfig.checkoutDiretoEnabled;
+        setGlobalConfig(prev => ({ ...prev, checkoutDiretoEnabled: newValue }));
+        await supabase.from('SITE_Config').upsert(
+            { key: 'checkout_direto_habilitado', value: String(newValue) },
+            { onConflict: 'key' }
+        );
     };
 
     const handleGoogleAuth = () => {
@@ -219,7 +234,63 @@ const AdminIntegrations = () => {
                 </button>
             </div>
 
-            {/* 4. Google Analytics / Search Console Config */}
+            {/* 4. Mercado Pago Config */}
+            <div className={`p-6 rounded-xl border-2 shadow-sm transition-all ${globalConfig.checkoutDiretoEnabled ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800' : 'bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-gray-800'}`}>
+                {/* Header com Toggle */}
+                <div className="flex items-start justify-between gap-4 mb-5">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${globalConfig.checkoutDiretoEnabled ? 'bg-green-100 dark:bg-green-900/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                            <ShoppingCart size={20} className={globalConfig.checkoutDiretoEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-800 dark:text-white">Mercado Pago — Checkout Direto</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                LP → Formulário → Checkout → Pagamento → Inscrição automática
+                            </p>
+                        </div>
+                    </div>
+                    {/* Toggle liga/desliga */}
+                    <button
+                        onClick={handleToggleCheckoutDireto}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-black text-sm transition-all shrink-0 ${globalConfig.checkoutDiretoEnabled ? 'bg-green-500 text-white shadow-md shadow-green-200 dark:shadow-green-900/30' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+                        title={globalConfig.checkoutDiretoEnabled ? 'Clique para desabilitar' : 'Clique para habilitar'}
+                    >
+                        {globalConfig.checkoutDiretoEnabled
+                            ? <><ToggleRight size={18} /> ATIVO</>
+                            : <><ToggleLeft size={18} /> INATIVO</>
+                        }
+                    </button>
+                </div>
+
+                {/* Status banner */}
+                <div className={`rounded-lg px-4 py-3 mb-5 text-sm font-bold flex items-center gap-2 ${globalConfig.checkoutDiretoEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
+                    {globalConfig.checkoutDiretoEnabled
+                        ? '✓ Habilitado — clientes serão redirecionados ao checkout após preencher o formulário da LP'
+                        : '○ Desabilitado — o formulário da LP exibirá a mensagem de "obrigado" (fluxo antigo)'}
+                </div>
+
+                {/* Access Token */}
+                <div>
+                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 tracking-wider">
+                        Access Token (APP_USR-... ou APP_TEST-...)
+                    </label>
+                    <input
+                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-sm bg-white dark:bg-[#222] dark:text-white font-mono focus:border-green-500 dark:focus:border-green-500/50 transition-colors outline-none"
+                        type="password"
+                        value={globalConfig.mercadoPagoKey}
+                        onChange={e => setGlobalConfig({ ...globalConfig, mercadoPagoKey: e.target.value })}
+                        placeholder="APP_USR-..."
+                    />
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        Use <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">APP_TEST-...</code> para sandbox (testes) ou <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">APP_USR-...</code> para produção.
+                    </p>
+                </div>
+                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 dark:hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-sm">
+                    <Save size={14} /> Salvar Token
+                </button>
+            </div>
+
+            {/* 5. Google Analytics / Search Console Config */}
             <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className="text-red-500 dark:text-red-400" />

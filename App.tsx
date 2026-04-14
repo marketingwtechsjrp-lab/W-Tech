@@ -42,6 +42,8 @@ const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const LPErgonomia = lazy(() => import('./pages/LPErgonomia'));
 const PronelloImmersion = lazy(() => import('./pages/PronelloImmersion'));
 const WaitlistSuspension = lazy(() => import('./pages/WaitlistSuspension'));
+const CourseCheckout = lazy(() => import('./pages/CourseCheckout'));
+const InscricaoConfirmada = lazy(() => import('./pages/InscricaoConfirmada'));
 
 
 
@@ -112,6 +114,8 @@ const App = () => {
                     <Route path="/validar/:id" element={<CertificateValidation />} />
                     <Route path="/bio" element={<Bio />} />
                     <Route path="/pagamento-sucesso" element={<PaymentSuccess />} />
+                    <Route path="/checkout-curso/:courseId" element={<CourseCheckout />} />
+                    <Route path="/inscricao-confirmada" element={<InscricaoConfirmada />} />
 
 
                     {/* Order Portals */}

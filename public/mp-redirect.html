@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecionando...</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #FDFCFB;
+      font-family: sans-serif;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #D4AF37;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <script>
+    // Lê os parâmetros enviados pelo Mercado Pago e redireciona para a SPA (HashRouter)
+    var params = new URLSearchParams(window.location.search);
+    var eid    = params.get('eid')    || '';
+    var status = params.get('status') || 'approved';
+    var cid    = params.get('cid')    || '';
+
+    if (status === 'failed' && cid) {
+      // Falha → volta ao checkout com mensagem de erro
+      window.location.replace('/#/checkout-curso/' + cid + '?error=payment_failed');
+    } else {
+      // Sucesso ou pendente → página de confirmação
+      window.location.replace('/#/inscricao-confirmada?eid=' + eid + '&status=' + status);
+    }
+  </script>
+</body>
+</html>
