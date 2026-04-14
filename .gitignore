@@ -28,3 +28,4 @@ dist-ssr
 # Large Media Files
 *.mov
 public/images/Pronello.mov
+.env

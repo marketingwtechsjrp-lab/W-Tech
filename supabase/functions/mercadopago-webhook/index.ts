@@ -6,15 +6,26 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
 serve(async (req) => {
-  // MP envia POST com { action, data: { id } }
-  let body: any;
+  // MP envia POST com { action, data: { id } } ou query params topic=payment&id=...
+  const url = new URL(req.url);
+  let body: any = {};
+  
   try {
     body = await req.json();
   } catch {
-    return new Response('Invalid JSON', { status: 400 });
+    // Se não for JSON, tentamos pegar dos query params (IPN antigo do MP)
+    body = {
+      action: url.searchParams.get('topic') === 'payment' ? 'payment.created' : null,
+      data: { id: url.searchParams.get('id') }
+    };
   }
 
-  console.log(`MP Webhook received: action=${body.action}, id=${body.data?.id}`);
+  console.log(`MP Webhook received: action=${body.action}, id=${body.data?.id || body.resource}`);
+
+  // Se for uma notificação de "test", apenas ignore e responda 200
+  if (body.action === 'test' || !body.data?.id) {
+    return new Response('OK', { status: 200 });
+  }
 
   // Processar apenas eventos de pagamento
   if (body.action !== 'payment.updated' && body.action !== 'payment.created') {

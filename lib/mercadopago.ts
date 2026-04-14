@@ -57,7 +57,7 @@ export const createMercadoPagoPreference = async ({
         },
         // auto_return removido: HashRouter URLs com '#' são rejeitadas pela validação do MP.
         // O webhook cuida da confirmação automaticamente.
-        notification_url: 'https://niesvylxwfaffgnmdoql.supabase.co/functions/v1/mercadopago-webhook',
+        notification_url: `${origin}/api/mercadopago-webhook`,
         external_reference: enrollmentId,
         metadata: {
             enrollment_id: enrollmentId,

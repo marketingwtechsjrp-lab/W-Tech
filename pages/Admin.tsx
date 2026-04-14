@@ -745,7 +745,6 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     title: 'Info: ' + payload.title,
                     slug: slug,
                     hero_headline: payload.title,
-                    hero_subheadline: payload.description ? payload.description.substring(0, 150) : 'Participe deste evento exclusivo!',
                     hero_image: payload.image,
                     status: 'Published'
                 };
