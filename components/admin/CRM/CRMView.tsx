@@ -42,7 +42,7 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
     ];
 
     return (
-        <div className="mb-6 w-full bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-transparent relative overflow-hidden transition-colors">
+        <div className="mb-6 w-full bg-[var(--admin-surface-1)] p-4 rounded-2xl shadow-sm border border-[var(--admin-border)] relative overflow-hidden transition-colors">
             <div className="flex justify-between items-center mb-4">
                 <div>
                     <h3 className="font-bold text-gray-900 dark:text-white">Visão do Funil</h3>
@@ -157,7 +157,7 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, o
 
     return (
         <div
-            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-gray-100/50 dark:bg-[#111]/50 border-2 border-dashed border-gray-300 dark:border-gray-700' : 'bg-gray-50 dark:bg-[#1A1A1A] border border-gray-200 dark:border-transparent'}`}
+            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-gray-100/50 dark:bg-[#111]/50 border-2 border-dashed border-[var(--admin-border)]' : 'bg-[var(--admin-surface-2)] border border-[var(--admin-border)]'}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
         >
@@ -361,7 +361,7 @@ const LeadCard: React.FC<{
             onDragStart={() => { setDraggedId(lead.id); setIsDragging(true); }}
             onDragEnd={() => { setDraggedId(null); setIsDragging(false); }}
             className={`
-                relative bg-white dark:bg-[#222]/80 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50 
+                relative bg-[var(--admin-surface-1)] p-3 rounded-xl border border-[var(--admin-border)]
                 hover:shadow-lg transition-all cursor-move group overflow-hidden
                 ${isLongWait ? 'ring-1 ring-red-500/20' : ''}
                 ${isSelected ? 'ring-2 ring-wtech-gold border-wtech-gold/50 bg-wtech-gold/5 dark:bg-wtech-gold/10' : 'hover:border-wtech-gold/30'}
@@ -389,7 +389,7 @@ const LeadCard: React.FC<{
                      
                      {/* Source & City Line */}
                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[9px] font-black bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 uppercase tracking-tighter">
+                        <span className="text-[9px] font-black bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded text-[var(--admin-text-secondary)] uppercase tracking-tighter">
                             {source}
                         </span>
                         {city && (
@@ -804,6 +804,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     // Bulk Selection State
     const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
+
+    // Stats Bar Filter State
+    const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
     const toggleLeadSelection = (leadId: string) => {
         setSelectedLeadIds(prev => {
@@ -1589,6 +1592,19 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         return Array.from(contexts);
     }, [leads]);
 
+    // Board leads: filtered by activeFilter (stats bar click) on top of filteredLeads
+    const boardLeads = useMemo(() => {
+        if (!activeFilter) return filteredLeads;
+        return filteredLeads.filter(l => {
+            if (activeFilter === 'New') return l.status === 'New';
+            if (activeFilter === 'Contacted') return l.status === 'Contacted';
+            if (activeFilter === 'Qualified') return l.status === 'Qualified' || l.status === 'Negotiating';
+            if (activeFilter === 'Converted') return l.status === 'Converted' || l.status === 'Matriculated';
+            if (activeFilter === 'Cold') return l.status === 'Cold' || l.status === 'Rejected';
+            return true;
+        });
+    }, [filteredLeads, activeFilter]);
+
     return (
         <DragContext.Provider value={{ draggedId, setDraggedId }}>
             <div className="h-full flex flex-col w-full max-w-full overflow-hidden relative">
@@ -1687,7 +1703,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 <FunnelChart leads={filteredLeads} />
 
                 {/* Controls Bar */}
-                <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4 bg-white dark:bg-[#1A1A1A] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4 bg-[var(--admin-surface-1)] p-4 rounded-xl shadow-sm border border-[var(--admin-border)]">
 
                     {/* Left: Search & Context */}
                     <div className="flex flex-wrap items-center gap-4">
@@ -1824,13 +1840,38 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 </div>
 
 
+                {/* Stats Bar */}
+                {viewMode === 'kanban' && (() => {
+                    const stageStats = [
+                        { label: 'Novos',        status: 'New',       count: filteredLeads.filter(l => l.status === 'New').length,        ring: 'ring-blue-500',    text: 'text-blue-500' },
+                        { label: 'Atendimento',  status: 'Contacted',  count: filteredLeads.filter(l => l.status === 'Contacted').length,  ring: 'ring-indigo-500',  text: 'text-indigo-500' },
+                        { label: 'Negociação',   status: 'Qualified',  count: filteredLeads.filter(l => l.status === 'Qualified' || l.status === 'Negotiating').length, ring: 'ring-purple-500', text: 'text-purple-500' },
+                        { label: 'Convertidos',  status: 'Converted',  count: filteredLeads.filter(l => l.status === 'Converted' || l.status === 'Matriculated').length, ring: 'ring-emerald-500', text: 'text-emerald-500' },
+                        { label: 'Frios',        status: 'Cold',       count: filteredLeads.filter(l => l.status === 'Cold' || l.status === 'Rejected').length, ring: 'ring-gray-500', text: 'text-gray-500' },
+                    ];
+                    return (
+                        <div className="grid grid-cols-5 gap-3 mb-4">
+                            {stageStats.map(s => (
+                                <button
+                                    key={s.status}
+                                    onClick={() => setActiveFilter(activeFilter === s.status ? null : s.status)}
+                                    className={`rounded-xl p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-center transition-all hover:shadow-sm ${activeFilter === s.status ? `ring-2 ring-offset-1 ${s.ring}` : ''}`}
+                                >
+                                    <p className={`text-2xl font-black ${s.text}`}>{s.count}</p>
+                                    <p className="text-[10px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-wider mt-0.5">{s.label}</p>
+                                </button>
+                            ))}
+                        </div>
+                    );
+                })()}
+
                 {/* Board or List */}
                 {viewMode === 'kanban' ? (
                     <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar flex-1 w-full min-h-0">
                         <KanbanColumn
                             title="Novos (Entrada)"
                             status="New"
-                            leads={filteredLeads.filter(l => l.status === 'New')}
+                            leads={boardLeads.filter(l => l.status === 'New')}
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
@@ -1842,7 +1883,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <KanbanColumn
                             title="Em Atendimento"
                             status="Contacted"
-                            leads={filteredLeads.filter(l => l.status === 'Contacted')}
+                            leads={boardLeads.filter(l => l.status === 'Contacted')}
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
@@ -1854,7 +1895,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <KanbanColumn
                             title="Negociação"
                             status="Qualified"
-                            leads={filteredLeads.filter(l => l.status === 'Qualified' || l.status === 'Negotiating')}
+                            leads={boardLeads.filter(l => l.status === 'Qualified' || l.status === 'Negotiating')}
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
@@ -1866,7 +1907,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <KanbanColumn
                             title="Fechado / Ganho"
                             status="Converted"
-                            leads={filteredLeads.filter(l => l.status === 'Converted' || l.status === 'Matriculated')}
+                            leads={boardLeads.filter(l => l.status === 'Converted' || l.status === 'Matriculated')}
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}
@@ -1878,7 +1919,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <KanbanColumn
                             title="Esfriou / Perdido"
                             status="Cold"
-                            leads={filteredLeads.filter(l => l.status === 'Cold' || l.status === 'Rejected')}
+                            leads={boardLeads.filter(l => l.status === 'Cold' || l.status === 'Rejected')}
                             onMove={onDropLead}
                             onDropLead={onDropLead}
                             onLeadClick={handleLeadClick}

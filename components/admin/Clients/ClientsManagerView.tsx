@@ -5,6 +5,7 @@ import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import ListsManager from '../Marketing/ListsManager';
 import { ClientDetailModal } from './ClientDetailModal';
+import { cn } from '../../../lib/utils';
 import * as XLSX from 'xlsx';
 
 const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
@@ -525,146 +526,112 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const mechanicsCount = visibleClients.filter(c => c.type === 'Credenciado').length;
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Gestão de Clientes</h2>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">Visualize Leads e Credenciados em um só lugar.</p>
+                    <h2 className="text-2xl font-black text-[var(--admin-text-primary)] tracking-tight flex items-center gap-2">
+                        <Users size={22} className="text-wtech-gold" /> Gestão de Clientes
+                    </h2>
+                    <p className="text-[11px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-widest mt-0.5">Leads e Credenciados em um só lugar</p>
                 </div>
-                <div className="flex gap-2">
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileUpload} 
-                        accept=".xlsx,.xls,.csv" 
-                        className="hidden" 
-                    />
-                    <button 
+                <div className="flex flex-wrap gap-2">
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx,.xls,.csv" className="hidden" />
+                    <button
                         onClick={handleSyncDeduplication}
-                        className="bg-white dark:bg-[#222] text-wtech-gold border border-wtech-gold/20 px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-wtech-gold/5 transition-all shadow-sm active:scale-95"
+                        className="bg-[var(--admin-surface-1)] text-wtech-gold border border-wtech-gold/30 px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-[var(--admin-accent-gold-muted)] transition-all active:scale-95"
                         title="Unir cadastros com o mesmo telefone"
                     >
-                        <Users size={20} className="text-wtech-gold" /> Sincronizar & Limpar
+                        <Users size={16} /> Sincronizar
                     </button>
-
-                    <button 
+                    <button
                         onClick={handleImportClick}
-                        className="bg-white dark:bg-[#222] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-700 px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95"
+                        className="bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] border border-[var(--admin-border)] px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-[var(--admin-surface-3)] transition-all active:scale-95"
                     >
-                        <Upload size={20} /> Importar Lista
+                        <Upload size={16} /> Importar
                     </button>
-
                     {activeTab === 'clients' && selectedClients.length > 0 && (
-                        <div className="flex gap-2 animate-in slide-in-from-right-4">
-                            <button 
+                        <div className="flex gap-2">
+                            <button
                                 onClick={() => setIsGroupModalOpen(true)}
-                                className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl active:scale-95"
+                                className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-blue-700 transition-all active:scale-95"
                             >
-                                <Users size={20} /> 
-                                Criar Grupo ({selectedClients.length})
+                                <Users size={16} /> Grupo ({selectedClients.length})
                             </button>
-                            <button 
+                            <button
                                 onClick={handleBulkDelete}
-                                className="bg-red-500 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-red-600 transition-all shadow-xl active:scale-95"
+                                className="bg-red-500 text-white px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-red-600 transition-all active:scale-95"
                             >
-                                <Trash2 size={20} /> 
-                                Excluir Seleção
+                                <Trash2 size={16} /> Excluir
                             </button>
                         </div>
                     )}
-                    <button 
+                    <button
                         onClick={() => setSelectedClientForEdit({ type: 'Lead' })}
-                        className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-xl active:scale-95"
+                        className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all"
                     >
-                        <UserPlus size={20} /> Novo Cliente
+                        <UserPlus size={16} /> Novo Cliente
                     </button>
                 </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="p-3 rounded-2xl bg-wtech-gold/10 text-wtech-gold">
-                            <Users size={24} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                    { label: 'Total de Clientes', value: totalClientsCount, icon: Users,  bg: 'bg-[var(--admin-accent-gold-muted)]',  text: 'text-wtech-gold' },
+                    { label: 'Credenciados',       value: mechanicsCount,    icon: Shield, bg: 'bg-blue-500/10',                       text: 'text-blue-500' },
+                    { label: 'Leads',              value: leadsCount,        icon: User,   bg: 'bg-orange-500/10',                     text: 'text-orange-500' },
+                ].map(s => (
+                    <div key={s.label} className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-5 hover:shadow-md transition-all">
+                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3', s.bg)}>
+                            <s.icon size={20} className={s.text} />
                         </div>
+                        <p className={cn('text-3xl font-black tracking-tight', s.text)}>{s.value}</p>
+                        <p className="text-[10px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-wider mt-1">{s.label}</p>
                     </div>
-                    <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{totalClientsCount}</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Total de Clientes</p>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
-                            <Shield size={24} />
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{mechanicsCount}</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Credenciados (Oficinas)</p>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="p-3 rounded-2xl bg-orange-500/10 text-orange-500">
-                            <User size={24} />
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{leadsCount}</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Leads Interessados</p>
-                    </div>
-                </div>
+                ))}
             </div>
 
             {/* Sub-Tabs */}
-            <div className="flex bg-white dark:bg-[#111] p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 w-fit">
-                <button
-                    onClick={() => setActiveTab('clients')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
-                        activeTab === 'clients' 
-                        ? 'bg-black dark:bg-white dark:text-black text-white shadow-lg' 
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
-                    }`}
-                >
-                    <User size={16} /> Todos os Clientes
-                </button>
-                <button
-                    onClick={() => setActiveTab('groups')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black transition-all ${
-                        activeTab === 'groups' 
-                        ? 'bg-black dark:bg-white dark:text-black text-white shadow-lg' 
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5'
-                    }`}
-                >
-                    <Users size={16} /> Grupos de Marketing
-                </button>
+            <div className="flex bg-[var(--admin-surface-3)] p-1 rounded-xl border border-[var(--admin-border)] w-fit">
+                {(['clients', 'groups'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={cn(
+                            'flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-black transition-all',
+                            activeTab === tab
+                                ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm'
+                                : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'
+                        )}
+                    >
+                        {tab === 'clients' ? <><User size={14} /> Todos os Clientes</> : <><Users size={14} /> Grupos de Marketing</>}
+                    </button>
+                ))}
             </div>
 
             {activeTab === 'groups' ? (
-                <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] overflow-hidden p-6">
                     <ListsManager permissions={permissions} />
                 </div>
             ) : (
-                <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">
-                    <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex flex-col md:flex-row gap-4">
+                <div className="bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] overflow-hidden">
+                    {/* Search + Filter */}
+                    <div className="p-4 border-b border-[var(--admin-border)] flex flex-col md:flex-row gap-3">
                         <div className="relative flex-1">
-                            <Search className="absolute left-4 top-3 text-gray-400" size={20} />
-                            <input 
+                            <Search className="absolute left-3 top-2.5 text-[var(--admin-text-tertiary)]" size={16} />
+                            <input
                                 type="text"
                                 placeholder="Buscar por nome, email ou telefone..."
-                                className="w-full bg-gray-50 dark:bg-[#222] dark:text-white border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
+                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl py-2.5 pl-9 pr-4 text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-colors"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <select 
-                            className="px-6 py-3 bg-gray-50 dark:bg-[#222] dark:text-white border-none rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-gold"
+                        <select
+                            className="px-4 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-colors"
                             value={filterType}
-                            onChange={(e) => setFilterType(e.target.value)}
+                            onChange={e => setFilterType(e.target.value)}
                         >
                             <option value="all">Todos os Tipos</option>
                             <option value="Lead">Leads</option>
@@ -672,229 +639,174 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         </select>
                     </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50/50 dark:bg-[#111]">
-                            <tr>
-                                <th className="px-6 py-4 w-[50px]">
-                                    <input 
-                                        type="checkbox" 
-                                        className="rounded border-gray-300 w-4 h-4 text-wtech-gold focus:ring-wtech-gold"
-                                        checked={filteredClients.length > 0 && selectedClients.length === filteredClients.length}
-                                        onChange={(e) => handleSelectAll(e.target.checked)}
-                                    />
-                                </th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Contato</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Tipo / Origem</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Classificação</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Atendente</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Última Compra</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status / Data</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                            {loading ? (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Carregando carteira de clientes...</td></tr>
-                            ) : paginatedClients.length === 0 ? (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Nenhum cliente encontrado.</td></tr>
-                            ) : paginatedClients.map((client, idx) => (
-                                <tr 
-                                    key={`${client.type}-${client.id}-${idx}`} 
-                                    className={`hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer ${selectedClients.includes(client.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
-                                    onClick={(e) => {
-                                        // Don't trigger if clicking checkbox
-                                        if ((e.target as any).type === 'checkbox') return;
-                                        setSelectedClientForEdit(client);
-                                    }}
-                                >
-                                     <td className="px-6 py-4">
-                                        <input 
-                                            type="checkbox" 
-                                            className="rounded border-gray-300 w-4 h-4 text-wtech-gold focus:ring-wtech-gold"
-                                            checked={selectedClients.includes(client.id)}
-                                            onChange={(e) => handleSelectClient(client.id, e.target.checked)}
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-[var(--admin-surface-2)]">
+                                <tr>
+                                    <th className="px-5 py-3 w-[44px]">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded w-4 h-4 accent-wtech-gold"
+                                            checked={filteredClients.length > 0 && selectedClients.length === filteredClients.length}
+                                            onChange={e => handleSelectAll(e.target.checked)}
                                         />
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${client.type === 'Credenciado' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                                                {client.type === 'Credenciado' ? <Shield size={18} /> : <User size={18} />}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-gray-900 dark:text-white line-clamp-1">{client.name || 'Sem Nome'}</p>
-                                                <p className="text-[10px] text-gray-400 uppercase font-bold">ID: {client.id.slice(0, 8)}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col gap-1">
-                                            {client.phone && (
-                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
-                                                    <Phone size={12} className="text-gray-400" />
-                                                    {client.phone}
+                                    </th>
+                                    {['Cliente', 'Contato', 'Tipo / Origem', 'Classificação', 'Atendente', 'Última Compra', 'Status'].map(h => (
+                                        <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--admin-border)]">
+                                {loading ? (
+                                    <tr><td colSpan={8} className="px-5 py-12 text-center text-[var(--admin-text-tertiary)] font-bold">Carregando...</td></tr>
+                                ) : paginatedClients.length === 0 ? (
+                                    <tr><td colSpan={8} className="px-5 py-12 text-center text-[var(--admin-text-tertiary)] font-bold">Nenhum cliente encontrado.</td></tr>
+                                ) : paginatedClients.map((client, idx) => (
+                                    <tr
+                                        key={`${client.type}-${client.id}-${idx}`}
+                                        className={cn(
+                                            'hover:bg-[var(--admin-surface-2)] transition-colors cursor-pointer',
+                                            selectedClients.includes(client.id) && 'bg-blue-500/5'
+                                        )}
+                                        onClick={e => { if ((e.target as any).type === 'checkbox') return; setSelectedClientForEdit(client); }}
+                                    >
+                                        <td className="px-5 py-3">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded w-4 h-4 accent-wtech-gold"
+                                                checked={selectedClients.includes(client.id)}
+                                                onChange={e => handleSelectClient(client.id, e.target.checked)}
+                                            />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn('w-9 h-9 rounded-full flex items-center justify-center shrink-0', client.type === 'Credenciado' ? 'bg-blue-500/10 text-blue-500' : 'bg-[var(--admin-surface-3)] text-[var(--admin-text-tertiary)]')}>
+                                                    {client.type === 'Credenciado' ? <Shield size={16} /> : <User size={16} />}
                                                 </div>
-                                            )}
-                                            {client.email && (
-                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
-                                                    <Mail size={12} className="text-gray-400" />
-                                                    {client.email}
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-[var(--admin-text-primary)] truncate">{client.name || 'Sem Nome'}</p>
+                                                    <p className="text-[10px] text-[var(--admin-text-tertiary)] font-mono">{client.id.slice(0, 8)}</p>
                                                 </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <span className={`text-[10px] font-black uppercase tracking-wider w-fit px-2 py-0.5 rounded ${client.type === 'Credenciado' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'}`}>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="flex flex-col gap-0.5">
+                                                {client.phone && <span className="flex items-center gap-1 text-xs text-[var(--admin-text-secondary)]"><Phone size={11} className="text-[var(--admin-text-tertiary)]" />{client.phone}</span>}
+                                                {client.email && <span className="flex items-center gap-1 text-xs text-[var(--admin-text-secondary)]"><Mail size={11} className="text-[var(--admin-text-tertiary)]" />{client.email}</span>}
+                                            </div>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <span className={cn('text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md', client.type === 'Credenciado' ? 'bg-blue-500/10 text-blue-500' : 'bg-orange-500/10 text-orange-500')}>
                                                 {client.type}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 truncate max-w-[150px]">{client.origin}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${
-                                            client.classification === 'VIP' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                                            client.classification === 'Ouro' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                                            client.classification === 'Prata' ? 'bg-gray-100 text-gray-700 border-gray-200' :
-                                            'bg-white text-gray-500 border-gray-100'
-                                        }`}>
-                                            {client.classification}
-                                        </span>
-                                        {client.isAccredited && (
-                                            <span className="ml-2 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-blue-100 text-blue-700 border border-blue-200">
-                                                Credenciado
+                                            <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-0.5 truncate max-w-[130px]">{client.origin}</p>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <span className={cn('text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md border', {
+                                                'bg-purple-500/10 text-purple-500 border-purple-500/20': client.classification === 'VIP',
+                                                'bg-yellow-500/10 text-yellow-600 border-yellow-500/20': client.classification === 'Ouro',
+                                                'bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] border-[var(--admin-border)]': !['VIP','Ouro'].includes(client.classification),
+                                            })}>
+                                                {client.classification || 'Novato'}
                                             </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-[10px] font-bold">
-                                                <UserPlus size={12} />
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <span className="text-xs font-medium text-[var(--admin-text-secondary)]">
+                                                {attendants.find(u => u.id === client.assigned_to)?.name || <span className="text-[var(--admin-text-tertiary)]">—</span>}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <span className="text-xs text-[var(--admin-text-secondary)]">
+                                                {client.lastPurchaseDate ? new Date(client.lastPurchaseDate).toLocaleDateString('pt-BR') : '—'}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="flex flex-col items-start gap-0.5">
+                                                <span className="text-[10px] font-bold text-[var(--admin-text-primary)] bg-[var(--admin-surface-3)] border border-[var(--admin-border)] px-2 py-0.5 rounded-md">
+                                                    {client.status || 'Ativo'}
+                                                </span>
+                                                <span className="text-[10px] text-[var(--admin-text-tertiary)]">{new Date(client.createdAt).toLocaleDateString('pt-BR')}</span>
                                             </div>
-                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                                                {attendants.find(u => u.id === client.assigned_to)?.name || 'Sem Atendente'}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                                            {client.lastPurchaseDate ? new Date(client.lastPurchaseDate).toLocaleDateString('pt-BR') : '-'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex flex-col items-end gap-1">
-                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#222] px-2 py-1 rounded-lg border border-transparent dark:border-gray-800">
-                                                {client.status || 'Ativo'}
-                                            </span>
-                                            <span className="text-[10px] font-medium text-gray-400">{new Date(client.createdAt).toLocaleDateString('pt-BR')}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                
-                {/* Pagination Controls */}
-                 {!loading && filteredClients.length > 0 && (
-                     <div className="border-t border-gray-100 dark:border-gray-800 p-4 bg-gray-50 dark:bg-[#111] flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                            Exibindo {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredClients.length)} de {filteredClients.length} clientes
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mr-2">Itens por página:</span>
-                            {[50, 100, 300].map(limit => (
-                                <button
-                                    key={limit}
-                                    onClick={() => { setItemsPerPage(limit); setCurrentPage(1); }}
-                                    className={`px-3 py-1 rounded text-xs font-bold ${itemsPerPage === limit ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white border border-gray-200 dark:border-gray-700' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                                >
-                                    {limit}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                             <button 
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                                className="px-3 py-1.5 rounded bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-400 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-white/5"
-                             >
-                                Anterior
-                             </button>
-                             <span className="text-xs font-bold text-gray-900 dark:text-white">
-                                Página {currentPage} de {totalPages}
-                             </span>
-                             <button 
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                                className="px-3 py-1.5 rounded bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-400 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-white/5"
-                             >
-                                Próxima
-                             </button>
-                        </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-            </div>
+
+                    {/* Pagination */}
+                    {!loading && filteredClients.length > 0 && (
+                        <div className="border-t border-[var(--admin-border)] px-5 py-3 bg-[var(--admin-surface-2)] flex flex-col md:flex-row justify-between items-center gap-3">
+                            <span className="text-xs font-bold text-[var(--admin-text-tertiary)]">
+                                {startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredClients.length)} de {filteredClients.length}
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <span className="text-xs font-bold text-[var(--admin-text-tertiary)] mr-2">Por página:</span>
+                                {[50, 100, 300].map(limit => (
+                                    <button
+                                        key={limit}
+                                        onClick={() => { setItemsPerPage(limit); setCurrentPage(1); }}
+                                        className={cn('px-2.5 py-1 rounded text-xs font-bold transition-colors', itemsPerPage === limit ? 'bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]')}
+                                    >
+                                        {limit}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-xs font-bold text-[var(--admin-text-secondary)] disabled:opacity-40 hover:bg-[var(--admin-surface-3)] transition-colors">Anterior</button>
+                                <span className="text-xs font-bold text-[var(--admin-text-primary)]">Página {currentPage} / {totalPages}</span>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 rounded-lg bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-xs font-bold text-[var(--admin-text-secondary)] disabled:opacity-40 hover:bg-[var(--admin-surface-3)] transition-colors">Próxima</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
 
             {/* Add to Group Modal */}
             {isGroupModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 border border-gray-100 dark:border-gray-800">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#111]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+                        <div className="px-6 py-4 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-surface-2)]">
                             <div>
-                                <h3 className="font-black text-xl text-gray-900 dark:text-white">Adicionar ao Grupo</h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">{selectedClients.length} contatos selecionados</p>
+                                <h3 className="font-black text-base text-[var(--admin-text-primary)]">Adicionar ao Grupo</h3>
+                                <p className="text-xs text-[var(--admin-text-tertiary)] font-bold">{selectedClients.length} contatos selecionados</p>
                             </div>
-                            <button onClick={() => setIsGroupModalOpen(false)} className="text-gray-400 hover:text-red-500">
-                                <X size={20} />
+                            <button onClick={() => setIsGroupModalOpen(false)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:bg-[var(--admin-surface-3)] transition-colors">
+                                <X size={15} />
                             </button>
                         </div>
-                        
-                        <div className="p-6 space-y-6">
+                        <div className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Selecione o Grupo</label>
-                                <select 
-                                    className="w-full p-3 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
+                                <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider mb-1.5">Selecione o Grupo</label>
+                                <select
+                                    className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors"
                                     value={selectedListId}
-                                    onChange={(e) => setSelectedListId(e.target.value)}
+                                    onChange={e => setSelectedListId(e.target.value)}
                                 >
                                     <option value="">Selecione...</option>
                                     <option value="new">+ Criar Novo Grupo</option>
-                                    {staticLists.map(list => (
-                                        <option key={list.id} value={list.id}>{list.name} ({list.type})</option>
-                                    ))}
+                                    {staticLists.map(list => <option key={list.id} value={list.id}>{list.name}</option>)}
                                 </select>
                             </div>
-
                             {selectedListId === 'new' && (
-                                <div className="space-y-2 animate-in slide-in-from-top-2">
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Nome do Novo Grupo</label>
-                                    <input 
-                                        type="text" 
+                                <div>
+                                    <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider mb-1.5">Nome do Novo Grupo</label>
+                                    <input
+                                        type="text"
                                         placeholder="Ex: Alunos VIP 2024"
-                                        className="w-full p-3 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none"
+                                        className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors"
                                         value={newListName}
-                                        onChange={(e) => setNewListName(e.target.value)}
+                                        onChange={e => setNewListName(e.target.value)}
                                         autoFocus
                                     />
                                 </div>
                             )}
-
-                            <div className="flex justify-end gap-3 pt-4">
-                                <button 
-                                    onClick={() => setIsGroupModalOpen(false)}
-                                    className="px-4 py-3 text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button onClick={() => setIsGroupModalOpen(false)} className="px-4 py-2 text-sm font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] rounded-xl transition-colors">Cancelar</button>
+                                <button
                                     onClick={handleAddToGroup}
                                     disabled={!selectedListId || (selectedListId === 'new' && !newListName) || isSavingGroup}
-                                    className="bg-wtech-black dark:bg-white dark:text-black text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-5 py-2 rounded-xl font-black text-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
                                     {isSavingGroup ? 'Salvando...' : 'Salvar Grupo'}
                                 </button>

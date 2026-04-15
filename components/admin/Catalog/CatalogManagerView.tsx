@@ -437,70 +437,70 @@ const CatalogManagerView = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--admin-surface-1)] p-6 rounded-2xl border border-[var(--admin-border)]">
                 <div>
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-2xl font-black text-[var(--admin-text-primary)] flex items-center gap-2">
                         <Package className="text-wtech-gold" /> Catálogo & Estoque
                     </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Gerencie seus produtos, insumos e movimentações de estoque.</p>
+                    <p className="text-sm text-[var(--admin-text-secondary)] font-medium">Gerencie seus produtos, insumos e movimentações de estoque.</p>
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
-                    <label className={`cursor-pointer px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <Upload size={20} /> 
+                    <label className={`cursor-pointer px-4 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[var(--admin-surface-3)] transition-all text-sm ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <Upload size={16} />
                         {isImporting ? 'Processando...' : 'Importar CSV'}
                         <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} />
                     </label>
-                    <button 
+                    <button
                         onClick={() => setIsMassAdjusting(true)}
-                        className="flex-1 md:flex-none px-6 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
+                        className="flex-1 md:flex-none px-4 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[var(--admin-surface-3)] transition-all text-sm"
                     >
-                        <RefreshCcw size={20} className="text-blue-500" /> Reajuste em Massa
+                        <RefreshCcw size={16} className="text-blue-500" /> Reajuste em Massa
                     </button>
-                    <button 
+                    <button
                         onClick={() => { setEditingProduct({ type: 'product', unit: 'un' }); setIsProductModalOpen(true); }}
-                        className="flex-1 md:flex-none px-6 py-3 bg-wtech-black dark:bg-white dark:text-black text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-lg active:scale-95"
+                        className="flex-1 md:flex-none px-4 py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-xl font-black flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20 text-sm"
                     >
-                        <Plus size={20} /> Novo Item
+                        <Plus size={16} /> Novo Item
                     </button>
                 </div>
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm transition-colors">
-                    <p className="text-xs font-bold text-gray-400 uppercase">Total de Itens</p>
-                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">{products.length}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-[var(--admin-surface-1)] p-4 rounded-xl border border-[var(--admin-border)] transition-colors">
+                    <p className="text-xs font-bold text-[var(--admin-text-tertiary)] uppercase">Total de Itens</p>
+                    <h3 className="text-2xl font-black text-[var(--admin-text-primary)]">{products.length}</h3>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/20 shadow-sm transition-colors">
+                <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20 transition-colors">
                     <p className="text-xs font-bold text-red-400 uppercase">Estoque Crítico</p>
-                    <h3 className="text-2xl font-black text-red-600 dark:text-red-400">{products.filter(p => p.currentStock <= p.minStock).length}</h3>
+                    <h3 className="text-2xl font-black text-red-500">{products.filter(p => p.currentStock <= p.minStock).length}</h3>
                 </div>
-                <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/20 shadow-sm transition-colors">
+                <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 transition-colors">
                     <p className="text-xs font-bold text-blue-400 uppercase">Produtos Finais</p>
-                    <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400">{products.filter(p => p.type === 'product').length}</h3>
+                    <h3 className="text-2xl font-black text-blue-500">{products.filter(p => p.type === 'product').length}</h3>
                 </div>
-                <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900/20 shadow-sm transition-colors">
-                    <p className="text-xs font-bold text-green-400 uppercase">Valor em Estoque</p>
-                    <h3 className="text-2xl font-black text-green-600 dark:text-green-400">
+                <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 transition-colors">
+                    <p className="text-xs font-bold text-emerald-400 uppercase">Valor em Estoque</p>
+                    <h3 className="text-xl font-black text-emerald-500">
                         R$ {products.reduce((acc, p) => acc + (p.currentStock * p.averageCost), 0).toLocaleString('pt-BR')}
                     </h3>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="bg-[var(--admin-surface-1)] p-4 rounded-xl border border-[var(--admin-border)] flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
-                    <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                    <input 
-                        type="text" 
-                        placeholder="Buscar por nome ou SKU..." 
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 dark:text-white rounded-lg focus:ring-2 ring-wtech-gold/20 outline-none transition-all"
+                    <Search className="absolute left-3 top-3 text-[var(--admin-text-tertiary)]" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nome ou SKU..."
+                        className="w-full pl-9 pr-4 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] rounded-xl text-sm focus:border-wtech-gold outline-none transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <select 
-                    className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-[#111] dark:text-white outline-none"
+                <select
+                    className="px-4 py-2.5 border border-[var(--admin-border)] rounded-xl bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] text-sm outline-none focus:border-wtech-gold transition-all"
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                 >
@@ -512,82 +512,80 @@ const CatalogManagerView = () => {
             </div>
 
             {/* Products Table */}
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] overflow-hidden">
                 <table className="w-full text-left">
-                    <thead className="bg-gray-50 dark:bg-[#111] border-b border-gray-100 dark:border-gray-700 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                    <thead className="bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)] text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">
                         <tr>
-                            <th className="px-6 py-4 w-[50px]">
-                                <input 
-                                    type="checkbox" 
-                                    className="rounded border-gray-300 dark:border-gray-600 bg-transparent"
+                            <th className="px-5 py-4 w-[50px]">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-[var(--admin-border)] bg-transparent"
                                     onChange={(e) => handleSelectAll(e.target.checked)}
                                     checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
                                 />
                             </th>
-                            <th className="px-6 py-4">Item</th>
-                            <th className="px-6 py-4">Status Estoque</th>
-                            <th className="px-6 py-4 text-right">Custo / Venda</th>
-                            <th className="px-6 py-4 text-center">Ações</th>
+                            <th className="px-5 py-4">Item</th>
+                            <th className="px-5 py-4">Status Estoque</th>
+                            <th className="px-5 py-4 text-right">Custo / Venda</th>
+                            <th className="px-5 py-4 text-center">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                    <tbody className="divide-y divide-[var(--admin-border)]">
                         {loading ? (
-                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center">
+                            <tr>
+                                <td colSpan={5} className="px-5 py-16 text-center">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="w-8 h-8 border-4 border-wtech-gold border-t-transparent rounded-full animate-spin"></div>
-                                        <p className="text-sm text-gray-400 font-medium">Carregando catálogo...</p>
+                                        <p className="text-sm text-[var(--admin-text-tertiary)] font-medium">Carregando catálogo...</p>
                                     </div>
                                 </td>
                             </tr>
                         ) : filteredProducts.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">
+                                <td colSpan={5} className="px-5 py-16 text-center text-[var(--admin-text-tertiary)] font-bold">
                                     Nenhum item encontrado.
                                 </td>
                             </tr>
                         ) : filteredProducts.map((product) => {
                             const isSelected = selectedProducts.includes(product.id);
                             return (
-                            <tr key={product.id} className={`hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group ${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}>
-                                <td className="px-6 py-4 align-top">
-                                    <input 
-                                        type="checkbox" 
-                                        className="rounded border-gray-300 dark:border-gray-600 bg-transparent"
+                            <tr key={product.id} className={`hover:bg-[var(--admin-surface-2)] transition-colors group ${isSelected ? 'bg-indigo-500/5' : ''}`}>
+                                <td className="px-5 py-4 align-top">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-[var(--admin-border)] bg-transparent"
                                         checked={isSelected}
                                         onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
                                     />
                                 </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-[#111] flex-shrink-0 flex items-center justify-center text-gray-400 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-                                            {product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <Package size={20} />}
+                                <td className="px-5 py-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-11 h-11 rounded-xl bg-[var(--admin-surface-2)] flex-shrink-0 flex items-center justify-center text-[var(--admin-text-tertiary)] border border-[var(--admin-border)] overflow-hidden">
+                                            {product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <Package size={18} />}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900 dark:text-gray-100 leading-tight text-sm line-clamp-2 max-w-[300px]" title={product.name}>
+                                            <p className="font-bold text-[var(--admin-text-primary)] leading-tight text-sm line-clamp-2 max-w-[300px]" title={product.name}>
                                                 {product.name}
                                             </p>
-                                            
-                                            <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                                <span className="text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 font-bold border border-gray-200 dark:border-gray-700">
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                                <span className="text-[10px] bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded text-[var(--admin-text-tertiary)] font-bold border border-[var(--admin-border)]">
                                                     {product.sku || 'S/ SKU'}
                                                 </span>
                                                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase border ${
-                                                    product.type === 'product' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
-                                                    product.type === 'raw_material' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-900/30' :
-                                                    'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30'
+                                                    product.type === 'product' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                                    product.type === 'raw_material' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
+                                                    'bg-purple-500/10 text-purple-500 border-purple-500/20'
                                                 }`}>
                                                     {product.type === 'product' ? 'Produto' : product.type === 'raw_material' ? 'Insumo' : 'Serviço'}
                                                 </span>
                                                 {product.category && (
-                                                     <span className="text-[10px] bg-white dark:bg-white/5 px-1.5 py-0.5 rounded text-gray-400 dark:text-gray-500 font-medium border border-gray-100 dark:border-gray-800 truncate max-w-[100px]">
+                                                    <span className="text-[10px] bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded text-[var(--admin-text-tertiary)] font-medium border border-[var(--admin-border)] truncate max-w-[100px]">
                                                         {product.category}
                                                     </span>
                                                 )}
                                             </div>
-                                            
                                             {(product.weight || product.length) > 0 && (
-                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400 dark:text-gray-500">
+                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-[var(--admin-text-tertiary)]">
                                                     {product.weight > 0 && <span>{product.weight}g</span>}
                                                     {product.length > 0 && <span>{product.length}x{product.width}x{product.height}cm</span>}
                                                 </div>
@@ -595,50 +593,50 @@ const CatalogManagerView = () => {
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-center">
+                                <td className="px-5 py-4">
                                     <div className="flex flex-col items-start gap-1">
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-sm font-black ${product.currentStock <= product.minStock ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                            <span className={`text-sm font-black ${product.currentStock <= product.minStock ? 'text-red-500' : 'text-emerald-500'}`}>
                                                 {product.currentStock} {product.unit}
                                             </span>
-                                            {product.currentStock <= product.minStock && <AlertTriangle size={14} className="text-red-500 animate-pulse" />}
+                                            {product.currentStock <= product.minStock && <AlertTriangle size={13} className="text-red-500 animate-pulse" />}
                                         </div>
-                                        <div className="w-24 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
-                                            <div 
-                                                className={`h-full transition-all ${product.currentStock <= product.minStock ? 'bg-red-500' : 'bg-green-500'}`} 
+                                        <div className="w-24 h-1.5 bg-[var(--admin-surface-3)] rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all ${product.currentStock <= product.minStock ? 'bg-red-500' : 'bg-emerald-500'}`}
                                                 style={{ width: `${Math.min(100, (product.currentStock / (product.minStock * 2 || 1)) * 100)}%` }}
                                             />
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 text-right">
-                                    <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Custo: R$ {product.averageCost.toLocaleString('pt-BR')}</p>
-                                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-0.5">Venda: R$ {product.salePrice.toLocaleString('pt-BR')}</p>
+                                <td className="px-5 py-4 text-right">
+                                    <p className="text-[11px] text-[var(--admin-text-tertiary)] font-medium">Custo: R$ {product.averageCost.toLocaleString('pt-BR')}</p>
+                                    <p className="text-sm font-bold text-[var(--admin-text-primary)] mt-0.5">Venda: R$ {product.salePrice.toLocaleString('pt-BR')}</p>
                                 </td>
-                                <td className="px-6 py-4 text-center">
+                                <td className="px-5 py-4 text-center">
                                     <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
+                                        <button
                                             onClick={() => { setEditingProduct(product); setActiveModalTab('general'); setIsProductModalOpen(true); }}
-                                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Editar"
+                                            className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors" title="Editar"
                                         >
-                                            <Edit size={18} />
+                                            <Edit size={16} />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => { setEditingProduct(product); setActiveModalTab('history'); setIsProductModalOpen(true); }}
-                                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors" title="Movimentar Estoque"
+                                            className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-lg transition-colors" title="Movimentar Estoque"
                                         >
-                                            <Layers size={18} />
+                                            <Layers size={16} />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={async () => {
                                                 if (confirm("Deseja realmente excluir este item?")) {
                                                     await supabase.from('SITE_Products').delete().eq('id', product.id);
                                                     fetchProducts();
                                                 }
                                             }}
-                                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Excluir"
+                                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors" title="Excluir"
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </td>
@@ -653,60 +651,39 @@ const CatalogManagerView = () => {
             <AnimatePresence>
                 {isProductModalOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white dark:bg-[#1A1A1A] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+                            className="bg-[var(--admin-surface-1)] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[var(--admin-border)]"
                         >
-                            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
+                            <div className="px-6 pt-5 pb-4 border-b border-[var(--admin-border)] flex justify-between items-start bg-[var(--admin-surface-2)]">
                                 <div>
-                                    <h3 className="text-xl font-black text-gray-900 dark:text-white">{editingProduct?.id ? 'Editar Item' : 'Novo Item no Catálogo'}</h3>
+                                    <h3 className="text-lg font-black text-[var(--admin-text-primary)]">{editingProduct?.id ? 'Editar Item' : 'Novo Item no Catálogo'}</h3>
                                     <div className="flex gap-4 mt-2">
-                                        <button 
-                                            onClick={() => setActiveModalTab('general')}
-                                            className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'general' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
-                                        >
-                                            Geral
-                                        </button>
-                                        {editingProduct?.id && editingProduct.type === 'product' && (
-                                            <button 
-                                                onClick={() => setActiveModalTab('bom')}
-                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'bom' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
+                                        {(['general', ...(editingProduct?.id && editingProduct.type === 'product' ? ['bom'] : []), ...(editingProduct?.id ? ['history', 'reservations'] : [])] as const).map(tab => (
+                                            <button
+                                                key={tab}
+                                                onClick={() => setActiveModalTab(tab as any)}
+                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === tab ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-[var(--admin-text-tertiary)]'}`}
                                             >
-                                                Composição (BOM)
+                                                {tab === 'general' ? 'Geral' : tab === 'bom' ? 'Composição (BOM)' : tab === 'history' ? 'Movimentações' : 'Reservas'}
                                             </button>
-                                        )}
-                                        {editingProduct?.id && (
-                                            <button 
-                                                onClick={() => setActiveModalTab('history')}
-                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'history' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
-                                            >
-                                                Movimentações
-                                            </button>
-                                        )}
-                                        {editingProduct?.id && (
-                                            <button 
-                                                onClick={() => setActiveModalTab('reservations')}
-                                                className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeModalTab === 'reservations' ? 'border-wtech-gold text-wtech-gold' : 'border-transparent text-gray-400 dark:text-gray-500'}`}
-                                            >
-                                                Reservas
-                                            </button>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
-                                <button onClick={() => setIsProductModalOpen(false)} className="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-red-500">
-                                    <X size={24} />
+                                <button onClick={() => setIsProductModalOpen(false)} className="p-2 hover:bg-[var(--admin-surface-3)] rounded-xl transition-colors text-[var(--admin-text-tertiary)] hover:text-red-500 shrink-0">
+                                    <X size={20} />
                                 </button>
                             </div>
 
-                            <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+                            <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4 custom-scrollbar">
                                 {activeModalTab === 'general' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Nome do Item</label>
-                                            <input 
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Nome do Item</label>
+                                            <input
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all placeholder:text-[var(--admin-text-tertiary)]"
                                                 value={editingProduct?.name || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
                                                 placeholder="Ex: Kit de Suspensão Hércules"
@@ -714,9 +691,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">SKU / Código</label>
-                                            <input 
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all uppercase"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">SKU / Código</label>
+                                            <input
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all uppercase placeholder:text-[var(--admin-text-tertiary)]"
                                                 value={editingProduct?.sku || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, sku: e.target.value.toUpperCase()})}
                                                 placeholder="WT-KIT-001"
@@ -724,22 +701,22 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Tipo de Item</label>
-                                            <select 
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Tipo de Item</label>
+                                            <select
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.type || 'product'}
                                                 onChange={e => setEditingProduct({...editingProduct, type: e.target.value as any})}
                                             >
-                                                <option value="product">📦 Produto Final</option>
-                                                <option value="raw_material">🧱 Insumo / Matéria-prima</option>
-                                                <option value="service" disabled>🛠️ Serviço (Em breve)</option>
+                                                <option value="product">Produto Final</option>
+                                                <option value="raw_material">Insumo / Matéria-prima</option>
+                                                <option value="service" disabled>Serviço (Em breve)</option>
                                             </select>
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Unidade</label>
-                                            <select 
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Unidade</label>
+                                            <select
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.unit || 'un'}
                                                 onChange={e => setEditingProduct({...editingProduct, unit: e.target.value})}
                                             >
@@ -752,40 +729,35 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Estoque Mínimo</label>
-                                            <input 
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Estoque Mínimo</label>
+                                            <input
                                                 type="number"
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all"
                                                 value={editingProduct?.minStock || 0}
                                                 onChange={e => setEditingProduct({...editingProduct, minStock: parseInt(e.target.value)})}
                                             />
                                         </div>
 
-                                        <div className="bg-green-50/50 dark:bg-green-900/10 p-5 rounded-[2rem] border border-green-100 dark:border-green-900/20 flex flex-col gap-5 md:col-span-2">
-                                            <p className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-[0.2em] ml-1">Configuração de Preços & Níveis</p>
-                                            
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="bg-emerald-500/5 p-5 rounded-2xl border border-emerald-500/15 flex flex-col gap-5 md:col-span-2">
+                                            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Configuração de Preços & Níveis</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Custo Médio (R$)</label>
+                                                    <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Custo Médio</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-gray-400">R$</span>
-                                                        <input 
-                                                            type="number"
-                                                            step="0.01"
-                                                            className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                                                        <span className="absolute left-3 top-2.5 text-xs font-bold text-[var(--admin-text-tertiary)]">R$</span>
+                                                        <input type="number" step="0.01"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl py-2.5 pl-9 pr-3 text-sm font-bold text-[var(--admin-text-primary)] focus:border-emerald-500 outline-none transition-all"
                                                             value={editingProduct?.averageCost || 0}
                                                             onChange={e => setEditingProduct({...editingProduct, averageCost: parseFloat(e.target.value)})}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 ml-1">Preço Final</label>
+                                                    <label className="block text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Preço Final</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-blue-400">R$</span>
-                                                        <input 
-                                                            type="number"
-                                                            step="0.01"
-                                                            className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-black text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                                        <span className="absolute left-3 top-2.5 text-xs font-bold text-blue-400">R$</span>
+                                                        <input type="number" step="0.01"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-blue-500/30 rounded-xl py-2.5 pl-9 pr-3 text-sm font-black text-[var(--admin-text-primary)] focus:border-blue-500 outline-none transition-all"
                                                             value={editingProduct?.priceRetail || editingProduct?.salePrice || 0}
                                                             onChange={e => {
                                                                 const val = parseFloat(e.target.value);
@@ -795,42 +767,35 @@ const CatalogManagerView = () => {
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-green-100 dark:border-white/5">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-emerald-500/15">
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-1.5 ml-1">Credenciados</label>
+                                                    <label className="block text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1.5">Credenciados</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-orange-400">R$</span>
-                                                        <input 
-                                                            type="number"
-                                                            step="0.01"
-                                                            className="w-full bg-white dark:bg-[#111] border border-orange-200 dark:border-orange-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                        <span className="absolute left-3 top-2.5 text-xs font-bold text-orange-400">R$</span>
+                                                        <input type="number" step="0.01"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-orange-500/30 rounded-xl py-2.5 pl-9 pr-3 text-sm font-bold text-[var(--admin-text-primary)] focus:border-orange-500 outline-none transition-all"
                                                             value={editingProduct?.pricePartner || 0}
                                                             onChange={e => setEditingProduct({...editingProduct, pricePartner: parseFloat(e.target.value)})}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1.5 ml-1">Distribuidor</label>
+                                                    <label className="block text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1.5">Distribuidor</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-purple-400">R$</span>
-                                                        <input 
-                                                            type="number"
-                                                            step="0.01"
-                                                            className="w-full bg-white dark:bg-[#111] border border-purple-200 dark:border-purple-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                                                        <span className="absolute left-3 top-2.5 text-xs font-bold text-purple-400">R$</span>
+                                                        <input type="number" step="0.01"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-purple-500/30 rounded-xl py-2.5 pl-9 pr-3 text-sm font-bold text-[var(--admin-text-primary)] focus:border-purple-500 outline-none transition-all"
                                                             value={editingProduct?.priceDistributor || 0}
                                                             onChange={e => setEditingProduct({...editingProduct, priceDistributor: parseFloat(e.target.value)})}
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="md:col-span-2">
-                                                    <label className="block text-[10px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-widest mb-1.5 ml-1">Mecânico sem curso</label>
+                                                    <label className="block text-[10px] font-black text-cyan-500 uppercase tracking-widest mb-1.5">Mecânico sem curso</label>
                                                     <div className="relative">
-                                                        <span className="absolute left-4 top-3.5 text-xs font-bold text-cyan-400">R$</span>
-                                                        <input 
-                                                            type="number"
-                                                            step="0.01"
-                                                            className="w-full bg-white dark:bg-[#111] border border-cyan-200 dark:border-cyan-900/30 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
+                                                        <span className="absolute left-3 top-2.5 text-xs font-bold text-cyan-400">R$</span>
+                                                        <input type="number" step="0.01"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-cyan-500/30 rounded-xl py-2.5 pl-9 pr-3 text-sm font-bold text-[var(--admin-text-primary)] focus:border-cyan-500 outline-none transition-all"
                                                             value={editingProduct?.priceMechanic || 0}
                                                             onChange={e => setEditingProduct({...editingProduct, priceMechanic: parseFloat(e.target.value)})}
                                                         />
@@ -839,52 +804,31 @@ const CatalogManagerView = () => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20 flex flex-col gap-4 md:col-span-2">
-                                            <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">Logística & Dimensões</p>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Peso (g)</label>
-                                                    <input 
-                                                        type="number"
-                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
-                                                        value={editingProduct?.weight || 0}
-                                                        onChange={e => setEditingProduct({...editingProduct, weight: parseFloat(e.target.value)})}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Comp. (cm)</label>
-                                                    <input 
-                                                        type="number"
-                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
-                                                        value={editingProduct?.length || 0}
-                                                        onChange={e => setEditingProduct({...editingProduct, length: parseFloat(e.target.value)})}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Larg. (cm)</label>
-                                                    <input 
-                                                        type="number"
-                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
-                                                        value={editingProduct?.width || 0}
-                                                        onChange={e => setEditingProduct({...editingProduct, width: parseFloat(e.target.value)})}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Alt. (cm)</label>
-                                                    <input 
-                                                        type="number"
-                                                        className="w-full bg-white dark:bg-[#111] border border-blue-200 dark:border-blue-900/30 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:border-blue-400 outline-none transition-all"
-                                                        value={editingProduct?.height || 0}
-                                                        onChange={e => setEditingProduct({...editingProduct, height: parseFloat(e.target.value)})}
-                                                    />
-                                                </div>
+                                        <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/15 flex flex-col gap-4 md:col-span-2">
+                                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Logística & Dimensões</p>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                {[
+                                                    { label: 'Peso (g)', field: 'weight' },
+                                                    { label: 'Comp. (cm)', field: 'length' },
+                                                    { label: 'Larg. (cm)', field: 'width' },
+                                                    { label: 'Alt. (cm)', field: 'height' },
+                                                ].map(({ label, field }) => (
+                                                    <div key={field}>
+                                                        <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">{label}</label>
+                                                        <input type="number"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-blue-500/30 rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-blue-400 outline-none transition-all"
+                                                            value={(editingProduct as any)?.[field] || 0}
+                                                            onChange={e => setEditingProduct({...editingProduct, [field]: parseFloat(e.target.value)})}
+                                                        />
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">URL da Imagem</label>
-                                            <input 
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">URL da Imagem</label>
+                                            <input
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all placeholder:text-[var(--admin-text-tertiary)]"
                                                 value={editingProduct?.imageUrl || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, imageUrl: e.target.value})}
                                                 placeholder="https://exemplo.com/imagem.jpg"
@@ -892,9 +836,9 @@ const CatalogManagerView = () => {
                                         </div>
 
                                         <div className="md:col-span-2">
-                                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Descrição Curta</label>
-                                            <textarea 
-                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-bold text-gray-900 dark:text-white focus:bg-white dark:focus:bg-black focus:border-wtech-gold outline-none transition-all h-24"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Descrição Curta</label>
+                                            <textarea
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all h-24 placeholder:text-[var(--admin-text-tertiary)]"
                                                 value={editingProduct?.description || ''}
                                                 onChange={e => setEditingProduct({...editingProduct, description: e.target.value})}
                                                 placeholder="Detalhes do produto para o catálogo..."
@@ -905,56 +849,47 @@ const CatalogManagerView = () => {
 
                                 {activeModalTab === 'bom' && (
                                     <div className="space-y-4">
-                                        <div className="flex justify-between items-center text-gray-700">
-                                            <h4 className="text-sm font-black uppercase">Matérias-primas / Componentes</h4>
-                                            <button 
+                                        <div className="flex justify-between items-center">
+                                            <h4 className="text-sm font-black text-[var(--admin-text-primary)] uppercase">Matérias-primas / Componentes</h4>
+                                            <button
                                                 onClick={() => setIsAddingBOM(!isAddingBOM)}
                                                 className="text-xs bg-wtech-gold text-black px-3 py-1.5 rounded-lg font-bold hover:bg-yellow-500 transition-all flex items-center gap-1"
                                             >
-                                                {isAddingBOM ? <X size={14} /> : <Plus size={14} />} 
+                                                {isAddingBOM ? <X size={13} /> : <Plus size={13} />}
                                                 {isAddingBOM ? 'Voltar' : 'Adicionar Componente'}
                                             </button>
                                         </div>
-
                                         {isAddingBOM && (
-                                            <div className="bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 space-y-3">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Buscar Insumo</p>
+                                            <div className="bg-[var(--admin-surface-2)] p-4 rounded-xl border border-dashed border-[var(--admin-border)] space-y-3">
+                                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">Buscar Insumo</p>
                                                 <div className="flex gap-2">
                                                     <div className="relative flex-1">
-                                                        <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Nome ou SKU..." 
-                                                            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-wtech-gold"
+                                                        <Search className="absolute left-3 top-2.5 text-[var(--admin-text-tertiary)]" size={14} />
+                                                        <input type="text" placeholder="Nome ou SKU..."
+                                                            className="w-full pl-9 pr-3 py-2 text-sm bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-lg outline-none focus:border-wtech-gold transition-all placeholder:text-[var(--admin-text-tertiary)]"
                                                             value={bomSearch}
                                                             onChange={(e) => setBomSearch(e.target.value)}
                                                         />
                                                     </div>
-                                                    <div className="w-24">
-                                                        <input 
-                                                            type="number" 
-                                                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-wtech-gold"
-                                                            value={bomQuantity}
-                                                            onChange={(e) => setBomQuantity(Number(e.target.value))}
-                                                        />
-                                                    </div>
+                                                    <input type="number"
+                                                        className="w-20 px-3 py-2 text-sm bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-lg outline-none focus:border-wtech-gold transition-all"
+                                                        value={bomQuantity}
+                                                        onChange={(e) => setBomQuantity(Number(e.target.value))}
+                                                    />
                                                 </div>
-                                                
                                                 {bomSearch.length > 2 && (
-                                                    <div className="bg-white rounded-lg border border-gray-100 shadow-sm max-h-40 overflow-y-auto divide-y divide-gray-50">
+                                                    <div className="bg-[var(--admin-surface-1)] rounded-lg border border-[var(--admin-border)] max-h-40 overflow-y-auto divide-y divide-[var(--admin-border)]">
                                                         {products
                                                             .filter(p => p.id !== editingProduct?.id && (p.name.toLowerCase().includes(bomSearch.toLowerCase()) || p.sku?.toLowerCase().includes(bomSearch.toLowerCase())))
                                                             .map(p => (
-                                                                <button 
-                                                                    key={p.id}
-                                                                    onClick={() => handleAddBOMItem(p.id)}
-                                                                    className="w-full text-left px-4 py-2 hover:bg-gray-50 flex justify-between items-center group transition-colors"
+                                                                <button key={p.id} onClick={() => handleAddBOMItem(p.id)}
+                                                                    className="w-full text-left px-4 py-2.5 hover:bg-[var(--admin-surface-2)] flex justify-between items-center group transition-colors"
                                                                 >
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-sm font-bold text-gray-900">{p.name}</span>
-                                                                        <span className="text-[10px] text-gray-400 uppercase font-bold">{p.sku} | {p.unit}</span>
+                                                                    <div>
+                                                                        <p className="text-sm font-bold text-[var(--admin-text-primary)]">{p.name}</p>
+                                                                        <p className="text-[10px] text-[var(--admin-text-tertiary)] uppercase font-bold">{p.sku} | {p.unit}</p>
                                                                     </div>
-                                                                    <Plus size={16} className="text-gray-300 group-hover:text-wtech-gold" />
+                                                                    <Plus size={14} className="text-[var(--admin-text-tertiary)] group-hover:text-wtech-gold" />
                                                                 </button>
                                                             ))
                                                         }
@@ -962,30 +897,27 @@ const CatalogManagerView = () => {
                                                 )}
                                             </div>
                                         )}
-                                        <div className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+                                        <div className="bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)] overflow-hidden">
                                             <table className="w-full text-xs">
-                                                <thead className="bg-gray-100 text-gray-500 uppercase font-black">
+                                                <thead className="bg-[var(--admin-surface-3)] text-[var(--admin-text-tertiary)] uppercase font-black border-b border-[var(--admin-border)]">
                                                     <tr>
                                                         <th className="px-4 py-3 text-left">Item</th>
                                                         <th className="px-4 py-3 text-center">Quantidade</th>
                                                         <th className="px-4 py-3 text-center">Ações</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-100">
+                                                <tbody className="divide-y divide-[var(--admin-border)]">
                                                     {loadingBOM ? (
-                                                        <tr><td colSpan={3} className="px-4 py-6 text-center text-gray-400">Carregando BOM...</td></tr>
+                                                        <tr><td colSpan={3} className="px-4 py-6 text-center text-[var(--admin-text-tertiary)]">Carregando BOM...</td></tr>
                                                     ) : bomItems.length === 0 ? (
-                                                        <tr><td colSpan={3} className="px-4 py-6 text-center text-gray-400 italic">Nenhum componente definido.</td></tr>
+                                                        <tr><td colSpan={3} className="px-4 py-6 text-center text-[var(--admin-text-tertiary)] italic">Nenhum componente definido.</td></tr>
                                                     ) : bomItems.map(item => (
-                                                        <tr key={item.id} className="hover:bg-white transition-colors">
-                                                            <td className="px-4 py-3 font-bold">{item.name}</td>
-                                                            <td className="px-4 py-3 text-center text-blue-600 font-black">{item.quantity} {item.unit}</td>
+                                                        <tr key={item.id} className="hover:bg-[var(--admin-surface-1)] transition-colors">
+                                                            <td className="px-4 py-3 font-bold text-[var(--admin-text-primary)]">{item.name}</td>
+                                                            <td className="px-4 py-3 text-center text-blue-500 font-black">{item.quantity} {item.unit}</td>
                                                             <td className="px-4 py-3 text-center">
-                                                                <button 
-                                                                    onClick={() => handleRemoveBOMItem(item.id)}
-                                                                    className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
-                                                                >
-                                                                    <Trash2 size={14} />
+                                                                <button onClick={() => handleRemoveBOMItem(item.id)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors">
+                                                                    <Trash2 size={13} />
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -998,77 +930,75 @@ const CatalogManagerView = () => {
 
                                 {activeModalTab === 'history' && (
                                     <div className="space-y-4">
-                                        <div className="flex justify-between items-center text-gray-700">
-                                            <h4 className="text-sm font-black uppercase">Histórico de Movimentações</h4>
-                                            <button 
+                                        <div className="flex justify-between items-center">
+                                            <h4 className="text-sm font-black text-[var(--admin-text-primary)] uppercase">Histórico de Movimentações</h4>
+                                            <button
                                                 onClick={() => setIsMovementModalOpen(true)}
-                                                className="text-[10px] bg-black text-white px-3 py-1.5 rounded-lg font-black hover:bg-gray-800 transition-all flex items-center gap-1 uppercase tracking-wider"
+                                                className="text-[10px] bg-[var(--admin-text-primary)] text-[var(--admin-surface-1)] px-3 py-1.5 rounded-lg font-black hover:opacity-80 transition-all flex items-center gap-1 uppercase tracking-wider"
                                             >
-                                                <Layers size={14} /> Lançar Movimento
+                                                <Layers size={13} /> Lançar Movimento
                                             </button>
                                         </div>
                                         <div className="space-y-2">
                                             {loadingHistory ? (
-                                                <div className="text-center py-6 text-gray-400 italic">Carregando histórico...</div>
+                                                <div className="text-center py-8 text-[var(--admin-text-tertiary)] italic">Carregando histórico...</div>
                                             ) : stockHistory.length === 0 ? (
-                                                <div className="text-center py-6 text-gray-400 italic">Nenhuma movimentação registrada.</div>
+                                                <div className="text-center py-8 text-[var(--admin-text-tertiary)] italic">Nenhuma movimentação registrada.</div>
                                             ) : stockHistory.map(entry => (
-                                                <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div key={entry.id} className="flex items-center justify-between p-3 bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)]">
                                                     <div className="flex items-center gap-3">
                                                         <div className={`p-2 rounded-lg ${
-                                                            entry.type === 'IN' ? 'bg-green-100 text-green-600' :
-                                                            entry.type === 'OUT' ? 'bg-red-100 text-red-600' :
-                                                            entry.type === 'RESERVED' ? 'bg-blue-100 text-blue-600' :
-                                                            'bg-gray-100 text-gray-600'
+                                                            entry.type === 'IN' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                            entry.type === 'OUT' ? 'bg-red-500/10 text-red-500' :
+                                                            entry.type === 'RESERVED' ? 'bg-blue-500/10 text-blue-500' :
+                                                            'bg-[var(--admin-surface-3)] text-[var(--admin-text-tertiary)]'
                                                         }`}>
-                                                            {entry.type === 'IN' ? <ArrowUpRight size={16} /> : 
-                                                             entry.type === 'OUT' ? <ArrowDownRight size={16} /> :
-                                                             entry.type === 'RESERVED' ? <PackageCheck size={16} /> :
-                                                             <Edit size={16} />}
+                                                            {entry.type === 'IN' ? <ArrowUpRight size={15} /> :
+                                                             entry.type === 'OUT' ? <ArrowDownRight size={15} /> :
+                                                             entry.type === 'RESERVED' ? <PackageCheck size={15} /> :
+                                                             <Edit size={15} />}
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs font-black text-gray-900 leading-tight">
-                                                                {entry.type === 'IN' ? 'Entrada' : 
+                                                            <p className="text-xs font-black text-[var(--admin-text-primary)] leading-tight">
+                                                                {entry.type === 'IN' ? 'Entrada' :
                                                                  entry.type === 'OUT' ? 'Saída' :
-                                                                 entry.type === 'RESERVED' ? 'Reserva' :
-                                                                 'Ajuste'} - {entry.quantity} {editingProduct?.unit}
+                                                                 entry.type === 'RESERVED' ? 'Reserva' : 'Ajuste'} — {entry.quantity} {editingProduct?.unit}
                                                             </p>
-                                                            <p className="text-[10px] text-gray-400 font-medium">Origem: {entry.origin || 'Manual'} | {new Date(entry.createdAt).toLocaleString('pt-BR')}</p>
+                                                            <p className="text-[10px] text-[var(--admin-text-tertiary)] font-medium">Origem: {entry.origin || 'Manual'} · {new Date(entry.createdAt).toLocaleString('pt-BR')}</p>
                                                         </div>
                                                     </div>
-                                                    <p className="text-[10px] text-gray-400 italic">{entry.notes}</p>
+                                                    <p className="text-[10px] text-[var(--admin-text-tertiary)] italic max-w-[120px] text-right">{entry.notes}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 )}
+
                                 {activeModalTab === 'reservations' && (
                                     <div className="space-y-4">
-                                        <div className="flex justify-between items-center text-gray-700">
-                                            <h4 className="text-sm font-black uppercase">Reservas Ativas</h4>
-                                        </div>
-                                        <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex items-center gap-3">
-                                            <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
-                                                <ShoppingCart size={18} />
+                                        <h4 className="text-sm font-black text-[var(--admin-text-primary)] uppercase">Reservas Ativas</h4>
+                                        <div className="bg-orange-500/10 p-4 rounded-xl border border-orange-500/20 flex items-center gap-3">
+                                            <div className="p-2 bg-orange-500/20 text-orange-500 rounded-lg">
+                                                <ShoppingCart size={16} />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-orange-900">Total Reservado: {stockHistory.filter(h => h.type === 'RESERVED').reduce((acc, h) => acc + h.quantity, 0)} {editingProduct?.unit}</p>
-                                                <p className="text-[10px] text-orange-700">Estoque bloqueado para pedidos pendentes.</p>
+                                                <p className="text-xs font-bold text-[var(--admin-text-primary)]">Total Reservado: {stockHistory.filter(h => h.type === 'RESERVED').reduce((acc, h) => acc + h.quantity, 0)} {editingProduct?.unit}</p>
+                                                <p className="text-[10px] text-orange-500 font-medium">Estoque bloqueado para pedidos pendentes.</p>
                                             </div>
                                         </div>
-                                        <div className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-200 h-[250px] overflow-y-auto">
+                                        <div className="bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)] overflow-hidden divide-y divide-[var(--admin-border)] h-[250px] overflow-y-auto custom-scrollbar">
                                             {stockHistory.filter(h => h.type === 'RESERVED').length === 0 ? (
-                                                <div className="p-12 text-center text-gray-400 font-bold italic">Nenhuma reserva ativa para este item.</div>
+                                                <div className="p-12 text-center text-[var(--admin-text-tertiary)] font-bold italic">Nenhuma reserva ativa para este item.</div>
                                             ) : stockHistory.filter(h => h.type === 'RESERVED').map(item => (
-                                                <div key={item.id} className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-gray-900">{item.origin || 'Venda'}</span>
-                                                        <span className="text-[10px] text-gray-400 font-bold uppercase">Ref: {item.referenceId?.slice(0,8) || '-'}</span>
-                                                        <span className="text-[10px] text-gray-400">{new Date(item.createdAt).toLocaleDateString('pt-BR')}</span>
+                                                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-[var(--admin-surface-1)] transition-colors">
+                                                    <div>
+                                                        <p className="text-xs font-black text-[var(--admin-text-primary)]">{item.origin || 'Venda'}</p>
+                                                        <p className="text-[10px] text-[var(--admin-text-tertiary)] font-bold uppercase">Ref: {item.referenceId?.slice(0,8) || '-'}</p>
+                                                        <p className="text-[10px] text-[var(--admin-text-tertiary)]">{new Date(item.createdAt).toLocaleDateString('pt-BR')}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-sm font-black text-orange-600">-{item.quantity} {editingProduct?.unit}</p>
-                                                        <p className="text-[10px] text-gray-400 font-bold italic">{item.notes}</p>
+                                                        <p className="text-sm font-black text-orange-500">-{item.quantity} {editingProduct?.unit}</p>
+                                                        <p className="text-[10px] text-[var(--admin-text-tertiary)] italic">{item.notes}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -1077,18 +1007,18 @@ const CatalogManagerView = () => {
                                 )}
                             </div>
 
-                            <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
-                                <button 
+                            <div className="px-6 py-4 bg-[var(--admin-surface-2)] border-t border-[var(--admin-border)] flex gap-3">
+                                <button
                                     onClick={() => setIsProductModalOpen(false)}
-                                    className="flex-1 py-3 px-6 border border-gray-200 text-gray-500 rounded-xl font-bold hover:bg-white transition-all outline-none"
+                                    className="flex-1 py-2.5 border border-[var(--admin-border)] text-[var(--admin-text-secondary)] rounded-xl font-bold hover:bg-[var(--admin-surface-3)] transition-all text-sm"
                                 >
                                     Cancelar
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleSaveProduct}
-                                    className="flex-[2] py-3 px-6 bg-wtech-black text-white rounded-xl font-black hover:bg-gray-800 shadow-xl transition-all active:scale-95 outline-none flex items-center justify-center gap-2"
+                                    className="flex-[2] py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20 flex items-center justify-center gap-2 text-sm"
                                 >
-                                    <Save size={20} /> Salvar no Catálogo
+                                    <Save size={16} /> Salvar no Catálogo
                                 </button>
                             </div>
                         </motion.div>
@@ -1100,71 +1030,66 @@ const CatalogManagerView = () => {
             <AnimatePresence>
                 {isMovementModalOpen && (
                     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+                            className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-[var(--admin-border)]"
                         >
-                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                                <h3 className="text-lg font-black text-gray-900">Lançar Movimento Manual</h3>
-                                <button onClick={() => setIsMovementModalOpen(false)} className="p-2 text-gray-400 hover:text-red-500">
-                                    <X size={20} />
+                            <div className="px-6 py-4 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-surface-2)]">
+                                <h3 className="text-base font-black text-[var(--admin-text-primary)]">Lançar Movimento Manual</h3>
+                                <button onClick={() => setIsMovementModalOpen(false)} className="p-2 text-[var(--admin-text-tertiary)] hover:text-red-500 transition-colors">
+                                    <X size={18} />
                                 </button>
                             </div>
                             <div className="p-6 space-y-4">
-                                <div className="p-4 bg-wtech-gold/10 rounded-2xl border border-wtech-gold/20 flex gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                                        <Package className="text-wtech-gold" />
+                                <div className="p-4 bg-wtech-gold/10 rounded-2xl border border-wtech-gold/20 flex gap-3 items-center">
+                                    <div className="w-10 h-10 rounded-xl bg-[var(--admin-surface-1)] flex items-center justify-center border border-[var(--admin-border)] shrink-0">
+                                        <Package size={16} className="text-wtech-gold" />
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-wtech-gold uppercase tracking-widest">Ajustando Estoque de:</p>
-                                        <p className="text-sm font-black text-gray-900">{editingProduct?.name}</p>
-                                        <p className="text-xs text-gray-500">Saldo Atual: {editingProduct?.currentStock} {editingProduct?.unit}</p>
+                                        <p className="text-sm font-black text-[var(--admin-text-primary)] leading-tight">{editingProduct?.name}</p>
+                                        <p className="text-[11px] text-[var(--admin-text-tertiary)]">Saldo Atual: {editingProduct?.currentStock} {editingProduct?.unit}</p>
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="col-span-2">
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Tipo de Movimento</label>
+                                        <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider mb-1.5">Tipo de Movimento</label>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => setMovementData({...movementData, type: 'IN'})}
-                                                className={`py-2 rounded-xl border font-bold text-sm transition-all ${movementData.type === 'IN' ? 'bg-green-600 border-green-600 text-white shadow-lg' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+                                                className={`py-2.5 rounded-xl border font-bold text-sm transition-all ${movementData.type === 'IN' ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-tertiary)]'}`}
                                             >
                                                 Entrada (+)
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setMovementData({...movementData, type: 'OUT'})}
-                                                className={`py-2 rounded-xl border font-bold text-sm transition-all ${movementData.type === 'OUT' ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+                                                className={`py-2.5 rounded-xl border font-bold text-sm transition-all ${movementData.type === 'OUT' ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-tertiary)]'}`}
                                             >
                                                 Saída (-)
                                             </button>
                                         </div>
                                     </div>
-
                                     <div>
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Quantidade</label>
-                                        <input 
-                                            type="number"
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-black text-lg focus:bg-white outline-none"
+                                        <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider mb-1.5">Quantidade</label>
+                                        <input type="number"
+                                            className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 font-black text-lg text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all"
                                             value={movementData.quantity}
                                             onChange={e => setMovementData({...movementData, quantity: Number(e.target.value)})}
                                         />
                                     </div>
-
                                     <div className="flex items-end pb-1">
-                                         <p className="text-xs font-bold text-gray-400">Novo Saldo: <span className="text-gray-900 font-black">
-                                            {movementData.type === 'IN' 
-                                                ? (editingProduct?.currentStock || 0) + movementData.quantity 
+                                        <p className="text-xs font-bold text-[var(--admin-text-tertiary)]">Novo Saldo: <span className="text-[var(--admin-text-primary)] font-black">
+                                            {movementData.type === 'IN'
+                                                ? (editingProduct?.currentStock || 0) + movementData.quantity
                                                 : (editingProduct?.currentStock || 0) - movementData.quantity}
-                                         </span></p>
+                                        </span></p>
                                     </div>
-
                                     <div className="col-span-2">
-                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Observações / Motivo</label>
-                                        <textarea 
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-medium focus:bg-white outline-none"
+                                        <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider mb-1.5">Observações / Motivo</label>
+                                        <textarea
+                                            className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-2.5 text-sm text-[var(--admin-text-primary)] focus:border-wtech-gold outline-none transition-all placeholder:text-[var(--admin-text-tertiary)]"
                                             rows={2}
                                             placeholder="Ex: Ajuste de inventário mensal..."
                                             value={movementData.notes}
@@ -1173,11 +1098,11 @@ const CatalogManagerView = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
-                                <button onClick={() => setIsMovementModalOpen(false)} className="flex-1 py-3 text-sm font-bold text-gray-400">Cancelar</button>
-                                <button 
+                            <div className="px-6 py-4 bg-[var(--admin-surface-2)] border-t border-[var(--admin-border)] flex gap-3">
+                                <button onClick={() => setIsMovementModalOpen(false)} className="flex-1 py-2.5 text-sm font-bold text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] transition-colors">Cancelar</button>
+                                <button
                                     onClick={handleRecordMovement}
-                                    className="flex-[2] py-3 bg-wtech-black text-white rounded-xl font-black shadow-xl hover:bg-gray-800 transition-all active:scale-95"
+                                    className="flex-[2] py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20"
                                 >
                                     Confirmar Lançamento
                                 </button>
@@ -1195,88 +1120,82 @@ const CatalogManagerView = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white dark:bg-[#1A1A1A] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+                            className="bg-[var(--admin-surface-1)] w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-[var(--admin-border)]"
                         >
-                            <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-white/5">
+                            <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-surface-2)]">
                                 <div>
-                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white italic uppercase tracking-tight">Reajuste em Massa</h3>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Atualize valores de múltiplos produtos</p>
+                                    <h3 className="text-xl font-black text-[var(--admin-text-primary)] italic uppercase tracking-tight">Reajuste em Massa</h3>
+                                    <p className="text-[10px] text-[var(--admin-text-tertiary)] font-bold uppercase tracking-widest mt-0.5">Atualize valores de múltiplos produtos</p>
                                 </div>
-                                <button onClick={() => setIsMassAdjusting(false)} className="p-3 bg-white dark:bg-gray-800 rounded-2xl text-gray-400 hover:text-red-500 shadow-sm transition-all shadow-gray-200/50">
-                                    <X size={24} />
+                                <button onClick={() => setIsMassAdjusting(false)} className="p-2.5 bg-[var(--admin-surface-3)] rounded-2xl text-[var(--admin-text-tertiary)] hover:text-red-500 transition-all">
+                                    <X size={20} />
                                 </button>
                             </div>
-                            
-                            <div className="p-8 space-y-8">
+                            <div className="p-6 space-y-6">
                                 <div className="space-y-3">
-                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">1. Selecione o Nível de Preço</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                            {[
-                                                { id: 'retail', label: 'Final', color: 'blue', activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/30' },
-                                                { id: 'partner', label: 'Credenciados', color: 'orange', activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/30' },
-                                                { id: 'mechanic', label: 'Mec sem curso', color: 'cyan', activeClass: 'bg-cyan-600 border-cyan-600 shadow-cyan-500/30' },
-                                                { id: 'distributor', label: 'Distribuidor', color: 'purple', activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/30' }
-                                            ].map(level => (
-                                            <button
-                                                key={level.id}
+                                    <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-[0.2em]">1. Nível de Preço</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { id: 'retail',      label: 'Final',         activeClass: 'bg-blue-600 border-blue-600 shadow-blue-500/30' },
+                                            { id: 'partner',     label: 'Credenciados',  activeClass: 'bg-orange-600 border-orange-600 shadow-orange-500/30' },
+                                            { id: 'mechanic',    label: 'Mec sem curso', activeClass: 'bg-cyan-600 border-cyan-600 shadow-cyan-500/30' },
+                                            { id: 'distributor', label: 'Distribuidor',  activeClass: 'bg-purple-600 border-purple-600 shadow-purple-500/30' }
+                                        ].map(level => (
+                                            <button key={level.id}
                                                 onClick={() => setMassAdjustData({...massAdjustData, level: level.id})}
-                                                className={`py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all border-2 ${massAdjustData.level === level.id ? `${level.activeClass} text-white` : 'bg-gray-50 dark:bg-[#111] border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-200'}`}
+                                                className={`py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm transition-all border-2 ${massAdjustData.level === level.id ? `${level.activeClass} text-white shadow-lg` : 'bg-[var(--admin-surface-2)] border-transparent text-[var(--admin-text-tertiary)] hover:border-[var(--admin-border)]'}`}
                                             >
                                                 {level.label}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-
                                 <div className="space-y-3">
-                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">2. Tipo de Ajuste</label>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-[0.2em]">2. Tipo de Ajuste</label>
+                                    <div className="grid grid-cols-2 gap-2">
                                         <button
                                             onClick={() => setMassAdjustData({...massAdjustData, direction: 'increase'})}
-                                            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 ${massAdjustData.direction === 'increase' ? 'bg-green-600 border-green-600 text-white shadow-lg shadow-green-500/20' : 'bg-gray-50 dark:bg-[#111] border-transparent text-gray-400 dark:text-gray-600'}`}
+                                            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 ${massAdjustData.direction === 'increase' ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-[var(--admin-surface-2)] border-transparent text-[var(--admin-text-tertiary)] hover:border-[var(--admin-border)]'}`}
                                         >
-                                            <ArrowUpRight size={18} /> Aumento
+                                            <ArrowUpRight size={16} /> Aumento
                                         </button>
                                         <button
                                             onClick={() => setMassAdjustData({...massAdjustData, direction: 'decrease'})}
-                                            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 ${massAdjustData.direction === 'decrease' ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-gray-50 dark:bg-[#111] border-transparent text-gray-400 dark:text-gray-600'}`}
+                                            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2 ${massAdjustData.direction === 'decrease' ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-[var(--admin-surface-2)] border-transparent text-[var(--admin-text-tertiary)] hover:border-[var(--admin-border)]'}`}
                                         >
-                                            <ArrowDownRight size={18} /> Desconto
+                                            <ArrowDownRight size={16} /> Desconto
                                         </button>
                                     </div>
                                 </div>
-
                                 <div className="space-y-3">
-                                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-2">3. Valor do Reajuste (%)</label>
-                                    <div className="relative group">
-                                        <input 
-                                            type="number"
-                                            className="w-full bg-gray-50 dark:bg-[#111] border-2 border-transparent focus:border-wtech-black dark:focus:border-white rounded-[1.5rem] py-5 px-6 text-3xl font-black text-center dark:text-white outline-none transition-all placeholder:text-gray-200"
+                                    <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-[0.2em]">3. Valor do Reajuste (%)</label>
+                                    <div className="relative">
+                                        <input type="number"
+                                            className="w-full bg-[var(--admin-surface-2)] border-2 border-transparent focus:border-wtech-gold rounded-2xl py-5 px-6 text-3xl font-black text-center text-[var(--admin-text-primary)] outline-none transition-all placeholder:text-[var(--admin-text-tertiary)]"
                                             placeholder="0"
                                             value={massAdjustData.value || ''}
                                             onChange={e => setMassAdjustData({...massAdjustData, value: parseFloat(e.target.value)})}
                                         />
-                                        <span className="absolute right-8 top-6.5 text-2xl font-black text-gray-300">%</span>
+                                        <span className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-[var(--admin-text-tertiary)]">%</span>
                                     </div>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center mt-2 italic">
+                                    <p className="text-[10px] text-[var(--admin-text-tertiary)] font-bold uppercase tracking-widest text-center italic">
                                         O reajuste será aplicado sobre o valor atual de cada produto.
                                     </p>
                                 </div>
                             </div>
-                            
-                            <div className="p-8 bg-gray-50 dark:bg-black/20 border-t border-gray-100 dark:border-gray-800 flex gap-4">
-                                <button 
+                            <div className="p-6 bg-[var(--admin-surface-2)] border-t border-[var(--admin-border)] flex gap-3">
+                                <button
                                     onClick={() => setIsMassAdjusting(false)}
-                                    className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-all"
+                                    className="flex-1 py-3 text-xs font-black uppercase tracking-widest text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] transition-all"
                                 >
                                     Cancelar
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleMassAdjust}
                                     disabled={loading || massAdjustData.value <= 0}
-                                    className="flex-[2] py-5 bg-wtech-black dark:bg-white text-white dark:text-black rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 italic"
+                                    className="flex-[2] py-3.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-2xl font-black uppercase tracking-widest text-sm hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2 italic shadow-md shadow-yellow-500/20"
                                 >
-                                    {loading ? 'Processando...' : <><Save size={20} /> Aplicar Reajuste Agora</>}
+                                    {loading ? 'Processando...' : <><Save size={18} /> Aplicar Reajuste Agora</>}
                                 </button>
                             </div>
                         </motion.div>

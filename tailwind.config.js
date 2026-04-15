@@ -18,7 +18,14 @@ export default {
           red: '#E60000',
           gray: '#1A1A1A',
           light: '#F5F5F5',
-          dark: '#050505'
+          dark: '#050505',
+          // Semantic admin aliases (apontam para as CSS vars)
+          'surface':    'var(--admin-surface-1)',
+          'surface-2':  'var(--admin-surface-2)',
+          'surface-3':  'var(--admin-surface-3)',
+          'border':     'var(--admin-border)',
+          'text-base':  'var(--admin-text-primary)',
+          'text-muted': 'var(--admin-text-secondary)',
         }
       },
       animation: {

@@ -1,54 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { 
-    Search, Plus, Filter, Edit, Trash2, Truck, CreditCard,
-    CheckCircle2, Clock, Wrench, Ban, MoreVertical, LayoutGrid, List, RefreshCcw, ShoppingCart
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    Search, Plus, CreditCard, CheckCircle2, Clock, Wrench, Truck,
+    LayoutGrid, List, RefreshCcw, ShoppingCart, MessageCircle, BadgeCheck, Ban
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { OrdersKanbanBoard } from './OrdersKanbanBoard';
 import { NewOrderModal } from './OrderEditor';
+import { cn } from '../../../lib/utils';
+import type { Lead } from '../../../types';
 
-import type { Lead } from '../../../types'; // Import Lead type
+// ── Status config (explicit classes — Tailwind purge safe) ─────────────────
 
-const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null, onConsumeInitialLead?: () => void }> = ({ permissions, initialLead, onConsumeInitialLead }) => {
+const STATUS_CFG: Record<string, {
+    label: string;
+    icon: React.ElementType;
+    iconBg: string;
+    iconText: string;
+    badge: string;
+}> = {
+    pending:     { label: 'Pendente',    icon: Clock,         iconBg: 'bg-yellow-500/10',  iconText: 'text-yellow-500',  badge: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
+    negotiation: { label: 'Negociação',  icon: MessageCircle, iconBg: 'bg-purple-500/10',  iconText: 'text-purple-500',  badge: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
+    approved:    { label: 'Aprovado',    icon: BadgeCheck,    iconBg: 'bg-indigo-500/10',  iconText: 'text-indigo-500',  badge: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20' },
+    paid:        { label: 'Pago',        icon: CreditCard,    iconBg: 'bg-green-500/10',   iconText: 'text-green-500',   badge: 'bg-green-500/10 text-green-600 border-green-500/20' },
+    producing:   { label: 'Em Produção', icon: Wrench,        iconBg: 'bg-blue-500/10',    iconText: 'text-blue-500',    badge: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+    shipped:     { label: 'Enviado',     icon: Truck,         iconBg: 'bg-orange-500/10',  iconText: 'text-orange-500',  badge: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
+    delivered:   { label: 'Entregue',   icon: CheckCircle2,  iconBg: 'bg-emerald-500/10', iconText: 'text-emerald-500', badge: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+    cancelled:   { label: 'Cancelado',  icon: Ban,           iconBg: 'bg-red-500/10',     iconText: 'text-red-500',     badge: 'bg-red-500/10 text-red-600 border-red-500/20' },
+};
+
+const inputCls = 'bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] rounded-xl px-3 py-2.5 text-sm outline-none focus:border-wtech-gold transition-colors';
+
+// ── Main Component ─────────────────────────────────────────────────────────
+
+const SalesManagerView: React.FC<{
+    permissions?: any;
+    initialLead?: Lead | null;
+    onConsumeInitialLead?: () => void;
+}> = ({ permissions, initialLead, onConsumeInitialLead }) => {
     const { user } = useAuth();
-    const [sales, setSales] = useState<Sale[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [sales, setSales]             = useState<Sale[]>([]);
+    const [loading, setLoading]         = useState(true);
+    const [searchTerm, setSearchTerm]   = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [attendantFilter, setAttendantFilter] = useState<string>('all');
-    const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
+    const [dateFilter, setDateFilter]   = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
     const [customStartDate, setCustomStartDate] = useState('');
-    const [customEndDate, setCustomEndDate] = useState('');
-    const [usersList, setUsersList] = useState<{id: string, name: string}[]>([]);
-    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
-    
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [editingSale, setEditingSale] = useState<Partial<Sale> | null>(null);
+    const [customEndDate, setCustomEndDate]     = useState('');
+    const [usersList, setUsersList]     = useState<{ id: string; name: string }[]>([]);
+    const [viewMode, setViewMode]       = useState<'list' | 'kanban'>('kanban');
+
+    const [isEditMode, setIsEditMode]         = useState(false);
+    const [editingSale, setEditingSale]       = useState<Partial<Sale> | null>(null);
     const [currentSaleItems, setCurrentSaleItems] = useState<(SaleItem & { product?: Product })[]>([]);
-    
-    // Portal Menu State
-    const [activeMenu, setActiveMenu] = useState<{top: number, left: number, saleId: string} | null>(null);
 
-    const handleOpenMenu = (e: React.MouseEvent, saleId: string) => {
-        e.stopPropagation();
-        const rect = e.currentTarget.getBoundingClientRect();
-        setActiveMenu({
-            top: rect.bottom + 5 + window.scrollY,
-            left: rect.right - 192 + window.scrollX,
-            saleId
-        });
-    };
-
+    // ── scroll closes menu (not needed anymore but kept for compat) ──
     useEffect(() => {
-        const handleScroll = () => setActiveMenu(null);
-        window.addEventListener('scroll', handleScroll, true);
-        window.addEventListener('resize', handleScroll);
-        return () => {
-             window.removeEventListener('scroll', handleScroll, true);
-             window.removeEventListener('resize', handleScroll);
-        };
+        const close = () => {};
+        window.addEventListener('scroll', close, true);
+        return () => window.removeEventListener('scroll', close, true);
     }, []);
 
     useEffect(() => {
@@ -56,74 +67,55 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
         fetchUsers();
     }, [attendantFilter]);
 
+    useEffect(() => {
+        if (initialLead) {
+            setIsEditMode(true);
+            setEditingSale({
+                clientName: initialLead.name,
+                clientEmail: initialLead.email,
+                clientPhone: initialLead.phone,
+                clientId: initialLead.id,
+                channel: 'CRM',
+                status: 'negotiation'
+            });
+            setCurrentSaleItems([]);
+            onConsumeInitialLead?.();
+        }
+    }, [initialLead]);
+
     const fetchUsers = async () => {
         const { data } = await supabase.from('SITE_Users').select('id, name');
         if (data) setUsersList(data);
     };
 
-    // Handle Initial Lead from CRM
-    useEffect(() => {
-        if (initialLead) {
-             console.log("Opening new order for lead:", initialLead);
-             setIsEditMode(true);
-             setEditingSale({
-                 clientName: initialLead.name,
-                 clientEmail: initialLead.email,
-                 clientPhone: initialLead.phone,
-                 clientId: initialLead.id,
-                 channel: 'CRM',
-                 status: 'negotiation'
-             });
-             setCurrentSaleItems([]); // Clear previous items
-             
-             if (onConsumeInitialLead) onConsumeInitialLead();
-        }
-    }, [initialLead]);
-
     const fetchSales = async () => {
         setLoading(true);
         let query = supabase.from('SITE_Sales').select('*');
-
         if (permissions && !permissions.orders_view_all && user) {
             query = query.eq('seller_id', user.id);
         } else if (attendantFilter !== 'all') {
             query = query.eq('seller_id', attendantFilter);
         }
-
         const { data, error } = await query.order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching sales:', error);
-        } else {
-            const mappedSales = (data || []).map((s: any) => ({
-                id: s.id,
-                clientId: s.client_id,
-                clientName: s.client_name,
-                clientEmail: s.client_email,
-                clientPhone: s.client_phone,
-                channel: s.channel,
-                status: s.status,
-                totalValue: s.total_value,
-                paymentMethod: s.payment_method,
-                itemsJson: s.items, // Keep raw items just in case
-                notes: s.notes,
-                seller_id: s.seller_id,
-                createdAt: s.created_at
-            }));
-            setSales(mappedSales);
+        if (!error) {
+            setSales((data || []).map((s: any) => ({
+                id: s.id, clientId: s.client_id, clientName: s.client_name,
+                clientEmail: s.client_email, clientPhone: s.client_phone,
+                channel: s.channel, status: s.status, totalValue: s.total_value,
+                paymentMethod: s.payment_method, itemsJson: s.items, notes: s.notes,
+                seller_id: s.seller_id, createdAt: s.created_at
+            })));
         }
         setLoading(false);
     };
 
     const handleCreateSale = () => {
-        window.alert('Criando nova venda...');
         setEditingSale(null);
         setCurrentSaleItems([]);
         setIsEditMode(true);
     };
 
     const handleEditSale = async (saleId: string) => {
-        window.alert('Editando venda ID: ' + saleId);
         setLoading(true);
         try {
             const { data: saleData } = await supabase.from('SITE_Sales').select('*').eq('id', saleId).single();
@@ -131,68 +123,42 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
 
             if (saleData) {
                 setEditingSale({
-                    id: saleData.id,
-                    clientId: saleData.client_id,
-                    clientName: saleData.client_name,
-                    clientEmail: saleData.client_email,
-                    clientPhone: saleData.client_phone,
-                    channel: saleData.channel,
-                    status: saleData.status,
-                    totalValue: saleData.total_value,
-                    notes: saleData.notes,
-                    // Campos de logística e pagamento
-                    payment_method: saleData.payment_method,
-                    shipping_method: saleData.shipping_method,
-                    shipping_cost: saleData.shipping_cost,
+                    id: saleData.id, clientId: saleData.client_id,
+                    clientName: saleData.client_name, clientEmail: saleData.client_email,
+                    clientPhone: saleData.client_phone, channel: saleData.channel,
+                    status: saleData.status, totalValue: saleData.total_value,
+                    notes: saleData.notes, payment_method: saleData.payment_method,
+                    shipping_method: saleData.shipping_method, shipping_cost: saleData.shipping_cost,
                     insurance_cost: saleData.insurance_cost,
                     estimated_delivery_date: saleData.estimated_delivery_date,
-                    tracking_code: saleData.tracking_code,
-                    discount_code: saleData.discount_code,
-                    discount_amount: saleData.discount_amount,
-                    delivery_cep: saleData.delivery_cep,
-                    delivery_street: saleData.delivery_street,
-                    delivery_number: saleData.delivery_number,
+                    tracking_code: saleData.tracking_code, discount_code: saleData.discount_code,
+                    discount_amount: saleData.discount_amount, delivery_cep: saleData.delivery_cep,
+                    delivery_street: saleData.delivery_street, delivery_number: saleData.delivery_number,
                     delivery_neighborhood: saleData.delivery_neighborhood,
-                    delivery_city: saleData.delivery_city,
-                    delivery_state: saleData.delivery_state
+                    delivery_city: saleData.delivery_city, delivery_state: saleData.delivery_state
                 });
 
-                let mappedItems = [];
-                
+                let mappedItems: any[] = [];
                 if (itemsData && itemsData.length > 0) {
                     mappedItems = itemsData.map((item: any) => ({
-                        id: item.id,
-                        saleId: item.sale_id,
-                        productId: item.product_id,
-                        quantity: item.quantity,
-                        unitPrice: item.unit_price,
+                        id: item.id, saleId: item.sale_id, productId: item.product_id,
+                        quantity: item.quantity, unitPrice: item.unit_price,
                         product: item.product ? {
-                            id: item.product.id,
-                            sku: item.product.sku,
-                            name: item.product.name,
-                            salePrice: item.product.sale_price,
-                            unit: item.product.unit,
-                            currentStock: item.product.current_stock
+                            id: item.product.id, sku: item.product.sku,
+                            name: item.product.name, salePrice: item.product.sale_price,
+                            unit: item.product.unit, currentStock: item.product.current_stock
                         } : undefined
                     }));
                 } else if (saleData.items) {
-                    // Fallback to JSON items if SITE_SaleItems is empty
                     const jsonItems = typeof saleData.items === 'string' ? JSON.parse(saleData.items) : saleData.items;
                     mappedItems = jsonItems.map((item: any) => ({
-                        id: Math.random().toString(),
-                        saleId: saleData.id,
-                        productId: item.productId,
-                        quantity: item.quantity,
-                        unitPrice: item.price || item.unitPrice || 0,
-                        name: item.name, // Explicit name for display
-                        product: {
-                            id: item.productId,
-                            name: item.name,
-                            salePrice: item.price || item.unitPrice || 0,
-                        }
+                        id: Math.random().toString(), saleId: saleData.id,
+                        productId: item.productId, quantity: item.quantity,
+                        unitPrice: item.price || item.unitPrice || 0, name: item.name,
+                        product: { id: item.productId, name: item.name, salePrice: item.price || item.unitPrice || 0 }
                     }));
                 }
-                
+
                 setCurrentSaleItems(mappedItems);
                 setIsEditMode(true);
             }
@@ -206,51 +172,32 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
     const handleUpdateStatus = async (saleId: string, newStatus: Sale['status'], trackingCode?: string) => {
         setLoading(true);
         try {
-             // 1. Stock Deduction Rule ("When passes to Paid")
             const { data: sale } = await supabase.from('SITE_Sales').select('status').eq('id', saleId).single();
-            
-            // Check if we should deduct stock (Trigger: Moving TO 'paid' OR 'shipped' from a non-deducted state)
-            // Ideally we only do this ONCE. 
-            // If it goes Pending -> Paid (Deduct). Then Paid -> Shipped (Do NOT Deduct again).
-            // Logic: Target is (paid|shipped|delivered) AND Origin was NOT (paid|shipped|delivered)
             const wasDeducted = ['paid', 'shipped', 'delivered', 'producing'].includes(sale?.status || '');
             const targetIsDeducted = ['paid', 'shipped', 'delivered', 'producing'].includes(newStatus);
-            
             const shouldDeduct = targetIsDeducted && !wasDeducted;
-            
+
             const updatePayload: any = { status: newStatus };
-            if (trackingCode) {
-                updatePayload.tracking_code = trackingCode;
-            }
+            if (trackingCode) updatePayload.tracking_code = trackingCode;
 
             const { error } = await supabase.from('SITE_Sales').update(updatePayload).eq('id', saleId);
             if (error) throw error;
 
             if (shouldDeduct) {
-                // Fetch reserved movements and convert to OUT
                 const { data: movements } = await supabase.from('SITE_StockMovements').select('*').eq('reference_id', saleId).eq('type', 'RESERVED');
                 if (movements) {
                     for (const mov of movements) {
                         await supabase.from('SITE_StockMovements').insert([{
-                            product_id: mov.product_id,
-                            type: 'OUT',
-                            quantity: mov.quantity,
-                            origin: `Venda (${getStatusLabel(newStatus)})`,
+                            product_id: mov.product_id, type: 'OUT', quantity: mov.quantity,
+                            origin: `Venda (${STATUS_CFG[newStatus]?.label || newStatus})`,
                             reference_id: saleId,
-                            notes: `Baixa automática Venda #${saleId.slice(0,8)}`
+                            notes: `Baixa automática Venda #${saleId.slice(0, 8)}`
                         }]);
-                        // Deduct actual stock
-                        // Note: Current stock logic usually deducts available stock. 
-                        // If we implement 'Available' vs 'Physical', this changes.
-                        // For now, simple deduction from current_stock.
-                         const { data: p } = await supabase.from('SITE_Products').select('current_stock').eq('id', mov.product_id).single();
-                         if(p) {
-                             await supabase.from('SITE_Products').update({ current_stock: p.current_stock - mov.quantity }).eq('id', mov.product_id);
-                         }
+                        const { data: p } = await supabase.from('SITE_Products').select('current_stock').eq('id', mov.product_id).single();
+                        if (p) await supabase.from('SITE_Products').update({ current_stock: p.current_stock - mov.quantity }).eq('id', mov.product_id);
                     }
                 }
             }
-
             fetchSales();
         } catch (error: any) {
             alert('Erro ao atualizar status: ' + error.message);
@@ -260,97 +207,56 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
     };
 
     const handleDeleteSale = async (saleId: string) => {
-        if (!confirm('Tem certeza? Isso excluirá permanentemente o histórico.')) return;
+        if (!confirm('Excluir permanentemente este pedido?')) return;
         setLoading(true);
         try {
             await supabase.from('SITE_SaleItems').delete().eq('sale_id', saleId);
             await supabase.from('SITE_StockMovements').delete().eq('reference_id', saleId);
             await supabase.from('SITE_Sales').delete().eq('id', saleId);
             fetchSales();
-        } catch(e) { console.error(e); }
+        } catch (e) { console.error(e); }
         setLoading(false);
     };
 
-    const filteredSales = sales.filter(s => {
-        const matchesSearch = s.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             s.id.toLowerCase().includes(searchTerm.toLowerCase());
+    // ── Filtered + metrics ─────────────────────────────────────────────────
+
+    const applyDateFilter = (s: Sale) => {
+        if (dateFilter === 'all') return true;
+        const saleDate = new Date(s.createdAt);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        if (dateFilter === 'today') return saleDate >= today;
+        if (dateFilter === '7days')  { const d = new Date(today); d.setDate(today.getDate() - 7); return saleDate >= d; }
+        if (dateFilter === '30days') { const d = new Date(today); d.setDate(today.getDate() - 30); return saleDate >= d; }
+        if (dateFilter === 'custom' && customStartDate && customEndDate) {
+            const end = new Date(customEndDate); end.setHours(23, 59, 59, 999);
+            return saleDate >= new Date(customStartDate) && saleDate <= end;
+        }
+        return true;
+    };
+
+    const filteredSales = useMemo(() => sales.filter(s => {
+        const matchesSearch = s.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) || s.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-        
-        // Date filtering
-        let matchesDate = true;
-        if (dateFilter !== 'all') {
-            const saleDate = new Date(s.createdAt);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            if (dateFilter === 'today') {
-                matchesDate = saleDate >= today;
-            } else if (dateFilter === '7days') {
-                const sevenDaysAgo = new Date(today);
-                sevenDaysAgo.setDate(today.getDate() - 7);
-                matchesDate = saleDate >= sevenDaysAgo;
-            } else if (dateFilter === '30days') {
-                const thirtyDaysAgo = new Date(today);
-                thirtyDaysAgo.setDate(today.getDate() - 30);
-                matchesDate = saleDate >= thirtyDaysAgo;
-            } else if (dateFilter === 'custom' && customStartDate && customEndDate) {
-                const start = new Date(customStartDate);
-                const end = new Date(customEndDate);
-                end.setHours(23, 59, 59, 999);
-                matchesDate = saleDate >= start && saleDate <= end;
-            }
-        }
-        
-        return matchesSearch && matchesStatus && matchesDate;
-    });
+        return matchesSearch && matchesStatus && applyDateFilter(s);
+    }), [sales, searchTerm, statusFilter, dateFilter, customStartDate, customEndDate]);
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'negotiation': return 'bg-purple-100 text-purple-700';
-            case 'approved': return 'bg-indigo-100 text-indigo-700';
-            case 'pending': return 'bg-yellow-100 text-yellow-700';
-            case 'paid': return 'bg-green-100 text-green-700';
-            case 'producing': return 'bg-blue-100 text-blue-700';
-            case 'shipped': return 'bg-orange-100 text-orange-700';
-            case 'delivered': return 'bg-emerald-100 text-emerald-700';
-            case 'cancelled': return 'bg-red-100 text-red-700';
-            default: return 'bg-gray-100 text-gray-700';
-        }
-    };
+    const metricSales = useMemo(() => sales.filter(s => {
+        const matchesAttendant = attendantFilter === 'all' || s.seller_id === attendantFilter;
+        return matchesAttendant && applyDateFilter(s);
+    }), [sales, attendantFilter, dateFilter, customStartDate, customEndDate]);
 
-    const getStatusLabel = (status: string) => {
-        const map: any = { 
-            negotiation: 'Negociação',
-            approved: 'Aprovado',
-            pending: 'Pendente', 
-            paid: 'Pago', 
-            producing: 'Em Produção', 
-            shipped: 'Enviado', 
-            delivered: 'Entregue', 
-            cancelled: 'Cancelado' 
-        };
-        return map[status] || status;
-    };
+    const totalRevenue = metricSales.filter(s => s.status !== 'cancelled').reduce((acc, s) => acc + (s.totalValue || 0), 0);
 
+    // ── Render ─────────────────────────────────────────────────────────────
 
     return (
         <div className="w-full h-full flex flex-col relative">
             {isEditMode ? (
-                // Order Editor View — fixed to ensure it covers everything and is visible
-                <div className="fixed inset-0 z-[9999] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
-                    <NewOrderModal 
+                <div className="fixed inset-0 z-[9999] bg-[var(--admin-surface-1)] flex flex-col overflow-hidden">
+                    <NewOrderModal
                         isOpen={true}
-                        onClose={() => {
-                            setIsEditMode(false);
-                            setEditingSale(null);
-                            setCurrentSaleItems([]);
-                        }}
-                        onSave={() => {
-                            fetchSales();
-                            setIsEditMode(false);
-                            setEditingSale(null);
-                            setCurrentSaleItems([]);
-                        }}
+                        onClose={() => { setIsEditMode(false); setEditingSale(null); setCurrentSaleItems([]); }}
+                        onSave={() => { fetchSales(); setIsEditMode(false); setEditingSale(null); setCurrentSaleItems([]); }}
                         onDelete={handleDeleteSale}
                         editingSale={editingSale}
                         user={user}
@@ -359,260 +265,188 @@ const SalesManagerView: React.FC<{ permissions?: any, initialLead?: Lead | null,
                     />
                 </div>
             ) : (
-                // Dashboard View (Header + Metrics + List/Kanban)
-                <div className="p-6 space-y-6 overflow-auto flex-1">
-                    {/* Futuristic Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-4">
-                        <div className="flex items-center gap-5">
-                            <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-wtech-red to-red-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                                <div className="relative p-4 bg-wtech-red shadow-2xl rounded-2xl">
-                                    <ShoppingCart className="text-white" size={32} />
-                                </div>
-                            </div>
-                            <div>
-                                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
-                                    Vendas & <span className="text-wtech-red">Fluxo</span>
-                                </h2>
-                                <div className="flex items-center gap-2 mt-1 px-2 py-0.5 bg-gray-100 dark:bg-white/5 rounded-full w-fit border border-gray-200 dark:border-gray-800">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                    <span className="text-gray-500 dark:text-gray-400 font-black text-[9px] uppercase tracking-widest">{sales.length} Pedidos Ativos</span>
-                                </div>
+                <div className="p-6 space-y-5 overflow-auto flex-1">
+
+                    {/* ── Header ── */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 className="text-xl font-black text-[var(--admin-text-primary)] tracking-tight flex items-center gap-2">
+                                <ShoppingCart size={20} className="text-wtech-gold" /> Pedidos
+                            </h2>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">{sales.length} pedidos · R$ {(totalRevenue / 1000).toFixed(1)}k</span>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* View Switcher - Futuristic Style */}
-                            <div className="bg-gray-100 dark:bg-[#111] p-1.5 rounded-2xl flex gap-1 border border-gray-200 dark:border-gray-800 shadow-inner">
-                                <button 
-                                    onClick={() => setViewMode('kanban')}
-                                    className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                                >
-                                    <LayoutGrid size={20} />
-                                </button>
-                                <button 
-                                    onClick={() => setViewMode('list')}
-                                    className={`p-3 rounded-xl transition-all duration-300 ${viewMode === 'list' ? 'bg-white dark:bg-[#222] text-wtech-red shadow-xl scale-105' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
-                                >
-                                    <List size={20} />
-                                </button>
+                        <div className="flex items-center gap-2">
+                            {/* View switcher */}
+                            <div className="flex bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-1 rounded-xl gap-1">
+                                {([['kanban', LayoutGrid], ['list', List]] as const).map(([mode, Icon]) => (
+                                    <button
+                                        key={mode}
+                                        onClick={() => setViewMode(mode)}
+                                        className={cn(
+                                            'p-2 rounded-lg transition-all',
+                                            viewMode === mode
+                                                ? 'bg-[var(--admin-surface-1)] text-wtech-gold shadow-sm'
+                                                : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'
+                                        )}
+                                    >
+                                        <Icon size={16} />
+                                    </button>
+                                ))}
                             </div>
 
-                            <button 
+                            <button
                                 onClick={fetchSales}
                                 disabled={loading}
-                                className="bg-white dark:bg-[#111] text-gray-700 dark:text-white border border-gray-200 dark:border-gray-800 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-[#222] transition-all shadow-sm active:scale-90 group relative"
-                                title="Sincronizar Pedidos"
+                                className="p-2.5 rounded-xl bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)] hover:bg-[var(--admin-surface-3)] transition-colors"
+                                title="Atualizar"
                             >
-                                <RefreshCcw size={20} className={`${loading ? 'animate-spin text-wtech-red' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
-                                {loading && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span></span>}
+                                <RefreshCcw size={16} className={loading ? 'animate-spin text-wtech-gold' : ''} />
                             </button>
 
-                            <button 
+                            <button
                                 onClick={handleCreateSale}
-                                className="bg-wtech-red text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-black transition-all shadow-2xl shadow-red-600/20 active:scale-95 group relative overflow-hidden"
+                                className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 
-                                <span>Novo Pedido</span>
+                                <Plus size={16} strokeWidth={3} /> Novo Pedido
                             </button>
                         </div>
                     </div>
 
-                    {/* Comprehensive Status Metrics */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                        {[
-                            { id: 'pending', label: 'Pendente', color: 'yellow', icon: Clock },
-                            { id: 'negotiation', label: 'Negociação', color: 'purple', icon: Clock },
-                            { id: 'approved', label: 'Aprovado', color: 'indigo', icon: CheckCircle2 },
-                            { id: 'paid', label: 'Pago', color: 'green', icon: CreditCard },
-                            { id: 'producing', label: 'Produção', color: 'blue', icon: Wrench },
-                            { id: 'shipped', label: 'Enviado', color: 'orange', icon: Truck },
-                            { id: 'delivered', label: 'Entregue', color: 'emerald', icon: CheckCircle2 }
-                        ].map(status => {
-                            const Icon = status.icon;
-                            // Apply date and attendant filters to the status metrics
-                            const baseFilteredForMetrics = sales.filter(s => {
-                                // Attendant filter
-                                const matchesAttendant = attendantFilter === 'all' || s.seller_id === attendantFilter;
-                                
-                                // Date filtering
-                                let matchesDate = true;
-                                if (dateFilter !== 'all') {
-                                    const saleDate = new Date(s.createdAt);
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-                                    
-                                    if (dateFilter === 'today') {
-                                        matchesDate = saleDate >= today;
-                                    } else if (dateFilter === '7days') {
-                                        const sevenDaysAgo = new Date(today);
-                                        sevenDaysAgo.setDate(today.getDate() - 7);
-                                        matchesDate = saleDate >= sevenDaysAgo;
-                                    } else if (dateFilter === '30days') {
-                                        const thirtyDaysAgo = new Date(today);
-                                        thirtyDaysAgo.setDate(today.getDate() - 30);
-                                        matchesDate = saleDate >= thirtyDaysAgo;
-                                    } else if (dateFilter === 'custom' && customStartDate && customEndDate) {
-                                        const start = new Date(customStartDate);
-                                        const end = new Date(customEndDate);
-                                        end.setHours(23, 59, 59, 999);
-                                        matchesDate = saleDate >= start && saleDate <= end;
-                                    }
-                                }
-                                return matchesAttendant && matchesDate;
-                            });
-
-                            const statusSales = baseFilteredForMetrics.filter(s => s.status === status.id);
+                    {/* ── Status Metrics ── */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        {(Object.entries(STATUS_CFG).filter(([k]) => k !== 'cancelled')).map(([id, cfg]) => {
+                            const Icon = cfg.icon;
+                            const statusSales = metricSales.filter(s => s.status === id);
                             const count = statusSales.length;
                             const total = statusSales.reduce((acc, s) => acc + (s.totalValue || 0), 0);
-                            
+                            const isActive = statusFilter === id;
                             return (
-                                <div 
-                                    key={status.id}
-                                    className="bg-white dark:bg-[#1A1A1A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group cursor-pointer"
-                                    onClick={() => setStatusFilter(status.id)}
+                                <button
+                                    key={id}
+                                    onClick={() => setStatusFilter(isActive ? 'all' : id)}
+                                    className={cn(
+                                        'bg-[var(--admin-surface-1)] border rounded-2xl p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-md',
+                                        isActive
+                                            ? 'border-wtech-gold ring-1 ring-wtech-gold/30'
+                                            : 'border-[var(--admin-border)]'
+                                    )}
                                 >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className={`p-2 bg-${status.color}-50 dark:bg-${status.color}-900/20 text-${status.color}-600 rounded-xl group-hover:scale-110 transition-transform`}>
-                                            <Icon size={16} />
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className={cn('p-1.5 rounded-lg', cfg.iconBg)}>
+                                            <Icon size={13} className={cfg.iconText} />
                                         </div>
-                                        <span className="text-2xl font-black text-gray-900 dark:text-white">{count}</span>
+                                        <span className={cn('text-xl font-black', cfg.iconText)}>{count}</span>
                                     </div>
-                                    <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{status.label}</p>
-                                        <p className="text-sm font-black text-gray-900 dark:text-white">
-                                            R$ {(total / 1000).toFixed(1)}k
-                                        </p>
-                                    </div>
-                                </div>
+                                    <p className="text-[9px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-0.5">{cfg.label}</p>
+                                    <p className="text-xs font-black text-[var(--admin-text-primary)]">
+                                        R$ {total >= 1000 ? (total / 1000).toFixed(1) + 'k' : total.toLocaleString('pt-BR')}
+                                    </p>
+                                </button>
                             );
                         })}
                     </div>
 
-                    {/* Filters */}
-                    <div className="flex flex-col md:flex-row gap-4 p-4 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800">
+                    {/* ── Filters ── */}
+                    <div className="flex flex-col md:flex-row gap-3 p-4 bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)]">
                         <div className="relative flex-1">
-                            <Search className="absolute left-4 top-3 text-gray-400" size={20} />
-                            <input 
+                            <Search className="absolute left-3 top-2.5 text-[var(--admin-text-tertiary)]" size={16} />
+                            <input
                                 type="text"
                                 placeholder="Buscar por cliente ou ID..."
-                                className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 pl-12 pr-4 text-sm font-bold dark:text-white focus:ring-2 focus:ring-wtech-gold transition-all outline-none"
+                                className={cn(inputCls, 'pl-9 w-full')}
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            {/* Date Filter */}
-                            <select 
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value as any)}
-                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                            >
+                            <select value={dateFilter} onChange={e => setDateFilter(e.target.value as any)} className={inputCls}>
                                 <option value="all">Todos os Períodos</option>
                                 <option value="today">Hoje</option>
                                 <option value="7days">Últimos 7 dias</option>
                                 <option value="30days">Últimos 30 dias</option>
-                                <option value="custom">Período Customizado</option>
+                                <option value="custom">Personalizado</option>
                             </select>
-                            
                             {dateFilter === 'custom' && (
                                 <>
-                                    <input 
-                                        type="date"
-                                        value={customStartDate}
-                                        onChange={(e) => setCustomStartDate(e.target.value)}
-                                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                                    />
-                                    <input 
-                                        type="date"
-                                        value={customEndDate}
-                                        onChange={(e) => setCustomEndDate(e.target.value)}
-                                        className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                                    />
+                                    <input type="date" value={customStartDate} onChange={e => setCustomStartDate(e.target.value)} className={inputCls} />
+                                    <input type="date" value={customEndDate} onChange={e => setCustomEndDate(e.target.value)} className={inputCls} />
                                 </>
                             )}
-                            
                             {permissions?.orders_view_all && (
-                                <select 
-                                    value={attendantFilter}
-                                    onChange={(e) => setAttendantFilter(e.target.value)}
-                                    className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                                >
+                                <select value={attendantFilter} onChange={e => setAttendantFilter(e.target.value)} className={inputCls}>
                                     <option value="all">Todos os Atendentes</option>
                                     {usersList.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                 </select>
                             )}
-                            <select 
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="bg-gray-50 dark:bg-[#111] border-none rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none"
-                            >
+                            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={inputCls}>
                                 <option value="all">Todos os Status</option>
-                                <option value="negotiation">Negociação</option>
-                                <option value="approved">Aprovado</option>
-                                <option value="pending">Pendente</option>
-                                <option value="paid">Pago</option>
-                                <option value="producing">Em Produção</option>
-                                <option value="shipped">Enviado</option>
-                                <option value="delivered">Entregue</option>
+                                {Object.entries(STATUS_CFG).map(([id, cfg]) => (
+                                    <option key={id} value={id}>{cfg.label}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
 
-                    {/* Content Area (Kanban or List) */}
+                    {/* ── Content ── */}
                     {viewMode === 'kanban' ? (
-                        <OrdersKanbanBoard 
+                        <OrdersKanbanBoard
                             sales={filteredSales}
                             onEditSale={handleEditSale}
                             onUpdateStatus={handleUpdateStatus}
                             onDeleteSale={handleDeleteSale}
                         />
                     ) : (
-                        <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm overflow-hidden">
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl overflow-hidden">
                             <table className="w-full">
-                                <thead className="bg-gray-50 dark:bg-black/20 border-b border-gray-200 dark:border-gray-800">
+                                <thead className="bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)]">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliente</th>
-                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor</th>
-                                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
-                                        <th className="px-6 py-4 text-right text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                                        {['Cliente', 'Status', 'Canal', 'Valor', 'Data', 'Ações'].map(h => (
+                                            <th key={h} className={cn('px-5 py-3 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest', h === 'Ações' ? 'text-right' : 'text-left')}>{h}</th>
+                                        ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                                    {filteredSales.map(sale => (
-                                        <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold text-gray-900 dark:text-white">{sale.clientName}</div>
-                                                <div className="text-sm text-gray-500">{sale.clientPhone}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                    sale.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                                    sale.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                    sale.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                                }`}>
-                                                    {sale.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
-                                                R$ {sale.totalValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(sale.createdAt).toLocaleDateString('pt-BR')}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button
-                                                    onClick={() => handleEditSale(sale.id)}
-                                                    className="text-blue-600 hover:text-blue-700 font-bold text-sm"
-                                                >
-                                                    Editar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                <tbody className="divide-y divide-[var(--admin-border)]">
+                                    {loading ? (
+                                        <tr><td colSpan={6} className="px-5 py-10 text-center text-[var(--admin-text-tertiary)] font-bold">Carregando...</td></tr>
+                                    ) : filteredSales.length === 0 ? (
+                                        <tr><td colSpan={6} className="px-5 py-10 text-center text-[var(--admin-text-tertiary)] font-bold">Nenhum pedido encontrado.</td></tr>
+                                    ) : filteredSales.map(sale => {
+                                        const cfg = STATUS_CFG[sale.status] ?? STATUS_CFG.pending;
+                                        return (
+                                            <tr key={sale.id} className="hover:bg-[var(--admin-surface-2)] transition-colors cursor-pointer" onClick={() => handleEditSale(sale.id)}>
+                                                <td className="px-5 py-3">
+                                                    <p className="font-bold text-[var(--admin-text-primary)] text-sm">{sale.clientName || 'Balcão'}</p>
+                                                    <p className="text-[10px] text-[var(--admin-text-tertiary)] font-mono">{sale.id.slice(0, 8)}</p>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <span className={cn('text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md border', cfg.badge)}>
+                                                        {cfg.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <span className="text-xs text-[var(--admin-text-secondary)]">{sale.channel || 'Admin'}</span>
+                                                </td>
+                                                <td className="px-5 py-3 font-black text-[var(--admin-text-primary)]">
+                                                    R$ {sale.totalValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="px-5 py-3 text-xs text-[var(--admin-text-secondary)]">
+                                                    {new Date(sale.createdAt).toLocaleDateString('pt-BR')}
+                                                </td>
+                                                <td className="px-5 py-3 text-right">
+                                                    <button
+                                                        onClick={e => { e.stopPropagation(); handleEditSale(sale.id); }}
+                                                        className="text-xs font-bold text-wtech-gold hover:underline"
+                                                    >
+                                                        Abrir
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

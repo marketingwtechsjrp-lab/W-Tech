@@ -370,32 +370,41 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
     };
 
     // --- Sub-Components ---
-    
-    const KpiCard = ({ label, value, sub, icon: Icon, color, isCurrency }: any) => (
-        <motion.div 
-            whileHover={{ y: -5 }}
-            className={`
-                relative overflow-hidden bg-white dark:bg-black/40 backdrop-blur-xl 
-                border-l-4 ${color.replace('text-', 'border-')} border-y border-r border-gray-100 dark:border-white/10 
-                p-6 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all
-            `}
+
+    // Unified chart tooltip style using design system tokens
+    const CHART_TOOLTIP = {
+        contentStyle: {
+            backgroundColor: 'var(--admin-surface-1)',
+            border: '1px solid var(--admin-border)',
+            borderRadius: '8px',
+            color: 'var(--admin-text-primary)',
+            fontSize: '12px',
+        },
+        itemStyle: { color: 'var(--admin-text-primary)' },
+    };
+
+    const KpiCard = ({ label, value, sub, icon: Icon, accentClass, mutedClass, isCurrency }: {
+        label: string; value: number; sub: string; icon: any;
+        accentClass: string; mutedClass: string; isCurrency?: boolean;
+    }) => (
+        <motion.div
+            whileHover={{ y: -4 }}
+            className="relative overflow-hidden bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
         >
-            <div className="flex justify-between items-start">
+            <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${accentClass}`} />
+            <div className="flex items-start justify-between pl-3">
                 <div>
-                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-                     <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
-                         <CountUp end={value} duration={2} separator="." decimals={isCurrency ? 2 : 0} prefix={isCurrency ? 'R$ ' : ''} />
+                    <p className="text-[11px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-[0.12em] mb-2">{label}</p>
+                    <h3 className="text-[2rem] font-black text-[var(--admin-text-primary)] leading-none tracking-tighter">
+                        <CountUp end={value} duration={1.8} separator="." decimals={isCurrency ? 2 : 0} prefix={isCurrency ? 'R$\u00A0' : ''} />
                     </h3>
                 </div>
-                <div className={`p-3 rounded-xl bg-gray-50 dark:bg-white/5 ${color}`}>
-                    <Icon size={24} />
+                <div className={`p-2.5 rounded-xl ${mutedClass}`}>
+                    <Icon size={20} className={accentClass.replace('bg-', 'text-')} />
                 </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center gap-2">
-                <div className="bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1">
-                    <TrendingUp size={10} /> +12%
-                </div>
-                <p className="text-[10px] text-gray-400 font-medium">{sub}</p>
+            <div className="mt-4 pt-3 border-t border-[var(--admin-border-subtle)] pl-3">
+                <p className="text-[11px] text-[var(--admin-text-tertiary)] font-medium">{sub}</p>
             </div>
         </motion.div>
     );
@@ -403,45 +412,48 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
     return (
         <div className="space-y-8 pb-12 w-full font-sans">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-white dark:bg-gradient-to-r dark:from-blue-900/10 dark:to-purple-900/10 p-8 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-[var(--admin-surface-1)] p-8 rounded-[2.5rem] border border-[var(--admin-border)] shadow-sm">
                 <div>
-                     <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2">
                         <span className="w-2 h-2 rounded-full bg-wtech-gold animate-pulse"></span>
                         <span className="text-xs font-black text-wtech-gold uppercase tracking-[0.2em]">Live Dashboard</span>
-                     </div>
-                     <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">
-                         Visão Geral <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Corporativa</span>
-                     </h2>
+                    </div>
+                    <h2 className="text-4xl font-black text-[var(--admin-text-primary)] tracking-tighter">
+                        Visão Geral <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Corporativa</span>
+                    </h2>
                 </div>
-                
-                <div className="flex p-1 bg-gray-100 dark:bg-black/40 rounded-xl border border-gray-200 dark:border-white/10 overflow-x-auto max-w-full">
-                     {['today', '7d', '30d', '90d', 'YYYY'].map((key) => (
-                         <button 
-                            key={key} 
+
+                <div className="flex p-1 bg-[var(--admin-surface-3)] rounded-xl border border-[var(--admin-border)] gap-0.5 overflow-x-auto max-w-full">
+                    {['today', '7d', '30d', '90d', 'YYYY'].map((key) => (
+                        <button
+                            key={key}
                             onClick={() => setFilterPeriod(key)}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterPeriod === key ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
-                         >
-                             {key === 'YYYY' ? 'Anual' : key === '30d' ? 'Mensal' : key === 'today' ? 'Hoje' : key === '7d' ? '7 Dias' : 'Trimestral'}
-                         </button>
-                      ))}
+                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterPeriod === key
+                                ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm border border-[var(--admin-border)]'
+                                : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]'
+                            }`}
+                        >
+                            {key === 'YYYY' ? 'Anual' : key === '30d' ? 'Mensal' : key === 'today' ? 'Hoje' : key === '7d' ? '7 Dias' : 'Trimestral'}
+                        </button>
+                    ))}
                 </div>
             </div>
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KpiCard label="Receita Total" value={kpis.revenue} sub="Faturamento + CRM" icon={DollarSign} color="text-emerald-500" isCurrency />
-                <KpiCard label="Pedidos" value={(kpis as any).totalOrders} sub="Volume de Vendas" icon={Package} color="text-amber-500" />
-                <KpiCard label="Leads Ativos" value={kpis.totalLeads} sub={`${kpis.conversionRate.toFixed(1)}% Conversão`} icon={Users} color="text-blue-500" />
-                <KpiCard label="Alunos" value={kpis.totalStudents} sub="Matrículas Ativas" icon={Award} color="text-purple-500" />
+                <KpiCard label="Receita Total"  value={kpis.revenue}               sub="Faturamento + CRM"                              icon={DollarSign} accentClass="bg-emerald-500" mutedClass="bg-emerald-500/10" isCurrency />
+                <KpiCard label="Pedidos"         value={(kpis as any).totalOrders}  sub="Volume de Vendas"                               icon={Package}    accentClass="bg-amber-500"   mutedClass="bg-amber-500/10" />
+                <KpiCard label="Leads Ativos"    value={kpis.totalLeads}            sub={`${kpis.conversionRate.toFixed(1)}% Conversão`} icon={Users}      accentClass="bg-blue-500"    mutedClass="bg-blue-500/10" />
+                <KpiCard label="Alunos"          value={kpis.totalStudents}         sub="Matrículas Ativas"                              icon={Award}      accentClass="bg-purple-500"  mutedClass="bg-purple-500/10" />
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Financial Area Chart */}
-                <div className="lg:col-span-2 bg-white dark:bg-black/40 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-3xl p-6 shadow-sm">
+                <div className="lg:col-span-2 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-6 shadow-sm">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-[var(--admin-text-primary)] flex items-center gap-2">
                             <Activity className="text-emerald-500" size={18} /> Fluxo Financeiro
                         </h3>
                     </div>
@@ -461,9 +473,8 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" opacity={0.1} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
                                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(value) => `R$${value/1000}k`} />
-                                <Tooltip 
-                                    contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                    itemStyle={{ color: '#fff' }}
+                                <Tooltip
+                                    {...CHART_TOOLTIP}
                                     formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
                                 />
                                 <Area type="monotone" dataKey="receita" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" name="Receita" />
@@ -474,9 +485,9 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                 </div>
 
                 {/* Orders Bar Chart */}
-                <div className="bg-white dark:bg-black/40 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-3xl p-6 shadow-sm">
+                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-6 shadow-sm">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-[var(--admin-text-primary)] flex items-center gap-2">
                             <ShoppingBag className="text-amber-500" size={18} /> Volumetria
                         </h3>
                     </div>
@@ -485,9 +496,9 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                             <BarChart data={ordersData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" opacity={0.1} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 10}} />
-                                <Tooltip 
+                                <Tooltip
                                     cursor={{fill: 'transparent'}}
-                                    contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                    {...CHART_TOOLTIP}
                                 />
                                 <Bar dataKey="pedidos" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={30}>
                                     {ordersData.map((entry, index) => (
@@ -516,8 +527,8 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Funnel Chart */}
-                <div className="bg-white dark:bg-black/40 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-3xl p-8 shadow-sm">
-                    <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-6">
+                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-8 shadow-sm">
+                    <h3 className="text-lg font-bold text-[var(--admin-text-primary)] flex items-center gap-2 mb-6">
                         <Target className="text-blue-500" size={18} /> Funil de Conversão
                     </h3>
                     <div className="mt-4">
@@ -538,9 +549,9 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                 </div>
 
                 {/* Conversion Performance Card (Replaces Campaigns) */}
-                <div className="bg-white dark:bg-black/40 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-8 shadow-sm flex flex-col justify-between">
                     <div className="flex justify-between items-center mb-6">
-                         <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                         <h3 className="text-lg font-bold text-[var(--admin-text-primary)] flex items-center gap-2">
                             <TrendingUp className="text-emerald-500" size={18} /> Performance de CRM
                          </h3>
                     </div>
@@ -592,9 +603,9 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             </div>
 
             {/* Rankings (Merged into one component for cleaner UI) */}
-             <div className="bg-white dark:bg-black/40 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-3xl p-8 shadow-sm">
+             <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-8 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                     <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                     <h3 className="text-lg font-bold text-[var(--admin-text-primary)] flex items-center gap-2">
                         <Award className="text-wtech-gold" size={18} /> Top Performance
                      </h3>
                 </div>

@@ -51,6 +51,7 @@ import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplate
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
+import AdminSidebar from '../components/admin/AdminSidebar';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
@@ -95,47 +96,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
 
 type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow';
 
-const SidebarItem = ({
-    icon: Icon,
-    label,
-    active,
-    onClick,
-    collapsed,
-    menuStyles
-}: {
-    icon: any,
-    label: string,
-    active: boolean,
-    onClick: () => void,
-    collapsed?: boolean,
-    menuStyles?: any
-}) => {
-    // Defaults matching the "compact" aggressive look we just made
-    const fSize = menuStyles?.fontSize || 11;
-    const iSize = menuStyles?.iconSize || 15;
-    const pY = menuStyles?.paddingY !== undefined ? menuStyles.paddingY : 4; // px
-    const mY = menuStyles?.marginY !== undefined ? menuStyles.marginY : 1; // px
-
-    // Responsive Logic: Cap values based on viewport height (vh) to prevent overflow on small screens
-    const responsivePY = `min(${pY}px, 0.8vh)`;
-    const responsiveMY = `min(${mY}px, 0.4vh)`;
-    const responsiveFS = `min(${fSize}px, 2.2vh)`; // Font size shouldn't exceed ~2.2% of screen height
-
-    return (
-        <button
-            onClick={onClick}
-            title={collapsed ? label : undefined}
-            className={`w-full flex items-center ${collapsed ? 'justify-center px-0' : 'px-2'} rounded-md transition-all duration-200 group ${active
-                ? 'bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-bold shadow-sm shadow-yellow-500/20'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                }`}
-            style={{ paddingTop: responsivePY, paddingBottom: responsivePY, marginTop: responsiveMY, marginBottom: responsiveMY }}
-        >
-            <Icon size={iSize} className={`${active ? 'text-black' : 'text-gray-500 group-hover:text-wtech-gold'} ${collapsed ? '' : 'mr-2'}`} />
-            {!collapsed && <span className="font-medium tracking-tight transition-opacity duration-200 truncate leading-none" style={{ fontSize: responsiveFS }}>{label}</span>}
-        </button>
-    )
-};
+// SidebarItem moved to AdminSidebar.tsx
 
 const MobileMenuItem = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
     <button onClick={onClick} className="flex flex-col items-center gap-3 group">
@@ -3823,48 +3784,44 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     };
 
     return (
-        <div className="text-gray-900 dark:text-gray-100 animate-fade-in space-y-6 pb-20">
+        <div className="text-[var(--admin-text-primary)] animate-fade-in space-y-5 pb-20">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all">
-                <div className="w-full md:w-auto">
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3 uppercase">
-                        <DollarSign className="text-wtech-gold" size={32} />
-                        Módulo Financeiro
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--admin-surface-1)] p-5 rounded-2xl border border-[var(--admin-border)] shadow-sm">
+                <div>
+                    <h2 className="text-xl font-black text-[var(--admin-text-primary)] tracking-tight flex items-center gap-2">
+                        <DollarSign className="text-wtech-gold" size={20} />
+                        Financeiro
                     </h2>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mt-1">Gestão de receitas, despesas e vendas fechadas.</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)] mt-0.5">Receitas, despesas e histórico de vendas</p>
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl h-12 w-full md:w-auto">
-                    <button
-                        onClick={() => setActiveTab('cashflow')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'cashflow' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        <Wallet size={14} /> Fluxo
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('sales')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'sales' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        <TrendingUp size={14} /> Vendas
-                    </button>
+                <div className="flex bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-1 rounded-xl gap-1">
+                    {(['cashflow', 'sales'] as const).map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
+                        >
+                            {tab === 'cashflow' ? <><Wallet size={13} /> Fluxo</> : <><TrendingUp size={13} /> Vendas</>}
+                        </button>
+                    ))}
                     {hasPermission('financial_view_all') && (
                         <button
                             onClick={() => setActiveTab('settings')}
-                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-white dark:bg-wtech-gold text-black shadow-lg shadow-wtech-gold/20' : 'text-gray-400 hover:text-white'}`}
+                            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
                         >
-                            <Settings size={14} /> Config
+                            <Settings size={13} /> Config
                         </button>
                     )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 items-center justify-end">
-                    {/* Attendant Filter */}
+                <div className="flex flex-wrap gap-2 items-center">
                     {hasPermission('financial_view_all') ? (
-                        <div className="flex items-center gap-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/5 px-2 py-1 rounded-xl h-11">
-                            <Filter size={14} className="text-gray-400 ml-1" />
+                        <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] px-3 py-2 rounded-xl">
+                            <Filter size={13} className="text-[var(--admin-text-tertiary)]" />
                             <select
-                                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none text-gray-600 dark:text-gray-300 pr-8"
+                                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none text-[var(--admin-text-secondary)] pr-6"
                                 value={attendantFilter}
                                 onChange={(e) => setAttendantFilter(e.target.value)}
                             >
@@ -3873,14 +3830,14 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                             </select>
                         </div>
                     ) : (
-                        <div className="text-[10px] font-black uppercase tracking-widest bg-wtech-gold/10 text-wtech-gold px-4 py-3 rounded-xl border border-wtech-gold/20 h-11 flex items-center">
+                        <div className="text-[10px] font-black uppercase tracking-widest bg-[var(--admin-accent-gold-muted)] text-wtech-gold px-4 py-2 rounded-xl border border-wtech-gold/20 flex items-center">
                             Meus Lançamentos
                         </div>
                     )}
 
                     {activeTab === 'cashflow' && hasPermission('financial_add_transaction') && (
-                        <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-6 py-3 bg-black dark:bg-wtech-gold text-white dark:text-black rounded-xl hover:scale-105 active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest shadow-xl h-11">
-                            <Plus size={16} strokeWidth={3} /> Novo Lançamento
+                        <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-xl hover:scale-105 active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest shadow-md shadow-yellow-500/20">
+                            <Plus size={14} strokeWidth={3} /> Novo Lançamento
                         </button>
                     )}
                 </div>
@@ -3888,210 +3845,168 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
             {/* Sub-Filters for Cash Flow */}
             {activeTab === 'cashflow' && (
-                <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-[#111] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#222] p-1 rounded-xl">
-                        {[
-                            { id: 'All', l: 'Início' },
-                            { id: '7d', l: '7D' },
-                            { id: '30d', l: '30D' },
-                        ].map(f => (
+                <div className="flex flex-wrap items-center gap-3 bg-[var(--admin-surface-1)] p-4 rounded-2xl border border-[var(--admin-border)]">
+                    <div className="flex items-center gap-1 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-1 rounded-xl">
+                        {[{ id: 'All', l: 'Início' }, { id: '7d', l: '7D' }, { id: '30d', l: '30D' }].map(f => (
                             <button
                                 key={f.id}
                                 onClick={() => setFilterType(f.id as any)}
-                                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${filterType === f.id ? 'bg-white shadow-md text-black dark:bg-gray-700 dark:text-white' : 'text-gray-500 hover:text-white'}`}
+                                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${filterType === f.id ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
                             >
                                 {f.l}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-2 border border-gray-200 dark:border-white/5 rounded-xl px-3 h-10 bg-gray-50 dark:bg-black/20">
-                        <CalendarIcon size={14} className="text-gray-400" />
+                    <div className="flex items-center gap-2 border border-[var(--admin-border)] rounded-xl px-3 h-9 bg-[var(--admin-surface-2)]">
+                        <CalendarIcon size={13} className="text-[var(--admin-text-tertiary)]" />
                         <input
                             type="month"
                             value={selectedMonth}
                             onChange={(e) => { setSelectedMonth(e.target.value); setFilterType('Month'); }}
-                            className="bg-transparent text-[10px] font-black uppercase outline-none dark:text-white border-none focus:ring-0"
+                            className="bg-transparent text-[10px] font-black uppercase outline-none text-[var(--admin-text-primary)] border-none focus:ring-0"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 border border-gray-200 dark:border-white/5 rounded-xl px-3 h-10 bg-gray-50 dark:bg-black/20 ml-auto">
-                        <Filter size={14} className="text-gray-400" />
+                    <div className="flex items-center gap-2 border border-[var(--admin-border)] rounded-xl px-3 h-9 bg-[var(--admin-surface-2)] ml-auto">
+                        <Filter size={13} className="text-[var(--admin-text-tertiary)]" />
                         <select
-                            className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none pr-8 text-gray-500"
+                            className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest focus:ring-0 outline-none pr-6 text-[var(--admin-text-secondary)]"
                             value={filterReference.type === 'All' ? 'All' : `${filterReference.type}:${filterReference.id}`}
                             onChange={(e) => {
                                 const val = e.target.value;
                                 if (val === 'All') setFilterReference({ type: 'All', id: '' });
-                                else {
-                                    const [type, id] = val.split(':');
-                                    setFilterReference({ type: type as 'Course' | 'Event', id });
-                                }
+                                else { const [type, id] = val.split(':'); setFilterReference({ type: type as 'Course' | 'Event', id }); }
                             }}
                         >
                             <option value="All">Categoria: Geral</option>
-                            <optgroup label="Cursos">
-                                {courses.map(c => <option key={c.id} value={`Course:${c.id}`}>{c.title}</option>)}
-                            </optgroup>
-                            <optgroup label="Eventos">
-                                {events.map(ev => <option key={ev.id} value={`Event:${ev.id}`}>{ev.title}</option>)}
-                            </optgroup>
+                            <optgroup label="Cursos">{courses.map(c => <option key={c.id} value={`Course:${c.id}`}>{c.title}</option>)}</optgroup>
+                            <optgroup label="Eventos">{events.map(ev => <option key={ev.id} value={`Event:${ev.id}`}>{ev.title}</option>)}</optgroup>
                         </select>
                     </div>
 
-                    <button onClick={handleExportCSV} className="p-3 bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-white rounded-xl transition-all h-10 border border-transparent hover:border-white/10" title="Exportar CSV">
-                        <Download size={18} />
+                    <button onClick={handleExportCSV} className="p-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)] rounded-xl transition-colors" title="Exportar CSV">
+                        <Download size={16} />
                     </button>
                 </div>
             )}
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {activeTab === 'cashflow' ? (
                     <>
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group hover:border-green-500/30 transition-all">
-                            <div className="flex justify-between items-start relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-green-500">Receitas</span>
-                                <div className="p-2 bg-green-500/10 rounded-xl text-green-500"><TrendingUp size={20} /></div>
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-5 rounded-2xl relative overflow-hidden group hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)]">Receitas</span>
+                                <div className="p-2 bg-green-500/10 rounded-xl text-green-500"><TrendingUp size={16} /></div>
                             </div>
-                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">{formatCurr(mainBRL.income, 'BRL')}</h3>
+                            <h3 className="text-xl font-black text-green-500">{formatCurr(mainBRL.income, 'BRL')}</h3>
                             {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
-                                <p key={c} className="text-[10px] font-bold text-green-600 dark:text-green-400">
-                                    + {formatCurr(totalsByCurrency[c].income, c)}
-                                </p>
+                                <p key={c} className="text-[10px] font-bold text-green-500">+ {formatCurr(totalsByCurrency[c].income, c)}</p>
                             ))}
-                            <div className="absolute -right-2 -bottom-2 opacity-5 text-green-500 group-hover:opacity-10 transition-opacity"><TrendingUp size={80} /></div>
                         </div>
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group hover:border-red-500/30 transition-all">
-                            <div className="flex justify-between items-start relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-red-500">Despesas</span>
-                                <div className="p-2 bg-red-500/10 rounded-xl text-red-500"><TrendingDown size={20} /></div>
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-5 rounded-2xl relative overflow-hidden group hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)]">Despesas</span>
+                                <div className="p-2 bg-red-500/10 rounded-xl text-red-500"><TrendingDown size={16} /></div>
                             </div>
-                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">{formatCurr(mainBRL.expense, 'BRL')}</h3>
+                            <h3 className="text-xl font-black text-red-500">{formatCurr(mainBRL.expense, 'BRL')}</h3>
                             {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
-                                <p key={c} className="text-[10px] font-bold text-red-600 dark:text-red-400">
-                                    - {formatCurr(totalsByCurrency[c].expense, c)}
-                                </p>
+                                <p key={c} className="text-[10px] font-bold text-red-500">- {formatCurr(totalsByCurrency[c].expense, c)}</p>
                             ))}
-                            <div className="absolute -right-2 -bottom-2 opacity-5 text-red-500 group-hover:opacity-10 transition-opacity"><TrendingDown size={80} /></div>
                         </div>
-                        <div className="bg-black p-6 rounded-2xl shadow-xl shadow-black/20 relative overflow-hidden group border border-white/5 transition-all">
-                            <div className="flex justify-between items-start relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Saldo Disponível</span>
-                                <div className={`p-2 rounded-xl ${balance >= 0 ? 'bg-wtech-gold/20 text-wtech-gold' : 'bg-red-500/20 text-red-500'}`}><Wallet size={20} /></div>
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-5 rounded-2xl relative overflow-hidden group hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)]">Saldo</span>
+                                <div className={`p-2 rounded-xl ${balance >= 0 ? 'bg-wtech-gold/15 text-wtech-gold' : 'bg-red-500/10 text-red-500'}`}><Wallet size={16} /></div>
                             </div>
-                            <h3 className={`text-2xl font-black mt-2 ${mainBRL.income - mainBRL.expense >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurr(mainBRL.income - mainBRL.expense, 'BRL')}</h3>
+                            <h3 className={`text-xl font-black ${balance >= 0 ? 'text-wtech-gold' : 'text-red-500'}`}>{formatCurr(balance, 'BRL')}</h3>
                             {Object.keys(totalsByCurrency).filter(c => c !== 'BRL').map(c => (
-                                <p key={c} className="text-[10px] font-bold text-wtech-gold mt-1">
-                                    {formatCurr(totalsByCurrency[c].income - totalsByCurrency[c].expense, c)}
-                                </p>
+                                <p key={c} className="text-[10px] font-bold text-wtech-gold">{formatCurr(totalsByCurrency[c].income - totalsByCurrency[c].expense, c)}</p>
                             ))}
-                            <div className="absolute -right-4 -bottom-4 bg-wtech-gold/10 w-32 h-32 rounded-full blur-3xl group-hover:bg-wtech-gold/20 transition-all"></div>
                         </div>
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                            <div className="flex justify-between items-start relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-blue-500">Previsão</span>
-                                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500"><CalendarIcon size={20} /></div>
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-5 rounded-2xl relative overflow-hidden group hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)]">Previsão</span>
+                                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500"><CalendarIcon size={16} /></div>
                             </div>
-                            <h3 className="text-2xl font-black mt-2 text-gray-900 dark:text-white">{formatCurr(receivables, 'BRL')}</h3>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mt-1">Saldos Alunos</p>
-                            <div className="absolute -right-2 -bottom-2 opacity-5 text-blue-500 group-hover:opacity-10 transition-opacity"><ShoppingBag size={80} /></div>
+                            <h3 className="text-xl font-black text-blue-500">{formatCurr(receivables, 'BRL')}</h3>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)] mt-1">Saldos Alunos</p>
                         </div>
                     </>
                 ) : activeTab === 'sales' ? (
                     <>
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Volume de Vendas</div>
-                            <div className="text-3xl font-black text-wtech-gold">
-                                R$ {salesHistory.reduce((acc, s) => acc + (s.total_value || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {[
+                            { label: 'Volume de Vendas', value: `R$ ${salesHistory.reduce((acc, s) => acc + (s.total_value || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, color: 'text-wtech-gold' },
+                            { label: 'Leads Convertidos', value: salesHistory.length.toString(), color: 'text-[var(--admin-text-primary)]' },
+                            { label: 'Ticket Médio', value: `R$ ${salesHistory.length > 0 ? (salesHistory.reduce((acc, s) => acc + (s.total_value || 0), 0) / salesHistory.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}`, color: 'text-blue-500' },
+                        ].map(c => (
+                            <div key={c.label} className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-5 rounded-2xl hover:shadow-md transition-all">
+                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-2">{c.label}</p>
+                                <p className={`text-2xl font-black ${c.color}`}>{c.value}</p>
                             </div>
-                        </div>
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Leads Convertidos</div>
-                            <div className="text-3xl font-black text-gray-900 dark:text-white">
-                                {salesHistory.length}
-                            </div>
-                        </div>
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Ticket Médio</div>
-                            <div className="text-3xl font-black text-blue-500">
-                                R$ {salesHistory.length > 0 ? (salesHistory.reduce((acc, s) => acc + (s.total_value || 0), 0) / salesHistory.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}
-                            </div>
-                        </div>
-                        <div className="bg-black p-6 rounded-2xl border border-white/10 shadow-xl">
-                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Top Atendente</div>
-                            <div className="text-xl font-black text-white truncate">
+                        ))}
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-5 rounded-2xl hover:shadow-md transition-all">
+                            <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-2">Top Atendente</p>
+                            <p className="text-lg font-black text-[var(--admin-text-primary)] truncate">
                                 {(() => {
                                     const scores: any = {};
                                     salesHistory.forEach(s => { if (s.seller_name) scores[s.seller_name] = (scores[s.seller_name] || 0) + (s.total_value || 0); });
                                     const top = Object.entries(scores).sort((a: any, b: any) => b[1] - a[1])[0];
-                                    return top ? `${top[0]} (R$ ${Number(top[1]).toLocaleString('pt-BR')})` : '-';
+                                    return top ? `${top[0]}` : '—';
                                 })()}
-                            </div>
+                            </p>
                         </div>
                     </>
                 ) : null}
             </div>
 
             {/* Content Area */}
-            <div className="bg-white dark:bg-[#111] rounded-3xl shadow-2xl shadow-black/5 border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto min-h-[400px]">
                     {activeTab === 'cashflow' ? (
                         <table className="w-full">
-                            <thead className="bg-gray-50/50 dark:bg-[#151515] border-b border-gray-100 dark:border-gray-800">
+                            <thead className="bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)]">
                                 <tr>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Data</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Descrição Detalhada</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Categoria</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Método</th>
-                                    <th className="px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Valor Lançado</th>
-                                    {hasPermission('financial_delete_transaction') && <th className="px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ações</th>}
+                                    {['Data', 'Descrição', 'Categoria', 'Método', 'Valor'].map(h => (
+                                        <th key={h} className={`px-5 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest ${h === 'Valor' ? 'text-right' : 'text-left'}`}>{h}</th>
+                                    ))}
+                                    {hasPermission('financial_delete_transaction') && <th className="px-5 py-4 text-right text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">Ações</th>}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/40">
+                            <tbody className="divide-y divide-[var(--admin-border)]">
                                 {loading ? (
-                                    <tr><td colSpan={6} className="px-6 py-24 text-center">
-                                        <div className="flex flex-col items-center justify-center gap-4">
-                                            <div className="w-12 h-12 border-4 border-wtech-gold border-t-transparent rounded-full animate-spin"></div>
-                                            <p className="text-xs font-black uppercase tracking-widest text-gray-400 animate-pulse">Consolidando extrato bancário...</p>
+                                    <tr><td colSpan={6} className="px-5 py-16 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-8 h-8 border-2 border-wtech-gold border-t-transparent rounded-full animate-spin" />
+                                            <p className="text-xs font-bold text-[var(--admin-text-tertiary)]">Carregando extrato...</p>
                                         </div>
                                     </td></tr>
                                 ) : filteredTransactions.length === 0 ? (
-                                    <tr><td colSpan={6} className="px-6 py-24 text-center">
-                                        <div className="flex flex-col items-center justify-center gap-4 opacity-30">
-                                            <Wallet size={64} className="text-gray-400" />
-                                            <p className="text-sm font-black uppercase tracking-widest text-gray-400">Nenhuma movimentação identificada.</p>
-                                        </div>
-                                    </td></tr>
+                                    <tr><td colSpan={6} className="px-5 py-16 text-center text-[var(--admin-text-tertiary)] font-bold">Nenhuma movimentação encontrada.</td></tr>
                                 ) : filteredTransactions.map((t) => (
-                                    <motion.tr key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group">
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <div className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase">{formatDateLocal(t.date)}</div>
-                                            <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tight opacity-50">{new Date(t.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+                                    <motion.tr key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-[var(--admin-surface-2)] transition-colors group">
+                                        <td className="px-5 py-4 whitespace-nowrap">
+                                            <p className="text-xs font-black text-[var(--admin-text-primary)]">{formatDateLocal(t.date)}</p>
+                                            <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-0.5">{new Date(t.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none">{t.description}</div>
-                                            {t.enrollment_id && <div className="text-[9px] text-blue-500 font-black tracking-widest mt-1.5 flex items-center gap-1"><Sparkles size={10} /> INTEGRAÇÃO SISTEMA</div>}
+                                        <td className="px-5 py-4">
+                                            <p className="text-sm font-bold text-[var(--admin-text-primary)]">{t.description}</p>
+                                            {t.enrollment_id && <p className="text-[9px] text-blue-500 font-black tracking-widest mt-1 flex items-center gap-1"><Sparkles size={9} /> Integração</p>}
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase bg-gray-100 dark:bg-black/40 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/5 tracking-widest">
+                                        <td className="px-5 py-4">
+                                            <span className="px-2 py-1 rounded-lg text-[9px] font-black uppercase bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] border border-[var(--admin-border)] tracking-widest">
                                                 {t.category}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t.payment_method}</div>
-                                        </td>
-                                        <td className={`px-6 py-5 text-right font-black text-xl tracking-tighter ${t.type === 'Income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                            {t.type === 'Expense' ? '-' : '+'} {formatCurr(t.amount, t.currency || 'BRL')}
+                                        <td className="px-5 py-4 text-[10px] font-bold text-[var(--admin-text-secondary)] uppercase">{t.payment_method}</td>
+                                        <td className={`px-5 py-4 text-right font-black text-base ${t.type === 'Income' ? 'text-green-500' : 'text-red-500'}`}>
+                                            {t.type === 'Expense' ? '−' : '+'} {formatCurr(t.amount, t.currency || 'BRL')}
                                         </td>
                                         {hasPermission('financial_delete_transaction') && (
-                                            <td className="px-6 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => handleDeleteTransaction(t.id)}
-                                                    className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-lg shadow-red-500/10"
-                                                    title="Excluir Definitivamente"
-                                                >
-                                                    <Trash2 size={16} />
+                                            <td className="px-5 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleDeleteTransaction(t.id)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all" title="Excluir">
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </td>
                                         )}
@@ -4101,53 +4016,41 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                         </table>
                     ) : (
                         <table className="w-full">
-                            <thead className="bg-gray-50/50 dark:bg-[#151515] border-b border-gray-100 dark:border-gray-800">
+                            <thead className="bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)]">
                                 <tr>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Data</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Cliente & Canal</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Atendente</th>
-                                    <th className="px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Resumo do Pedido</th>
-                                    <th className="px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Valor Final</th>
+                                    {['Data', 'Cliente', 'Atendente', 'Resumo', 'Valor'].map(h => (
+                                        <th key={h} className={`px-5 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest ${h === 'Valor' ? 'text-right' : 'text-left'}`}>{h}</th>
+                                    ))}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/40">
+                            <tbody className="divide-y divide-[var(--admin-border)]">
                                 {salesLoading ? (
-                                    <tr><td colSpan={5} className="px-6 py-24 text-center font-black text-xs uppercase tracking-widest text-gray-400 animate-pulse italic">Auditor de vendas em execução...</td></tr>
+                                    <tr><td colSpan={5} className="px-5 py-16 text-center text-[var(--admin-text-tertiary)] font-bold animate-pulse">Carregando histórico...</td></tr>
                                 ) : salesHistory.length === 0 ? (
-                                    <tr><td colSpan={5} className="px-6 py-24 text-center">
-                                        <div className="flex flex-col items-center justify-center gap-4 opacity-30">
-                                            <TrendingUp size={64} className="text-gray-400" />
-                                            <p className="text-sm font-black uppercase tracking-widest text-gray-400">Nenhum histórico comercial.</p>
-                                        </div>
-                                    </td></tr>
+                                    <tr><td colSpan={5} className="px-5 py-16 text-center text-[var(--admin-text-tertiary)] font-bold">Nenhum histórico de vendas.</td></tr>
                                 ) : salesHistory.map((s) => (
-                                    <tr key={s.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group">
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <div className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase">{formatDateLocal(s.created_at)}</div>
-                                            <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tight opacity-50 italic">CONVERSÃO CRM</div>
+                                    <tr key={s.id} className="hover:bg-[var(--admin-surface-2)] transition-colors">
+                                        <td className="px-5 py-4 whitespace-nowrap">
+                                            <p className="text-xs font-black text-[var(--admin-text-primary)]">{formatDateLocal(s.created_at)}</p>
+                                            <p className="text-[10px] text-[var(--admin-text-tertiary)]">Conversão CRM</p>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none">{s.client_name}</div>
-                                            <div className="text-[9px] text-gray-400 uppercase font-black tracking-[0.2em] mt-2 flex items-center gap-2">
-                                                <Phone size={10} className="text-wtech-gold opacity-50" /> {s.client_phone || 'N/A'}
+                                        <td className="px-5 py-4">
+                                            <p className="text-sm font-bold text-[var(--admin-text-primary)]">{s.client_name}</p>
+                                            <p className="text-[10px] text-[var(--admin-text-tertiary)] flex items-center gap-1 mt-0.5"><Phone size={9} /> {s.client_phone || '—'}</p>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-black text-xs">
+                                                    {s.seller_name?.charAt(0) || '?'}
+                                                </div>
+                                                <span className="text-xs font-bold text-[var(--admin-text-primary)]">{s.seller_name || '—'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-black text-xs shadow-lg">
-                                                    {s.seller_name?.charAt(0) || <User size={12} />}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase leading-none">{s.seller_name || 'DESCONHECIDO'}</span>
-                                                    <span className="text-[9px] text-gray-500 uppercase font-bold mt-1">RESPONSÁVEL</span>
-                                                </div>
-                                            </div>
+                                        <td className="px-5 py-4 max-w-[280px]">
+                                            <p className="text-xs text-[var(--admin-text-secondary)] italic line-clamp-2">"{s.notes}"</p>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <div className="text-xs font-medium text-gray-600 dark:text-gray-400 max-w-[350px] italic leading-snug line-clamp-2">"{s.notes}"</div>
-                                        </td>
-                                        <td className="px-6 py-5 text-right font-black text-2xl tracking-tighter text-gray-900 dark:text-white">
-                                            <span className="text-xs font-bold text-wtech-gold mr-1 italic">R$</span> {Number(s.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        <td className="px-5 py-4 text-right font-black text-[var(--admin-text-primary)]">
+                                            <span className="text-xs text-wtech-gold mr-0.5">R$</span>{Number(s.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </td>
                                     </tr>
                                 ))}
@@ -4159,21 +4062,26 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
             {/* Add Transaction Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in">
-                    <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-2xl w-full max-w-md p-6">
-                        <h3 className="text-xl font-bold mb-4 dark:text-white">Nova Transação</h3>
-                        <form onSubmit={handleAddTransaction} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--admin-border)]">
+                            <div className="p-2 bg-wtech-gold/10 rounded-xl">
+                                <DollarSign size={16} className="text-wtech-gold" />
+                            </div>
+                            <h3 className="text-base font-black text-[var(--admin-text-primary)]">Nova Transação</h3>
+                        </div>
+                        <form onSubmit={handleAddTransaction} className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Tipo</label>
-                                    <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.type} onChange={e => setNewTrans({ ...newTrans, type: e.target.value as any })}>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Tipo</label>
+                                    <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors" value={newTrans.type} onChange={e => setNewTrans({ ...newTrans, type: e.target.value as any })}>
                                         <option value="Income">Receita (Entrada)</option>
                                         <option value="Expense">Despesa (Saída)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Categoria</label>
-                                    <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.category} onChange={e => setNewTrans({ ...newTrans, category: e.target.value as any })}>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Categoria</label>
+                                    <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors" value={newTrans.category} onChange={e => setNewTrans({ ...newTrans, category: e.target.value as any })}>
                                         <option value="Sales">Vendas</option>
                                         <option value="Operational">Operacional</option>
                                         <option value="Marketing">Marketing</option>
@@ -4184,10 +4092,10 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                             {/* Link to Course/Event */}
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Vincular a (Opcional)</label>
-                                <div className="grid grid-cols-2 gap-4">
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Vincular a (Opcional)</label>
+                                <div className="grid grid-cols-2 gap-3">
                                     <select
-                                        className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300"
+                                        className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors"
                                         value={linkType}
                                         onChange={e => {
                                             setLinkType(e.target.value as any);
@@ -4201,7 +4109,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                                     {linkType === 'Course' && (
                                         <select
-                                            className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300"
+                                            className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors"
                                             value={linkedId}
                                             onChange={e => setLinkedId(e.target.value)}
                                         >
@@ -4212,7 +4120,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
 
                                     {linkType === 'Event' && (
                                         <select
-                                            className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300"
+                                            className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors"
                                             value={linkedId}
                                             onChange={e => setLinkedId(e.target.value)}
                                         >
@@ -4223,33 +4131,33 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Data</label>
-                                    <input type="date" required className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.date} onChange={e => setNewTrans({ ...newTrans, date: e.target.value })} />
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Data</label>
+                                    <input type="date" required className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors" value={newTrans.date} onChange={e => setNewTrans({ ...newTrans, date: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Moeda</label>
-                                    <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 font-bold" value={newTrans.currency || 'BRL'} onChange={e => setNewTrans({ ...newTrans, currency: e.target.value as any })}>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Moeda</label>
+                                    <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm font-bold outline-none focus:border-wtech-gold transition-colors" value={newTrans.currency || 'BRL'} onChange={e => setNewTrans({ ...newTrans, currency: e.target.value as any })}>
                                         <option value="BRL">BRL (R$)</option>
                                         <option value="EUR">EUR (€)</option>
                                         <option value="USD">USD ($)</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Valor</label>
-                                    <input type="number" step="0.01" required className="w-full p-2 border rounded-lg font-bold dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.amount || ''} onChange={e => setNewTrans({ ...newTrans, amount: parseFloat(e.target.value) })} />
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Valor</label>
+                                    <input type="number" step="0.01" required className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm font-bold outline-none focus:border-wtech-gold transition-colors" value={newTrans.amount || ''} onChange={e => setNewTrans({ ...newTrans, amount: parseFloat(e.target.value) })} />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Descrição</label>
-                                <input required className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" placeholder="Ex: Venda Curso X" value={newTrans.description || ''} onChange={e => setNewTrans({ ...newTrans, description: e.target.value })} />
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Descrição</label>
+                                <input required className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors placeholder:text-[var(--admin-text-tertiary)]" placeholder="Ex: Venda Curso X" value={newTrans.description || ''} onChange={e => setNewTrans({ ...newTrans, description: e.target.value })} />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Método Pagamento</label>
-                                <select className="w-full p-2 border rounded-lg dark:bg-[#222] dark:border-gray-700 dark:text-gray-300" value={newTrans.payment_method || ''} onChange={e => setNewTrans({ ...newTrans, payment_method: e.target.value })}>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1.5">Método Pagamento</label>
+                                <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl text-sm outline-none focus:border-wtech-gold transition-colors" value={newTrans.payment_method || ''} onChange={e => setNewTrans({ ...newTrans, payment_method: e.target.value })}>
                                     <option value="">Selecione...</option>
                                     <option value="Pix">Pix</option>
                                     <option value="Cartão Crédito">Cartão de Crédito</option>
@@ -4259,9 +4167,9 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                                 </select>
                             </div>
 
-                            <div className="flex justify-end gap-2 mt-6">
-                                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#333] rounded-lg font-bold">Cancelar</button>
-                                <button type="submit" className="px-6 py-2 bg-wtech-black text-white rounded-lg font-bold shadow hover:bg-gray-800">Salvar Transação</button>
+                            <div className="flex gap-2 pt-2">
+                                <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] transition-colors border border-[var(--admin-border)]">Cancelar</button>
+                                <button type="submit" className="flex-1 py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20">Salvar Transação</button>
                             </div>
                         </form>
                     </div>
@@ -7199,160 +7107,18 @@ const Admin = () => {
         <div className={`flex h-screen bg-[#F8F9FA] dark:bg-black overflow-hidden transition-colors duration-300`}>
 
             {/* Sidebar (Desktop Only) */}
-            <div className={`
-            hidden md:flex flex-col justify-between shadow-2xl dark:shadow-[0_0_20px_rgba(234,179,8,0.15)] bg-black text-white p-4 transition-all duration-300 ease-in-out relative z-30 ${isSidebarCollapsed ? 'w-20' : 'w-64'}
-        `}>
-                <div>
-                    {/* Brand / Toggle */}
-                    <div className={`flex items-start ${isSidebarCollapsed ? 'justify-center' : 'gap-3'} mb-8 mt-12 md:mt-0 transition-all`}>
-                        <div className={`flex flex-col ${isSidebarCollapsed ? 'items-center' : 'items-start'} gap-1 w-full overflow-hidden`}>
-                            <div className="flex items-center gap-3 w-full">
-                                {config.logo_url ? (
-                                    <div className={`${isSidebarCollapsed ? 'w-12 h-12' : 'h-10 w-full'} flex items-center transition-all`}>
-                                        <img
-                                            src={config.logo_url}
-                                            alt={config.site_title || 'W-TECH'}
-                                            className={`${isSidebarCollapsed ? 'w-full h-full object-contain' : 'h-full w-auto object-contain'}`}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-wtech-gold to-yellow-600 flex items-center justify-center text-black font-bold text-xl font-sans shadow-lg shadow-yellow-500/20 shrink-0">
-                                        'W'
-                                    </div>
-                                )}
-
-                                {!isSidebarCollapsed && !config.logo_url && (
-                                    <div className="overflow-hidden whitespace-nowrap">
-                                        <h1 className="font-black text-xl tracking-tighter text-white leading-none">{config.site_title || 'W-TECH'}</h1>
-                                        <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">Admin</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Version Tag & Dark Mode Toggle */}
-                            <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'flex-col scale-75' : 'px-0.5'}`}>
-                                <span className="opacity-40 hover:opacity-100 transition-opacity text-[9px] font-black text-wtech-gold uppercase tracking-[0.3em] font-mono">
-                                    v{changelogData[0]?.version || '2.2.4'}
-                                </span>
-                                {!isSidebarCollapsed && <ToggleTheme />}
-                            </div>
-                        </div>
-                        {/* Desktop Toggle Button */}
-                        <button
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className={`hidden md:flex items-center justify-center w-6 h-6 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors ${isSidebarCollapsed ? 'mt-2' : 'ml-auto'}`}
-                        >
-                            {isSidebarCollapsed ? <ArrowRight size={14} /> : <ChevronLeft size={14} />}
-                        </button>
-                    </div>
-
-                    {/* Sidebar User Profile */}
-                    <div onClick={() => { setIsProfileModalOpen(true); setIsMobileMenuOpen(false); }} className={`mb-2 p-1.5 bg-white/5 rounded-xl border border-white/10 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors group ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-wtech-gold to-yellow-700 flex items-center justify-center text-black font-bold text-xs shadow-lg shrink-0 overflow-hidden">
-                            {user?.avatar_url ? (
-                                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                            ) : (
-                                user?.name?.charAt(0)
-                            )}
-                        </div>
-                        {!isSidebarCollapsed && (
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="text-xs font-bold text-white truncate group-hover:text-wtech-gold transition-colors">{user?.name}</div>
-                                <div className="text-[9px] text-gray-400 font-medium uppercase truncate">
-                                    {typeof user?.role === 'string' ? user?.role : (user?.role?.name || 'Sem Cargo')}
-                                </div>
-                            </div>
-                        )}
-                        {!isSidebarCollapsed && (
-                            <div className="flex items-center gap-1">
-                                <Settings size={12} className="text-gray-500 hover:text-white transition-colors" />
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-                                    className="p-1 hover:bg-red-500/20 rounded transition-colors text-gray-500 hover:text-red-500"
-                                    title="Sair"
-                                >
-                                    <LogOut size={12} />
-                                </button>
-                            </div>
-                        )}
-                        {isSidebarCollapsed && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-                                className="absolute -bottom-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Sair"
-                            >
-                                <LogOut size={10} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-between overflow-hidden gap-0.5 pb-2 min-h-0 custom-scrollbar overflow-y-auto">
-                        <div className="flex flex-col gap-0.5">
-                            {hasPermission('dashboard_view') && (
-                                <SidebarItem icon={LayoutDashboard} label="Visão Geral" active={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('crm_view') && (
-                                <SidebarItem icon={KanbanSquare} label="Leads & CRM" active={currentView === 'crm'} onClick={() => { setCurrentView('crm'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('tasks_view') && (
-                                <SidebarItem icon={CheckCircle} label="Tarefas (To-Do)" active={currentView === 'tasks'} onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('clients_view') && (
-                                <SidebarItem icon={Users} label="Clientes Unificado" active={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('accredited_view') && (
-                                <SidebarItem icon={Wrench} label="Rede Credenciada" active={currentView === 'mechanics'} onClick={() => { setCurrentView('mechanics'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('orders_view') && (
-                                <SidebarItem icon={ShoppingBag} label="Pedidos (Loja)" active={currentView === 'orders'} onClick={() => { setCurrentView('orders'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('courses_view') && (
-                                <SidebarItem icon={GraduationCap} label="Cursos & Alunos" active={currentView === 'courses_manager'} onClick={() => { setCurrentView('courses_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('catalog_view') && (
-                                <SidebarItem icon={Package} label="Catálogo & Estoque" active={currentView === 'catalog_manager'} onClick={() => { setCurrentView('catalog_manager'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('invoices_view') && (
-                                <SidebarItem icon={FileText} label="Notas Fiscais" active={currentView === 'invoices'} onClick={() => { setCurrentView('invoices'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('financial_view') && (
-                                <SidebarItem icon={DollarSign} label="Financeiro" active={currentView === 'finance'} onClick={() => { setCurrentView('finance'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {(hasPermission('marketing_view') || hasPermission('manage_marketing')) && (
-                                <SidebarItem icon={Megaphone} label="Campanhas" active={currentView === 'email_marketing'} onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {(hasPermission('marketing_view') || hasPermission('manage_marketing') || hasPermission('blog_view') || hasPermission('landing_pages_view')) && (
-                                <SidebarItem icon={Rocket} label="Marketing" active={currentView === 'marketing_hub'} onClick={() => { setCurrentView('marketing_hub'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('intelligence_view') && (
-                                <SidebarItem icon={Sparkles} label="W-Intelligence" active={currentView === 'intelligence'} onClick={() => { setCurrentView('intelligence'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('manage_users') && (
-                                <SidebarItem icon={Users} label="Equipe & Acesso" active={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-
-                            {hasPermission('manage_settings') && (
-                                <SidebarItem icon={Settings} label="Configurações" active={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} collapsed={isSidebarCollapsed} menuStyles={config.menu_styles} />
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Logout Button Removed From Bottom */}
-            </div>
+            <AdminSidebar
+                currentView={currentView}
+                onNavigate={(view) => { setCurrentView(view as any); setIsMobileMenuOpen(false); }}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapsed={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                hasPermission={hasPermission}
+                user={user}
+                config={config}
+                onLogout={handleLogout}
+                onOpenProfile={() => { setIsProfileModalOpen(true); setIsMobileMenuOpen(false); }}
+                urgentTasksCount={urgentTasksCount}
+            />
 
             {/* Mobile Bottom FAB (Floating Action Button) */}
             <AnimatePresence>
