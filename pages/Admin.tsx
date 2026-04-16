@@ -8,7 +8,8 @@ import {
     ChevronLeft, ChevronRight, Download, Upload, Plus, Trash2, Edit, Save, X, Menu, Link,
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
-    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard, Zap
+    Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard, Zap,
+    LayoutGrid, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -504,6 +505,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [showPastCourses, setShowPastCourses] = useState(true);
     const [calendarViewMode, setCalendarViewMode] = useState<'Month' | 'Week' | 'Year'>('Month');
+    const [activeStatusFilter, setActiveStatusFilter] = useState<'upcoming' | 'completed' | 'published' | null>(null);
 
     // Filtered Data
     const filteredCourses = courses.filter(c => {
@@ -517,7 +519,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         const matchesDateRange = (!dateRange.start || courseDate >= new Date(dateRange.start)) &&
             (!dateRange.end || courseDate <= new Date(dateRange.end));
 
-        return matchesSearch && matchesPast && matchesDateRange;
+        const matchesStatusFilter = !activeStatusFilter ? true :
+            activeStatusFilter === 'upcoming' ? (!isPast && c.status !== 'Completed' && c.status !== 'Archived') :
+            activeStatusFilter === 'completed' ? c.status === 'Completed' :
+            activeStatusFilter === 'published' ? c.status === 'Published' :
+            true;
+
+        return matchesSearch && matchesPast && matchesDateRange && matchesStatusFilter;
     });
 
     useEffect(() => {
@@ -2117,111 +2125,170 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         );
     }
 
-    const Table = () => (
+    // ── STATUS BADGE helper ───────────────────────────────────────────────
+    const CourseStatusBadge = ({ status, courseId }: { status: string; courseId: string }) => {
+        const map: Record<string, string> = {
+            Published: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900',
+            Full:      'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400',
+            Completed: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400',
+            Archived:  'bg-red-100 text-red-800 border-red-200',
+            Draft:     'bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] border-[var(--admin-border)]',
+        };
+        const labels: Record<string, string> = { Published: 'Publicado', Full: 'Lotado', Completed: 'Realizado', Archived: 'Desativado', Draft: 'Rascunho' };
+        return (
+            <select
+                value={status || 'Draft'}
+                onClick={e => e.stopPropagation()}
+                onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    await supabase.from('SITE_Courses').update({ status: newStatus }).eq('id', courseId);
+                    setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: newStatus as any } : c));
+                }}
+                className={`text-[10px] px-2 py-1 rounded-lg uppercase font-black border cursor-pointer outline-none ${map[status] || map.Draft}`}
+            >
+                <option value="Draft">Rascunho</option>
+                <option value="Published">Publicado (Ativo)</option>
+                <option value="Full">Lotado</option>
+                <option value="Completed">Realizado</option>
+                <option value="Archived">Desativado</option>
+            </select>
+        );
+    };
+
+    // ── COURSE CARDS GRID ─────────────────────────────────────────────────
+    const CourseCards = () => (
         <>
-            <div className="bg-[var(--admin-surface-1)] rounded-lg shadow-sm border border-[var(--admin-border)] overflow-hidden">
-                <table className="w-full text-left font-bold text-sm">
-                    <thead className="bg-[var(--admin-surface-1)] text-[#1e3a8a] dark:text-blue-400 text-xs uppercase">
-                        <tr>
-                            <th className="p-4">Evento</th>
-                            <th className="p-4">Data</th>
-                            <th className="p-4 text-center">Inscritos</th>
-                            <th className="p-4 text-center">Status</th>
-                            <th className="p-4 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--admin-border)] text-[var(--admin-text-secondary)]">
-                        {filteredCourses.length > 0 ? (
-                            filteredCourses.map(course => (
-                                <tr key={course.id} className="hover:bg-[var(--admin-surface-2)] transition-colors">
-                                    <td className="p-4">
-                                        <div className="text-blue-700 dark:text-blue-400 font-bold">{course.title}</div>
-                                        <div className="text-xs text-[var(--admin-text-tertiary)]">{course.location}</div>
-                                    </td>
-                                    <td className="p-4 text-[var(--admin-text-primary)] font-bold">
-                                        {formatDateLocal(course.date)}
-                                        <div className="text-xs text-[var(--admin-text-tertiary)] font-normal">{course.startTime || '08:00'}</div>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <button
-                                            onClick={() => {
-                                                setCurrentCourse(course);
-                                                fetchEnrollments(course.id);
-                                                setShowEnrollments(true);
-                                            }}
-                                            className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors"
-                                        >
-                                            {course.registeredCount} / {course.capacity} (Ver Lista)
-                                        </button>
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <select
-                                            value={course.status || 'Draft'}
-                                            onChange={async (e) => {
-                                                const newStatus = e.target.value;
-                                                await supabase.from('SITE_Courses').update({ status: newStatus }).eq('id', course.id);
-                                                // Optimistic Update
-                                                setCourses(prev => prev.map(c => c.id === course.id ? { ...c, status: newStatus as any } : c));
-                                            }}
-                                            className={`text-[10px] px-2 py-1 rounded uppercase font-bold border cursor-pointer outline-none ${
-                                                course.status === 'Published' ? 'bg-green-100 text-green-800 border-green-200' :
-                                                course.status === 'Full' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                                                course.status === 'Completed' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                                course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                'bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] border-[var(--admin-border)]'
-                                                }`}
-                                        >
-                                            <option value="Draft">Rascunho</option>
-                                            <option value="Published">Publicado (Ativo)</option>
-                                            <option value="Full">Lotado</option>
-                                            <option value="Completed">Realizado</option>
-                                            <option value="Archived">Desativado</option>
-                                        </select>
-                                    </td>
-                                    <td className="p-4 flex gap-2 justify-end">
-                                        {isLevel10() && (
-                                            <button onClick={() => handleOpenReport(course)} title="Relatório Gerencial (Nível 10)" className="p-2 text-black bg-wtech-gold hover:bg-yellow-500 rounded transition-colors shadow-sm"><BarChart3 size={16} /></button>
-                                        )}
-                                        {hasPermission('courses_edit_lp') && (
-                                            <button onClick={() => setEditingLandingPage(course)} title="Gerenciar Landing Page" className="p-2 text-purple-600 hover:bg-purple-50 rounded transition-colors"><Globe size={16} /></button>
-                                        )}
-                                        {hasPermission('courses_edit_lp') && (
-                                            <button
-                                                onClick={() => {
-                                                    setCreativeHubCourse(course);
-                                                    setShowCreativeHub(true);
-                                                }}
-                                                title="Gerar Criativo Social Media"
-                                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                                            >
-                                                <Wand2 size={16} />
-                                            </button>
-                                        )}
+            {filteredCourses.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredCourses.map(course => {
+                        const isPast = new Date(course.date) < new Date(new Date().setHours(0, 0, 0, 0));
+                        const occupancyPct = course.capacity > 0 ? Math.min(100, Math.round((course.registeredCount / course.capacity) * 100)) : 0;
+                        return (
+                            <div
+                                key={course.id}
+                                className="group bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-wtech-gold/30 transition-all duration-200 flex flex-col"
+                            >
+                                {/* Cover image */}
+                                <div className="relative h-36 overflow-hidden bg-[var(--admin-surface-3)]">
+                                    {course.image ? (
+                                        <img src={course.image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <GraduationCap size={40} className="text-[var(--admin-text-tertiary)] opacity-30" />
+                                        </div>
+                                    )}
+                                    {/* Status badge overlay */}
+                                    <div className="absolute top-2 right-2">
+                                        <CourseStatusBadge status={course.status} courseId={course.id} />
+                                    </div>
+                                    {/* Past overlay */}
+                                    {isPast && course.status !== 'Completed' && (
+                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                            <span className="text-white text-[10px] font-black uppercase tracking-widest bg-black/60 px-3 py-1 rounded-full">Encerrado</span>
+                                        </div>
+                                    )}
+                                    {/* Type tag */}
+                                    <div className="absolute top-2 left-2">
+                                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${course.type === 'Event' ? 'bg-purple-500/90 text-white' : course.type === 'TrackDay' ? 'bg-red-500/90 text-white' : 'bg-wtech-gold/90 text-black'}`}>
+                                            {course.type === 'Event' ? 'Evento' : course.type === 'TrackDay' ? 'Track Day' : 'Curso'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Card body */}
+                                <div className="p-4 flex-1 flex flex-col gap-3">
+                                    <div>
+                                        <h3 className="font-black text-[var(--admin-text-primary)] text-sm leading-tight line-clamp-2">{course.title}</h3>
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <MapPin size={11} className="text-[var(--admin-text-tertiary)] shrink-0" />
+                                            <span className="text-[11px] text-[var(--admin-text-tertiary)] truncate">{course.location}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Date */}
+                                    <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] rounded-xl p-2.5 border border-[var(--admin-border)]">
+                                        <Calendar size={14} className="text-wtech-gold shrink-0" />
+                                        <div>
+                                            <div className="text-xs font-black text-[var(--admin-text-primary)]">{formatDateLocal(course.date)}{course.dateEnd ? ` → ${formatDateLocal(course.dateEnd)}` : ''}</div>
+                                            <div className="text-[10px] text-[var(--admin-text-tertiary)]">{course.startTime || '08:00'}{course.endTime ? ` – ${course.endTime}` : ''}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Occupancy */}
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-[10px] font-black text-[var(--admin-text-secondary)] uppercase tracking-wider">Ocupação</span>
+                                            <span className={`text-[10px] font-black ${occupancyPct >= 90 ? 'text-red-500' : occupancyPct >= 60 ? 'text-amber-500' : 'text-emerald-500'}`}>{course.registeredCount}/{course.capacity} ({occupancyPct}%)</span>
+                                        </div>
+                                        <div className="h-1.5 bg-[var(--admin-surface-3)] rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${occupancyPct >= 90 ? 'bg-red-500' : occupancyPct >= 60 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                                style={{ width: `${occupancyPct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Price */}
+                                    {course.price > 0 && (
+                                        <div className="text-xs font-black text-wtech-gold">
+                                            {course.currency === 'EUR' ? '€' : course.currency === 'USD' ? '$' : 'R$'} {course.price.toFixed(2)}
+                                            {course.recyclingPrice ? <span className="text-[var(--admin-text-tertiary)] font-normal"> · Reciclagem: {course.currency === 'EUR' ? '€' : course.currency === 'USD' ? '$' : 'R$'} {course.recyclingPrice.toFixed(2)}</span> : null}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Footer actions */}
+                                <div className="px-4 pb-4 flex items-center gap-1 border-t border-[var(--admin-border)] pt-3">
+                                    {/* Primary: Ver Inscritos */}
+                                    <button
+                                        onClick={() => { setCurrentCourse(course); fetchEnrollments(course.id); setShowEnrollments(true); }}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black text-xs font-black rounded-xl shadow-sm shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                    >
+                                        <Users size={13} /> {course.registeredCount} Aluno{course.registeredCount !== 1 ? 's' : ''}
+                                    </button>
+
+                                    {/* Secondary actions */}
+                                    <div className="flex gap-1 ml-1">
                                         {hasPermission('courses_add_student') && (
-                                            <button onClick={() => handleQuickAddStudent(course)} title="Adicionar Aluno Rápido" className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"><UserPlus size={16} /></button>
+                                            <button onClick={() => handleQuickAddStudent(course)} title="Adicionar Aluno Rápido" className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"><UserPlus size={14} /></button>
+                                        )}
+                                        {isLevel10() && (
+                                            <button onClick={() => handleOpenReport(course)} title="Relatório Gerencial" className="p-2 text-wtech-gold hover:bg-wtech-gold/10 rounded-lg transition-colors"><BarChart3 size={14} /></button>
+                                        )}
+                                        {hasPermission('courses_edit_lp') && (
+                                            <button onClick={() => setEditingLandingPage(course)} title="Landing Page" className="p-2 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"><Globe size={14} /></button>
+                                        )}
+                                        {hasPermission('courses_edit_lp') && (
+                                            <button onClick={() => { setCreativeHubCourse(course); setShowCreativeHub(true); }} title="Creative Hub" className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"><Wand2 size={14} /></button>
                                         )}
                                         {hasPermission('courses_edit') && (
-                                            <button onClick={() => handleEdit(course)} title="Editar Curso" className="p-2 text-[var(--admin-text-secondary)] hover:text-blue-600 transition-colors"><Edit size={16} /></button>
+                                            <button onClick={() => handleEdit(course)} title="Editar" className="p-2 text-[var(--admin-text-secondary)] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"><Edit size={14} /></button>
                                         )}
                                         {hasPermission('courses_edit') && (
-                                            <button onClick={() => handleDuplicate(course)} title="Duplicar Curso" className="p-2 text-[var(--admin-text-secondary)] hover:text-wtech-gold transition-colors"><Copy size={16} /></button>
+                                            <button onClick={() => handleDuplicate(course)} title="Duplicar" className="p-2 text-[var(--admin-text-secondary)] hover:text-wtech-gold hover:bg-wtech-gold/10 rounded-lg transition-colors"><Copy size={14} /></button>
                                         )}
                                         {hasPermission('courses_delete') && (
-                                            <button onClick={() => handleDelete(course.id)} title="Excluir Curso" className="p-2 text-[var(--admin-text-secondary)] hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                                            <button onClick={() => handleDelete(course.id)} title="Excluir" className="p-2 text-[var(--admin-text-secondary)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 size={14} /></button>
                                         )}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={5} className="p-8 text-center text-[var(--admin-text-tertiary)] italic">
-                                    {searchTerm ? 'Nenhum curso encontrado.' : 'Nenhum curso cadastrado.'}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="p-6 bg-[var(--admin-surface-2)] rounded-3xl mb-4 border border-[var(--admin-border)]">
+                        <GraduationCap size={40} className="text-[var(--admin-text-tertiary)]" />
+                    </div>
+                    <p className="text-[var(--admin-text-secondary)] font-bold">
+                        {searchTerm || activeStatusFilter ? 'Nenhum curso encontrado com os filtros atuais.' : 'Nenhum curso cadastrado ainda.'}
+                    </p>
+                    {(searchTerm || activeStatusFilter) && (
+                        <button onClick={() => { setSearchTerm(''); setActiveStatusFilter(null); }} className="mt-3 text-xs text-wtech-gold font-bold hover:underline">Limpar filtros</button>
+                    )}
+                </div>
+            )}
 
             {editingLandingPage && (
                 <LandingPageEditor
@@ -2453,63 +2520,142 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
 
     return (
-        <div className="text-gray-900 pb-20">
+        <div className="text-[var(--admin-text-primary)] pb-20">
+            {/* ── PAGE HEADER ─────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h2 className="text-xl font-bold">Gestão de Cursos e Eventos</h2>
+                    <h2 className="text-2xl font-black text-[var(--admin-text-primary)] tracking-tight">Cursos & Eventos</h2>
+                    <p className="text-xs text-[var(--admin-text-tertiary)] mt-0.5 font-medium">
+                        {courses.length} {courses.length === 1 ? 'evento cadastrado' : 'eventos cadastrados'} · {courses.filter(c => new Date(c.date) >= new Date()).length} futuros
+                    </p>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
                     {/* Search Bar */}
-                    <div className="relative">
+                    <div className="relative flex-1 md:flex-none">
                         <input
-                            className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-wtech-gold w-full md:w-64 bg-[var(--admin-surface-2)]"
+                            className="pl-8 pr-4 py-2 border border-[var(--admin-border)] rounded-xl focus:outline-none focus:border-wtech-gold w-full md:w-56 bg-[var(--admin-surface-2)] text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)]"
                             placeholder="Buscar curso..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <Search className="absolute left-2 top-2.5 text-gray-400" size={16} />
+                        <Search className="absolute left-2.5 top-2.5 text-[var(--admin-text-tertiary)]" size={15} />
                     </div>
 
                     {/* Date Filter */}
-                    <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] border rounded-lg px-2 py-1">
-                        <span className="text-xs font-bold text-gray-400 uppercase">Período:</span>
-                        <input type="date" className="text-sm border-none focus:ring-0 text-[var(--admin-text-secondary)] dark:bg-transparent" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
-                        <span className="text-gray-400">-</span>
-                        <input type="date" className="text-sm border-none focus:ring-0 text-[var(--admin-text-secondary)] dark:bg-transparent" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
+                    <div className="flex items-center gap-1.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-1.5">
+                        <Calendar size={13} className="text-[var(--admin-text-tertiary)] shrink-0" />
+                        <input type="date" className="text-xs border-none focus:ring-0 text-[var(--admin-text-secondary)] bg-transparent outline-none" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
+                        <span className="text-[var(--admin-text-tertiary)] text-xs">—</span>
+                        <input type="date" className="text-xs border-none focus:ring-0 text-[var(--admin-text-secondary)] bg-transparent outline-none" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
                         {(dateRange.start || dateRange.end) && (
-                            <button onClick={() => setDateRange({ start: '', end: '' })} className="text-gray-400 hover:text-red-500"><X size={14} /></button>
+                            <button onClick={() => setDateRange({ start: '', end: '' })} className="text-[var(--admin-text-tertiary)] hover:text-red-500 ml-1"><X size={13} /></button>
                         )}
                     </div>
 
-                    <div className="h-8 w-px bg-gray-300 mx-2 hidden md:block"></div>
-
-                    <div className="flex gap-2">
-                        <button onClick={downloadCoursesReport} className="bg-green-100 text-green-800 border border-green-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-green-200 transition-colors dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" title="Exportar Relatório CSV">
-                            <Download size={16} /> Relatório
-                        </button>
-
-                        <button onClick={handlePrintCoursesReport} className="bg-[var(--admin-surface-3)] text-[var(--admin-text-primary)] border border-[var(--admin-border)] px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[var(--admin-surface-2)] transition-colors" title="Imprimir Lista">
-                            <Printer size={16} /> Imprimir
-                        </button>
-                    </div>
+                    {/* Export / Print */}
+                    <button onClick={downloadCoursesReport} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors" title="Exportar CSV">
+                        <Download size={14} /> CSV
+                    </button>
+                    <button onClick={handlePrintCoursesReport} className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--admin-surface-3)] transition-colors text-[var(--admin-text-secondary)]" title="Imprimir Lista">
+                        <Printer size={14} /> Imprimir
+                    </button>
 
                     {/* View Toggles */}
-                    <div className="flex bg-[var(--admin-surface-3)] p-1 rounded-lg">
-                        <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'calendar' ? 'bg-[var(--admin-surface-3)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Calendário</button>
-                        <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'list' ? 'bg-[var(--admin-surface-3)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Lista</button>
+                    <div className="flex bg-[var(--admin-surface-3)] p-1 rounded-xl border border-[var(--admin-border)]">
+                        <button onClick={() => setViewMode('list')} title="Cards" className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${viewMode === 'list' ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>
+                            <LayoutGrid size={13} /> Cards
+                        </button>
+                        <button onClick={() => setViewMode('calendar')} title="Calendário" className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${viewMode === 'calendar' ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>
+                            <CalendarIcon size={13} /> Calendário
+                        </button>
                     </div>
                 </div>
             </div>
 
+            {/* ── STATS BAR ───────────────────────────────────────────────── */}
+            {viewMode === 'list' && (() => {
+                const today = new Date(new Date().setHours(0, 0, 0, 0));
+                const stats = [
+                    {
+                        key: 'upcoming' as const,
+                        label: 'Próximos',
+                        count: courses.filter(c => new Date(c.date) >= today && c.status !== 'Completed' && c.status !== 'Archived').length,
+                        icon: CalendarIcon,
+                        accent: 'text-blue-500',
+                        ring: 'ring-blue-500',
+                        bg: 'bg-blue-500/10',
+                    },
+                    {
+                        key: 'published' as const,
+                        label: 'Publicados',
+                        count: courses.filter(c => c.status === 'Published').length,
+                        icon: CheckCircle2,
+                        accent: 'text-emerald-500',
+                        ring: 'ring-emerald-500',
+                        bg: 'bg-emerald-500/10',
+                    },
+                    {
+                        key: 'completed' as const,
+                        label: 'Realizados',
+                        count: courses.filter(c => c.status === 'Completed').length,
+                        icon: Award,
+                        accent: 'text-amber-500',
+                        ring: 'ring-amber-500',
+                        bg: 'bg-amber-500/10',
+                    },
+                    {
+                        key: null,
+                        label: 'Total Alunos',
+                        count: courses.reduce((acc, c) => acc + (c.registeredCount || 0), 0),
+                        icon: Users,
+                        accent: 'text-purple-500',
+                        ring: 'ring-purple-500',
+                        bg: 'bg-purple-500/10',
+                    },
+                ];
+                return (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        {stats.map((s, i) => (
+                            <button
+                                key={i}
+                                onClick={() => s.key && setActiveStatusFilter(activeStatusFilter === s.key ? null : s.key)}
+                                className={cn(
+                                    'rounded-2xl p-4 border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-left transition-all hover:shadow-sm',
+                                    s.key ? 'cursor-pointer hover:border-current/30' : 'cursor-default',
+                                    activeStatusFilter === s.key && `ring-2 ring-offset-1 ${s.ring}`
+                                )}
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className={`p-2 rounded-xl ${s.bg}`}>
+                                        <s.icon size={16} className={s.accent} />
+                                    </div>
+                                    {activeStatusFilter === s.key && (
+                                        <span className={`text-[9px] font-black uppercase tracking-wider ${s.accent}`}>Filtrado</span>
+                                    )}
+                                </div>
+                                <p className={`text-2xl font-black ${s.accent} leading-none`}>{s.count}</p>
+                                <p className="text-[10px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-wider mt-1">{s.label}</p>
+                            </button>
+                        ))}
+                    </div>
+                );
+            })()}
+
+            {/* Show-past toggle & active filter chip */}
             {viewMode === 'list' && (
-                <div className="mb-4 flex items-center gap-2">
+                <div className="mb-4 flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => setShowPastCourses(!showPastCourses)}
                         className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${showPastCourses ? 'bg-[var(--admin-text-primary)] text-[var(--admin-surface-1)] border-[var(--admin-text-primary)]' : 'bg-[var(--admin-surface-1)] text-[var(--admin-text-secondary)] border-[var(--admin-border)]'}`}
                     >
-                        {showPastCourses ? 'Mostrando Histórico Completo' : 'Ocultar Cursos Passados'}
+                        {showPastCourses ? 'Mostrando Histórico' : 'Apenas Futuros'}
                     </button>
+                    {activeStatusFilter && (
+                        <button onClick={() => setActiveStatusFilter(null)} className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-wtech-gold/10 text-wtech-gold border border-wtech-gold/30 hover:bg-wtech-gold/20 transition-colors">
+                            <X size={11} /> Limpar filtro
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -2915,26 +3061,28 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {!isEditing && hasPermission('courses_add') && (
                 <div className="mb-4">
-                    <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-[var(--admin-border)] rounded-lg text-[var(--admin-text-secondary)] font-bold hover:border-wtech-gold hover:text-wtech-gold transition-colors flex items-center justify-center gap-2">
-                        <Plus size={20} /> Adicionar Novo Curso no Topo
+                    <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-[var(--admin-border)] rounded-2xl text-[var(--admin-text-secondary)] font-bold hover:border-wtech-gold hover:text-wtech-gold transition-all flex items-center justify-center gap-2 hover:bg-wtech-gold/5">
+                        <Plus size={18} /> Novo Curso / Evento
                     </button>
                 </div>
             )}
 
             {/* DATA DISPLAY */}
-            <div className="bg-[var(--admin-surface-1)] rounded-lg shadow-sm border border-[var(--admin-border)] overflow-hidden min-h-[400px]">
-                {viewMode === 'list' ? (
-                    <Table />
-                ) : (
+            {viewMode === 'list' ? (
+                <CourseCards />
+            ) : (
+                <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-sm border border-[var(--admin-border)] overflow-hidden">
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-[var(--admin-text-primary)]">Calendário de {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
-                            <span className="text-xs text-gray-400">Navegue acima para mudar</span>
+                            <h3 className="font-black text-[var(--admin-text-primary)]">
+                                Calendário · {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+                            </h3>
+                            <span className="text-xs text-[var(--admin-text-tertiary)]">Use os controles acima para navegar</span>
                         </div>
                         <CalendarGrid />
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
