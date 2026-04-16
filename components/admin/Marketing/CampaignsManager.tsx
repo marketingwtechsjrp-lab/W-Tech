@@ -123,12 +123,12 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
                 <QueueProcessor campaign={activeProcessingCampaign} onComplete={fetchCampaigns} />
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--admin-surface-1)] p-6 rounded-2xl shadow-sm border border-[var(--admin-border)]">
                 <div>
-                     <h3 className="font-black text-2xl text-gray-900 dark:text-white flex items-center gap-2">
+                     <h3 className="font-black text-2xl text-[var(--admin-text-primary)] flex items-center gap-2">
                         <Megaphone className="text-purple-600 dark:text-purple-400" /> Campanhas
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-tight">Gerencie e monitore seus disparos de marketing.</p>
+                    <p className="text-sm text-[var(--admin-text-secondary)] font-medium tracking-tight">Gerencie e monitore seus disparos de marketing.</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -136,7 +136,7 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
                         <input 
                             type="text" 
                             placeholder="Buscar campanha..."
-                            className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl text-sm outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all font-medium dark:text-white"
+                            className="w-full pl-9 pr-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-2 focus:ring-purple-100 dark:focus:ring-purple-900/20 transition-all font-medium"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -144,7 +144,7 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
                     </div>
 
                     <select 
-                        className="bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm font-bold text-gray-700 dark:text-gray-200 outline-none focus:border-purple-400 dark:focus:border-purple-500"
+                        className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-4 py-2 text-sm font-bold text-[var(--admin-text-primary)] outline-none focus:border-purple-400 dark:focus:border-purple-500"
                         value={filterDays}
                         onChange={e => setFilterDays(e.target.value)}
                     >
@@ -172,7 +172,7 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
                     const progress = totalCount > 0 ? Math.round((sentCount / totalCount) * 100) : 0;
 
                     return (
-                        <div key={campaign.id} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                        <div key={campaign.id} className="bg-[var(--admin-surface-1)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
                             {/* Decorative accent */}
                             <div className={`absolute top-0 left-0 w-1 h-full ${campaign.status === 'Completed' ? 'bg-green-500' : campaign.status === 'Processing' ? 'bg-yellow-500' : 'bg-purple-500'}`} />
 
@@ -182,15 +182,15 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
                                         {campaign.channel === 'WhatsApp' ? <Send size={24} /> : <Mail size={24} />} 
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-gray-900 dark:text-white text-lg leading-tight mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors uppercase tracking-tight">{campaign.name}</h4>
+                                        <h4 className="font-black text-[var(--admin-text-primary)] text-lg leading-tight mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors uppercase tracking-tight">{campaign.name}</h4>
                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold mt-2">
                                             <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase tracking-widest ${getStatusColor(campaign.status)}`}>
                                                 {campaign.status === 'Processing' ? 'ENVIANDO' : campaign.status === 'Completed' ? 'CONCLUÍDA' : campaign.status === 'Paused' ? 'PAUSADA' : campaign.status}
                                             </span>
-                                            <span className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-[#222] px-2 py-1 rounded-md">
-                                                <Calendar size={12} className="text-gray-300 dark:text-gray-600" /> {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}
+                                            <span className="flex items-center gap-1.5 text-[var(--admin-text-tertiary)] bg-[var(--admin-surface-2)] px-2 py-1 rounded-md">
+                                                <Calendar size={12} className="text-[var(--admin-text-tertiary)]" /> {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}
                                             </span>
-                                            <span className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-[#222] px-2 py-1 rounded-md">
+                                            <span className="flex items-center gap-1.5 text-[var(--admin-text-tertiary)] bg-[var(--admin-surface-2)] px-2 py-1 rounded-md">
                                                 <CheckCircle size={12} className="text-green-500" /> {sentCount} de {totalCount} Enviados
                                             </span>
                                         </div>
@@ -222,9 +222,9 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
                                  <div className="mt-6">
                                     <div className="flex justify-between items-end mb-2">
                                         <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Progresso do Disparo</span>
-                                        <span className="text-xs font-black text-gray-900 dark:text-white">{progress}%</span>
+                                        <span className="text-xs font-black text-[var(--admin-text-primary)]">{progress}%</span>
                                     </div>
-                                    <div className="w-full bg-gray-100 dark:bg-[#333] rounded-full h-2.5 overflow-hidden p-0.5 border border-gray-50 dark:border-gray-800">
+                                    <div className="w-full bg-[var(--admin-surface-3)] rounded-full h-2.5 overflow-hidden p-0.5 border border-gray-50 ">
                                         <div 
                                             className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${campaign.status === 'Completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-purple-500 to-indigo-600 shadow-[0_0_10px_rgba(139,92,246,0.3)]'}`} 
                                             style={{ width: `${progress}%` }}
@@ -238,7 +238,7 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {filteredCampaigns.length === 0 && !isLoading && (
-                <div className="bg-white dark:bg-[#1A1A1A] border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl py-20 text-center text-gray-400">
+                <div className="bg-[var(--admin-surface-1)] border-2 border-dashed border-[var(--admin-border)] rounded-3xl py-20 text-center text-gray-400">
                     <Megaphone size={64} className="mx-auto mb-4 opacity-10" />
                     <p className="text-lg font-bold">Nenhuma campanha encontrada</p>
                     <p className="text-sm">Ajuste os filtros ou crie uma nova campanha.</p>

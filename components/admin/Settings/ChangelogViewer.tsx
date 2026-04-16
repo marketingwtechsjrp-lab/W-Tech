@@ -5,7 +5,7 @@ import changelogData from '../../../CHANGELOG.json';
 
 const ChangelogViewer = () => {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-sm border border-[var(--admin-border)] overflow-hidden">
             <div className="bg-gradient-to-r from-gray-900 to-black p-6 text-white">
                 <h2 className="text-xl font-black uppercase tracking-wider flex items-center gap-3">
                     <GitCommit className="text-wtech-gold" />
@@ -26,7 +26,7 @@ const ChangelogViewer = () => {
                         className="relative pl-8 border-l-2 border-gray-100 last:border-0"
                     >
                         {/* Timeline Dot */}
-                        <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 ${index === 0 ? 'bg-wtech-gold border-wtech-gold' : 'bg-white border-gray-300'}`}></div>
+                        <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 ${index === 0 ? 'bg-wtech-gold border-wtech-gold' : 'bg-[var(--admin-surface-1)] border-[var(--admin-border)]'}`}></div>
 
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
                             <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${index === 0 ? 'bg-wtech-black text-wtech-gold' : 'bg-gray-100 text-gray-500'}`}>

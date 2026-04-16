@@ -132,7 +132,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
     return (
         <div className="flex flex-col lg:flex-row h-full">
             {/* Chat Flow */}
-            <div className="flex-1 flex flex-col min-h-[500px] border-r border-gray-100 dark:border-gray-800 bg-white dark:bg-transparent">
+            <div className="flex-1 flex flex-col min-h-[500px] border-r border-[var(--admin-border)] bg-white dark:bg-transparent">
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                     {messages.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
@@ -140,7 +140,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                                 <Bot size={64} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-gray-900 dark:text-white">Olá, Sou seu Gestor Meta AI</h3>
+                                <h3 className="text-xl font-black text-[var(--admin-text-primary)]">Olá, Sou seu Gestor Meta AI</h3>
                                 <p className="text-gray-500 text-sm max-w-sm mt-2">
                                     Posso analisar suas campanhas, sugerir orçamentos, criar novos anúncios ou otimizar seu ROAS. O que faremos hoje?
                                 </p>
@@ -148,19 +148,19 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                             <div className="flex flex-wrap justify-center gap-2 mt-4">
                                 <button 
                                     onClick={() => setInput("Como está o desempenho das minhas campanhas?")}
-                                    className="px-4 py-2 bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-xs font-bold transition-all text-gray-600 dark:text-gray-300"
+                                    className="px-4 py-2 bg-[var(--admin-surface-3)] hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-xs font-bold transition-all text-[var(--admin-text-secondary)]"
                                 >
                                     📊 Ver Performance
                                 </button>
                                 <button 
                                     onClick={() => setInput("Sugira melhorias nos meus criativos.")}
-                                    className="px-4 py-2 bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-xs font-bold transition-all text-gray-600 dark:text-gray-300"
+                                    className="px-4 py-2 bg-[var(--admin-surface-3)] hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-xs font-bold transition-all text-[var(--admin-text-secondary)]"
                                 >
                                     🎨 Melhorar Criativos
                                 </button>
                                 <button 
                                     onClick={() => setInput("Analise o CTR da campanha atual.")}
-                                    className="px-4 py-2 bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-xs font-bold transition-all text-gray-600 dark:text-gray-300"
+                                    className="px-4 py-2 bg-[var(--admin-surface-3)] hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-xs font-bold transition-all text-[var(--admin-text-secondary)]"
                                 >
                                     🔍 Analisar CTR
                                 </button>
@@ -174,7 +174,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                                 <div className={`p-2 rounded-xl shrink-0 h-fit ${msg.role === 'user' ? 'bg-black text-white' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'}`}>
                                     {msg.role === 'user' ? <User size={18} /> : <Bot size={18} />}
                                 </div>
-                                <div className={`p-4 rounded-3xl ${msg.role === 'user' ? 'bg-gray-800 text-white rounded-tr-none' : 'bg-white dark:bg-[#1A1A1A] text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-gray-800 rounded-tl-none font-medium'}`}>
+                                <div className={`p-4 rounded-3xl ${msg.role === 'user' ? 'bg-gray-800 text-white rounded-tr-none' : 'bg-[var(--admin-surface-1)] text-gray-800 shadow-sm border border-[var(--admin-border)] rounded-tl-none font-medium'}`}>
                                     <div className="whitespace-pre-wrap text-sm leading-relaxed prose dark:prose-invert max-w-none">
                                         {msg.content}
                                     </div>
@@ -189,7 +189,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                                 <div className="p-2 rounded-xl bg-blue-600 text-white animate-pulse">
                                     <Bot size={18} />
                                 </div>
-                                <div className="p-4 bg-white dark:bg-[#1A1A1A] rounded-3xl rounded-tl-none border border-gray-100 dark:border-gray-800 flex items-center gap-2">
+                                <div className="p-4 bg-[var(--admin-surface-1)] rounded-3xl rounded-tl-none border border-[var(--admin-border)] flex items-center gap-2">
                                     <div className="flex gap-1">
                                         <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                                         <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -204,7 +204,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-6 bg-white dark:bg-[#1A1A1A] border-t border-gray-100 dark:border-gray-800">
+                <div className="p-6 bg-[var(--admin-surface-1)] border-t border-[var(--admin-border)]">
                     <form onSubmit={handleSendMessage} className="relative group">
                         <input 
                             type="text" 
@@ -212,7 +212,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder={loading ? "Aguardando agente..." : "Pergunte algo sobre sua conta Meta..."}
-                            className="w-full bg-gray-50 dark:bg-[#111] border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-6 py-4 pr-16 text-sm font-medium focus:border-blue-500 focus:ring-0 transition-all disabled:opacity-50"
+                            className="w-full bg-[var(--admin-surface-2)] border-2 border-[var(--admin-border)] rounded-2xl px-6 py-4 pr-16 text-sm font-medium focus:border-blue-500 focus:ring-0 transition-all disabled:opacity-50"
                         />
                         <button 
                             type="submit"
@@ -247,8 +247,8 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
             </div>
 
             {/* Side Logs */}
-            <div className={`w-full lg:w-80 bg-gray-50 dark:bg-[#111] overflow-hidden transition-all duration-300 ${showLogs ? 'h-auto' : 'h-12 lg:w-12'}`}>
-                <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-[#0A0A0A] border-b border-gray-200 dark:border-gray-800">
+            <div className={`w-full lg:w-80 bg-[var(--admin-surface-2)] overflow-hidden transition-all duration-300 ${showLogs ? 'h-auto' : 'h-12 lg:w-12'}`}>
+                <div className="flex items-center justify-between p-3 bg-[var(--admin-surface-3)] border-b border-gray-200 ">
                     <span className="text-[10px] font-black text-gray-500 flex items-center gap-2">
                         <Terminal size={12} /> LOGS DE EXECUÇÃO
                     </span>
@@ -262,7 +262,7 @@ const MetaAIChat = ({ slug }: { slug: string | null }) => {
                             <div className="text-gray-500 opacity-40 italic">Aguardando atividade do agente...</div>
                         ) : (
                             logs.map((log, i) => (
-                                <div key={i} className="flex gap-2 text-gray-600 dark:text-gray-400 border-l-2 border-blue-500/30 pl-2 py-0.5">
+                                <div key={i} className="flex gap-2 text-[var(--admin-text-secondary)] border-l-2 border-blue-500/30 pl-2 py-0.5">
                                     <span className="text-blue-500 shrink-0 font-black">❯</span>
                                     {log}
                                 </div>

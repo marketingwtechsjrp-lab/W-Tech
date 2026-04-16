@@ -23,7 +23,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000/api';
 
 const StatCard = ({ title, value, unit, icon: Icon, trend, color }: any) => (
-    <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-4">
+    <div className="bg-[var(--admin-surface-1)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm flex flex-col gap-4">
         <div className="flex justify-between items-start">
             <div className={`p-3 rounded-xl bg-${color}-50 dark:bg-${color}-900/20 text-${color}-600`}>
                 <Icon size={24} />
@@ -38,7 +38,7 @@ const StatCard = ({ title, value, unit, icon: Icon, trend, color }: any) => (
         <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{title}</p>
             <div className="flex items-baseline gap-1 mt-1">
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white">{value}</h3>
+                <h3 className="text-2xl font-black text-[var(--admin-text-primary)]">{value}</h3>
                 {unit && <span className="text-sm font-bold text-gray-400">{unit}</span>}
             </div>
         </div>
@@ -86,7 +86,7 @@ const MetaDashboard = ({ slug }: { slug: string | null }) => {
         return (
             <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
                 {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-32 bg-gray-100 dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800"></div>
+                    <div key={i} className="h-32 bg-gray-100 bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)]"></div>
                 ))}
             </div>
         );
@@ -136,11 +136,11 @@ const MetaDashboard = ({ slug }: { slug: string | null }) => {
 
             {/* Performance Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="lg:col-span-2 bg-[var(--admin-surface-1)] p-8 rounded-3xl border border-[var(--admin-border)] shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h4 className="font-black text-xl text-gray-900 dark:text-white">Performance Temporal</h4>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Gasto vs Cliques nos últimos 30 dias.</p>
+                            <h4 className="font-black text-xl text-[var(--admin-text-primary)]">Performance Temporal</h4>
+                            <p className="text-sm text-[var(--admin-text-secondary)]">Gasto vs Cliques nos últimos 30 dias.</p>
                         </div>
                         <button onClick={fetchData} className="p-2 hover:bg-gray-100 dark:hover:bg-[#222] rounded-lg transition-colors">
                             <RefreshCcw size={18} className="text-gray-400" />

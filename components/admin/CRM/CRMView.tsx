@@ -45,17 +45,17 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
         <div className="mb-6 w-full bg-[var(--admin-surface-1)] p-4 rounded-2xl shadow-sm border border-[var(--admin-border)] relative overflow-hidden transition-colors">
             <div className="flex justify-between items-center mb-4">
                 <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white">Visão do Funil</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Fluxo de conversão atual</p>
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Visão do Funil</h3>
+                    <p className="text-xs text-[var(--admin-text-secondary)]">Fluxo de conversão atual</p>
                 </div>
-                <div className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300">
+                <div className="bg-[var(--admin-surface-3)] px-3 py-1 rounded-full text-xs font-bold text-[var(--admin-text-secondary)]">
                     Total: {leads.length}
                 </div>
             </div>
 
             <div className="flex items-center justify-between h-32 relative px-4">
                 {/* Connecting Line (Background Pipe) */}
-                <div className="absolute top-1/2 left-0 w-full h-4 bg-gray-100 dark:bg-gray-800 -translate-y-1/2 rounded-full z-0"></div>
+                <div className="absolute top-1/2 left-0 w-full h-4 bg-[var(--admin-surface-3)] -translate-y-1/2 rounded-full z-0"></div>
 
                 {stages.map((stage, i) => {
                     const isLast = i === stages.length - 1;
@@ -101,7 +101,7 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
 
                             {/* Label */}
                             <div className="mt-3 text-center">
-                                <span className="block text-xs font-bold text-gray-800 dark:text-gray-300 group-hover:text-wtech-gold transition-colors uppercase tracking-wider">{stage.label}</span>
+                                <span className="block text-xs font-bold text-[var(--admin-text-primary)] group-hover:text-wtech-gold transition-colors uppercase tracking-wider">{stage.label}</span>
                             </div>
                         </div>
                     );
@@ -109,10 +109,10 @@ const FunnelChart = ({ leads }: { leads: Lead[] }) => {
             </div>
 
             {/* Legend / Stats Footer */}
-            <div className="flex gap-4 mt-2 justify-center border-t border-gray-50 pt-2 opacity-60 hover:opacity-100 transition-opacity">
+            <div className="flex gap-4 mt-2 justify-center border-t border-[var(--admin-border)] pt-2 opacity-60 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-[10px] font-bold text-gray-500">{counts.lost} Perdidos</span>
+                    <span className="text-[10px] font-bold text-[var(--admin-text-tertiary)]">{counts.lost} Perdidos</span>
                 </div>
             </div>
         </div>
@@ -152,17 +152,17 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, o
         'Contacted': 'bg-blue-600 text-white border-blue-600',
         'Qualified': 'bg-purple-600 text-white border-purple-600',
         'Converted': 'bg-green-600 text-white border-green-600',
-        'Cold': 'bg-gray-500 dark:bg-gray-700 text-white border-gray-500 dark:border-gray-700'
+        'Cold': 'bg-gray-500 text-white border-gray-500'
     };
 
     return (
         <div
-            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-gray-100/50 dark:bg-[#111]/50 border-2 border-dashed border-[var(--admin-border)]' : 'bg-[var(--admin-surface-2)] border border-[var(--admin-border)]'}`}
+            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-[var(--admin-surface-3)] border-2 border-dashed border-[var(--admin-border)]' : 'bg-[var(--admin-surface-2)] border border-[var(--admin-border)]'}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
         >
             {/* Header */}
-            <div className={`p-4 rounded-t-2xl flex flex-col gap-2 ${status === 'New' || status === 'Converted' ? 'shadow-md' : ''} ${statusColors[status] || 'bg-white dark:bg-[#111] text-gray-800 dark:text-gray-100'}`}>
+            <div className={`p-4 rounded-t-2xl flex flex-col gap-2 ${status === 'New' || status === 'Converted' ? 'shadow-md' : ''} ${statusColors[status] || 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)]'}`}>
                 <div className="flex justify-between items-center">
                     <h3 className="font-bold text-sm uppercase tracking-wider">{title}</h3>
                     <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, o
                     />
                 ))}
                 {leads.length === 0 && (
-                    <div className="text-center py-8 text-gray-400 dark:text-gray-600 text-xs italic">
+                    <div className="text-center py-8 text-[var(--admin-text-tertiary)] text-xs italic">
                         Sem leads nesta etapa
                     </div>
                 )}
@@ -371,9 +371,9 @@ const LeadCard: React.FC<{
             <div 
                 onClick={(e) => { e.stopPropagation(); onToggleSelection(); }}
                 className={`absolute right-2 top-2 z-30 flex items-center justify-center w-5 h-5 rounded border transition-all cursor-pointer shadow-sm
-                    ${isSelected 
-                        ? 'bg-wtech-gold border-wtech-gold text-black scale-110 shadow-wtech-gold/20' 
-                        : 'bg-white/80 dark:bg-black/80 border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 hover:border-wtech-gold'
+                    ${isSelected
+                        ? 'bg-wtech-gold border-wtech-gold text-black scale-110 shadow-wtech-gold/20'
+                        : 'bg-[var(--admin-surface-1)] border-[var(--admin-border)] opacity-0 group-hover:opacity-100 hover:border-wtech-gold'
                     }`}
             >
                 {isSelected && <CheckCircle size={14} strokeWidth={3} />}
@@ -385,7 +385,7 @@ const LeadCard: React.FC<{
             {/* Header / Name */}
             <div className="flex justify-between items-start pl-3 mb-1">
                 <div className="flex-1 min-w-0">
-                     <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm line-clamp-1 pr-2">{lead.name}</h4>
+                     <h4 className="font-bold text-[var(--admin-text-primary)] text-sm line-clamp-1 pr-2">{lead.name}</h4>
                      
                      {/* Source & City Line */}
                      <div className="flex items-center gap-1.5 mt-0.5">
@@ -410,24 +410,24 @@ const LeadCard: React.FC<{
                                 const val = clean.length <= 11 ? `55${clean}` : clean;
                                 window.open(`https://wa.me/${val}`, '_blank');
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg text-gray-400 hover:text-green-600 transition-all transform hover:scale-110 active:scale-95 z-20"
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-green-500/10 rounded-lg text-[var(--admin-text-tertiary)] hover:text-green-600 transition-all transform hover:scale-110 active:scale-95 z-20"
                             title="Chamar no WhatsApp"
                         >
                             <MessageCircle size={16} />
                         </button>
                     )}
 
-                    <button 
+                    <button
                         onClick={(e) => { e.stopPropagation(); onTasks(lead); }}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95 z-20"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--admin-surface-3)] rounded-lg text-[var(--admin-text-tertiary)] hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95 z-20"
                         title="Ver Tarefas / Agendar WhatsApp"
                     >
                         <Clock size={16} />
                     </button>
                     {nextStatusMap[lead.status] && (
-                        <button 
+                        <button
                             onClick={handleNext}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-green-500 transition-all transform hover:scale-110 active:scale-95 z-20"
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--admin-surface-3)] rounded-lg text-[var(--admin-text-tertiary)] hover:text-green-500 transition-all transform hover:scale-110 active:scale-95 z-20"
                             title={`Mover para ${nextStatusMap[lead.status]}`}
                         >
                             <ArrowRight size={16} />
@@ -439,14 +439,14 @@ const LeadCard: React.FC<{
             {/* Contact Info */}
             <div className="mb-2 pl-3">
                 <div className="flex flex-col gap-0.5">
-                    {lead.email && <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate flex items-center gap-1"><MessageCircle size={9} /> {lead.email}</span>}
-                    {lead.phone && <span className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono tracking-tight"><Phone size={9} /> {lead.phone}</span>}
+                    {lead.email && <span className="text-[10px] text-[var(--admin-text-secondary)] truncate flex items-center gap-1"><MessageCircle size={9} /> {lead.email}</span>}
+                    {lead.phone && <span className="text-[10px] text-[var(--admin-text-secondary)] flex items-center gap-1 font-mono tracking-tight"><Phone size={9} /> {lead.phone}</span>}
                 </div>
             </div>
 
             {/* Attendant Info */}
             <div className="mb-2 pl-3">
-                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">
+                <span className="text-[9px] uppercase font-bold text-[var(--admin-text-tertiary)] tracking-wider truncate">
                     {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
                 </span>
             </div>
@@ -461,21 +461,21 @@ const LeadCard: React.FC<{
                             </Badge>
                         </div>
                     ))}
-                    {lead.tags.length > 3 && <span className="text-[9px] text-gray-400">+{lead.tags.length - 3}</span>}
+                    {lead.tags.length > 3 && <span className="text-[9px] text-[var(--admin-text-tertiary)]">+{lead.tags.length - 3}</span>}
                 </div>
             )}
 
             {/* Progress Bar (Compact) */}
             <div className="mt-1">
                 <div className="flex justify-between items-end mb-0.5">
-                    <span className={`text-[8px] font-bold uppercase ${isLongWait ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                    <span className={`text-[8px] font-bold uppercase ${isLongWait ? 'text-red-500' : 'text-[var(--admin-text-tertiary)]'}`}>
                         TEMPO NA ETAPA
                     </span>
-                    <span className={`text-[8px] font-mono ${isLongWait ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                    <span className={`text-[8px] font-mono ${isLongWait ? 'text-red-500 font-bold' : 'text-[var(--admin-text-tertiary)]'}`}>
                         {timeDisplay}
                     </span>
                 </div>
-                <div className="h-1 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-1 w-full bg-[var(--admin-surface-3)] rounded-full overflow-hidden">
                     <div
                         className={`h-full rounded-full ${isLongWait ? 'bg-red-500' : 'bg-blue-500'}`}
                         style={{ width: isLongWait ? '100%' : '30%' }}
@@ -497,19 +497,19 @@ const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[var(--admin-surface-1)] p-6 rounded-2xl w-full max-w-md shadow-2xl border border-[var(--admin-border)]">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold dark:text-white">Novo Lead</h3>
-                    <button onClick={onClose}><X className="dark:text-white" /></button>
+                    <h3 className="text-xl font-bold text-[var(--admin-text-primary)]">Novo Lead</h3>
+                    <button onClick={onClose} className="p-1.5 hover:bg-[var(--admin-surface-3)] rounded-lg transition-colors text-[var(--admin-text-secondary)]"><X size={18} /></button>
                 </div>
                 <div className="space-y-4">
-                    <input autoFocus placeholder="Nome Completo" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                    <input placeholder="Telefone" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-                    <input placeholder="Email (Opcional)" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-                    
+                    <input autoFocus placeholder="Nome Completo" className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-all" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                    <input placeholder="Telefone" className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-all" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                    <input placeholder="Email (Opcional)" className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-all" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+
                     <div className="grid grid-cols-2 gap-4">
-                        <input placeholder="CPF" className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.cpf} onChange={e => setForm({...form, cpf: e.target.value})} />
-                        <select className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white" value={form.t_shirt_size} onChange={e => setForm({...form, t_shirt_size: e.target.value})}>
+                        <input placeholder="CPF" className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-all" value={form.cpf} onChange={e => setForm({...form, cpf: e.target.value})} />
+                        <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all" value={form.t_shirt_size} onChange={e => setForm({...form, t_shirt_size: e.target.value})}>
                             <option value="">Tamanho Camiseta</option>
                             <option value="P">P</option>
                             <option value="M">M</option>
@@ -521,17 +521,17 @@ const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
 
                     {/* Value Input */}
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase">Valor Potencial (R$)</label>
-                        <input 
-                            type="number" 
-                            placeholder="0,00" 
-                            className="w-full p-3 bg-gray-100 dark:bg-[#333] rounded-lg dark:text-white font-mono" 
-                            value={form.value} 
-                            onChange={e => setForm({...form, value: Number(e.target.value)})} 
+                        <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Valor Potencial (R$)</label>
+                        <input
+                            type="number"
+                            placeholder="0,00"
+                            className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] font-mono outline-none focus:border-wtech-gold transition-all"
+                            value={form.value}
+                            onChange={e => setForm({...form, value: Number(e.target.value)})}
                         />
                     </div>
                 </div>
-                <button onClick={() => onSave(form)} className="w-full bg-wtech-gold text-black font-bold py-3 rounded-xl mt-6">
+                <button onClick={() => onSave(form)} className="w-full py-3 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-black rounded-xl mt-6 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-yellow-500/20">
                     Criar Lead
                 </button>
             </motion.div>
@@ -567,40 +567,40 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white dark:bg-[#1A1A1A] rounded-2xl w-full max-w-2xl shadow-2xl h-[80vh] flex flex-col">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-[var(--admin-surface-1)] rounded-2xl w-full max-w-2xl shadow-2xl border border-[var(--admin-border)] h-[80vh] flex flex-col">
+                <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-center">
                     <div>
-                        <h3 className="text-xl font-black dark:text-white">{form.name}</h3>
-                        <p className="text-sm text-gray-500">Editando informações do lead.</p>
+                        <h3 className="text-xl font-black text-[var(--admin-text-primary)]">{form.name}</h3>
+                        <p className="text-sm text-[var(--admin-text-secondary)]">Editando informações do lead.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button 
+                        <button
                             onClick={() => onTasks(form)}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition-colors text-xs font-bold"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500/20 transition-colors text-xs font-bold"
                         >
                             <Clock size={16} /> Tarefas
                         </button>
-                        <button 
+                        <button
                             onClick={() => {
                                 if (window.confirm('Tem certeza que deseja excluir este lead?')) {
                                     onDelete();
                                 }
                             }}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"
+                            className="p-2 text-[var(--admin-text-tertiary)] hover:text-red-500 hover:bg-red-500/10 transition-colors rounded-lg"
                             title="Excluir Lead"
                         >
                             <Trash2 size={20} />
                         </button>
-                        <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"><X size={24} className="dark:text-white" /></button>
+                        <button onClick={onClose} className="p-2 text-[var(--admin-text-tertiary)] hover:bg-[var(--admin-surface-3)] rounded-lg transition-colors"><X size={24} /></button>
                     </div>
                 </div>
                 
                 <div className="p-6 overflow-y-auto flex-1 space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                             <label className="text-xs font-bold text-gray-500 uppercase">Status</label>
-                             <select 
-                                className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white font-bold"
+                             <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Status</label>
+                             <select
+                                className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] font-bold outline-none focus:border-wtech-gold transition-all"
                                 value={form.status}
                                 onChange={e => setForm({...form, status: e.target.value})}
                              >
@@ -614,23 +614,23 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                                 <option value="Rejected">Perdido</option>
                              </select>
                         </div>
-                        
+
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Telefone</label>
-                            <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Telefone</label>
+                            <input className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Email</label>
-                            <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Email</label>
+                            <input className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
                         </div>
-                        
+
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">CPF</label>
-                            <input className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.cpf || ''} onChange={e => setForm({...form, cpf: e.target.value})} />
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">CPF</label>
+                            <input className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all" value={form.cpf || ''} onChange={e => setForm({...form, cpf: e.target.value})} />
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Tamanho Camiseta</label>
-                            <select className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white" value={form.t_shirt_size || ''} onChange={e => setForm({...form, t_shirt_size: e.target.value})}>
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Tamanho Camiseta</label>
+                            <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all" value={form.t_shirt_size || ''} onChange={e => setForm({...form, t_shirt_size: e.target.value})}>
                                 <option value="">Não informado</option>
                                 <option value="P">P</option>
                                 <option value="M">M</option>
@@ -641,29 +641,29 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         </div>
 
                         {/* Client Portal Access Link */}
-                        <div className="col-span-2 bg-wtech-black/5 dark:bg-white/5 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                        <div className="col-span-2 bg-[var(--admin-surface-2)] p-4 rounded-xl border border-dashed border-[var(--admin-border)]">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Código de Acesso</h4>
-                                    <p className="text-[10px] text-gray-400 mt-1">Acesso ao portal (Meus Pedidos).</p>
+                                    <h4 className="text-xs font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">Código de Acesso</h4>
+                                    <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-1">Acesso ao portal (Meus Pedidos).</p>
                                 </div>
                                 <div className="text-right flex items-center gap-2">
                                     <p className={`text-lg font-black font-mono tracking-wider ${form.client_code ? 'text-wtech-gold' : 'text-gray-400 italic text-sm'}`}>
                                         {form.client_code || 'Não definido'}
                                     </p>
                                     <div className="flex gap-1">
-                                        <button 
+                                        <button
                                             onClick={handleRegenerateCode}
-                                            className="bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 px-2 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors flex items-center gap-2"
+                                            className="bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] px-2 py-1.5 rounded-lg hover:bg-[var(--admin-border)] transition-colors flex items-center gap-2"
                                             title="Gerar Novo Código"
                                         >
                                             <RefreshCw size={14} className={!form.client_code ? 'animate-pulse text-blue-500' : ''} />
                                             {!form.client_code && <span className="text-[10px] font-bold">GERAR</span>}
                                         </button>
                                         {form.client_code && (
-                                            <button 
+                                            <button
                                                 onClick={handleCopyLink}
-                                                className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
+                                                className="bg-blue-500/10 text-blue-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-500/20 transition-colors flex items-center gap-1"
                                                 title="Copiar Link de Acesso"
                                             >
                                                 <Share2 size={14} /> Link
@@ -675,15 +675,15 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         </div>
 
 
-                        <div className="col-span-2 bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
-                             <label className="text-xs font-black text-green-700 dark:text-green-400 uppercase flex items-center gap-2">
+                        <div className="col-span-2 bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/20">
+                             <label className="text-xs font-black text-emerald-500 uppercase flex items-center gap-2 mb-1.5">
                                 <Banknote size={14}/> Valor da Venda (R$)
                              </label>
-                             <input 
+                             <input
                                 type="number"
-                                className="w-full p-3 bg-white dark:bg-[#222] rounded-lg mt-1 dark:text-white font-mono text-lg font-bold" 
-                                value={form.value} 
-                                onChange={e => setForm({...form, value: Number(e.target.value)})} 
+                                className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] font-mono font-bold outline-none focus:border-wtech-gold transition-all"
+                                value={form.value}
+                                onChange={e => setForm({...form, value: Number(e.target.value)})}
                              />
                              <p className="text-[10px] text-green-600 mt-1">
                                 * Ao mover para "Ganho" ou "Matriculado", este valor será lançado automaticamente no Fluxo de Caixa.
@@ -691,9 +691,9 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         </div>
 
                         <div className="col-span-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Responsável</label>
-                            <select 
-                                className="w-full p-3 bg-gray-50 dark:bg-[#333] rounded-lg mt-1 dark:text-white"
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Responsável</label>
+                            <select
+                                className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all"
                                 value={form.assignedTo || ''}
                                 onChange={e => setForm({...form, assignedTo: e.target.value || null})}
                             >
@@ -705,9 +705,9 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         </div>
 
                         <div className="col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Notas Internas</label>
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Notas Internas</label>
                             <textarea
-                                className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-wtech-gold focus:ring-1 focus:ring-wtech-gold outline-none min-h-[100px]"
+                                className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] focus:border-wtech-gold outline-none min-h-[100px] resize-none transition-all"
                                 placeholder="Observações sobre o lead..."
                                 value={form.internalNotes || ''}
                                 onChange={e => setForm({ ...form, internalNotes: e.target.value })}
@@ -715,10 +715,10 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         </div>
 
                         <div className="col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tags</label>
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Tags</label>
                             <div className="flex flex-wrap gap-2 mb-2">
                                 {form.tags?.map((tag: string, idx: number) => (
-                                    <span key={idx} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-gray-200">
+                                    <span key={idx} className="bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-[var(--admin-border)]">
                                         {tag}
                                         <button onClick={() => setForm({...form, tags: form.tags.filter((_:any, i:any) => i !== idx)})} className="hover:text-red-500"><X size={12} /></button>
                                     </span>
@@ -726,7 +726,7 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                             </div>
                             <div className="flex gap-2">
                                 <input
-                                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-wtech-gold"
+                                    className="flex-1 px-3 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-all"
                                     placeholder="Adicionar tag... (Enter)"
                                     value={tagInput}
                                     onChange={e => setTagInput(e.target.value)}
@@ -747,7 +747,7 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                                             setTagInput('');
                                         }
                                     }}
-                                    className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                    className="px-3 py-2 bg-[var(--admin-surface-3)] rounded-xl hover:bg-[var(--admin-border)] transition-colors text-[var(--admin-text-secondary)]"
                                 >
                                     <Plus size={16}/>
                                 </button>
@@ -756,9 +756,9 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                     </div>
                 </div>
 
-                <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111] flex justify-end gap-3 rounded-b-2xl">
-                     <button onClick={onClose} className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400">Cancelar</button>
-                     <button onClick={() => onSave(form)} className="px-8 py-3 bg-wtech-black text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2">
+                <div className="p-6 border-t border-[var(--admin-border)] bg-[var(--admin-surface-2)] flex justify-end gap-3 rounded-b-2xl">
+                     <button onClick={onClose} className="px-6 py-3 font-bold text-[var(--admin-text-secondary)] hover:text-[var(--admin-text-primary)] transition-colors">Cancelar</button>
+                     <button onClick={() => onSave(form)} className="px-8 py-3 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-black rounded-xl shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
                         <Save size={18} /> Salvar Alterações
                      </button>
                 </div>
@@ -1616,15 +1616,15 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             initial={{ y: 100, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 100, opacity: 0 }}
-                            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-white dark:bg-[#1A1A1A] border border-wtech-gold/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[500px]"
+                            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] bg-[var(--admin-surface-1)] border border-wtech-gold/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[500px]"
                         >
-                            <div className="flex items-center gap-3 pr-6 border-r border-gray-100 dark:border-gray-800">
+                            <div className="flex items-center gap-3 pr-6 border-r border-[var(--admin-border)]">
                                 <div className="w-10 h-10 rounded-xl bg-wtech-gold/10 flex items-center justify-center text-wtech-gold font-black">
                                     {selectedLeadIds.size}
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-black dark:text-white uppercase leading-none">Selecionados</h4>
-                                    <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tight">Cuidado ao realizar ações</p>
+                                    <h4 className="text-sm font-black text-[var(--admin-text-primary)] uppercase leading-none">Selecionados</h4>
+                                    <p className="text-[10px] font-bold text-[var(--admin-text-tertiary)] mt-1 uppercase tracking-tight">Cuidado ao realizar ações</p>
                                 </div>
                             </div>
 
@@ -1637,37 +1637,37 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     
                                     {/* Attendant Dropdown */}
                                     <div className="absolute bottom-full left-0 mb-2 w-64 opacity-0 invisible group-hover/bulk:opacity-100 group-hover/bulk:visible transition-all duration-300 z-[101]">
-                                        <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-gray-800 shadow-2xl rounded-xl p-2 max-h-64 overflow-y-auto custom-scrollbar">
-                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest p-2 mb-1 border-b border-gray-50 dark:border-gray-800/50">Selecionar Atendente</p>
+                                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] shadow-2xl rounded-xl p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                            <p className="text-[9px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest p-2 mb-1 border-b border-[var(--admin-border)]">Selecionar Atendente</p>
                                             {usersList.map((u) => (
-                                                <button 
-                                                    key={u.id} 
+                                                <button
+                                                    key={u.id}
                                                     onClick={() => handleBulkAssign(u.id)}
-                                                    className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 transition-colors flex items-center gap-3"
+                                                    className="w-full text-left px-3 py-2.5 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-secondary)] transition-colors flex items-center gap-3"
                                                 >
-                                                    <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] uppercase">
+                                                    <div className="w-6 h-6 rounded-full bg-[var(--admin-surface-3)] flex items-center justify-center text-[10px] uppercase text-[var(--admin-text-secondary)]">
                                                         {u.name.charAt(0)}
                                                     </div>
                                                     {u.name}
                                                 </button>
                                             ))}
-                                            {usersList.length === 0 && <p className="p-4 text-center text-xs text-gray-400 italic">Nenhum usuário encontrado</p>}
+                                            {usersList.length === 0 && <p className="p-4 text-center text-xs text-[var(--admin-text-tertiary)] italic">Nenhum usuário encontrado</p>}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
-                                    <button 
+                                <div className="flex bg-[var(--admin-surface-3)] p-1 rounded-xl">
+                                    <button
                                         onClick={() => exportLeadsToPDF(true)}
-                                        className="flex items-center gap-2 hover:bg-white dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                                        className="flex items-center gap-2 hover:bg-[var(--admin-surface-1)] text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg text-xs font-bold transition-all"
                                         title="Exportar Selecionados para PDF"
                                     >
                                         <FileText size={14} className="text-red-500" />
                                         PDF
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => exportLeadsToCSV(true)}
-                                        className="flex items-center gap-2 hover:bg-white dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                                        className="flex items-center gap-2 hover:bg-[var(--admin-surface-1)] text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg text-xs font-bold transition-all"
                                         title="Exportar Selecionados para CSV"
                                     >
                                         <FileSpreadsheet size={14} className="text-green-500" />
@@ -1675,23 +1675,23 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     </button>
                                 </div>
 
-                                <button 
+                                <button
                                     onClick={() => {
                                         if (window.confirm(`Deseja remover ${selectedLeadIds.size} leads permanentemente?`)) {
                                             // Handle bulk delete if needed later, for now just focus on assignment
                                             alert("Função disponível em breve. Focando na atribuição agora.");
                                         }
                                     }}
-                                    className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all"
+                                    className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-500/10 rounded-xl transition-all"
                                     title="Remover Selecionados"
                                 >
                                     <Trash2 size={18} />
                                 </button>
                             </div>
 
-                            <button 
+                            <button
                                 onClick={clearSelection}
-                                className="text-[10px] font-black uppercase text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-[10px] font-black uppercase text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)] transition-colors"
                             >
                                 Limpar
                             </button>
@@ -1710,7 +1710,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-3 text-gray-400" />
                             <input
-                                className="pl-9 pr-4 py-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 dark:text-white rounded-lg text-xs font-bold w-64 focus:bg-white dark:focus:bg-[#111] focus:border-wtech-gold outline-none transition-all"
+                                className="pl-9 pr-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] rounded-lg text-xs font-bold w-64 focus:border-wtech-gold outline-none transition-all"
                                 placeholder="Buscar por nome, email, telefone..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -1718,18 +1718,18 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         </div>
 
                         <div className="relative group">
-                            <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-[#111] transition-colors">
-                                <Filter size={14} className="text-gray-400" />
-                                <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
+                            <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] px-3 py-2 rounded-lg cursor-pointer hover:border-wtech-gold/50 transition-colors">
+                                <Filter size={14} className="text-[var(--admin-text-tertiary)]" />
+                                <span className="text-xs font-bold text-[var(--admin-text-secondary)] truncate max-w-[150px]">
                                     {contextFilter === 'All' ? 'Todas as Origens' : contextFilter}
                                 </span>
                             </div>
                             {/* Dropdown */}
                             <div className="absolute top-full left-0 pt-2 w-64 hidden group-hover:block z-50">
-                                <div className="bg-white dark:bg-[#1A1A1A] shadow-xl rounded-xl border border-gray-100 dark:border-gray-700 p-2 max-h-64 overflow-y-auto custom-scrollbar">
-                                    <button onClick={() => setContextFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-200">Todas as Origens</button>
+                                <div className="bg-[var(--admin-surface-1)] shadow-xl rounded-xl border border-[var(--admin-border)] p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <button onClick={() => setContextFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)]">Todas as Origens</button>
                                     {uniqueContexts.map((ctx: any) => (
-                                        <button key={ctx} onClick={() => setContextFilter(ctx)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs text-gray-600 dark:text-gray-400 truncate">{ctx}</button>
+                                        <button key={ctx} onClick={() => setContextFilter(ctx)} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs text-[var(--admin-text-secondary)] truncate">{ctx}</button>
                                     ))}
                                 </div>
                             </div>
@@ -1739,18 +1739,18 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         {/* User Filter (Admin/Manager Only) */}
                         {(hasPermission('crm_view_all') || hasPermission('crm_view_team') || user?.role === 'Super Admin') && (
                             <div className="relative group">
-                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-[#111] transition-colors">
-                                    <Users size={14} className="text-gray-400" />
-                                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate max-w-[150px]">
+                                <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] px-3 py-2 rounded-lg cursor-pointer hover:border-wtech-gold/50 transition-colors">
+                                    <Users size={14} className="text-[var(--admin-text-tertiary)]" />
+                                    <span className="text-xs font-bold text-[var(--admin-text-secondary)] truncate max-w-[150px]">
                                         {selectedUserFilter === 'All' ? 'Todos os Usuários' : selectedUserFilter === 'None' ? 'Sem Atendente' : (usersMap[selectedUserFilter] || 'Usuário')}
                                     </span>
                                 </div>
                                 <div className="absolute top-full left-0 pt-2 w-64 hidden group-hover:block z-50">
-                                    <div className="bg-white dark:bg-[#1A1A1A] shadow-xl rounded-xl border border-gray-100 dark:border-gray-700 p-2 max-h-64 overflow-y-auto custom-scrollbar">
-                                        <button onClick={() => setSelectedUserFilter('All')} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-200 uppercase">Todos</button>
-                                        <button onClick={() => setSelectedUserFilter('None')} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs font-bold text-orange-600 dark:text-orange-400 uppercase">Fila (Sem Dono)</button>
+                                    <div className="bg-[var(--admin-surface-1)] shadow-xl rounded-xl border border-[var(--admin-border)] p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                        <button onClick={() => setSelectedUserFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)] uppercase">Todos</button>
+                                        <button onClick={() => setSelectedUserFilter('None')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-orange-500 uppercase">Fila (Sem Dono)</button>
                                         {usersList.map((u) => (
-                                            <button key={u.id} onClick={() => setSelectedUserFilter(u.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg text-xs text-gray-600 dark:text-gray-400 truncate">
+                                            <button key={u.id} onClick={() => setSelectedUserFilter(u.id)} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs text-[var(--admin-text-secondary)] truncate">
                                                 {u.name}
                                             </button>
                                         ))}
@@ -1764,17 +1764,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     <div className="flex flex-wrap items-center gap-4">
 
                         {/* Export Buttons */}
-                        <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
+                        <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
                              <button
                                 onClick={() => exportLeadsToPDF(false)}
-                                className="p-2 text-gray-500 hover:text-red-500 hover:bg-white dark:hover:bg-[#222] rounded-md transition-all"
+                                className="p-2 text-[var(--admin-text-tertiary)] hover:text-red-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
                                 title="Exportar Tudo para PDF"
                             >
                                 <FileText size={16} />
                             </button>
                             <button
                                 onClick={() => exportLeadsToCSV(false)}
-                                className="p-2 text-gray-500 hover:text-green-500 hover:bg-white dark:hover:bg-[#222] rounded-md transition-all"
+                                className="p-2 text-[var(--admin-text-tertiary)] hover:text-green-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
                                 title="Exportar Tudo para CSV"
                             >
                                 <FileSpreadsheet size={16} />
@@ -1782,12 +1782,12 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         </div>
 
                         {/* Date Filter Compact */}
-                        <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
+                        <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
                             {[7, 30, 9999].map(days => (
                                 <button
                                     key={days}
                                     onClick={() => { setFilterPeriod(days); setFilterType('Period'); }}
-                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${filterType === 'Period' && filterPeriod === days ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-500 hover:text-black dark:hover:text-gray-200'}`}
+                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${filterType === 'Period' && filterPeriod === days ? 'bg-[var(--admin-surface-1)] shadow text-[var(--admin-text-primary)]' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
                                 >
                                     {days === 9999 ? 'Tudo' : `${days}d`}
                                 </button>
@@ -1796,9 +1796,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                         {/* Distribution Switch - Permission Gated */}
                         {hasPermission('crm_config_dist') && (
-                            <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
+                            <div className="flex items-center gap-3 pl-4 border-l border-[var(--admin-border)]">
                                 <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase">Distribuição</span>
+                                    <span className="text-[10px] font-bold text-[var(--admin-text-tertiary)] uppercase">Distribuição</span>
                                     <span className={`text-xs font-black uppercase ${distMode === 'Random' ? 'text-green-600' : 'text-orange-600'}`}>
                                         {distMode === 'Random' ? 'Roleta (Auto)' : 'Manual'}
                                     </span>
@@ -1813,17 +1813,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         )}
 
                         {/* View Mode Toggle */}
-                        <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-lg border border-transparent dark:border-gray-800">
+                        <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
                             <button
                                 onClick={() => setViewMode('kanban')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-400 hover:text-black dark:hover:text-gray-200'}`}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-[var(--admin-surface-1)] shadow text-[var(--admin-text-primary)]' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
                                 title="Visualização Kanban"
                             >
                                 <KanbanSquare size={16} />
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#222] shadow text-black dark:text-white' : 'text-gray-400 hover:text-black dark:hover:text-gray-200'}`}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-[var(--admin-surface-1)] shadow text-[var(--admin-text-primary)]' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
                                 title="Visualização em Lista"
                             >
                                 <List size={16} />
@@ -1832,7 +1832,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="bg-wtech-black text-white p-2.5 rounded-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black p-2.5 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20"
                         >
                             <Plus size={18} />
                         </button>
@@ -1930,10 +1930,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         />
                     </div>
                 ) : (
-                    <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                    <div className="flex-1 bg-[var(--admin-surface-1)] rounded-xl shadow-sm border border-[var(--admin-border)] overflow-hidden flex flex-col">
                         <div className="overflow-y-auto flex-1 custom-scrollbar">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-gray-50 text-gray-400 text-[10px] uppercase font-bold tracking-wider sticky top-0 z-10">
+                                <thead className="bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)] text-[10px] uppercase font-bold tracking-wider sticky top-0 z-10">
                                     <tr>
                                         <th className="px-6 py-4">Lead</th>
                                         <th className="px-6 py-4">Contato</th>
@@ -1944,10 +1944,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         <th className="px-6 py-4 text-right">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100 text-sm">
+                                <tbody className="divide-y divide-[var(--admin-border)] text-sm">
                                     {filteredLeads.map(lead => {
                                         // Status Config
-                                        let statusColor = 'bg-gray-100 text-gray-600';
+                                        let statusColor = 'bg-gray-100 text-[var(--admin-text-secondary)]';
                                         let statusLabel = lead.status;
                                         if (lead.status === 'New') { statusColor = 'bg-wtech-black text-white'; statusLabel = 'NOVO'; }
                                         else if (lead.status === 'Contacted') { statusColor = 'bg-blue-100 text-blue-700'; statusLabel = 'EM ATENDIMENTO'; }
@@ -1965,26 +1965,26 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                         return (
                                             <tr 
                                                 key={lead.id} 
-                                                className={`hover:bg-gray-50 transition-colors group cursor-pointer ${selectedLeadIds.has(lead.id) ? 'bg-wtech-gold/5 border-l-2 border-l-wtech-gold' : ''}`} 
+                                                className={`hover:bg-[var(--admin-surface-2)] transition-colors group cursor-pointer ${selectedLeadIds.has(lead.id) ? 'bg-wtech-gold/5 border-l-2 border-l-wtech-gold' : ''}`} 
                                                 onClick={() => handleLeadClick(lead)}
                                             >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div 
                                                             onClick={(e) => { e.stopPropagation(); toggleLeadSelection(lead.id); }}
-                                                            className={`w-4 h-4 rounded border transition-all flex items-center justify-center ${selectedLeadIds.has(lead.id) ? 'bg-wtech-gold border-wtech-gold text-black' : 'bg-white border-gray-300'}`}
+                                                            className={`w-4 h-4 rounded border transition-all flex items-center justify-center ${selectedLeadIds.has(lead.id) ? 'bg-wtech-gold border-wtech-gold text-black' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)]'}`}
                                                         >
                                                             {selectedLeadIds.has(lead.id) && <CheckCircle size={10} strokeWidth={4} />}
                                                         </div>
                                                         <div>
-                                                            <div className="font-bold text-gray-900 group-hover:text-wtech-gold transition-colors">{lead.name}</div>
-                                                            <div className="text-xs text-gray-400">{new Date(lead.createdAt).toLocaleDateString()}</div>
+                                                            <div className="font-bold text-[var(--admin-text-primary)] group-hover:text-wtech-gold transition-colors">{lead.name}</div>
+                                                            <div className="text-xs text-[var(--admin-text-tertiary)]">{new Date(lead.createdAt).toLocaleDateString()}</div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="text-gray-600">{lead.email}</div>
-                                                    <div className="text-xs text-gray-400">{lead.phone}</div>
+                                                    <div className="text-[var(--admin-text-secondary)]">{lead.email}</div>
+                                                    <div className="text-xs text-[var(--admin-text-tertiary)]">{lead.phone}</div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${statusColor}`}>
@@ -1994,30 +1994,30 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-1.5">
                                                         {lead.contextId?.startsWith('LP') ? <Globe size={12} className="text-blue-400" /> : <GraduationCap size={12} className="text-orange-400" />}
-                                                        <span className="text-xs font-medium text-gray-500 truncate max-w-[150px]" title={lead.contextId}>{lead.contextId || 'N/A'}</span>
+                                                        <span className="text-xs font-medium text-[var(--admin-text-secondary)] truncate max-w-[150px]" title={lead.contextId}>{lead.contextId || 'N/A'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {/* Robust User Display */}
                                                     {lead.assignedTo ? (
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold overflow-hidden border border-gray-300">
+                                                            <div className="w-6 h-6 rounded-full bg-[var(--admin-surface-3)] flex items-center justify-center text-[10px] font-bold overflow-hidden border border-[var(--admin-border)]">
                                                                 {/* Try to show Avatar or Initial */}
                                                                 {usersMap[lead.assignedTo] ? (
                                                                     usersMap[lead.assignedTo].charAt(0).toUpperCase()
                                                                 ) : '?'}
                                                             </div>
-                                                            <span className="text-xs text-gray-700 font-bold truncate max-w-[100px]" title={usersMap[lead.assignedTo] || lead.assignedTo}>
+                                                            <span className="text-xs text-[var(--admin-text-primary)] font-bold truncate max-w-[100px]" title={usersMap[lead.assignedTo] || lead.assignedTo}>
                                                                 {usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'Usuário ' + lead.assignedTo.substr(0, 4)}
                                                             </span>
                                                         </div>
-                                                    ) : <span className="text-xs text-gray-400 italic">Fila (Sem Dono)</span>}
+                                                    ) : <span className="text-xs text-[var(--admin-text-tertiary)] italic">Fila (Sem Dono)</span>}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="text-xs font-bold text-gray-500">{days}d {hours}h</span>
+                                                    <span className="text-xs font-bold text-[var(--admin-text-secondary)]">{days}d {hours}h</span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button className="text-gray-400 hover:text-black p-1"><MoreVertical size={16} /></button>
+                                                    <button className="text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)] p-1"><MoreVertical size={16} /></button>
                                                 </td>
                                             </tr>
                                         )
@@ -2025,7 +2025,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                 </tbody>
                             </table>
                             {filteredLeads.length === 0 && (
-                                <div className="p-10 text-center text-gray-400 text-sm">Nenhum lead encontrado com os filtros atuais.</div>
+                                <div className="p-10 text-center text-[var(--admin-text-tertiary)] text-sm">Nenhum lead encontrado com os filtros atuais.</div>
                             )}
                         </div>
                     </div>
@@ -2058,28 +2058,28 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 {/* Conversion Modal */}
                 {conversionModal.isOpen && (
                      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl w-full max-w-md shadow-2xl space-y-4">
-                            <h3 className="text-xl font-bold dark:text-white">Confirmar Conversão</h3>
-                            <p className="text-sm text-gray-500">O lead <b>{conversionModal.lead?.name}</b> será marcado como <b>{conversionModal.targetStatus}</b>.</p>
-                            
-                            <div className="bg-gray-50 dark:bg-[#222] p-4 rounded-xl space-y-3">
-                                <label className="text-xs font-bold uppercase text-gray-500">Tipo de Venda</label>
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[var(--admin-surface-1)] p-6 rounded-2xl w-full max-w-md shadow-2xl border border-[var(--admin-border)] space-y-4">
+                            <h3 className="text-xl font-bold text-[var(--admin-text-primary)]">Confirmar Conversão</h3>
+                            <p className="text-sm text-[var(--admin-text-secondary)]">O lead <b>{conversionModal.lead?.name}</b> será marcado como <b>{conversionModal.targetStatus}</b>.</p>
+
+                            <div className="bg-[var(--admin-surface-2)] p-4 rounded-xl space-y-3">
+                                <label className="text-xs font-bold uppercase text-[var(--admin-text-tertiary)]">Tipo de Venda</label>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setConversionType('Course')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${conversionType === 'Course' ? 'bg-white border-wtech-gold shadow' : 'border-transparent hover:bg-white/50'}`}>Curso/Evento</button>
-                                    <button onClick={() => setConversionType('Product')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${conversionType === 'Product' ? 'bg-white border-wtech-gold shadow' : 'border-transparent hover:bg-white/50'}`}>Produto/Serviço</button>
+                                    <button onClick={() => setConversionType('Course')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${conversionType === 'Course' ? 'bg-[var(--admin-surface-1)] border-wtech-gold shadow text-[var(--admin-text-primary)]' : 'border-[var(--admin-border)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)]'}`}>Curso/Evento</button>
+                                    <button onClick={() => setConversionType('Product')} className={`flex-1 py-2 rounded-lg text-sm font-bold border ${conversionType === 'Product' ? 'bg-[var(--admin-surface-1)] border-wtech-gold shadow text-[var(--admin-text-primary)]' : 'border-[var(--admin-border)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)]'}`}>Produto/Serviço</button>
                                 </div>
 
                                 {conversionType === 'Course' ? (
-                                    <select className="w-full p-2 rounded-lg border border-gray-200" value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)}>
+                                    <select className="w-full px-3 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all" value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)}>
                                         <option value="">Selecione o Curso...</option>
                                         {activeCourses.map(c => <option key={c.id} value={c.id}>{c.title} ({new Date(c.date).toLocaleDateString()})</option>)}
                                     </select>
                                 ) : (
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Produto / Serviço</label>
-                                            <select 
-                                                className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1"
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Produto / Serviço</label>
+                                            <select
+                                                className="w-full px-3 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all"
                                                 value={selectedProductId}
                                                 onChange={e => {
                                                     const prod = catalogProducts.find(p => p.id === e.target.value);
@@ -2096,62 +2096,62 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                                         <div className="flex gap-2">
                                             <div className="flex-1">
-                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Valor Total (R$)</label>
-                                                <input 
-                                                    placeholder="0.00" 
-                                                    className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1" 
-                                                    value={saleValue} 
-                                                    onChange={e => setSaleValue(e.target.value)} 
+                                                <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Valor Total (R$)</label>
+                                                <input
+                                                    placeholder="0.00"
+                                                    className="w-full px-3 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] font-bold outline-none focus:border-wtech-gold transition-all"
+                                                    value={saleValue}
+                                                    onChange={e => setSaleValue(e.target.value)}
                                                 />
                                             </div>
                                             <div className="w-24">
-                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Qtd.</label>
-                                                <input 
-                                                    type="number" 
-                                                    className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1 text-center" 
-                                                    value={orderQuantity} 
-                                                    onChange={e => setOrderQuantity(Number(e.target.value))} 
+                                                <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Qtd.</label>
+                                                <input
+                                                    type="number"
+                                                    className="w-full px-3 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] font-bold outline-none text-center focus:border-wtech-gold transition-all"
+                                                    value={orderQuantity}
+                                                    onChange={e => setOrderQuantity(Number(e.target.value))}
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Forma de Pagamento</label>
-                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Forma de Pagamento</label>
+                                            <div className="grid grid-cols-2 gap-2">
                                                 {['Manual', 'Pix', 'Crédito', 'Boleto', 'Asaas', 'Stripe'].map(method => (
-                                                    <button 
+                                                    <button
                                                         key={method}
                                                         onClick={() => setPaymentMethod(method as any)}
-                                                        className={`py-2 text-[10px] font-black rounded-lg border uppercase ${paymentMethod === method ? 'bg-wtech-gold text-black border-wtech-gold' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}
+                                                        className={`py-2 text-[10px] font-black rounded-lg border uppercase ${paymentMethod === method ? 'bg-wtech-gold text-black border-wtech-gold' : 'border-[var(--admin-border)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)]'}`}
                                                     >
                                                         {method}
                                                     </button>
                                                 ))}
                                             </div>
                                             {paymentMethod === 'Manual' && (
-                                                <input 
-                                                    placeholder="Detalhes (Ex: Dinheiro, Cheque...)" 
-                                                    className="w-full p-2 rounded-lg border border-gray-200 text-xs mt-2" 
-                                                    value={manualDetails} 
-                                                    onChange={e => setManualDetails(e.target.value)} 
+                                                <input
+                                                    placeholder="Detalhes (Ex: Dinheiro, Cheque...)"
+                                                    className="w-full px-3 py-2 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-lg text-xs text-[var(--admin-text-primary)] mt-2 outline-none focus:border-wtech-gold transition-all"
+                                                    value={manualDetails}
+                                                    onChange={e => setManualDetails(e.target.value)}
                                                 />
                                             )}
                                         </div>
 
                                         {!selectedProductId && (
                                             <div>
-                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Obs/Resumo do Pedido</label>
-                                                <input 
-                                                    placeholder="Ex: Peças X, Y..." 
-                                                    className="w-full p-2.5 bg-gray-100 dark:bg-[#333] rounded-xl border-none text-sm font-bold dark:text-white mt-1" 
-                                                    value={productSummary} 
-                                                    onChange={e => setProductSummary(e.target.value)} 
+                                                <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Obs/Resumo do Pedido</label>
+                                                <input
+                                                    placeholder="Ex: Peças X, Y..."
+                                                    className="w-full px-3 py-2.5 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-all"
+                                                    value={productSummary}
+                                                    onChange={e => setProductSummary(e.target.value)}
                                                 />
                                             </div>
                                         )}
 
-                                        <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 mt-2">
-                                            <input type="checkbox" checked={generatePaymentLink} onChange={e => setGeneratePaymentLink(e.target.checked)} />
+                                        <label className="flex items-center gap-2 text-[10px] font-bold text-[var(--admin-text-secondary)] mt-2 cursor-pointer">
+                                            <input type="checkbox" className="accent-wtech-gold" checked={generatePaymentLink} onChange={e => setGeneratePaymentLink(e.target.checked)} />
                                             Gerar Link de Pagamento no Sistema
                                         </label>
                                     </div>
@@ -2159,8 +2159,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             </div>
 
                             <div className="flex gap-2 pt-2">
-                                <button onClick={() => setConversionModal({ ...conversionModal, isOpen: false })} className="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
-                                <button onClick={handleConfirmConversion} className="flex-1 py-3 font-bold bg-green-500 text-white rounded-xl hover:bg-green-600 shadow-lg shadow-green-500/20">Confirmar</button>
+                                <button onClick={() => setConversionModal({ ...conversionModal, isOpen: false })} className="flex-1 py-3 font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] rounded-xl transition-colors">Cancelar</button>
+                                <button onClick={handleConfirmConversion} className="flex-1 py-3 font-black bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all active:scale-95">Confirmar</button>
                             </div>
                         </motion.div>
                     </div>
@@ -2169,18 +2169,18 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 {/* Lost Reason Modal */}
                 {lostReasonModal.isOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl w-full max-w-sm shadow-2xl space-y-4">
-                            <h3 className="text-lg font-bold text-red-600">Motivo da Perda</h3>
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[var(--admin-surface-1)] p-6 rounded-2xl w-full max-w-sm shadow-2xl border border-[var(--admin-border)] space-y-4">
+                            <h3 className="text-lg font-bold text-red-500">Motivo da Perda</h3>
                             <textarea
                                 autoFocus
-                                className="w-full p-3 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700 h-24 text-sm"
+                                className="w-full px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] h-24 outline-none focus:border-wtech-gold resize-none transition-all"
                                 placeholder="Por que o lead foi perdido?"
                                 value={lostReason}
                                 onChange={e => setLostReason(e.target.value)}
                             />
                             <div className="flex gap-2">
-                                <button onClick={() => setLostReasonModal({ ...lostReasonModal, isOpen: false })} className="flex-1 py-2 font-bold text-gray-500">Voltar</button>
-                                <button onClick={handleConfirmLost} className="flex-1 py-2 font-bold bg-red-500 text-white rounded-lg">Confirmar</button>
+                                <button onClick={() => setLostReasonModal({ ...lostReasonModal, isOpen: false })} className="flex-1 py-2 font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] rounded-xl transition-colors">Voltar</button>
+                                <button onClick={handleConfirmLost} className="flex-1 py-2 font-black bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all active:scale-95">Confirmar</button>
                             </div>
                         </motion.div>
                     </div>

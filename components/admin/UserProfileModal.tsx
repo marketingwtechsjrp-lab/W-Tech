@@ -159,7 +159,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.95, y: 20 }}
                     onClick={e => e.stopPropagation()}
-                    className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                    className="bg-[var(--admin-surface-1)] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
                 >
                     {/* Header */}
                     <div className="bg-wtech-black p-4 sm:p-8 text-white relative overflow-hidden">
@@ -230,7 +230,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                                         <div className="relative">
                                             <User size={18} className="absolute left-4 top-3.5 text-gray-400" />
                                             <input 
-                                                className="w-full border border-gray-200 bg-gray-50 rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold focus:bg-white focus:border-wtech-gold transition-all outline-none"
+                                                className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                                 placeholder="Seu nome..."
@@ -254,7 +254,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                                         <div className="relative">
                                             <Smartphone size={18} className="absolute left-4 top-3.5 text-gray-400" />
                                             <input 
-                                                className="w-full border border-gray-200 bg-gray-50 rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold focus:bg-white focus:border-wtech-gold transition-all outline-none"
+                                                className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl pl-12 pr-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
                                                 value={formData.phone}
                                                 onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                                 placeholder="(00) 00000-0000"
@@ -270,7 +270,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                                             <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Nova Senha</label>
                                             <input 
                                                 type="password"
-                                                className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-3.5 text-sm font-bold focus:bg-white focus:border-wtech-gold transition-all outline-none"
+                                                className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl px-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
                                                 value={formData.password}
                                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                                                 placeholder="••••••••"

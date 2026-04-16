@@ -160,7 +160,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
     };
 
     return (
-        <div className="text-gray-900 dark:text-gray-100 animate-in fade-in duration-500 pb-20">
+        <div className="text-[var(--admin-text-primary)] animate-in fade-in duration-500 pb-20">
             {/* Header / Premium Glass Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
                 <div>
@@ -168,14 +168,14 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                         <div className="p-2 bg-gradient-to-br from-wtech-gold to-yellow-600 rounded-lg text-black shadow-lg shadow-yellow-500/20">
                             <Sparkles size={20} />
                         </div>
-                        <h2 className="text-3xl font-black tracking-tighter dark:text-white uppercase">W-Intelligence</h2>
+                        <h2 className="text-3xl font-black tracking-tighter uppercase">W-Intelligence</h2>
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">Análise de negócios e resumos estratégicos alimentados por IA.</p>
+                    <p className="text-[var(--admin-text-secondary)] font-medium">Análise de negócios e resumos estratégicos alimentados por IA.</p>
                 </div>
 
                 <div className="flex gap-2">
                     {/* Date Filters UI */}
-                    <div className="flex bg-white dark:bg-[#111] p-1 rounded-xl border border-gray-200 dark:border-gray-800 mr-4">
+                    <div className="flex bg-[var(--admin-surface-1)] p-1 rounded-xl border border-gray-200  mr-4">
                         {(['7d', '30d', 'this_month', 'all'] as DateRange[]).map(range => (
                             <button
                                 key={range}
@@ -189,12 +189,12 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
 
                     <button 
                         onClick={() => loadData()}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg border border-gray-200 dark:border-gray-800 transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-lg border border-gray-200  transition-colors"
                         title="Recarregar Dados"
                     >
                         <RefreshCw size={18} className={fetchingData ? 'animate-spin' : ''} />
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-lg text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-[var(--admin-surface-1)] border border-gray-200  rounded-lg text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 transition-colors">
                         <Download size={16} /> Exportar Report
                     </button>
                 </div>
@@ -255,7 +255,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Tabs for Detailed Analysis */}
-            <div className="flex gap-2 mb-6 bg-white dark:bg-[#111] p-1.5 rounded-2xl border border-gray-100 dark:border-gray-800 w-fit">
+            <div className="flex gap-2 mb-6 bg-[var(--admin-surface-1)] p-1.5 rounded-2xl border border-[var(--admin-border)] w-fit">
                 {(['Global', 'Atendimento', 'Vendas', 'Equipe'] as Category[]).map(cat => (
                     <button
                         key={cat}
@@ -277,7 +277,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                         exit={{ opacity: 0, y: -10 }}
                         className="grid grid-cols-1 md:grid-cols-2 gap-6"
                     >
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-3xl border border-[var(--admin-border)] shadow-sm">
                             <div className="flex justify-between items-center mb-6">
                                 <h4 className="font-bold flex items-center gap-2"><BarChart3 size={18} className="text-wtech-gold" /> Funil de Vendas</h4>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase">Últimos 30 dias</span>
@@ -285,7 +285,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                             <ChartPlaceholder height={300} type="bar" />
                         </div>
 
-                        <div className="bg-white dark:bg-[#111] p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-3xl border border-[var(--admin-border)] shadow-sm">
                             <div className="flex justify-between items-center mb-6">
                                 <h4 className="font-bold flex items-center gap-2"><PieChart size={18} className="text-wtech-gold" /> Distribuição de Origem</h4>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase">Total Geral</span>
@@ -303,7 +303,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-6"
                     >
-                        <div className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-gray-800">
+                        <div className="bg-[var(--admin-surface-1)] p-8 rounded-3xl border border-[var(--admin-border)]">
                            <h4 className="font-bold text-lg mb-6 flex items-center gap-2"><Users size={20} className="text-wtech-gold" /> Análise de Atendentes</h4>
                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                {attendants.map((att) => (
@@ -320,7 +320,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                                         
                                         <div className="flex-1">
                                             {attendantAnalysis[att.id] ? (
-                                                <div className="text-[11px] text-gray-600 dark:text-gray-400 mb-4 bg-white dark:bg-black/20 p-4 rounded-xl border border-gray-100 dark:border-white/5 animate-in fade-in slide-in-from-top-2">
+                                                <div className="text-[11px] text-[var(--admin-text-secondary)] mb-4 bg-white dark:bg-black/20 p-4 rounded-xl border border-gray-100 dark:border-white/5 animate-in fade-in slide-in-from-top-2">
                                                     {attendantAnalysis[att.id]}
                                                 </div>
                                             ) : (
@@ -353,7 +353,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                         exit={{ opacity: 0, y: -10 }}
                         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
                     >
-                        <div className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-gray-800">
+                        <div className="bg-[var(--admin-surface-1)] p-8 rounded-3xl border border-[var(--admin-border)]">
                            <h4 className="font-bold text-lg mb-6 flex items-center gap-2"><DollarSign size={20} className="text-wtech-gold" /> Performance de Vendas</h4>
                            <div className="space-y-6">
                                <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-white/5 rounded-2xl">
@@ -376,7 +376,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                            </div>
                         </div>
 
-                        <div className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-gray-800">
+                        <div className="bg-[var(--admin-surface-1)] p-8 rounded-3xl border border-[var(--admin-border)]">
                            <h4 className="font-bold text-lg mb-6 flex items-center gap-2"><TrendingUp size={20} className="text-wtech-gold" /> Projeção de Crescimento</h4>
                            <p className="text-sm text-gray-500 mb-6">Baseado na taxa de conversão atual de {stats.conversionRate.toFixed(1)}%, projetamos o seguinte cenário:</p>
                            <ChartPlaceholder height={250} type="bar" />
@@ -431,12 +431,12 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                             </div>
                         </div>
 
-                         <div className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-gray-800">
+                         <div className="bg-[var(--admin-surface-1)] p-8 rounded-3xl border border-[var(--admin-border)]">
                            <h4 className="font-bold text-lg mb-6 flex items-center gap-2"><Activity size={20} className="text-wtech-gold" /> Monitoramento de Atividade</h4>
                            <div className="space-y-4">
                                {/* Activity content remains the same... */}
                                {[1,2,3,4].map(i => (
-                                   <div key={i} className="flex gap-4 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-2xl items-center">
+                                   <div key={i} className="flex gap-4 p-4 hover:bg-[var(--admin-surface-2)] transition-colors rounded-2xl items-center">
                                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-xs font-bold">{i}</div>
                                        <div className="flex-1">
                                            <p className="text-sm font-bold">Ação do Sistema #{i}</p>
@@ -457,7 +457,7 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
 // Sub-components for better organization
 
 const KPIComponent = ({ label, value, icon: Icon, color, trend }: any) => (
-    <div className="bg-white dark:bg-[#111] p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:border-wtech-gold/50 transition-colors group">
+    <div className="bg-[var(--admin-surface-1)] p-5 rounded-2xl border border-[var(--admin-border)] shadow-sm hover:border-wtech-gold/50 transition-colors group">
         <div className="flex justify-between items-start mb-2">
             <div className={`p-2 rounded-lg bg-gray-50 dark:bg-gray-900 group-hover:bg-wtech-gold/10 transition-colors`}>
                 <Icon size={18} className={color} />

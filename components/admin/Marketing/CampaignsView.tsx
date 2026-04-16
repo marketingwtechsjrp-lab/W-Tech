@@ -147,32 +147,32 @@ const DashboardTab = ({ permissions }: { permissions?: any }) => {
         <div className="p-6 md:p-8 space-y-8">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">
                             {permissions?.admin_access ? 'Total de Contatos' : 'Meus Contatos'}
                         </p>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.totalContacts}</h3>
+                        <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">{stats.totalContacts}</h3>
                     </div>
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl">
                         <Users size={28} />
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Campanhas</p>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.totalCampaigns}</h3>
+                        <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">{stats.totalCampaigns}</h3>
                     </div>
                     <div className="p-4 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-2xl">
                         <Megaphone size={28} />
                     </div>
                 </div>
 
-                 <div className="bg-white dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
+                 <div className="bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Disparos Feitos</p>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.messages.sent}</h3>
+                        <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">{stats.messages.sent}</h3>
                         <p className="text-xs text-green-500 font-bold mt-1">Entregues</p>
                     </div>
                     <div className="p-4 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-2xl">
@@ -183,10 +183,10 @@ const DashboardTab = ({ permissions }: { permissions?: any }) => {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Modelos Usados</p>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.totalTemplates}</h3>
+                        <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">{stats.totalTemplates}</h3>
                     </div>
                     <div className="p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-2xl">
                         <FileText size={28} />
@@ -195,21 +195,21 @@ const DashboardTab = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Chart Section */}
-            <div className="bg-white dark:bg-[#222] rounded-3xl p-8 border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="bg-[var(--admin-surface-2)] rounded-3xl p-8 border border-[var(--admin-border)] shadow-sm">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <div>
-                        <h4 className="font-black text-xl text-gray-900 dark:text-white">Desempenho de Disparos</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Volume de mensagens enviadas e falhas no período.</p>
+                        <h4 className="font-black text-xl text-[var(--admin-text-primary)]">Desempenho de Disparos</h4>
+                        <p className="text-sm text-[var(--admin-text-secondary)]">Volume de mensagens enviadas e falhas no período.</p>
                     </div>
-                    <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-xl">
+                    <div className="flex bg-gray-100 bg-[var(--admin-surface-1)] p-1 rounded-xl">
                         {['1', '7', '15', '30', '60', '90'].map((d) => (
                             <button
                                 key={d}
                                 onClick={() => setDateFilter(d)}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                                     dateFilter === d 
-                                    ? 'bg-white dark:bg-[#333] text-black dark:text-white shadow-sm' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                    ? 'bg-white bg-[var(--admin-surface-3)] text-black shadow-sm' 
+                                    : 'text-[var(--admin-text-secondary)] hover:text-gray-900 dark:hover:text-gray-200'
                                 }`}
                             >
                                 {d === '1' ? 'Hoje' : `${d}D`}
@@ -247,35 +247,35 @@ const DashboardTab = ({ permissions }: { permissions?: any }) => {
             </div>
             
             {/* Status Progress Bars (Same as before) */}
-            <div className="bg-gray-50 dark:bg-[#1A1A1A] rounded-3xl p-8 border border-gray-100 dark:border-gray-800">
-                <h4 className="font-black text-xl text-gray-900 dark:text-white mb-6">Status Global</h4>
+            <div className="bg-gray-50 bg-[var(--admin-surface-1)] rounded-3xl p-8 border border-[var(--admin-border)]">
+                <h4 className="font-black text-xl text-[var(--admin-text-primary)] mb-6">Status Global</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white dark:bg-[#222] p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <div className="bg-[var(--admin-surface-2)] p-5 rounded-2xl border border-[var(--admin-border)]">
                         <div className="flex justify-between mb-2">
-                             <span className="font-bold text-gray-500 dark:text-gray-400">Total Processado</span>
-                             <span className="font-black text-gray-900 dark:text-white">{stats.messages.total}</span>
+                             <span className="font-bold text-[var(--admin-text-secondary)]">Total Processado</span>
+                             <span className="font-black text-[var(--admin-text-primary)]">{stats.messages.total}</span>
                         </div>
-                        <div className="w-full bg-gray-100 dark:bg-[#111] h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-gray-100 bg-[var(--admin-surface-1)] h-2 rounded-full overflow-hidden">
                             <div className="bg-gray-400 h-full w-full opacity-20"></div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-[#222] p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <div className="bg-[var(--admin-surface-2)] p-5 rounded-2xl border border-[var(--admin-border)]">
                         <div className="flex justify-between mb-2">
                              <span className="font-bold text-yellow-600 dark:text-yellow-500">Pendentes</span>
-                             <span className="font-black text-gray-900 dark:text-white">{stats.messages.pending}</span>
+                             <span className="font-black text-[var(--admin-text-primary)]">{stats.messages.pending}</span>
                         </div>
-                        <div className="w-full bg-gray-100 dark:bg-[#111] h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-gray-100 bg-[var(--admin-surface-1)] h-2 rounded-full overflow-hidden">
                             <div className="bg-yellow-400 h-full transition-all" style={{ width: `${stats.messages.total ? (stats.messages.pending / stats.messages.total) * 100 : 0}%` }}></div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-[#222] p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <div className="bg-[var(--admin-surface-2)] p-5 rounded-2xl border border-[var(--admin-border)]">
                         <div className="flex justify-between mb-2">
                              <span className="font-bold text-red-600 dark:text-red-500">Falhas / Erros</span>
-                             <span className="font-black text-gray-900 dark:text-white">{stats.messages.failed}</span>
+                             <span className="font-black text-[var(--admin-text-primary)]">{stats.messages.failed}</span>
                         </div>
-                        <div className="w-full bg-gray-100 dark:bg-[#111] h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-gray-100 bg-[var(--admin-surface-1)] h-2 rounded-full overflow-hidden">
                             <div className="bg-red-500 h-full transition-all" style={{ width: `${stats.messages.total ? (stats.messages.failed / stats.messages.total) * 100 : 0}%` }}></div>
                         </div>
                     </div>
@@ -316,17 +316,17 @@ const CampaignsView = ({ permissions }: { permissions?: any }) => {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
             {/* Header */}
-             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200  pb-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+                    <h2 className="text-3xl font-black text-[var(--admin-text-primary)] tracking-tight flex items-center gap-3">
                         <Megaphone className="text-wtech-gold" /> Campanhas
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Automação de e-mail, WhatsApp e gestão de listas.</p>
+                    <p className="text-[var(--admin-text-secondary)] mt-1">Automação de e-mail, WhatsApp e gestão de listas.</p>
                 </div>
             </div>
 
             {/* Tabs Navigation */}
-            <div className="flex bg-white dark:bg-[#1A1A1A] p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 w-full md:w-auto overflow-x-auto custom-scrollbar">
+            <div className="flex bg-[var(--admin-surface-1)] p-1 rounded-xl shadow-sm border border-[var(--admin-border)] w-full md:w-auto overflow-x-auto custom-scrollbar">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -334,7 +334,7 @@ const CampaignsView = ({ permissions }: { permissions?: any }) => {
                         className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                             activeTab === tab.id 
                             ? 'bg-black text-white shadow-lg dark:bg-white dark:text-black' 
-                            : 'text-gray-500 hover:bg-gray-50 hover:text-black dark:text-gray-400 dark:hover:bg-[#333] dark:hover:text-white'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-black dark:hover:bg-[#333] dark:hover:text-white'
                         }`}
                     >
                         <tab.icon size={16} />
@@ -344,7 +344,7 @@ const CampaignsView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Content Area */}
-            <div className={`bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm min-h-[600px] ${activeTab === 'Dashboard' ? '' : 'p-6'}`}>
+            <div className={`bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm min-h-[600px] ${activeTab === 'Dashboard' ? '' : 'p-6'}`}>
                 {activeTab === 'Dashboard' && <DashboardTab permissions={permissions} />}
                 {activeTab === 'Lists' && <ListsManager permissions={permissions} />}
                 {activeTab === 'Campaigns' && <CampaignsManager permissions={permissions} />}

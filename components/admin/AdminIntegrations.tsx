@@ -147,11 +147,11 @@ const AdminIntegrations = () => {
 
     if (!isAdmin) {
         return (
-            <div className="p-8 text-center text-gray-500 bg-gray-50 dark:bg-[#1A1A1A] rounded-xl border border-gray-200 dark:border-gray-800">
+            <div className="p-8 text-center text-gray-500 bg-gray-50 bg-[var(--admin-surface-1)] rounded-xl border border-gray-200 ">
                 <AlertTriangle className="mx-auto mb-2 text-yellow-500" size={32} />
-                <h3 className="font-bold text-gray-900 dark:text-white">Acesso Restrito</h3>
-                <p className="dark:text-gray-400">Apenas administradores podem configurar o Servidor da API.</p>
-                <p className="text-sm mt-2 dark:text-gray-500">Para conectar seu WhatsApp, vá em <strong>Meu Perfil</strong>.</p>
+                <h3 className="font-bold text-[var(--admin-text-primary)]">Acesso Restrito</h3>
+                <p className="text-[var(--admin-text-secondary)]">Apenas administradores podem configurar o Servidor da API.</p>
+                <p className="text-sm mt-2">Para conectar seu WhatsApp, vá em <strong>Meu Perfil</strong>.</p>
             </div>
         );
     }
@@ -159,25 +159,25 @@ const AdminIntegrations = () => {
     return (
         <div className="space-y-6">
             {/* 1. Global Server Config (Admin Only) */}
-            <div className="bg-gray-50 dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+            <div className="bg-gray-50 bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Server className="text-gray-600 dark:text-gray-400" />
-                    <h3 className="font-bold text-gray-800 dark:text-white">Configuração do Servidor (Global)</h3>
+                    <Server className="text-[var(--admin-text-secondary)]" />
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Configuração do Servidor (Global)</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Server URL</label>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Server URL</label>
                         <input
-                            className="w-full border border-gray-300 dark:border-gray-700 rounded p-2 text-sm bg-white dark:bg-[#222] dark:text-white dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
                             value={globalConfig.serverUrl}
                             onChange={e => setGlobalConfig({ ...globalConfig, serverUrl: e.target.value })}
                             placeholder="https://api.seudominio.com"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Global API Key</label>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Global API Key</label>
                         <input
-                            className="w-full border border-gray-300 dark:border-gray-700 rounded p-2 text-sm bg-white dark:bg-[#222] dark:text-white font-mono dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-wtech-gold/50 transition-colors outline-none"
                             type="password"
                             value={globalConfig.apiKey}
                             onChange={e => setGlobalConfig({ ...globalConfig, apiKey: e.target.value })}
@@ -187,64 +187,64 @@ const AdminIntegrations = () => {
             </div>
 
             {/* 2. Asaas Payment Config */}
-            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-2 mb-4">
                     <Banknote className="text-blue-600 dark:text-blue-400" />
-                    <h3 className="font-bold text-gray-800 dark:text-white">Integração Asaas (Nacional)</h3>
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Integração Asaas (Nacional)</h3>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-6">
                     API Key do Asaas para gerar links de pagamento (Boleto/Pix/Cartão) automaticamente.
                 </p>
                 <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Asaas API Key</label>
+                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Asaas API Key</label>
                     <input
-                        className="w-full border border-gray-300 dark:border-gray-700 rounded p-2 text-sm bg-white dark:bg-[#222] dark:text-white font-mono dark:focus:border-blue-500/50 transition-colors outline-none"
+                        className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-blue-500/50 transition-colors outline-none"
                         type="password"
                         value={globalConfig.asaasKey}
                         onChange={e => setGlobalConfig({ ...globalConfig, asaasKey: e.target.value })}
                         placeholder="$aact_..."
                     />
                 </div>
-                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 dark:hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-sm">
+                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
                     <Save size={14} /> Salvar Asaas
                 </button>
             </div>
 
             {/* 3. Stripe Payment Config */}
-            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-2 mb-4">
                     <CreditCard className="text-purple-600 dark:text-purple-400" />
-                    <h3 className="font-bold text-gray-800 dark:text-white">Integração Stripe (Internacional)</h3>
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Integração Stripe (Internacional)</h3>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-6">
                     Secret Key do Stripe para vendas internacionais (USD, EUR, etc).
                 </p>
                 <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Stripe Secret Key (sk_live_...)</label>
+                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Stripe Secret Key (sk_live_...)</label>
                     <input
-                        className="w-full border border-gray-300 dark:border-gray-700 rounded p-2 text-sm bg-white dark:bg-[#222] dark:text-white font-mono dark:focus:border-purple-500/50 transition-colors outline-none"
+                        className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-purple-500/50 transition-colors outline-none"
                         type="password"
                         value={globalConfig.stripeKey}
                         onChange={e => setGlobalConfig({ ...globalConfig, stripeKey: e.target.value })}
                         placeholder="sk_live_..."
                     />
                 </div>
-                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 dark:hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-sm">
+                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
                     <Save size={14} /> Salvar Stripe
                 </button>
             </div>
 
             {/* 4. Mercado Pago Config */}
-            <div className={`p-6 rounded-xl border-2 shadow-sm transition-all ${globalConfig.checkoutDiretoEnabled ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800' : 'bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-gray-800'}`}>
+            <div className={`p-6 rounded-xl border-2 shadow-sm transition-all ${globalConfig.checkoutDiretoEnabled ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800' : 'bg-[var(--admin-surface-1)] border-gray-200 '}`}>
                 {/* Header com Toggle */}
                 <div className="flex items-start justify-between gap-4 mb-5">
                     <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-lg ${globalConfig.checkoutDiretoEnabled ? 'bg-green-100 dark:bg-green-900/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                            <ShoppingCart size={20} className={globalConfig.checkoutDiretoEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'} />
+                            <ShoppingCart size={20} className={globalConfig.checkoutDiretoEnabled ? 'text-green-600 dark:text-green-400' : 'text-[var(--admin-text-secondary)]'} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-800 dark:text-white">Mercado Pago — Checkout Direto</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            <h3 className="font-bold text-[var(--admin-text-primary)]">Mercado Pago — Checkout Direto</h3>
+                            <p className="text-xs text-[var(--admin-text-secondary)] mt-0.5">
                                 LP → Formulário → Checkout → Pagamento → Inscrição automática
                             </p>
                         </div>
@@ -252,7 +252,7 @@ const AdminIntegrations = () => {
                     {/* Toggle liga/desliga */}
                     <button
                         onClick={handleToggleCheckoutDireto}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-black text-sm transition-all shrink-0 ${globalConfig.checkoutDiretoEnabled ? 'bg-green-500 text-white shadow-md shadow-green-200 dark:shadow-green-900/30' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-black text-sm transition-all shrink-0 ${globalConfig.checkoutDiretoEnabled ? 'bg-green-500 text-white shadow-md shadow-green-200 dark:shadow-green-900/30' : 'bg-gray-200 dark:bg-gray-700 text-[var(--admin-text-secondary)]'}`}
                         title={globalConfig.checkoutDiretoEnabled ? 'Clique para desabilitar' : 'Clique para habilitar'}
                     >
                         {globalConfig.checkoutDiretoEnabled
@@ -263,7 +263,7 @@ const AdminIntegrations = () => {
                 </div>
 
                 {/* Status banner */}
-                <div className={`rounded-lg px-4 py-3 mb-5 text-sm font-bold flex items-center gap-2 ${globalConfig.checkoutDiretoEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
+                <div className={`rounded-lg px-4 py-3 mb-5 text-sm font-bold flex items-center gap-2 ${globalConfig.checkoutDiretoEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-[var(--admin-text-secondary)]'}`}>
                     {globalConfig.checkoutDiretoEnabled
                         ? '✓ Habilitado — clientes serão redirecionados ao checkout após preencher o formulário da LP'
                         : '○ Desabilitado — o formulário da LP exibirá a mensagem de "obrigado" (fluxo antigo)'}
@@ -271,32 +271,32 @@ const AdminIntegrations = () => {
 
                 {/* Access Token */}
                 <div>
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 tracking-wider">
+                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1 tracking-wider">
                         Access Token (APP_USR-... ou APP_TEST-...)
                     </label>
                     <input
-                        className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-sm bg-white dark:bg-[#222] dark:text-white font-mono focus:border-green-500 dark:focus:border-green-500/50 transition-colors outline-none"
+                        className="w-full border border-[var(--admin-border)] rounded-lg p-2.5 text-sm bg-[var(--admin-surface-2)] font-mono focus:border-green-500 dark:focus:border-green-500/50 transition-colors outline-none"
                         type="password"
                         value={globalConfig.mercadoPagoKey}
                         onChange={e => setGlobalConfig({ ...globalConfig, mercadoPagoKey: e.target.value })}
                         placeholder="APP_USR-..."
                     />
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--admin-text-tertiary)] mt-1">
                         Use <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">APP_TEST-...</code> para sandbox (testes) ou <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">APP_USR-...</code> para produção.
                     </p>
                 </div>
-                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 dark:hover:bg-gray-200 transition-colors flex items-center gap-2 shadow-sm">
+                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
                     <Save size={14} /> Salvar Token
                 </button>
             </div>
 
             {/* 5. Google Analytics / Search Console Config */}
-            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className="text-red-500 dark:text-red-400" />
-                    <h3 className="font-bold text-gray-800 dark:text-white">Conexão Google Cloud (Marketing)</h3>
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Conexão Google Cloud (Marketing)</h3>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-6 font-medium">
                     Configure as credenciais OAuth para importar dados reais do Google Analytics 4 e Search Console.
                 </p>
                 
@@ -304,7 +304,7 @@ const AdminIntegrations = () => {
                     <div>
                         <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Client ID (OAuth)</label>
                         <input
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm bg-gray-50/50 dark:bg-[#222] dark:text-white focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono text-[10px]"
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono text-[10px]"
                             value={globalConfig.googleClientId}
                             onChange={e => setGlobalConfig({ ...globalConfig, googleClientId: e.target.value })}
                             placeholder="...apps.googleusercontent.com"
@@ -313,7 +313,7 @@ const AdminIntegrations = () => {
                     <div>
                         <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Client Secret</label>
                         <input
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm bg-gray-50/50 dark:bg-[#222] dark:text-white focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono text-[10px]"
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono text-[10px]"
                             type="password"
                             value={globalConfig.googleClientSecret}
                             onChange={e => setGlobalConfig({ ...globalConfig, googleClientSecret: e.target.value })}
@@ -323,7 +323,7 @@ const AdminIntegrations = () => {
                     <div className="md:col-span-2">
                         <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">GA4 Property ID</label>
                         <input
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm bg-gray-50/50 dark:bg-[#222] dark:text-white focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
                             value={globalConfig.ga4PropertyId}
                             onChange={e => setGlobalConfig({ ...globalConfig, ga4PropertyId: e.target.value })}
                             placeholder="123456789"
@@ -333,13 +333,13 @@ const AdminIntegrations = () => {
                 </div>
 
                 <div className="flex gap-3 mt-8">
-                    <button onClick={handleSaveGlobalConfig} disabled={loading} className="bg-wtech-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-200 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                    <button onClick={handleSaveGlobalConfig} disabled={loading} className="bg-wtech-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
                         <Save size={14} /> Salvar Credenciais Google
                     </button>
                     <button 
                         onClick={handleGoogleAuth} 
                         disabled={loading || !globalConfig.googleClientId}
-                        className="border-2 border-wtech-black dark:border-white text-wtech-black dark:text-white px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-wtech-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95"
+                        className="border-2 border-wtech-black dark:border-white text-wtech-black px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-wtech-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95"
                     >
                         <Globe size={14} /> Autenticar Conta
                     </button>
@@ -357,10 +357,10 @@ const AdminIntegrations = () => {
             </div>
 
             {/* 2. Test Connection & Send (NEW) */}
-            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-[var(--admin-border)] shadow-sm">
                 <div className="flex items-center gap-2 mb-6">
                     <Send className="text-blue-500 dark:text-blue-400" />
-                    <h3 className="font-bold text-gray-800 dark:text-white">Testar Disparo & Integração</h3>
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Testar Disparo & Integração</h3>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
@@ -369,7 +369,7 @@ const AdminIntegrations = () => {
                         <div className="relative">
                             <Smartphone size={14} className="absolute left-3 top-3 text-gray-300" />
                             <input
-                                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-9 pr-3 py-2.5 text-sm font-bold bg-gray-50/30 dark:bg-[#222] dark:text-white focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all"
+                                className="w-full border border-[var(--admin-border)] rounded-lg pl-9 pr-3 py-2.5 text-sm font-bold bg-gray-50/30 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all"
                                 placeholder="DD9XXXXXXXX"
                                 value={testPhone}
                                 onChange={e => setTestPhone(e.target.value)}
@@ -380,7 +380,7 @@ const AdminIntegrations = () => {
                     <div className="lg:col-span-4">
                         <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Conteúdo da Mensagem</label>
                         <input
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-gray-50/30 dark:bg-[#222] dark:text-white focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all"
+                            className="w-full border border-[var(--admin-border)] rounded-lg px-3 py-2.5 text-sm bg-gray-50/30 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all"
                             placeholder="Olá, teste de integração..."
                             value={testMessage}
                             onChange={e => setTestMessage(e.target.value)}
@@ -393,7 +393,7 @@ const AdminIntegrations = () => {
                             <div className="relative">
                                 <ImageIcon size={14} className="absolute left-3 top-3 text-gray-300" />
                                 <input
-                                    className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-9 pr-3 py-2.5 text-sm bg-gray-50/30 dark:bg-[#222] dark:text-white focus:bg-white dark:focus:bg-[#1A1A1A] outline-none font-mono text-[10px] transition-all"
+                                    className="w-full border border-[var(--admin-border)] rounded-lg pl-9 pr-3 py-2.5 text-sm bg-gray-50/30 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none font-mono text-[10px] transition-all"
                                     placeholder="https://exemplo.com/imagem.jpg"
                                     value={testImageUrl}
                                     onChange={e => setTestImageUrl(e.target.value)}
@@ -403,7 +403,7 @@ const AdminIntegrations = () => {
                     </div>
                 </div>
 
-                <div className="flex gap-3 mt-6 pt-6 border-t border-gray-50 dark:border-gray-800">
+                <div className="flex gap-3 mt-6 pt-6 border-t border-gray-50 ">
                     <button
                         onClick={handleTestText}
                         disabled={isSendingTest || !testPhone}

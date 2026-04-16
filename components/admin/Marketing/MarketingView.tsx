@@ -46,17 +46,17 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
             {/* Header */}
-             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200  pb-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+                    <h2 className="text-3xl font-black text-[var(--admin-text-primary)] tracking-tight flex items-center gap-3">
                         <Rocket className="text-wtech-gold" /> Marketing
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Gestão de conteúdo, páginas, links e análise de dados.</p>
+                    <p className="text-[var(--admin-text-secondary)] mt-1">Gestão de conteúdo, páginas, links e análise de dados.</p>
                 </div>
             </div>
 
             {/* Tabs Navigation */}
-            <div className="flex bg-white dark:bg-[#1A1A1A] p-1 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 w-full overflow-x-auto custom-scrollbar">
+            <div className="flex bg-[var(--admin-surface-1)] p-1 rounded-xl shadow-sm border border-[var(--admin-border)] w-full overflow-x-auto custom-scrollbar">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -64,7 +64,7 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
                         className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                             activeTab === tab.id 
                             ? 'bg-black text-white shadow-lg dark:bg-white dark:text-black' 
-                            : 'text-gray-500 hover:bg-gray-50 hover:text-black dark:text-gray-400 dark:hover:bg-[#333] dark:hover:text-white'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-black dark:hover:bg-[#333] dark:hover:text-white'
                         }`}
                     >
                         <tab.icon size={16} />
@@ -74,7 +74,7 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Content Area */}
-            <div className={`bg-white dark:bg-[#1A1A1A] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'LP', 'Bio'].includes(activeTab) ? '' : 'p-6'}`}>
+            <div className={`bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'LP', 'Bio'].includes(activeTab) ? '' : 'p-6'}`}>
                 {activeTab === 'Blog' && <BlogManagerView permissions={permissions} />}
                 {activeTab === 'LP' && <LandingPagesView permissions={permissions} />}
                 {activeTab === 'Bio' && <BioPageManager />}

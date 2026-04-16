@@ -1585,20 +1585,20 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         const totalPotential = enrollments.length * (currentCourse.price || 0);
 
         return (
-            <div className="bg-white dark:bg-[#1A1A1A] p-8 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 min-h-screen">
+            <div className="bg-[var(--admin-surface-1)] p-8 rounded-lg shadow-sm border border-[var(--admin-border)] min-h-screen">
                 <div className="flex justify-between items-start mb-8 print:hidden">
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-1">
+                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-[var(--admin-text-secondary)] hover:text-black dark:hover:text-white flex items-center gap-1">
                                 <ArrowRight className="rotate-180" size={14} /> Voltar
                             </button>
                         </div>
-                        <h2 className="text-2xl font-black text-gray-900 dark:text-white">Lista de Inscritos</h2>
-                        <p className="text-gray-500 dark:text-gray-400">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
+                        <h2 className="text-2xl font-black text-[var(--admin-text-primary)]">Lista de Inscritos</h2>
+                        <p className="text-[var(--admin-text-secondary)]">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
                         <div className="mt-2 text-sm flex gap-4">
                             <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-blue-700 dark:text-blue-400">Moeda: {currentCourse.currency || 'BRL'}</span>
                             <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</span>
-                            <span className="text-gray-600 dark:text-gray-400 font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
+                            <span className="text-[var(--admin-text-secondary)] font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1619,7 +1619,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                 {/* Enrollment Edit Form */}
                 {editingEnrollment && (
-                    <div className="mb-6 bg-gray-50 dark:bg-[#222] p-6 rounded-lg border border-gray-200 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 print:hidden">
+                    <div className="mb-6 bg-[var(--admin-surface-2)] p-6 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 print:hidden">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingEnrollment.id ? 'Editar Aluno' : 'Novo Aluno'}</h3>
                             <button onClick={() => setEditingEnrollment(null)}><X size={18} /></button>
@@ -1627,24 +1627,24 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <form onSubmit={handleSaveEnrollment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* ... Fields ... reuse previous fields ... */}
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Nome Completo</label>
-                                <input required className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentName || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentName: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Nome Completo</label>
+                                <input required className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentName || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentName: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Email</label>
-                                <input type="email" className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentEmail || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentEmail: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Email</label>
+                                <input type="email" className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentEmail || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentEmail: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Telefone/WhatsApp</label>
-                                <input className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Telefone/WhatsApp</label>
+                                <input className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">CPF</label>
-                                <input className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">CPF</label>
+                                <input className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Tamanho da Camiseta</label>
-                                <select className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
+                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Tamanho da Camiseta</label>
+                                <select className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
                                     <option value="">Selecione...</option>
                                     <option value="P">P</option>
                                     <option value="M">M</option>
@@ -1654,8 +1654,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">Status</label>
-                                <select className="w-full p-2 border rounded dark:bg-[#333] dark:border-gray-700 dark:text-white" value={editingEnrollment.status || 'Confirmed'} onChange={e => setEditingEnrollment({ ...editingEnrollment, status: e.target.value as any })}>
+                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Status</label>
+                                <select className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.status || 'Confirmed'} onChange={e => setEditingEnrollment({ ...editingEnrollment, status: e.target.value as any })}>
                                     <option value="Pending">Pendente</option>
                                     <option value="Confirmed">Confirmado</option>
                                     <option value="CheckedIn">Presente (Check-in)</option>
@@ -1763,7 +1763,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-800 text-indigo-600 dark:text-indigo-300 text-[9px] rounded font-bold uppercase tracking-wider">Restrito</span>
                                             </label>
                                             <input
-                                                className="w-full p-2 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-[#1a1a2e] dark:text-white text-sm font-medium focus:ring-2 focus:ring-indigo-400 outline-none"
+                                                className="w-full p-2 border border-indigo-200 rounded bg-[var(--admin-surface-2)] text-sm font-medium focus:ring-2 focus:ring-indigo-400 outline-none"
                                                 placeholder="Nome do atendente..."
                                                 value={editingEnrollment.enrolledByName || ''}
                                                 onChange={e => setEditingEnrollment({ ...editingEnrollment, enrolledByName: e.target.value })}
@@ -1786,7 +1786,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 {/* ... Table ... */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 dark:bg-[#111] text-gray-800 dark:text-gray-200 uppercase font-bold text-xs border-b border-gray-200 dark:border-gray-800">
+                        <thead className="bg-[var(--admin-surface-2)] text-gray-800 uppercase font-bold text-xs border-b border-gray-200">
                             <tr>
                                 <th className="px-6 py-3">Nome do Aluno</th>
                                 <th className="px-6 py-3">Contato</th>
@@ -1797,18 +1797,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <th className="px-6 py-3 hidden print:table-cell">Assinatura</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-100">
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-[var(--admin-text-primary)]">
                             {enrollments.length > 0 ? (
                                 enrollments.map((enr, idx) => {
                                     const balance = (enr.totalAmount ?? currentCourse.price ?? 0) - (enr.amountPaid || 0);
                                     return (
-                                        <tr key={enr.id} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                        <tr key={enr.id} className="group hover:bg-[var(--admin-surface-2)] transition-colors">
                                             <td className="px-6 py-4 font-bold">
                                                 {idx + 1}. {enr.studentName}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div>{enr.studentEmail}</div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400">{enr.studentPhone}</div>
+                                                <div className="text-xs text-[var(--admin-text-secondary)]">{enr.studentPhone}</div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${enr.status === 'CheckedIn' ? 'bg-green-100 text-green-700' : enr.status === 'Pending' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-yellow-100 text-yellow-700'}`}>
@@ -1822,7 +1822,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 ) : (
                                                     <div className="text-xs text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/20 inline-block px-1 rounded">Quitado</div>
                                                 )}
-                                                <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{enr.paymentMethod || '-'}</div>
+                                                <div className="text-[10px] text-[var(--admin-text-tertiary)] mt-1">{enr.paymentMethod || '-'}</div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {enr.enrolledByName ? (
@@ -1889,25 +1889,25 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 {
                     stripeReconcileModal.isOpen && (
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                            <div className="bg-white dark:bg-[#1A1A1A] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Conciliação Stripe</h3>
+                            <div className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                                <h3 className="text-2xl font-black text-[var(--admin-text-primary)] mb-2">Conciliação Stripe</h3>
                                 <p className="text-gray-500 mb-6">Vincular ID de transação para confirmar pagamento.</p>
 
                                 <div className="space-y-4 mb-6">
                                     <div>
-                                        <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Stripe ID (ch_... ou pi_...)</label>
+                                        <label className="block text-sm font-bold mb-2 text-gray-700">Stripe ID (ch_... ou pi_...)</label>
                                         <input
-                                            className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            className="w-full p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-3)] rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                                             placeholder="Ex: ch_3SzzWkJcoez..."
                                             value={stripeReconcileModal.stripeId || ''}
                                             onChange={e => setStripeReconcileModal({ ...stripeReconcileModal, stripeId: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Valor Confirmado ({currentCourse?.currency})</label>
+                                        <label className="block text-sm font-bold mb-2 text-gray-700">Valor Confirmado ({currentCourse?.currency})</label>
                                         <input
                                             type="number"
-                                            className="w-full p-3 border border-gray-300 dark:border-gray-700 dark:bg-[#333] dark:text-white rounded-lg font-bold"
+                                            className="w-full p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-3)] rounded-lg font-bold"
                                             value={stripeReconcileModal.amount || 0}
                                             onChange={e => setStripeReconcileModal({ ...stripeReconcileModal, amount: parseFloat(e.target.value) })}
                                         />
@@ -1917,7 +1917,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setStripeReconcileModal({ isOpen: false, enrollment: null })}
-                                        className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50"
                                     >
                                         Cancelar
                                     </button>
@@ -1938,14 +1938,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 {
                     settleModal.isOpen && (
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                            <div className="bg-white dark:bg-[#1A1A1A] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Quitar Saldo Restante</h3>
+                            <div className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                                <h3 className="text-2xl font-black text-[var(--admin-text-primary)] mb-2">Quitar Saldo Restante</h3>
                                 <p className="text-gray-500 mb-6">Confirmar recebimento do valor pendente.</p>
 
-                                <div className="bg-gray-50 dark:bg-[#222] p-4 rounded-lg mb-6 border border-gray-100 dark:border-gray-800">
+                                <div className="bg-[var(--admin-surface-2)] p-4 rounded-lg mb-6 border border-[var(--admin-border)]">
                                     <div className="flex justify-between mb-2">
                                         <span className="text-sm font-bold text-gray-500">Aluno</span>
-                                        <span className="font-bold dark:text-white">{settleModal.enrollment?.studentName}</span>
+                                        <span className="font-bold">{settleModal.enrollment?.studentName}</span>
                                     </div>
                                     <div className="flex justify-between mb-2">
                                         <span className="text-sm font-bold text-gray-500">Saldo Atual</span>
@@ -1972,7 +1972,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     className={`flex items-center gap-2 p-3 rounded-xl border transition-all font-bold text-xs ${
                                                         settleMethod === method.id 
                                                         ? 'bg-wtech-gold border-wtech-gold text-black shadow-lg shadow-yellow-500/10' 
-                                                        : 'bg-white dark:bg-[#222] border-gray-100 dark:border-gray-800 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                                                        : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
                                                     }`}
                                                 >
                                                     <span className={settleMethod === method.id ? 'text-black' : 'text-gray-400'}>{method.icon}</span>
@@ -2025,7 +2025,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                                     className={`flex-1 py-2 rounded-lg font-black text-xs border transition-all ${
                                                                         settleModal.targetCurrency === curr 
                                                                         ? 'bg-violet-600 border-violet-600 text-white shadow-lg' 
-                                                                        : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-400'
+                                                                        : 'bg-[var(--admin-surface-1)] border-gray-200 text-gray-400'
                                                                     }`}
                                                                 >
                                                                     {curr}
@@ -2053,7 +2053,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
                                                     <input
                                                         type="number"
-                                                        className="w-full p-4 pl-12 bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl font-black text-lg relative focus:ring-0 outline-none"
+                                                        className="w-full p-4 pl-12 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl font-black text-lg relative focus:ring-0 outline-none"
                                                         value={settleModal.linkAmount}
                                                         onChange={e => setSettleModal({ ...settleModal, linkAmount: parseFloat(e.target.value) })}
                                                     />
@@ -2077,8 +2077,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-in fade-in">
                                             <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase mb-2">Link Gerado:</p>
                                             <div className="flex gap-2">
-                                                <input readOnly className="flex-1 text-xs p-2 border rounded bg-white dark:bg-[#111] dark:text-white dark:border-gray-700" value={generatedLink} />
-                                                <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} className="p-2 bg-white dark:bg-[#333] border rounded hover:bg-gray-50"><Copy size={14} /></button>
+                                                <input readOnly className="flex-1 text-xs p-2 border rounded bg-[var(--admin-surface-1)]" value={generatedLink} />
+                                                <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} className="p-2 bg-[var(--admin-surface-3)] border rounded hover:bg-gray-50"><Copy size={14} /></button>
                                             </div>
                                         </div>
                                     )}
@@ -2096,7 +2096,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <>
                                             <button
                                                 onClick={() => setSettleModal({ ...settleModal, isOpen: false })}
-                                                className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                                className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50"
                                             >
                                                 Cancelar
                                             </button>
@@ -2119,9 +2119,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
     const Table = () => (
         <>
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="bg-[var(--admin-surface-1)] rounded-lg shadow-sm border border-[var(--admin-border)] overflow-hidden">
                 <table className="w-full text-left font-bold text-sm">
-                    <thead className="bg-[#eff6ff] dark:bg-[#111] text-[#1e3a8a] dark:text-blue-400 text-xs uppercase">
+                    <thead className="bg-[var(--admin-surface-1)] text-[#1e3a8a] dark:text-blue-400 text-xs uppercase">
                         <tr>
                             <th className="p-4">Evento</th>
                             <th className="p-4">Data</th>
@@ -2130,15 +2130,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <th className="p-4 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-600 dark:text-gray-400">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-[var(--admin-text-secondary)]">
                         {filteredCourses.length > 0 ? (
                             filteredCourses.map(course => (
-                                <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                <tr key={course.id} className="hover:bg-[var(--admin-surface-2)] transition-colors">
                                     <td className="p-4">
                                         <div className="text-blue-700 dark:text-blue-400 font-bold">{course.title}</div>
                                         <div className="text-xs text-gray-400">{course.location}</div>
                                     </td>
-                                    <td className="p-4 text-gray-800 dark:text-gray-300 font-bold">
+                                    <td className="p-4 text-gray-800 font-bold">
                                         {formatDateLocal(course.date)}
                                         <div className="text-xs text-gray-400 font-normal">{course.startTime || '08:00'}</div>
                                     </td>
@@ -2364,9 +2364,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     </div>
 
                                     {/* Student List Table */}
-                                    <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-                                        <div className="p-4 bg-gray-50 dark:bg-[#111] border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                                            <h4 className="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
+                                    <div className="bg-[var(--admin-surface-1)] rounded-xl shadow-sm border border-[var(--admin-border)] overflow-hidden">
+                                        <div className="p-4 bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)] flex justify-between items-center">
+                                            <h4 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
                                             <button
                                                 onClick={() => {
                                                     const csv = [
@@ -2387,13 +2387,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     a.download = `Relatorio_${reportCourse.title}.csv`;
                                                     a.click();
                                                 }}
-                                                className="text-xs bg-white dark:bg-[#333] border border-gray-300 dark:border-gray-700 px-3 py-1 rounded font-bold hover:bg-gray-50 dark:hover:bg-[#444] flex items-center gap-1 dark:text-gray-300"
+                                                className="text-xs bg-[var(--admin-surface-3)] border border-[var(--admin-border)] px-3 py-1 rounded font-bold hover:bg-gray-50 flex items-center gap-1"
                                             >
                                                 <Download size={12} /> CSV
                                             </button>
                                         </div>
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-gray-100 dark:bg-[#111] text-gray-500 dark:text-gray-400 font-bold text-xs uppercase">
+                                            <thead className="bg-[var(--admin-surface-1)] text-[var(--admin-text-secondary)] font-bold text-xs uppercase">
                                                 <tr>
                                                     <th className="px-4 py-3">Aluno</th>
                                                     <th className="px-4 py-3">Contato</th>
@@ -2403,9 +2403,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                                 {reportData.studentsList?.map((student: any, idx: number) => (
-                                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/5">
-                                                        <td className="px-4 py-3 font-bold text-gray-800 dark:text-gray-100">{student.name}</td>
-                                                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                                                    <tr key={idx} className="hover:bg-[var(--admin-surface-2)]">
+                                                        <td className="px-4 py-3 font-bold text-[var(--admin-text-primary)]">{student.name}</td>
+                                                        <td className="px-4 py-3 text-[var(--admin-text-secondary)]">
                                                             <div className="text-xs">{student.email}</div>
                                                             <div className="text-xs">{student.phone}</div>
                                                         </td>
@@ -2414,7 +2414,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                                 {student.status}
                                                             </span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-gray-200">
+                                                        <td className="px-4 py-3 text-right font-bold text-[var(--admin-text-primary)]">
                                                             R$ {student.paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                         </td>
                                                     </tr>
@@ -2456,14 +2456,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         <div className="text-gray-900 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h2 className="text-xl font-bold dark:text-white">Gestão de Cursos e Eventos</h2>
+                    <h2 className="text-xl font-bold">Gestão de Cursos e Eventos</h2>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                     {/* Search Bar */}
                     <div className="relative">
                         <input
-                            className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-wtech-gold w-full md:w-64 dark:bg-[#222] dark:border-gray-700 dark:text-white"
+                            className="pl-8 pr-4 py-2 border rounded-lg focus:outline-none focus:border-wtech-gold w-full md:w-64 bg-[var(--admin-surface-2)]"
                             placeholder="Buscar curso..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -2472,11 +2472,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     </div>
 
                     {/* Date Filter */}
-                    <div className="flex items-center gap-2 bg-white dark:bg-[#222] border dark:border-gray-700 rounded-lg px-2 py-1">
+                    <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] border rounded-lg px-2 py-1">
                         <span className="text-xs font-bold text-gray-400 uppercase">Período:</span>
-                        <input type="date" className="text-sm border-none focus:ring-0 text-gray-600 dark:text-gray-300 dark:bg-transparent" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
+                        <input type="date" className="text-sm border-none focus:ring-0 text-[var(--admin-text-secondary)] dark:bg-transparent" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
                         <span className="text-gray-400">-</span>
-                        <input type="date" className="text-sm border-none focus:ring-0 text-gray-600 dark:text-gray-300 dark:bg-transparent" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
+                        <input type="date" className="text-sm border-none focus:ring-0 text-[var(--admin-text-secondary)] dark:bg-transparent" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
                         {(dateRange.start || dateRange.end) && (
                             <button onClick={() => setDateRange({ start: '', end: '' })} className="text-gray-400 hover:text-red-500"><X size={14} /></button>
                         )}
@@ -2489,15 +2489,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <Download size={16} /> Relatório
                         </button>
 
-                        <button onClick={handlePrintCoursesReport} className="bg-gray-100 text-gray-800 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700" title="Imprimir Lista">
+                        <button onClick={handlePrintCoursesReport} className="bg-gray-100 text-gray-800 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors dark:bg-gray-800" title="Imprimir Lista">
                             <Printer size={16} /> Imprimir
                         </button>
                     </div>
 
                     {/* View Toggles */}
                     <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
-                        <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'calendar' ? 'bg-white dark:bg-[#333] shadow-sm dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Calendário</button>
-                        <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'list' ? 'bg-white dark:bg-[#333] shadow-sm dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>Lista</button>
+                        <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'calendar' ? 'bg-[var(--admin-surface-3)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Calendário</button>
+                        <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'list' ? 'bg-[var(--admin-surface-3)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Lista</button>
                     </div>
                 </div>
             </div>
@@ -2549,25 +2549,25 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {/* INLINE FORM / TOP INSERTION */}
             {isEditing && (
-                <div className="mb-8 bg-white dark:bg-[#1A1A1A] p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95">
+                <div className="mb-8 bg-[var(--admin-surface-1)] p-8 rounded-2xl shadow-xl border border-[var(--admin-border)] animate-in fade-in zoom-in-95">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-black text-2xl text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                        <h3 className="font-black text-2xl text-[var(--admin-text-primary)] uppercase tracking-tight flex items-center gap-2">
                             {formData.id ? <Edit className="text-wtech-gold" /> : <Plus className="text-wtech-gold" />}
                             {formData.id ? 'Editar Evento' : 'Novo Evento'}
                         </h3>
-                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-gray-100 dark:hover:bg-[#333] rounded-full transition-colors dark:text-gray-300">
+                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                             <X size={24} />
                         </button>
                     </div>
 
                     <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Título do Evento</label>
-                            <input autoFocus className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] text-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Curso de Suspensão Avançada" required />
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Título do Evento</label>
+                            <input autoFocus className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] text-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Curso de Suspensão Avançada" required />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Tipo de Evento</label>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Tipo de Evento</label>
                             <div className="flex gap-2">
                                 {['Course', 'Event', 'TrackDay'].map(type => (
                                     <button
@@ -2576,7 +2576,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         onClick={() => setFormData({ ...formData, type: type as any })}
                                         className={`flex-1 p-3 rounded-lg border font-bold text-sm transition-all ${formData.type === type
                                             ? 'bg-black text-white dark:bg-white dark:text-black'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-[#222] dark:text-gray-400 dark:border-gray-700 dark:hover:bg-[#333]'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-[var(--admin-surface-2)]'
                                             }`}
                                     >
                                         {type === 'Course' ? 'Curso' : type === 'TrackDay' ? 'Track Day' : 'Evento'}
@@ -2586,28 +2586,28 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Data de Início</label>
-                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Data de Início</label>
+                            <input type="date" className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Data de Fim (Opcional)</label>
-                            <input type="date" className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Data de Fim (Opcional)</label>
+                            <input type="date" className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Hora Início</label>
-                                <input type="time" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
+                                <label className="block text-sm font-bold mb-1 text-gray-700">Hora Início</label>
+                                <input type="time" className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Hora Fim</label>
-                                <input type="time" className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
+                                <label className="block text-sm font-bold mb-1 text-gray-700">Hora Fim</label>
+                                <input type="time" className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Status</label>
-                            <select className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-bold" value={formData.status || 'Draft'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Status</label>
+                            <select className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold" value={formData.status || 'Draft'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
                                 <option value="Draft">Rascunho (Oculto)</option>
                                 <option value="Published">Publicado (Visível)</option>
                                 <option value="Full">Esgotado</option>
@@ -2617,44 +2617,44 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         {/* LOCATION SECTION */}
-                        <div className="md:col-span-2 border-t pt-4 mt-2 border-gray-100 dark:border-gray-800">
-                            <label className="block text-sm font-bold mb-3 text-gray-800 dark:text-gray-200 uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
+                        <div className="md:col-span-2 border-t pt-4 mt-2 border-[var(--admin-border)]">
+                            <label className="block text-sm font-bold mb-3 text-gray-800 uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
                             <div className="grid grid-cols-4 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">CEP</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} onBlur={handleBlurCEP} placeholder="00000-000" />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">CEP</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} onBlur={handleBlurCEP} placeholder="00000-000" />
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Endereço (Rua/Av)</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Endereço (Rua/Av)</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Número</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.addressNumber || ''} onChange={e => setFormData({ ...formData, addressNumber: e.target.value })} onBlur={handleGeocodeCourse} placeholder="Ex: 123" />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Número</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.addressNumber || ''} onChange={e => setFormData({ ...formData, addressNumber: e.target.value })} onBlur={handleGeocodeCourse} placeholder="Ex: 123" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Bairro</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.addressNeighborhood || ''} onChange={e => setFormData({ ...formData, addressNeighborhood: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Bairro</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.addressNeighborhood || ''} onChange={e => setFormData({ ...formData, addressNeighborhood: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Cidade</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Cidade</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Estado</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.state || ''} onChange={e => setFormData({ ...formData, state: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Estado</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.state || ''} onChange={e => setFormData({ ...formData, state: e.target.value })} />
                                 </div>
                                 <div className="col-span-4">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Local (Exibido no Cabeçalho)</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Local (Exibido no Cabeçalho)</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Latitude</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222] bg-gray-50 dark:bg-[#333]" value={formData.latitude || ''} readOnly />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Latitude</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] bg-[var(--admin-surface-3)]" value={formData.latitude || ''} readOnly />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold mb-1 text-gray-500 dark:text-gray-400">Longitude</label>
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222] bg-gray-50 dark:bg-[#333]" value={formData.longitude || ''} readOnly />
+                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Longitude</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] bg-[var(--admin-surface-3)]" value={formData.longitude || ''} readOnly />
                                 </div>
                                 <div className="col-span-4">
                                     <button type="button" onClick={handleGeocodeCourse} className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-3 py-1 rounded font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-900/40">
@@ -2665,8 +2665,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Modalidade</label>
-                            <select className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Modalidade</label>
+                            <select className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
                                 <option value="Presencial">Presencial</option>
                                 <option value="Online">Online</option>
                             </select>
@@ -2674,14 +2674,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                         {/* Event Types DON'T have instructor usually? Or maybe they do. Keeping for now. */}
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Resposável / Instrutor</label>
-                            <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Resposável / Instrutor</label>
+                            <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
 
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-[var(--admin-border)]">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Tipo de Faturamento</label>
-                                <div className="flex bg-white dark:bg-[#111] p-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <label className="block text-sm font-bold mb-1 text-gray-700">Tipo de Faturamento</label>
+                                <div className="flex bg-[var(--admin-surface-1)] p-1 rounded-lg border border-[var(--admin-border)]">
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, isInternational: false, currency: 'BRL' })}
@@ -2701,9 +2701,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                             {formData.isInternational && (
                                 <div className="animate-in fade-in slide-in-from-left-2">
-                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Moeda</label>
+                                    <label className="block text-sm font-bold mb-1 text-gray-700">Moeda</label>
                                     <select
-                                        className="w-full border border-gray-300 dark:border-gray-700 p-2.5 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-bold"
+                                        className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold"
                                         value={formData.currency || 'USD'}
                                         onChange={e => setFormData({ ...formData, currency: e.target.value as any })}
                                     >
@@ -2714,39 +2714,39 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             )}
 
                             <div className={!formData.isInternational ? 'md:col-span-2' : ''}>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                                <label className="block text-sm font-bold mb-1 text-gray-700">
                                     Vagas / Cotas
                                 </label>
-                                <input type="number" className="w-full border border-gray-300 dark:border-gray-700 p-2.5 rounded-lg text-gray-900 dark:text-white dark:bg-[#222]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
+                                <input type="number" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
                             </div>
 
-                            <div className="md:col-span-3 grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <div className="md:col-span-3 grid grid-cols-2 gap-4 pt-4 border-t border-[var(--admin-border)]">
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-bold mb-1 text-gray-700">
                                         Valor do Curso ({formData.currency || 'BRL'})
                                     </label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-3 text-gray-400 font-bold">{formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : 'R$'}</span>
-                                        <input type="number" step="0.01" className="w-full border border-gray-300 dark:border-gray-700 p-2.5 pl-10 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-black" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
+                                        <input type="number" step="0.01" className="w-full border border-[var(--admin-border)] p-2.5 pl-10 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-black" value={formData.price || ''} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })} placeholder="0.00" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                                    <label className="block text-sm font-bold mb-1 text-gray-700">
                                         Reciclagem ({formData.currency || 'BRL'})
                                     </label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-3 text-gray-400 font-bold">{formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : 'R$'}</span>
-                                        <input type="number" step="0.01" className="w-full border border-gray-300 dark:border-gray-700 p-2.5 pl-10 rounded-lg text-gray-900 dark:text-white dark:bg-[#222] font-black" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
+                                        <input type="number" step="0.01" className="w-full border border-[var(--admin-border)] p-2.5 pl-10 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-black" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-gray-200">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><Award size={14} /> Layout do Certificado</label>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 flex items-center gap-2"><Award size={14} /> Layout do Certificado</label>
                                 <select
-                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]"
+                                    className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]"
                                     value={formData.certificateLayoutId || ''}
                                     onChange={e => setFormData({ ...formData, certificateLayoutId: e.target.value })}
                                 >
@@ -2757,9 +2757,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-2"><User size={14} /> Layout do Crachá</label>
+                                <label className="block text-sm font-bold mb-1 text-gray-700 flex items-center gap-2"><User size={14} /> Layout do Crachá</label>
                                 <select
-                                    className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]"
+                                    className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]"
                                     value={formData.badgeLayoutId || ''}
                                     onChange={e => setFormData({ ...formData, badgeLayoutId: e.target.value })}
                                 >
@@ -2772,23 +2772,23 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Imagem de Capa</label>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Imagem de Capa</label>
                             <div className="flex flex-col gap-2">
                                 <div className="flex gap-4 mb-2">
-                                    <label className="flex items-center gap-2 cursor-pointer dark:text-gray-300">
+                                    <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" name="imgSource" checked={formData.imageSourceType !== 'Upload'} onChange={() => setFormData({ ...formData, imageSourceType: 'Url' })} />
                                         <span className="text-sm">Link Externo (URL)</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer dark:text-gray-300">
+                                    <label className="flex items-center gap-2 cursor-pointer">
                                         <input type="radio" name="imgSource" checked={formData.imageSourceType === 'Upload'} onChange={() => setFormData({ ...formData, imageSourceType: 'Upload' })} />
                                         <span className="text-sm">Upload de Arquivo</span>
                                     </label>
                                 </div>
 
                                 {formData.imageSourceType === 'Upload' ? (
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white bg-white dark:bg-[#222]" />
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" />
                                 ) : (
-                                    <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
+                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
                                 )}
 
                                 {formData.image && (
@@ -2801,12 +2801,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">URL do Mapa (Opcional - Gerado Automático)</label>
-                            <input className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
+                            <label className="block text-sm font-bold mb-1 text-gray-700">URL do Mapa (Opcional - Gerado Automático)</label>
+                            <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">Cronograma / Conteúdo</label>
+                            <label className="block text-sm font-bold mb-1 text-gray-700">Cronograma / Conteúdo</label>
                             <div className="mb-2 flex gap-2">
                                 <button
                                     type="button"
@@ -2816,15 +2816,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     📥 Carregar Modelo: Suspensão
                                 </button>
                             </div>
-                            <textarea rows={8} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                            <textarea rows={8} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">O que levar / Requisitos</label>
-                            <textarea rows={4} className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-white dark:bg-[#222]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
+                            <label className="block text-sm font-bold mb-1 text-gray-700">O que levar / Requisitos</label>
+                            <textarea rows={4} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
                         </div>
 
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[var(--admin-border)] pt-4">
                             <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100/50 dark:border-green-900/30">
                                 <h4 className="font-bold text-green-800 dark:text-green-400 text-xs uppercase mb-3 flex items-center gap-2">
                                     <Bell size={14} /> Lembrete Antecipado
@@ -2836,16 +2836,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             checked={formData.reminder5dEnabled ?? true}
                                             onChange={e => setFormData({ ...formData, reminder5dEnabled: e.target.checked })}
                                         />
-                                        <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
+                                        <span className="text-sm font-bold">Ativar</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700"
+                                            className="w-16 p-1 border rounded text-sm font-bold text-center bg-[var(--admin-surface-2)]"
                                             value={formData.reminder5dDays ?? 5}
                                             onChange={e => setFormData({ ...formData, reminder5dDays: parseInt(e.target.value) })}
                                         />
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">dias antes</span>
+                                        <span className="text-xs text-[var(--admin-text-secondary)]">dias antes</span>
                                     </div>
                                 </div>
                             </div>
@@ -2861,22 +2861,22 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             checked={formData.reminder1dEnabled ?? true}
                                             onChange={e => setFormData({ ...formData, reminder1dEnabled: e.target.checked })}
                                         />
-                                        <span className="text-sm font-bold dark:text-gray-300">Ativar</span>
+                                        <span className="text-sm font-bold">Ativar</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            className="w-16 p-1 border rounded text-sm font-bold text-center dark:bg-[#222] dark:text-white dark:border-gray-700"
+                                            className="w-16 p-1 border rounded text-sm font-bold text-center bg-[var(--admin-surface-2)]"
                                             value={formData.reminder1dDays ?? 1}
                                             onChange={e => setFormData({ ...formData, reminder1dDays: parseInt(e.target.value) })}
                                         />
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">dia(s) antes</span>
+                                        <span className="text-xs text-[var(--admin-text-secondary)]">dia(s) antes</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 bg-gray-50 dark:bg-[#222] p-4 rounded border border-gray-200 dark:border-gray-700">
+                        <div className="md:col-span-2 bg-[var(--admin-surface-2)] p-4 rounded border border-[var(--admin-border)]">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -2884,16 +2884,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     checked={generateLP}
                                     onChange={e => setGenerateLP(e.target.checked)}
                                 />
-                                <span className="font-bold text-gray-900 dark:text-white">Gerar Landing Page Automática?</span>
+                                <span className="font-bold text-[var(--admin-text-primary)]">Gerar Landing Page Automática?</span>
                             </label>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                            <div className="text-xs text-[var(--admin-text-secondary)] mt-1 ml-7">
                                 Cria uma página em <code>/lp/titulo-data</code> vinculada a este curso.
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-gray-200">
                             <div className="flex gap-2 w-full md:w-auto">
-                                <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-white dark:bg-[#333] border border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-[#444] flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
+                                <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-gray-50 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
                                     <Mail size={16} /> Anunciar p/ Base (Email)
                                 </button>
                                 <button
@@ -2905,8 +2905,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </button>
                             </div>
                             <div className="flex gap-3 w-full md:w-auto">
-                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">Cancelar</button>
-                                <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 dark:hover:bg-gray-700 shadow-xl transition-all active:scale-95">Salvar Curso</button>
+                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-100 transition-all">Cancelar</button>
+                                <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 shadow-xl transition-all active:scale-95">Salvar Curso</button>
                             </div>
                         </div>
                     </form>
@@ -2915,20 +2915,20 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {!isEditing && hasPermission('courses_add') && (
                 <div className="mb-4">
-                    <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 dark:text-gray-400 font-bold hover:border-wtech-gold hover:text-wtech-gold transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => handleEdit()} className="w-full py-3 border-2 border-dashed border-[var(--admin-border)] rounded-lg text-[var(--admin-text-secondary)] font-bold hover:border-wtech-gold hover:text-wtech-gold transition-colors flex items-center justify-center gap-2">
                         <Plus size={20} /> Adicionar Novo Curso no Topo
                     </button>
                 </div>
             )}
 
             {/* DATA DISPLAY */}
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden min-h-[400px]">
+            <div className="bg-[var(--admin-surface-1)] rounded-lg shadow-sm border border-[var(--admin-border)] overflow-hidden min-h-[400px]">
                 {viewMode === 'list' ? (
                     <Table />
                 ) : (
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-gray-700 dark:text-gray-200">Calendário de {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
+                            <h3 className="font-bold text-[var(--admin-text-primary)]">Calendário de {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
                             <span className="text-xs text-gray-400">Navegue acima para mudar</span>
                         </div>
                         <CalendarGrid />
@@ -3357,11 +3357,11 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
     }
 
     return (
-        <div className="text-gray-900 dark:text-gray-100">
+        <div className="text-[var(--admin-text-primary)]">
             <div className="flex flex-col gap-4 mb-6">
                 {/* Header Row */}
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold dark:text-white">Oficinas Credenciadas</h2>
+                    <h2 className="text-xl font-bold">Oficinas Credenciadas</h2>
                     <div className="flex gap-2">
                         {processingCount.total > 0 && (
                             <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 px-4 py-2 rounded text-xs font-bold flex items-center gap-2">
@@ -3382,13 +3382,13 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                         )}
 
                         {isImporting ? (
-                            <div className="flex items-center gap-2 bg-gray-100 dark:bg-[#222] p-2 rounded">
-                                <input type="file" accept=".csv" onChange={handleCSVImport} className="text-xs dark:text-gray-300" />
-                                <button onClick={() => setIsImporting(false)} className="dark:text-gray-300"><X size={16} /></button>
+                            <div className="flex items-center gap-2 bg-[var(--admin-surface-3)] p-2 rounded">
+                                <input type="file" accept=".csv" onChange={handleCSVImport} className="text-xs" />
+                                <button onClick={() => setIsImporting(false)} className="text-[var(--admin-text-secondary)]"><X size={16} /></button>
                             </div>
                         ) : (
                             hasPermission('accredited_import') && (
-                                <button onClick={() => setIsImporting(true)} className="bg-white border border-gray-300 text-gray-700 dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 px-4 py-2 rounded font-bold flex items-center gap-2">
+                                <button onClick={() => setIsImporting(true)} className="bg-white border border-gray-300 text-gray-700 bg-[var(--admin-surface-2)] px-4 py-2 rounded font-bold flex items-center gap-2">
                                     <Upload size={18} /> Importar CSV
                                 </button>
                             )
@@ -3403,18 +3403,18 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
 
                 {/* Filter Row */}
                 <div className="flex gap-4">
-                    <div className="flex-grow flex items-center bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded px-3 py-2">
+                    <div className="flex-grow flex items-center bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded px-3 py-2">
                         <Search size={18} className="text-gray-400 mr-2" />
                         <input
                             placeholder="Buscar por Oficina, Cidade, UF ou Região..."
-                            className="flex-grow outline-none text-sm text-gray-900 dark:text-white bg-transparent"
+                            className="flex-grow outline-none text-sm text-[var(--admin-text-primary)] bg-transparent"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <button
                         onClick={() => setFilterMissingGPS(!filterMissingGPS)}
-                        className={`px-4 py-2 rounded font-bold flex items-center gap-2 border transition-all ${filterMissingGPS ? 'bg-orange-100 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-900/40 dark:text-orange-400' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 dark:bg-[#222] dark:border-gray-700 dark:text-gray-400 dark:hover:bg-[#333]'}`}
+                        className={`px-4 py-2 rounded font-bold flex items-center gap-2 border transition-all ${filterMissingGPS ? 'bg-orange-100 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-900/40 dark:text-orange-400' : 'bg-white border-gray-200 text-gray-500 hover:bg-[var(--admin-surface-2)]'}`}
                     >
                         <MapPin size={18} className={filterMissingGPS ? "fill-orange-500" : ""} />
                         {filterMissingGPS ? 'Mostrando Sem GPS' : 'Filtrar Sem GPS'}
@@ -3422,9 +3422,9 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="bg-[var(--admin-surface-1)] rounded-lg shadow-sm border border-[var(--admin-border)] overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 uppercase font-bold text-xs">
+                    <thead className="bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] uppercase font-bold text-xs">
                         <tr>
                             <th className="px-4 py-3 w-10">
                                 <input type="checkbox" onChange={toggleSelectAll} checked={selectedIds.length > 0 && selectedIds.length === filteredMechanics.length} />
@@ -3436,9 +3436,9 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                             <th className="px-6 py-3">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-200">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900">
                         {currentMechanics.map(mech => (
-                            <tr key={mech.id} className="hover:bg-gray-50 dark:hover:bg-[#222]">
+                            <tr key={mech.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-4 w-10">
                                     <input type="checkbox" checked={selectedIds.includes(mech.id)} onChange={() => toggleSelect(mech.id)} />
                                 </td>
@@ -3463,7 +3463,7 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                                         </button>
                                     )}
                                     {hasPermission('accredited_edit') && (
-                                        <button onClick={() => { setFormData(mech); setIsEditing(true); }} className="text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"><Edit size={16} /></button>
+                                        <button onClick={() => { setFormData(mech); setIsEditing(true); }} className="text-gray-500 hover:text-black dark:hover:text-white"><Edit size={16} /></button>
                                     )}
                                     {(!mech.latitude || !mech.longitude) && hasPermission('accredited_edit') && (
                                         <button onClick={() => handleQuickGeocode(mech)} className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" title="Atualizar GPS Rápido">
@@ -3479,12 +3479,12 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                     </tbody>
                 </table>
                 {filteredMechanics.length === 0 && (
-                    <div className="p-10 text-center text-gray-500 dark:text-gray-400">Nenhum credenciado encontrado com os filtros atuais.</div>
+                    <div className="p-10 text-center text-[var(--admin-text-secondary)]">Nenhum credenciado encontrado com os filtros atuais.</div>
                 )}
             </div>
             {/* Pagination Controls */}
             {filteredMechanics.length > itemsPerPage && (
-                <div className="flex justify-between items-center mt-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex justify-between items-center mt-4 text-sm text-[var(--admin-text-secondary)]">
                     <div>
                         Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredMechanics.length)} de {filteredMechanics.length}
                     </div>
@@ -3492,14 +3492,14 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                         <button
                             onClick={prevPage}
                             disabled={currentPage === 1}
-                            className="px-4 py-2 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-[#333] disabled:opacity-50"
+                            className="px-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded hover:bg-gray-50 disabled:opacity-50"
                         >
                             Anterior
                         </button>
                         <button
                             onClick={nextPage}
                             disabled={currentPage === totalPages}
-                            className="px-4 py-2 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-[#333] disabled:opacity-50"
+                            className="px-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded hover:bg-gray-50 disabled:opacity-50"
                         >
                             Próxima
                         </button>
@@ -4213,22 +4213,22 @@ const NewsCenterView = () => {
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in">
-            <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Centro de Notícias</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">Envie comunicados para credenciados e alunos via Email e WhatsApp.</p>
+            <h2 className="text-3xl font-black text-[var(--admin-text-primary)] mb-2">Centro de Notícias</h2>
+            <p className="text-[var(--admin-text-secondary)] mb-8">Envie comunicados para credenciados e alunos via Email e WhatsApp.</p>
 
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8">
+            <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-sm border border-[var(--admin-border)] p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Título / Assunto</label>
-                        <input className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 font-bold text-gray-900 dark:text-white outline-none focus:border-wtech-gold" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Atualização Importante" />
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Título / Assunto</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded-lg p-3 font-bold text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Atualização Importante" />
                     </div>
                     <div className="col-span-2">
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Mensagem</label>
-                        <textarea className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 h-40 outline-none focus:border-wtech-gold dark:bg-[#222] dark:text-white" value={message} onChange={e => setMessage(e.target.value)} placeholder="Escreva sua mensagem aqui..." />
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Mensagem</label>
+                        <textarea className="w-full border border-[var(--admin-border)] rounded-lg p-3 h-40 outline-none focus:border-wtech-gold bg-[var(--admin-surface-2)]" value={message} onChange={e => setMessage(e.target.value)} placeholder="Escreva sua mensagem aqui..." />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Público Alvo</label>
-                        <select className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-[#222] dark:text-white outline-none" value={audience} onChange={e => setAudience(e.target.value)}>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Público Alvo</label>
+                        <select className="w-full border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)] outline-none" value={audience} onChange={e => setAudience(e.target.value)}>
                             <option value="All">Todos (Geral)</option>
                             <option value="Mechanics">Credenciados (Oficinas)</option>
                             <option value="Students">Alunos</option>
@@ -4236,8 +4236,8 @@ const NewsCenterView = () => {
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
-                    <button className="px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#333]">Salvar Rascunho</button>
+                <div className="flex justify-end gap-4 border-t border-[var(--admin-border)] pt-6">
+                    <button className="px-6 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50">Salvar Rascunho</button>
                     <button onClick={handleSend} disabled={sending} className="px-8 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 shadow-lg flex items-center gap-2">
                         {sending ? 'Enviando...' : <><Send size={18} /> Enviar Comunicado</>}
                     </button>
@@ -4309,22 +4309,22 @@ const OrdersView = () => {
     });
 
     return (
-        <div className="text-gray-900 dark:text-gray-100 space-y-6 animate-fade-in">
+        <div className="text-[var(--admin-text-primary)] space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">Pedidos & Inscrições</h2>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">Acompanhe as vendas de cursos e produtos.</p>
+                    <h2 className="text-3xl font-black text-[var(--admin-text-primary)] tracking-tighter">Pedidos & Inscrições</h2>
+                    <p className="text-[var(--admin-text-secondary)] font-medium">Acompanhe as vendas de cursos e produtos.</p>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="bg-[var(--admin-surface-1)] p-4 rounded-xl border border-[var(--admin-border)] shadow-sm flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Buscar por Cliente</label>
+                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Buscar por Cliente</label>
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-3 text-gray-400" />
                         <input
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold dark:bg-[#222] dark:text-white"
+                            className="w-full border border-[var(--admin-border)] rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold bg-[var(--admin-surface-2)]"
                             placeholder="Nome do aluno..."
                             value={filterName}
                             onChange={e => setFilterName(e.target.value)}
@@ -4332,11 +4332,11 @@ const OrdersView = () => {
                     </div>
                 </div>
                 <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Buscar por Curso/Item</label>
+                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Buscar por Curso/Item</label>
                     <div className="relative">
                         <ShoppingBag size={16} className="absolute left-3 top-3 text-gray-400" />
                         <input
-                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold dark:bg-[#222] dark:text-white"
+                            className="w-full border border-[var(--admin-border)] rounded-lg pl-10 pr-3 py-2 text-sm outline-none focus:border-wtech-gold bg-[var(--admin-surface-2)]"
                             placeholder="Nome do curso..."
                             value={filterCourse}
                             onChange={e => setFilterCourse(e.target.value)}
@@ -4345,9 +4345,9 @@ const OrdersView = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="bg-[var(--admin-surface-1)] rounded-xl shadow-sm border border-[var(--admin-border)] overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 dark:bg-[#222] text-gray-500 dark:text-gray-400 uppercase font-bold text-xs border-b border-gray-100 dark:border-gray-800">
+                    <thead className="bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] uppercase font-bold text-xs border-b border-[var(--admin-border)]">
                         <tr>
                             <th className="px-6 py-4">Cliente / Aluno</th>
                             <th className="px-6 py-4">Item Comprado</th>
@@ -4356,17 +4356,17 @@ const OrdersView = () => {
                             <th className="px-6 py-4">Status</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900 dark:text-gray-200">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-900">
                         {loading ? (
                             <tr><td colSpan={5} className="p-8 text-center text-gray-400">Carregando pedidos...</td></tr>
                         ) : filteredOrders.length === 0 ? (
                             <tr><td colSpan={5} className="p-8 text-center text-gray-400">Nenhum pedido encontrado.</td></tr>
                         ) : (
                             filteredOrders.map((order, idx) => (
-                                <tr key={`${order.id}-${idx}`} className="hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
+                                <tr key={`${order.id}-${idx}`} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-bold text-gray-900 dark:text-white">{order.customerName}</div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">{order.customerEmail}</div>
+                                        <div className="font-bold text-[var(--admin-text-primary)]">{order.customerName}</div>
+                                        <div className="text-xs text-[var(--admin-text-secondary)]">{order.customerEmail}</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
@@ -4376,13 +4376,13 @@ const OrdersView = () => {
                                             <span className="font-medium">{order.itemName}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{new Date(order.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
+                                    <td className="px-6 py-4 text-[var(--admin-text-secondary)]">{new Date(order.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 font-bold text-[var(--admin-text-primary)]">
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${order.status === 'Paid' || order.status === 'Confirmed' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
-                                            order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400'
+                                            order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-900/20'
                                             }`}>
                                             {order.status === 'Paid' || order.status === 'Confirmed' ? 'Pago / Confirmado' : 'Pendente'}
                                         </span>
@@ -4717,10 +4717,10 @@ const SettingsView = () => {
     };
 
     return (
-        <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col h-full">
+        <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-sm border border-[var(--admin-border)] overflow-hidden flex flex-col h-full">
             {/* Header / Tabs */}
             {/* Header / Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#222] px-6 pt-4 pb-4 flex items-center justify-between gap-4">
+            <div className="border-b border-gray-200 bg-[var(--admin-surface-2)] px-6 pt-4 pb-4 flex items-center justify-between gap-4">
                 <div className="flex-1 overflow-x-auto scrollbar-hide">
                     <ExpandableTabs
                         activeId={activeTab}
@@ -4762,91 +4762,91 @@ const SettingsView = () => {
 
                             {/* Visual Identity */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><ImageIcon size={18} /> Identidade Visual</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><ImageIcon size={18} /> Identidade Visual</h3>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Nome do Site</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Nome do Site</label>
                                     <input
-                                        className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                        className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                         value={config.site_title || ''}
                                         onChange={(e) => handleChange('site_title', e.target.value)}
                                         placeholder="W-TECH Brasil"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo URL</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Logo URL</label>
                                     <div className="flex gap-3">
-                                        <div className="w-16 h-16 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden relative group">
+                                        <div className="w-16 h-16 bg-[var(--admin-surface-3)] rounded border flex items-center justify-center overflow-hidden relative group">
                                             {config.logo_url ? <img src={config.logo_url} className="w-full h-full object-contain" /> : <ImageIcon size={20} className="text-gray-400" />}
                                         </div>
                                         <div className="flex-1 flex gap-2">
                                             <input
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                                 value={config.logo_url || ''}
                                                 onChange={(e) => handleChange('logo_url', e.target.value)}
                                                 placeholder="https://..."
                                             />
-                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
-                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                            <label className="cursor-pointer bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-3 rounded-lg hover:bg-gray-200">
+                                                <Upload size={18} className="text-[var(--admin-text-secondary)]" />
                                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'logo_url')} />
                                             </label>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo URL (Dark Mode)</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Logo URL (Dark Mode)</label>
                                     <div className="flex gap-3">
-                                        <div className="w-16 h-16 bg-black rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden relative group">
+                                        <div className="w-16 h-16 bg-black rounded border flex items-center justify-center overflow-hidden relative group">
                                             {config.logo_dark_url ? <img src={config.logo_dark_url} className="w-full h-full object-contain" /> : <ImageIcon size={20} className="text-gray-600" />}
                                         </div>
                                         <div className="flex-1 flex gap-2">
                                             <input
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                                 value={config.logo_dark_url || ''}
                                                 onChange={(e) => handleChange('logo_dark_url', e.target.value)}
                                                 placeholder="https://..."
                                             />
-                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
-                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                            <label className="cursor-pointer bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-3 rounded-lg hover:bg-gray-200">
+                                                <Upload size={18} className="text-[var(--admin-text-secondary)]" />
                                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'logo_dark_url')} />
                                             </label>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Favicon URL (Ícone da Aba)</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Favicon URL (Ícone da Aba)</label>
                                     <div className="flex gap-3">
-                                        <div className="w-10 h-10 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden">
+                                        <div className="w-10 h-10 bg-[var(--admin-surface-3)] rounded border flex items-center justify-center overflow-hidden">
                                             {config.favicon_url ? <img src={config.favicon_url} className="w-6 h-6 object-contain" /> : <div className="w-4 h-4 bg-gray-400 rounded-full" />}
                                         </div>
                                         <div className="flex-1 flex gap-2">
                                             <input
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                                 value={config.favicon_url || ''}
                                                 onChange={(e) => handleChange('favicon_url', e.target.value)}
                                                 placeholder="https://... (PNG/ICO)"
                                             />
-                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
-                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                            <label className="cursor-pointer bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-3 rounded-lg hover:bg-gray-200">
+                                                <Upload size={18} className="text-[var(--admin-text-secondary)]" />
                                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'favicon_url')} />
                                             </label>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Imagem de Destaque (SEO OG Image)</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Imagem de Destaque (SEO OG Image)</label>
                                     <div className="flex gap-3">
-                                        <div className="w-16 h-12 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden">
+                                        <div className="w-16 h-12 bg-[var(--admin-surface-3)] rounded border flex items-center justify-center overflow-hidden">
                                             {config.seo_og_image ? <img src={config.seo_og_image} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-400" />}
                                         </div>
                                         <div className="flex-1 flex gap-2">
                                             <input
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                                 value={config.seo_og_image || ''}
                                                 onChange={(e) => handleChange('seo_og_image', e.target.value)}
                                                 placeholder="https://... (1200x630 recomendado)"
                                             />
-                                            <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
-                                                <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                            <label className="cursor-pointer bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-3 rounded-lg hover:bg-gray-200">
+                                                <Upload size={18} className="text-[var(--admin-text-secondary)]" />
                                                 <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'seo_og_image')} />
                                             </label>
                                         </div>
@@ -4855,17 +4855,17 @@ const SettingsView = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Cor Primária</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Cor Primária</label>
                                         <div className="flex items-center gap-2">
                                             <input type="color" className="w-8 h-8 rounded cursor-pointer border-0" value={config.primary_color || '#D4AF37'} onChange={(e) => handleChange('primary_color', e.target.value)} />
-                                            <span className="text-xs font-mono dark:text-gray-300">{config.primary_color}</span>
+                                            <span className="text-xs font-mono">{config.primary_color}</span>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Cor Secundária</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Cor Secundária</label>
                                         <div className="flex items-center gap-2">
                                             <input type="color" className="w-8 h-8 rounded cursor-pointer border-0" value={config.secondary_color || '#111111'} onChange={(e) => handleChange('secondary_color', e.target.value)} />
-                                            <span className="text-xs font-mono dark:text-gray-300">{config.secondary_color}</span>
+                                            <span className="text-xs font-mono">{config.secondary_color}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -4873,10 +4873,10 @@ const SettingsView = () => {
 
                             {/* Contact & WhatsApp */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><MessageCircle size={18} /> Contato & WhatsApp</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><MessageCircle size={18} /> Contato & WhatsApp</h3>
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
-                                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">WhatsApp Button</label>
+                                        <label className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">WhatsApp Button</label>
                                         <button
                                             onClick={() => handleChange('whatsapp_enabled', !config.whatsapp_enabled)}
                                             className={`w-10 h-6 rounded-full transition-colors relative ${config.whatsapp_enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
@@ -4907,9 +4907,9 @@ const SettingsView = () => {
                                         { k: 'linkedin', l: 'LinkedIn URL' }
                                     ].map(field => (
                                         <div key={field.k}>
-                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{field.l}</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">{field.l}</label>
                                             <input
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                                 value={config[field.k] || ''}
                                                 onChange={(e) => handleChange(field.k, e.target.value)}
                                                 placeholder="..."
@@ -4921,7 +4921,7 @@ const SettingsView = () => {
 
                             {/* Tracking & Integrations */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Code size={18} /> Tracking & Pixels</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Code size={18} /> Tracking & Pixels</h3>
                                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 text-xs rounded-lg mb-4">
                                     Insira os IDs de rastreamento para ativar a coleta de dados automática.
                                 </div>
@@ -4931,9 +4931,9 @@ const SettingsView = () => {
                                     { k: 'gtm_id', l: 'Google Tag Manager' }
                                 ].map(field => (
                                     <div key={field.k}>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">{field.l}</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">{field.l}</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg font-mono text-sm dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg font-mono text-sm bg-[var(--admin-surface-2)]"
                                             value={config[field.k] || ''}
                                             onChange={(e) => handleChange(field.k, e.target.value)}
                                             placeholder="..."
@@ -4944,11 +4944,11 @@ const SettingsView = () => {
 
                             {/* Dev Tools */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Shield size={18} /> Ferramentas do Sistema</h3>
-                                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-100 dark:border-gray-700">
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Shield size={18} /> Ferramentas do Sistema</h3>
+                                <div className="flex items-center justify-between p-4 bg-[var(--admin-surface-2)] rounded-lg border border-[var(--admin-border)]">
                                     <div>
-                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">Super Admin</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Ativa botão flutuante para troca rápida de usuários (para testes).</p>
+                                        <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Super Admin</h4>
+                                        <p className="text-xs text-[var(--admin-text-secondary)]">Ativa botão flutuante para troca rápida de usuários (para testes).</p>
                                     </div>
                                     <button
                                         onClick={() => handleChange('enable_dev_panel', config.enable_dev_panel === 'true' ? 'false' : 'true')}
@@ -4959,7 +4959,7 @@ const SettingsView = () => {
                                 </div>
                                 <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-900/40">
                                     <div>
-                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white">Distribuição de Leads (CRM)</h4>
+                                        <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Distribuição de Leads (CRM)</h4>
                                         <p className="text-xs text-purple-800 dark:text-purple-400">
                                             {config.crm_distribution_mode === 'Random'
                                                 ? 'MODO AUTOMÁTICO: Leads são distribuídos aleatoriamente entre a equipe.'
@@ -4970,23 +4970,23 @@ const SettingsView = () => {
                             </div>
 
                             {/* Hero & Parceiros */}
-                            <div className="space-y-6 col-span-1 md:col-span-2 lg:col-span-3 border-t dark:border-gray-800 pt-8 mt-4">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Sparkles size={18} /> Página Inicial (Hero & Parceiros)</h3>
+                            <div className="space-y-6 col-span-1 md:col-span-2 lg:col-span-3 border-t pt-8 mt-4">
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Sparkles size={18} /> Página Inicial (Hero & Parceiros)</h3>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Headline do Hero</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Headline do Hero</label>
                                             <input
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                                 value={config.hero_headline || ''}
                                                 onChange={(e) => handleChange('hero_headline', e.target.value)}
                                                 placeholder="A Elite da Tecnologia Automotiva"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Subheadline do Hero</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Subheadline do Hero</label>
                                             <textarea
-                                                className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                                 rows={3}
                                                 value={config.hero_subheadline || ''}
                                                 onChange={(e) => handleChange('hero_subheadline', e.target.value)}
@@ -4994,16 +4994,16 @@ const SettingsView = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">URL do Vídeo (Fundo)</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">URL do Vídeo (Fundo)</label>
                                             <div className="flex gap-2">
                                                 <input
-                                                    className="flex-1 border border-gray-300 dark:border-gray-700 p-3 rounded-lg font-mono text-xs dark:bg-[#222] dark:text-white"
+                                                    className="flex-1 border border-[var(--admin-border)] p-3 rounded-lg font-mono text-xs bg-[var(--admin-surface-2)]"
                                                     value={config.hero_video_url || ''}
                                                     onChange={(e) => handleChange('hero_video_url', e.target.value)}
                                                     placeholder="https://..."
                                                 />
-                                                <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
-                                                    <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                                <label className="cursor-pointer bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-3 rounded-lg hover:bg-gray-200">
+                                                    <Upload size={18} className="text-[var(--admin-text-secondary)]" />
                                                     <input type="file" className="hidden" accept="video/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'hero_video_url')} />
                                                 </label>
                                             </div>
@@ -5012,7 +5012,7 @@ const SettingsView = () => {
 
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center mb-2">
-                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Marcas Parceiras</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Marcas Parceiras</label>
                                             <button
                                                 onClick={() => setPartnerBrands([...partnerBrands, { name: '', logo: '' }])}
                                                 className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded hover:bg-gray-800 flex items-center gap-1 uppercase"
@@ -5023,15 +5023,15 @@ const SettingsView = () => {
 
                                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                             {partnerBrands.length === 0 && (
-                                                <div className="text-center py-8 bg-gray-50 dark:bg-[#222] rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 text-xs">
+                                                <div className="text-center py-8 bg-[var(--admin-surface-2)] rounded-lg border-2 border-dashed border-[var(--admin-border)] text-gray-400 text-xs">
                                                     Nenhuma marca cadastrada. Use os padrões do sistema.
                                                 </div>
                                             )}
                                             {partnerBrands.map((brand, idx) => (
-                                                <div key={idx} className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col gap-3 group">
+                                                <div key={idx} className="p-3 bg-[var(--admin-surface-2)] rounded-lg border border-[var(--admin-border)] flex flex-col gap-3 group">
                                                     <div className="flex gap-2">
                                                         <input
-                                                            className="flex-1 border bg-white dark:bg-[#1A1A1A] p-2 rounded text-xs px-2 dark:border-gray-700 dark:text-white"
+                                                            className="flex-1 border bg-[var(--admin-surface-1)] p-2 rounded text-xs px-2"
                                                             placeholder="Nome da Marca"
                                                             value={brand.name}
                                                             onChange={e => {
@@ -5048,11 +5048,11 @@ const SettingsView = () => {
                                                         </button>
                                                     </div>
                                                     <div className="flex gap-2">
-                                                        <div className="w-10 h-10 bg-white dark:bg-[#1A1A1A] border dark:border-gray-700 rounded shrink-0 flex items-center justify-center p-1">
+                                                        <div className="w-10 h-10 bg-[var(--admin-surface-1)] border rounded shrink-0 flex items-center justify-center p-1">
                                                             {brand.logo ? <img src={brand.logo} className="max-h-full max-w-full object-contain" /> : <ImageIcon size={14} className="text-gray-300" />}
                                                         </div>
                                                         <input
-                                                            className="flex-1 border bg-white dark:bg-[#1A1A1A] p-2 rounded text-[10px] px-2 font-mono dark:border-gray-700 dark:text-white"
+                                                            className="flex-1 border bg-[var(--admin-surface-1)] p-2 rounded text-[10px] px-2 font-mono"
                                                             placeholder="Logo URL"
                                                             value={brand.logo}
                                                             onChange={e => {
@@ -5061,8 +5061,8 @@ const SettingsView = () => {
                                                                 setPartnerBrands(newBrands);
                                                             }}
                                                         />
-                                                        <label className="cursor-pointer bg-white dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-2 rounded hover:bg-gray-50 dark:hover:bg-[#333]">
-                                                            <Upload size={14} className="text-gray-600 dark:text-gray-300" />
+                                                        <label className="cursor-pointer bg-[var(--admin-surface-2)] border border-[var(--admin-border)] p-2 rounded hover:bg-gray-50">
+                                                            <Upload size={14} className="text-[var(--admin-text-secondary)]" />
                                                             <input
                                                                 type="file"
                                                                 className="hidden"
@@ -5113,8 +5113,8 @@ const SettingsView = () => {
                                         <Sparkles size={20} className="text-white" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">Preencher com IA Especialista em SEO</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Nossa IA analisa o contexto do site e gera configurações SEO otimizadas automaticamente</p>
+                                        <h4 className="font-bold text-[var(--admin-text-primary)] text-sm">Preencher com IA Especialista em SEO</h4>
+                                        <p className="text-xs text-[var(--admin-text-secondary)]">Nossa IA analisa o contexto do site e gera configurações SEO otimizadas automaticamente</p>
                                     </div>
                                 </div>
                                 <button
@@ -5164,13 +5164,13 @@ const SettingsView = () => {
 
                             {/* --- 1. SEO Global --- */}
                             <div className="space-y-6 lg:col-span-2">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Globe size={18} className="text-emerald-500" /> SEO Global</h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">Configurações padrão de SEO aplicadas em todas as páginas. Páginas individuais podem sobrescrever estes valores.</p>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Globe size={18} className="text-emerald-500" /> SEO Global</h3>
+                                <p className="text-xs text-[var(--admin-text-secondary)] -mt-4">Configurações padrão de SEO aplicadas em todas as páginas. Páginas individuais podem sobrescrever estes valores.</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Título SEO (Title Tag)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Título SEO (Title Tag)</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_title || ''}
                                             onChange={(e) => handleChange('seo_title', e.target.value)}
                                             placeholder="W-TECH Brasil | Autoridade em Suspensões"
@@ -5179,18 +5179,18 @@ const SettingsView = () => {
                                         <span className={`text-[10px] mt-1 block ${(config.seo_title || '').length > 60 ? 'text-red-500' : 'text-gray-400'}`}>{(config.seo_title || '').length}/60 caracteres</span>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">URL Canônica Base</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">URL Canônica Base</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_canonical_url || ''}
                                             onChange={(e) => handleChange('seo_canonical_url', e.target.value)}
                                             placeholder="https://w-techbrasil.com.br"
                                         />
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Meta Descrição</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Meta Descrição</label>
                                         <textarea
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white resize-none"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)] resize-none"
                                             rows={3}
                                             value={config.seo_description || ''}
                                             onChange={(e) => handleChange('seo_description', e.target.value)}
@@ -5200,9 +5200,9 @@ const SettingsView = () => {
                                         <span className={`text-[10px] mt-1 block ${(config.seo_description || '').length > 160 ? 'text-red-500' : 'text-gray-400'}`}>{(config.seo_description || '').length}/160 caracteres</span>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Keywords (separadas por vírgula)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Keywords (separadas por vírgula)</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_keywords || ''}
                                             onChange={(e) => handleChange('seo_keywords', e.target.value)}
                                             placeholder="suspensão moto, curso mecânica, enduro, motocross"
@@ -5213,41 +5213,41 @@ const SettingsView = () => {
 
                             {/* --- 2. Open Graph / Redes Sociais --- */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><ImageIcon size={18} className="text-blue-500" /> Open Graph & Redes Sociais</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><ImageIcon size={18} className="text-blue-500" /> Open Graph & Redes Sociais</h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Imagem OG (compartilhamento)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Imagem OG (compartilhamento)</label>
                                         <div className="flex gap-3">
-                                            <div className="w-24 h-14 bg-gray-100 dark:bg-[#222] rounded border dark:border-gray-700 flex items-center justify-center overflow-hidden">
+                                            <div className="w-24 h-14 bg-[var(--admin-surface-3)] rounded border flex items-center justify-center overflow-hidden">
                                                 {config.seo_og_image ? <img src={config.seo_og_image} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-400" />}
                                             </div>
                                             <div className="flex-1 flex gap-2">
                                                 <input
-                                                    className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                                    className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                                     value={config.seo_og_image || ''}
                                                     onChange={(e) => handleChange('seo_og_image', e.target.value)}
                                                     placeholder="https://... (1200x630px recomendado)"
                                                 />
-                                                <label className="cursor-pointer bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-gray-700 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-[#333]">
-                                                    <Upload size={18} className="text-gray-600 dark:text-gray-300" />
+                                                <label className="cursor-pointer bg-[var(--admin-surface-3)] border border-[var(--admin-border)] p-3 rounded-lg hover:bg-gray-200">
+                                                    <Upload size={18} className="text-[var(--admin-text-secondary)]" />
                                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'seo_og_image')} />
                                                 </label>
                                             </div>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Nome do Site (og:site_name)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Nome do Site (og:site_name)</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_site_name || ''}
                                             onChange={(e) => handleChange('seo_site_name', e.target.value)}
                                             placeholder="W-TECH Brasil"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Tipo OG</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Tipo OG</label>
                                         <select
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_og_type || 'website'}
                                             onChange={(e) => handleChange('seo_og_type', e.target.value)}
                                         >
@@ -5258,9 +5258,9 @@ const SettingsView = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Twitter / X Handle</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Twitter / X Handle</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_twitter_handle || ''}
                                             onChange={(e) => handleChange('seo_twitter_handle', e.target.value)}
                                             placeholder="@wtechbrasil"
@@ -5271,12 +5271,12 @@ const SettingsView = () => {
 
                             {/* --- 3. Indexação & Rastreamento --- */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Search size={18} className="text-yellow-500" /> Indexação & Rastreamento</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Search size={18} className="text-yellow-500" /> Indexação & Rastreamento</h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Meta Robots</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Meta Robots</label>
                                         <select
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_robots || 'index, follow'}
                                             onChange={(e) => handleChange('seo_robots', e.target.value)}
                                         >
@@ -5287,18 +5287,18 @@ const SettingsView = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Google Search Console (Verification)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Google Search Console (Verification)</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white font-mono text-xs"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)] font-mono text-xs"
                                             value={config.seo_google_verification || ''}
                                             onChange={(e) => handleChange('seo_google_verification', e.target.value)}
                                             placeholder="Código de verificação do Google"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Bing Webmaster (Verification)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Bing Webmaster (Verification)</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white font-mono text-xs"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)] font-mono text-xs"
                                             value={config.seo_bing_verification || ''}
                                             onChange={(e) => handleChange('seo_bing_verification', e.target.value)}
                                             placeholder="Código de verificação do Bing"
@@ -5331,8 +5331,8 @@ const SettingsView = () => {
 
                             {/* --- 4. Schema Markup (JSON-LD) --- */}
                             <div className="space-y-6 lg:col-span-2">
-                                <div className="flex items-center justify-between border-b dark:border-gray-800 pb-2 flex-wrap gap-2">
-                                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2"><Code size={18} className="text-purple-500" /> Schema Markup (JSON-LD Organization)</h3>
+                                <div className="flex items-center justify-between border-b pb-2 flex-wrap gap-2">
+                                    <h3 className="font-bold text-[var(--admin-text-primary)] flex items-center gap-2"><Code size={18} className="text-purple-500" /> Schema Markup (JSON-LD Organization)</h3>
                                     <button
                                         disabled={isGeneratingSEO}
                                         onClick={async () => {
@@ -5371,57 +5371,57 @@ const SettingsView = () => {
                                         Gerar Schema com IA
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">Dados estruturados da organização que ajudam o Google a exibir informações completas nos resultados de busca.</p>
+                                <p className="text-xs text-[var(--admin-text-secondary)] -mt-4">Dados estruturados da organização que ajudam o Google a exibir informações completas nos resultados de busca.</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Nome da Organização</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Nome da Organização</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_schema_name || ''}
                                             onChange={(e) => handleChange('seo_schema_name', e.target.value)}
                                             placeholder="W-TECH Brasil"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Logo da Organização (URL)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Logo da Organização (URL)</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white text-sm"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)] text-sm"
                                             value={config.seo_schema_logo || ''}
                                             onChange={(e) => handleChange('seo_schema_logo', e.target.value)}
                                             placeholder="https://... (logo quadrado recomendado)"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Telefone</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Telefone</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_schema_phone || ''}
                                             onChange={(e) => handleChange('seo_schema_phone', e.target.value)}
                                             placeholder="+55 17 99999-9999"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Email de Contato</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Email de Contato</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_schema_email || ''}
                                             onChange={(e) => handleChange('seo_schema_email', e.target.value)}
                                             placeholder="contato@w-techbrasil.com.br"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Endereço</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Endereço</label>
                                         <input
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_schema_address || ''}
                                             onChange={(e) => handleChange('seo_schema_address', e.target.value)}
                                             placeholder="São José do Rio Preto - SP, Brasil"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Tipo de Negócio</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Tipo de Negócio</label>
                                         <select
-                                            className="w-full border border-gray-300 dark:border-gray-700 p-3 rounded-lg dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] p-3 rounded-lg bg-[var(--admin-surface-2)]"
                                             value={config.seo_schema_type || 'EducationalOrganization'}
                                             onChange={(e) => handleChange('seo_schema_type', e.target.value)}
                                         >
@@ -5436,7 +5436,7 @@ const SettingsView = () => {
 
                                 {/* JSON-LD Preview */}
                                 <div className="mt-4">
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Preview JSON-LD</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Preview JSON-LD</label>
                                     <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-xs overflow-x-auto max-h-48 font-mono">
                                         {JSON.stringify({
                                             "@context": "https://schema.org",
@@ -5471,16 +5471,16 @@ const SettingsView = () => {
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="col-span-2">
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">HEAD Code</label>
-                                <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.head_code} onChange={e => handleChange('head_code', e.target.value)} placeholder="<meta...>, <style...>" />
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">HEAD Code</label>
+                                <textarea className="w-full h-40 border border-[var(--admin-border)] p-4 rounded-lg font-mono text-xs bg-[var(--admin-surface-2)]" value={config.head_code} onChange={e => handleChange('head_code', e.target.value)} placeholder="<meta...>, <style...>" />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Body Start</label>
-                                <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.body_start_code} onChange={e => handleChange('body_start_code', e.target.value)} />
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Body Start</label>
+                                <textarea className="w-full h-40 border border-[var(--admin-border)] p-4 rounded-lg font-mono text-xs bg-[var(--admin-surface-2)]" value={config.body_start_code} onChange={e => handleChange('body_start_code', e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2">Body End</label>
-                                <textarea className="w-full h-40 border border-gray-300 dark:border-gray-700 p-4 rounded-lg font-mono text-xs bg-gray-50 dark:bg-[#222] dark:text-white" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Body End</label>
+                                <textarea className="w-full h-40 border border-[var(--admin-border)] p-4 rounded-lg font-mono text-xs bg-[var(--admin-surface-2)]" value={config.body_end_code} onChange={e => handleChange('body_end_code', e.target.value)} />
                             </div>
                         </div>
                     </div>
@@ -5490,8 +5490,8 @@ const SettingsView = () => {
                 {activeTab === 'Layout Menu' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="max-w-xl mx-auto space-y-8">
-                            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-6 flex items-center gap-2">
+                            <div className="bg-[var(--admin-surface-1)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm">
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-4 mb-6 flex items-center gap-2">
                                     <Layout size={20} className="text-cyan-500" /> Personalização do Menu
                                 </h3>
 
@@ -5499,7 +5499,7 @@ const SettingsView = () => {
                                     {/* Icon Size */}
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-end">
-                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tamanho dos Ícones</label>
+                                            <label className="text-sm font-bold text-gray-700">Tamanho dos Ícones</label>
                                         </div>
                                         <Slider
                                             value={[config.menu_styles?.iconSize || 15]}
@@ -5513,7 +5513,7 @@ const SettingsView = () => {
                                     {/* Font Size */}
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-end">
-                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tamanho da Fonte</label>
+                                            <label className="text-sm font-bold text-gray-700">Tamanho da Fonte</label>
                                         </div>
                                         <Slider
                                             value={[config.menu_styles?.fontSize || 11]}
@@ -5527,7 +5527,7 @@ const SettingsView = () => {
                                     {/* Spacing (Padding Y) */}
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-end">
-                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Espaçamento Vertical (Padding)</label>
+                                            <label className="text-sm font-bold text-gray-700">Espaçamento Vertical (Padding)</label>
                                         </div>
                                         <Slider
                                             value={[config.menu_styles?.paddingY !== undefined ? config.menu_styles.paddingY : 4]}
@@ -5541,7 +5541,7 @@ const SettingsView = () => {
                                     {/* Margin Y */}
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-end">
-                                            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Margem Entre Itens</label>
+                                            <label className="text-sm font-bold text-gray-700">Margem Entre Itens</label>
                                         </div>
                                         <Slider
                                             value={[config.menu_styles?.marginY !== undefined ? config.menu_styles.marginY : 1]}
@@ -5553,11 +5553,11 @@ const SettingsView = () => {
                                     </div>
                                 </div>
 
-                                <div className="mt-8 p-4 bg-gray-50 dark:bg-[#222] rounded-lg border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                                <div className="mt-8 p-4 bg-[var(--admin-surface-2)] rounded-lg border border-[var(--admin-border)] flex items-center gap-3">
                                     <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg">
                                         <AlertTriangle size={16} />
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    <p className="text-xs text-[var(--admin-text-secondary)]">
                                         As alterações são aplicadas a <strong>todos os usuários</strong> do sistema.
                                     </p>
                                 </div>
@@ -5580,11 +5580,11 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Backup Section */}
-                            <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-4 mb-4 flex items-center gap-2">
+                            <div className="bg-[var(--admin-surface-1)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm">
+                                <h3 className="text-lg font-bold text-[var(--admin-text-primary)] border-b pb-4 mb-4 flex items-center gap-2">
                                     <Save size={20} className="text-blue-600" /> Backup System
                                 </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                <p className="text-sm text-[var(--admin-text-secondary)] mb-6">
                                     Faça o download dos dados principais do sistema em formato JSON.
                                     Recomendamos fazer backups regulares.
                                 </p>
@@ -5609,7 +5609,7 @@ const SettingsView = () => {
                                                 a.download = `${item.table}_backup_${new Date().toISOString().split('T')[0]}.json`;
                                                 a.click();
                                             }}
-                                            className="w-full flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-[#222] hover:border-blue-300 transition-all font-bold text-gray-700 dark:text-gray-300 text-xs"
+                                            className="w-full flex items-center justify-between p-3 border border-[var(--admin-border)] rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-all font-bold text-gray-700 text-xs"
                                         >
                                             {item.label}
                                             <TrendingUp size={16} className="text-blue-500" />
@@ -5633,7 +5633,7 @@ const SettingsView = () => {
                                         { table: 'SITE_Notifications', label: 'LIMPAR NOTIFICAÇÕES', desc: 'Remove alertas e avisos enviados.' },
                                         { table: 'SITE_Transactions', label: 'LIMPAR FINANCEIRO', desc: 'Apaga todas as receitas e despesas.' },
                                     ].map((item) => (
-                                        <div key={item.table} className="bg-white dark:bg-[#1A1A1A] p-4 rounded-xl border border-red-100 dark:border-red-900/40 shadow-sm">
+                                        <div key={item.table} className="bg-[var(--admin-surface-1)] p-4 rounded-xl border border-red-100 dark:border-red-900/40 shadow-sm">
                                             <div className="flex justify-between items-center mb-2">
                                                 <h4 className="font-bold text-red-700 dark:text-red-400 text-sm">{item.label}</h4>
                                                 <button
@@ -5650,7 +5650,7 @@ const SettingsView = () => {
                                                     RESETAR
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
+                                            <p className="text-xs text-[var(--admin-text-secondary)]">{item.desc}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -5664,25 +5664,25 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><Mail size={18} /> Configurações de SMTP</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Mail size={18} /> Configurações de SMTP</h3>
                                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 text-xs rounded-lg mb-4 flex items-center gap-2">
                                     <AlertCircle size={16} />
                                     Essas configurações são usadas para disparos de Email Marketing e notificações do sistema.
                                 </div>
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-3">
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Servidor SMTP (Host)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Servidor SMTP (Host)</label>
                                         <input
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            className="w-full border p-2 rounded text-sm font-mono bg-[var(--admin-surface-2)]"
                                             value={config.email_smtp_host || ''}
                                             onChange={e => handleChange('email_smtp_host', e.target.value)}
                                             placeholder="smtp.example.com"
                                         />
                                     </div>
                                     <div className="col-span-1">
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Porta</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Porta</label>
                                         <input
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            className="w-full border p-2 rounded text-sm font-mono bg-[var(--admin-surface-2)]"
                                             value={config.email_smtp_port || ''}
                                             onChange={e => handleChange('email_smtp_port', e.target.value)}
                                             placeholder="587"
@@ -5690,21 +5690,21 @@ const SettingsView = () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Usuário / Email Autenticação</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Usuário / Email Autenticação</label>
                                     <input
-                                        className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                        className="w-full border p-2 rounded text-sm font-mono bg-[var(--admin-surface-2)]"
                                         value={config.email_smtp_user || ''}
                                         onChange={e => handleChange('email_smtp_user', e.target.value)}
                                         placeholder="user@example.com"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Senha de App / SMTP</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Senha de App / SMTP</label>
                                     <div className="relative">
                                         <Lock size={14} className="absolute left-3 top-3 text-gray-400" />
                                         <input
                                             type="password"
-                                            className="w-full border dark:border-gray-700 p-2 pl-10 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            className="w-full border p-2 pl-10 rounded text-sm font-mono bg-[var(--admin-surface-2)]"
                                             value={config.email_smtp_pass || ''}
                                             onChange={e => handleChange('email_smtp_pass', e.target.value)}
                                             placeholder="••••••••••••"
@@ -5716,20 +5716,20 @@ const SettingsView = () => {
 
                             <div className="space-y-8">
                                 <div className="space-y-6">
-                                    <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2"><User size={18} /> Remetente Padrão</h3>
+                                    <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><User size={18} /> Remetente Padrão</h3>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome do Remetente</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Nome do Remetente</label>
                                         <input
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-bold dark:bg-[#222] dark:text-white"
+                                            className="w-full border p-2 rounded text-sm font-bold bg-[var(--admin-surface-2)]"
                                             value={config.email_sender_name || ''}
                                             onChange={e => handleChange('email_sender_name', e.target.value)}
                                             placeholder="W-Tech Brasil"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email do Remetente</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Email do Remetente</label>
                                         <input
-                                            className="w-full border dark:border-gray-700 p-2 rounded text-sm font-mono dark:bg-[#222] dark:text-white"
+                                            className="w-full border p-2 rounded text-sm font-mono bg-[var(--admin-surface-2)]"
                                             value={config.email_sender_email || ''}
                                             onChange={e => handleChange('email_sender_email', e.target.value)}
                                             placeholder="contato@wtech.com"
@@ -5738,18 +5738,18 @@ const SettingsView = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-6 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                    <h3 className="font-bold text-gray-900 dark:text-white pb-2 flex items-center gap-2"><Send size={18} /> Teste de Envio</h3>
-                                    <div className="p-4 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-xl space-y-4">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <div className="space-y-6 pt-4 border-t border-[var(--admin-border)]">
+                                    <h3 className="font-bold text-[var(--admin-text-primary)] pb-2 flex items-center gap-2"><Send size={18} /> Teste de Envio</h3>
+                                    <div className="p-4 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl space-y-4">
+                                        <p className="text-xs text-[var(--admin-text-secondary)]">
                                             Use este campo para verificar se as configurações estão corretas.
                                             <strong>Salve antes de testar.</strong>
                                         </p>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">E-mail de Destino</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">E-mail de Destino</label>
                                             <input
                                                 type="email"
-                                                className="w-full border dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white"
+                                                className="w-full border p-2 rounded text-sm bg-[var(--admin-surface-2)]"
                                                 value={testEmail}
                                                 onChange={e => setTestEmail(e.target.value)}
                                                 placeholder="seu-email@exemplo.com"
@@ -5758,7 +5758,7 @@ const SettingsView = () => {
                                         <button
                                             onClick={handleTestEmail}
                                             disabled={isTestingEmail}
-                                            className={`w-full py-3 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${isTestingEmail ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-[#333] dark:text-gray-500' : 'bg-wtech-black text-white hover:bg-gray-800 shadow-md'}`}
+                                            className={`w-full py-3 rounded-lg font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${isTestingEmail ? 'bg-gray-100 text-gray-400 cursor-not-allowed bg-[var(--admin-surface-3)]' : 'bg-wtech-black text-white hover:bg-gray-800 shadow-md'}`}
                                         >
                                             {isTestingEmail ? (
                                                 <><Loader2 size={16} className="animate-spin" /> Testando...</>
@@ -5786,19 +5786,19 @@ const SettingsView = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* ERP / Bling */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2">
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2">
                                     <Package size={18} /> ERP & Faturamento
                                 </h3>
 
-                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-xs border border-green-100 dark:border-green-900/40">
                                                 BLING
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Integração Bling ERP</h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Sincroniza pedidos e emite notas fiscais.</p>
+                                                <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Integração Bling ERP</h4>
+                                                <p className="text-xs text-[var(--admin-text-secondary)]">Sincroniza pedidos e emite notas fiscais.</p>
                                             </div>
                                         </div>
                                         <button
@@ -5812,12 +5812,12 @@ const SettingsView = () => {
                                     {config.bling_enabled === 'true' && (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">API Key (Personal Token)</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">API Key (Personal Token)</label>
                                                 <div className="relative">
                                                     <Lock size={14} className="absolute left-3 top-2.5 text-gray-400" />
                                                     <input
                                                         type="password"
-                                                        className="w-full border border-gray-200 dark:border-gray-700 p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none dark:bg-[#222] dark:text-white"
+                                                        className="w-full border border-[var(--admin-border)] p-2 pl-9 rounded-lg text-sm font-mono focus:border-green-500 outline-none bg-[var(--admin-surface-2)]"
                                                         value={config.bling_api_key || ''}
                                                         onChange={e => handleChange('bling_api_key', e.target.value)}
                                                         placeholder="••••••••••••••••••••••••"
@@ -5835,20 +5835,20 @@ const SettingsView = () => {
 
                             {/* Marketplaces */}
                             <div className="space-y-6">
-                                <h3 className="font-bold text-gray-900 dark:text-white border-b dark:border-gray-800 pb-2 flex items-center gap-2">
+                                <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2">
                                     <Globe size={18} /> Marketplaces
                                 </h3>
 
                                 {/* Mercado Livre */}
-                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center text-yellow-600 dark:text-yellow-400 font-bold text-xs border border-yellow-100 dark:border-yellow-900/40">
                                                 MELI
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Mercado Livre</h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Sincroniza anúncios e vendas.</p>
+                                                <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Mercado Livre</h4>
+                                                <p className="text-xs text-[var(--admin-text-secondary)]">Sincroniza anúncios e vendas.</p>
                                             </div>
                                         </div>
                                         <button
@@ -5862,19 +5862,19 @@ const SettingsView = () => {
                                     {config.meli_enabled === 'true' && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">App ID</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">App ID</label>
                                                 <input
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white"
+                                                    className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono outline-none bg-[var(--admin-surface-2)]"
                                                     value={config.meli_app_id || ''}
                                                     onChange={e => handleChange('meli_app_id', e.target.value)}
                                                     placeholder="12345678"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Client Secret</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Client Secret</label>
                                                 <input
                                                     type="password"
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono outline-none dark:bg-[#222] dark:text-white"
+                                                    className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono outline-none bg-[var(--admin-surface-2)]"
                                                     value={config.meli_secret || ''}
                                                     onChange={e => handleChange('meli_secret', e.target.value)}
                                                     placeholder="••••••••"
@@ -5885,15 +5885,15 @@ const SettingsView = () => {
                                 </div>
 
                                 {/* Shopee */}
-                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-xs border border-orange-100 dark:border-orange-900/40">
                                                 SHP
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Shopee</h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Integração oficial Shopee Open Platform.</p>
+                                                <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Shopee</h4>
+                                                <p className="text-xs text-[var(--admin-text-secondary)]">Integração oficial Shopee Open Platform.</p>
                                             </div>
                                         </div>
                                         <button
@@ -5908,32 +5908,32 @@ const SettingsView = () => {
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Partner ID</label>
-                                                    <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.shopee_partner_id || ''} onChange={e => handleChange('shopee_partner_id', e.target.value)} />
+                                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Partner ID</label>
+                                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.shopee_partner_id || ''} onChange={e => handleChange('shopee_partner_id', e.target.value)} />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Shop ID</label>
-                                                    <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.shopee_shop_id || ''} onChange={e => handleChange('shopee_shop_id', e.target.value)} />
+                                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Shop ID</label>
+                                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.shopee_shop_id || ''} onChange={e => handleChange('shopee_shop_id', e.target.value)} />
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Partner Key (Secret)</label>
-                                                <input type="password" className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.shopee_key || ''} onChange={e => handleChange('shopee_key', e.target.value)} placeholder="••••••••" />
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Partner Key (Secret)</label>
+                                                <input type="password" className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.shopee_key || ''} onChange={e => handleChange('shopee_key', e.target.value)} placeholder="••••••••" />
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Amazon */}
-                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gray-50 dark:bg-[#222] rounded-lg flex items-center justify-center text-gray-800 dark:text-gray-200 font-bold text-xs border border-gray-200 dark:border-gray-700">
+                                            <div className="w-10 h-10 bg-[var(--admin-surface-2)] rounded-lg flex items-center justify-center text-gray-800 font-bold text-xs border border-[var(--admin-border)]">
                                                 AMZ
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">Amazon Seller</h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">SP-API Integration.</p>
+                                                <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Amazon Seller</h4>
+                                                <p className="text-xs text-[var(--admin-text-secondary)]">SP-API Integration.</p>
                                             </div>
                                         </div>
                                         <button
@@ -5947,31 +5947,31 @@ const SettingsView = () => {
                                     {config.amazon_enabled === 'true' && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Selling Partner ID</label>
-                                                <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.amazon_seller_id || ''} onChange={e => handleChange('amazon_seller_id', e.target.value)} placeholder="A2..." />
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Selling Partner ID</label>
+                                                <input className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.amazon_seller_id || ''} onChange={e => handleChange('amazon_seller_id', e.target.value)} placeholder="A2..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">AWS Access Key ID</label>
-                                                <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.amazon_access_key || ''} onChange={e => handleChange('amazon_access_key', e.target.value)} placeholder="AKIA..." />
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">AWS Access Key ID</label>
+                                                <input className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.amazon_access_key || ''} onChange={e => handleChange('amazon_access_key', e.target.value)} placeholder="AKIA..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">AWS Secret Key</label>
-                                                <input type="password" className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.amazon_secret || ''} onChange={e => handleChange('amazon_secret', e.target.value)} placeholder="••••••••" />
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">AWS Secret Key</label>
+                                                <input type="password" className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.amazon_secret || ''} onChange={e => handleChange('amazon_secret', e.target.value)} placeholder="••••••••" />
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* WooCommerce (WordPress) */}
-                                <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-6 shadow-sm">
                                     <div className="flex justify-between items-center mb-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-xs border border-purple-100 dark:border-purple-900/40">
                                                 WOO
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white">WooCommerce (WordPress)</h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Sincroniza estoques, pedidos, etiquetas e notas.</p>
+                                                <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">WooCommerce (WordPress)</h4>
+                                                <p className="text-xs text-[var(--admin-text-secondary)]">Sincroniza estoques, pedidos, etiquetas e notas.</p>
                                             </div>
                                         </div>
                                         <button
@@ -5985,19 +5985,19 @@ const SettingsView = () => {
                                     {config.woocommerce_enabled === 'true' && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">URL da Loja</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">URL da Loja</label>
                                                 <div className="relative">
                                                     <Globe size={14} className="absolute left-3 top-2.5 text-gray-400" />
-                                                    <input className="w-full border border-gray-200 dark:border-gray-700 p-2 pl-9 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.woocommerce_url || ''} onChange={e => handleChange('woocommerce_url', e.target.value)} placeholder="https://sua-loja.com" />
+                                                    <input className="w-full border border-[var(--admin-border)] p-2 pl-9 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.woocommerce_url || ''} onChange={e => handleChange('woocommerce_url', e.target.value)} placeholder="https://sua-loja.com" />
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Consumer Key (CK)</label>
-                                                <input className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.woocommerce_key || ''} onChange={e => handleChange('woocommerce_key', e.target.value)} placeholder="ck_..." />
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Consumer Key (CK)</label>
+                                                <input className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.woocommerce_key || ''} onChange={e => handleChange('woocommerce_key', e.target.value)} placeholder="ck_..." />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Consumer Secret (CS)</label>
-                                                <input type="password" className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded-lg text-sm font-mono dark:bg-[#222] dark:text-white" value={config.woocommerce_secret || ''} onChange={e => handleChange('woocommerce_secret', e.target.value)} placeholder="cs_..." />
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Consumer Secret (CS)</label>
+                                                <input type="password" className="w-full border border-[var(--admin-border)] p-2 rounded-lg text-sm font-mono bg-[var(--admin-surface-2)]" value={config.woocommerce_secret || ''} onChange={e => handleChange('woocommerce_secret', e.target.value)} placeholder="cs_..." />
                                             </div>
                                         </div>
                                     )}
@@ -6019,14 +6019,14 @@ const SettingsView = () => {
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Categorias de Tarefas</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie as categorias usadas para organizar tarefas.</p>
+                                <h3 className="text-lg font-bold text-[var(--admin-text-primary)]">Categorias de Tarefas</h3>
+                                <p className="text-sm text-[var(--admin-text-secondary)]">Gerencie as categorias usadas para organizar tarefas.</p>
                             </div>
 
                             {/* Simple Inline Create */}
                             <div className="flex gap-2">
                                 <input
-                                    className="border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-sm dark:bg-[#222] dark:text-white"
+                                    className="border border-[var(--admin-border)] p-2 rounded-lg text-sm bg-[var(--admin-surface-2)]"
                                     placeholder="Nova Categoria..."
                                     id="new-cat-name"
                                 />
@@ -6057,7 +6057,7 @@ const SettingsView = () => {
                                             // Ideally, we move this to a separate component, but I'll implement a basic list fetch below.
                                         }
                                     }}
-                                    className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                                    className="bg-wtech-black text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-800 dark:bg-white dark:text-black"
                                 >
                                     <Plus size={14} /> Adicionar
                                 </button>
@@ -6102,13 +6102,13 @@ const SettingsView = () => {
                             </div>
 
                             {/* OpenAI Config */}
-                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-3xl p-8 shadow-sm hover:border-blue-500/30 transition-colors">
+                            <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-8 shadow-sm hover:border-blue-500/30 transition-colors">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white shadow-xl">
                                         <Code size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-lg text-gray-900 dark:text-white leading-tight">OPENAI (GPT-4o)</h4>
+                                        <h4 className="font-black text-lg text-[var(--admin-text-primary)] leading-tight">OPENAI (GPT-4o)</h4>
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Integração Direta</p>
                                     </div>
                                 </div>
@@ -6119,7 +6119,7 @@ const SettingsView = () => {
                                             <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
                                             <input
                                                 type="password"
-                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-blue-500 outline-none transition-all"
+                                                className="w-full border border-gray-200 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black focus:border-blue-500 outline-none transition-all"
                                                 value={config.openai_api_key || ''}
                                                 onChange={e => handleChange('openai_api_key', e.target.value)}
                                                 placeholder="sk-..."
@@ -6134,13 +6134,13 @@ const SettingsView = () => {
                             </div>
 
                             {/* Gemini Config */}
-                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-3xl p-8 shadow-sm hover:border-wtech-gold/30 transition-colors">
+                            <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-8 shadow-sm hover:border-wtech-gold/30 transition-colors">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="w-12 h-12 bg-gradient-to-br from-wtech-gold to-yellow-600 rounded-2xl flex items-center justify-center text-black shadow-xl">
                                         <Sparkles size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-lg text-gray-900 dark:text-white leading-tight">GOOGLE GEMINI</h4>
+                                        <h4 className="font-black text-lg text-[var(--admin-text-primary)] leading-tight">GOOGLE GEMINI</h4>
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Tecnologia Google</p>
                                     </div>
                                 </div>
@@ -6151,7 +6151,7 @@ const SettingsView = () => {
                                             <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
                                             <input
                                                 type="password"
-                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-wtech-gold outline-none transition-all"
+                                                className="w-full border border-gray-200 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black focus:border-wtech-gold outline-none transition-all"
                                                 value={config.gemini_api_key || ''}
                                                 onChange={e => handleChange('gemini_api_key', e.target.value)}
                                                 placeholder="..."
@@ -6166,13 +6166,13 @@ const SettingsView = () => {
                             </div>
 
                             {/* OpenRouter Config */}
-                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-3xl p-8 shadow-sm hover:border-purple-500/30 transition-colors md:col-span-2">
+                            <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-3xl p-8 shadow-sm hover:border-purple-500/30 transition-colors md:col-span-2">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
                                         <Globe size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="font-black text-lg text-gray-900 dark:text-white leading-tight">OPENROUTER</h4>
+                                        <h4 className="font-black text-lg text-[var(--admin-text-primary)] leading-tight">OPENROUTER</h4>
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Multi-Model Gateway</p>
                                     </div>
                                 </div>
@@ -6184,7 +6184,7 @@ const SettingsView = () => {
                                                 <Lock size={14} className="absolute left-4 top-4 text-gray-400" />
                                                 <input
                                                     type="password"
-                                                    className="w-full border border-gray-200 dark:border-gray-800 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-purple-500 outline-none transition-all"
+                                                    className="w-full border border-gray-200 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black focus:border-purple-500 outline-none transition-all"
                                                     value={config.openrouter_api_key || ''}
                                                     onChange={e => handleChange('openrouter_api_key', e.target.value)}
                                                     placeholder="sk-or-v1-..."
@@ -6200,7 +6200,7 @@ const SettingsView = () => {
                                         <div>
                                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Modelo AI (OpenRouter)</label>
                                             <input
-                                                className="w-full border border-gray-200 dark:border-gray-800 p-4 rounded-2xl text-sm font-mono dark:bg-black dark:text-white focus:border-purple-500 outline-none transition-all"
+                                                className="w-full border border-gray-200 p-4 rounded-2xl text-sm font-mono dark:bg-black focus:border-purple-500 outline-none transition-all"
                                                 value={config.openrouter_model || ''}
                                                 onChange={e => handleChange('openrouter_model', e.target.value)}
                                                 placeholder="google/gemini-2.0-flash-001"
@@ -6214,11 +6214,11 @@ const SettingsView = () => {
                         </div>
 
                         {/* Webhooks Legacy */}
-                        <div className="bg-white dark:bg-[#111] p-8 rounded-3xl border border-gray-100 dark:border-gray-800 mt-12">
+                        <div className="bg-[var(--admin-surface-1)] p-8 rounded-3xl border border-[var(--admin-border)] mt-12">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Webhooks do Sistema</h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mt-1">Integrações Externas</p>
+                                    <h3 className="text-lg font-bold text-[var(--admin-text-primary)]">Webhooks do Sistema</h3>
+                                    <p className="text-xs text-[var(--admin-text-secondary)] uppercase tracking-widest font-bold mt-1">Integrações Externas</p>
                                 </div>
                                 <button className="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl text-xs font-black uppercase hover:opacity-80 transition-opacity" onClick={() => {
                                     const url = prompt("URL do Webhook:");
@@ -6229,12 +6229,12 @@ const SettingsView = () => {
                                 </button>
                             </div>
 
-                            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
+                            <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl overflow-hidden shadow-sm">
                                 {webhooks.length === 0 ? (
                                     <div className="p-8 text-center text-gray-400">Nenhum webhook configurado.</div>
                                 ) : (
                                     <table className="w-full text-left">
-                                        <thead className="bg-gray-50 dark:bg-[#222] border-b border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400 uppercase">
+                                        <thead className="bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)] text-xs text-[var(--admin-text-secondary)] uppercase">
                                             <tr>
                                                 <th className="p-4">Tópico</th>
                                                 <th className="p-4">URL de Destino</th>
@@ -6246,7 +6246,7 @@ const SettingsView = () => {
                                             {webhooks.map((wh, idx) => (
                                                 <tr key={idx}>
                                                     <td className="p-4 font-bold"><span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded">{wh.topic}</span></td>
-                                                    <td className="p-4 font-mono text-xs text-gray-600 dark:text-gray-300 truncate max-w-xs">{wh.url}</td>
+                                                    <td className="p-4 font-mono text-xs text-[var(--admin-text-secondary)] truncate max-w-xs">{wh.url}</td>
                                                     <td className="p-4 font-mono text-xs text-gray-400">{wh.secret}</td>
                                                     <td className="p-4 text-right">
                                                         <button onClick={() => setWebhooks(webhooks.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
@@ -6266,12 +6266,12 @@ const SettingsView = () => {
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Hierarquia de Acesso</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Defina os perfis e o que cada uno pode fazer no sistema.</p>
+                                <h3 className="text-lg font-bold text-[var(--admin-text-primary)]">Hierarquia de Acesso</h3>
+                                <p className="text-sm text-[var(--admin-text-secondary)]">Defina os perfis e o que cada uno pode fazer no sistema.</p>
                             </div>
                             <button
                                 onClick={() => setEditingRole({ name: '', description: '', permissions: {}, level: 1 })}
-                                className="bg-gray-900 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                                className="bg-gray-900 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2 hover:bg-black dark:bg-white dark:text-black"
                             >
                                 <Plus size={14} /> Criar Novo Cargo
                             </button>
@@ -6284,13 +6284,13 @@ const SettingsView = () => {
                                     <div
                                         key={role.id}
                                         onClick={() => setEditingRole(role)}
-                                        className={`p-4 rounded-xl border cursor-pointer transition-all ${editingRole?.id === role.id ? 'bg-white border-wtech-gold shadow-md scale-[1.02] dark:bg-[#1A1A1A] dark:border-wtech-gold' : 'bg-white border-gray-100 hover:border-gray-200 dark:bg-[#1A1A1A] dark:border-gray-800 dark:hover:border-gray-700'}`}
+                                        className={`p-4 rounded-xl border cursor-pointer transition-all ${editingRole?.id === role.id ? 'bg-white border-wtech-gold shadow-md scale-[1.02] bg-[var(--admin-surface-1)] dark:border-wtech-gold' : 'bg-white border-gray-100 hover:border-gray-200 bg-[var(--admin-surface-1)] dark:hover:border-gray-700'}`}
                                     >
                                         <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-bold text-gray-900 dark:text-white">{role.name}</h4>
-                                            <span className="bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Nível {role.level}</span>
+                                            <h4 className="font-bold text-[var(--admin-text-primary)]">{role.name}</h4>
+                                            <span className="bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] text-[10px] uppercase font-bold px-2 py-0.5 rounded">Nível {role.level}</span>
                                         </div>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{role.description}</p>
+                                        <p className="text-xs text-[var(--admin-text-secondary)] line-clamp-2">{role.description}</p>
                                     </div>
                                 ))}
                             </div>
@@ -6298,9 +6298,9 @@ const SettingsView = () => {
                             {/* Editor */}
                             <div className="lg:col-span-2">
                                 {editingRole ? (
-                                    <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-right-4">
-                                        <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
-                                            <h3 className="font-bold text-lg dark:text-white">{editingRole.id ? 'Editar Cargo' : 'Novo Cargo'}</h3>
+                                    <div className="bg-[var(--admin-surface-1)] p-6 rounded-2xl shadow-lg border border-[var(--admin-border)] animate-in fade-in slide-in-from-right-4">
+                                        <div className="flex justify-between items-center mb-6 border-b border-[var(--admin-border)] pb-4">
+                                            <h3 className="font-bold text-lg">{editingRole.id ? 'Editar Cargo' : 'Novo Cargo'}</h3>
                                             <div className="flex gap-2">
                                                 {editingRole.id && (
                                                     <button onClick={() => handleDeleteRole(editingRole.id!)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors dark:hover:bg-red-900/20">
@@ -6315,27 +6315,27 @@ const SettingsView = () => {
 
                                         <div className="grid grid-cols-2 gap-4 mb-6">
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome do Cargo</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Nome do Cargo</label>
                                                 <input
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded text-sm font-bold dark:bg-[#222] dark:text-white"
+                                                    className="w-full border border-[var(--admin-border)] p-2 rounded text-sm font-bold bg-[var(--admin-surface-2)]"
                                                     value={editingRole.name || ''}
                                                     onChange={e => setEditingRole({ ...editingRole, name: e.target.value })}
                                                     placeholder="Ex: Editor Chefe"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nível Hierárquico (1-10)</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Nível Hierárquico (1-10)</label>
                                                 <input
                                                     type="number"
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white"
+                                                    className="w-full border border-[var(--admin-border)] p-2 rounded text-sm bg-[var(--admin-surface-2)]"
                                                     value={editingRole.level || 1}
                                                     onChange={e => setEditingRole({ ...editingRole, level: parseInt(e.target.value) })}
                                                 />
                                             </div>
                                             <div className="col-span-2">
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Descrição</label>
+                                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Descrição</label>
                                                 <input
-                                                    className="w-full border border-gray-200 dark:border-gray-700 p-2 rounded text-sm dark:bg-[#222] dark:text-white"
+                                                    className="w-full border border-[var(--admin-border)] p-2 rounded text-sm bg-[var(--admin-surface-2)]"
                                                     value={editingRole.description || ''}
                                                     onChange={e => setEditingRole({ ...editingRole, description: e.target.value })}
                                                     placeholder="O que este cargo pode fazer?"
@@ -6346,11 +6346,11 @@ const SettingsView = () => {
                                         <div>
                                             {permissionCategories.map((category, idx) => (
                                                 <div key={idx} className="mb-6">
-                                                    <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 border-b border-gray-100 dark:border-gray-800 pb-1">{category.title}</h4>
+                                                    <h4 className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2 border-b border-[var(--admin-border)] pb-1">{category.title}</h4>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         {category.perms.map(perm => (
-                                                            <label key={perm.key} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
-                                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${editingRole.permissions?.[perm.key] ? 'bg-wtech-gold border-wtech-gold' : 'border-gray-300 bg-white dark:bg-[#1A1A1A] dark:border-gray-700'}`}>
+                                                            <label key={perm.key} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${editingRole.permissions?.[perm.key] ? 'bg-wtech-gold border-wtech-gold' : 'border-gray-300 bg-[var(--admin-surface-1)]'}`}>
                                                                     {editingRole.permissions?.[perm.key] && <CheckCircle size={14} className="text-black" />}
                                                                 </div>
                                                                 <input
@@ -6359,7 +6359,7 @@ const SettingsView = () => {
                                                                     checked={editingRole.permissions?.[perm.key] || false}
                                                                     onChange={() => togglePermission(perm.key)}
                                                                 />
-                                                                <span className={`text-sm ${perm.label.includes('(Risco)') || perm.label.includes('Excluir') ? 'text-red-700 font-medium dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>{perm.label}</span>
+                                                                <span className={`text-sm ${perm.label.includes('(Risco)') || perm.label.includes('Excluir') ? 'text-red-700 font-medium dark:text-red-400' : 'text-gray-700'}`}>{perm.label}</span>
                                                             </label>
                                                         ))}
                                                     </div>
@@ -6367,13 +6367,13 @@ const SettingsView = () => {
                                             ))}
                                         </div>
 
-                                        <button onClick={handleSaveRole} className="w-full bg-wtech-black text-white py-3 rounded-lg font-bold uppercase hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all shadow-lg">
+                                        <button onClick={handleSaveRole} className="w-full bg-wtech-black text-white py-3 rounded-lg font-bold uppercase hover:bg-gray-800 dark:bg-white dark:text-black transition-all shadow-lg">
                                             Salvar Cargo
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl p-10">
-                                        <Shield size={48} className="mb-4 text-gray-200 dark:text-gray-700" />
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-[var(--admin-border)] rounded-2xl p-10">
+                                        <Shield size={48} className="mb-4 text-[var(--admin-text-tertiary)]" />
                                         <p className="text-sm font-medium">Selecione um cargo para editar ou crie um novo.</p>
                                     </div>
                                 )}
@@ -6549,15 +6549,15 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-6">
                 <div>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Equipe & Acessos</h2>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie os colaboradores e suas permissões no sistema.</p>
+                    <h2 className="text-3xl font-black text-[var(--admin-text-primary)] tracking-tight">Equipe & Acessos</h2>
+                    <p className="text-[var(--admin-text-secondary)] mt-1">Gerencie os colaboradores e suas permissões no sistema.</p>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={() => onOpenProfile?.()}
-                        className="bg-white border border-gray-200 text-gray-700 dark:bg-[#222] dark:border-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-50 dark:hover:bg-[#333] flex items-center gap-2 shadow-sm"
+                        className="bg-white border border-gray-200 text-gray-700 bg-[var(--admin-surface-2)] px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-gray-50 flex items-center gap-2 shadow-sm"
                     >
                         <User size={16} /> Meu Perfil
                     </button>
@@ -6572,11 +6572,11 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
             {/* User Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {users.map(u => (
-                    <div key={u.id} onClick={() => { setEditingUser(u); setIsModalOpen(true); }} className="bg-white dark:bg-[#1A1A1A] group hover:shadow-xl transition-all duration-300 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex flex-col items-center text-center relative overflow-hidden cursor-pointer">
+                    <div key={u.id} onClick={() => { setEditingUser(u); setIsModalOpen(true); }} className="bg-[var(--admin-surface-1)] group hover:shadow-xl transition-all duration-300 rounded-2xl border border-[var(--admin-border)] p-6 flex flex-col items-center text-center relative overflow-hidden cursor-pointer">
                         <div className={`absolute top-0 left-0 w-full h-1 ${u.status === 'Active' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
 
                         {/* Avatar */}
-                        <div className="w-20 h-20 rounded-full bg-gray-50 dark:bg-[#222] border-2 border-white dark:border-[#333] shadow-lg flex items-center justify-center text-2xl font-bold text-gray-400 dark:text-gray-500 mb-4 group-hover:scale-110 transition-transform bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#222] dark:to-[#111] group-hover:from-wtech-gold/20 group-hover:to-yellow-50 dark:group-hover:to-yellow-900/20">
+                        <div className="w-20 h-20 rounded-full bg-[var(--admin-surface-2)] border-2 border-white dark:border-[#333] shadow-lg flex items-center justify-center text-2xl font-bold text-[var(--admin-text-tertiary)] mb-4 group-hover:scale-110 transition-transform bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#222] dark:to-[#111] group-hover:from-wtech-gold/20 group-hover:to-yellow-50 dark:group-hover:to-yellow-900/20">
                             {(u.name || '?').charAt(0)}
                         </div>
 
@@ -6592,7 +6592,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 
                         <div className="mt-auto w-full">
                             <button
-                                className="w-full py-2 rounded border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black group-hover:border-black dark:group-hover:border-white transition-colors"
+                                className="w-full py-2 rounded border border-[var(--admin-border)] text-[var(--admin-text-secondary)] font-bold text-xs uppercase group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black group-hover:border-black dark:group-hover:border-white transition-colors"
                             >
                                 Editar Perfil
                             </button>
@@ -6612,10 +6612,10 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-gray-700 rounded-2xl shadow-2xl p-8 w-full max-w-md"
+                            className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl shadow-2xl p-8 w-full max-w-md"
                         >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{editingUser.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
+                            <div className="flex justify-between items-center mb-6 border-b border-[var(--admin-border)] pb-4">
+                                <h3 className="text-xl font-bold text-[var(--admin-text-primary)]">{editingUser.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
                                 <div className="flex gap-2">
                                     {editingUser.id && hasPermission('manage_users') && (
                                         <button
@@ -6626,36 +6626,36 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                             <Trash2 size={20} />
                                         </button>
                                     )}
-                                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-[#333] rounded-full text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+                                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-red-500 transition-colors"><X size={20} /></button>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nome Completo</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Nome Completo</label>
                                     <input
-                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none dark:bg-[#222] dark:text-white"
+                                        className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-[var(--admin-surface-2)]"
                                         value={editingUser.name || ''}
                                         onChange={e => setEditingUser({ ...editingUser, name: e.target.value })}
                                         placeholder="Ex: João Silva"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">E-mail</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">E-mail</label>
                                     <input
-                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none dark:bg-[#222] dark:text-white"
+                                        className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-[var(--admin-surface-2)]"
                                         value={editingUser.email || ''}
                                         onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
                                         placeholder="joao@exemplo.com"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Senha {editingUser.id && '(Deixe em branco para manter)'}</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Senha {editingUser.id && '(Deixe em branco para manter)'}</label>
                                     <div className="relative">
                                         <Lock size={16} className="absolute left-3 top-3 text-gray-400" />
                                         <input
                                             type="password"
-                                            className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-3 text-sm font-medium focus:border-wtech-gold outline-none dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] rounded-lg pl-10 pr-3 py-3 text-sm font-medium focus:border-wtech-gold outline-none bg-[var(--admin-surface-2)]"
                                             placeholder={editingUser.id ? "Nova senha..." : "Definir senha..."}
                                             value={editingUser.password || ''}
                                             onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
@@ -6663,9 +6663,9 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Cargo / Função</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Cargo / Função</label>
                                     <select
-                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white dark:bg-[#222] dark:text-white"
+                                        className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-[var(--admin-surface-2)]"
                                         value={editingUser.role_id || ''}
                                         onChange={e => setEditingUser({ ...editingUser, role_id: e.target.value })}
                                     >
@@ -6676,9 +6676,9 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status</label>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Status</label>
                                     <select
-                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-white dark:bg-[#222] dark:text-white"
+                                        className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm font-medium focus:border-wtech-gold outline-none bg-[var(--admin-surface-2)]"
                                         value={editingUser.status || 'Active'}
                                         onChange={e => setEditingUser({ ...editingUser, status: e.target.value as any })}
                                     >
@@ -6719,8 +6719,8 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
-                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#333]">Cancelar</button>
-                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-lg">Salvar Dados</button>
+                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50">Cancelar</button>
+                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 dark:bg-white dark:text-black shadow-lg">Salvar Dados</button>
                                 </div>
                             </div>
                         </motion.div>
@@ -7191,7 +7191,7 @@ const Admin = () => {
             </AnimatePresence>
 
             {/* Main Content */}
-            <div ref={mainContentRef} className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-gray-50/50 dark:bg-[#111] dark:text-gray-100 transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
+            <div ref={mainContentRef} className={`flex-1 overflow-y-auto overflow-x-hidden md:pt-0 bg-[var(--admin-surface-1)] transition-colors duration-300 ${isMobileMenuOpen ? 'blur-sm scale-95 transition-all duration-300' : 'transition-all duration-300'}`}>
 
                 <AnimatePresence mode="popLayout">
                     <motion.div

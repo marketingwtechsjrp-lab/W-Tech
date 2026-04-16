@@ -309,10 +309,10 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                     <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                     <h3 className="font-bold text-lg text-[var(--admin-text-primary)] flex items-center gap-2">
                         <Users className="text-blue-600 dark:text-blue-400" /> Listas de Contatos
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie grupos de contatos por usuário.</p>
+                    <p className="text-sm text-[var(--admin-text-secondary)]">Gerencie grupos de contatos por usuário.</p>
                 </div>
                 {!isEditing && hasPerm('marketing_manage_lists') && (
                     <div className="flex gap-2">
@@ -329,7 +329,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                         </button>
                         <button 
                             onClick={() => { setIsEditing(true); setCurrentList({ name: '', description: '', type: 'Static', rules: {}, ownerId: user?.id }); }}
-                            className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-lg"
+                            className="bg-black text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black shadow-lg"
                         >
                             <Plus size={16} /> Nova Lista
                         </button>
@@ -338,17 +338,17 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {isEditing && (
-                <div className="bg-gray-50 dark:bg-[#222] p-6 rounded-xl border border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-top-4">
+                <div className="bg-[var(--admin-surface-2)] p-6 rounded-xl border border-[var(--admin-border)] animate-in fade-in slide-in-from-top-4">
                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-bold text-gray-700 dark:text-white">{currentList.id ? 'Editar Lista' : 'Nova Lista'}</h4>
+                        <h4 className="font-bold text-[var(--admin-text-primary)]">{currentList.id ? 'Editar Lista' : 'Nova Lista'}</h4>
                         <button onClick={() => setIsEditing(false)}><X size={20} className="text-gray-400 hover:text-red-500" /></button>
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Nome da Lista</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nome da Lista</label>
                                 <input 
-                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#1A1A1A] dark:text-white" 
+                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)]" 
                                     placeholder="Ex: Alunos de Offroad 2024"
                                     value={currentList.name}
                                     onChange={e => setCurrentList({...currentList, name: e.target.value})}
@@ -356,9 +356,9 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             </div>
                            
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Dono da Lista (Vinculado)</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Dono da Lista (Vinculado)</label>
                                 <select 
-                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm bg-white dark:bg-[#1A1A1A] dark:text-white"
+                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)]"
                                     value={currentList.ownerId || ''}
                                     onChange={e => setCurrentList({...currentList, ownerId: e.target.value})}
                                 >
@@ -370,16 +370,16 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Descrição</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Descrição</label>
                                 <input 
-                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#1A1A1A] dark:text-white" 
+                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)]" 
                                     placeholder="Opcional"
                                     value={currentList.description || ''}
                                     onChange={e => setCurrentList({...currentList, description: e.target.value})}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Tipo de Lista</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Tipo de Lista</label>
                                 <div className="flex gap-4">
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input 
@@ -388,7 +388,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                             checked={currentList.type === 'Static'} 
                                             onChange={() => setCurrentList({...currentList, type: 'Static'})} 
                                         />
-                                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Estática (Manual)</span>
+                                        <span className="text-sm text-gray-700 font-medium">Estática (Manual)</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input 
@@ -397,20 +397,20 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                             checked={currentList.type === 'Dynamic'} 
                                             onChange={() => setCurrentList({...currentList, type: 'Dynamic'})} 
                                         />
-                                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Dinâmica (Filtros)</span>
+                                        <span className="text-sm text-gray-700 font-medium">Dinâmica (Filtros)</span>
                                     </label>
                                 </div>
                             </div>
                         </div>
 
                         {currentList.type === 'Dynamic' && (
-                            <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded border border-gray-200 dark:border-gray-700">
-                                <h5 className="font-bold text-sm mb-3 flex items-center gap-2 dark:text-white"><Filter size={14} /> Regras de Filtragem</h5>
+                            <div className="bg-[var(--admin-surface-1)] p-4 rounded border border-[var(--admin-border)]">
+                                <h5 className="font-bold text-sm mb-3 flex items-center gap-2"><Filter size={14} /> Regras de Filtragem</h5>
                                 <div className="space-y-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Filtrar por Curso</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Filtrar por Curso</label>
                                         <select 
-                                            className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)]"
                                             value={currentList.rules?.course_id || ''}
                                             onChange={e => setCurrentList({
                                                 ...currentList, 
@@ -422,9 +422,9 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status do Lead</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Status do Lead</label>
                                         <select 
-                                            className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm dark:bg-[#222] dark:text-white"
+                                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)]"
                                             value={currentList.rules?.status || ''}
                                             onChange={e => setCurrentList({
                                                 ...currentList, 
@@ -446,14 +446,14 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                         )}
                         
                         {currentList.type === 'Static' && (
-                             <div className="bg-white dark:bg-[#1A1A1A] p-4 rounded border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-sm">
+                             <div className="bg-[var(--admin-surface-1)] p-4 rounded border border-[var(--admin-border)] flex items-center justify-center text-gray-400 text-sm">
                                 <p>Contatos são adicionados manualmente ou via importação após salvar a lista.</p>
                              </div>
                         )}
                      </div>
 
                      <div className="flex justify-end gap-2 mt-6">
-                        <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors">Cancelar</button>
+                        <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-200 rounded transition-colors">Cancelar</button>
                         <button onClick={handleSave} disabled={isLoading} className="bg-green-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
                             <Save size={16} /> Salvar Lista
                         </button>
@@ -463,7 +463,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {lists.map(list => (
-                    <div key={list.id} className="bg-white dark:bg-[#1A1A1A] p-5 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group relative">
+                    <div key={list.id} className="bg-[var(--admin-surface-1)] p-5 rounded-xl border border-[var(--admin-border)] shadow-sm hover:shadow-md transition-all group relative">
                         <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`w-2 h-2 rounded-full ${list.type === 'Dynamic' ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
@@ -487,20 +487,20 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             )}
                         </div>
                         
-                        <h4 className="font-bold text-gray-800 dark:text-gray-100 text-lg mb-1">{list.name}</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{list.description || 'Sem descrição'}</p>
+                        <h4 className="font-bold text-[var(--admin-text-primary)] text-lg mb-1">{list.name}</h4>
+                        <p className="text-sm text-[var(--admin-text-secondary)] mb-2 line-clamp-2">{list.description || 'Sem descrição'}</p>
 
                          {/* Owner Badge */}
                          {list.ownerId && (
-                             <div className="flex items-center gap-1.5 mb-3 bg-gray-50 dark:bg-[#222] px-2 py-1 rounded w-fit">
+                             <div className="flex items-center gap-1.5 mb-3 bg-[var(--admin-surface-2)] px-2 py-1 rounded w-fit">
                                 <Users size={10} className="text-gray-400" />
-                                <span className="text-[10px] uppercase font-bold text-gray-600 dark:text-gray-300">
+                                <span className="text-[10px] uppercase font-bold text-[var(--admin-text-secondary)]">
                                     {getUserName(list.ownerId)}
                                 </span>
                              </div>
                          )}
 
-                         <div className="pt-3 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-xs text-gray-400">
+                         <div className="pt-3 border-t border-gray-50  flex justify-between items-center text-xs text-gray-400">
                             <span>Criada em: {list.createdAt ? new Date(list.createdAt).toLocaleDateString() : 'N/A'}</span>
                             <button 
                                 onClick={() => { setSelectedList(list); setIsMembersModalOpen(true); }}
@@ -516,11 +516,11 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
             {/* Members Modal */}
             {isMembersModalOpen && selectedList && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh] border dark:border-gray-800">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#222]">
+                    <div className="bg-[var(--admin-surface-1)] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[80vh] border ">
+                        <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-surface-2)]">
                             <div>
-                                <h3 className="font-black text-xl text-gray-900 dark:text-white">{selectedList.name}</h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{members.length} Membros Vinculados</p>
+                                <h3 className="font-black text-xl text-[var(--admin-text-primary)]">{selectedList.name}</h3>
+                                <p className="text-xs text-[var(--admin-text-secondary)] font-bold uppercase tracking-wider">{members.length} Membros Vinculados</p>
                             </div>
                             <button onClick={() => setIsMembersModalOpen(false)} className="text-gray-400 hover:text-red-500">
                                 <X size={24} />
@@ -538,7 +538,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         <input 
                                             type="text" 
                                             placeholder="Buscar por nome, e-mail ou telefone..."
-                                            className="w-full bg-white dark:bg-[#222] border-2 border-gray-100 dark:border-gray-700 rounded-2xl px-12 py-4 text-sm font-bold outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all dark:text-white"
+                                            className="w-full bg-[var(--admin-surface-2)] border-2 border-[var(--admin-border)] rounded-2xl px-12 py-4 text-sm font-bold outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                                             value={clientSearchTerm}
                                             onChange={e => {
                                                 setClientSearchTerm(e.target.value);
@@ -559,7 +559,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
 
                                     {/* Search Results Dropdown */}
                                     {showClientResults && clientSearchTerm && (
-                                        <div className="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 max-h-60 overflow-y-auto animate-in slide-in-from-top-2">
+                                        <div className="absolute z-50 left-0 right-0 mt-2 bg-[var(--admin-surface-1)] rounded-2xl shadow-2xl border border-[var(--admin-border)] max-h-60 overflow-y-auto animate-in slide-in-from-top-2">
                                             {allSelectableClients
                                                 .filter(c => 
                                                     c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
@@ -571,10 +571,10 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                                     <button
                                                         key={`${client.type}-${client.id}`}
                                                         onClick={() => handleAddExistingClient(client)}
-                                                        className="w-full flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800"
+                                                        className="w-full flex items-center justify-between p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors border-b last:border-0 border-gray-50 "
                                                     >
                                                         <div>
-                                                            <p className="font-bold text-sm text-gray-900 dark:text-white">{client.name}</p>
+                                                            <p className="font-bold text-sm text-[var(--admin-text-primary)]">{client.name}</p>
                                                             <p className="text-[10px] text-gray-400 font-medium">
                                                                 {client.type} • {client.email || 'Sem e-mail'}
                                                             </p>
@@ -593,8 +593,8 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             </div>
 
                             {/* Manual Member Form - Fixed for Overflow */}
-                            <div className="bg-gray-50 dark:bg-[#222] p-5 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-4">
-                                <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                            <div className="bg-[var(--admin-surface-2)] p-5 rounded-3xl border border-[var(--admin-border)] space-y-4">
+                                <h4 className="text-xs font-black text-[var(--admin-text-secondary)] uppercase tracking-widest flex items-center gap-2">
                                     <Plus size={14} className="text-blue-600 dark:text-blue-400" /> Ou Cadastrar Novo Contato
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -603,7 +603,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         <input 
                                             type="text" 
                                             placeholder="Nome completo"
-                                            className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20 dark:text-white"
+                                            className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20"
                                             value={newMember.name}
                                             onChange={e => setNewMember({...newMember, name: e.target.value})}
                                         />
@@ -613,7 +613,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         <input 
                                             type="email" 
                                             placeholder="exemplo@v.com"
-                                            className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20 dark:text-white"
+                                            className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20"
                                             value={newMember.email}
                                             onChange={e => setNewMember({...newMember, email: e.target.value})}
                                         />
@@ -624,7 +624,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                             <input 
                                                 type="text" 
                                                 placeholder="(00) 00000-0000"
-                                                className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20 dark:text-white"
+                                                className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500/20"
                                                 value={newMember.phone}
                                                 onChange={e => setNewMember({...newMember, phone: e.target.value})}
                                             />
@@ -655,14 +655,14 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                 ) : (
                                     <div className="space-y-2">
                                         {members.map(member => (
-                                            <div key={member.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
+                                            <div key={member.id} className="flex items-center justify-between p-3 rounded-xl border border-[var(--admin-border)] bg-gray-50/50 bg-[var(--admin-surface-1)] hover:bg-gray-50 dark:hover:bg-[#222] transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
                                                         {member.name?.charAt(0) || '?'}
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{member.name}</p>
-                                                        <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                                                        <p className="font-bold text-sm text-[var(--admin-text-primary)]">{member.name}</p>
+                                                        <div className="flex items-center gap-3 text-[10px] text-[var(--admin-text-secondary)] font-medium">
                                                             <span className="flex items-center gap-1"><Mail size={10} /> {member.email || 'N/A'}</span>
                                                             <span className="flex items-center gap-1"><Phone size={10} /> {member.phone || 'N/A'}</span>
                                                         </div>
@@ -682,10 +682,10 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             </div>
                         </div>
                         
-                        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] flex justify-end">
+                        <div className="p-6 border-t border-[var(--admin-border)] bg-[var(--admin-surface-2)] flex justify-end">
                             <button 
                                 onClick={() => setIsMembersModalOpen(false)}
-                                className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all active:scale-95 shadow-lg"
+                                className="bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 dark:bg-white dark:text-black transition-all active:scale-95 shadow-lg"
                             >
                                 Fechar
                             </button>
@@ -697,15 +697,15 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
             {/* NEW: Import XLS Modal */}
             {isImportModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col border border-gray-100 dark:border-gray-800">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#111]">
+                    <div className="bg-[var(--admin-surface-1)] rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col border border-[var(--admin-border)]">
+                        <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-surface-2)]">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center">
                                     <FileSpreadsheet size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase tracking-tight">Importar Contatos</h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold">Crie um novo grupo via Excel (.xls, .xlsx)</p>
+                                    <h3 className="font-black text-xl text-[var(--admin-text-primary)] uppercase tracking-tight">Importar Contatos</h3>
+                                    <p className="text-xs text-[var(--admin-text-secondary)] font-bold">Crie um novo grupo via Excel (.xls, .xlsx)</p>
                                 </div>
                             </div>
                             <button onClick={() => setIsImportModalOpen(false)} className="text-gray-400 hover:text-red-500">
@@ -717,7 +717,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             {/* Step 1: File Selection */}
                             <div className="space-y-4">
                                 <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">1. Selecione o Arquivo</label>
-                                <div className={`relative border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center gap-4 ${importFile ? 'border-green-500 bg-green-50/10' : 'border-gray-200 dark:border-gray-800 hover:border-blue-500 hover:bg-blue-50/5'}`}>
+                                <div className={`relative border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center gap-4 ${importFile ? 'border-green-500 bg-green-50/10' : 'border-gray-200  hover:border-blue-500 hover:bg-blue-50/5'}`}>
                                     <input 
                                         type="file" 
                                         accept=".xlsx, .xls"
@@ -730,7 +730,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                                 <Check size={32} />
                                             </div>
                                             <div className="text-center">
-                                                <p className="font-bold text-gray-900 dark:text-white">{importFile.name}</p>
+                                                <p className="font-bold text-[var(--admin-text-primary)]">{importFile.name}</p>
                                                 <p className="text-xs text-green-600 font-bold uppercase">{importData.length} Contatos identificados</p>
                                             </div>
                                         </>
@@ -738,7 +738,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         <>
                                             <Upload size={40} className="text-gray-300" />
                                             <div className="text-center">
-                                                <p className="font-bold text-gray-700 dark:text-gray-200">Clique ou arraste seu arquivo XLS aqui</p>
+                                                <p className="font-bold text-[var(--admin-text-primary)]">Clique ou arraste seu arquivo XLS aqui</p>
                                                 <p className="text-xs text-gray-400 mt-1">Colunas esperadas: Cliente, Telefone, E-mail</p>
                                             </div>
                                         </>
@@ -754,7 +754,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         <div>
                                             <label className="block text-[10px] font-black text-gray-400 uppercase ml-1 mb-1">Nome do Grupo</label>
                                             <input 
-                                                className="w-full bg-gray-50 dark:bg-[#222] border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-green-500"
                                                 placeholder="Nome do grupo..."
                                                 value={currentList.name}
                                                 onChange={e => setCurrentList({...currentList, name: e.target.value})}
@@ -763,7 +763,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                         <div>
                                             <label className="block text-[10px] font-black text-gray-400 uppercase ml-1 mb-1">Descrição (Opcional)</label>
                                             <input 
-                                                className="w-full bg-gray-50 dark:bg-[#222] border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-green-500"
                                                 placeholder="Ex: Importação lista de janeiro"
                                                 value={currentList.description || ''}
                                                 onChange={e => setCurrentList({...currentList, description: e.target.value})}
@@ -772,9 +772,9 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                     </div>
 
                                     {/* Preview Table */}
-                                    <div className="mt-4 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden max-h-40 overflow-y-auto bg-gray-50/50">
+                                    <div className="mt-4 border border-[var(--admin-border)] rounded-2xl overflow-hidden max-h-40 overflow-y-auto bg-gray-50/50">
                                         <table className="w-full text-[10px]">
-                                            <thead className="bg-gray-100 dark:bg-[#222] text-gray-500 uppercase font-black">
+                                            <thead className="bg-[var(--admin-surface-3)] text-gray-500 uppercase font-black">
                                                 <tr>
                                                     <th className="px-4 py-2 text-left">Cliente</th>
                                                     <th className="px-4 py-2 text-left">Telefone (Limpo)</th>
@@ -782,7 +782,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                                             </thead>
                                             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                                 {importData.slice(0, 5).map((row: any, i) => (
-                                                    <tr key={i} className="text-gray-600 dark:text-gray-400">
+                                                    <tr key={i} className="text-[var(--admin-text-secondary)]">
                                                         <td className="px-4 py-2">{row['Cliente'] || row['Name'] || '-'}</td>
                                                         <td className="px-4 py-2">{String(row['Telefone'] || row['Phone'] || '').replace(/\D/g, '')}</td>
                                                     </tr>
@@ -799,7 +799,7 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
                             )}
                         </div>
 
-                        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111] flex justify-end gap-3">
+                        <div className="p-6 border-t border-[var(--admin-border)] bg-[var(--admin-surface-2)] flex justify-end gap-3">
                             <button 
                                 onClick={() => setIsImportModalOpen(false)}
                                 className="px-6 py-3 text-sm font-bold text-gray-500 hover:text-gray-700 font-bold"

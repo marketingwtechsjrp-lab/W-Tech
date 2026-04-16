@@ -207,12 +207,12 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
 
     return (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-xl w-full max-w-5xl mx-auto border border-gray-100 dark:border-gray-800 flex flex-col h-[85vh] animate-in zoom-in-95">
+            <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-xl w-full max-w-5xl mx-auto border border-[var(--admin-border)] flex flex-col h-[85vh] animate-in zoom-in-95">
                 
                 {/* Fixed Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#222]">
+                <div className="flex justify-between items-center p-6 border-b border-[var(--admin-border)] bg-[var(--admin-surface-2)]">
                     <div>
-                        <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                        <h3 className="text-2xl font-black text-[var(--admin-text-primary)] flex items-center gap-2">
                             Nova Campanha
                         </h3>
                         <div className="flex gap-2 mt-2">
@@ -221,7 +221,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                             ))}
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-[#333] rounded-full text-gray-400 hover:text-red-500 transition-all">
+                    <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full text-gray-400 hover:text-red-500 transition-all">
                         <X size={24} />
                     </button>
                 </div>
@@ -236,7 +236,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Nome da Campanha</label>
                                 <input 
                                     type="text" 
-                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all dark:text-white"
+                                    className="w-full bg-[var(--admin-surface-2)] border-2 border-transparent focus:border-purple-500 focus:bg-[var(--admin-surface-1)] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all text-[var(--admin-text-primary)]"
                                     placeholder="Ex: Promoção de Natal 2024"
                                     value={formData.name}
                                     onChange={e => setFormData({...formData, name: e.target.value})}
@@ -249,7 +249,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                 <div className="grid grid-cols-2 gap-4">
                                     <button 
                                         onClick={() => setFormData({...formData, channel: 'WhatsApp'})}
-                                        className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${formData.channel === 'WhatsApp' ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-xl shadow-green-100 dark:shadow-none' : 'border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-400 hover:bg-gray-50 dark:hover:bg-[#222]'}`}
+                                        className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${formData.channel === 'WhatsApp' ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-xl shadow-green-100 dark:shadow-none' : 'border-[var(--admin-border)] hover:border-gray-300 text-gray-400 hover:bg-[var(--admin-surface-2)]'}`}
                                     >
                                         <Smartphone size={32} />
                                         <span className="font-black uppercase tracking-tight">WhatsApp</span>
@@ -257,7 +257,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                     <button 
                                         onClick={() => setFormData({...formData, channel: 'Email'})} // Assuming Email logic exists or is planned
                                         disabled // Disabled based on previous code usually disable email
-                                        className={`p-6 rounded-2xl border-2 border-gray-100 dark:border-gray-800 flex flex-col items-center gap-3 text-gray-300 dark:text-gray-600 cursor-not-allowed grayscale bg-gray-50 dark:bg-[#222]/50`}
+                                        className={`p-6 rounded-2xl border-2 border-[var(--admin-border)] flex flex-col items-center gap-3 text-[var(--admin-text-tertiary)] cursor-not-allowed grayscale bg-[var(--admin-surface-2)]/50`}
                                     >
                                         <Mail size={32} />
                                         <span className="font-black uppercase tracking-tight">Email (Em breve)</span>
@@ -273,7 +273,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                              <div className="space-y-2">
                                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Selecione a Lista de Destino</label>
                                 <select 
-                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all dark:text-white"
+                                    className="w-full bg-[var(--admin-surface-2)] border-2 border-transparent focus:border-purple-500 focus:bg-[var(--admin-surface-1)] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all text-[var(--admin-text-primary)]"
                                     value={formData.listId}
                                     onChange={e => setFormData({...formData, listId: e.target.value})}
                                 >
@@ -290,7 +290,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                             <div className="space-y-2">
                                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Modelo de Mensagem</label>
                                 <select 
-                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all dark:text-white"
+                                    className="w-full bg-[var(--admin-surface-2)] border-2 border-transparent focus:border-purple-500 focus:bg-[var(--admin-surface-1)] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all text-[var(--admin-text-primary)]"
                                     value={formData.templateId}
                                     onChange={e => {
                                         const t = templates.find(t => t.id === e.target.value);
@@ -309,8 +309,8 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                 </select>
                             </div>
 
-                            <div className="space-y-4 bg-gray-50 dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner">
-                                <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+                            <div className="space-y-4 bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-inner">
+                                <div className="flex justify-between items-center border-b border-[var(--admin-border)] pb-2 mb-2">
                                     <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest ">Conteúdo Sequencial</h4>
                                     <div className="flex items-center gap-2">
                                         <label className="text-[9px] font-black text-gray-400 uppercase">Intervalo entre partes (Seg)</label>
@@ -318,7 +318,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                             type="number" 
                                             min="0"
                                             max="60"
-                                            className="w-16 border border-gray-200 dark:border-gray-700 rounded p-1 text-xs font-bold bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white text-center"
+                                            className="w-16 border border-[var(--admin-border)] rounded p-1 text-xs font-bold bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] text-center"
                                             value={formData.part_delay || 0}
                                             onChange={e => setFormData({...formData, part_delay: parseInt(e.target.value) || 0})}
                                         />
@@ -331,7 +331,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                         <span className="text-gray-400 font-medium normal-case">Variáveis: {'{{nome}}'}, {'{{telefone}}'}...</span>
                                     </label>
                                     <textarea 
-                                        className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm font-medium h-32 outline-none focus:ring-2 focus:ring-blue-500/20 dark:text-white transition-all shadow-sm"
+                                        className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-4 text-sm font-medium h-32 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
                                         value={formData.content}
                                         onChange={e => setFormData({...formData, content: e.target.value})}
                                         placeholder="Olá {{nome}}..."
@@ -341,7 +341,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-purple-500 uppercase">2. Imagem (URL)</label>
                                     <input 
-                                        className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white transition-all shadow-sm"
+                                        className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-purple-500/20 transition-all shadow-sm"
                                         placeholder="https://..."
                                         value={formData.imageUrl}
                                         onChange={e => setFormData({...formData, imageUrl: e.target.value})}
@@ -351,7 +351,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-indigo-500 uppercase">3. Texto Final</label>
                                     <textarea 
-                                        className="w-full bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm font-medium h-24 outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white transition-all shadow-sm"
+                                        className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl p-4 text-sm font-medium h-24 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                                         value={formData.content2}
                                         onChange={e => setFormData({...formData, content2: e.target.value})}
                                         placeholder="Aguardo seu retorno!"
@@ -373,9 +373,9 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                             </div>
 
                              <div className="space-y-2">
-                                <label className="block text-xs font-black uppercase text-gray-500 dark:text-gray-400 mb-1 tracking-widest ml-1">Velocidade de Envio (Segurança)</label>
+                                <label className="block text-xs font-black uppercase text-[var(--admin-text-secondary)] mb-1 tracking-widest ml-1">Velocidade de Envio (Segurança)</label>
                                 <select 
-                                    className="w-full bg-gray-50 dark:bg-[#222] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl p-4 text-lg font-bold outline-none transition-all dark:text-white"
+                                    className="w-full bg-[var(--admin-surface-2)] border-2 border-transparent focus:border-purple-500 focus:bg-white dark:focus:bg-[#1A1A1A] rounded-2xl p-4 text-lg font-bold outline-none transition-all"
                                     value={formData.throttling.delay_seconds}
                                     onChange={e => setFormData({...formData, throttling: {...formData.throttling, delay_seconds: Number(e.target.value)}})}
                                 >
@@ -384,27 +384,27 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                     <option value="180">Seguro (1 msg / 3 min)</option>
                                     <option value="300">Lento (1 msg / 5 min)</option>
                                 </select>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-1 font-medium"> Recomendamos 3 minutos para listas frias.</p>
+                                <p className="text-xs text-[var(--admin-text-tertiary)] mt-1 ml-1 font-medium"> Recomendamos 3 minutos para listas frias.</p>
                             </div>
 
-                            <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
-                                <h4 className="font-black text-gray-900 dark:text-white mb-4 text-lg">Resumo da Campanha</h4>
+                            <div className="border-t border-[var(--admin-border)] pt-6">
+                                <h4 className="font-black text-[var(--admin-text-primary)] mb-4 text-lg">Resumo da Campanha</h4>
                                 <ul className="space-y-3 text-sm">
-                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
-                                        <span className="text-gray-500 dark:text-gray-400">Campanha</span>
-                                        <strong className="text-gray-900 dark:text-white">{formData.name}</strong>
+                                    <li className="flex justify-between items-center p-3 bg-[var(--admin-surface-2)] rounded-xl">
+                                        <span className="text-[var(--admin-text-secondary)]">Campanha</span>
+                                        <strong className="text-[var(--admin-text-primary)]">{formData.name}</strong>
                                     </li>
-                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
-                                        <span className="text-gray-500 dark:text-gray-400">Canal</span>
-                                        <strong className="text-gray-900 dark:text-white">{formData.channel}</strong>
+                                    <li className="flex justify-between items-center p-3 bg-[var(--admin-surface-2)] rounded-xl">
+                                        <span className="text-[var(--admin-text-secondary)]">Canal</span>
+                                        <strong className="text-[var(--admin-text-primary)]">{formData.channel}</strong>
                                     </li>
-                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
-                                        <span className="text-gray-500 dark:text-gray-400">Destinatários estimados</span>
+                                    <li className="flex justify-between items-center p-3 bg-[var(--admin-surface-2)] rounded-xl">
+                                        <span className="text-[var(--admin-text-secondary)]">Destinatários estimados</span>
                                         <strong className="text-purple-600 dark:text-purple-400">{audienceCount}</strong>
                                     </li>
-                                    <li className="flex justify-between items-center p-3 bg-gray-50 dark:bg-[#222] rounded-xl">
-                                        <span className="text-gray-500 dark:text-gray-400">Intervalo de envio</span>
-                                        <strong className="text-gray-900 dark:text-white">{formData.throttling.delay_seconds} segundos</strong>
+                                    <li className="flex justify-between items-center p-3 bg-[var(--admin-surface-2)] rounded-xl">
+                                        <span className="text-[var(--admin-text-secondary)]">Intervalo de envio</span>
+                                        <strong className="text-[var(--admin-text-primary)]">{formData.throttling.delay_seconds} segundos</strong>
                                     </li>
                                 </ul>
                             </div>
@@ -414,11 +414,11 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-gray-50 dark:bg-[#222] rounded-b-2xl">
+                <div className="p-6 border-t border-[var(--admin-border)] flex justify-end gap-3 bg-[var(--admin-surface-2)] rounded-b-2xl">
                     {step > 1 && (
                         <button 
                             onClick={() => setStep(step - 1)}
-                            className="px-6 py-3 rounded-xl font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#333] transition-all"
+                            className="px-6 py-3 rounded-xl font-bold text-[var(--admin-text-secondary)] hover:bg-gray-200 dark:hover:bg-[#333] transition-all"
                         >
                             Voltar
                         </button>
@@ -428,7 +428,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                         <button 
                             onClick={() => setStep(step + 1)}
                             disabled={!formData.name}
-                            className="bg-black text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:transform-none"
+                            className="bg-black text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-800 dark:bg-white dark:text-black transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:transform-none"
                         >
                             Próximo <ArrowRight size={18} />
                         </button>

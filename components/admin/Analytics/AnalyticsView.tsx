@@ -98,7 +98,7 @@ const AnalyticsView = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <h2 className="text-2xl font-bold text-[var(--admin-text-primary)] flex items-center gap-2">
                         <Activity className="text-wtech-gold" /> Analytics 2.0
                     </h2>
                     <div className="flex items-center gap-2 mt-1">
@@ -110,12 +110,12 @@ const AnalyticsView = () => {
                     </div>
                 </div>
 
-                <div className="flex bg-gray-100 dark:bg-[#1A1A1A] p-1 rounded-lg border border-gray-200 dark:border-gray-800">
+                <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
                     {[7, 30, 90].map(d => (
                         <button
                             key={d}
                             onClick={() => setPeriod(d)}
-                            className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${period === d ? 'bg-white dark:bg-[#333] shadow text-black dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${period === d ? 'bg-[var(--admin-surface-3)] shadow text-black dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                         >
                             {d} dias
                         </button>
@@ -124,7 +124,7 @@ const AnalyticsView = () => {
             </div>
 
             {/* Tabs Navigation */}
-            <div className="flex border-b border-gray-100 dark:border-gray-800 gap-8 overflow-x-auto no-scrollbar">
+            <div className="flex border-b border-[var(--admin-border)] gap-8 overflow-x-auto no-scrollbar">
                 {[
                     { id: 'overview', label: 'Visão Geral' },
                     { id: 'acquisition', label: 'Aquisição' },
@@ -152,28 +152,28 @@ const AnalyticsView = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                            <h3 className="font-bold text-gray-800 dark:text-white mb-6">Tráfego no Período</h3>
+                        <div className="lg:col-span-2 bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)]">
+                            <h3 className="font-bold text-[var(--admin-text-primary)] mb-6">Tráfego no Período</h3>
                             <div className="h-[300px]">
                                 <ReactApexChart options={chartOptions} series={[{ name: 'Visitas', data: dailyVisits.data }]} type="area" height="100%" />
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] flex flex-col justify-between">
                             <div>
-                                <h3 className="font-bold text-gray-800 dark:text-white mb-4 italic">Dispositivos</h3>
+                                <h3 className="font-bold text-[var(--admin-text-primary)] mb-4 italic">Dispositivos</h3>
                                 <div className="space-y-6 py-4">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-bold"><Smartphone size={18} /> Mobile</div>
-                                        <span className="font-black text-xl dark:text-white">{deviceStats.mobile}</span>
+                                        <div className="flex items-center gap-2 text-[var(--admin-text-secondary)] font-bold"><Smartphone size={18} /> Mobile</div>
+                                        <span className="font-black text-xl text-[var(--admin-text-primary)]">{deviceStats.mobile}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-bold"><Monitor size={18} /> Desktop</div>
-                                        <span className="font-black text-xl dark:text-white">{deviceStats.desktop}</span>
+                                        <div className="flex items-center gap-2 text-[var(--admin-text-secondary)] font-bold"><Monitor size={18} /> Desktop</div>
+                                        <span className="font-black text-xl text-[var(--admin-text-primary)]">{deviceStats.desktop}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 font-bold">
+                            <div className="p-4 bg-[var(--admin-surface-2)] rounded-xl border border-dashed border-[var(--admin-border)] font-bold">
                                 <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Dica do Time</p>
                                 <p className="text-xs text-gray-400 leading-relaxed">
                                     {deviceStats.mobile > deviceStats.desktop 
@@ -185,19 +185,19 @@ const AnalyticsView = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                            <h3 className="font-bold text-gray-800 dark:text-white mb-4">Páginas mais Visitadas</h3>
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)]">
+                            <h3 className="font-bold text-[var(--admin-text-primary)] mb-4">Páginas mais Visitadas</h3>
                             <div className="space-y-3">
                                 {topPages.map((p, idx) => (
                                     <div key={idx} className="flex justify-between items-center text-sm group">
                                         <span className="text-gray-500 group-hover:text-wtech-gold transition-colors truncate w-4/5">{p.path}</span>
-                                        <span className="font-bold dark:text-white bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{p.count}</span>
+                                        <span className="font-bold text-[var(--admin-text-primary)] bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">{p.count}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                            <h3 className="font-bold text-gray-800 dark:text-white mb-4">Métricas de Engajamento</h3>
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)]">
+                            <h3 className="font-bold text-[var(--admin-text-primary)] mb-4">Métricas de Engajamento</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <MetricBox label="Taxa de Rejeição" value={stats.bounceRate} sub="Menor é melhor" />
                                 <MetricBox label="Tempo Médio" value={stats.avgDuration} sub="Permanência" />
@@ -209,8 +209,8 @@ const AnalyticsView = () => {
 
             {activeTab === 'acquisition' && (
                 <div className="space-y-6 animate-fade-in">
-                    <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <h3 className="text-lg font-bold dark:text-white mb-6">Tráfego por Canal ao Longo do Tempo</h3>
+                    <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-[var(--admin-border)]">
+                        <h3 className="text-lg font-bold text-[var(--admin-text-primary)] mb-6">Tráfego por Canal ao Longo do Tempo</h3>
                         <div className="h-[350px]">
                             {acquisitionChart.series.length > 0 ? (
                                 <ReactApexChart
@@ -265,13 +265,13 @@ const AnalyticsView = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-[#1A1A1A] p-8 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <h3 className="text-lg font-bold dark:text-white mb-6">Canais de Aquisição (Sessões)</h3>
+                    <div className="bg-[var(--admin-surface-1)] p-8 rounded-xl border border-[var(--admin-border)]">
+                        <h3 className="text-lg font-bold text-[var(--admin-text-primary)] mb-6">Canais de Aquisição (Sessões)</h3>
                         <div className="space-y-6">
                             {acquisitionChannels.map((c, idx) => (
                                 <div key={idx} className="space-y-2">
                                     <div className="flex justify-between text-sm">
-                                        <span className="font-bold text-gray-700 dark:text-gray-300 capitalize">{c.source === '(direct)' ? 'Direto / Bookmark' : c.source}</span>
+                                        <span className="font-bold text-[var(--admin-text-primary)] capitalize">{c.source === '(direct)' ? 'Direto / Bookmark' : c.source}</span>
                                         <span className="text-wtech-gold font-bold">{c.count} sessões</span>
                                     </div>
                                     <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -311,8 +311,8 @@ const AnalyticsView = () => {
                             <p className="text-xs text-gray-500">Acessos registrados nos últimos 30 minutos.</p>
                         </div>
 
-                        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800">
-                            <h3 className="font-bold dark:text-white mb-4">Páginas em Alta (Agora)</h3>
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-[var(--admin-border)]">
+                            <h3 className="font-bold text-[var(--admin-text-primary)] mb-4">Páginas em Alta (Agora)</h3>
                             <div className="space-y-4">
                                 {realtime?.topPages.map((p, idx) => (
                                     <div key={idx} className="flex justify-between items-center group">
@@ -325,13 +325,13 @@ const AnalyticsView = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl border border-gray-100 dark:border-gray-800 lg:col-span-2">
-                            <h3 className="font-bold dark:text-white mb-4">Origem Geográfica</h3>
+                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-[var(--admin-border)] lg:col-span-2">
+                            <h3 className="font-bold text-[var(--admin-text-primary)] mb-4">Origem Geográfica</h3>
                             <div className="flex flex-wrap gap-4">
                                 {realtime?.topCountries.map((c, idx) => (
-                                    <div key={idx} className="flex-1 min-w-[150px] p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-100 dark:border-gray-800 text-center">
+                                    <div key={idx} className="flex-1 min-w-[150px] p-4 bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)] text-center">
                                         <p className="text-[10px] text-gray-500 uppercase font-black mb-1">{c.country}</p>
-                                        <p className="text-2xl font-black dark:text-white">{c.users}</p>
+                                        <p className="text-2xl font-black text-[var(--admin-text-primary)]">{c.users}</p>
                                     </div>
                                 ))}
                             </div>
@@ -351,20 +351,20 @@ const KPICard = ({ icon: Icon, label, value, color }: any) => {
         yellow: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400',
     };
     return (
-        <div className="bg-white dark:bg-[#1A1A1A] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
+        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] flex items-center gap-4">
             <div className={`p-4 rounded-full ${colors[color]}`}><Icon size={24} /></div>
             <div>
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{label}</p>
-                <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1">{value}</h3>
+                <h3 className="text-2xl font-black text-[var(--admin-text-primary)] mt-1">{value}</h3>
             </div>
         </div>
     );
 };
 
 const MetricBox = ({ label, value, sub }: any) => (
-    <div className="text-center p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-100 dark:border-gray-800">
+    <div className="text-center p-4 bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)]">
         <p className="text-[10px] text-gray-500 uppercase font-black mb-1">{label}</p>
-        <p className="text-xl font-bold dark:text-white">{value}</p>
+        <p className="text-xl font-bold text-[var(--admin-text-primary)]">{value}</p>
         <p className="text-[9px] text-gray-400 italic">{sub}</p>
     </div>
 );

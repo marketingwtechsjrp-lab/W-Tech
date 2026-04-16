@@ -515,7 +515,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                         </div>
                         <div>
                              <p className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest">Insight</p>
-                             <p className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                             <p className="text-xs font-bold text-[var(--admin-text-secondary)]">
                                  Média de {((kpis as any).totalOrders / 12).toFixed(1)} pedidos mensais.
                              </p>
                         </div>
@@ -562,7 +562,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                             <div className="relative w-24 h-24 flex items-center justify-center">
                                 {/* Circular Progress Mockup */}
                                 <svg className="transform -rotate-90 w-24 h-24">
-                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-100 dark:text-gray-800" />
+                                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-[var(--admin-surface-3)]" />
                                     <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-emerald-500" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * kpis.conversionRate) / 100} strokeLinecap="round" />
                                 </svg>
                                 <span className="absolute text-lg font-black text-gray-900 dark:text-white">{kpis.conversionRate.toFixed(1)}%</span>
@@ -620,7 +620,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                                         {i + 1}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200">{att.name}</p>
+                                        <p className="text-sm font-bold text-[var(--admin-text-primary)]">{att.name}</p>
                                         <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full mt-1 overflow-hidden">
                                             <div className="h-full bg-blue-500" style={{ width: `${att.rate}%` }}></div>
                                         </div>
@@ -639,7 +639,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                              {coursesRank.slice(0, 4).map((course, i) => (
                                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                     <div className="flex-1">
-                                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate">{course.title}</p>
+                                        <p className="text-sm font-bold text-[var(--admin-text-primary)] truncate">{course.title}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-black text-emerald-500">R$ {course.revenue.toLocaleString('pt-BR')}</p>

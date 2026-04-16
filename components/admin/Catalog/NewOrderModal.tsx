@@ -388,12 +388,12 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20, transition: { duration: 0.2 } }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-[#F8F9FC] dark:bg-[#121212] w-full max-w-7xl h-full md:h-[95vh] md:max-h-[1000px] md:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative cursor-default border border-white/10"
+                        className="bg-[var(--admin-surface-1)] w-full max-w-7xl h-full md:h-[95vh] md:max-h-[1000px] md:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative cursor-default border border-[var(--admin-border)]"
                     >
                          {/* Header */}
-                         <div className="px-4 md:px-8 py-4 md:py-6 bg-white dark:bg-[#1A1A1A] border-b border-gray-200 dark:border-gray-800 flex justify-between items-center sticky top-0 z-10">
+                         <div className="px-4 md:px-8 py-4 md:py-6 bg-[var(--admin-surface-1)] border-b border-[var(--admin-border)] flex justify-between items-center sticky top-0 z-10">
                             <div>
-                                <h2 className="text-lg md:text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase italic underline decoration-wtech-red decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">Fluxo de Pedido <span className="text-wtech-red">W-Tech</span></h2>
+                                <h2 className="text-lg md:text-2xl font-black text-[var(--admin-text-primary)] tracking-tight uppercase italic underline decoration-wtech-red decoration-2 md:decoration-4 underline-offset-4 md:underline-offset-8">Fluxo de Pedido <span className="text-wtech-red">W-Tech</span></h2>
                                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
                         Módulo de Gestão Logística v3.0.2
                     </p>
@@ -409,48 +409,48 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                         <Trash2 size={20} />
                                     </button>
                                 )}
-                                 <button className="hidden sm:block px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+                                 <button className="hidden sm:block px-4 py-2 text-sm font-bold text-[var(--admin-text-secondary)] hover:text-[var(--admin-text-primary)] transition-colors">
                                     Salvar Rascunho
                                 </button>
-                                <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors bg-gray-50 dark:bg-black/20 md:bg-transparent">
+                                <button onClick={onClose} className="p-2 hover:bg-[var(--admin-surface-2)] rounded-full transition-colors bg-[var(--admin-surface-2)] md:bg-transparent">
                                     <X size={24} className="text-gray-400" />
                                 </button>
                             </div>
                         </div>
 
                         {/* Step Indicator */}
-                        <div className="bg-white dark:bg-[#1A1A1A] px-4 md:px-8 py-3 md:py-2 border-b border-gray-100 dark:border-gray-800 flex items-center justify-center gap-4 md:gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                        <div className="bg-[var(--admin-surface-1)] px-4 md:px-8 py-3 md:py-2 border-b border-[var(--admin-border)] flex items-center justify-center gap-4 md:gap-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
                             <button 
                                 onClick={() => setActiveStep('items')}
                                 className={`flex items-center gap-2 py-2 border-b-2 transition-all font-black text-[10px] md:text-xs uppercase tracking-widest ${activeStep === 'items' ? 'border-wtech-red text-wtech-red' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
                             >
-                                <span className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] ${activeStep === 'items' ? 'bg-wtech-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>1</span>
+                                <span className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] ${activeStep === 'items' ? 'bg-wtech-red text-white' : 'bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)]'}`}>1</span>
                                 Carrinho
                             </button>
-                            <div className="w-4 md:w-8 h-[1px] bg-gray-200 dark:bg-gray-800 shrink-0" />
+                            <div className="w-4 md:w-8 h-[1px] bg-[var(--admin-border)] shrink-0" />
                             <button 
                                 onClick={() => { if (currentSale.clientId && saleItems.length > 0) setActiveStep('checkout'); }}
                                 disabled={!currentSale.clientId || saleItems.length === 0}
                                 className={`flex items-center gap-2 py-2 border-b-2 transition-all font-black text-[10px] md:text-xs uppercase tracking-widest ${activeStep === 'checkout' ? 'border-wtech-red text-wtech-red' : 'border-transparent text-gray-400 hover:text-gray-600'} disabled:opacity-30`}
                             >
-                                <span className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] ${activeStep === 'checkout' ? 'bg-wtech-red text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>2</span>
+                                <span className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[9px] md:text-[10px] ${activeStep === 'checkout' ? 'bg-wtech-red text-white' : 'bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)]'}`}>2</span>
                                 Finalizar
                             </button>
                         </div>
 
                         <div className="flex-1 overflow-hidden">
                             {activeStep === 'items' ? (
-                                <div className="h-full flex flex-col lg:flex-row bg-white dark:bg-[#1A1A1A] min-h-0">
+                                <div className="h-full flex flex-col lg:flex-row bg-[var(--admin-surface-1)] min-h-0">
                                     {/* Sidebar: Client Search */}
-                                    <div className="lg:w-1/3 p-4 md:p-8 border-r border-gray-100 dark:border-gray-800 space-y-6 overflow-y-auto shrink-0">
+                                    <div className="lg:w-1/3 p-4 md:p-8 border-r border-[var(--admin-border)] space-y-6 overflow-y-auto shrink-0">
                                         <section>
-                                            <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white mb-4 uppercase tracking-wider">
+                                            <h3 className="flex items-center gap-2 text-sm font-black text-[var(--admin-text-primary)] mb-4 uppercase tracking-wider">
                                                 <UserPlus size={18} className="text-blue-600" /> Cliente
                                             </h3>
                                             <div className="relative mb-4">
                                                 <Search className="absolute left-4 top-3 text-gray-400" size={16} />
-                                                <input 
-                                                    className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                                <input
+                                                    className="w-full bg-[var(--admin-surface-2)] border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium text-[var(--admin-text-primary)] outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                                                     placeholder="Buscar cliente..."
                                                     value={clientSearchTerm}
                                                     onChange={(e) => {
@@ -459,7 +459,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                     }}
                                                 />
                                                 {isSearchingClient && clientSearchTerm.length > 1 && (
-                                                    <div className="absolute top-12 left-0 w-full bg-white dark:bg-[#222] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-50 max-h-60 overflow-y-auto font-sans">
+                                                    <div className="absolute top-12 left-0 w-full bg-[var(--admin-surface-2)] rounded-xl shadow-2xl border border-[var(--admin-border)] z-50 max-h-60 overflow-y-auto font-sans">
                                                         {potentialClients
                                                             .filter(c => c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()))
                                                             .map(c => (
@@ -483,9 +483,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                         setClientSearchTerm(c.name);
                                                                         setIsSearchingClient(false);
                                                                     }}
-                                                                    className="p-3 hover:bg-blue-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-50 dark:border-gray-800 last:border-0"
+                                                                    className="p-3 hover:bg-[var(--admin-surface-2)] cursor-pointer border-b border-[var(--admin-border)] last:border-0"
                                                                 >
-                                                                    <p className="font-bold text-gray-900 dark:text-white text-xs">{c.name}</p>
+                                                                    <p className="font-bold text-[var(--admin-text-primary)] text-xs">{c.name}</p>
                                                                     <p className="text-[10px] text-gray-500">{c.phone}</p>
                                                                 </div>
                                                             ))
@@ -498,14 +498,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 <motion.div 
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
-                                                    className="p-6 bg-white dark:bg-[#1A1A1A] rounded-[2rem] border-2 border-blue-500/20 shadow-xl space-y-5 relative overflow-hidden group"
+                                                    className="p-6 bg-[var(--admin-surface-1)] rounded-[2rem] border-2 border-blue-500/20 shadow-xl space-y-5 relative overflow-hidden group"
                                                 >
                                                     <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full translate-x-12 -translate-y-12"></div>
                                                     
                                                     <div className="flex justify-between items-start">
                                                         <div>
                                                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Selecionado</p>
-                                                            <p className="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter uppercase">{currentSale.clientName}</p>
+                                                            <p className="text-xl font-black text-[var(--admin-text-primary)] italic tracking-tighter uppercase">{currentSale.clientName}</p>
                                                         </div>
                                                         <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 border border-blue-200 dark:border-blue-800">
                                                             <Check size={16} />
@@ -518,7 +518,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 <div className="flex justify-between items-start">
                                                                     <div className="space-y-1">
                                                                         <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">Endereço de Entrega</label>
-                                                                        <p className="text-xs font-bold leading-relaxed text-gray-700 dark:text-gray-300">
+                                                                        <p className="text-xs font-bold leading-relaxed text-[var(--admin-text-secondary)]">
                                                                             {currentSale.delivery_street ? (
                                                                                 <>
                                                                                     {currentSale.delivery_street}, {currentSale.delivery_number || 'SN'}<br/>
@@ -559,8 +559,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 <div className="grid grid-cols-3 gap-3">
                                                                     <div className="col-span-2 space-y-1.5">
                                                                         <div className="relative">
-                                                                            <input 
-                                                                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-300"
+                                                                            <input
+                                                                                className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl py-3 px-4 text-sm font-black text-[var(--admin-text-primary)] outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-300"
                                                                                 value={currentSale.delivery_cep || ''}
                                                                                 placeholder="00000-000"
                                                                                 autoFocus
@@ -574,7 +574,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                     </div>
                                                                     <div className="space-y-1.5">
                                                                         <input 
-                                                                            className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-3 px-2 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all text-center"
+                                                                            className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl py-3 px-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500 transition-all text-center"
                                                                             value={currentSale.delivery_number || ''}
                                                                             placeholder="Nº"
                                                                             onChange={e => setCurrentSale({...currentSale, delivery_number: e.target.value})}
@@ -585,7 +585,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 <div className="space-y-1.5">
                                                                     <textarea 
                                                                         rows={2}
-                                                                        className="w-full bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-2xl py-3 px-4 text-xs font-bold leading-relaxed dark:text-gray-300 outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                                                                        className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-2xl py-3 px-4 text-xs font-bold leading-relaxed outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
                                                                         placeholder="Rua, Bairro, Cidade..."
                                                                         value={`${currentSale.delivery_street || ''}${currentSale.delivery_neighborhood ? ' - ' + currentSale.delivery_neighborhood : ''}${currentSale.delivery_city ? '\n' + currentSale.delivery_city : ''}${currentSale.delivery_state ? ' / ' + currentSale.delivery_state : ''}`}
                                                                         readOnly
@@ -605,14 +605,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         )}
                                                     </div>
 
-                                                    <div className="pt-4 border-t border-gray-50 dark:border-gray-800 grid grid-cols-2 gap-4">
+                                                    <div className="pt-4 border-t border-gray-50  grid grid-cols-2 gap-4">
                                                         <div>
                                                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Fone</p>
-                                                            <p className="text-[11px] font-black text-gray-900 dark:text-white tracking-tight">{currentSale.clientPhone || 'N/A'}</p>
+                                                            <p className="text-[11px] font-black text-[var(--admin-text-primary)] tracking-tight">{currentSale.clientPhone || 'N/A'}</p>
                                                         </div>
                                                         <div className="text-right">
                                                             <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">E-mail</p>
-                                                            <p className="text-[11px] font-black text-gray-900 dark:text-white tracking-tight truncate lowercase">{currentSale.clientEmail || 'N/A'}</p>
+                                                            <p className="text-[11px] font-black text-[var(--admin-text-primary)] tracking-tight truncate lowercase">{currentSale.clientEmail || 'N/A'}</p>
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -621,7 +621,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
 
                                         <section className="pt-4">
                                             <div className="flex justify-between items-center mb-4">
-                                                <h3 className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                                                <h3 className="flex items-center gap-2 text-sm font-black text-[var(--admin-text-primary)] uppercase tracking-wider">
                                                     <ShoppingCart size={18} className="text-gray-400" /> Catálogo
                                                 </h3>
                                                 <button 
@@ -633,11 +633,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                             </div>
 
                                             {isManualMode ? (
-                                                <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 space-y-4 animate-in fade-in slide-in-from-top-2">
+                                                <div className="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-dashed border-gray-200  space-y-4 animate-in fade-in slide-in-from-top-2">
                                                     <div>
                                                         <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Nome do Item</label>
                                                         <input 
-                                                            className="w-full bg-white dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-2 px-3 text-xs font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl py-2 px-3 text-xs font-bold outline-none focus:ring-2 focus:ring-wtech-red"
                                                             placeholder="Ex: Serviço de Instalação especial..."
                                                             value={manualItem.name}
                                                             onChange={e => setManualItem({...manualItem, name: e.target.value})}
@@ -648,7 +648,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Qtd</label>
                                                             <input 
                                                                 type="number"
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-2 px-3 text-xs font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl py-2 px-3 text-xs font-bold outline-none focus:ring-2 focus:ring-wtech-red"
                                                                 value={manualItem.quantity}
                                                                 onChange={e => setManualItem({...manualItem, quantity: Number(e.target.value)})}
                                                             />
@@ -657,7 +657,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">Valor Unit.</label>
                                                             <input 
                                                                 type="number"
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl py-2 px-3 text-xs font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-xl py-2 px-3 text-xs font-bold outline-none focus:ring-2 focus:ring-wtech-red"
                                                                 placeholder="0,00"
                                                                 value={manualItem.price || ''}
                                                                 onChange={e => setManualItem({...manualItem, price: Number(e.target.value)})}
@@ -675,7 +675,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 <div className="relative mb-4">
                                                     <Search className="absolute left-4 top-3 text-gray-400" size={16} />
                                                     <input 
-                                                        className="w-full bg-gray-50 dark:bg-[#111] border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all font-sans"
+                                                        className="w-full bg-[var(--admin-surface-2)] border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500 transition-all font-sans"
                                                         placeholder="Buscar produto no estoque..."
                                                         value={productSearchTerm}
                                                         onChange={e => setProductSearchTerm(e.target.value)}
@@ -683,17 +683,17 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         disabled={isLocked && !canBypassLock}
                                                     />
                                                     {isAddingItem && productSearchTerm && !isLocked && (
-                                                         <div className="absolute top-12 left-0 w-full bg-white dark:bg-[#222] rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-40 max-h-80 overflow-y-auto font-sans">
+                                                         <div className="absolute top-12 left-0 w-full bg-[var(--admin-surface-2)] rounded-xl shadow-2xl border border-[var(--admin-border)] z-40 max-h-80 overflow-y-auto font-sans">
                                                              {products
                                                                 .filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase()))
                                                                 .map(p => (
                                                                     <div 
                                                                         key={p.id} 
                                                                         onClick={() => handleAddProduct(p)}
-                                                                        className="flex justify-between items-center p-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-50 dark:border-gray-800 last:border-0"
+                                                                        className="flex justify-between items-center p-3 hover:bg-[var(--admin-surface-2)] cursor-pointer border-b border-gray-50  last:border-0"
                                                                     >
                                                                         <div className="min-w-0">
-                                                                            <p className="font-bold text-xs dark:text-white truncate">{p.name}</p>
+                                                                            <p className="font-bold text-xs truncate">{p.name}</p>
                                                                             <p className="text-[9px] text-gray-400 uppercase">Estoque: {p.currentStock}</p>
                                                                         </div>
                                                                         <span className="font-black text-green-600 text-xs ml-2">R$ {p.salePrice.toLocaleString('pt-BR')}</span>
@@ -708,11 +708,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                         <div className="pt-8 space-y-3">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold text-gray-400 uppercase">Itens no Carrinho</span>
-                                                <span className="text-sm font-black text-gray-900 dark:text-white">{saleItems.length}</span>
+                                                <span className="text-sm font-black text-[var(--admin-text-primary)]">{saleItems.length}</span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold text-gray-400 uppercase">Subtotal</span>
-                                                <span className="text-sm font-black text-gray-900 dark:text-white italic">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                <span className="text-sm font-black text-[var(--admin-text-primary)] italic">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                             </div>
                                             <button 
                                                 onClick={() => setActiveStep('checkout')}
@@ -729,7 +729,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                         <div className="max-w-4xl mx-auto space-y-6">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                                                 <div>
-                                                    <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight italic uppercase">Carrinho do Cliente</h3>
+                                                    <h3 className="text-xl md:text-2xl font-black text-[var(--admin-text-primary)] tracking-tight italic uppercase">Carrinho do Cliente</h3>
                                                     <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Gerencie a lista de produtos selecionados</p>
                                                 </div>
                                                 {saleItems.length > 0 && (
@@ -739,7 +739,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                                                 {saleItems.length === 0 ? (
-                                                    <div className="md:col-span-2 py-20 text-center opacity-40 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-3xl">
+                                                    <div className="md:col-span-2 py-20 text-center opacity-40 border-2 border-dashed border-gray-200  rounded-3xl">
                                                         <ShoppingCart className="mx-auto mb-4" size={48} />
                                                         <p className="text-lg font-black uppercase italic">Nenhum produto adicionado</p>
                                                         <p className="text-sm">Use o campo de busca à esquerda para adicionar itens.</p>
@@ -749,10 +749,10 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <motion.div 
                                                             layout 
                                                             key={index}
-                                                            className="bg-white dark:bg-[#1A1A1A] p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between group hover:border-blue-500/30 transition-all"
+                                                            className="bg-[var(--admin-surface-1)] p-5 rounded-3xl border border-[var(--admin-border)] shadow-sm flex items-center justify-between group hover:border-blue-500/30 transition-all"
                                                         >
                                                             <div className="flex items-center gap-4 overflow-hidden">
-                                                                <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black flex items-center justify-center overflow-hidden shrink-0 border border-gray-100 dark:border-gray-800">
+                                                                <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-black flex items-center justify-center overflow-hidden shrink-0 border border-[var(--admin-border)]">
                                                                     {item.product?.imageUrl ? (
                                                                         <img src={item.product.imageUrl} className="w-full h-full object-cover" />
                                                                     ) : (
@@ -760,13 +760,13 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                     )}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <p className="font-black text-gray-900 dark:text-white italic uppercase truncate">{item.product?.name}</p>
+                                                                    <p className="font-black text-[var(--admin-text-primary)] italic uppercase truncate">{item.product?.name}</p>
                                                                     <p className="text-xs font-bold text-gray-400 mt-0.5">UN: R$ {item.unitPrice.toLocaleString('pt-BR')}</p>
                                                                 </div>
                                                             </div>
                                                             
                                                             <div className="flex flex-col items-end gap-2">
-                                                                <div className="flex items-center bg-gray-100 dark:bg-black rounded-xl p-1 shadow-inner border border-gray-200 dark:border-gray-800">
+                                                                <div className="flex items-center bg-gray-100 dark:bg-black rounded-xl p-1 shadow-inner border border-gray-200 ">
                                                                     <button onClick={() => handleUpdateQuantity(index, -1)} className="px-2 py-1 hover:bg-white dark:hover:bg-white/10 rounded-lg text-lg font-bold transition-all">-</button>
                                                                     <span className="text-sm font-black px-3 min-w-[32px] text-center">{item.quantity}</span>
                                                                     <button onClick={() => handleUpdateQuantity(index, 1)} className="px-2 py-1 hover:bg-white dark:hover:bg-white/10 rounded-lg text-lg font-bold transition-all">+</button>
@@ -783,9 +783,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                             ) : (
                                 <div className="h-full flex flex-col lg:flex-row bg-[#F8F9FC] dark:bg-black/40 min-h-0">
                                     {/* Checkout Step: Left Info */}
-                                    <div className="lg:w-1/2 p-6 md:p-10 overflow-y-auto space-y-8 md:space-y-10 border-r border-gray-100 dark:border-gray-800">
+                                    <div className="lg:w-1/2 p-6 md:p-10 overflow-y-auto space-y-8 md:space-y-10 border-r border-[var(--admin-border)]">
                                         <section>
-                                            <h3 className="flex items-center gap-3 text-lg md:text-xl font-black text-gray-900 dark:text-white mb-6 md:mb-8 italic uppercase text-blue-600">
+                                            <h3 className="flex items-center gap-3 text-lg md:text-xl font-black text-[var(--admin-text-primary)] mb-6 md:mb-8 italic uppercase text-blue-600">
                                                 <Truck size={24} /> Logística e Entrega
                                             </h3>
                                             
@@ -793,7 +793,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 <div className="space-y-2">
                                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Método de Envio</label>
                                                     <select 
-                                                        className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-2xl py-4 px-5 font-black text-sm dark:text-white outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
+                                                        className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-2xl py-4 px-5 font-black text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
                                                         value={currentSale.shipping_method || ''}
                                                         onChange={e => {
                                                             const method = e.target.value;
@@ -818,7 +818,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                          <Calendar className="absolute left-5 top-4 text-gray-400" size={18} />
                                                          <input 
                                                             type="date"
-                                                            className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-2xl py-4 pl-14 pr-5 font-black text-sm dark:text-white outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-sans"
+                                                            className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-2xl py-4 pl-14 pr-5 font-black text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-sans"
                                                             value={currentSale.estimated_delivery_date || ''}
                                                             onChange={e => setCurrentSale({...currentSale, estimated_delivery_date: e.target.value})}
                                                          />
@@ -831,7 +831,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                          {/* Stripe option — always visible */}
                                                          <button
                                                              onClick={() => setCurrentSale({...currentSale, payment_method: 'Stripe'})}
-                                                             className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border flex items-center justify-center gap-1.5 ${currentSale.payment_method === 'Stripe' ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-violet-400 hover:text-violet-600'}`}
+                                                             className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border flex items-center justify-center gap-1.5 ${currentSale.payment_method === 'Stripe' ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-[var(--admin-surface-1)] border-gray-200  text-gray-500 hover:border-violet-400 hover:text-violet-600'}`}
                                                          >
                                                              <Zap size={12} /> Stripe
                                                          </button>
@@ -842,7 +842,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                      setCurrentSale({...currentSale, payment_method: pm.name});
                                                                      setStripePaymentUrl(null); // clear Stripe link if switching away
                                                                  }}
-                                                                 className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border ${currentSale.payment_method === pm.name ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-[#111] border-gray-200 dark:border-gray-800 text-gray-500 hover:border-gray-400'}`}
+                                                                 className={`py-3 px-4 rounded-xl font-bold text-xs transition-all border ${currentSale.payment_method === pm.name ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-[var(--admin-surface-1)] border-gray-200  text-gray-500 hover:border-gray-400'}`}
                                                              >
                                                                  {pm.name}
                                                              </button>
@@ -895,7 +895,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                          <input
                                                                              readOnly
                                                                              value={stripePaymentUrl}
-                                                                             className="flex-1 bg-white dark:bg-black/30 border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-300 outline-none truncate"
+                                                                             className="flex-1 bg-white dark:bg-black/30 border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2.5 text-xs font-mono text-[var(--admin-text-secondary)] outline-none truncate"
                                                                          />
                                                                          <button
                                                                              onClick={handleCopyStripeLink}
@@ -934,7 +934,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <div className="relative">
                                                             <Truck className="absolute left-5 top-4.5 text-orange-400" size={20} />
                                                             <input 
-                                                                className="w-full bg-white dark:bg-[#111] border-2 border-orange-200 dark:border-orange-900/30 rounded-2xl py-4 pl-14 pr-6 font-black tracking-widest text-lg dark:text-white focus:ring-8 focus:ring-orange-500/10 outline-none transition-all placeholder:text-gray-300"
+                                                                className="w-full bg-[var(--admin-surface-1)] border-2 border-orange-200 dark:border-orange-900/30 rounded-2xl py-4 pl-14 pr-6 font-black tracking-widest text-lg focus:ring-8 focus:ring-orange-500/10 outline-none transition-all placeholder:text-gray-300"
                                                                 placeholder="DIGITE O CÓDIGO"
                                                                 value={currentSale.tracking_code || ''}
                                                                 onChange={e => setCurrentSale({...currentSale, tracking_code: e.target.value.toUpperCase()})}
@@ -943,11 +943,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                     </div>
                                                 )}
 
-                                                <div className="md:col-span-2 space-y-4 bg-gray-50/50 dark:bg-white/5 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 mt-4">
+                                                <div className="md:col-span-2 space-y-4 bg-gray-50/50 dark:bg-white/5 p-6 rounded-3xl border border-[var(--admin-border)] mt-4">
                                                     <div className="flex items-center gap-3 mb-4">
                                                         <MapPin size={20} className="text-wtech-red" />
                                                         <div>
-                                                            <h4 className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Endereço de Entrega</h4>
+                                                            <h4 className="text-sm font-black uppercase tracking-widest text-[var(--admin-text-primary)]">Endereço de Entrega</h4>
                                                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Confirme o local de destino deste pedido</p>
                                                         </div>
                                                     </div>
@@ -957,7 +957,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">CEP</label>
                                                             <div className="relative">
                                                                 <input 
-                                                                    className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                    className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-xl py-3 px-4 text-sm font-black outline-none focus:ring-2 focus:ring-wtech-red"
                                                                     value={currentSale.delivery_cep || ''}
                                                                     placeholder="00000-000"
                                                                     onChange={e => {
@@ -979,7 +979,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <div className="md:col-span-3 space-y-1">
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Rua / Logradouro</label>
                                                             <input 
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-xl py-3 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-red"
                                                                 value={currentSale.delivery_street || ''}
                                                                 onChange={e => setCurrentSale({...currentSale, delivery_street: e.target.value})}
                                                             />
@@ -987,7 +987,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <div className="md:col-span-1 space-y-1">
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Nº</label>
                                                             <input 
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-wtech-red text-center"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-xl py-3 px-4 text-sm font-black outline-none focus:ring-2 focus:ring-wtech-red text-center"
                                                                 value={currentSale.delivery_number || ''}
                                                                 onChange={e => setCurrentSale({...currentSale, delivery_number: e.target.value})}
                                                             />
@@ -995,7 +995,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <div className="md:col-span-2 space-y-1">
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Bairro</label>
                                                             <input 
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-xl py-3 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-red"
                                                                 value={currentSale.delivery_neighborhood || ''}
                                                                 onChange={e => setCurrentSale({...currentSale, delivery_neighborhood: e.target.value})}
                                                             />
@@ -1003,7 +1003,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <div className="md:col-span-3 space-y-1">
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Cidade</label>
                                                             <input 
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-bold dark:text-white outline-none focus:ring-2 focus:ring-wtech-red"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-xl py-3 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-wtech-red"
                                                                 value={currentSale.delivery_city || ''}
                                                                 onChange={e => setCurrentSale({...currentSale, delivery_city: e.target.value})}
                                                             />
@@ -1011,7 +1011,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <div className="md:col-span-1 space-y-1">
                                                             <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">UF</label>
                                                             <input 
-                                                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl py-3 px-4 text-sm font-black dark:text-white outline-none focus:ring-2 focus:ring-wtech-red text-center uppercase"
+                                                                className="w-full bg-[var(--admin-surface-1)] border border-gray-200  rounded-xl py-3 px-4 text-sm font-black outline-none focus:ring-2 focus:ring-wtech-red text-center uppercase"
                                                                 maxLength={2}
                                                                 value={currentSale.delivery_state || ''}
                                                                 onChange={e => setCurrentSale({...currentSale, delivery_state: e.target.value.toUpperCase()})}
@@ -1023,17 +1023,17 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                         </section>
 
                                         <section>
-                                            <h3 className="flex items-center gap-3 text-xl font-black text-gray-900 dark:text-white mb-6 italic uppercase text-gray-400">
+                                            <h3 className="flex items-center gap-3 text-xl font-black text-[var(--admin-text-primary)] mb-6 italic uppercase text-gray-400">
                                                 <ShoppingCart size={24} /> Itens do Pedido
                                             </h3>
                                             <div className="space-y-2">
                                                 {saleItems.map((item, i) => (
-                                                    <div key={i} className="flex justify-between items-center text-sm py-2 border-b border-gray-100 dark:border-gray-800 last:border-0 opacity-60">
+                                                    <div key={i} className="flex justify-between items-center text-sm py-2 border-b border-[var(--admin-border)] last:border-0 opacity-60">
                                                         <div className="flex gap-4">
                                                             <span className="font-black text-gray-400 w-8">x{item.quantity}</span>
-                                                            <span className="font-bold text-gray-700 dark:text-gray-300 uppercase italic truncate max-w-[200px]">{item.product?.name}</span>
+                                                            <span className="font-bold text-gray-700 uppercase italic truncate max-w-[200px]">{item.product?.name}</span>
                                                         </div>
-                                                        <span className="font-black text-gray-900 dark:text-white italic">R$ {(item.unitPrice * item.quantity).toLocaleString('pt-BR')}</span>
+                                                        <span className="font-black text-[var(--admin-text-primary)] italic">R$ {(item.unitPrice * item.quantity).toLocaleString('pt-BR')}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1041,15 +1041,15 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                     </div>
 
                                     {/* Checkout Step: Right Summary */}
-                                    <div className="lg:w-1/2 p-6 md:p-10 bg-white dark:bg-[#1A1A1A] flex flex-col justify-center overflow-y-auto">
+                                    <div className="lg:w-1/2 p-6 md:p-10 bg-[var(--admin-surface-1)] flex flex-col justify-center overflow-y-auto">
                                         <div className="max-w-md mx-auto w-full space-y-6 md:space-y-8">
                                             <div>
-                                                <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter">Resumo Financeiro</h3>
+                                                <h3 className="text-2xl md:text-3xl font-black text-[var(--admin-text-primary)] italic uppercase tracking-tighter">Resumo Financeiro</h3>
                                                 <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Conferência final de valores</p>
                                             </div>
 
                                             <div className="space-y-4">
-                                                <div className="bg-gray-50 dark:bg-black/20 p-6 rounded-3xl border border-gray-100 dark:border-gray-800">
+                                                <div className="bg-gray-50 dark:bg-black/20 p-6 rounded-3xl border border-[var(--admin-border)]">
                                                     <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">
                                                         <Tag size={14} className="text-vibrant-blue" /> Ajuste de Desconto
                                                     </div>
@@ -1057,7 +1057,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                         <span className="absolute left-5 top-4.5 text-gray-400 font-black text-sm italic">R$</span>
                                                         <input 
                                                             type="number"
-                                                            className="w-full pl-12 pr-6 py-4 bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-2xl text-xl font-black dark:text-white focus:ring-8 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-300 italic"
+                                                            className="w-full pl-12 pr-6 py-4 bg-[var(--admin-surface-1)] border border-gray-200  rounded-2xl text-xl font-black focus:ring-8 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-300 italic"
                                                             placeholder="0,00"
                                                             value={currentSale.discount_amount || ''}
                                                             onChange={e => setCurrentSale({...currentSale, discount_amount: Number(e.target.value)})}
@@ -1068,11 +1068,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                 <div className="space-y-4 px-2">
                                                     <div className="flex justify-between items-center text-gray-500 font-bold uppercase text-xs tracking-widest">
                                                         <span>Subtotal</span>
-                                                        <span className="text-sm font-black text-gray-700 dark:text-gray-300 italic">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                        <span className="text-sm font-black text-gray-700 italic">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                                     </div>
                                                     <div className="flex justify-between items-center text-gray-500 font-bold uppercase text-xs tracking-widest">
                                                         <span>Frete ({currentSale.shipping_method || 'Não sel.'})</span>
-                                                        <span className="text-sm font-black text-gray-700 dark:text-gray-300 italic">R$ {shippingCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                        <span className="text-sm font-black text-gray-700 italic">R$ {shippingCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                                     </div>
                                                     {insuranceCost > 0 && (
                                                         <div className="flex justify-between items-center text-blue-500 font-bold uppercase text-xs tracking-widest italic">
@@ -1088,7 +1088,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                     )}
                                                 </div>
 
-                                                <div className="bg-black dark:bg-[#111] p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden group">
+                                                <div className="bg-black bg-[var(--admin-surface-1)] p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden group">
                                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-wtech-red via-blue-500 to-wtech-red group-hover:h-2 transition-all duration-700 opacity-50" />
                                                     <div className="flex justify-between items-center relative z-10">
                                                         <span className="text-gray-400 font-black uppercase text-[10px] md:text-sm tracking-widest italic">Total Final</span>

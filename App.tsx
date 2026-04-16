@@ -40,6 +40,8 @@ const GoogleCallback = lazy(() => import('./pages/auth/GoogleCallback'));
 const Bio = lazy(() => import('./pages/bio'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const LPErgonomia = lazy(() => import('./pages/LPErgonomia'));
+const LPErgonomia2 = lazy(() => import('./pages/LPErgonomia2'));
+const LPErgonomia3 = lazy(() => import('./pages/LPErgonomia3'));
 const PronelloImmersion = lazy(() => import('./pages/PronelloImmersion'));
 const WaitlistSuspension = lazy(() => import('./pages/WaitlistSuspension'));
 const CourseCheckout = lazy(() => import('./pages/CourseCheckout'));
@@ -100,6 +102,8 @@ const App = () => {
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
                     <Route path="/curso-suspensao-piloto" element={<LPErgonomia />} />
+                    <Route path="/curso-suspensao-piloto-v2" element={<LPErgonomia2 />} />
+                    <Route path="/curso-suspensao-piloto-v3" element={<LPErgonomia3 />} />
                     <Route path="/imersao-pronello" element={<PronelloImmersion />} />
                     <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />

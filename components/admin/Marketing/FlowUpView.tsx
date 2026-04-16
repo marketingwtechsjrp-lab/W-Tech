@@ -46,8 +46,8 @@ const PHASE_CONFIG: Record<FlowUpPhase, { label: string; color: string; bg: stri
     },
     archived: {
         label: 'Arquivado',
-        color: 'text-gray-500 dark:text-gray-400',
-        bg: 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700',
+        color: 'text-[var(--admin-text-secondary)]',
+        bg: 'bg-gray-50 dark:bg-gray-900/20 border-[var(--admin-border)]',
         description: 'Sem perspectiva no momento',
         icon: <Archive size={14} />,
     },
@@ -127,14 +127,14 @@ const FlowUpLeadModal = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="bg-[var(--admin-surface-1)] rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">
+                <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-start">
                     <div>
-                        <h3 className="text-xl font-black dark:text-white">{lead.name}</h3>
+                        <h3 className="text-xl font-black">{lead.name}</h3>
                         <div className="flex flex-wrap gap-2 mt-2">
                             {lead.region_city && (
-                                <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-gray-600 dark:text-gray-400">
+                                <span className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-[var(--admin-text-secondary)]">
                                     <MapPin size={10} /> {lead.region_city}{lead.region_state ? `, ${lead.region_state}` : ''}
                                 </span>
                             )}
@@ -150,7 +150,7 @@ const FlowUpLeadModal = ({
                             )}
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--admin-surface-3)] text-gray-400">
                         <X size={20} />
                     </button>
                 </div>
@@ -167,7 +167,7 @@ const FlowUpLeadModal = ({
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                                         lead.phase === p
                                             ? PHASE_CONFIG[p].bg + ' ' + PHASE_CONFIG[p].color + ' shadow-sm'
-                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-400'
+                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-[var(--admin-border)] hover:border-gray-400'
                                     }`}
                                 >
                                     {PHASE_CONFIG[p].icon} {PHASE_CONFIG[p].label}
@@ -197,16 +197,16 @@ const FlowUpLeadModal = ({
                         <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Ação Manual</label>
                         <div className="flex gap-2 mb-2">
                             <button onClick={() => setMsgChannel('whatsapp')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${msgChannel === 'whatsapp' ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${msgChannel === 'whatsapp' ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-[var(--admin-border)]'}`}>
                                 <MessageCircle size={12} /> WhatsApp
                             </button>
                             <button onClick={() => setMsgChannel('email')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${msgChannel === 'email' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${msgChannel === 'email' ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-[var(--admin-border)]'}`}>
                                 <Mail size={12} /> Email
                             </button>
                         </div>
                         <textarea
-                            className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-gray-200 dark:border-gray-700 focus:border-black dark:focus:border-white outline-none min-h-[80px] resize-none"
+                            className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-[var(--admin-border)] focus:border-black dark:focus:border-white outline-none min-h-[80px] resize-none"
                             placeholder={msgChannel === 'whatsapp' ? 'Oi, [Nome]. Abrimos uma nova turma...' : 'Assunto e corpo do email...'}
                             value={newMsg}
                             onChange={e => setNewMsg(e.target.value)}
@@ -238,7 +238,7 @@ const FlowUpLeadModal = ({
                                         <div key={act.id} className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
                                             <span className={`mt-0.5 ${cfg.color}`}>{cfg.icon}</span>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">{cfg.label}</p>
+                                                <p className="text-xs font-bold text-gray-700">{cfg.label}</p>
                                                 {act.subject && <p className="text-xs text-gray-500 truncate">{act.subject}</p>}
                                                 {act.body && <p className="text-xs text-gray-400 line-clamp-2">{act.body}</p>}
                                             </div>
@@ -265,13 +265,13 @@ const FlowUpLeadCard = ({ lead, onClick }: { lead: FlowUpLead; onClick: () => vo
 
     return (
         <div onClick={onClick}
-            className="bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-gray-800 rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:border-black/20 dark:hover:border-white/20 transition-all group">
+            className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:border-black/20 transition-all group">
             <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate group-hover:text-black dark:group-hover:text-white">{lead.name}</h4>
+                    <h4 className="font-bold text-[var(--admin-text-primary)] text-sm truncate group-hover:text-black dark:group-hover:text-white">{lead.name}</h4>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         {lead.region_city && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded uppercase tracking-tight">
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-[var(--admin-text-secondary)] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded uppercase tracking-tight">
                                 <MapPin size={8} /> {lead.region_city}
                             </span>
                         )}
@@ -299,7 +299,7 @@ const FlowUpLeadCard = ({ lead, onClick }: { lead: FlowUpLead; onClick: () => vo
                 </p>
             )}
 
-            <div className="flex justify-between items-center border-t border-gray-50 dark:border-gray-800 pt-2 mt-2">
+            <div className="flex justify-between items-center border-t border-gray-50  pt-2 mt-2">
                 <div className="flex items-center gap-3 text-[10px] text-gray-400">
                     <span className="flex items-center gap-1"><MessageCircle size={10} /> {lead.contact_count}</span>
                     <span className="flex items-center gap-1"><Mail size={10} /> {lead.email_open_count}</span>
@@ -326,15 +326,15 @@ const SegmentCard = ({ seg, leads }: { seg: FlowUpSegment; leads: FlowUpLead[]; 
     }).length;
 
     return (
-        <div className="bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-gray-800 rounded-2xl p-5 hover:border-black/20 dark:hover:border-white/20 transition-all">
+        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-5 hover:border-black/20 transition-all">
             <div className="flex justify-between items-start mb-3">
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm">{seg.name}</h4>
-                <span className="text-2xl font-black text-black dark:text-white">{count}</span>
+                <h4 className="font-bold text-[var(--admin-text-primary)] text-sm">{seg.name}</h4>
+                <span className="text-2xl font-black text-black">{count}</span>
             </div>
             {seg.description && <p className="text-xs text-gray-500 mb-3">{seg.description}</p>}
             <div className="flex flex-wrap gap-1 mb-3">
                 {Object.entries(seg.rules).filter(([, v]) => v).map(([k, v]) => (
-                    <span key={k} className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full font-mono">
+                    <span key={k} className="text-[10px] bg-gray-100 dark:bg-gray-800 text-[var(--admin-text-secondary)] px-2 py-0.5 rounded-full font-mono">
                         {k}: {v}
                     </span>
                 ))}
@@ -390,7 +390,7 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
                 {kpis.map(k => (
                     <div key={k.label} className={`${k.bg} rounded-2xl p-4 border border-transparent`}>
                         <div className={`${k.color} mb-2`}>{k.icon}</div>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white">{k.value}</p>
+                        <p className="text-2xl font-black text-[var(--admin-text-primary)]">{k.value}</p>
                         <p className="text-xs text-gray-500 font-medium">{k.label}</p>
                     </div>
                 ))}
@@ -398,8 +398,8 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Por Fase */}
-                <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
-                    <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-4 flex items-center gap-2">
+                <div className="bg-[var(--admin-surface-1)] rounded-2xl p-5 border border-[var(--admin-border)]">
+                    <h4 className="font-bold text-[var(--admin-text-primary)] text-sm mb-4 flex items-center gap-2">
                         <Layers size={14} /> Distribuição por Fase
                     </h4>
                     <div className="space-y-2">
@@ -419,15 +419,15 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
                                         style={{ width: total > 0 ? `${(p.count / total) * 100}%` : '0%' }}
                                     />
                                 </div>
-                                <span className="text-xs font-bold text-gray-700 dark:text-gray-300 w-6 text-right">{p.count}</span>
+                                <span className="text-xs font-bold text-gray-700 w-6 text-right">{p.count}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Motivos de Perda */}
-                <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
-                    <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-4 flex items-center gap-2">
+                <div className="bg-[var(--admin-surface-1)] rounded-2xl p-5 border border-[var(--admin-border)]">
+                    <h4 className="font-bold text-[var(--admin-text-primary)] text-sm mb-4 flex items-center gap-2">
                         <AlertCircle size={14} /> Motivos de Perda
                     </h4>
                     {byReason.length === 0 ? (
@@ -436,8 +436,8 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
                         <div className="space-y-2">
                             {byReason.map(r => (
                                 <div key={r.reason} className="flex items-center justify-between">
-                                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate w-40">{r.label}</span>
-                                    <span className="text-xs font-black text-gray-900 dark:text-white">{r.count}</span>
+                                    <span className="text-xs text-[var(--admin-text-secondary)] truncate w-40">{r.label}</span>
+                                    <span className="text-xs font-black text-[var(--admin-text-primary)]">{r.count}</span>
                                 </div>
                             ))}
                         </div>
@@ -446,22 +446,22 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
 
                 {/* Top Cursos + Regiões */}
                 <div className="space-y-4">
-                    <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                        <h4 className="font-bold text-gray-900 dark:text-white text-xs mb-3 uppercase tracking-wider">Top Cursos</h4>
+                    <div className="bg-[var(--admin-surface-1)] rounded-2xl p-4 border border-[var(--admin-border)]">
+                        <h4 className="font-bold text-[var(--admin-text-primary)] text-xs mb-3 uppercase tracking-wider">Top Cursos</h4>
                         {Object.entries(topCourses).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([name, count]) => (
                             <div key={name} className="flex justify-between text-xs mb-1">
-                                <span className="text-gray-600 dark:text-gray-400 truncate w-32">{name}</span>
-                                <span className="font-bold text-gray-900 dark:text-white">{count}</span>
+                                <span className="text-[var(--admin-text-secondary)] truncate w-32">{name}</span>
+                                <span className="font-bold text-[var(--admin-text-primary)]">{count}</span>
                             </div>
                         ))}
                         {Object.keys(topCourses).length === 0 && <p className="text-xs text-gray-400">Sem dados</p>}
                     </div>
-                    <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl p-4 border border-gray-100 dark:border-gray-800">
-                        <h4 className="font-bold text-gray-900 dark:text-white text-xs mb-3 uppercase tracking-wider">Top Regiões</h4>
+                    <div className="bg-[var(--admin-surface-1)] rounded-2xl p-4 border border-[var(--admin-border)]">
+                        <h4 className="font-bold text-[var(--admin-text-primary)] text-xs mb-3 uppercase tracking-wider">Top Regiões</h4>
                         {Object.entries(topRegions).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([city, count]) => (
                             <div key={city} className="flex justify-between text-xs mb-1">
-                                <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1"><MapPin size={9}/>{city}</span>
-                                <span className="font-bold text-gray-900 dark:text-white">{count}</span>
+                                <span className="text-[var(--admin-text-secondary)] flex items-center gap-1"><MapPin size={9}/>{city}</span>
+                                <span className="font-bold text-[var(--admin-text-primary)]">{count}</span>
                             </div>
                         ))}
                         {Object.keys(topRegions).length === 0 && <p className="text-xs text-gray-400">Sem dados</p>}
@@ -470,8 +470,8 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
             </div>
 
             {/* Timeline das fases */}
-            <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
-                <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-4">Jornada de Reengajamento</h4>
+            <div className="bg-[var(--admin-surface-1)] rounded-2xl p-5 border border-[var(--admin-border)]">
+                <h4 className="font-bold text-[var(--admin-text-primary)] text-sm mb-4">Jornada de Reengajamento</h4>
                 <div className="flex items-center gap-0 overflow-x-auto">
                     {[
                         { phase: 'accommodation', title: 'Acomodação', time: 'D0', desc: 'Canal aberto\nSem pressão' },
@@ -487,7 +487,7 @@ const DashboardTab = ({ leads }: { leads: FlowUpLead[] }) => {
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${cfg.bg} ${cfg.color} mb-2 border font-black text-lg`}>
                                         {cnt}
                                     </div>
-                                    <p className="text-xs font-black text-gray-900 dark:text-white">{item.title}</p>
+                                    <p className="text-xs font-black text-[var(--admin-text-primary)]">{item.title}</p>
                                     <p className="text-[10px] text-gray-400 font-mono">{item.time}</p>
                                     <p className="text-[10px] text-gray-500 whitespace-pre-line mt-1 leading-tight">{item.desc}</p>
                                 </div>
@@ -766,7 +766,7 @@ const FlowUpView: React.FC = () => {
         { id: 'activities' as const, label: 'Atividades', icon: <Activity size={15} /> },
     ];
 
-    const selectorClass = "p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs border border-gray-200 dark:border-gray-700 dark:text-white outline-none focus:border-black dark:focus:border-white";
+    const selectorClass = "p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs border border-[var(--admin-border)] outline-none focus:border-black dark:focus:border-white";
 
     // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -779,7 +779,7 @@ const FlowUpView: React.FC = () => {
                         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
                             <RefreshCw size={16} className="text-white" />
                         </div>
-                        <h2 className="text-xl font-black text-gray-900 dark:text-white">FlowUp</h2>
+                        <h2 className="text-xl font-black text-[var(--admin-text-primary)]">FlowUp</h2>
                         <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-black rounded-full uppercase tracking-widest">
                             Retrabalho de Leads
                         </span>
@@ -798,8 +798,8 @@ const FlowUpView: React.FC = () => {
                     <button key={t.id} onClick={() => setActiveTab(t.id)}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                             activeTab === t.id
-                                ? 'bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}>
                         {t.icon} {t.label}
                     </button>
@@ -824,10 +824,10 @@ const FlowUpView: React.FC = () => {
                         <div className="space-y-4">
                             {/* Filtros */}
                             <div className="flex flex-wrap gap-2 items-center">
-                                <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2 border border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2 border border-[var(--admin-border)]">
                                     <Search size={14} className="text-gray-400" />
                                     <input
-                                        className="flex-1 bg-transparent text-sm outline-none dark:text-white placeholder-gray-400"
+                                        className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
                                         placeholder="Buscar por nome, email, telefone..."
                                         value={search} onChange={e => setSearch(e.target.value)}
                                     />
@@ -855,12 +855,12 @@ const FlowUpView: React.FC = () => {
 
                             {/* Counter */}
                             <p className="text-xs text-gray-500">
-                                Mostrando <strong className="text-gray-900 dark:text-white">{filteredLeads.length}</strong> de {leads.length} leads
+                                Mostrando <strong className="text-[var(--admin-text-primary)]">{filteredLeads.length}</strong> de {leads.length} leads
                             </p>
 
                             {filteredLeads.length === 0 ? (
                                 <div className="text-center py-16">
-                                    <Users className="w-12 h-12 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+                                    <Users className="w-12 h-12 text-[var(--admin-text-tertiary)] mx-auto mb-3" />
                                     <p className="text-gray-400 font-medium">Nenhum lead encontrado</p>
                                     <p className="text-xs text-gray-300 mt-1">Leads com status "Esfriou" ou "Perdido" no CRM entram automaticamente aqui.</p>
                                     <button onClick={() => setShowAddModal(true)} className="mt-4 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold">
@@ -915,11 +915,11 @@ const FlowUpView: React.FC = () => {
                                         const cfg = ACTIVITY_CONFIG[act.type] || { label: act.type, color: 'text-gray-500', icon: <Activity size={14} /> };
                                         const lead = leads.find(l => l.id === act.flowup_lead_id);
                                         return (
-                                            <div key={act.id} className="flex items-start gap-3 p-3 bg-white dark:bg-[#1E1E1E] rounded-xl border border-gray-100 dark:border-gray-800">
+                                            <div key={act.id} className="flex items-start gap-3 p-3 bg-[var(--admin-surface-1)] rounded-xl border border-[var(--admin-border)]">
                                                 <span className={`mt-0.5 ${cfg.color}`}>{cfg.icon}</span>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{cfg.label}</span>
+                                                        <span className="text-xs font-bold text-gray-700">{cfg.label}</span>
                                                         {lead && (
                                                             <span className="text-xs text-gray-400">— {lead.name}</span>
                                                         )}
@@ -952,37 +952,37 @@ const FlowUpView: React.FC = () => {
             {/* Add Lead Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl w-full max-w-md shadow-2xl p-6">
+                    <div className="bg-[var(--admin-surface-1)] rounded-2xl w-full max-w-md shadow-2xl p-6">
                         <div className="flex justify-between items-center mb-5">
-                            <h3 className="font-black text-gray-900 dark:text-white text-lg">Adicionar Lead ao FlowUp</h3>
-                            <button onClick={() => setShowAddModal(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                            <h3 className="font-black text-[var(--admin-text-primary)] text-lg">Adicionar Lead ao FlowUp</h3>
+                            <button onClick={() => setShowAddModal(false)} className="p-2 rounded-lg hover:bg-[var(--admin-surface-3)]">
                                 <X size={18} className="text-gray-500" />
                             </button>
                         </div>
                         <div className="space-y-3">
-                            <input className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Nome *" value={addForm.name} onChange={e => setAddForm(p => ({...p, name: e.target.value}))} />
+                            <input className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Nome *" value={addForm.name} onChange={e => setAddForm(p => ({...p, name: e.target.value}))} />
                             <div className="grid grid-cols-2 gap-3">
-                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Telefone" value={addForm.phone} onChange={e => setAddForm(p => ({...p, phone: e.target.value}))} />
-                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Email" value={addForm.email} onChange={e => setAddForm(p => ({...p, email: e.target.value}))} />
+                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Telefone" value={addForm.phone} onChange={e => setAddForm(p => ({...p, phone: e.target.value}))} />
+                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Email" value={addForm.email} onChange={e => setAddForm(p => ({...p, email: e.target.value}))} />
                             </div>
-                            <input className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Curso de interesse (ex: Suspensão W-Tech)" value={addForm.course_interest} onChange={e => setAddForm(p => ({...p, course_interest: e.target.value}))} />
+                            <input className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Curso de interesse (ex: Suspensão W-Tech)" value={addForm.course_interest} onChange={e => setAddForm(p => ({...p, course_interest: e.target.value}))} />
                             <div className="grid grid-cols-2 gap-3">
-                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Cidade" value={addForm.region_city} onChange={e => setAddForm(p => ({...p, region_city: e.target.value}))} />
-                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Estado (ex: SP)" value={addForm.region_state} onChange={e => setAddForm(p => ({...p, region_state: e.target.value}))} />
+                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Cidade" value={addForm.region_city} onChange={e => setAddForm(p => ({...p, region_city: e.target.value}))} />
+                                <input className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" placeholder="Estado (ex: SP)" value={addForm.region_state} onChange={e => setAddForm(p => ({...p, region_state: e.target.value}))} />
                             </div>
-                            <select className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" value={addForm.lead_source_type} onChange={e => setAddForm(p => ({...p, lead_source_type: e.target.value}))}>
+                            <select className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" value={addForm.lead_source_type} onChange={e => setAddForm(p => ({...p, lead_source_type: e.target.value}))}>
                                 <option value="Manual">Manual</option>
                                 <option value="Quiz">Quiz</option>
                                 <option value="LP">LP</option>
                                 <option value="Evento">Evento</option>
                                 <option value="WhatsApp">WhatsApp</option>
                             </select>
-                            <select className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none" value={addForm.lost_reason} onChange={e => setAddForm(p => ({...p, lost_reason: e.target.value as FlowUpLostReason}))}>
+                            <select className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none" value={addForm.lost_reason} onChange={e => setAddForm(p => ({...p, lost_reason: e.target.value as FlowUpLostReason}))}>
                                 <option value="">Motivo da Perda (opcional)</option>
                                 {Object.entries(LOST_REASON_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
                             {addForm.lost_reason && (
-                                <textarea className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm dark:text-white border border-transparent focus:border-black dark:focus:border-white outline-none resize-none h-16" placeholder="Observações sobre o motivo..." value={addForm.lost_reason_notes} onChange={e => setAddForm(p => ({...p, lost_reason_notes: e.target.value}))} />
+                                <textarea className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm border border-transparent focus:border-black dark:focus:border-white outline-none resize-none h-16" placeholder="Observações sobre o motivo..." value={addForm.lost_reason_notes} onChange={e => setAddForm(p => ({...p, lost_reason_notes: e.target.value}))} />
                             )}
                         </div>
                         <button onClick={handleAddLead} className="w-full mt-5 bg-black dark:bg-white text-white dark:text-black font-bold py-3 rounded-xl hover:opacity-80 transition-opacity">

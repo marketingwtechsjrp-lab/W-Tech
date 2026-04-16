@@ -126,18 +126,18 @@ const MetaAdsView = () => {
 
     if (error && !Object.keys(accounts).length) {
         return (
-            <div className="flex flex-col items-center justify-center h-[500px] p-8 text-center bg-white dark:bg-[#1A1A1A] rounded-3xl m-6">
+            <div className="flex flex-col items-center justify-center h-[500px] p-8 text-center bg-[var(--admin-surface-1)] rounded-3xl m-6">
                 <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-full text-red-600 mb-4">
                     <AlertCircle size={48} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Erro de Conexão</h3>
+                <h3 className="text-xl font-bold text-[var(--admin-text-primary)] mb-2">Erro de Conexão</h3>
                 <p className="text-gray-500 max-w-md mb-6">
                     O servidor de Meta Ads não está respondendo na porta 5000 ou não há contas configuradas.
                 </p>
                 <div className="flex gap-4">
                     <button 
                         onClick={fetchAccounts}
-                        className="px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-bold flex items-center gap-2 hover:opacity-80 transition-all"
+                        className="px-6 py-2 bg-gray-100 dark:bg-gray-800 text-[var(--admin-text-primary)] rounded-xl font-bold flex items-center gap-2 hover:opacity-80 transition-all"
                     >
                         <RefreshCcw size={18} /> Tentar Novamente
                     </button>
@@ -157,7 +157,7 @@ const MetaAdsView = () => {
     return (
         <div className="flex flex-col h-full bg-gray-50/50 dark:bg-transparent relative">
             {/* Meta Header / Account Selector */}
-            <div className="bg-white dark:bg-[#1A1A1A] border-b border-gray-100 dark:border-gray-800 p-4 sticky top-0 z-10">
+            <div className="bg-[var(--admin-surface-1)] border-b border-[var(--admin-border)] p-4 sticky top-0 z-10">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-500/20">
@@ -165,7 +165,7 @@ const MetaAdsView = () => {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                <h3 className="text-lg font-black text-[var(--admin-text-primary)] uppercase tracking-tight">
                                     Meta Traffic AI
                                 </h3>
                                 <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ const MetaAdsView = () => {
                                     </span>
                                     <button 
                                         onClick={openEditModal}
-                                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                        className="p-1 hover:bg-[var(--admin-surface-3)] rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                                         title="Editar Token/ID"
                                     >
                                         <Settings size={14} />
@@ -185,10 +185,10 @@ const MetaAdsView = () => {
                                 <select 
                                     value={activeAccount || ''} 
                                     onChange={(e) => handleSelectAccount(e.target.value)}
-                                    className="bg-transparent border-none text-sm font-bold text-gray-500 dark:text-gray-400 focus:ring-0 p-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
+                                    className="bg-transparent border-none text-sm font-bold text-[var(--admin-text-secondary)] focus:ring-0 p-0 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
                                 >
                                     {Object.entries(accounts).map(([slug, acc]: [string, any]) => (
-                                        <option key={slug} value={slug} className="dark:bg-[#1A1A1A]">
+                                        <option key={slug} value={slug} className="bg-[var(--admin-surface-1)]">
                                             {acc.name} ({acc.niche_name})
                                         </option>
                                     ))}
@@ -200,12 +200,12 @@ const MetaAdsView = () => {
                     </div>
 
                     <div className="flex items-center gap-4 w-full md:w-auto">
-                        <div className="flex bg-gray-100 dark:bg-[#111] p-1 rounded-xl flex-1 md:flex-none">
+                        <div className="flex bg-gray-100 bg-[var(--admin-surface-1)] p-1 rounded-xl flex-1 md:flex-none">
                             <button
                                 onClick={() => setActiveSubTab('dashboard')}
                                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-xs font-bold transition-all ${
                                     activeSubTab === 'dashboard' 
-                                    ? 'bg-white dark:bg-[#222] text-black dark:text-white shadow-sm' 
+                                    ? 'bg-[var(--admin-surface-2)] text-black shadow-sm' 
                                     : 'text-gray-500 hover:text-gray-900'
                                 }`}
                             >
@@ -215,7 +215,7 @@ const MetaAdsView = () => {
                                 onClick={() => setActiveSubTab('campaigns')}
                                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-xs font-bold transition-all ${
                                     activeSubTab === 'campaigns' 
-                                    ? 'bg-white dark:bg-[#222] text-black dark:text-white shadow-sm' 
+                                    ? 'bg-[var(--admin-surface-2)] text-black shadow-sm' 
                                     : 'text-gray-500 hover:text-gray-900'
                                 }`}
                             >
@@ -225,7 +225,7 @@ const MetaAdsView = () => {
                                 onClick={() => setActiveSubTab('chat')}
                                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg text-xs font-bold transition-all ${
                                     activeSubTab === 'chat' 
-                                    ? 'bg-white dark:bg-[#222] text-black dark:text-white shadow-sm' 
+                                    ? 'bg-[var(--admin-surface-2)] text-black shadow-sm' 
                                     : 'text-gray-500 hover:text-gray-900'
                                 }`}
                             >
@@ -253,10 +253,10 @@ const MetaAdsView = () => {
             {/* Config Modal */}
             {showConfig && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-[#1A1A1A] w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 animate-in zoom-in-95 duration-300">
+                    <div className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-[var(--admin-border)] animate-in zoom-in-95 duration-300">
                         <div className="p-8 space-y-6">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                <h3 className="text-2xl font-black text-[var(--admin-text-primary)] uppercase tracking-tight">
                                     {isEditing ? 'Editar Conta' : 'Nova Conta Meta'}
                                 </h3>
                                 <button onClick={() => setShowConfig(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
@@ -273,7 +273,7 @@ const MetaAdsView = () => {
                                         value={configFormData.slug}
                                         onChange={(e) => setConfigFormData({...configFormData, slug: e.target.value})}
                                         placeholder="ex: wtech"
-                                        className="w-full bg-gray-50 dark:bg-[#111] border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
+                                        className="w-full bg-[var(--admin-surface-2)] border-2 border-[var(--admin-border)] rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
                                         required
                                     />
                                 </div>
@@ -284,7 +284,7 @@ const MetaAdsView = () => {
                                         value={configFormData.name}
                                         onChange={(e) => setConfigFormData({...configFormData, name: e.target.value})}
                                         placeholder="ex: W-Tech Principal"
-                                        className="w-full bg-gray-50 dark:bg-[#111] border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
+                                        className="w-full bg-[var(--admin-surface-2)] border-2 border-[var(--admin-border)] rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
                                         required
                                     />
                                 </div>
@@ -295,7 +295,7 @@ const MetaAdsView = () => {
                                         value={configFormData.access_token}
                                         onChange={(e) => setConfigFormData({...configFormData, access_token: e.target.value})}
                                         placeholder="EAA..."
-                                        className="w-full bg-gray-50 dark:bg-[#111] border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
+                                        className="w-full bg-[var(--admin-surface-2)] border-2 border-[var(--admin-border)] rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
                                         required={!isEditing}
                                     />
                                     {isEditing && <p className="text-[10px] text-gray-400 mt-1">* Deixe em branco para manter o token atual.</p>}
@@ -307,7 +307,7 @@ const MetaAdsView = () => {
                                         value={configFormData.ad_account_id}
                                         onChange={(e) => setConfigFormData({...configFormData, ad_account_id: e.target.value})}
                                         placeholder="ex: 123456789 (sem act_)"
-                                        className="w-full bg-gray-50 dark:bg-[#111] border-2 border-gray-100 dark:border-gray-800 rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
+                                        className="w-full bg-[var(--admin-surface-2)] border-2 border-[var(--admin-border)] rounded-2xl px-4 py-3 text-sm font-bold focus:border-blue-500 transition-all"
                                         required
                                     />
                                 </div>

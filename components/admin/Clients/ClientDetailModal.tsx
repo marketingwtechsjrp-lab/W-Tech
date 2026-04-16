@@ -214,16 +214,16 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden animate-in zoom-in-95 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]">
+            <div className="bg-[var(--admin-surface-1)] rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden animate-in zoom-in-95 border border-[var(--admin-border)] flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#111]">
+                <div className="p-6 border-b border-[var(--admin-border)] flex justify-between items-center bg-[var(--admin-surface-2)]">
                     <div className="flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center ${client.type === 'Credenciado' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
                             <User size={24} />
                         </div>
                         <div>
-                            <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase tracking-tight">
+                            <h3 className="font-black text-xl text-[var(--admin-text-primary)] uppercase tracking-tight">
                                 {client?.id ? client.name : 'Novo Cliente'}
                             </h3>
                             <p className="text-xs text-gray-400 font-bold uppercase">
@@ -231,35 +231,35 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-red-500">
+                    <button onClick={onClose} className="p-2 hover:bg-[var(--admin-surface-3)] rounded-full transition-colors text-gray-400 hover:text-red-500">
                         <X size={24} />
                     </button>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-100 dark:border-gray-800">
+                <div className="flex border-b border-[var(--admin-border)]">
                     <button 
                         onClick={() => setActiveTab('details')}
-                        className={`flex-1 py-4 text-sm font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === 'details' ? 'border-wtech-gold text-wtech-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                        className={`flex-1 py-4 text-sm font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === 'details' ? 'border-wtech-gold text-wtech-black' : 'border-transparent text-gray-400 hover:text-gray-600 hover:text-[var(--admin-text-primary)]'}`}
                     >
                         Dados do Cliente
                     </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`flex-1 py-4 text-sm font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === 'history' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                        className={`flex-1 py-4 text-sm font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === 'history' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-600 hover:text-[var(--admin-text-primary)]'}`}
                     >
                         Histórico de Compras
                     </button>
                     <button 
                         onClick={() => setActiveTab('courses')}
-                        className={`flex-1 py-4 text-sm font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === 'courses' ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                        className={`flex-1 py-4 text-sm font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === 'courses' ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-gray-400 hover:text-gray-600 hover:text-[var(--admin-text-primary)]'}`}
                     >
                         Cursos Realizados
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-[#111]">
+                <div className="flex-1 overflow-y-auto p-6 bg-[var(--admin-surface-2)]">
                     {activeTab === 'details' ? (
                         <div className="space-y-8">
                             
@@ -271,35 +271,35 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">Nome Completo</label>
-                                        <input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                        <input type="text" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">Email</label>
-                                        <input type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                        <input type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">Telefone / WhatsApp</label>
-                                        <input type="text" value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                        <input type="text" value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">CPF</label>
-                                        <input type="text" value={formData.cpf || ''} onChange={(e) => handleChange('cpf', e.target.value)} placeholder="000.000.000-00" className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                        <input type="text" value={formData.cpf || ''} onChange={(e) => handleChange('cpf', e.target.value)} placeholder="000.000.000-00" className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">RG</label>
-                                        <input type="text" value={formData.rg || ''} onChange={(e) => handleChange('rg', e.target.value)} placeholder="00.000.000-0" className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                        <input type="text" value={formData.rg || ''} onChange={(e) => handleChange('rg', e.target.value)} placeholder="00.000.000-0" className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">Data de Nascimento</label>
                                         <div className="relative">
                                             <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
-                                            <input type="date" value={formData.birth_date} onChange={(e) => handleChange('birth_date', e.target.value)} className="w-full p-3 pl-10 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                            <input type="date" value={formData.birth_date} onChange={(e) => handleChange('birth_date', e.target.value)} className="w-full p-3 pl-10 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2 space-y-4 bg-gray-100/50 dark:bg-white/5 p-4 rounded-2xl border border-gray-200 dark:border-gray-800">
+                                    <div className="md:col-span-2 space-y-4 bg-[var(--admin-surface-2)] p-4 rounded-2xl border border-[var(--admin-border)]">
                                         <div className="flex items-center gap-2 mb-2">
                                             <MapPin size={16} className="text-wtech-gold" />
-                                            <h5 className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Endereço Principal</h5>
+                                            <h5 className="text-xs font-black uppercase tracking-widest text-[var(--admin-text-secondary)]">Endereço Principal</h5>
                                         </div>
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -315,7 +315,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                                             if (val.replace(/\D/g, '').length === 8) handleCEPLookup(val, 'main');
                                                         }} 
                                                         placeholder="00000-000"
-                                                        className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
+                                                        className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
                                                     />
                                                     {formData.zip_code?.replace(/\D/g, '').length === 8 && (
                                                         <button 
@@ -330,23 +330,23 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                             </div>
                                             <div className="md:col-span-3 space-y-1">
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Rua / Logradouro</label>
-                                                <input type="text" value={formData.address_street} onChange={(e) => handleChange('address_street', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                                <input type="text" value={formData.address_street} onChange={(e) => handleChange('address_street', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                             </div>
                                             <div className="md:col-span-1 space-y-1">
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Nº</label>
-                                                <input type="text" value={formData.address_number} onChange={(e) => handleChange('address_number', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all text-center" />
+                                                <input type="text" value={formData.address_number} onChange={(e) => handleChange('address_number', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all text-center" />
                                             </div>
                                             <div className="md:col-span-2 space-y-1">
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Bairro</label>
-                                                <input type="text" value={formData.address_neighborhood} onChange={(e) => handleChange('address_neighborhood', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                                <input type="text" value={formData.address_neighborhood} onChange={(e) => handleChange('address_neighborhood', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                             </div>
                                             <div className="md:col-span-3 space-y-1">
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Cidade</label>
-                                                <input type="text" value={formData.address_city} onChange={(e) => handleChange('address_city', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
+                                                <input type="text" value={formData.address_city} onChange={(e) => handleChange('address_city', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" />
                                             </div>
                                             <div className="md:col-span-1 space-y-1">
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">UF</label>
-                                                <input type="text" value={formData.address_state} onChange={(e) => handleChange('address_state', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all text-center uppercase" maxLength={2} />
+                                                <input type="text" value={formData.address_state} onChange={(e) => handleChange('address_state', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all text-center uppercase" maxLength={2} />
                                             </div>
                                         </div>
                                     </div>
@@ -354,7 +354,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                     <div className="md:col-span-2 space-y-4 bg-blue-50/30 dark:bg-blue-900/5 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/20">
                                         <div className="flex items-center gap-2 mb-2">
                                             <Truck size={16} className="text-blue-500" />
-                                            <h5 className="text-xs font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">Endereço de Entrega (Opcional)</h5>
+                                            <h5 className="text-xs font-black uppercase tracking-widest text-[var(--admin-text-secondary)]">Endereço de Entrega (Opcional)</h5>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -369,7 +369,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                                             handleCEPLookup(val, 'delivery');
                                                         }} 
                                                         placeholder="00000-000"
-                                                        className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                                                        className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                                                     />
                                                 </div>
                                             </div>
@@ -380,7 +380,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                                     value={(formData.delivery_address as any)?.full_address || ''} 
                                                     onChange={(e) => handleChange('delivery_address', { ...formData.delivery_address as any, full_address: e.target.value })} 
                                                     placeholder="Rua, Número, Bairro, Cidade - UF"
-                                                    className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                                                    className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                                                 />
                                             </div>
                                         </div>
@@ -389,10 +389,10 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                             </section>
 
                             {/* Client Portal Code */}
-                            <section className="bg-wtech-black/5 dark:bg-white/5 p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                            <section className="bg-[var(--admin-surface-2)] p-4 rounded-xl border border-dashed border-[var(--admin-border)]">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Código de Acesso do Cliente</h4>
+                                        <h4 className="text-xs font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest">Código de Acesso do Cliente</h4>
                                         <p className="text-[10px] text-gray-400 mt-1">Utilizado para acesso ao portal do cliente (Meus Pedidos).</p>
                                     </div>
                                     <div className="text-right flex items-center gap-2">
@@ -402,7 +402,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         <div className="flex gap-1">
                                             <button 
                                                 onClick={handleRegenerateCode}
-                                                className="bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 px-2 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors flex items-center gap-2"
+                                                className="bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)] px-2 py-1.5 rounded-lg hover:bg-[var(--admin-surface-3)] transition-colors flex items-center gap-2"
                                                 title="Gerar Novo Código"
                                             >
                                                 <RefreshCw size={14} className={!formData.client_code ? 'animate-pulse text-blue-500' : ''} />
@@ -423,8 +423,8 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                             </section>
 
                             {/* Pricing Level Selection */}
-                            <section className="bg-white dark:bg-[#1A1A1A] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                                <h4 className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <section className="bg-[var(--admin-surface-1)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm">
+                                <h4 className="text-xs font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-4 flex items-center gap-2">
                                     <CreditCard size={14} /> Nível de Preço no Catálogo
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -436,7 +436,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         <button
                                             key={level.id}
                                             onClick={() => handleChange('pricing_level', level.id)}
-                                            className={`p-4 rounded-xl border-2 text-left transition-all ${formData.pricing_level === level.id ? `border-${level.color}-500 bg-${level.color}-50/50 dark:bg-${level.color}-900/10` : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-transparent hover:border-gray-200'}`}
+                                            className={`p-4 rounded-xl border-2 text-left transition-all ${formData.pricing_level === level.id ? `border-${level.color}-500 bg-${level.color}-50/50 dark:bg-${level.color}-900/10` : 'border-[var(--admin-border)] bg-[var(--admin-surface-1)] hover:border-gray-200'}`}
                                         >
                                             <div className="flex items-center justify-between mb-1">
                                                 <span className={`text-[10px] font-black uppercase tracking-widest ${formData.pricing_level === level.id ? `text-${level.color}-600` : 'text-gray-400'}`}>{level.label}</span>
@@ -461,7 +461,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         <select 
                                             value={formData.assigned_to} 
                                             onChange={(e) => handleChange('assigned_to', e.target.value)} 
-                                            className="w-full md:w-1/2 p-3 bg-white dark:bg-[#222] border border-blue-200 dark:border-blue-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            className="w-full md:w-1/2 p-3 bg-[var(--admin-surface-2)] border border-blue-200 dark:border-blue-800 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         >
                                             <option value="">Sem Atendente Definido</option>
                                             {users.map(u => (
@@ -469,7 +469,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                             ))}
                                         </select>
                                     ) : (
-                                        <div className="w-full md:w-1/2 p-3 bg-white dark:bg-[#222] border border-blue-200 dark:border-blue-800 rounded-xl text-sm font-bold text-gray-500">
+                                        <div className="w-full md:w-1/2 p-3 bg-[var(--admin-surface-2)] border border-blue-200 dark:border-blue-800 rounded-xl text-sm font-bold text-gray-500">
                                             {users.find(u => u.id === formData.assigned_to)?.name || users.find(u => u.id === formData.assigned_to)?.full_name || users.find(u => u.id === formData.assigned_to)?.email || 'Sem Atendente / Não Visível'}
                                         </div>
                                     )}
@@ -483,10 +483,10 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
 
                             {/* Credential Status (Admin/Manager) */}
                             {canAssign && (
-                                <section className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-[#222] dark:to-[#111] p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                <section className="bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)]">
                                     <div className="flex justify-between items-center">
                                         <div>
-                                            <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                                            <h4 className="text-xs font-black text-[var(--admin-text-primary)] uppercase tracking-widest flex items-center gap-2">
                                                 <Shield size={14} className={formData.is_accredited ? "text-blue-600" : "text-gray-400"} /> 
                                                 Status de Credenciamento
                                             </h4>
@@ -499,7 +499,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         <button 
                                             onClick={() => handleChange('is_accredited', !formData.is_accredited)}
                                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                                                formData.is_accredited ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                                                formData.is_accredited ? 'bg-blue-600' : 'bg-[var(--admin-surface-3)]'
                                             }`}
                                         >
                                             <span
@@ -520,7 +520,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                     </h4>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-500">Tamanho da Camiseta</label>
-                                        <select value={formData.t_shirt_size} onChange={(e) => handleChange('t_shirt_size', e.target.value)} className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all">
+                                        <select value={formData.t_shirt_size} onChange={(e) => handleChange('t_shirt_size', e.target.value)} className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all">
                                             <option value="">Selecione...</option>
                                             <option value="PP">PP</option>
                                             <option value="P">P</option>
@@ -544,7 +544,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                                 type="text" 
                                                 value={(formData.workshop_details as any)?.name || ''} 
                                                 onChange={(e) => handleWorkshopChange('name', e.target.value)} 
-                                                className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
+                                                className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
                                                 placeholder="Nome Fantasia"
                                             />
                                         </div>
@@ -554,7 +554,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                                 type="text" 
                                                 value={(formData.workshop_details as any)?.cnpj || ''} 
                                                 onChange={(e) => handleWorkshopChange('cnpj', e.target.value)} 
-                                                className="w-full p-3 bg-white dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
+                                                className="w-full p-3 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm font-medium focus:ring-2 focus:ring-wtech-gold outline-none transition-all" 
                                                 placeholder="00.000.000/0000-00"
                                             />
                                         </div>
@@ -576,13 +576,13 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                 </div>
                             ) : (
                                 sales.map((sale, i) => (
-                                    <div key={i} className="bg-white dark:bg-[#222] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex justify-between items-center shadow-sm">
+                                    <div key={i} className="bg-[var(--admin-surface-2)] p-4 rounded-2xl border border-[var(--admin-border)] flex justify-between items-center shadow-sm">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 flex items-center justify-center">
                                                 <ShoppingBag size={20} />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-gray-900 dark:text-white">{sale.sale_summary || 'Venda'}</p>
+                                                <p className="font-bold text-[var(--admin-text-primary)]">{sale.sale_summary || 'Venda'}</p>
                                                 <p className="text-xs text-gray-400">{new Date(sale.created_at || sale.sale_date).toLocaleDateString('pt-BR')} • {sale.payment_method || 'PIX'}</p>
                                             </div>
                                         </div>
@@ -605,7 +605,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                     ) : (
                         <div className="space-y-6">
                             {/* Course Registration Form */}
-                            <section className="bg-white dark:bg-[#222] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <section className="bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)] shadow-sm">
                                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                                     <Plus size={14} /> Registrar Novo Curso Realizado
                                 </h4>
@@ -615,7 +615,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         <select 
                                             value={newCourse.type} 
                                             onChange={(e) => setNewCourse({ ...newCourse, type: e.target.value })}
-                                            className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold outline-none"
+                                            className="w-full p-3 bg-[var(--admin-surface-2)] border border-gray-200  rounded-xl text-sm font-bold outline-none"
                                         >
                                             <option value="suspension">Curso de Suspensão</option>
                                             <option value="experience">W-Tech Experience</option>
@@ -627,7 +627,7 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                             type="date" 
                                             value={newCourse.date}
                                             onChange={(e) => setNewCourse({ ...newCourse, date: e.target.value })}
-                                            className="w-full p-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-bold outline-none"
+                                            className="w-full p-3 bg-[var(--admin-surface-2)] border border-gray-200  rounded-xl text-sm font-bold outline-none"
                                         />
                                     </div>
                                     <div className="flex items-end">
@@ -651,19 +651,19 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                     <History size={14} /> Cursos Registrados
                                 </h4>
                                 {formData.completed_courses.length === 0 ? (
-                                    <div className="bg-white/5 p-10 rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 text-center">
+                                    <div className="bg-white/5 p-10 rounded-2xl border border-dashed border-gray-300  text-center">
                                         <p className="text-gray-400 font-bold text-sm">Nenhum curso registrado para este cliente.</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {formData.completed_courses.map((course: any, idx: number) => (
-                                            <div key={course.id || idx} className="bg-white dark:bg-[#222] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex justify-between items-center shadow-sm">
+                                            <div key={course.id || idx} className="bg-[var(--admin-surface-2)] p-4 rounded-2xl border border-[var(--admin-border)] flex justify-between items-center shadow-sm">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center justify-center">
                                                         <GraduationCap size={20} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-gray-900 dark:text-white uppercase text-xs tracking-tight">
+                                                        <p className="font-bold text-[var(--admin-text-primary)] uppercase text-xs tracking-tight">
                                                             {course.type === 'experience' ? 'W-Tech Experience' : 'Curso de Suspensão'}
                                                         </p>
                                                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">{new Date(course.date).toLocaleDateString('pt-BR')}</p>
@@ -688,10 +688,10 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111] flex justify-end gap-3">
+                <div className="p-6 border-t border-[var(--admin-border)] bg-[var(--admin-surface-2)] flex justify-end gap-3">
                     <button 
                         onClick={onClose}
-                        className="px-6 py-3 text-sm font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-white/5 rounded-xl transition-colors"
+                        className="px-6 py-3 text-sm font-bold text-gray-500 hover:bg-gray-200 rounded-xl transition-colors"
                     >
                         Cancelar
                     </button>

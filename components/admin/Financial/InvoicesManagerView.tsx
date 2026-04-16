@@ -37,7 +37,7 @@ const InvoicesManagerView = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-[var(--admin-surface-1)] rounded-3xl border border-[var(--admin-border)] shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-gray-50">
                     <div className="flex items-center gap-2 bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-100">
                         <AlertCircle size={20} />
