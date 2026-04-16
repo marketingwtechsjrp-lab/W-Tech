@@ -1469,12 +1469,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     });
 
                     return (
-                        <div key={month} className="border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all">
-                            <h3 className="font-bold text-lg mb-2 text-gray-800">{month}</h3>
+                        <div key={month} className="border border-[var(--admin-border)] p-4 rounded-lg bg-[var(--admin-surface-1)] shadow-sm hover:shadow-md transition-all">
+                            <h3 className="font-bold text-lg mb-2 text-[var(--admin-text-primary)]">{month}</h3>
                             {monthEvents.length > 0 ? (
                                 <ul className="space-y-2">
                                     {monthEvents.map(e => (
-                                        <li key={e.id} onClick={() => handleEdit(e)} className="text-xs bg-gray-50 p-2 rounded cursor-pointer hover:bg-yellow-50 border-l-2 border-wtech-gold">
+                                        <li key={e.id} onClick={() => handleEdit(e)} className="text-xs bg-[var(--admin-surface-2)] p-2 rounded cursor-pointer hover:bg-yellow-50 border-l-2 border-wtech-gold">
                                             <div className="font-bold flex justify-between">
                                                 <span>
                                                     {parseInt(e.date.split('T')[0].split('-')[2])}
@@ -1486,7 +1486,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     ))}
                                 </ul>
                             ) : (
-                                <div className="text-xs text-gray-400 italic">Sem eventos</div>
+                                <div className="text-xs text-[var(--admin-text-tertiary)] italic">Sem eventos</div>
                             )}
                         </div>
                     );
@@ -1519,10 +1519,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     });
                     const isToday = date.toDateString() === new Date().toDateString();
                     return (
-                        <div key={date.toString()} className={`border rounded-lg p-2 flex flex-col ${isToday ? 'bg-yellow-50 border-yellow-200' : 'bg-white'}`}>
+                        <div key={date.toString()} className={`border rounded-lg p-2 flex flex-col ${isToday ? 'bg-yellow-50 border-yellow-200' : 'bg-[var(--admin-surface-1)]'}`}>
                             <div className="text-center border-b pb-2 mb-2">
-                                <div className="text-xs font-bold uppercase text-gray-500">{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
-                                <div className={`text-xl font-black ${isToday ? 'text-wtech-gold' : 'text-gray-800'}`}>{date.getDate()}</div>
+                                <div className="text-xs font-bold uppercase text-[var(--admin-text-tertiary)]">{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
+                                <div className={`text-xl font-black ${isToday ? 'text-wtech-gold' : 'text-[var(--admin-text-primary)]'}`}>{date.getDate()}</div>
                             </div>
                             <div className="flex-1 space-y-2 overflow-y-auto">
                                 {dayEvents.map(e => (
@@ -1562,11 +1562,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         return (
             <div className="grid grid-cols-7 gap-2">
                 {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-                    <div key={d} className="font-bold text-center text-xs text-gray-500 py-2 uppercase">{d}</div>
+                    <div key={d} className="font-bold text-center text-xs text-[var(--admin-text-tertiary)] py-2 uppercase">{d}</div>
                 ))}
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
-                    <div key={day} className="border border-gray-100 min-h-[100px] p-2 rounded relative hover:bg-gray-50 transition-colors">
-                        <span className="text-xs font-bold text-gray-400 absolute top-2 left-2">{day}</span>
+                    <div key={day} className="border border-[var(--admin-border)] min-h-[100px] p-2 rounded relative hover:bg-[var(--admin-surface-2)] transition-colors">
+                        <span className="text-xs font-bold text-[var(--admin-text-tertiary)] absolute top-2 left-2">{day}</span>
                         <div className="mt-6 space-y-1">
                             {eventsByDay[day]?.map(ev => (
                                 <div key={ev.id} onClick={() => handleEdit(ev)} className="bg-wtech-gold/20 text-yellow-900 text-[10px] p-1 rounded font-bold cursor-pointer hover:bg-wtech-gold truncate">
@@ -1598,7 +1598,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <div className="mt-2 text-sm flex gap-4">
                             <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-blue-700 dark:text-blue-400">Moeda: {currentCourse.currency || 'BRL'}</span>
                             <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</span>
-                            <span className="text-[var(--admin-text-secondary)] font-bold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
+                            <span className="text-[var(--admin-text-secondary)] font-bold bg-[var(--admin-surface-3)] px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -1619,10 +1619,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                 {/* Enrollment Edit Form */}
                 {editingEnrollment && (
-                    <div className="mb-6 bg-[var(--admin-surface-2)] p-6 rounded-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 print:hidden">
+                    <div className="mb-6 bg-[var(--admin-surface-2)] p-6 rounded-lg border border-[var(--admin-border)] animate-in fade-in slide-in-from-top-2 print:hidden">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingEnrollment.id ? 'Editar Aluno' : 'Novo Aluno'}</h3>
-                            <button onClick={() => setEditingEnrollment(null)}><X size={18} /></button>
+                            <button onClick={() => setEditingEnrollment(null)} className="text-[var(--admin-text-secondary)] hover:text-red-500 transition-colors"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleSaveEnrollment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* ... Fields ... reuse previous fields ... */}
@@ -1663,12 +1663,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </div>
 
                             {/* Financial Fields */}
-                            <div className="md:col-span-2 grid grid-cols-3 gap-4 border-t border-gray-200 pt-4 mt-2">
+                            <div className="md:col-span-2 grid grid-cols-3 gap-4 border-t border-[var(--admin-border)] pt-4 mt-2">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Valor Total (Negociado)</label>
+                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Valor Total (Negociado)</label>
                                     <input
                                         type="number"
-                                        className="w-full p-2 border rounded font-bold text-gray-900"
+                                        className="w-full p-2 border border-[var(--admin-border)] rounded font-bold text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]"
                                         value={editingEnrollment.totalAmount ?? currentCourse.price ?? 0}
                                         onChange={e => setEditingEnrollment({ ...editingEnrollment, totalAmount: parseFloat(e.target.value) })}
                                     />
@@ -1677,14 +1677,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             <button
                                                 type="button"
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, totalAmount: currentCourse.price || 0 })}
-                                                className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.price ? 'bg-blue-100 border-blue-300 text-blue-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
+                                                className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.price ? 'bg-blue-100 border-blue-300 text-blue-800 font-bold' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-secondary)]'}`}
                                             >
                                                 <span>Normal</span> <span>{currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {currentCourse.price}</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, totalAmount: currentCourse.recyclingPrice || 0 })}
-                                                className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.recyclingPrice ? 'bg-green-100 border-green-300 text-green-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600'}`}
+                                                className={`text-[10px] px-2 py-1 rounded border text-left flex justify-between ${editingEnrollment.totalAmount === currentCourse.recyclingPrice ? 'bg-green-100 border-green-300 text-green-800 font-bold' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-secondary)]'}`}
                                             >
                                                 <span>Reciclagem</span> <span>{currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {currentCourse.recyclingPrice}</span>
                                             </button>
@@ -1692,56 +1692,56 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     )}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Valor Pago</label>
+                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Valor Pago</label>
                                     <input type="number" step="0.01" className="w-full p-2 border rounded font-bold text-green-700" value={editingEnrollment.amountPaid || 0} onChange={e => setEditingEnrollment({ ...editingEnrollment, amountPaid: parseFloat(e.target.value) })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Saldo a Pagar</label>
+                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Saldo a Pagar</label>
                                     <div className="text-lg font-bold text-red-600">
                                         {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {((editingEnrollment.totalAmount ?? currentCourse.price ?? 0) - (editingEnrollment.amountPaid || 0)).toFixed(2)}
                                     </div>
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Método de Pagamento</label>
+                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Método de Pagamento</label>
                                     <div className="flex gap-2">
                                         {['Pix', 'Cartão Crédito', 'Cartão Débito', 'Dinheiro', 'Boleto'].map(method => (
                                             <button
                                                 key={method}
                                                 type="button"
                                                 onClick={() => setEditingEnrollment({ ...editingEnrollment, paymentMethod: method })}
-                                                className={`px-3 py-1 rounded border text-xs font-bold ${editingEnrollment.paymentMethod === method ? 'bg-wtech-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                                className={`px-3 py-1 rounded border text-xs font-bold ${editingEnrollment.paymentMethod === method ? 'bg-wtech-black text-white border-black' : 'bg-[var(--admin-surface-1)] text-[var(--admin-text-secondary)] border-[var(--admin-border)] hover:bg-[var(--admin-surface-2)]'}`}
                                             >
                                                 {method}
                                             </button>
                                         ))}
                                     </div>
-                                    <input placeholder="Outro método..." className="w-full p-2 border rounded mt-2 text-sm" value={editingEnrollment.paymentMethod || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, paymentMethod: e.target.value })} />
+                                    <input placeholder="Outro método..." className="w-full p-2 border border-[var(--admin-border)] rounded mt-2 text-sm bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)]" value={editingEnrollment.paymentMethod || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, paymentMethod: e.target.value })} />
                                 </div>
 
                                 {/* Address & Credentialing Section */}
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4 bg-gray-100 p-4 rounded-lg">
-                                    <h4 className="md:col-span-2 font-bold text-gray-700 flex items-center gap-2"><MapPin size={16} /> Endereço & Credenciamento</h4>
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[var(--admin-border)] pt-4 bg-[var(--admin-surface-3)] p-4 rounded-lg">
+                                    <h4 className="md:col-span-2 font-bold text-[var(--admin-text-primary)] flex items-center gap-2"><MapPin size={16} /> Endereço & Credenciamento</h4>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1">CEP</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">CEP</label>
                                         <input className="w-full p-2 border rounded" value={editingEnrollment.zipCode || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, zipCode: e.target.value })} />
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="flex-1">
-                                            <label className="block text-xs font-bold text-gray-500 mb-1">Cidade</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">Cidade</label>
                                             <input className="w-full p-2 border rounded" value={editingEnrollment.city || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, city: e.target.value })} />
                                         </div>
                                         <div className="w-20">
-                                            <label className="block text-xs font-bold text-gray-500 mb-1">UF</label>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">UF</label>
                                             <input className="w-full p-2 border rounded" value={editingEnrollment.state || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, state: e.target.value })} />
                                         </div>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="block text-xs font-bold text-gray-500 mb-1">Endereço Completo (Rua, Nº, Bairro)</label>
+                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">Endereço Completo (Rua, Nº, Bairro)</label>
                                         <input className="w-full p-2 border rounded" value={editingEnrollment.address || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, address: e.target.value })} />
                                     </div>
 
-                                    <div className="md:col-span-2 flex items-center gap-2 mt-2 bg-white p-3 rounded border border-gray-200">
+                                    <div className="md:col-span-2 flex items-center gap-2 mt-2 bg-[var(--admin-surface-1)] p-3 rounded border border-[var(--admin-border)]">
                                         <input
                                             type="checkbox"
                                             id="cred"
@@ -1750,8 +1750,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             onChange={e => setEditingEnrollment({ ...editingEnrollment, isCredentialed: e.target.checked })}
                                         />
                                         <div className="flex flex-col">
-                                            <label htmlFor="cred" className="text-sm font-bold text-gray-900 cursor-pointer">Aluno Credenciado</label>
-                                            <span className="text-xs text-gray-500">Se marcado, este aluno será listado como oficina credenciada (Mapas).</span>
+                                            <label htmlFor="cred" className="text-sm font-bold text-[var(--admin-text-primary)] cursor-pointer">Aluno Credenciado</label>
+                                            <span className="text-xs text-[var(--admin-text-secondary)]">Se marcado, este aluno será listado como oficina credenciada (Mapas).</span>
                                         </div>
                                     </div>
 
@@ -1776,8 +1776,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </div>
 
                             <div className="md:col-span-2 flex justify-end gap-2 mt-4">
-                                <button type="button" onClick={() => setEditingEnrollment(null)} className="px-4 py-2 text-gray-500 font-bold">Cancelar</button>
-                                <button type="submit" className="px-6 py-2 bg-wtech-black text-white rounded font-bold hover:bg-gray-800">Salvar Aluno</button>
+                                <button type="button" onClick={() => setEditingEnrollment(null)} className="px-4 py-2 text-[var(--admin-text-secondary)] font-bold">Cancelar</button>
+                                <button type="submit" className="px-6 py-2 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded font-bold shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Aluno</button>
                             </div>
                         </form>
                     </div>
@@ -1786,7 +1786,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 {/* ... Table ... */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-[var(--admin-surface-2)] text-gray-800 uppercase font-bold text-xs border-b border-gray-200">
+                        <thead className="bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] uppercase font-bold text-xs border-b border-[var(--admin-border)]">
                             <tr>
                                 <th className="px-6 py-3">Nome do Aluno</th>
                                 <th className="px-6 py-3">Contato</th>
@@ -1797,7 +1797,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <th className="px-6 py-3 hidden print:table-cell">Assinatura</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-[var(--admin-text-primary)]">
+                        <tbody className="divide-y divide-[var(--admin-border)] text-[var(--admin-text-primary)]">
                             {enrollments.length > 0 ? (
                                 enrollments.map((enr, idx) => {
                                     const balance = (enr.totalAmount ?? currentCourse.price ?? 0) - (enr.amountPaid || 0);
@@ -1831,12 +1831,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         {enr.enrolledByName}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-xs text-gray-400">—</span>
+                                                    <span className="text-xs text-[var(--admin-text-tertiary)]">—</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 print:hidden">
                                                 <div className="flex items-center gap-2">
-                                                    <button onClick={() => toggleCheckIn(enr.id, enr.status)} title="Check-in Rápido" className={`p-1.5 rounded border ${enr.status === 'CheckedIn' ? 'text-green-600 border-green-200 bg-green-50' : 'text-gray-400 border-gray-200 hover:bg-gray-100'}`}>
+                                                    <button onClick={() => toggleCheckIn(enr.id, enr.status)} title="Check-in Rápido" className={`p-1.5 rounded border ${enr.status === 'CheckedIn' ? 'text-green-600 border-green-200 bg-green-50' : 'text-[var(--admin-text-secondary)] border-[var(--admin-border)] hover:bg-[var(--admin-surface-2)]'}`}>
                                                         <CheckCircle size={16} />
                                                     </button>
 
@@ -1854,10 +1854,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         <Send size={16} />
                                                     </button>
 
-                                                    <button onClick={() => handleGenerateSingleCertificate(enr, false)} title="Baixar Certificado" className="p-1.5 text-gray-700 hover:bg-gray-100 rounded border border-gray-200">
+                                                    <button onClick={() => handleGenerateSingleCertificate(enr, false)} title="Baixar Certificado" className="p-1.5 text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)] rounded border border-[var(--admin-border)]">
                                                         <Award size={16} />
                                                     </button>
-                                                    <button onClick={() => handleGenerateSingleCertificate(enr, true)} title="Baixar Crachá" className="p-1.5 text-gray-700 hover:bg-gray-100 rounded border border-gray-200">
+                                                    <button onClick={() => handleGenerateSingleCertificate(enr, true)} title="Baixar Crachá" className="p-1.5 text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)] rounded border border-[var(--admin-border)]">
                                                         <User size={16} />
                                                     </button>
 
@@ -1872,13 +1872,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     </button>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 hidden print:table-cell border-b border-gray-100 h-16 w-64"></td>
+                                            <td className="px-6 py-4 hidden print:table-cell border-b border-[var(--admin-border)] h-16 w-64"></td>
                                         </tr>
                                     );
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Nenhum aluno inscrito ainda.</td>
+                                    <td colSpan={7} className="px-6 py-8 text-center text-[var(--admin-text-secondary)]">Nenhum aluno inscrito ainda.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -1891,11 +1891,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                             <div className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
                                 <h3 className="text-2xl font-black text-[var(--admin-text-primary)] mb-2">Conciliação Stripe</h3>
-                                <p className="text-gray-500 mb-6">Vincular ID de transação para confirmar pagamento.</p>
+                                <p className="text-[var(--admin-text-secondary)] mb-6">Vincular ID de transação para confirmar pagamento.</p>
 
                                 <div className="space-y-4 mb-6">
                                     <div>
-                                        <label className="block text-sm font-bold mb-2 text-gray-700">Stripe ID (ch_... ou pi_...)</label>
+                                        <label className="block text-sm font-bold mb-2 text-[var(--admin-text-primary)]">Stripe ID (ch_... ou pi_...)</label>
                                         <input
                                             className="w-full p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-3)] rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                                             placeholder="Ex: ch_3SzzWkJcoez..."
@@ -1904,7 +1904,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold mb-2 text-gray-700">Valor Confirmado ({currentCourse?.currency})</label>
+                                        <label className="block text-sm font-bold mb-2 text-[var(--admin-text-primary)]">Valor Confirmado ({currentCourse?.currency})</label>
                                         <input
                                             type="number"
                                             className="w-full p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-3)] rounded-lg font-bold"
@@ -1917,7 +1917,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => setStripeReconcileModal({ isOpen: false, enrollment: null })}
-                                        className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50"
+                                        className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)]"
                                     >
                                         Cancelar
                                     </button>
@@ -1940,15 +1940,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                             <div className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
                                 <h3 className="text-2xl font-black text-[var(--admin-text-primary)] mb-2">Quitar Saldo Restante</h3>
-                                <p className="text-gray-500 mb-6">Confirmar recebimento do valor pendente.</p>
+                                <p className="text-[var(--admin-text-secondary)] mb-6">Confirmar recebimento do valor pendente.</p>
 
                                 <div className="bg-[var(--admin-surface-2)] p-4 rounded-lg mb-6 border border-[var(--admin-border)]">
                                     <div className="flex justify-between mb-2">
-                                        <span className="text-sm font-bold text-gray-500">Aluno</span>
+                                        <span className="text-sm font-bold text-[var(--admin-text-secondary)]">Aluno</span>
                                         <span className="font-bold">{settleModal.enrollment?.studentName}</span>
                                     </div>
                                     <div className="flex justify-between mb-2">
-                                        <span className="text-sm font-bold text-gray-500">Saldo Atual</span>
+                                        <span className="text-sm font-bold text-[var(--admin-text-secondary)]">Saldo Atual</span>
                                         <span className="font-bold text-red-600 text-lg">
                                             {currentCourse?.currency === 'EUR' ? '€' : currentCourse?.currency === 'USD' ? '$' : 'R$'} {settleModal.amount.toFixed(2)}
                                         </span>
@@ -1957,7 +1957,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                 <div className="space-y-4 mb-6">
                                     <div>
-                                        <label className="block text-xs font-black uppercase text-gray-400 mb-3 tracking-widest italic">Forma de Pagamento</label>
+                                        <label className="block text-xs font-black uppercase text-[var(--admin-text-tertiary)] mb-3 tracking-widest">Forma de Pagamento</label>
                                         <div className="grid grid-cols-3 gap-2">
                                             {[
                                                 { id: 'Pix', icon: <Zap size={14} />, label: 'Pix' },
@@ -1972,10 +1972,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     className={`flex items-center gap-2 p-3 rounded-xl border transition-all font-bold text-xs ${
                                                         settleMethod === method.id 
                                                         ? 'bg-wtech-gold border-wtech-gold text-black shadow-lg shadow-yellow-500/10' 
-                                                        : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'
+                                                        : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-secondary)] hover:border-[var(--admin-border)]'
                                                     }`}
                                                 >
-                                                    <span className={settleMethod === method.id ? 'text-black' : 'text-gray-400'}>{method.icon}</span>
+                                                    <span className={settleMethod === method.id ? 'text-black' : 'text-[var(--admin-text-tertiary)]'}>{method.icon}</span>
                                                     {method.label}
                                                 </button>
                                             ))}
@@ -2025,7 +2025,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                                     className={`flex-1 py-2 rounded-lg font-black text-xs border transition-all ${
                                                                         settleModal.targetCurrency === curr 
                                                                         ? 'bg-violet-600 border-violet-600 text-white shadow-lg' 
-                                                                        : 'bg-[var(--admin-surface-1)] border-gray-200 text-gray-400'
+                                                                        : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-secondary)]'
                                                                     }`}
                                                                 >
                                                                     {curr}
@@ -2048,7 +2048,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             )}
 
                                             <div>
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 italic">Valor Final do Link ({settleModal.targetCurrency || currentCourse?.currency})</label>
+                                                <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-2 italic">Valor Final do Link ({settleModal.targetCurrency || currentCourse?.currency})</label>
                                                 <div className="relative group">
                                                     <div className="absolute inset-0 bg-indigo-500/10 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
                                                     <input
@@ -2057,7 +2057,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         value={settleModal.linkAmount}
                                                         onChange={e => setSettleModal({ ...settleModal, linkAmount: parseFloat(e.target.value) })}
                                                     />
-                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg italic">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--admin-text-tertiary)] font-bold text-lg italic">
                                                         {settleModal.targetCurrency === 'EUR' ? '€' : settleModal.targetCurrency === 'USD' ? '$' : 'R$'}
                                                     </div>
                                                 </div>
@@ -2074,11 +2074,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     )}
 
                                     {generatedLink && (
-                                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-in fade-in">
+                                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded-lg animate-in fade-in">
                                             <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase mb-2">Link Gerado:</p>
                                             <div className="flex gap-2">
                                                 <input readOnly className="flex-1 text-xs p-2 border rounded bg-[var(--admin-surface-1)]" value={generatedLink} />
-                                                <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} className="p-2 bg-[var(--admin-surface-3)] border rounded hover:bg-gray-50"><Copy size={14} /></button>
+                                                <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} className="p-2 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] rounded hover:bg-[var(--admin-surface-2)]"><Copy size={14} /></button>
                                             </div>
                                         </div>
                                     )}
@@ -2096,7 +2096,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <>
                                             <button
                                                 onClick={() => setSettleModal({ ...settleModal, isOpen: false })}
-                                                className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50"
+                                                className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)]"
                                             >
                                                 Cancelar
                                             </button>
@@ -2130,17 +2130,17 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <th className="p-4 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-[var(--admin-text-secondary)]">
+                    <tbody className="divide-y divide-[var(--admin-border)] text-[var(--admin-text-secondary)]">
                         {filteredCourses.length > 0 ? (
                             filteredCourses.map(course => (
                                 <tr key={course.id} className="hover:bg-[var(--admin-surface-2)] transition-colors">
                                     <td className="p-4">
                                         <div className="text-blue-700 dark:text-blue-400 font-bold">{course.title}</div>
-                                        <div className="text-xs text-gray-400">{course.location}</div>
+                                        <div className="text-xs text-[var(--admin-text-tertiary)]">{course.location}</div>
                                     </td>
-                                    <td className="p-4 text-gray-800 font-bold">
+                                    <td className="p-4 text-[var(--admin-text-primary)] font-bold">
                                         {formatDateLocal(course.date)}
-                                        <div className="text-xs text-gray-400 font-normal">{course.startTime || '08:00'}</div>
+                                        <div className="text-xs text-[var(--admin-text-tertiary)] font-normal">{course.startTime || '08:00'}</div>
                                     </td>
                                     <td className="p-4 text-center">
                                         <button
@@ -2168,7 +2168,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 course.status === 'Full' ? 'bg-orange-100 text-orange-800 border-orange-200' :
                                                 course.status === 'Completed' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                                                 course.status === 'Archived' ? 'bg-red-100 text-red-800 border-red-200' :
-                                                'bg-gray-100 text-gray-600 border-gray-200'
+                                                'bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] border-[var(--admin-border)]'
                                                 }`}
                                         >
                                             <option value="Draft">Rascunho</option>
@@ -2201,20 +2201,20 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                             <button onClick={() => handleQuickAddStudent(course)} title="Adicionar Aluno Rápido" className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"><UserPlus size={16} /></button>
                                         )}
                                         {hasPermission('courses_edit') && (
-                                            <button onClick={() => handleEdit(course)} title="Editar Curso" className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Edit size={16} /></button>
+                                            <button onClick={() => handleEdit(course)} title="Editar Curso" className="p-2 text-[var(--admin-text-secondary)] hover:text-blue-600 transition-colors"><Edit size={16} /></button>
                                         )}
                                         {hasPermission('courses_edit') && (
-                                            <button onClick={() => handleDuplicate(course)} title="Duplicar Curso" className="p-2 text-gray-400 hover:text-wtech-gold transition-colors"><Copy size={16} /></button>
+                                            <button onClick={() => handleDuplicate(course)} title="Duplicar Curso" className="p-2 text-[var(--admin-text-secondary)] hover:text-wtech-gold transition-colors"><Copy size={16} /></button>
                                         )}
                                         {hasPermission('courses_delete') && (
-                                            <button onClick={() => handleDelete(course.id)} title="Excluir Curso" className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                                            <button onClick={() => handleDelete(course.id)} title="Excluir Curso" className="p-2 text-[var(--admin-text-secondary)] hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
                                         )}
                                     </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={5} className="p-8 text-center text-gray-400 italic">
+                                <td colSpan={5} className="p-8 text-center text-[var(--admin-text-tertiary)] italic">
                                     {searchTerm ? 'Nenhum curso encontrado.' : 'Nenhum curso cadastrado.'}
                                 </td>
                             </tr>
@@ -2233,74 +2233,74 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             {/* RELATÓRIO DE CURSO (NÍVEL 10) */}
             {showReportModal && reportCourse && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-[var(--admin-surface-1)] w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="bg-wtech-black text-white p-6 flex justify-between items-center">
                             <div>
                                 <div className="text-wtech-gold text-xs font-bold uppercase tracking-widest mb-1">Relatório Gerencial (Nível 10)</div>
                                 <h2 className="text-2xl font-black uppercase">{reportCourse.title}</h2>
-                                <p className="text-gray-400 text-sm">Análise completa de performance e financeiro.</p>
+                                <p className="text-[var(--admin-text-secondary)] text-sm">Análise completa de performance e financeiro.</p>
                             </div>
-                            <button onClick={() => setShowReportModal(false)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+                            <button onClick={() => setShowReportModal(false)} className="p-2 hover:bg-white/10 rounded-full text-[var(--admin-text-secondary)] hover:text-white transition-colors">
                                 <X size={24} />
                             </button>
                         </div>
 
                         {/* Content */}
-                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                        <div className="p-6 overflow-y-auto flex-1 bg-[var(--admin-surface-2)]">
                             {reportLoading ? (
                                 <div className="flex flex-col items-center justify-center h-64">
                                     <Loader2 size={48} className="text-wtech-gold animate-spin mb-4" />
-                                    <p className="text-gray-500 font-bold animate-pulse">Gerando Relatório...</p>
+                                    <p className="text-[var(--admin-text-secondary)] font-bold animate-pulse">Gerando Relatório...</p>
                                 </div>
                             ) : (
                                 <div className="space-y-8">
                                     {/* KPI Grid */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Receita Bruta</p>
-                                            <h3 className="text-3xl font-black text-gray-900">R$ {reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] border-l-4 border-l-blue-500">
+                                            <p className="text-[var(--admin-text-secondary)] text-xs font-bold uppercase mb-1">Receita Bruta</p>
+                                            <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">R$ {reportData.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                                             <p className="text-xs text-blue-500 font-medium mt-1">Total de Vendas ({reportData.enrollmentsCount})</p>
                                         </div>
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-red-500">
-                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Despesas Totais</p>
-                                            <h3 className="text-3xl font-black text-gray-900">R$ ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] border-l-4 border-l-red-500">
+                                            <p className="text-[var(--admin-text-secondary)] text-xs font-bold uppercase mb-1">Despesas Totais</p>
+                                            <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">R$ ${(reportData.expenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                                             <p className="text-xs text-red-500 font-medium mt-1">Custos operacionais</p>
                                         </div>
-                                        <div className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 ${(reportData.netResult || 0) >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
-                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Resultado Líquido</p>
+                                        <div className={`bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] border-l-4 ${(reportData.netResult || 0) >= 0 ? 'border-l-green-500' : 'border-l-red-500'}`}>
+                                            <p className="text-[var(--admin-text-secondary)] text-xs font-bold uppercase mb-1">Resultado Líquido</p>
                                             <h3 className={`text-3xl font-black ${(reportData.netResult || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                 R$ ${(reportData.netResult || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                             </h3>
-                                            <p className="text-xs text-gray-400 font-medium mt-1">Lucro da operação</p>
+                                            <p className="text-xs text-[var(--admin-text-tertiary)] font-medium mt-1">Lucro da operação</p>
                                         </div>
 
                                         {/* Row 2 */}
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-wtech-gold">
-                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Total de Leads</p>
-                                            <h3 className="text-3xl font-black text-gray-900">{reportData.leadsCount}</h3>
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] border-l-4 border-l-wtech-gold">
+                                            <p className="text-[var(--admin-text-secondary)] text-xs font-bold uppercase mb-1">Total de Leads</p>
+                                            <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">{reportData.leadsCount}</h3>
                                             <p className="text-xs text-yellow-600 font-medium mt-1">
                                                 Conversão: {reportData.leadsCount > 0 ? ((reportData.enrollmentsCount / reportData.leadsCount) * 100).toFixed(1) : 0}%
                                             </p>
                                         </div>
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-purple-500">
-                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Em Atendimento</p>
-                                            <h3 className="text-3xl font-black text-gray-900">{reportData.inProgressCount}</h3>
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] border-l-4 border-l-purple-500">
+                                            <p className="text-[var(--admin-text-secondary)] text-xs font-bold uppercase mb-1">Em Atendimento</p>
+                                            <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">{reportData.inProgressCount}</h3>
                                             <p className="text-xs text-purple-600 font-medium mt-1">Funil de Vendas</p>
                                         </div>
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-gray-500">
-                                            <p className="text-gray-500 text-xs font-bold uppercase mb-1">Custo por Lead</p>
-                                            <h3 className="text-3xl font-black text-gray-900">
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)] border-l-4 border-l-gray-500">
+                                            <p className="text-[var(--admin-text-secondary)] text-xs font-bold uppercase mb-1">Custo por Lead</p>
+                                            <h3 className="text-3xl font-black text-[var(--admin-text-primary)]">
                                                 R$ {reportData.leadsCount > 0 ? ((reportData.expenses || 0) / reportData.leadsCount).toFixed(2) : '0,00'}
                                             </h3>
-                                            <p className="text-xs text-gray-400 font-medium mt-1">Eficiência de Mkt</p>
+                                            <p className="text-xs text-[var(--admin-text-tertiary)] font-medium mt-1">Eficiência de Mkt</p>
                                         </div>
                                     </div>
 
                                     {/* Charts / Funnel (Simplified Visual) */}
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                            <h4 className="font-bold text-gray-800 mb-6 flex items-center gap-2"><Filter size={18} /> Funil de Vendas do Curso</h4>
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)]">
+                                            <h4 className="font-bold text-[var(--admin-text-primary)] mb-6 flex items-center gap-2"><Filter size={18} /> Funil de Vendas do Curso</h4>
                                             <div className="flex flex-col gap-2">
                                                 {/* Top Funnel */}
                                                 <div className="w-full bg-blue-50 rounded-lg p-3 relative overflow-hidden group">
@@ -2330,12 +2330,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         </div>
 
                                         {/* Leads Origin Breakdown */}
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                            <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Globe size={18} /> Origem dos Leads (Landing Pages)</h4>
+                                        <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl shadow-sm border border-[var(--admin-border)]">
+                                            <h4 className="font-bold text-[var(--admin-text-primary)] mb-4 flex items-center gap-2"><Globe size={18} /> Origem dos Leads (Landing Pages)</h4>
                                             <div className="overflow-y-auto max-h-[200px] custom-scrollbar">
                                                 {reportData.leadsByOrigin && reportData.leadsByOrigin.length > 0 ? (
                                                     <table className="w-full text-xs">
-                                                        <thead className="bg-gray-50 text-gray-500 font-bold">
+                                                        <thead className="bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] font-bold">
                                                             <tr>
                                                                 <th className="px-2 py-2 text-left">Origem / LP</th>
                                                                 <th className="px-2 py-2 text-center">Leads</th>
@@ -2343,7 +2343,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                                 <th className="px-2 py-2 text-center">Conv.</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody className="divide-y divide-gray-100">
+                                                        <tbody className="divide-y divide-[var(--admin-border)]">
                                                             {reportData.leadsByOrigin.map((origin: any, i: number) => (
                                                                 <tr key={i}>
                                                                     <td className="px-2 py-2 font-medium truncate max-w-[150px]" title={origin.name}>{origin.name.replace('LP:', '').trim()}</td>
@@ -2355,7 +2355,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         </tbody>
                                                     </table>
                                                 ) : (
-                                                    <div className="text-center text-gray-400 py-8 text-sm italic">
+                                                    <div className="text-center text-[var(--admin-text-tertiary)] py-8 text-sm italic">
                                                         Nenhuma informação de origem encontrada.
                                                     </div>
                                                 )}
@@ -2366,7 +2366,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     {/* Student List Table */}
                                     <div className="bg-[var(--admin-surface-1)] rounded-xl shadow-sm border border-[var(--admin-border)] overflow-hidden">
                                         <div className="p-4 bg-[var(--admin-surface-2)] border-b border-[var(--admin-border)] flex justify-between items-center">
-                                            <h4 className="font-bold text-gray-800 flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
+                                            <h4 className="font-bold text-[var(--admin-text-primary)] flex items-center gap-2"><Users size={18} /> Lista de Inscritos ({reportData.studentsList?.length || 0})</h4>
                                             <button
                                                 onClick={() => {
                                                     const csv = [
@@ -2387,7 +2387,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     a.download = `Relatorio_${reportCourse.title}.csv`;
                                                     a.click();
                                                 }}
-                                                className="text-xs bg-[var(--admin-surface-3)] border border-[var(--admin-border)] px-3 py-1 rounded font-bold hover:bg-gray-50 flex items-center gap-1"
+                                                className="text-xs bg-[var(--admin-surface-3)] border border-[var(--admin-border)] px-3 py-1 rounded font-bold hover:bg-[var(--admin-surface-2)] flex items-center gap-1"
                                             >
                                                 <Download size={12} /> CSV
                                             </button>
@@ -2401,7 +2401,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     <th className="px-4 py-3 text-right">Pago</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                            <tbody className="divide-y divide-[var(--admin-border)]">
                                                 {reportData.studentsList?.map((student: any, idx: number) => (
                                                     <tr key={idx} className="hover:bg-[var(--admin-surface-2)]">
                                                         <td className="px-4 py-3 font-bold text-[var(--admin-text-primary)]">{student.name}</td>
@@ -2421,7 +2421,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                 ))}
                                                 {(!reportData.studentsList || reportData.studentsList.length === 0) && (
                                                     <tr>
-                                                        <td colSpan={4} className="p-8 text-center text-gray-400 italic">Nenhum aluno matriculado ainda.</td>
+                                                        <td colSpan={4} className="p-8 text-center text-[var(--admin-text-tertiary)] italic">Nenhum aluno matriculado ainda.</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -2430,7 +2430,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </div>
                             )}
                         </div>
-                        <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50">
+                        <div className="p-4 border-t border-[var(--admin-border)] flex justify-end bg-[var(--admin-surface-2)]">
                             <button onClick={printSingleCourseReport} className="bg-wtech-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 flex items-center gap-2">
                                 <Printer size={16} /> Imprimir Relatório
                             </button>
@@ -2489,13 +2489,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <Download size={16} /> Relatório
                         </button>
 
-                        <button onClick={handlePrintCoursesReport} className="bg-gray-100 text-gray-800 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors dark:bg-gray-800" title="Imprimir Lista">
+                        <button onClick={handlePrintCoursesReport} className="bg-[var(--admin-surface-3)] text-[var(--admin-text-primary)] border border-[var(--admin-border)] px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[var(--admin-surface-2)] transition-colors" title="Imprimir Lista">
                             <Printer size={16} /> Imprimir
                         </button>
                     </div>
 
                     {/* View Toggles */}
-                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                    <div className="flex bg-[var(--admin-surface-3)] p-1 rounded-lg">
                         <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'calendar' ? 'bg-[var(--admin-surface-3)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Calendário</button>
                         <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded text-sm font-bold ${viewMode === 'list' ? 'bg-[var(--admin-surface-3)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Lista</button>
                     </div>
@@ -2506,7 +2506,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 <div className="mb-4 flex items-center gap-2">
                     <button
                         onClick={() => setShowPastCourses(!showPastCourses)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${showPastCourses ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200'}`}
+                        className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${showPastCourses ? 'bg-[var(--admin-text-primary)] text-[var(--admin-surface-1)] border-[var(--admin-text-primary)]' : 'bg-[var(--admin-surface-1)] text-[var(--admin-text-secondary)] border-[var(--admin-border)]'}`}
                     >
                         {showPastCourses ? 'Mostrando Histórico Completo' : 'Ocultar Cursos Passados'}
                     </button>
@@ -2515,29 +2515,29 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {viewMode === 'calendar' && (
                 <div className="mb-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex bg-gray-100 p-1 rounded-lg">
-                        <button onClick={() => setCalendarViewMode('Month')} className={`px-3 py-1 rounded text-xs font-bold ${calendarViewMode === 'Month' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Mês</button>
-                        <button onClick={() => setCalendarViewMode('Week')} className={`px-3 py-1 rounded text-xs font-bold ${calendarViewMode === 'Week' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Início (7 Dias)</button>
-                        <button onClick={() => setCalendarViewMode('Year')} className={`px-3 py-1 rounded text-xs font-bold ${calendarViewMode === 'Year' ? 'bg-white shadow-sm' : 'text-gray-500'}`}>Ano</button>
+                    <div className="flex bg-[var(--admin-surface-3)] p-1 rounded-lg">
+                        <button onClick={() => setCalendarViewMode('Month')} className={`px-3 py-1 rounded text-xs font-bold ${calendarViewMode === 'Month' ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Mês</button>
+                        <button onClick={() => setCalendarViewMode('Week')} className={`px-3 py-1 rounded text-xs font-bold ${calendarViewMode === 'Week' ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Início (7 Dias)</button>
+                        <button onClick={() => setCalendarViewMode('Year')} className={`px-3 py-1 rounded text-xs font-bold ${calendarViewMode === 'Year' ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm' : 'text-[var(--admin-text-secondary)]'}`}>Ano</button>
                     </div>
 
-                    <div className="flex items-center gap-4 bg-white border border-gray-200 p-2 rounded-lg shadow-sm">
-                        <button onClick={() => setCurrentDate(new Date(currentDate.setFullYear(currentDate.getFullYear() - 1)))} className="p-1 hover:bg-gray-100 rounded" title="Ano Anterior">
+                    <div className="flex items-center gap-4 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] p-2 rounded-lg shadow-sm">
+                        <button onClick={() => setCurrentDate(new Date(currentDate.setFullYear(currentDate.getFullYear() - 1)))} className="p-1 hover:bg-[var(--admin-surface-3)] rounded" title="Ano Anterior">
                             <ChevronLeft size={16} />
                         </button>
                         <span className="font-bold text-lg min-w-[60px] text-center">{currentDate.getFullYear()}</span>
-                        <button onClick={() => setCurrentDate(new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)))} className="p-1 hover:bg-gray-100 rounded" title="Próximo Ano">
+                        <button onClick={() => setCurrentDate(new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)))} className="p-1 hover:bg-[var(--admin-surface-3)] rounded" title="Próximo Ano">
                             <ChevronRight size={16} />
                         </button>
 
                         {calendarViewMode === 'Month' && (
                             <>
                                 <div className="h-4 w-px bg-gray-300 mx-2"></div>
-                                <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))} className="p-1 hover:bg-gray-100 rounded" title="Mês Anterior">
+                                <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))} className="p-1 hover:bg-[var(--admin-surface-3)] rounded" title="Mês Anterior">
                                     <ChevronLeft size={16} />
                                 </button>
                                 <span className="font-bold w-[100px] text-center capitalize">{currentDate.toLocaleString('default', { month: 'long' })}</span>
-                                <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))} className="p-1 hover:bg-gray-100 rounded" title="Próximo Mês">
+                                <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))} className="p-1 hover:bg-[var(--admin-surface-3)] rounded" title="Próximo Mês">
                                     <ChevronRight size={16} />
                                 </button>
                             </>
@@ -2555,19 +2555,19 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             {formData.id ? <Edit className="text-wtech-gold" /> : <Plus className="text-wtech-gold" />}
                             {formData.id ? 'Editar Evento' : 'Novo Evento'}
                         </h3>
-                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-[var(--admin-surface-3)] rounded-full transition-colors">
                             <X size={24} />
                         </button>
                     </div>
 
                     <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Título do Evento</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Título do Evento</label>
                             <input autoFocus className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] text-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Curso de Suspensão Avançada" required />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Tipo de Evento</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Tipo de Evento</label>
                             <div className="flex gap-2">
                                 {['Course', 'Event', 'TrackDay'].map(type => (
                                     <button
@@ -2576,7 +2576,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         onClick={() => setFormData({ ...formData, type: type as any })}
                                         className={`flex-1 p-3 rounded-lg border font-bold text-sm transition-all ${formData.type === type
                                             ? 'bg-black text-white dark:bg-white dark:text-black'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:bg-[var(--admin-surface-2)]'
+                                            : 'bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] border-[var(--admin-border)] hover:bg-[var(--admin-surface-3)]'
                                             }`}
                                     >
                                         {type === 'Course' ? 'Curso' : type === 'TrackDay' ? 'Track Day' : 'Evento'}
@@ -2586,27 +2586,27 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Data de Início</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Data de Início</label>
                             <input type="date" className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Data de Fim (Opcional)</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Data de Fim (Opcional)</label>
                             <input type="date" className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Hora Início</label>
+                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Hora Início</label>
                                 <input type="time" className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Hora Fim</label>
+                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Hora Fim</label>
                                 <input type="time" className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Status</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Status</label>
                             <select className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold" value={formData.status || 'Draft'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
                                 <option value="Draft">Rascunho (Oculto)</option>
                                 <option value="Published">Publicado (Visível)</option>
@@ -2618,7 +2618,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                         {/* LOCATION SECTION */}
                         <div className="md:col-span-2 border-t pt-4 mt-2 border-[var(--admin-border)]">
-                            <label className="block text-sm font-bold mb-3 text-gray-800 uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
+                            <label className="block text-sm font-bold mb-3 text-[var(--admin-text-primary)] uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
                             <div className="grid grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">CEP</label>
@@ -2665,7 +2665,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Modalidade</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Modalidade</label>
                             <select className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
                                 <option value="Presencial">Presencial</option>
                                 <option value="Online">Online</option>
@@ -2674,25 +2674,25 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                         {/* Event Types DON'T have instructor usually? Or maybe they do. Keeping for now. */}
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Resposável / Instrutor</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Resposável / Instrutor</label>
                             <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
 
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-[var(--admin-border)]">
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)]">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">Tipo de Faturamento</label>
+                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Tipo de Faturamento</label>
                                 <div className="flex bg-[var(--admin-surface-1)] p-1 rounded-lg border border-[var(--admin-border)]">
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, isInternational: false, currency: 'BRL' })}
-                                        className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${!formData.isInternational ? 'bg-wtech-black text-white' : 'text-gray-500'}`}
+                                        className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${!formData.isInternational ? 'bg-wtech-black text-white' : 'text-[var(--admin-text-secondary)]'}`}
                                     >
                                         🇧🇷 Nacional
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, isInternational: true })}
-                                        className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${formData.isInternational ? 'bg-indigo-600 text-white' : 'text-gray-500'}`}
+                                        className={`flex-1 py-2 rounded-md text-xs font-bold transition-all ${formData.isInternational ? 'bg-indigo-600 text-white' : 'text-[var(--admin-text-secondary)]'}`}
                                     >
                                         🌍 Internacional
                                     </button>
@@ -2701,7 +2701,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                             {formData.isInternational && (
                                 <div className="animate-in fade-in slide-in-from-left-2">
-                                    <label className="block text-sm font-bold mb-1 text-gray-700">Moeda</label>
+                                    <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Moeda</label>
                                     <select
                                         className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold"
                                         value={formData.currency || 'USD'}
@@ -2714,7 +2714,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             )}
 
                             <div className={!formData.isInternational ? 'md:col-span-2' : ''}>
-                                <label className="block text-sm font-bold mb-1 text-gray-700">
+                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">
                                     Vagas / Cotas
                                 </label>
                                 <input type="number" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
@@ -2722,7 +2722,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                             <div className="md:col-span-3 grid grid-cols-2 gap-4 pt-4 border-t border-[var(--admin-border)]">
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700">
+                                    <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">
                                         Valor do Curso ({formData.currency || 'BRL'})
                                     </label>
                                     <div className="relative">
@@ -2731,7 +2731,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-700">
+                                    <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">
                                         Reciclagem ({formData.currency || 'BRL'})
                                     </label>
                                     <div className="relative">
@@ -2742,9 +2742,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-gray-200">
+                        <div className="md:col-span-2 grid grid-cols-2 gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-[var(--admin-border)]">
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 flex items-center gap-2"><Award size={14} /> Layout do Certificado</label>
+                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)] flex items-center gap-2"><Award size={14} /> Layout do Certificado</label>
                                 <select
                                     className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]"
                                     value={formData.certificateLayoutId || ''}
@@ -2757,7 +2757,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-bold mb-1 text-gray-700 flex items-center gap-2"><User size={14} /> Layout do Crachá</label>
+                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)] flex items-center gap-2"><User size={14} /> Layout do Crachá</label>
                                 <select
                                     className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]"
                                     value={formData.badgeLayoutId || ''}
@@ -2772,7 +2772,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Imagem de Capa</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Imagem de Capa</label>
                             <div className="flex flex-col gap-2">
                                 <div className="flex gap-4 mb-2">
                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -2792,21 +2792,21 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 )}
 
                                 {formData.image && (
-                                    <div className="mt-2 text-xs text-gray-500">
+                                    <div className="mt-2 text-xs text-[var(--admin-text-secondary)]">
                                         Preview: <br />
-                                        <img src={formData.image} alt="Capa" className="h-20 w-auto rounded border border-gray-200 mt-1 object-cover" />
+                                        <img src={formData.image} alt="Capa" className="h-20 w-auto rounded border border-[var(--admin-border)] mt-1 object-cover" />
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">URL do Mapa (Opcional - Gerado Automático)</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">URL do Mapa (Opcional - Gerado Automático)</label>
                             <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">Cronograma / Conteúdo</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Cronograma / Conteúdo</label>
                             <div className="mb-2 flex gap-2">
                                 <button
                                     type="button"
@@ -2820,7 +2820,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-gray-700">O que levar / Requisitos</label>
+                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">O que levar / Requisitos</label>
                             <textarea rows={4} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
                         </div>
 
@@ -2891,9 +2891,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-gray-200">
+                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-[var(--admin-border)]">
                             <div className="flex gap-2 w-full md:w-auto">
-                                <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-gray-50 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
+                                <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-[var(--admin-surface-2)] flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
                                     <Mail size={16} /> Anunciar p/ Base (Email)
                                 </button>
                                 <button
@@ -2905,8 +2905,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </button>
                             </div>
                             <div className="flex gap-3 w-full md:w-auto">
-                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-100 transition-all">Cancelar</button>
-                                <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-wtech-black text-white rounded-lg font-black hover:bg-gray-800 shadow-xl transition-all active:scale-95">Salvar Curso</button>
+                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)] transition-all">Cancelar</button>
+                                <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-lg font-black shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Curso</button>
                             </div>
                         </div>
                     </form>
@@ -3310,7 +3310,7 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                         <h3 className="text-sm font-bold text-gray-400 uppercase mb-4">Endereço & Localização</h3>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1">CEP</label>
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">CEP</label>
                                 <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} />
                             </div>
                             <div className="md:col-span-2">
@@ -3326,7 +3326,7 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
                                 <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.district || ''} onChange={e => setFormData({ ...formData, district: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Cidade</label>
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">Cidade</label>
                                 <input className="w-full border border-gray-300 p-2 rounded text-gray-900" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
                             </div>
                             <div>
@@ -6719,8 +6719,8 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
-                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-gray-50">Cancelar</button>
-                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-wtech-black text-white rounded-lg font-bold hover:bg-gray-800 dark:bg-white dark:text-black shadow-lg">Salvar Dados</button>
+                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)]">Cancelar</button>
+                                    <button onClick={handleSaveUser} className="flex-1 py-3 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-lg font-bold shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Dados</button>
                                 </div>
                             </div>
                         </motion.div>
