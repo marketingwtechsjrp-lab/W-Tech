@@ -808,7 +808,7 @@ const LPErgonomia: React.FC = () => {
                             >
                                 <div className="h-64 bg-gradient-to-br from-zinc-800 to-black flex items-center justify-center relative overflow-hidden">
                                     <img
-                                        src="http://w-techbrasil.com.br/wp-content/uploads/2026/02/foto-alex-crepaldi.png"
+                                        src="/images/alex-webp.webp"
                                         alt="Alex Crepaldi"
                                         className="w-full h-full object-cover object-top opacity-90 group-hover:scale-105 transition-transform duration-500"
                                     />
@@ -1135,7 +1135,7 @@ const LPErgonomia: React.FC = () => {
                 {/* Background da Seção (Apenas Desktop) */}
                 <div
                     className="hidden lg:block absolute inset-0 bg-cover bg-left-top bg-no-repeat z-0 scale-105"
-                    style={{ backgroundImage: `url('http://w-techbrasil.com.br/wp-content/uploads/2026/02/backgound-alex-crepaldi.png')`, backgroundPosition: 'left top' }}
+                    style={{ backgroundImage: `url('/images/alex-webp.webp')`, backgroundPosition: 'left top' }}
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-zinc-950/40 to-zinc-950 z-0" />
                 </div>
@@ -1144,7 +1144,7 @@ const LPErgonomia: React.FC = () => {
 
                     {/* Imagem Mobile (Escondida no Desktop) */}
                     <div className="lg:hidden w-full h-[400px] sm:h-[500px] relative -mx-0 mb-0 px-6">
-                        <img src="http://w-techbrasil.com.br/wp-content/uploads/2026/02/backgound-alex-crepaldi.png" alt="Alex Crepaldi" loading="lazy" className="w-full h-full object-cover object-left-top rounded-t-3xl" />
+                        <img src="/images/alex-webp.webp" alt="Alex Crepaldi" loading="lazy" className="w-full h-full object-cover object-left-top rounded-t-3xl" />
                         <div className="absolute inset-x-6 bottom-0 top-1/2 bg-gradient-to-t from-zinc-950 to-transparent" />
                     </div>
 
