@@ -2207,7 +2207,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                     {/* Date */}
                                     <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] rounded-xl p-2.5 border border-[var(--admin-border)]">
-                                        <Calendar size={14} className="text-wtech-gold shrink-0" />
+                                        <CalendarIcon size={14} className="text-wtech-gold shrink-0" />
                                         <div>
                                             <div className="text-xs font-black text-[var(--admin-text-primary)]">{formatDateLocal(course.date)}{course.dateEnd ? ` → ${formatDateLocal(course.dateEnd)}` : ''}</div>
                                             <div className="text-[10px] text-[var(--admin-text-tertiary)]">{course.startTime || '08:00'}{course.endTime ? ` – ${course.endTime}` : ''}</div>
@@ -2544,7 +2544,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                     {/* Date Filter */}
                     <div className="flex items-center gap-1.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl px-3 py-1.5">
-                        <Calendar size={13} className="text-[var(--admin-text-tertiary)] shrink-0" />
+                        <CalendarIcon size={13} className="text-[var(--admin-text-tertiary)] shrink-0" />
                         <input type="date" className="text-xs border-none focus:ring-0 text-[var(--admin-text-secondary)] bg-transparent outline-none" value={dateRange.start} onChange={e => setDateRange({ ...dateRange, start: e.target.value })} />
                         <span className="text-[var(--admin-text-tertiary)] text-xs">—</span>
                         <input type="date" className="text-xs border-none focus:ring-0 text-[var(--admin-text-secondary)] bg-transparent outline-none" value={dateRange.end} onChange={e => setDateRange({ ...dateRange, end: e.target.value })} />
