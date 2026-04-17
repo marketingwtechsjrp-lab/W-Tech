@@ -1,5 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.0.3 (2026-04-16) - Courses Module UI/UX Overhaul & Critical Fixes
+- FIX: Resolvido erro fatal de 'tela branca' no módulo de Cursos causado pela função `cn()` não definida.
+- UX: Redesign completo da Lista de Inscritos com novos cards de estatísticas (Moeda, Recebido, Previsto).
+- UX: Modernização dos formulários de alunos e cursos com bordas arredondadas, gradientes premium e melhorias de responsividade.
+- UI: Aplicação de design tokens consistentes (rounded-2xl, sombras dinâmicas) em todo o sub-módulo de Cursos.
+- VERSION: Atualização para v3.0.3.
+
 ## v3.0.2 (2026-04-13) - Stripe Fixes & Currency Intelligence
 - FIX: Resolvido erro de 'tela branca' ao gerar links de pagamento (Importação faltante lucide-react).
 - FIX: Inteligência Multi-Moeda na quitação de saldos (Conversão automática BRL/EUR/USD).

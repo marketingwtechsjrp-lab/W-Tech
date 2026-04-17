@@ -56,7 +56,7 @@ import AdminSidebar from '../components/admin/AdminSidebar';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
-import { formatDateLocal } from '../lib/utils';
+import { formatDateLocal, cn } from '../lib/utils';
 import changelogData from '../CHANGELOG.json';
 import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
 import { History } from 'lucide-react';
@@ -1593,66 +1593,81 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         const totalPotential = enrollments.length * (currentCourse.price || 0);
 
         return (
-            <div className="bg-[var(--admin-surface-1)] p-8 rounded-lg shadow-sm border border-[var(--admin-border)] min-h-screen">
-                <div className="flex justify-between items-start mb-8 print:hidden">
+            <div className="bg-[var(--admin-surface-1)] p-8 rounded-2xl shadow-sm border border-[var(--admin-border)] min-h-screen">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-6 print:hidden">
                     <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <button onClick={() => setShowEnrollments(false)} className="text-sm font-bold text-[var(--admin-text-secondary)] hover:text-black dark:hover:text-white flex items-center gap-1">
-                                <ArrowRight className="rotate-180" size={14} /> Voltar
-                            </button>
-                        </div>
-                        <h2 className="text-2xl font-black text-[var(--admin-text-primary)]">Lista de Inscritos</h2>
-                        <p className="text-[var(--admin-text-secondary)]">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
-                        <div className="mt-2 text-sm flex gap-4">
-                            <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded text-blue-700 dark:text-blue-400">Moeda: {currentCourse.currency || 'BRL'}</span>
-                            <span className="text-green-600 dark:text-green-400 font-bold bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded">Recebido: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</span>
-                            <span className="text-[var(--admin-text-secondary)] font-bold bg-[var(--admin-surface-3)] px-2 py-1 rounded">Total Previsto: {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</span>
-                        </div>
+                        <button onClick={() => setShowEnrollments(false)} className="text-xs font-bold text-[var(--admin-text-secondary)] hover:text-[var(--admin-text-primary)] flex items-center gap-1 mb-3 transition-colors">
+                            <ArrowRight className="rotate-180" size={13} /> Voltar para Cursos
+                        </button>
+                        <h2 className="text-2xl font-black text-[var(--admin-text-primary)] tracking-tight">Lista de Inscritos</h2>
+                        <p className="text-sm text-[var(--admin-text-secondary)] mt-0.5">{currentCourse.title} • {formatDateLocal(currentCourse.date)} {currentCourse.isInternational ? '🌍' : '🇧🇷'}</p>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setEditingEnrollment({ status: 'Confirmed', amountPaid: 0 })} className="bg-wtech-gold text-black px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-yellow-500">
-                            <Plus size={18} /> Adicionar Aluno
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setEditingEnrollment({ status: 'Confirmed', amountPaid: 0 })} className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-4 py-2.5 rounded-lg font-black flex items-center gap-2 shadow-sm hover:scale-[1.02] active:scale-95 transition-all text-sm">
+                            <Plus size={16} /> Adicionar Aluno
                         </button>
-                        <button onClick={printList} className="bg-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800">
-                            <Printer size={18} /> Imprimir Lista
+                        <button onClick={printList} className="px-4 py-2.5 rounded-lg font-bold flex items-center gap-2 text-sm border border-[var(--admin-border)] bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] hover:bg-[var(--admin-surface-3)] transition-all">
+                            <Printer size={16} /> Imprimir
                         </button>
-                        <button onClick={() => handleGenerateCertificates(false)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Certificados em PDF">
-                            <Award size={18} />
+                        <button onClick={() => handleGenerateCertificates(false)} className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-[var(--admin-border)] bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] transition-all" title="Gerar Certificados em PDF">
+                            <Award size={15} /> Certificados
                         </button>
-                        <button onClick={() => handleGenerateCertificates(true)} className="bg-wtech-black text-white px-4 py-2 rounded font-bold flex items-center gap-2 hover:bg-gray-800 border border-gray-700" title="Gerar Crachás em PDF">
-                            <User size={18} />
+                        <button onClick={() => handleGenerateCertificates(true)} className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-[var(--admin-border)] bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] transition-all" title="Gerar Crachás em PDF">
+                            <User size={15} /> Crachás
                         </button>
+                    </div>
+                </div>
+
+                {/* Stats do curso */}
+                <div className="grid grid-cols-3 gap-3 mb-6 print:hidden">
+                    <div className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1">Moeda</p>
+                        <p className="text-base font-black text-[var(--admin-info)]">{currentCourse.currency || 'BRL'}</p>
+                    </div>
+                    <div className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1">Recebido</p>
+                        <p className="text-base font-black text-[var(--admin-success)]">{currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPaid.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)] mb-1">Total Previsto</p>
+                        <p className="text-base font-black text-[var(--admin-text-primary)]">{currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {totalPotential.toFixed(2)}</p>
                     </div>
                 </div>
 
                 {/* Enrollment Edit Form */}
                 {editingEnrollment && (
-                    <div className="mb-6 bg-[var(--admin-surface-2)] p-6 rounded-lg border border-[var(--admin-border)] animate-in fade-in slide-in-from-top-2 print:hidden">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">{editingEnrollment.id ? 'Editar Aluno' : 'Novo Aluno'}</h3>
-                            <button onClick={() => setEditingEnrollment(null)} className="text-[var(--admin-text-secondary)] hover:text-red-500 transition-colors"><X size={18} /></button>
+                    <div className="mb-6 bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm animate-in fade-in slide-in-from-top-2 print:hidden overflow-hidden">
+                        {/* Form header */}
+                        <div className="flex justify-between items-center px-6 py-4 border-b border-[var(--admin-border)] bg-[var(--admin-surface-2)]">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 rounded-lg bg-[var(--admin-accent-gold-muted)]">
+                                    {editingEnrollment.id ? <Edit size={15} className="text-[var(--admin-accent-gold)]" /> : <Plus size={15} className="text-[var(--admin-accent-gold)]" />}
+                                </div>
+                                <h3 className="font-black text-base text-[var(--admin-text-primary)] uppercase tracking-tight">{editingEnrollment.id ? 'Editar Aluno' : 'Novo Aluno'}</h3>
+                            </div>
+                            <button onClick={() => setEditingEnrollment(null)} className="p-1.5 hover:bg-[var(--admin-surface-3)] rounded-lg text-[var(--admin-text-secondary)] hover:text-red-500 transition-colors"><X size={16} /></button>
                         </div>
-                        <form onSubmit={handleSaveEnrollment} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* ... Fields ... reuse previous fields ... */}
+                        <form onSubmit={handleSaveEnrollment} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Nome Completo</label>
-                                <input required className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentName || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentName: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Nome Completo</label>
+                                <input required className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.studentName || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentName: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Email</label>
-                                <input type="email" className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentEmail || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentEmail: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Email</label>
+                                <input type="email" className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.studentEmail || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentEmail: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Telefone/WhatsApp</label>
-                                <input className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Telefone / WhatsApp</label>
+                                <input className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.studentPhone || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentPhone: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">CPF</label>
-                                <input className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">CPF</label>
+                                <input className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.studentCpf || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, studentCpf: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Tamanho da Camiseta</label>
-                                <select className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Tamanho da Camiseta</label>
+                                <select className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.tShirtSize || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, tShirtSize: e.target.value })}>
                                     <option value="">Selecione...</option>
                                     <option value="P">P</option>
                                     <option value="M">M</option>
@@ -1662,8 +1677,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Status</label>
-                                <select className="w-full p-2 border rounded bg-[var(--admin-surface-3)]" value={editingEnrollment.status || 'Confirmed'} onChange={e => setEditingEnrollment({ ...editingEnrollment, status: e.target.value as any })}>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Status</label>
+                                <select className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.status || 'Confirmed'} onChange={e => setEditingEnrollment({ ...editingEnrollment, status: e.target.value as any })}>
                                     <option value="Pending">Pendente</option>
                                     <option value="Confirmed">Confirmado</option>
                                     <option value="CheckedIn">Presente (Check-in)</option>
@@ -1673,10 +1688,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             {/* Financial Fields */}
                             <div className="md:col-span-2 grid grid-cols-3 gap-4 border-t border-[var(--admin-border)] pt-4 mt-2">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Valor Total (Negociado)</label>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Valor Total (Negociado)</label>
                                     <input
                                         type="number"
-                                        className="w-full p-2 border border-[var(--admin-border)] rounded font-bold text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]"
+                                        className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
                                         value={editingEnrollment.totalAmount ?? currentCourse.price ?? 0}
                                         onChange={e => setEditingEnrollment({ ...editingEnrollment, totalAmount: parseFloat(e.target.value) })}
                                     />
@@ -1700,17 +1715,17 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     )}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Valor Pago</label>
-                                    <input type="number" step="0.01" className="w-full p-2 border rounded font-bold text-green-700" value={editingEnrollment.amountPaid || 0} onChange={e => setEditingEnrollment({ ...editingEnrollment, amountPaid: parseFloat(e.target.value) })} />
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Valor Pago</label>
+                                    <input type="number" step="0.01" className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-success)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.amountPaid || 0} onChange={e => setEditingEnrollment({ ...editingEnrollment, amountPaid: parseFloat(e.target.value) })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Saldo a Pagar</label>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Saldo a Pagar</label>
                                     <div className="text-lg font-bold text-red-600">
                                         {currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$'} {((editingEnrollment.totalAmount ?? currentCourse.price ?? 0) - (editingEnrollment.amountPaid || 0)).toFixed(2)}
                                     </div>
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold uppercase text-[var(--admin-text-secondary)] mb-1">Método de Pagamento</label>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Método de Pagamento</label>
                                     <div className="flex gap-2">
                                         {['Pix', 'Cartão Crédito', 'Cartão Débito', 'Dinheiro', 'Boleto'].map(method => (
                                             <button
@@ -1727,26 +1742,26 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </div>
 
                                 {/* Address & Credentialing Section */}
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[var(--admin-border)] pt-4 bg-[var(--admin-surface-3)] p-4 rounded-lg">
-                                    <h4 className="md:col-span-2 font-bold text-[var(--admin-text-primary)] flex items-center gap-2"><MapPin size={16} /> Endereço & Credenciamento</h4>
-
+                                <div className="md:col-span-2 border-t border-[var(--admin-border)] pt-4">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)] flex items-center gap-1.5 mb-3"><MapPin size={13} /> Endereço & Credenciamento</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">CEP</label>
-                                        <input className="w-full p-2 border rounded" value={editingEnrollment.zipCode || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, zipCode: e.target.value })} />
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">CEP</label>
+                                        <input className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.zipCode || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, zipCode: e.target.value })} />
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="flex-1">
-                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">Cidade</label>
-                                            <input className="w-full p-2 border rounded" value={editingEnrollment.city || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, city: e.target.value })} />
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Cidade</label>
+                                            <input className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.city || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, city: e.target.value })} />
                                         </div>
                                         <div className="w-20">
-                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">UF</label>
-                                            <input className="w-full p-2 border rounded" value={editingEnrollment.state || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, state: e.target.value })} />
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">UF</label>
+                                            <input className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.state || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, state: e.target.value })} />
                                         </div>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] mb-1">Endereço Completo (Rua, Nº, Bairro)</label>
-                                        <input className="w-full p-2 border rounded" value={editingEnrollment.address || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, address: e.target.value })} />
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Endereço Completo (Rua, Nº, Bairro)</label>
+                                        <input className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={editingEnrollment.address || ''} onChange={e => setEditingEnrollment({ ...editingEnrollment, address: e.target.value })} />
                                     </div>
 
                                     <div className="md:col-span-2 flex items-center gap-2 mt-2 bg-[var(--admin-surface-1)] p-3 rounded border border-[var(--admin-border)]">
@@ -1782,10 +1797,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                 </div>
                             </div>
+                            </div>
 
-                            <div className="md:col-span-2 flex justify-end gap-2 mt-4">
-                                <button type="button" onClick={() => setEditingEnrollment(null)} className="px-4 py-2 text-[var(--admin-text-secondary)] font-bold">Cancelar</button>
-                                <button type="submit" className="px-6 py-2 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded font-bold shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Aluno</button>
+                            <div className="md:col-span-2 flex justify-end gap-3 mt-2 pt-4 border-t border-[var(--admin-border)]">
+                                <button type="button" onClick={() => setEditingEnrollment(null)} className="px-5 py-2.5 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)] transition-all">Cancelar</button>
+                                <button type="submit" className="px-8 py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-lg font-black shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Aluno</button>
                             </div>
                         </form>
                     </div>
@@ -2620,11 +2636,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <button
                                 key={i}
                                 onClick={() => s.key && setActiveStatusFilter(activeStatusFilter === s.key ? null : s.key)}
-                                className={cn(
-                                    'rounded-2xl p-4 border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-left transition-all hover:shadow-sm',
-                                    s.key ? 'cursor-pointer hover:border-current/30' : 'cursor-default',
-                                    activeStatusFilter === s.key && `ring-2 ring-offset-1 ${s.ring}`
-                                )}
+                                className={`rounded-2xl p-4 border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-left transition-all hover:shadow-sm ${s.key ? 'cursor-pointer hover:border-current/30' : 'cursor-default'} ${activeStatusFilter === s.key ? `ring-2 ring-offset-1 ${s.ring}` : ''}`}
                             >
                                 <div className="flex items-start justify-between mb-2">
                                     <div className={`p-2 rounded-xl ${s.bg}`}>
@@ -2695,33 +2707,38 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
             {/* INLINE FORM / TOP INSERTION */}
             {isEditing && (
-                <div className="mb-8 bg-[var(--admin-surface-1)] p-8 rounded-2xl shadow-xl border border-[var(--admin-border)] animate-in fade-in zoom-in-95">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-black text-2xl text-[var(--admin-text-primary)] uppercase tracking-tight flex items-center gap-2">
-                            {formData.id ? <Edit className="text-wtech-gold" /> : <Plus className="text-wtech-gold" />}
-                            {formData.id ? 'Editar Evento' : 'Novo Evento'}
-                        </h3>
-                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-[var(--admin-surface-3)] rounded-full transition-colors">
-                            <X size={24} />
+                <div className="mb-8 bg-[var(--admin-surface-1)] rounded-2xl shadow-xl border border-[var(--admin-border)] animate-in fade-in zoom-in-95 overflow-hidden">
+                    {/* Form header */}
+                    <div className="flex justify-between items-center px-8 py-5 border-b border-[var(--admin-border)] bg-[var(--admin-surface-2)]">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-[var(--admin-accent-gold-muted)]">
+                                {formData.id ? <Edit size={16} className="text-[var(--admin-accent-gold)]" /> : <Plus size={16} className="text-[var(--admin-accent-gold)]" />}
+                            </div>
+                            <h3 className="font-black text-xl text-[var(--admin-text-primary)] uppercase tracking-tight">
+                                {formData.id ? 'Editar Evento' : 'Novo Evento'}
+                            </h3>
+                        </div>
+                        <button onClick={() => { setIsEditing(false); setFormData({}); }} className="p-2 hover:bg-[var(--admin-surface-3)] rounded-xl transition-colors text-[var(--admin-text-secondary)] hover:text-[var(--admin-text-primary)]">
+                            <X size={20} />
                         </button>
                     </div>
 
-                    <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Título do Evento</label>
-                            <input autoFocus className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] text-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Curso de Suspensão Avançada" required />
+                    <form onSubmit={handleSave} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Título do Evento</label>
+                            <input autoFocus className="w-full border border-[var(--admin-border)] p-3 rounded-xl text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] text-lg font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Ex: Curso de Suspensão Avançada" required />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Tipo de Evento</label>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Tipo de Evento</label>
                             <div className="flex gap-2">
                                 {['Course', 'Event', 'TrackDay'].map(type => (
                                     <button
                                         type="button"
                                         key={type}
                                         onClick={() => setFormData({ ...formData, type: type as any })}
-                                        className={`flex-1 p-3 rounded-lg border font-bold text-sm transition-all ${formData.type === type
-                                            ? 'bg-black text-white dark:bg-white dark:text-black'
+                                        className={`flex-1 p-2.5 rounded-lg border font-bold text-sm transition-all ${formData.type === type
+                                            ? 'bg-[var(--admin-accent-gold)] text-black border-[var(--admin-accent-gold)]'
                                             : 'bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] border-[var(--admin-border)] hover:bg-[var(--admin-surface-3)]'
                                             }`}
                                     >
@@ -2732,28 +2749,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Data de Início</label>
-                            <input type="date" className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Data de Fim (Opcional)</label>
-                            <input type="date" className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Hora Início</label>
-                                <input type="time" className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Hora Fim</label>
-                                <input type="time" className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Status</label>
-                            <select className="w-full border border-[var(--admin-border)] p-3 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold" value={formData.status || 'Draft'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Status</label>
+                            <select className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.status || 'Draft'} onChange={e => setFormData({ ...formData, status: e.target.value as any })}>
                                 <option value="Draft">Rascunho (Oculto)</option>
                                 <option value="Published">Publicado (Visível)</option>
                                 <option value="Full">Esgotado</option>
@@ -2762,48 +2759,68 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </select>
                         </div>
 
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Data de Início</label>
+                            <input type="date" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.date ? formData.date.split('T')[0] : ''} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Data de Fim <span className="normal-case font-normal">(Opcional)</span></label>
+                            <input type="date" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.dateEnd ? formData.dateEnd.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Hora Início</label>
+                                <input type="time" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.startTime || ''} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Hora Fim</label>
+                                <input type="time" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.endTime || ''} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
+                            </div>
+                        </div>
+
                         {/* LOCATION SECTION */}
-                        <div className="md:col-span-2 border-t pt-4 mt-2 border-[var(--admin-border)]">
-                            <label className="block text-sm font-bold mb-3 text-[var(--admin-text-primary)] uppercase flex items-center gap-2"><MapPin size={16} /> Localização e Endereço</label>
-                            <div className="grid grid-cols-4 gap-4">
+                        <div className="md:col-span-2 border-t pt-5 mt-2 border-[var(--admin-border)]">
+                            <p className="text-xs font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)] flex items-center gap-1.5 mb-4"><MapPin size={13} /> Localização e Endereço</p>
+                            <div className="grid grid-cols-4 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">CEP</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} onBlur={handleBlurCEP} placeholder="00000-000" />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">CEP</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.zipCode || ''} onChange={e => setFormData({ ...formData, zipCode: e.target.value })} onBlur={handleBlurCEP} placeholder="00000-000" />
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Endereço (Rua/Av)</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Endereço (Rua/Av)</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Número</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.addressNumber || ''} onChange={e => setFormData({ ...formData, addressNumber: e.target.value })} onBlur={handleGeocodeCourse} placeholder="Ex: 123" />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Número</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.addressNumber || ''} onChange={e => setFormData({ ...formData, addressNumber: e.target.value })} onBlur={handleGeocodeCourse} placeholder="Ex: 123" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Bairro</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.addressNeighborhood || ''} onChange={e => setFormData({ ...formData, addressNeighborhood: e.target.value })} />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Bairro</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.addressNeighborhood || ''} onChange={e => setFormData({ ...formData, addressNeighborhood: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Cidade</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Cidade</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Estado</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.state || ''} onChange={e => setFormData({ ...formData, state: e.target.value })} />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Estado</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.state || ''} onChange={e => setFormData({ ...formData, state: e.target.value })} />
                                 </div>
                                 <div className="col-span-4">
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Local (Exibido no Cabeçalho)</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Local (Exibido no Cabeçalho)</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Latitude</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] bg-[var(--admin-surface-3)]" value={formData.latitude || ''} readOnly />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Latitude</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-3)] opacity-70" value={formData.latitude || ''} readOnly />
                                 </div>
                                 <div className="col-span-2">
-                                    <label className="block text-xs font-bold mb-1 text-[var(--admin-text-secondary)]">Longitude</label>
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] bg-[var(--admin-surface-3)]" value={formData.longitude || ''} readOnly />
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[var(--admin-text-secondary)]">Longitude</label>
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-3)] opacity-70" value={formData.longitude || ''} readOnly />
                                 </div>
                                 <div className="col-span-4">
-                                    <button type="button" onClick={handleGeocodeCourse} className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-3 py-1 rounded font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-900/40">
+                                    <button type="button" onClick={handleGeocodeCourse} className="text-xs bg-[var(--admin-info-muted)] text-[var(--admin-info)] px-3 py-1.5 rounded-lg font-bold hover:opacity-80 border border-[var(--admin-info)]/20 transition-all">
                                         📍 Atualizar Pin no Mapa (Forçar)
                                     </button>
                                 </div>
@@ -2811,17 +2828,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Modalidade</label>
-                            <select className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Modalidade</label>
+                            <select className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.locationType || 'Presencial'} onChange={e => setFormData({ ...formData, locationType: e.target.value as any })}>
                                 <option value="Presencial">Presencial</option>
                                 <option value="Online">Online</option>
                             </select>
                         </div>
 
-                        {/* Event Types DON'T have instructor usually? Or maybe they do. Keeping for now. */}
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Resposável / Instrutor</label>
-                            <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Responsável / Instrutor</label>
+                            <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.instructor || ''} onChange={e => setFormData({ ...formData, instructor: e.target.value })} />
                         </div>
 
                         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 bg-[var(--admin-surface-2)] p-6 rounded-2xl border border-[var(--admin-border)]">
@@ -2918,76 +2934,74 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Imagem de Capa</label>
-                            <div className="flex flex-col gap-2">
-                                <div className="flex gap-4 mb-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Imagem de Capa</label>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-[var(--admin-text-primary)]">
                                         <input type="radio" name="imgSource" checked={formData.imageSourceType !== 'Upload'} onChange={() => setFormData({ ...formData, imageSourceType: 'Url' })} />
-                                        <span className="text-sm">Link Externo (URL)</span>
+                                        Link Externo (URL)
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-[var(--admin-text-primary)]">
                                         <input type="radio" name="imgSource" checked={formData.imageSourceType === 'Upload'} onChange={() => setFormData({ ...formData, imageSourceType: 'Upload' })} />
-                                        <span className="text-sm">Upload de Arquivo</span>
+                                        Upload de Arquivo
                                     </label>
                                 </div>
 
                                 {formData.imageSourceType === 'Upload' ? (
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" />
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" />
                                 ) : (
-                                    <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
+                                    <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
                                 )}
 
                                 {formData.image && (
-                                    <div className="mt-2 text-xs text-[var(--admin-text-secondary)]">
-                                        Preview: <br />
-                                        <img src={formData.image} alt="Capa" className="h-20 w-auto rounded border border-[var(--admin-border)] mt-1 object-cover" />
-                                    </div>
+                                    <img src={formData.image} alt="Capa" className="h-24 w-auto rounded-lg border border-[var(--admin-border)] object-cover" />
                                 )}
                             </div>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">URL do Mapa (Opcional - Gerado Automático)</label>
-                            <input className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">URL do Mapa <span className="normal-case font-normal">(Opcional — gerado automático)</span></label>
+                            <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.mapUrl || ''} onChange={e => setFormData({ ...formData, mapUrl: e.target.value })} placeholder="https://maps.google.com/..." />
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Cronograma / Conteúdo</label>
-                            <div className="mb-2 flex gap-2">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)]">Cronograma / Conteúdo</label>
                                 <button
                                     type="button"
                                     onClick={() => setFormData({ ...formData, schedule: DEFAULT_COURSE_SCHEDULE })}
-                                    className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 px-2 py-1 rounded font-bold hover:bg-yellow-200"
+                                    className="text-xs bg-[var(--admin-accent-gold-muted)] text-[var(--admin-accent-gold)] border border-[var(--admin-accent-gold)]/20 px-2.5 py-1 rounded-lg font-bold hover:opacity-80 transition-all"
                                 >
                                     📥 Carregar Modelo: Suspensão
                                 </button>
                             </div>
-                            <textarea rows={8} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
+                            <textarea rows={8} className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">O que levar / Requisitos</label>
-                            <textarea rows={4} className="w-full border border-[var(--admin-border)] p-2 rounded text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">O que levar / Requisitos</label>
+                            <textarea rows={4} className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.whatToBring || ''} onChange={e => setFormData({ ...formData, whatToBring: e.target.value })} placeholder="Ex: Macacão, Luvas, Caderno para anotações..." />
                         </div>
 
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[var(--admin-border)] pt-4">
-                            <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100/50 dark:border-green-900/30">
-                                <h4 className="font-bold text-green-800 dark:text-green-400 text-xs uppercase mb-3 flex items-center gap-2">
-                                    <Bell size={14} /> Lembrete Antecipado
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[var(--admin-border)] pt-5">
+                            <div className="bg-[var(--admin-success-muted)] p-4 rounded-xl border border-[var(--admin-success)]/20">
+                                <h4 className="font-bold text-[var(--admin-success)] text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <Bell size={13} /> Lembrete Antecipado
                                 </h4>
                                 <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={formData.reminder5dEnabled ?? true}
                                             onChange={e => setFormData({ ...formData, reminder5dEnabled: e.target.checked })}
+                                            className="w-4 h-4"
                                         />
-                                        <span className="text-sm font-bold">Ativar</span>
-                                    </div>
+                                        <span className="text-sm font-bold text-[var(--admin-text-primary)]">Ativar</span>
+                                    </label>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            className="w-16 p-1 border rounded text-sm font-bold text-center bg-[var(--admin-surface-2)]"
+                                            className="w-16 p-1.5 border border-[var(--admin-border)] rounded-lg text-sm font-bold text-center bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] outline-none"
                                             value={formData.reminder5dDays ?? 5}
                                             onChange={e => setFormData({ ...formData, reminder5dDays: parseInt(e.target.value) })}
                                         />
@@ -2996,23 +3010,24 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100/50 dark:border-blue-900/30">
-                                <h4 className="font-bold text-blue-800 dark:text-blue-400 text-xs uppercase mb-3 flex items-center gap-2">
-                                    <Bell size={14} /> Lembrete Final
+                            <div className="bg-[var(--admin-info-muted)] p-4 rounded-xl border border-[var(--admin-info)]/20">
+                                <h4 className="font-bold text-[var(--admin-info)] text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <Bell size={13} /> Lembrete Final
                                 </h4>
                                 <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={formData.reminder1dEnabled ?? true}
                                             onChange={e => setFormData({ ...formData, reminder1dEnabled: e.target.checked })}
+                                            className="w-4 h-4"
                                         />
-                                        <span className="text-sm font-bold">Ativar</span>
-                                    </div>
+                                        <span className="text-sm font-bold text-[var(--admin-text-primary)]">Ativar</span>
+                                    </label>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            className="w-16 p-1 border rounded text-sm font-bold text-center bg-[var(--admin-surface-2)]"
+                                            className="w-16 p-1.5 border border-[var(--admin-border)] rounded-lg text-sm font-bold text-center bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] outline-none"
                                             value={formData.reminder1dDays ?? 1}
                                             onChange={e => setFormData({ ...formData, reminder1dDays: parseInt(e.target.value) })}
                                         />
@@ -3022,37 +3037,37 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 bg-[var(--admin-surface-2)] p-4 rounded border border-[var(--admin-border)]">
-                            <label className="flex items-center gap-2 cursor-pointer">
+                        <div className="md:col-span-2 bg-[var(--admin-accent-gold-muted)] p-4 rounded-xl border border-[var(--admin-accent-gold)]/20">
+                            <label className="flex items-center gap-3 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    className="w-5 h-5"
+                                    className="w-4 h-4"
                                     checked={generateLP}
                                     onChange={e => setGenerateLP(e.target.checked)}
                                 />
-                                <span className="font-bold text-[var(--admin-text-primary)]">Gerar Landing Page Automática?</span>
+                                <div>
+                                    <span className="font-bold text-[var(--admin-text-primary)] text-sm">Gerar Landing Page Automática?</span>
+                                    <p className="text-xs text-[var(--admin-text-secondary)] mt-0.5">Cria uma página em <code className="bg-[var(--admin-surface-3)] px-1 rounded">/lp/titulo-data</code> vinculada a este curso.</p>
+                                </div>
                             </label>
-                            <div className="text-xs text-[var(--admin-text-secondary)] mt-1 ml-7">
-                                Cria uma página em <code>/lp/titulo-data</code> vinculada a este curso.
-                            </div>
                         </div>
 
-                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 bg-[var(--admin-surface-1)] p-4 rounded-xl border border-[var(--admin-border)]">
+                        <div className="md:col-span-2 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-[var(--admin-border)] pt-6">
                             <div className="flex gap-2 w-full md:w-auto">
-                                <button type="button" className="flex-1 md:flex-none py-3 px-6 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] text-blue-600 dark:text-blue-400 rounded-lg font-bold hover:bg-[var(--admin-surface-2)] flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95">
-                                    <Mail size={16} /> Anunciar p/ Base (Email)
+                                <button type="button" className="flex-1 md:flex-none py-2.5 px-5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-info)] rounded-lg font-bold hover:bg-[var(--admin-surface-3)] flex items-center justify-center gap-2 text-sm transition-all active:scale-95">
+                                    <Mail size={15} /> Anunciar p/ Base
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleTestReminderMessage}
-                                    className="flex-1 md:flex-none py-3 px-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg font-bold hover:bg-green-100 dark:hover:bg-green-900/30 flex items-center justify-center gap-2 text-sm shadow-sm transition-all active:scale-95"
+                                    className="flex-1 md:flex-none py-2.5 px-5 bg-[var(--admin-success-muted)] border border-[var(--admin-success)]/20 text-[var(--admin-success)] rounded-lg font-bold hover:opacity-80 flex items-center justify-center gap-2 text-sm transition-all active:scale-95"
                                 >
-                                    <MessageCircle size={16} /> Testar Lembrete (WhatsApp)
+                                    <MessageCircle size={15} /> Testar Lembrete
                                 </button>
                             </div>
                             <div className="flex gap-3 w-full md:w-auto">
-                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-8 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)] transition-all">Cancelar</button>
-                                <button type="submit" className="flex-1 md:flex-none px-12 py-3 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-lg font-black shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Curso</button>
+                                <button type="button" onClick={() => { setIsEditing(false); setFormData({}); }} className="flex-1 md:flex-none px-6 py-2.5 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)] transition-all">Cancelar</button>
+                                <button type="submit" className="flex-1 md:flex-none px-10 py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-lg font-black shadow-md shadow-yellow-500/20 hover:scale-[1.02] active:scale-95 transition-all">Salvar Curso</button>
                             </div>
                         </div>
                     </form>
@@ -4864,41 +4879,102 @@ const SettingsView = () => {
         }
     };
 
+    const settingsNav = [
+        {
+            group: 'Sistema',
+            items: [
+                { id: 'Geral', icon: Settings, label: 'Geral' },
+                { id: 'Backup & Reset', icon: Save, label: 'Backup & Reset' },
+                { id: 'Histórico de Versões', icon: History, label: 'Histórico' },
+            ]
+        },
+        {
+            group: 'Conteúdo',
+            items: [
+                { id: 'SEO', icon: Globe, label: 'SEO' },
+                { id: 'Layout Menu', icon: Layout, label: 'Layout do Menu' },
+                { id: 'Categorias', icon: List, label: 'Categorias' },
+            ]
+        },
+        {
+            group: 'Comunicação',
+            items: [
+                { id: 'E-mail', icon: Mail, label: 'E-mail (SMTP)' },
+                { id: 'WhatsApp API', icon: MessageCircle, label: 'WhatsApp API' },
+                { id: 'Modelos Msg', icon: MessageSquare, label: 'Modelos de Msg' },
+            ]
+        },
+        {
+            group: 'Integrações & IA',
+            items: [
+                { id: 'IA & Integrações', icon: BrainCircuit, label: 'GPT & Gemini' },
+                { id: 'Marketplace & ERP', icon: ShoppingBag, label: 'Marketplace & ERP' },
+                { id: 'Scripts Globais', icon: Code, label: 'Scripts Globais' },
+            ]
+        },
+        {
+            group: 'Segurança',
+            items: [
+                { id: 'Permissões & Cargos', icon: Shield, label: 'Permissões & Cargos' },
+            ]
+        },
+    ];
+
+    const activeTabLabel = settingsNav.flatMap(g => g.items).find(i => i.id === activeTab)?.label ?? activeTab;
+    const ActiveTabIcon = settingsNav.flatMap(g => g.items).find(i => i.id === activeTab)?.icon ?? Settings;
+
     return (
-        <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-sm border border-[var(--admin-border)] overflow-hidden flex flex-col h-full">
-            {/* Header / Tabs */}
-            {/* Header / Tabs */}
-            <div className="border-b border-gray-200 bg-[var(--admin-surface-2)] px-6 pt-4 pb-4 flex items-center justify-between gap-4">
-                <div className="flex-1 overflow-x-auto scrollbar-hide">
-                    <ExpandableTabs
-                        activeId={activeTab}
-                        onChange={setActiveTab}
-                        tabs={[
-                            { id: 'Geral', icon: Settings, label: 'Geral', color: 'bg-blue-500' },
-                            { id: 'E-mail', icon: Mail, label: 'E-mail', color: 'bg-indigo-500' },
-                            { id: 'WhatsApp API', icon: MessageCircle, label: 'WhatsApp', color: 'bg-green-500' },
-                            { id: 'Marketplace & ERP', icon: ShoppingBag, label: 'Integrações', color: 'bg-orange-500' },
-                            { id: 'Modelos Msg', icon: MessageSquare, label: 'Modelos', color: 'bg-teal-500' },
-                            { id: 'Categorias', icon: List, label: 'Categorias', color: 'bg-purple-500' },
-                            { id: 'IA & Integrações', icon: BrainCircuit, label: 'GPT & Gemini', color: 'bg-pink-500' },
-                            { id: 'Permissões & Cargos', icon: Shield, label: 'Permissões', color: 'bg-red-500' },
-                            { id: 'SEO', icon: Globe, label: 'SEO', color: 'bg-emerald-500' },
-                            { id: 'Scripts Globais', icon: Code, label: 'Scripts', color: 'bg-yellow-500' },
-                            { id: 'Layout Menu', icon: Layout, label: 'Layout Menu', color: 'bg-cyan-500' },
-                            { id: 'Histórico de Versões', icon: History, label: 'Versões', color: 'bg-gray-500' },
-                            { id: 'Backup & Reset', icon: Save, label: 'Backup', color: 'bg-blue-600' },
-                        ]}
-                    />
+        <div className="bg-[var(--admin-surface-1)] rounded-2xl shadow-sm border border-[var(--admin-border)] overflow-hidden flex h-full min-h-0">
+
+            {/* ── Sidebar de Navegação ── */}
+            <aside className="w-56 flex-shrink-0 border-r border-[var(--admin-border)] bg-[var(--admin-surface-2)] overflow-y-auto custom-scrollbar py-4">
+                {settingsNav.map(group => (
+                    <div key={group.group} className="mb-5 px-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-tertiary)] mb-1.5 px-2">{group.group}</p>
+                        {group.items.map(item => {
+                            const active = activeTab === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={cn(
+                                        'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all mb-0.5 text-left',
+                                        active
+                                            ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm border border-[var(--admin-border)]'
+                                            : 'text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] hover:text-[var(--admin-text-primary)]'
+                                    )}
+                                >
+                                    <item.icon size={14} className={active ? 'text-[var(--admin-accent-gold)]' : ''} />
+                                    {item.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                ))}
+            </aside>
+
+            {/* ── Área de Conteúdo ── */}
+            <div className="flex-1 flex flex-col min-h-0 min-w-0">
+                {/* Content header */}
+                <div className="border-b border-[var(--admin-border)] bg-[var(--admin-surface-1)] px-8 py-4 flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-[var(--admin-accent-gold-muted)]">
+                            <ActiveTabIcon size={15} className="text-[var(--admin-accent-gold)]" />
+                        </div>
+                        <div>
+                            <h2 className="font-black text-base text-[var(--admin-text-primary)] uppercase tracking-tight">{activeTabLabel}</h2>
+                            <p className="text-[10px] text-[var(--admin-text-tertiary)] font-medium">{settingsNav.find(g => g.items.some(i => i.id === activeTab))?.group}</p>
+                        </div>
+                    </div>
+                    {activeTab !== 'Permissões & Cargos' && activeTab !== 'Histórico de Versões' && activeTab !== 'Backup & Reset' && (
+                        <button
+                            onClick={handleSaveConfig}
+                            className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-5 py-2 rounded-lg font-black text-xs uppercase shadow-md shadow-yellow-500/20 hover:scale-105 transition-transform flex items-center gap-2"
+                        >
+                            <Save size={14} /> Salvar
+                        </button>
+                    )}
                 </div>
-                {activeTab !== 'Permissões & Cargos' && (
-                    <button
-                        onClick={handleSaveConfig}
-                        className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-2 rounded-lg font-bold text-xs uppercase shadow-lg shadow-yellow-500/20 hover:scale-105 transition-transform flex items-center gap-2 whitespace-nowrap"
-                    >
-                        <Save size={16} /> Salvar Alterações
-                    </button>
-                )}
-            </div>
 
             {/* Content Area */}
             <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
@@ -6529,6 +6605,7 @@ const SettingsView = () => {
                         </div>
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

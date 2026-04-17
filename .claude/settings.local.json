@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls:*)",
+      "Bash(grep -rn \"anon.*insert\\\\|insert.*anon\\\\|SITE_Leads.*anon\" /Users/daniel/Documents/Sistemas/Programar/Site-Wtech/*.sql)",
+      "Bash(grep -rn \"anon.*enrollment\\\\|enrollment.*anon\\\\|GRANT.*SITE_Enrollments\" /Users/daniel/Documents/Sistemas/Programar/Site-Wtech/*.sql)",
+      "Bash(grep -rn \"SITE_Enrollments\" /Users/daniel/Documents/Sistemas/Programar/Site-Wtech/*.sql)",
+      "Bash(grep -rn \"GRANT.*SITE_Enrollments\\\\|SITE_Enrollments.*GRANT\" /Users/daniel/Documents/Sistemas/Programar/Site-Wtech/*.sql)",
+      "Bash(npx tsc:*)",
+      "Bash(git worktree *)",
+      "Bash(git branch *)"
+    ]
+  }
+}

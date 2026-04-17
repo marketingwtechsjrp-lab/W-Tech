@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare, Mail, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -147,81 +147,90 @@ const KanbanColumn = ({ title, status, leads, onMove, onDropLead, onLeadClick, o
         return `${hours}h médios`;
     }, [leads]);
 
-    const statusColors: any = {
-        'New': 'bg-wtech-black text-white border-wtech-black',
-        'Contacted': 'bg-blue-600 text-white border-blue-600',
-        'Qualified': 'bg-purple-600 text-white border-purple-600',
-        'Converted': 'bg-green-600 text-white border-green-600',
-        'Cold': 'bg-gray-500 text-white border-gray-500'
+    const statusConfig: Record<string, { dot: string; label: string; bg: string; text: string; border: string }> = {
+        'New':       { dot: '#0A0A0A', label: 'Novos',        bg: 'bg-[var(--admin-surface-1)]', text: 'text-[var(--admin-text-primary)]',   border: 'border-[var(--admin-border)]' },
+        'Contacted': { dot: '#2563eb', label: 'Atendimento',  bg: 'bg-blue-50 dark:bg-blue-950/30',     text: 'text-blue-700 dark:text-blue-300',    border: 'border-blue-100 dark:border-blue-900/50' },
+        'Qualified': { dot: '#7c3aed', label: 'Negociação',   bg: 'bg-purple-50 dark:bg-purple-950/30', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-100 dark:border-purple-900/50' },
+        'Converted': { dot: '#16a34a', label: 'Fechado',      bg: 'bg-green-50 dark:bg-green-950/30',   text: 'text-green-700 dark:text-green-300',  border: 'border-green-100 dark:border-green-900/50' },
+        'Cold':      { dot: '#6b7280', label: 'Perdido',      bg: 'bg-[var(--admin-surface-2)]',        text: 'text-[var(--admin-text-tertiary)]',   border: 'border-[var(--admin-border)]' },
     };
+    const sc = statusConfig[status] ?? statusConfig['New'];
+    const allSelected = leads.length > 0 && leads.every((l: any) => selectedLeadIds.has(l.id));
 
     return (
         <div
-            className={`flex-1 min-w-[200px] flex flex-col h-full rounded-2xl transition-colors ${draggedId ? 'bg-[var(--admin-surface-3)] border-2 border-dashed border-[var(--admin-border)]' : 'bg-[var(--admin-surface-2)] border border-[var(--admin-border)]'}`}
+            className={`flex-1 min-w-[220px] flex flex-col h-full rounded-2xl border transition-all
+                ${draggedId
+                    ? 'bg-[var(--admin-surface-3)] border-2 border-dashed border-[var(--admin-border)] scale-[0.99]'
+                    : `bg-[var(--admin-surface-2)] ${sc.border}`
+                }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
         >
-            {/* Header */}
-            <div className={`p-4 rounded-t-2xl flex flex-col gap-2 ${status === 'New' || status === 'Converted' ? 'shadow-md' : ''} ${statusColors[status] || 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)]'}`}>
-                <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-sm uppercase tracking-wider">{title}</h3>
+            {/* ── Cabeçalho da Coluna ── */}
+            <div className={`px-4 pt-4 pb-3 rounded-t-2xl border-b ${sc.border}`}>
+                <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                        <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">{leads.length}</span>
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: sc.dot }} />
+                        <h3 className={`font-black text-xs uppercase tracking-widest ${sc.text}`}>{title}</h3>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-black ${sc.text} bg-black/5 dark:bg-white/10`}>
+                            {leads.length}
+                        </span>
                         {leads.length > 0 && (
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    const allInColSelected = leads.every((l: any) => selectedLeadIds.has(l.id));
                                     leads.forEach((l: any) => {
-                                        if (allInColSelected) {
-                                            if (selectedLeadIds.has(l.id)) onToggleSelection(l.id);
-                                        } else {
-                                            if (!selectedLeadIds.has(l.id)) onToggleSelection(l.id);
-                                        }
+                                        if (allSelected) { if (selectedLeadIds.has(l.id)) onToggleSelection(l.id); }
+                                        else { if (!selectedLeadIds.has(l.id)) onToggleSelection(l.id); }
                                     });
                                 }}
-                                className="hover:scale-110 transition-all opacity-60 hover:opacity-100"
-                                title={leads.every((l: any) => selectedLeadIds.has(l.id)) ? "Desmarcar Todos" : "Selecionar Todos"}
+                                className={`p-0.5 rounded transition-all hover:scale-110 ${sc.text} opacity-50 hover:opacity-100`}
+                                title={allSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}
                             >
-                                <CheckSquare size={14} className={leads.every((l: any) => selectedLeadIds.has(l.id)) ? "text-white" : ""} />
+                                <CheckSquare size={13} />
                             </button>
                         )}
                     </div>
                 </div>
-                {/* Stats Summary */}
-                <div className="flex items-center gap-2 text-[10px] font-medium opacity-80">
-                    <Clock size={10} />
-                    <span>Tempo Médio: {averageTime}</span>
-                </div>
-                {/* Total Value for Won Column */}
-                {(status === 'Converted' || status === 'Matriculated' || status === 'Fechamento' || status === 'Ganho') && (
-                    <div className="flex items-center gap-1 mt-1 bg-white/20 p-1.5 rounded text-xs font-bold border border-white/10">
-                        <Banknote size={12} />
-                        <span>
-                            Total: {leads.reduce((acc: number, l: any) => acc + (Number(l.conversion_value) || 0), 0)
+
+                {/* Stats: tempo médio + total (converted) */}
+                <div className="flex items-center justify-between gap-2">
+                    <span className={`text-[10px] font-medium flex items-center gap-1 opacity-60 ${sc.text}`}>
+                        <Clock size={9} /> {averageTime}
+                    </span>
+                    {(status === 'Converted' || status === 'Matriculated') && (
+                        <span className={`text-[10px] font-black flex items-center gap-1 ${sc.text}`}>
+                            <Banknote size={9} />
+                            {leads.reduce((acc: number, l: any) => acc + (Number(l.conversion_value) || 0), 0)
                                 .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
-            {/* Cards Container */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            {/* ── Lista de Cards ── */}
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-2 custom-scrollbar">
                 {leads.map((lead: any) => (
-                    <LeadCard 
-                        key={lead.id} 
-                        lead={lead} 
-                        onClick={() => onLeadClick(lead)} 
-                        onMove={onDropLead} 
-                        onTasks={onTasks} 
+                    <LeadCard
+                        key={lead.id}
+                        lead={lead}
+                        onClick={() => onLeadClick(lead)}
+                        onMove={onDropLead}
+                        onTasks={onTasks}
                         usersMap={usersMap}
                         isSelected={selectedLeadIds.has(lead.id)}
                         onToggleSelection={() => onToggleSelection(lead.id)}
                     />
                 ))}
                 {leads.length === 0 && (
-                    <div className="text-center py-8 text-[var(--admin-text-tertiary)] text-xs italic">
-                        Sem leads nesta etapa
+                    <div className="flex flex-col items-center justify-center py-10 gap-2 text-[var(--admin-text-tertiary)]">
+                        <div className="w-8 h-8 rounded-full bg-[var(--admin-surface-3)] flex items-center justify-center">
+                            <Users size={14} />
+                        </div>
+                        <span className="text-[10px] font-medium">Nenhum lead aqui</span>
                     </div>
                 )}
             </div>
@@ -354,133 +363,159 @@ const LeadCard: React.FC<{
 
     const { source, city } = getLeadInfo();
 
+    const initials = lead.name
+        ? lead.name.trim().split(/\s+/).slice(0, 2).map((n: string) => n[0]?.toUpperCase() ?? '').join('')
+        : '?';
+
     return (
         <div
             onClick={onClick}
             draggable
             onDragStart={() => { setDraggedId(lead.id); setIsDragging(true); }}
             onDragEnd={() => { setDraggedId(null); setIsDragging(false); }}
-            className={`
-                relative bg-[var(--admin-surface-1)] p-3 rounded-xl border border-[var(--admin-border)]
-                hover:shadow-lg transition-all cursor-move group overflow-hidden
-                ${isLongWait ? 'ring-1 ring-red-500/20' : ''}
-                ${isSelected ? 'ring-2 ring-wtech-gold border-wtech-gold/50 bg-wtech-gold/5 dark:bg-wtech-gold/10' : 'hover:border-wtech-gold/30'}
-            `}
+            className={`relative bg-[var(--admin-surface-1)] rounded-xl border transition-all cursor-move group overflow-hidden
+                ${isLongWait ? 'ring-1 ring-red-500/30' : ''}
+                ${isSelected
+                    ? 'ring-2 ring-wtech-gold border-wtech-gold/50 bg-wtech-gold/5'
+                    : 'border-[var(--admin-border)] hover:border-wtech-gold/40 hover:shadow-md hover:-translate-y-px'
+                }`}
         >
-            {/* Selection Checkbox Overlay (Visible always if selected, or on hover) */}
-            <div 
-                onClick={(e) => { e.stopPropagation(); onToggleSelection(); }}
-                className={`absolute right-2 top-2 z-30 flex items-center justify-center w-5 h-5 rounded border transition-all cursor-pointer shadow-sm
-                    ${isSelected
-                        ? 'bg-wtech-gold border-wtech-gold text-black scale-110 shadow-wtech-gold/20'
-                        : 'bg-[var(--admin-surface-1)] border-[var(--admin-border)] opacity-0 group-hover:opacity-100 hover:border-wtech-gold'
-                    }`}
-            >
-                {isSelected && <CheckCircle size={14} strokeWidth={3} />}
-            </div>
+            {/* Left temperature bar */}
+            <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl" style={{ backgroundColor: accentColor }} />
 
-            {/* Left Accent Border */}
-            <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: accentColor }}></div>
+            <div className="pl-4 pr-3 pt-3 pb-2.5 flex flex-col gap-2">
 
-            {/* Header / Name */}
-            <div className="flex justify-between items-start pl-3 mb-1">
-                <div className="flex-1 min-w-0">
-                     <h4 className="font-bold text-[var(--admin-text-primary)] text-sm line-clamp-1 pr-2">{lead.name}</h4>
-                     
-                     {/* Source & City Line */}
-                     <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[9px] font-black bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded text-[var(--admin-text-secondary)] uppercase tracking-tighter">
-                            {source}
-                        </span>
-                        {city && (
-                            <span className="text-[9px] font-black bg-wtech-gold/10 px-1.5 py-0.5 rounded text-wtech-gold uppercase tracking-tighter border border-wtech-gold/20">
-                                {city}
+                {/* ── Row 1: Avatar + Name + Checkbox ── */}
+                <div className="flex items-start gap-2">
+                    {/* Avatar com iniciais */}
+                    <div
+                        className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-black text-[11px] shadow-sm select-none"
+                        style={{ backgroundColor: accentColor }}
+                    >
+                        {initials}
+                    </div>
+
+                    {/* Nome + badges */}
+                    <div className="flex-1 min-w-0 pt-0.5">
+                        <h4 className="font-black text-[var(--admin-text-primary)] text-sm leading-tight line-clamp-1">{lead.name}</h4>
+                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                            <span className="text-[9px] font-bold bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded-md text-[var(--admin-text-tertiary)] uppercase tracking-wide">
+                                {source}
+                            </span>
+                            {city && (
+                                <span className="text-[9px] font-bold bg-wtech-gold/10 px-1.5 py-0.5 rounded-md text-wtech-gold uppercase tracking-wide border border-wtech-gold/20">
+                                    {city}
+                                </span>
+                            )}
+                            {quizTemp && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide"
+                                    style={{ backgroundColor: `${accentColor}22`, color: accentColor }}>
+                                    {quizTemp}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Checkbox */}
+                    <div
+                        onClick={(e) => { e.stopPropagation(); onToggleSelection(); }}
+                        className={`flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-md border transition-all cursor-pointer mt-0.5
+                            ${isSelected
+                                ? 'bg-wtech-gold border-wtech-gold text-black'
+                                : 'border-[var(--admin-border)] opacity-0 group-hover:opacity-100 bg-[var(--admin-surface-1)] hover:border-wtech-gold'
+                            }`}
+                    >
+                        {isSelected && <CheckCircle size={12} strokeWidth={3} />}
+                    </div>
+                </div>
+
+                {/* ── Row 2: Contato ── */}
+                {(lead.phone || lead.email) && (
+                    <div className="bg-[var(--admin-surface-2)] rounded-lg px-2.5 py-1.5 flex flex-col gap-0.5">
+                        {lead.phone && (
+                            <span className="text-[10px] text-[var(--admin-text-secondary)] flex items-center gap-1.5">
+                                <Phone size={9} className="flex-shrink-0 text-[var(--admin-text-tertiary)]" />
+                                <span className="font-mono tracking-tight">{lead.phone}</span>
                             </span>
                         )}
-                     </div>
-                </div>
-                 {/* Quick Move Arrow */}
-                <div className="flex gap-1">
-                    {/* WhatsApp Action */}
-                    {lead.phone && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const clean = String(lead.phone).replace(/\D/g, '');
-                                const val = clean.length <= 11 ? `55${clean}` : clean;
-                                window.open(`https://wa.me/${val}`, '_blank');
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-green-500/10 rounded-lg text-[var(--admin-text-tertiary)] hover:text-green-600 transition-all transform hover:scale-110 active:scale-95 z-20"
-                            title="Chamar no WhatsApp"
-                        >
-                            <MessageCircle size={16} />
-                        </button>
-                    )}
+                        {lead.email && (
+                            <span className="text-[10px] text-[var(--admin-text-secondary)] truncate flex items-center gap-1.5">
+                                <Mail size={9} className="flex-shrink-0 text-[var(--admin-text-tertiary)]" />
+                                {lead.email}
+                            </span>
+                        )}
+                    </div>
+                )}
 
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onTasks(lead); }}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--admin-surface-3)] rounded-lg text-[var(--admin-text-tertiary)] hover:text-blue-500 transition-all transform hover:scale-110 active:scale-95 z-20"
-                        title="Ver Tarefas / Agendar WhatsApp"
-                    >
-                        <Clock size={16} />
-                    </button>
-                    {nextStatusMap[lead.status] && (
-                        <button
-                            onClick={handleNext}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--admin-surface-3)] rounded-lg text-[var(--admin-text-tertiary)] hover:text-green-500 transition-all transform hover:scale-110 active:scale-95 z-20"
-                            title={`Mover para ${nextStatusMap[lead.status]}`}
-                        >
-                            <ArrowRight size={16} />
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="mb-2 pl-3">
-                <div className="flex flex-col gap-0.5">
-                    {lead.email && <span className="text-[10px] text-[var(--admin-text-secondary)] truncate flex items-center gap-1"><MessageCircle size={9} /> {lead.email}</span>}
-                    {lead.phone && <span className="text-[10px] text-[var(--admin-text-secondary)] flex items-center gap-1 font-mono tracking-tight"><Phone size={9} /> {lead.phone}</span>}
-                </div>
-            </div>
-
-            {/* Attendant Info */}
-            <div className="mb-2 pl-3">
-                <span className="text-[9px] uppercase font-bold text-[var(--admin-text-tertiary)] tracking-wider truncate">
-                    {lead.assignedTo ? `Atendente: ${attendantName.toUpperCase()}` : 'FILA DE ESPERA'}
-                </span>
-            </div>
-
-            {/* Tags */}
-            {lead.tags && lead.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                    {lead.tags.slice(0, 3).map((tag: string, i: number) => (
-                        <div key={`${lead.id}-tag-${i}`}>
-                            <Badge variant="secondary" size="xs" appearance="outline" className="text-[9px] h-4 px-1">
+                {/* ── Row 3: Tags ── */}
+                {lead.tags && lead.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                        {lead.tags.slice(0, 3).map((tag: string, i: number) => (
+                            <span key={`${lead.id}-tag-${i}`}
+                                className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--admin-surface-3)] text-[var(--admin-text-tertiary)] border border-[var(--admin-border)]">
                                 {tag}
-                            </Badge>
-                        </div>
-                    ))}
-                    {lead.tags.length > 3 && <span className="text-[9px] text-[var(--admin-text-tertiary)]">+{lead.tags.length - 3}</span>}
-                </div>
-            )}
+                            </span>
+                        ))}
+                        {lead.tags.length > 3 && (
+                            <span className="text-[9px] text-[var(--admin-text-tertiary)] px-1">+{lead.tags.length - 3}</span>
+                        )}
+                    </div>
+                )}
 
-            {/* Progress Bar (Compact) */}
-            <div className="mt-1">
-                <div className="flex justify-between items-end mb-0.5">
-                    <span className={`text-[8px] font-bold uppercase ${isLongWait ? 'text-red-500' : 'text-[var(--admin-text-tertiary)]'}`}>
-                        TEMPO NA ETAPA
-                    </span>
-                    <span className={`text-[8px] font-mono ${isLongWait ? 'text-red-500 font-bold' : 'text-[var(--admin-text-tertiary)]'}`}>
-                        {timeDisplay}
-                    </span>
+                {/* ── Row 4: Footer — Atendente + Tempo + Ações ── */}
+                <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-[var(--admin-border-subtle)]">
+                    {/* Atendente + Tempo */}
+                    <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold truncate max-w-[90px]
+                            ${lead.assignedTo
+                                ? 'bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)]'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                            }`}>
+                            <User size={9} className="flex-shrink-0" />
+                            <span className="truncate uppercase tracking-wide">{attendantName}</span>
+                        </div>
+                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold
+                            ${isLongWait ? 'bg-red-500/10 text-red-500' : 'bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)]'}`}>
+                            <Clock size={9} />
+                            <span className="font-mono">{timeDisplay}</span>
+                        </div>
+                    </div>
+
+                    {/* Botões de ação */}
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                        {lead.phone && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const clean = String(lead.phone).replace(/\D/g, '');
+                                    const val = clean.length <= 11 ? `55${clean}` : clean;
+                                    window.open(`https://wa.me/${val}`, '_blank');
+                                }}
+                                className="p-1 hover:bg-green-500/10 rounded-md text-[var(--admin-text-tertiary)] hover:text-green-500 transition-all active:scale-95"
+                                title="WhatsApp"
+                            >
+                                <MessageCircle size={13} />
+                            </button>
+                        )}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onTasks(lead); }}
+                            className="p-1 hover:bg-[var(--admin-surface-3)] rounded-md text-[var(--admin-text-tertiary)] hover:text-blue-500 transition-all active:scale-95"
+                            title="Tarefas"
+                        >
+                            <Clock size={13} />
+                        </button>
+                        {nextStatusMap[lead.status] && (
+                            <button
+                                onClick={handleNext}
+                                className="p-1 hover:bg-green-500/10 rounded-md text-[var(--admin-text-tertiary)] hover:text-green-500 transition-all active:scale-95"
+                                title={`→ ${nextStatusMap[lead.status]}`}
+                            >
+                                <ArrowRight size={13} />
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div className="h-1 w-full bg-[var(--admin-surface-3)] rounded-full overflow-hidden">
-                    <div
-                        className={`h-full rounded-full ${isLongWait ? 'bg-red-500' : 'bg-blue-500'}`}
-                        style={{ width: isLongWait ? '100%' : '30%' }}
-                    ></div>
-                </div>
+
             </div>
         </div>
     );

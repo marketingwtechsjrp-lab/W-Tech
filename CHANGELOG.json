@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.0.3",
+    "date": "2026-04-16",
+    "title": "Courses Module UI/UX Overhaul & Critical Fixes",
+    "changes": [
+      "FIX: Resolvido erro fatal de 'tela branca' no módulo de Cursos causado pela função `cn()` não definida.",
+      "UX: Redesign completo da Lista de Inscritos com novos cards de estatísticas (Moeda, Recebido, Previsto).",
+      "UX: Modernização dos formulários de alunos e cursos com bordas arredondadas, gradientes premium e melhorias de responsividade.",
+      "UI: Aplicação de design tokens consistentes (rounded-2xl, sombras dinâmicas) em todo o sub-módulo de Cursos.",
+      "VERSION: Atualização para v3.0.3."
+    ],
+    "author": "Antigravity"
+  },
+  {
     "version": "3.0.2",
     "date": "2026-04-13",
     "title": "Stripe Fixes & Currency Intelligence",
