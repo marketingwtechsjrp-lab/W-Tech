@@ -1,0 +1,86 @@
+'use client';
+
+import React from 'react';
+import { MonitorCog, Moon, Sun } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useTheme } from 'next-themes';
+import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
+
+const THEME_OPTIONS = [
+	{
+		icon: MonitorCog,
+		value: 'system',
+	},
+	{
+		icon: Sun,
+		value: 'light',
+	},
+	{
+		icon: Moon,
+		value: 'dark',
+	},
+];
+
+export function ToggleTheme() {
+	const { theme, setTheme } = useTheme();
+
+	const [isMounted, setIsMounted] = React.useState(false);
+
+	React.useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+    const { user } = useAuth();
+
+
+
+
+    const handleThemeChange = async (newTheme: string) => {
+        setTheme(newTheme);
+        if (user?.id) {
+            await supabase.from('SITE_Users').update({ theme: newTheme }).eq('id', user.id);
+        }
+    };
+
+	if (!isMounted) {
+		return <div className="flex h-8 w-24" />;
+	}
+
+	return (
+		<motion.div
+			key={String(isMounted)}
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			transition={{ duration: 0.3 }}
+			className="bg-muted/80 inline-flex items-center overflow-hidden rounded-md border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800"
+			role="radiogroup"
+		>
+			{THEME_OPTIONS.map((option) => (
+				<button
+                    key={option.value}
+					className={cn(
+						'relative flex size-7 cursor-pointer items-center justify-center rounded-md transition-all',
+						theme === option.value
+							? 'text-foreground'
+							: 'text-muted-foreground hover:text-foreground',
+					)}
+					role="radio"
+					aria-checked={theme === option.value}
+					aria-label={`Switch to ${option.value} theme`}
+					onClick={() => handleThemeChange(option.value)}
+				>
+					{theme === option.value && (
+						<motion.div
+							layoutId="theme-option"
+							transition={{ type: 'spring', bounce: 0.1, duration: 0.75 }}
+							className="absolute inset-0 rounded-md bg-white dark:bg-black shadow-sm border border-gray-200 dark:border-gray-700"
+						/>
+					)}
+					<option.icon className="size-3.5 relative z-10 text-gray-700 dark:text-gray-300" />
+				</button>
+			))}
+		</motion.div>
+	);
+}

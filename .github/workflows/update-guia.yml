@@ -1,0 +1,35 @@
+name: Update System Guide
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'guia.md'
+      - '.agent/**'
+
+jobs:
+  update-guide:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update Guide File
+        run: node scripts/update-guide-action.js
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add guia.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update guia.md [skip ci]" && git push)
