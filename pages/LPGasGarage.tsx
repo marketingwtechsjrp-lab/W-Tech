@@ -7,6 +7,7 @@ import {
     ShieldCheck, Flame, Star, Settings, Terminal,
     MessageCircle, HelpCircle
 } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 /* ─── Google Fonts Injection ─── */
 if (typeof document !== 'undefined') {
@@ -76,6 +77,123 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     </div>
 );
 
+
+const LeadForm: React.FC = () => {
+    const [formData, setFormData] = useState({ name: '', phone: '' });
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            // 1. Save Lead to Supabase
+            const { error: dbError } = await supabase.from('SITE_Leads').insert([{
+                name: formData.name,
+                phone: formData.phone,
+                type: 'Gas_Garage_LP',
+                status: 'New',
+                context_id: 'LP_Chao_de_Oficina',
+                tags: ['Gas_Garage', 'RJ', 'André_W-Tech'],
+            }]);
+
+            if (dbError) throw dbError;
+
+            // 2. Automated Welcome Message via Evolution API (André's Instance)
+            try {
+                const instanceName = 'André W-Tech';
+                const apiKey = 'd037768b3d06382756a0d9edecf3e40e'; // Global API Key
+                const evolutionUrl = 'https://api.2b.app.br';
+
+                let formattedPhone = formData.phone.replace(/\D/g, '');
+                if (!formattedPhone.startsWith('55')) {
+                    formattedPhone = '55' + formattedPhone;
+                }
+
+                await fetch(`${evolutionUrl}/message/sendText/${encodeURIComponent(instanceName)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': apiKey
+                    },
+                    body: JSON.stringify({
+                        number: formattedPhone,
+                        text: `Olá ${formData.name}! Tudo bem? Aqui é o André da W-Tech. Vi que você se inscreveu na nossa landing page do treinamento Chão de Oficina com o Emanuel do Rio de Janeiro. Seja muito bem-vindo! Como posso te ajudar hoje?`
+                    })
+                });
+            } catch (whatsappErr) {
+                console.error('Erro ao disparar WhatsApp automático:', whatsappErr);
+            }
+
+            setSuccess(true);
+            
+            // 3. Redirect to André's WhatsApp (+55 17 98132-7309)
+            const andrePhone = '5517981327309';
+            const redirectUrl = `https://wa.me/${andrePhone}?text=${encodeURIComponent(`Olá André! Acabei de me inscrever na LP Chão de Oficina. Meu nome é ${formData.name}.`)}`;
+            
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1500);
+
+        } catch (err: any) {
+            console.error('Submission error:', err);
+            setError('Ocorreu um erro ao processar sua inscrição. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (success) {
+        return (
+            <div className="text-center py-8">
+                <motion.div 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className="w-20 h-20 bg-amber-500/20 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6"
+                >
+                    <CheckCircle size={40} />
+                </motion.div>
+                <h3 className="text-2xl font-bold text-white mb-2">Inscrição Realizada!</h3>
+                <p className="text-gray-400 mb-6">Redirecionando para o WhatsApp do André...</p>
+            </div>
+        );
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Nome Completo</label>
+                <input 
+                    type="text" required
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                    placeholder="Seu nome"
+                />
+            </div>
+            <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">WhatsApp</label>
+                <input 
+                    type="tel" required
+                    value={formData.phone}
+                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                    placeholder="(00) 00000-0000"
+                />
+            </div>
+            {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
+            <button 
+                type="submit" disabled={loading}
+                className="gg-btn-primary w-full py-5 rounded-xl font-black text-sm uppercase tracking-[0.2em] flex items-center justify-center gap-2 mt-4"
+            >
+                {loading ? 'Processando...' : 'Quero me Inscrever'} <ArrowRight size={18} />
+            </button>
+        </form>
+    );
+};
+
 const LPGasGarage: React.FC = () => {
     const prefersReduced = useReducedMotion();
 
@@ -120,10 +238,8 @@ const LPGasGarage: React.FC = () => {
         { q: 'Quais marcas de motos serão abordadas?', a: 'O foco é multimarcas, abrangendo os principais sistemas eletrônicos encontrados nas oficinas brasileiras.' },
     ];
 
-    const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-
-    const openWhatsApp = () => {
-        window.open('https://wa.me/5511999999999?text=Ol%C3%A1%2C+tenho+interesse+no+Treinamento+Ch%C3%A3o+de+Oficina%21', '_blank');
+    const scrollToForm = () => {
+        document.getElementById('cadastro')?.scrollIntoView({ behavior: 'smooth' });
     };
 
     return (
@@ -135,7 +251,7 @@ const LPGasGarage: React.FC = () => {
                 {/* ── Sticky CTA ── */}
                 <div className="fixed bottom-0 left-0 right-0 z-[100] md:hidden p-4 bg-zinc-950/80 backdrop-blur-md border-t border-white/10">
                     <button 
-                        onClick={openWhatsApp}
+                        onClick={scrollToForm}
                         className="gg-btn-primary w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2"
                     >
                         Quero Minha Vaga <ArrowRight size={18} />
@@ -147,7 +263,7 @@ const LPGasGarage: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     whileHover={{ scale: 1.1 }}
-                    onClick={openWhatsApp}
+                    onClick={scrollToForm}
                     className="fixed bottom-8 right-8 z-[100] hidden md:flex gg-floating-whatsapp w-16 h-16 rounded-full items-center justify-center text-white"
                 >
                     <MessageCircle size={32} />
@@ -187,63 +303,65 @@ const LPGasGarage: React.FC = () => {
                     </div>
 
                     <div className="container mx-auto px-6 relative z-10">
-                        <div className="max-w-4xl">
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-                                className="mb-6"
-                            >
-                                <span className="inline-block border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full">
-                                    Treinamento Técnico Profissional
-                                </span>
-                            </motion.div>
-
-                            <motion.h1 
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
-                                className="text-4xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-tighter mb-8"
-                            >
-                                <div className="mb-4">
-                                    <img src="/logo-chao-de-oficina.jpg" alt="Chão de Oficina" className="h-20 md:h-32 lg:h-40 filter invert brightness-200" />
-                                </div>
-                            </motion.h1>
-
-                            <motion.p 
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-                                className="text-gray-300 text-lg md:text-2xl leading-relaxed mb-10 max-w-2xl font-light"
-                            >
-                                Capacitação prática para mecânicos que querem dominar <strong>diagnóstico eletrônico</strong> e soluções reais de oficina em motocicletas multimarcas.
-                            </motion.p>
-
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-                                className="flex flex-col sm:flex-row gap-4"
-                            >
-                                <button 
-                                    onClick={openWhatsApp}
-                                    className="gg-btn-primary px-10 py-5 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 transition-transform"
+                        <div className="grid lg:grid-cols-2 gap-16 items-center">
+                            <div className="max-w-4xl">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+                                    className="mb-6"
                                 >
-                                    Garantir Minha Vaga <ArrowRight size={20} />
-                                </button>
-                                <div className="flex flex-col justify-center px-4">
-                                    <div className="flex gap-1 text-amber-500 mb-1">
-                                        {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                                    <span className="inline-block border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full">
+                                        Treinamento Técnico Profissional
+                                    </span>
+                                </motion.div>
+
+                                <motion.h1 
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
+                                    className="text-4xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-tighter mb-8"
+                                >
+                                    <div className="mb-4">
+                                        <img src="/logo-chao-de-oficina.jpg" alt="Chão de Oficina" className="h-20 md:h-32 lg:h-40 filter invert brightness-200" />
                                     </div>
-                                    <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Workshop de Elite</p>
+                                </motion.h1>
+
+                                <motion.p 
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
+                                    className="text-gray-300 text-lg md:text-2xl leading-relaxed mb-10 max-w-2xl font-light"
+                                >
+                                    Capacitação prática para mecânicos que querem dominar <strong>diagnóstico eletrônico</strong> e soluções reais de oficina em motocicletas multimarcas.
+                                </motion.p>
+
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
+                                    className="flex flex-col sm:flex-row gap-4"
+                                >
+                                    <button 
+                                        onClick={scrollToForm}
+                                        className="gg-btn-primary px-10 py-5 rounded-2xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 transition-transform"
+                                    >
+                                        Garantir Minha Vaga <ArrowRight size={20} />
+                                    </button>
+                                    <div className="flex flex-col justify-center px-4">
+                                        <div className="flex gap-1 text-amber-500 mb-1">
+                                            {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                                        </div>
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">Workshop de Elite</p>
+                                    </div>
+                                </motion.div>
+                            </div>
+
+                            {/* Hero Form */}
+                            <motion.div 
+                                initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }}
+                                className="hidden lg:block w-full max-w-md ml-auto"
+                            >
+                                <div className="gg-card-dark p-10 rounded-[2.5rem] border-amber-500/20 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-orange-600"></div>
+                                    <h3 className="text-2xl font-black uppercase mb-6 tracking-tight">Pré-Inscrição</h3>
+                                    <LeadForm />
                                 </div>
                             </motion.div>
                         </div>
                     </div>
-
-                    {/* Floating Quote */}
-                    <motion.div 
-                        initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.5 }}
-                        className="absolute bottom-20 right-0 hidden lg:block bg-zinc-900/80 backdrop-blur-xl border-l-4 border-amber-500 p-8 max-w-md rounded-l-3xl"
-                    >
-                        <Quote className="text-amber-500 mb-4 opacity-50" size={32} />
-                        <p className="text-xl italic font-medium text-gray-200 leading-relaxed mb-4">
-                            “Tem hora para começar, mas não tem hora para terminar.”
-                        </p>
-                        <p className="text-sm font-bold uppercase tracking-widest text-amber-500">— Chão de Oficina</p>
-                    </motion.div>
                 </section>
 
                 {/* ── Methodology Section ── */}
@@ -405,7 +523,7 @@ const LPGasGarage: React.FC = () => {
                 </section>
 
                 {/* ── Final CTA ── */}
-                <section id="cta" className="py-32 bg-black relative overflow-hidden">
+                <section id="cadastro" className="py-32 bg-black relative overflow-hidden">
                     <div className="absolute inset-0 z-0">
                         <div className="absolute inset-0 bg-amber-500/5 mix-blend-overlay" />
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] gg-hero-glow" />
@@ -424,14 +542,9 @@ const LPGasGarage: React.FC = () => {
                                 Vagas limitadas para garantir o aproveitamento prático de cada aluno. Não perca a oportunidade de aprender com quem vive o chão de oficina.
                             </p>
                             
-                            <div className="flex flex-col items-center gap-6">
-                                <button 
-                                    onClick={openWhatsApp}
-                                    className="gg-btn-primary px-16 py-6 rounded-[2rem] font-black text-xl uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-105 transition-transform shadow-[0_20px_50px_rgba(245,158,11,0.2)]"
-                                >
-                                    Quero me Inscrever <ArrowRight size={24} />
-                                </button>
-                                <div className="flex items-center gap-4 text-gray-500 text-sm font-bold uppercase tracking-widest">
+                            <div className="max-w-md mx-auto text-left">
+                                <LeadForm />
+                                <div className="mt-8 flex items-center justify-center gap-4 text-gray-500 text-sm font-bold uppercase tracking-widest">
                                     <ShieldCheck size={20} className="text-amber-500" />
                                     <span>Certificado de Conclusão Incluso</span>
                                 </div>
