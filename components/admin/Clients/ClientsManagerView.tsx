@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, User, UserPlus, Phone, Mail, Filter, Shield, Users, Plus, X, Upload, FileSpreadsheet, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, User, UserPlus, Phone, Mail, Filter, Shield, Users, Plus, X, Upload, FileSpreadsheet, Trash2, Download, FileText } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
@@ -7,6 +7,39 @@ import ListsManager from '../Marketing/ListsManager';
 import { ClientDetailModal } from './ClientDetailModal';
 import { cn } from '../../../lib/utils';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const parseLPSource = (contextId: string | undefined): string => {
+    if (!contextId) return 'Sem origem';
+    const ctx = contextId.trim();
+
+    // "LP: Ergonomia Corporal (lp-ergonomia)" → "LP: Ergonomia Corporal"
+    if (ctx.startsWith('LP:')) {
+        const inner = ctx.slice(3).trim().replace(/\s*\([^)]+\)\s*$/, '').trim();
+        return 'LP: ' + inner;
+    }
+
+    // "LP LISBOA ABRIL 2026: Honda CBR600RR" → "LP LISBOA ABRIL 2026"
+    if (ctx.startsWith('LP ')) {
+        const colonIdx = ctx.indexOf(':');
+        return colonIdx > 0 ? ctx.slice(0, colonIdx).trim() : ctx;
+    }
+
+    // "Quiz Completed: CURSO SUSPENSÃO SJRP [QUENTE]" → "Quiz: CURSO SUSPENSÃO SJRP"
+    if (ctx.startsWith('Quiz Completed:')) {
+        const inner = ctx.slice('Quiz Completed:'.length).trim().replace(/\s*\[.*?\]\s*/g, '').trim();
+        return 'Quiz: ' + inner;
+    }
+
+    // Known short labels kept as-is
+    if (['Manual', 'Import', 'Evento', 'Direto', 'Site'].includes(ctx)) return ctx;
+
+    // Long strings (contact form messages)
+    if (ctx.length > 40) return 'Formulário de Contato';
+
+    return ctx;
+};
 
 const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
@@ -15,6 +48,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
+    const [filterLP, setFilterLP] = useState('all');
 
     // Selection & Groups State
     const [selectedClients, setSelectedClients] = useState<string[]>([]);
@@ -76,6 +110,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 phone: l.phone,
                 type: 'Lead',
                 origin: l.context_id || 'Lead',
+                lpSource: parseLPSource(l.context_id),
                 status: l.status,
                 address: l.address,
                 birth_date: l.birth_date,
@@ -105,6 +140,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                 phone: m.phone,
                 type: 'Credenciado',
                 origin: m.workshop_name || 'Oficina',
+                lpSource: 'Credenciado',
                 status: m.status,
                 address: m.address,
                 birth_date: m.birth_date,
@@ -263,12 +299,13 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
 
     const filteredClients = clients.filter(client => {
         // 1. Basic Type & Search Filters
-        const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        const matchesSearch = client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               client.phone?.includes(searchTerm);
         const matchesType = filterType === 'all' || client.type === filterType;
-        
-        if (!matchesSearch || !matchesType) return false;
+        const matchesLP = filterLP === 'all' || client.lpSource === filterLP;
+
+        if (!matchesSearch || !matchesType || !matchesLP) return false;
 
         // 2. Permission / Ownership Filters
         if (canSeeAll) return true;
@@ -519,6 +556,77 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
         }
     };
 
+    const uniqueLPs = useMemo(() => {
+        const sources = clients
+            .filter(c => c.type === 'Lead')
+            .map(c => c.lpSource as string)
+            .filter(Boolean);
+        return Array.from(new Set(sources)).sort();
+    }, [clients]);
+
+    const exportLeadsToXLS = () => {
+        const data = filteredClients.map((c, idx) => ({
+            '#': idx + 1,
+            'Nome': c.name || '',
+            'Email': c.email || '',
+            'Telefone': c.phone || '',
+            'CPF': c.cpf || '',
+            'RG': c.rg || '',
+            'Tipo': c.type || '',
+            'Origem / LP': c.lpSource || c.origin || '',
+            'Status': c.status || '',
+            'Classificação': c.classification || '',
+            'CEP': c.zip_code || '',
+            'Rua': c.address_street || '',
+            'Número': c.address_number || '',
+            'Bairro': c.address_neighborhood || '',
+            'Cidade': c.address_city || '',
+            'UF': c.address_state || '',
+            'Camiseta': c.t_shirt_size || '',
+            'Credenciado': c.isAccredited ? 'Sim' : 'Não',
+            'Cadastrado em': c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '',
+            'Última Compra': c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('pt-BR') : '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+        const suffix = filterLP !== 'all' ? ` - ${filterLP.slice(0, 30)}` : '';
+        XLSX.writeFile(wb, `Clientes${suffix}.xlsx`);
+    };
+
+    const exportLeadsToPDF = () => {
+        const doc = new jsPDF('l', 'mm', 'a4');
+        doc.setFontSize(15);
+        doc.setFont('helvetica', 'bold');
+        const title = filterLP !== 'all' ? `Leads — ${filterLP}` : 'Lista de Clientes / Leads';
+        doc.text(title, 14, 16);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Total: ${filteredClients.length} registro(s) | Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 23);
+        autoTable(doc, {
+            startY: 28,
+            head: [['#', 'Nome', 'Email', 'Telefone', 'CPF', 'Tipo', 'Origem / LP', 'Status', 'Cidade/UF', 'Cadastrado em']],
+            body: filteredClients.map((c, idx) => [
+                idx + 1,
+                c.name || '',
+                c.email || '',
+                c.phone || '',
+                c.cpf || '',
+                c.type || '',
+                c.lpSource || c.origin || '',
+                c.status || '',
+                [c.address_city, c.address_state].filter(Boolean).join('/') || '',
+                c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '',
+            ]),
+            styles: { fontSize: 7, cellPadding: 2 },
+            headStyles: { fillColor: [212, 175, 55], textColor: 0, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 248, 248] },
+            columnStyles: { 0: { cellWidth: 7 }, 1: { cellWidth: 32 }, 2: { cellWidth: 42 }, 3: { cellWidth: 24 } },
+        });
+        const suffix = filterLP !== 'all' ? ` - ${filterLP.slice(0, 30)}` : '';
+        doc.save(`Clientes${suffix}.pdf`);
+    };
+
     // Stats based on visibility
     const visibleClients = canSeeAll ? clients : clients.filter(c => c.assigned_to === user?.id || !c.assigned_to);
     const totalClientsCount = visibleClients.length;
@@ -549,6 +657,20 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         className="bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] border border-[var(--admin-border)] px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-[var(--admin-surface-3)] transition-all active:scale-95"
                     >
                         <Upload size={16} /> Importar
+                    </button>
+                    <button
+                        onClick={exportLeadsToXLS}
+                        className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-800 px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all active:scale-95"
+                        title="Exportar clientes filtrados em Excel"
+                    >
+                        <Download size={16} /> XLS
+                    </button>
+                    <button
+                        onClick={exportLeadsToPDF}
+                        className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all active:scale-95"
+                        title="Exportar clientes filtrados em PDF"
+                    >
+                        <FileText size={16} /> PDF
                     </button>
                     {activeTab === 'clients' && selectedClients.length > 0 && (
                         <div className="flex gap-2">
@@ -637,6 +759,26 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                             <option value="Lead">Leads</option>
                             <option value="Credenciado">Credenciados</option>
                         </select>
+                        <select
+                            className="px-4 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-sm text-[var(--admin-text-primary)] outline-none focus:border-wtech-gold transition-colors max-w-[220px]"
+                            value={filterLP}
+                            onChange={e => setFilterLP(e.target.value)}
+                            title="Filtrar por LP de origem"
+                        >
+                            <option value="all">Todas as LPs / Origens</option>
+                            {uniqueLPs.map(lp => (
+                                <option key={lp} value={lp}>{lp.length > 40 ? lp.slice(0, 40) + '…' : lp}</option>
+                            ))}
+                        </select>
+                        {filterLP !== 'all' && (
+                            <button
+                                onClick={() => setFilterLP('all')}
+                                className="flex items-center gap-1 px-3 py-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl text-xs font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] transition-colors whitespace-nowrap"
+                                title="Limpar filtro de LP"
+                            >
+                                <X size={13} /> Limpar LP
+                            </button>
+                        )}
                     </div>
 
                     <div className="overflow-x-auto">

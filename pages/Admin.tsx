@@ -66,6 +66,9 @@ import { ToggleTheme } from '../components/ui/toggle-theme';
 import { generateCertificatesPDF } from '../components/admin/Certificates/CertificateGenerator';
 import CertificateManagerView from '../components/admin/Certificates/CertificateManagerView';
 import type { CertificateLayout } from '../types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 
 // --- Types for Local State ---
@@ -243,6 +246,75 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
     };
 
+
+    const exportEnrollmentsToXLS = () => {
+        if (!currentCourse || enrollments.length === 0) return;
+        const currency = currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$';
+        const rows = enrollments.map((enr, idx) => ({
+            '#': idx + 1,
+            'Nome': enr.studentName || '',
+            'Email': enr.studentEmail || '',
+            'Telefone': enr.studentPhone || '',
+            'CPF': enr.studentCpf || '',
+            'Status': enr.status === 'CheckedIn' ? 'Presente' : enr.status === 'Pending' ? 'Pendente' : 'Confirmado',
+            'Valor Total': enr.totalAmount ?? currentCourse.price ?? 0,
+            'Valor Pago': enr.amountPaid ?? 0,
+            'Saldo': ((enr.totalAmount ?? currentCourse.price ?? 0) - (enr.amountPaid ?? 0)),
+            'Moeda': currency,
+            'Forma de Pagamento': enr.paymentMethod || '',
+            'Camiseta': enr.tShirtSize || '',
+            'CEP': enr.zipCode || '',
+            'Cidade': enr.city || '',
+            'UF': enr.state || '',
+            'Endereço': enr.address || '',
+            'Atendente': enr.enrolledByName || '',
+            'Credenciado': enr.isCredentialed ? 'Sim' : 'Não',
+            'Inscrito em': enr.createdAt ? new Date(enr.createdAt).toLocaleDateString('pt-BR') : '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inscritos');
+        XLSX.writeFile(wb, `Inscritos - ${currentCourse.title}.xlsx`);
+    };
+
+    const exportEnrollmentsToPDF = () => {
+        if (!currentCourse || enrollments.length === 0) return;
+        const currency = currentCourse.currency === 'EUR' ? '€' : currentCourse.currency === 'USD' ? '$' : 'R$';
+        const doc = new jsPDF('l', 'mm', 'a4');
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Lista de Inscritos — ${currentCourse.title}`, 14, 18);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Data do curso: ${formatDateLocal(currentCourse.date)} | Local: ${currentCourse.location} | Total: ${enrollments.length} aluno(s)`, 14, 26);
+        autoTable(doc, {
+            startY: 32,
+            head: [['#', 'Nome', 'Email', 'Telefone', 'CPF', 'Status', 'Pago', 'Saldo', 'Camiseta', 'Cidade/UF', 'Endereço', 'Atendente']],
+            body: enrollments.map((enr, idx) => {
+                const total = enr.totalAmount ?? currentCourse.price ?? 0;
+                const paid = enr.amountPaid ?? 0;
+                return [
+                    idx + 1,
+                    enr.studentName || '',
+                    enr.studentEmail || '',
+                    enr.studentPhone || '',
+                    enr.studentCpf || '',
+                    enr.status === 'CheckedIn' ? 'Presente' : enr.status === 'Pending' ? 'Pendente' : 'Confirmado',
+                    `${currency} ${paid.toFixed(2)}`,
+                    `${currency} ${(total - paid).toFixed(2)}`,
+                    enr.tShirtSize || '-',
+                    [enr.city, enr.state].filter(Boolean).join('/') || '-',
+                    enr.address || '-',
+                    enr.enrolledByName || '-',
+                ];
+            }),
+            styles: { fontSize: 7, cellPadding: 2 },
+            headStyles: { fillColor: [212, 175, 55], textColor: 0, fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [248, 248, 248] },
+            columnStyles: { 0: { cellWidth: 7 }, 1: { cellWidth: 30 }, 2: { cellWidth: 38 }, 3: { cellWidth: 22 } },
+        });
+        doc.save(`Inscritos - ${currentCourse.title}.pdf`);
+    };
 
     // Auto-Enrollment Effect
     useEffect(() => {
@@ -1609,6 +1681,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </button>
                         <button onClick={printList} className="px-4 py-2.5 rounded-lg font-bold flex items-center gap-2 text-sm border border-[var(--admin-border)] bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] hover:bg-[var(--admin-surface-3)] transition-all">
                             <Printer size={16} /> Imprimir
+                        </button>
+                        <button onClick={exportEnrollmentsToXLS} className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-all" title="Exportar lista completa em Excel (.xlsx)">
+                            <Download size={15} /> XLS
+                        </button>
+                        <button onClick={exportEnrollmentsToPDF} className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all" title="Exportar lista completa em PDF">
+                            <FileText size={15} /> PDF
                         </button>
                         <button onClick={() => handleGenerateCertificates(false)} className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-[var(--admin-border)] bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] transition-all" title="Gerar Certificados em PDF">
                             <Award size={15} /> Certificados

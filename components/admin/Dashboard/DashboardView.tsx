@@ -126,7 +126,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                 supabase.from('SITE_Enrollments').select('*'),
                 supabase.from('SITE_Courses').select('*'),
                 supabase.from('SITE_Tasks').select('*'),
-                supabase.from('SITE_Campaigns').select('*').order('created_at', { ascending: false }).limit(5),
+                supabase.from('SITE_EmailCampaigns').select('*').order('created_at', { ascending: false }).limit(5),
                 supabase.from('SITE_Users').select('id, name')
             ]);
 

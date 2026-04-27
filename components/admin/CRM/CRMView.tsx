@@ -13,7 +13,7 @@ import { BauhausCard } from '@/components/ui/bauhaus-card';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { FileDown, FileText, FileSpreadsheet } from 'lucide-react';
+import { FileDown, FileText, FileSpreadsheet, Download } from 'lucide-react';
 
 // Helper for Drag & Drop
 const DragContext = React.createContext<{
@@ -1572,6 +1572,26 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
 
 
+    const parseLPSourceCRM = (contextId: string | undefined): string => {
+        if (!contextId) return 'Sem origem';
+        const ctx = contextId.trim();
+        if (ctx.startsWith('LP:')) {
+            const inner = ctx.slice(3).trim().replace(/\s*\([^)]+\)\s*$/, '').trim();
+            return 'LP: ' + inner;
+        }
+        if (ctx.startsWith('LP ')) {
+            const colonIdx = ctx.indexOf(':');
+            return colonIdx > 0 ? ctx.slice(0, colonIdx).trim() : ctx;
+        }
+        if (ctx.startsWith('Quiz Completed:')) {
+            const inner = ctx.slice('Quiz Completed:'.length).trim().replace(/\s*\[.*?\]\s*/g, '').trim();
+            return 'Quiz: ' + inner;
+        }
+        if (['Manual', 'Import', 'Evento', 'Direto', 'Site'].includes(ctx)) return ctx;
+        if (ctx.length > 40) return 'Formulário de Contato';
+        return ctx;
+    };
+
     // Filter Logic
     const filteredLeads = useMemo(() => {
         return leads.filter(l => {
@@ -1592,11 +1612,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 if (customRange.end && d > new Date(new Date(customRange.end).setHours(23, 59, 59, 999))) return false;
             }
 
-            // 2. Source/Context Filter
+            // 2. Source/Context Filter (match against normalized LP name)
             if (contextFilter && contextFilter !== 'All') {
-                const ctx = String(l.contextId || '').toLowerCase();
-                const filter = contextFilter.toLowerCase();
-                if (!ctx.includes(filter)) return false;
+                if (parseLPSourceCRM(l.contextId) !== contextFilter) return false;
             }
 
             // 3. User Filter
@@ -1621,11 +1639,44 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         });
     }, [leads, filterType, filterPeriod, selectedMonth, customRange, contextFilter, selectedUserFilter, searchQuery]);
 
-    // Extract unique contexts for filter
+    // Extract unique contexts for filter — normalize LP names so the dropdown groups by LP
     const uniqueContexts = useMemo(() => {
-        const contexts = new Set(leads.map(l => l.contextId).filter(Boolean));
-        return Array.from(contexts);
+        const normalized = new Set(leads.map(l => parseLPSourceCRM(l.contextId)).filter(Boolean));
+        return Array.from(normalized).sort();
     }, [leads]);
+
+    const exportFilteredToXLS = () => {
+        if (filteredLeads.length === 0) {
+            alert('Nenhum lead encontrado para exportar.');
+            return;
+        }
+        const lpLabel = contextFilter !== 'All' ? contextFilter : 'Todos';
+        const data = filteredLeads.map((l, idx) => ({
+            '#': idx + 1,
+            'Nome': l.name || '',
+            'E-mail': l.email || '',
+            'Telefone': l.phone || '',
+            'CPF': l.cpf || '',
+            'RG': l.rg || '',
+            'Origem / LP': parseLPSourceCRM(l.contextId),
+            'Status': l.status || '',
+            'Atribuído a': usersMap[l.assignedTo || ''] || '',
+            'Cidade': l.address_city || '',
+            'UF': l.address_state || '',
+            'CEP': l.zip_code || '',
+            'Endereço': [l.address_street, l.address_number].filter(Boolean).join(', ') || '',
+            'Data de Entrada': new Date(l.createdAt).toLocaleDateString('pt-BR'),
+            'Notas': l.internalNotes || '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+        const safeName = lpLabel.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').trim().slice(0, 40);
+        XLSX.writeFile(wb, `Leads CRM - ${safeName}.xlsx`);
+        if (notificationRef.current) {
+            notificationRef.current.createNotification('success', 'XLS Gerado', `${filteredLeads.length} leads exportados com sucesso.`);
+        }
+    };
 
     // Board leads: filtered by activeFilter (stats bar click) on top of filteredLeads
     const boardLeads = useMemo(() => {
@@ -1799,20 +1850,30 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     <div className="flex flex-wrap items-center gap-4">
 
                         {/* Export Buttons */}
-                        <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
-                             <button
-                                onClick={() => exportLeadsToPDF(false)}
-                                className="p-2 text-[var(--admin-text-tertiary)] hover:text-red-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
-                                title="Exportar Tudo para PDF"
-                            >
-                                <FileText size={16} />
-                            </button>
+                        <div className="flex items-center gap-2">
+                            <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
+                                <button
+                                    onClick={() => exportLeadsToPDF(false)}
+                                    className="p-2 text-[var(--admin-text-tertiary)] hover:text-red-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
+                                    title="Exportar para PDF"
+                                >
+                                    <FileText size={16} />
+                                </button>
+                                <button
+                                    onClick={() => exportLeadsToCSV(false)}
+                                    className="p-2 text-[var(--admin-text-tertiary)] hover:text-green-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
+                                    title="Exportar para CSV"
+                                >
+                                    <FileSpreadsheet size={16} />
+                                </button>
+                            </div>
                             <button
-                                onClick={() => exportLeadsToCSV(false)}
-                                className="p-2 text-[var(--admin-text-tertiary)] hover:text-green-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
-                                title="Exportar Tudo para CSV"
+                                onClick={exportFilteredToXLS}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg text-xs font-black hover:bg-green-100 dark:hover:bg-green-900/40 transition-all active:scale-95"
+                                title={`Exportar ${filteredLeads.length} leads filtrados em XLS`}
                             >
-                                <FileSpreadsheet size={16} />
+                                <Download size={14} />
+                                XLS ({filteredLeads.length})
                             </button>
                         </div>
 
