@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { sendWhatsAppMessage } from '../lib/whatsapp';
+import { submitToGoogleSheets } from '../lib/googleSheets';
 
 /* ─── Google Fonts Injection ─── */
 if (typeof document !== 'undefined') {
@@ -103,7 +104,14 @@ const LeadForm: React.FC = () => {
 
             if (dbError) throw dbError;
 
-            // 2. Automated Welcome Message via Evolution API (André's Instance)
+            // 2. Backup to Google Sheets
+            try {
+                await submitToGoogleSheets(formData.name, formData.phone);
+            } catch (sheetsErr) {
+                console.error('Erro ao salvar no Google Sheets:', sheetsErr);
+            }
+
+            // 3. Automated Welcome Message via Evolution API (André's Instance)
             try {
                 const andreUserId = '407d09b8-8205-4697-9816-39b20f7e20ef';
                 const welcomeMessage = `Olá ${formData.name}! Tudo bem? Aqui é o André da W-Tech. Vi que você se inscreveu na nossa landing page do treinamento Chão de Oficina com o Emanuel do Rio de Janeiro. Seja muito bem-vindo! Como posso te ajudar hoje?`;
