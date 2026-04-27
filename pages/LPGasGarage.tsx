@@ -385,7 +385,7 @@ const LPGasGarage: React.FC = () => {
                                 className="relative rounded-[3rem] overflow-hidden aspect-[3/4]"
                             >
                                 <img 
-                                    src="/instructor-gas-garage.jpg" 
+                                    src="/gas-garage/emanuel.jpg" 
                                     alt="Emanuel Ricciardi" 
                                     className="w-full h-full object-cover"
                                 />
@@ -420,6 +420,63 @@ const LPGasGarage: React.FC = () => {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── W-Tech Headquarters Section ── */}
+                <section className="py-24 bg-[#0a0a0a] border-t border-white/5">
+                    <div className="container mx-auto px-6">
+                        <div className="grid lg:grid-cols-2 gap-16 items-center">
+                            <motion.div 
+                                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                            >
+                                <SectionLabel>Nossa Estrutura</SectionLabel>
+                                <h2 className="text-3xl md:text-5xl font-black uppercase mb-8 leading-tight">
+                                    ESTRUTURA <span className="text-amber-500 italic">INDEPENDENTE</span> DO BRASIL.
+                                </h2>
+                                <div className="space-y-6 text-gray-400 text-lg leading-relaxed">
+                                    <p>
+                                        Localizada estrategicamente em São José do Rio Preto, a sede da <strong>W-Tech Brasil</strong> é o epicentro da alta performance em duas rodas na América Latina.
+                                    </p>
+                                    <p>
+                                        Nossa metodologia exclusiva une a teoria da engenharia com a prática extrema do <strong>Motocross, Enduro e Rally</strong>. Não apenas ensinamos suspensão; entregamos a autoridade técnica que transforma oficinas comuns em centros de referência em preparação.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+                                        <div className="flex items-center gap-3 p-4 bg-zinc-900/50 rounded-2xl border border-white/5">
+                                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                                <Settings size={20} />
+                                            </div>
+                                            <span className="text-xs font-bold uppercase tracking-widest">Laboratório de Eletrônica</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 p-4 bg-zinc-900/50 rounded-2xl border border-white/5">
+                                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                                <Zap size={20} />
+                                            </div>
+                                            <span className="text-xs font-bold uppercase tracking-widest">Dinamômetro de Suspensão</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+                                className="relative"
+                            >
+                                <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/10">
+                                    <img 
+                                        src="/gas-garage/sede.jpg" 
+                                        alt="W-Tech Brasil Sede" 
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute bottom-6 left-6">
+                                        <div className="bg-black/80 backdrop-blur-md p-6 rounded-2xl border border-amber-500/30">
+                                            <p className="text-3xl font-black text-amber-500 mb-1">1.200m²</p>
+                                            <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-white">De Estrutura Técnica</p>
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>
