@@ -5,7 +5,7 @@
 
 export const submitToGoogleSheets = async (name, phone) => {
     try {
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzQy18Q3G6-8k19y8W9_38bNEguAXSk/exec'; // Web App URL do Apps Script
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwccY-jxPD_1IrCLmTxYHQNBl58in8g6Zzf55TAwGrQJ8I1ugNfcQiwWoYTh8tEZz8M/exec'; // Web App URL final
         
         const payload = {
             name,
