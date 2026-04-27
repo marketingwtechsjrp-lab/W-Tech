@@ -468,7 +468,7 @@ const LPGasGarage: React.FC = () => {
                             >
                                 <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-white/10">
                                     <img 
-                                        src="/gas-garage/sede.jpg" 
+                                        src="https://w-techbrasil.com.br/wp-content/uploads/2025/01/w-tech-sobre-nos-1-768x495.jpg" 
                                         alt="W-Tech Brasil Sede" 
                                         className="w-full h-full object-cover"
                                     />
