@@ -8,6 +8,7 @@ import {
     MessageCircle, HelpCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { sendWhatsAppMessage } from '../lib/whatsapp';
 
 /* ─── Google Fonts Injection ─── */
 if (typeof document !== 'undefined') {
@@ -104,26 +105,10 @@ const LeadForm: React.FC = () => {
 
             // 2. Automated Welcome Message via Evolution API (André's Instance)
             try {
-                const instanceName = 'André W-Tech';
-                const apiKey = 'd037768b3d06382756a0d9edecf3e40e'; // Global API Key
-                const evolutionUrl = 'https://api.2b.app.br';
-
-                let formattedPhone = formData.phone.replace(/\D/g, '');
-                if (!formattedPhone.startsWith('55')) {
-                    formattedPhone = '55' + formattedPhone;
-                }
-
-                await fetch(`${evolutionUrl}/message/sendText/${encodeURIComponent(instanceName)}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': apiKey
-                    },
-                    body: JSON.stringify({
-                        number: formattedPhone,
-                        text: `Olá ${formData.name}! Tudo bem? Aqui é o André da W-Tech. Vi que você se inscreveu na nossa landing page do treinamento Chão de Oficina com o Emanuel do Rio de Janeiro. Seja muito bem-vindo! Como posso te ajudar hoje?`
-                    })
-                });
+                const andreUserId = '407d09b8-8205-4697-9816-39b20f7e20ef';
+                const welcomeMessage = `Olá ${formData.name}! Tudo bem? Aqui é o André da W-Tech. Vi que você se inscreveu na nossa landing page do treinamento Chão de Oficina com o Emanuel do Rio de Janeiro. Seja muito bem-vindo! Como posso te ajudar hoje?`;
+                
+                await sendWhatsAppMessage(formData.phone, welcomeMessage, andreUserId);
             } catch (whatsappErr) {
                 console.error('Erro ao disparar WhatsApp automático:', whatsappErr);
             }
