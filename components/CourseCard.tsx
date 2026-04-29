@@ -2,6 +2,7 @@ import React from 'react';
 import { Course } from '../types';
 import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getCourseLink } from '../lib/utils';
 
 interface CourseCardProps {
   course: Course;
@@ -76,14 +77,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
 
           <div className="pt-4 border-t border-gray-100 mt-4">
             <Link
-              to={
-                course.customLink ? course.customLink :
-                course.tags?.includes('LISBOA_ABRIL_2026') ? '/lp-lisboa-fev-2026' :
-                  course.tags?.includes('WTECH_EUROPA_2026') ? '/lp-wtech-lisboa' :
-                    course.tags?.includes('PRORIDERS_EUROPA_2026') ? '/lp-proriders-lisboa' :
-                      course.tags?.includes('ERGONOMIA_ONLINE') ? '/curso-suspensao-piloto' :
-                        `/lp/${course.slug || course.id}`
-              }
+              to={getCourseLink(course)}
               className={`w-full py-3 rounded-lg flex items-center justify-center text-sm font-bold uppercase tracking-widest transition-all shadow-md active:scale-95 ${
                 course.status === 'Full' ? 'bg-orange-600 text-white hover:bg-orange-700' :
                 course.status === 'Completed' ? 'bg-gray-400 text-white cursor-not-allowed opacity-80' :

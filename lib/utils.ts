@@ -71,3 +71,32 @@ export function sanitizeHtml(html: string): string {
     
     return sanitized;
 }
+
+/**
+ * Retorna o link correto para um curso ou evento, priorizando links personalizados
+ * e tratando tags específicas. Também remove prefixos de hash duplicados.
+ */
+export function getCourseLink(course: any) {
+    let link = '';
+    
+    if (course.customLink) {
+        link = course.customLink;
+    } else {
+        const tags = course.tags || [];
+        if (tags.includes('LISBOA_ABRIL_2026')) link = '/lp-lisboa-fev-2026';
+        else if (tags.includes('WTECH_EUROPA_2026')) link = '/lp-wtech-lisboa';
+        else if (tags.includes('PRORIDERS_EUROPA_2026')) link = '/lp-proriders-lisboa';
+        else if (tags.includes('ERGONOMIA_ONLINE')) link = '/curso-suspensao-piloto';
+        else if (tags.includes('CHAO_DE_OFICINA')) link = '/chao-de-oficina';
+        else link = `/lp/${course.slug || course.id}`;
+    }
+
+    // Sanitize: remove "/#/" prefix if it exists to avoid duplication in HashRouter
+    if (link.startsWith('/#/')) {
+        link = link.substring(2);
+    } else if (link.startsWith('#/')) {
+        link = link.substring(1);
+    }
+    
+    return link;
+}

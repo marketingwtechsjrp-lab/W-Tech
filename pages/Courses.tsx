@@ -31,7 +31,7 @@ const Courses: React.FC = () => {
 
     const getCourseLink = (course: Course) => {
         if (course.customLink) return course.customLink;
-        
+
         const tags = course.tags || [];
         if (tags.includes('LISBOA_ABRIL_2026')) return '/lp-lisboa-fev-2026';
         if (tags.includes('WTECH_EUROPA_2026')) return '/lp-wtech-lisboa';
@@ -172,11 +172,10 @@ const Courses: React.FC = () => {
                                                 {hasEvent ? (
                                                     <Link
                                                         to={getCourseLink(dayEvents[0])}
-                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors font-bold hover:scale-110 ${
-                                                            dayEvents[0].status === 'Full' ? 'bg-orange-600 text-white' :
-                                                            dayEvents[0].status === 'Completed' ? 'bg-gray-400 text-white' :
-                                                            'bg-wtech-gold text-black'
-                                                        }`}
+                                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium cursor-pointer transition-colors font-bold hover:scale-110 ${dayEvents[0].status === 'Full' ? 'bg-orange-600 text-white' :
+                                                                dayEvents[0].status === 'Completed' ? 'bg-gray-400 text-white' :
+                                                                    'bg-wtech-gold text-black'
+                                                            }`}
                                                         title={dayEvents.map(e => e.title).join(', ')}
                                                     >
                                                         {day}

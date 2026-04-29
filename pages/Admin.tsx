@@ -753,7 +753,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             badge_layout_id: formData.badgeLayoutId || null,
             is_international: formData.isInternational || false,
             currency: formData.currency || 'BRL',
-            custom_link: formData.customLink || null
+            custom_link: formData.customLink ? formData.customLink.replace(/^\/?#\/?/, '/') : null
         };
 
         let error;
@@ -3042,7 +3042,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         <div className="md:col-span-2">
                             <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Link de Destino Personalizado (Ignora LP Automática)</label>
                             <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.customLink || ''} onChange={e => setFormData({ ...formData, customLink: e.target.value })} placeholder="Ex: /chao-de-oficina ou https://..." />
-                            <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-1">Se preenchido, o calendário usará este link em vez da Landing Page gerada automaticamente.</p>
+                            <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-1">Se preenchido, o calendário usará este link em vez da Landing Page gerada automaticamente. Use caminhos internos como "/chao-de-oficina" (sem o #).</p>
                         </div>
 
                         <div className="md:col-span-2">
