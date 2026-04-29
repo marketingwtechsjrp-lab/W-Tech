@@ -56,7 +56,8 @@ const Courses: React.FC = () => {
                 registeredCount: c.SITE_Enrollments?.[0]?.count || 0,
                 type: c.type,
                 tags: c.tags || [],
-                features: c.features || []
+                features: c.features || [],
+                customLink: c.custom_link
             })) : [];
 
             // Inserção manual do curso Chão de Oficina para garantir que apareça no calendário

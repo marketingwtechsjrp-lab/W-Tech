@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.0.6",
+    "date": "2026-04-29",
+    "title": "Fix: Mapeamento de Link Personalizado no Calendário",
+    "changes": [
+      "Corrigido mapeamento custom_link -> customLink no fetch de cursos."
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.0.5",
     "date": "2026-04-29",
     "title": "Redirecionamento Manual de Landing Pages",
