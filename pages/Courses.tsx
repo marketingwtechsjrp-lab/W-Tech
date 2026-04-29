@@ -57,7 +57,24 @@ const Courses: React.FC = () => {
                 features: c.features || []
             })) : [];
 
-            setCourses(dbCourses);
+            // Inserção manual do curso Chão de Oficina para garantir que apareça no calendário
+            const chaoDeOficinaCourse: Course = {
+                id: 'chao-de-oficina-fixo',
+                title: 'Treinamento Chão de Oficina (RJ)',
+                description: 'Capacitação prática em diagnóstico eletrônico multimarcas.',
+                date: '2026-06-19T07:30:00',
+                dateEnd: '2026-06-21T18:00:00',
+                location: 'Rio de Janeiro / RJ',
+                location_type: 'Presencial',
+                type: 'Course',
+                status: 'Published',
+                tags: ['CHAO_DE_OFICINA'],
+                price: 0,
+                currency: 'BRL',
+                image_url: '/logo-chao-de-oficina.jpg'
+            };
+
+            setCourses([...dbCourses, chaoDeOficinaCourse]);
             setLoading(false);
         };
         fetchCourses();
