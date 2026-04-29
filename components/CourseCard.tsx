@@ -77,6 +77,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
           <div className="pt-4 border-t border-gray-100 mt-4">
             <Link
               to={
+                course.customLink ? course.customLink :
                 course.tags?.includes('LISBOA_ABRIL_2026') ? '/lp-lisboa-fev-2026' :
                   course.tags?.includes('WTECH_EUROPA_2026') ? '/lp-wtech-lisboa' :
                     course.tags?.includes('PRORIDERS_EUROPA_2026') ? '/lp-proriders-lisboa' :

@@ -113,6 +113,7 @@ Este comando executa o script `scripts/deploy-update.js`, que:
 
 ## 📝 6. Histórico de Manutenção (Últimas 5 Modificações)
 
+- **29/04/2026**: Versão v3.0.4 - Implementação de redirecionamentos manuais para Landing Pages. Adicionado campo `customLink` no Admin para permitir que cursos/eventos apontem para URLs personalizadas, ignorando a LP automática.
 - **16/04/2026**: Versão v3.0.3 - Fix crítico de crash no módulo de cursos e redesign completo da UI de matrículas/cursos para padrão premium.
 - **13/04/2026**: Criação do `guia.md` e implementação da Regra de Atualização Automática via GitHub Actions.
 - **10/04/2026**: Unificação das tabelas de alunos e clientes para evitar duplicidade de dados.

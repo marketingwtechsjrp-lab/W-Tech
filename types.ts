@@ -81,6 +81,7 @@ export interface Course {
   badgeLayoutId?: string; // Mapped from badge_layout_id
   isInternational?: boolean; // Mapped from is_international
   currency?: 'BRL' | 'USD' | 'EUR';
+  customLink?: string; // Mapped from custom_link
 }
 
 export interface CertificateLayout {

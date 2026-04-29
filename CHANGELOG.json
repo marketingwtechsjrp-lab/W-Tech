@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.0.5",
+    "date": "2026-04-29",
+    "title": "Redirecionamento Manual de Landing Pages",
+    "changes": [
+      "Adicionado campo 'customLink' no Admin para redirecionamento manual."
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.0.4",
     "date": "2026-04-29",
     "title": "Correção de Slugs e Link no Editor de LP",
