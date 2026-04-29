@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.0.4",
+    "date": "2026-04-29",
+    "title": "Correção de Slugs e Link no Editor de LP",
+    "changes": [
+      "Corrigido prefixo da URL no Editor de LP para o domínio correto."
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.0.3",
     "date": "2026-04-16",
     "title": "Courses Module UI/UX Overhaul & Critical Fixes",

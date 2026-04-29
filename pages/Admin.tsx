@@ -779,7 +779,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 const dateStr = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
                 const normalizedTitle = payload.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
                 // Slug: title-date (e.g. curso-de-suspensao-2024-05-15)
-                const slug = `${normalizedTitle.replace(/[^a-z0-9]+/g, '-')}-${dateStr}`.replace(/^-+|-+$/g, '');
+                const slug = `${normalizedTitle.replace(/[^a-z0-9]+/g, '-')}-${dateStr}`.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
 
                 const lpPayload = {
                     course_id: savedCourseId,

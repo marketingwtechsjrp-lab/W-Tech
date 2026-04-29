@@ -18,7 +18,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         courseId: course.id,
         title: course.title,
         subtitle: 'Domine a arte da suspensão de motos com a metodologia W-Tech.',
-        slug: course.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
+        slug: course.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
         heroImage: course.image || '',
         heroSecondaryImage: 'https://lp.w-techbrasil.com.br/wp-content/webp-express/webp-images/uploads/2025/09/boas-vindas-2.png.webp',
         benefits: [
@@ -231,8 +231,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 <div>
                                     <label className="block text-sm font-bold text-gray-500 mb-1">URL Slug (ex: curso-bh)</label>
                                     <div className="flex items-center">
-                                        <span className="p-3 bg-gray-100 border border-r-0 border-gray-200 text-gray-500 rounded-l-lg text-sm">w-tech.com/curso/</span>
-                                        <input className="flex-1 bg-white border border-gray-200 p-3 rounded-r-lg focus:ring-2 focus:ring-black outline-none transition-all" value={lp.slug || ''} onChange={e => setLp({ ...lp, slug: e.target.value })} />
+                                        <span className="p-3 bg-gray-100 border border-r-0 border-gray-200 text-gray-500 rounded-l-lg text-sm">w-techbrasil.com.br/#/lp/</span>
+                                        <input className="flex-1 bg-white border border-gray-200 p-3 rounded-r-lg focus:ring-2 focus:ring-black outline-none transition-all" value={lp.slug || ''} onChange={e => setLp({ ...lp, slug: e.target.value.toLowerCase().trim().replace(/[^a-z0-9-]+/g, '') })} />
                                     </div>
                                 </div>
                                 <div>

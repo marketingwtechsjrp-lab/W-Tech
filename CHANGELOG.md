@@ -1,5 +1,8 @@
 # Histórico de Atualizações - W-Tech Platform
 
+
+## v3.0.4 (2026-04-29) - Correção de Slugs e Link no Editor de LP
+- Corrigido prefixo da URL no Editor de LP para o domínio correto.
 ## v3.0.3 (2026-04-16) - Courses Module UI/UX Overhaul & Critical Fixes
 - FIX: Resolvido erro fatal de 'tela branca' no módulo de Cursos causado pela função `cn()` não definida.
 - UX: Redesign completo da Lista de Inscritos com novos cards de estatísticas (Moeda, Recebido, Previsto).
