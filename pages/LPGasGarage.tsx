@@ -334,7 +334,8 @@ const LPGasGarage: React.FC = () => {
                                     </div>
                                     <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-2xl backdrop-blur-sm">
                                         <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 mb-1">Localização</p>
-                                        <p className="text-xl font-black text-white italic">Rio de Janeiro / RJ</p>
+                                        <p className="text-xl font-black text-white italic">Sede W-Tech / SP</p>
+                                        <p className="text-[10px] font-bold text-gray-500/60 mt-1 uppercase">São José do Rio Preto</p>
                                     </div>
                                 </motion.div>
 
