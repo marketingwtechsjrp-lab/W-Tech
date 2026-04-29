@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.6 (2026-04-29) - Fix: Mapeamento de Link Personalizado no Calendário
+- Corrigido mapeamento custom_link -> customLink no fetch de cursos.
+
 ## v3.0.5 (2026-04-29) - Redirecionamento Manual de Landing Pages
 - Adicionado campo 'customLink' no Admin para redirecionamento manual.
 
