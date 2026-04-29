@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.5 (2026-04-29) - Redirecionamento Manual de Landing Pages
+- Adicionado campo 'customLink' no Admin para redirecionamento manual.
+
 ## v3.0.4 (2026-04-29) - Correção de Slugs e Link no Editor de LP
 - Corrigido prefixo da URL no Editor de LP para o domínio correto.
 ## v3.0.3 (2026-04-16) - Courses Module UI/UX Overhaul & Critical Fixes

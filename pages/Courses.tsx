@@ -30,6 +30,8 @@ const Courses: React.FC = () => {
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
 
     const getCourseLink = (course: Course) => {
+        if (course.customLink) return course.customLink;
+        
         const tags = course.tags || [];
         if (tags.includes('LISBOA_ABRIL_2026')) return '/lp-lisboa-fev-2026';
         if (tags.includes('WTECH_EUROPA_2026')) return '/lp-wtech-lisboa';

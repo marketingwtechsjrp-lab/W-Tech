@@ -629,7 +629,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             certificateLayoutId: c.certificate_layout_id,
             badgeLayoutId: c.badge_layout_id,
             isInternational: c.is_international,
-            currency: c.currency || 'BRL'
+            currency: c.currency || 'BRL',
+            customLink: c.custom_link
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
@@ -751,7 +752,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             certificate_layout_id: formData.certificateLayoutId || null,
             badge_layout_id: formData.badgeLayoutId || null,
             is_international: formData.isInternational || false,
-            currency: formData.currency || 'BRL'
+            currency: formData.currency || 'BRL',
+            custom_link: formData.customLink || null
         };
 
         let error;
@@ -3035,6 +3037,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     <img src={formData.image} alt="Capa" className="h-24 w-auto rounded-lg border border-[var(--admin-border)] object-cover" />
                                 )}
                             </div>
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Link de Destino Personalizado (Ignora LP Automática)</label>
+                            <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.customLink || ''} onChange={e => setFormData({ ...formData, customLink: e.target.value })} placeholder="Ex: /chao-de-oficina ou https://..." />
+                            <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-1">Se preenchido, o calendário usará este link em vez da Landing Page gerada automaticamente.</p>
                         </div>
 
                         <div className="md:col-span-2">
