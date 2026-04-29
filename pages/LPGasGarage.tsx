@@ -318,10 +318,25 @@ const LPGasGarage: React.FC = () => {
 
                                 <motion.p 
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-                                    className="text-gray-300 text-lg md:text-2xl leading-relaxed mb-10 max-w-2xl font-light"
+                                    className="text-gray-300 text-lg md:text-2xl leading-relaxed mb-6 max-w-2xl font-light"
                                 >
                                     Capacitação prática para mecânicos que querem dominar <strong>diagnóstico eletrônico</strong> e soluções reais de oficina em motocicletas multimarcas.
                                 </motion.p>
+
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
+                                    className="flex flex-wrap gap-4 mb-10"
+                                >
+                                    <div className="bg-amber-500/10 border border-amber-500/20 px-6 py-4 rounded-2xl backdrop-blur-sm">
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-amber-500 mb-1">Próxima Turma</p>
+                                        <p className="text-xl font-black text-white italic">19 a 21 de JUNHO</p>
+                                        <p className="text-[10px] font-bold text-amber-500/60 mt-1 uppercase">07:30 às 18:00</p>
+                                    </div>
+                                    <div className="bg-white/5 border border-white/10 px-6 py-4 rounded-2xl backdrop-blur-sm">
+                                        <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500 mb-1">Localização</p>
+                                        <p className="text-xl font-black text-white italic">Rio de Janeiro / RJ</p>
+                                    </div>
+                                </motion.div>
 
                                 <motion.div 
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}

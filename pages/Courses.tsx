@@ -35,6 +35,7 @@ const Courses: React.FC = () => {
         if (tags.includes('WTECH_EUROPA_2026')) return '/lp-wtech-lisboa';
         if (tags.includes('PRORIDERS_EUROPA_2026')) return '/lp-proriders-lisboa';
         if (tags.includes('ERGONOMIA_ONLINE')) return '/curso-suspensao-piloto';
+        if (tags.includes('CHAO_DE_OFICINA')) return '/chao-de-oficina';
         return `/lp/${course.slug || course.id}`;
     };
 
