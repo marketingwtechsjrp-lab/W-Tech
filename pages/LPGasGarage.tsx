@@ -273,13 +273,13 @@ const LPGasGarage: React.FC = () => {
                             />
                             <div className="h-20 md:h-32 w-px bg-white/20" />
                             <div className="flex flex-col justify-center">
-                                <span className="text-[11px] md:text-sm text-gray-400 uppercase tracking-[0.4em] font-bold mb-4 drop-shadow-lg">
+                                <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-[0.3em] font-bold mb-2 drop-shadow-lg opacity-70">
                                     Em parceria com
                                </span>
                                 <img 
                                     src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
                                     alt="W-Tech" 
-                                    className="h-16 md:h-24 object-contain w-auto opacity-90 drop-shadow-lg" 
+                                    className="h-20 md:h-30 object-contain w-auto opacity-90 drop-shadow-lg" 
                                 />
                             </div>
                         </div>
