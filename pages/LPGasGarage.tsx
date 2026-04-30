@@ -263,24 +263,28 @@ const LPGasGarage: React.FC = () => {
                 </motion.button>
 
                 {/* ── Top Bar ── */}
-                <div className="relative z-[100] bg-black/80 backdrop-blur-md pt-8 pb-6 border-b border-white/5">
+                <div 
+                    className="relative z-[100] pt-8 pb-6 border-b border-white/5 overflow-hidden"
+                    style={{ backgroundImage: 'url(/header-bg-metal.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+                >
+                    <div className="absolute inset-0 bg-black/40" />
                     <div className="absolute top-0 left-0 right-0 h-4 bg-black" />
-                    <div className="container mx-auto px-6 flex justify-center items-center">
+                    <div className="container mx-auto px-6 relative z-10 flex justify-center items-center">
                         <div className="flex items-center gap-8 md:gap-16">
                             <img 
-                                src="/logo-gas-garage-new.png" 
+                                src="/logo-gas-garage-stylized.png" 
                                 alt="Gas Garage" 
-                                className="h-12 md:h-18 drop-shadow-[0_0_15px_rgba(239,68,68,0.2)] object-contain w-auto" 
+                                className="h-20 md:h-28 drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] object-contain w-auto" 
                             />
-                            <div className="h-12 md:h-16 w-px bg-white/10" />
+                            <div className="h-16 md:h-24 w-px bg-white/10" />
                             <div className="flex flex-col justify-center">
-                                <span className="text-[9px] md:text-[11px] text-gray-500 uppercase tracking-[0.3em] font-bold mb-3">
+                                <span className="text-[9px] md:text-[11px] text-gray-300 uppercase tracking-[0.3em] font-bold mb-3 drop-shadow-md">
                                     Em parceria com
                                </span>
                                 <img 
                                     src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
                                     alt="W-Tech" 
-                                    className="h-10 md:h-14 object-contain w-auto opacity-90" 
+                                    className="h-10 md:h-14 object-contain w-auto opacity-90 drop-shadow-md" 
                                 />
                             </div>
                         </div>
