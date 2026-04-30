@@ -573,7 +573,7 @@ const LPGasGarage: React.FC = () => {
                             <div className="text-center">
                                 <p className="text-[10px] uppercase tracking-[0.3em] font-black text-gray-500 mb-4">Realização</p>
                                 <div className="p-2">
-                                    <img src="/logo-gas-garage-stylized-transparent.png" alt="Gas Garage" className="h-20 md:h-28 drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
+                                    <img src="/logo-gas-garage-stylized-transparent.png" alt="Gas Garage" className="h-32 md:h-44 drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                                 </div>
                                 <p className="text-[10px] uppercase tracking-widest text-amber-500 mt-2">Motorcycle - RJ</p>
                             </div>
