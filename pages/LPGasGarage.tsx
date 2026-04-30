@@ -264,30 +264,24 @@ const LPGasGarage: React.FC = () => {
 
                 {/* ── Top Bar ── */}
                 <div className="relative z-[100] bg-black/50 backdrop-blur-sm py-4 border-b border-white/5">
-                    <div className="container mx-auto px-6 flex justify-between items-center">
-                        <div className="flex items-center gap-4 md:gap-6">
+                    <div className="container mx-auto px-6 flex justify-center items-center">
+                        <div className="flex items-center gap-6 md:gap-10">
                             <img 
                                 src="/logo-gas-garage.png" 
                                 alt="Gas Garage" 
-                                className="h-8 md:h-12 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" 
+                                className="h-10 md:h-16 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)] object-contain w-auto" 
                             />
-                            <div className="h-8 w-px bg-white/10" />
+                            <div className="h-10 md:h-12 w-px bg-white/10" />
                             <div className="flex flex-col justify-center">
-                                <span className="text-[8px] md:text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold mb-1">
+                                <span className="text-[8px] md:text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold mb-2">
                                     Em parceria com
                                </span>
                                 <img 
                                     src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
                                     alt="W-Tech" 
-                                    className="h-3 md:h-4 opacity-60" 
+                                    className="h-5 md:h-7 object-contain w-auto opacity-80" 
                                 />
                             </div>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-amber-500">
-                                <span className="hidden sm:inline">Ministrado por Emanuel Ricciardi</span>
-                                <span className="sm:hidden">Por Emanuel</span>
-                            </p>
                         </div>
                     </div>
                 </div>
