@@ -312,7 +312,7 @@ const LPGasGarage: React.FC = () => {
                                     className="text-4xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.9] tracking-tighter mb-8"
                                 >
                                     <div className="mb-4">
-                                        <img src="/logo-chao-de-oficina.jpg" alt="Chão de Oficina" className="h-20 md:h-32 lg:h-40 filter invert brightness-200" />
+                                        <img src="/logo-chao-de-oficina.png" alt="Chão de Oficina" className="h-20 md:h-32 lg:h-40" />
                                     </div>
                                 </motion.h1>
 
