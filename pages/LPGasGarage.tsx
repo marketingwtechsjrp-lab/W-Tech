@@ -569,11 +569,11 @@ const LPGasGarage: React.FC = () => {
                 <section className="py-24 border-t border-white/5">
                     <div className="container mx-auto px-6 text-center">
                         <SectionLabel>Parceria de Elite</SectionLabel>
-                        <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 transition-all duration-500">
                             <div className="text-center">
                                 <p className="text-[10px] uppercase tracking-[0.3em] font-black text-gray-500 mb-4">Realização</p>
                                 <div className="p-2">
-                                    <img src="/logo-gas-garage.png" alt="Gas Garage" className="h-20 md:h-28 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+                                    <img src="/logo-gas-garage-stylized-transparent.png" alt="Gas Garage" className="h-20 md:h-28 drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]" />
                                 </div>
                                 <p className="text-[10px] uppercase tracking-widest text-amber-500 mt-2">Motorcycle - RJ</p>
                             </div>
@@ -583,7 +583,7 @@ const LPGasGarage: React.FC = () => {
                                 <img 
                                     src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
                                     alt="W-Tech" 
-                                    className="h-10" 
+                                    className="h-14 md:h-20 object-contain opacity-90" 
                                 />
                                 <p className="text-[10px] uppercase tracking-widest text-amber-500 mt-2">Expertise em Suspensão</p>
                             </div>
