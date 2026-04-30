@@ -263,23 +263,23 @@ const LPGasGarage: React.FC = () => {
                 </motion.button>
 
                 {/* ── Top Bar (Transparent Over Hero) ── */}
-                <div className="absolute top-0 left-0 right-0 z-[100] pt-12 pb-6">
+                <div className="absolute top-0 left-0 right-0 z-[100] pt-6 md:pt-10 pb-6">
                     <div className="container mx-auto px-6 flex justify-center items-center">
                         <div className="flex items-center gap-8 md:gap-16">
                             <img 
                                 src="/logo-gas-garage-stylized-transparent.png" 
                                 alt="Gas Garage" 
-                                className="h-24 md:h-36 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] object-contain w-auto" 
+                                className="h-32 md:h-48 drop-shadow-[0_10px_40px_rgba(0,0,0,0.9)] object-contain w-auto" 
                             />
-                            <div className="h-16 md:h-24 w-px bg-white/20" />
+                            <div className="h-20 md:h-32 w-px bg-white/20" />
                             <div className="flex flex-col justify-center">
-                                <span className="text-[10px] md:text-xs text-gray-400 uppercase tracking-[0.3em] font-bold mb-3 drop-shadow-lg">
+                                <span className="text-[11px] md:text-sm text-gray-400 uppercase tracking-[0.4em] font-bold mb-4 drop-shadow-lg">
                                     Em parceria com
                                </span>
                                 <img 
                                     src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
                                     alt="W-Tech" 
-                                    className="h-12 md:h-16 object-contain w-auto opacity-90 drop-shadow-lg" 
+                                    className="h-16 md:h-24 object-contain w-auto opacity-90 drop-shadow-lg" 
                                 />
                             </div>
                         </div>
@@ -287,7 +287,7 @@ const LPGasGarage: React.FC = () => {
                 </div>
 
                 {/* ── Hero Section ── */}
-                <section className="relative min-h-[90vh] flex items-center pt-32 pb-32 overflow-hidden">
+                <section className="relative min-h-[90vh] flex items-center pt-48 md:pt-64 pb-32 overflow-hidden">
                     <div className="absolute inset-0 z-0">
                         <img 
                             src="/gas-garage-hero.png" 
