@@ -265,21 +265,21 @@ const LPGasGarage: React.FC = () => {
                 {/* ── Top Bar ── */}
                 <div className="relative z-[100] bg-black/50 backdrop-blur-sm py-4 border-b border-white/5">
                     <div className="container mx-auto px-6 flex justify-center items-center">
-                        <div className="flex items-center gap-6 md:gap-10">
+                        <div className="flex items-center gap-6 md:gap-12">
                             <img 
                                 src="/logo-gas-garage.png" 
                                 alt="Gas Garage" 
-                                className="h-10 md:h-16 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)] object-contain w-auto" 
+                                className="h-14 md:h-20 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)] object-contain w-auto" 
                             />
-                            <div className="h-10 md:h-12 w-px bg-white/10" />
+                            <div className="h-12 md:h-16 w-px bg-white/10" />
                             <div className="flex flex-col justify-center">
-                                <span className="text-[8px] md:text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold mb-2">
+                                <span className="text-[10px] md:text-xs text-gray-500 uppercase tracking-[0.2em] font-bold mb-2">
                                     Em parceria com
                                </span>
                                 <img 
                                     src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
                                     alt="W-Tech" 
-                                    className="h-5 md:h-7 object-contain w-auto opacity-80" 
+                                    className="h-8 md:h-10 object-contain w-auto opacity-80" 
                                 />
                             </div>
                         </div>
@@ -323,7 +323,7 @@ const LPGasGarage: React.FC = () => {
                                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
                                     className="text-gray-300 text-lg md:text-2xl leading-relaxed mb-6 max-w-2xl font-light"
                                 >
-                                    Capacitação prática para mecânicos que querem dominar <strong>diagnóstico eletrônico</strong> e soluções reais de oficina em motocicletas multimarcas.
+                                    Ministrado exclusivamente por <strong className="text-amber-500">Emanuel Ricciardi</strong>. Capacitação prática baseada no método da Gas Garage para mecânicos que querem dominar <strong>diagnóstico eletrônico</strong> e soluções reais em motocicletas multimarcas.
                                 </motion.p>
 
                                 <motion.div 
