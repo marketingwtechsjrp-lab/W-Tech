@@ -265,20 +265,29 @@ const LPGasGarage: React.FC = () => {
                 {/* ── Top Bar ── */}
                 <div className="relative z-[100] bg-black/50 backdrop-blur-sm py-4 border-b border-white/5">
                     <div className="container mx-auto px-6 flex justify-between items-center">
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-4 md:gap-6">
                             <img 
-                                src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
-                                alt="W-Tech" 
-                                className="h-6 md:h-8 opacity-80" 
+                                src="/logo-gas-garage.png" 
+                                alt="Gas Garage" 
+                                className="h-8 md:h-12 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" 
                             />
-                            <div className="h-6 w-px bg-white/10 hidden sm:block" />
-                            <div className="hidden sm:flex">
-                                <img src="/logo-gas-garage.png" alt="Gas Garage" className="h-8 md:h-10 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
+                            <div className="h-8 w-px bg-white/10" />
+                            <div className="flex flex-col justify-center">
+                                <span className="text-[8px] md:text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold mb-1">
+                                    Em parceria com
+                               </span>
+                                <img 
+                                    src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" 
+                                    alt="W-Tech" 
+                                    className="h-3 md:h-4 opacity-60" 
+                                />
                             </div>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] md:text-xs font-bold uppercase tracking-widest text-amber-500">
-                            <span className="hidden sm:inline">Gas Garage Motorcycle + W-Tech</span>
-                            <span className="sm:hidden">GG + W-Tech</span>
+                        <div className="text-right">
+                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-amber-500">
+                                <span className="hidden sm:inline">Ministrado por Emanuel Ricciardi</span>
+                                <span className="sm:hidden">Por Emanuel</span>
+                            </p>
                         </div>
                     </div>
                 </div>
