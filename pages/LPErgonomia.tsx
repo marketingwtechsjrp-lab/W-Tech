@@ -355,8 +355,8 @@ const LPErgonomia: React.FC = () => {
                 <div className="container mx-auto px-6 relative z-20 pt-10 pb-20">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center max-w-7xl mx-auto">
 
-                        {/* Text (Left) - Top Part */}
-                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-1">
+                        {/* Text (Left Column) */}
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-1 lg:col-start-1 lg:row-start-1">
                             <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6 max-w-fit">
                                 <Zap size={14} className="text-wtech-gold animate-pulse" />
                                 <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">Curso Online — W-Tech</span>
@@ -376,8 +376,8 @@ const LPErgonomia: React.FC = () => {
                             </motion.p>
                         </motion.div>
 
-                        {/* Video / VSL (Right on Desktop, Middle on Mobile) */}
-                        <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col gap-6 order-2 lg:order-none lg:row-span-2">
+                        {/* Video / VSL (Right Column) */}
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col gap-6 order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
                             <motion.div
                                 variants={v}
                                 className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group"
@@ -402,23 +402,14 @@ const LPErgonomia: React.FC = () => {
                             >
                                 <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                                 <span className="relative z-10 flex items-center gap-3">
-                                    Quero Garantir Minha Vaga Agora <ArrowRight strokeWidth={3} size={20} />
+                                    Quero Regular Minha Suspensão Agora <ArrowRight strokeWidth={3} size={20} />
                                 </span>
                             </motion.button>
                         </motion.div>
 
-                        {/* Buttons (Left Bottom on Desktop, Bottom on Mobile) */}
-                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-3">
-                            <motion.div variants={v} className="flex flex-col sm:flex-row gap-4">
-                                <motion.button
-                                    onClick={() => scrollTo('cta-final')}
-                                    whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(212,175,55,0.4)' } : undefined}
-                                    whileTap={shouldAnimate ? ctaTap : undefined}
-                                    className="lg:hidden bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(212,175,55,0.25)] flex items-center justify-center gap-3 w-full sm:w-auto hover:brightness-110 relative overflow-hidden group"
-                                >
-                                    <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                                    <span className="relative z-10 flex items-center gap-2">Quero Regular Minha Suspensão <ArrowRight strokeWidth={3} size={18} /></span>
-                                </motion.button>
+                        {/* Secondary Button (Below Text on Desktop, Bottom on Mobile) */}
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-3 lg:col-start-1 lg:row-start-2 lg:-mt-4">
+                            <motion.div variants={v}>
                                 <motion.button
                                     onClick={() => scrollTo('modulos')}
                                     whileHover={shouldAnimate ? { scale: 1.02 } : undefined}
