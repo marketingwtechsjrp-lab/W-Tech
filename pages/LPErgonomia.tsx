@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
@@ -180,6 +180,16 @@ const LPErgonomia: React.FC = () => {
     };
 
     /* ─── SALES HOOKS HOOKS ─── */
+    const [videoPlaying, setVideoPlaying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const handlePlayVideo = () => {
+        if (videoRef.current) {
+            videoRef.current.play();
+            setVideoPlaying(true);
+        }
+    };
+
     const [timeLeft, setTimeLeft] = useState(7 * 60); // 7 minutes in seconds
     const [showBuyer, setShowBuyer] = useState(false);
     const [currentBuyer, setCurrentBuyer] = useState<{ name: string, role: string, city: string } | null>(null);
@@ -376,22 +386,40 @@ const LPErgonomia: React.FC = () => {
                             </motion.p>
                         </motion.div>
 
-                        {/* Video / VSL (Right Column) */}
                         <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col gap-6 order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
                             <motion.div
                                 variants={v}
-                                className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group"
+                                className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group cursor-pointer"
+                                onClick={handlePlayVideo}
                             >
                                 <video
-                                    autoPlay
-                                    muted
-                                    controls
+                                    ref={videoRef}
+                                    poster="/images/vsl-thumbnail.png"
+                                    controls={videoPlaying}
                                     playsInline
                                     className="w-full h-full object-cover"
+                                    onPlay={() => setVideoPlaying(true)}
+                                    onPause={() => setVideoPlaying(false)}
                                 >
                                     <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
                                     Seu navegador não suporta vídeos.
                                 </video>
+
+                                {!videoPlaying && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors z-20">
+                                        <div className="relative">
+                                            {/* Pulse Rings */}
+                                            <div className="absolute inset-0 bg-wtech-gold/40 rounded-full animate-ping scale-150 opacity-20" />
+                                            <div className="absolute inset-0 bg-wtech-gold/30 rounded-full animate-pulse scale-125 opacity-40" />
+                                            
+                                            {/* Play Button */}
+                                            <div className="relative w-20 h-20 bg-wtech-gold rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(212,175,55,0.6)] group-hover:scale-110 transition-transform">
+                                                <Play fill="black" size={32} className="text-black ml-1" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
                                 <div className="absolute inset-0 pointer-events-none border-2 border-wtech-gold/20 rounded-2xl z-10" />
                             </motion.div>
 
