@@ -48,6 +48,7 @@ const WaitlistSuspension = lazy(() => import('./pages/WaitlistSuspension'));
 const CourseCheckout = lazy(() => import('./pages/CourseCheckout'));
 const InscricaoConfirmada = lazy(() => import('./pages/InscricaoConfirmada'));
 const LPGasGarage = lazy(() => import('./pages/LPGasGarage'));
+const ObrigadoSuspensao = lazy(() => import('./pages/ObrigadoSuspensao'));
 
 
 
@@ -109,6 +110,7 @@ const App = () => {
                     <Route path="/curso-suspensao-piloto-v4" element={<LPErgonomia4 />} />
                     <Route path="/imersao-pronello" element={<PronelloImmersion />} />
                     <Route path="/chao-de-oficina" element={<LPGasGarage />} />
+                    <Route path="/obrigado-suspensao" element={<ObrigadoSuspensao />} />
                     <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
 

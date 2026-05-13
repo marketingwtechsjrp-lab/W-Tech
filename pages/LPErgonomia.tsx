@@ -397,22 +397,34 @@ const LPErgonomia: React.FC = () => {
                         </motion.div>
 
                         {/* Video / VSL (Right) */}
-                        <motion.div
-                            initial="hidden"
-                            animate="visible"
-                            variants={v}
-                            className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] group bg-zinc-900"
-                        >
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                src="https://www.youtube.com/embed/rbslvR27uT0?autoplay=1&mute=1&controls=1&rel=0&loop=1"
-                                title="Apresentação W-Tech"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full"
-                            ></iframe>
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col gap-6">
+                            <motion.div
+                                variants={v}
+                                className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group"
+                            >
+                                <video
+                                    controls
+                                    playsInline
+                                    className="w-full h-full object-cover"
+                                >
+                                    <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
+                                    Seu navegador não suporta vídeos.
+                                </video>
+                                <div className="absolute inset-0 pointer-events-none border-2 border-wtech-gold/20 rounded-2xl z-10" />
+                            </motion.div>
+
+                            <motion.button
+                                onClick={() => scrollTo('cta-final')}
+                                variants={v}
+                                whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(212,175,55,0.4)' } : undefined}
+                                whileTap={shouldAnimate ? ctaTap : undefined}
+                                className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-8 py-5 rounded-xl font-black text-sm md:text-base uppercase tracking-[0.15em] transition-all shadow-[0_0_40px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 w-full hover:brightness-110 relative overflow-hidden group"
+                            >
+                                <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                                <span className="relative z-10 flex items-center gap-3">
+                                    Quero Garantir Minha Vaga Agora <ArrowRight strokeWidth={3} size={20} />
+                                </span>
+                            </motion.button>
                         </motion.div>
                     </div>
                 </div>
