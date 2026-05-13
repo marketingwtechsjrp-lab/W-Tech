@@ -394,7 +394,7 @@ const LPErgonomia: React.FC = () => {
                             >
                                 <video
                                     ref={videoRef}
-                                    poster="/images/vsl-thumbnail.png"
+                                    poster="/images/vsl-thumbnail.jpg"
                                     controls={videoPlaying}
                                     playsInline
                                     className="w-full h-full object-cover"
