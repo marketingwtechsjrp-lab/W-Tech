@@ -383,6 +383,8 @@ const LPErgonomia: React.FC = () => {
                                 className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group"
                             >
                                 <video
+                                    autoPlay
+                                    muted
                                     controls
                                     playsInline
                                     className="w-full h-full object-cover"
