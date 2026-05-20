@@ -214,47 +214,6 @@ When user's prompt is NOT in English:
 
 > 🔴 **Edit mode:** If multi-file or structural change → Offer to create `{task-slug}.md`. For single-file fixes → Proceed directly.
 
-### 🔄 Maintenance Rules (Project Specific)
-
-- **Sincronização do Guia**: Sempre que realizar alterações estruturais, novos módulos ou mudanças no banco de dados, certifique-se de atualizar o `guia.md`.
-- **GitHub Sync**: O `guia.md` é atualizado automaticamente em cada push via GitHub Actions. Garanta que o arquivo `scripts/update-guide-action.js` permaneça funcional.
-- **Relatórios de Bug**: Se um bug for corrigido, adicione a correção na seção de "Últimas Atualizações" do `guia.md` se for relevante para o funcionamento geral.
-
----
-
-## 🚀 PROJECT CONTEXT — W-Tech Experience Portal
-
-> 🔴 **LEIA SEMPRE** `CODEBASE.md` na raiz antes de qualquer edição para entender dependências, tokens CSS e padrões do projeto.
-
-### Stack Resumida
-- **React 19 + Vite + TypeScript + Tailwind CSS v4**
-- **Backend**: Supabase (Postgres + Auth + Storage)
-- **Deploy**: Vercel (via `npm run release`)
-- **OS**: macOS
-
-### Arquivos Mais Importantes
-| Arquivo | Descrição |
-|---------|-----------|
-| `CODEBASE.md` | Mapa completo de arquivos, tokens, padrões |
-| `pages/Admin.tsx` | Painel admin monolítico (~2500 linhas) |
-| `components/admin/AdminSidebar.tsx` | Sidebar com grupos de navegação |
-| `types.ts` | Todos os tipos TypeScript do projeto |
-| `index.css` | Design tokens CSS (`--admin-surface-*`, etc.) |
-| `tailwind.config.js` | Aliases Tailwind (`wtech.surface`, etc.) |
-| `guia.md` | Documentação do sistema (manter atualizado) |
-
-### Design System — Regras Obrigatórias
-- **Superfícies**: usar `var(--admin-surface-1/2/3)` — NUNCA `dark:bg-[#...]` hardcoded
-- **Bordas**: usar `var(--admin-border)` — NUNCA `dark:border-white/10`
-- **Textos**: usar `var(--admin-text-primary/secondary/tertiary)`
-- **Botão primário**: gold gradient `from-wtech-gold to-yellow-600 text-black`
-- **Cards**: `rounded-2xl` + `border border-[var(--admin-border)]`
-
-### Idioma do Projeto
-- **Interface**: Português (PT-BR)
-- **Código/variáveis/comentários**: Inglês
-- **Responder sempre em PT-BR ao Daniel**
-
 ---
 
 ## TIER 2: DESIGN RULES (Reference)

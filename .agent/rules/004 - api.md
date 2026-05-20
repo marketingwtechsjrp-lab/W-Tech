@@ -1,0 +1,64 @@
+---
+trigger: always_on
+---
+
+
+================================================================================
+rule-11-api-consistency.md
+LEI 11: Consistencia de API REST
+================================================================================
+
+MOTIVO: 
+APIs previsiveis reduzem erros de integracao e facilitam onboarding de novos devs.
+
+GATILHO: 
+Ativado ao criar routers, controllers ou endpoints de API.
+
+CONVENCOES DE ROTAS:
+```
+| Acao      | Metodo | Rota             | Response        |
+|-----------|--------|------------------|-----------------|
+| Listar    | GET    | /resources       | 200 + array     |
+| Detalhe   | GET    | /resources/:id   | 200 + objeto    |
+| Criar     | POST   | /resources       | 201 + objeto    |
+| Atualizar | PATCH  | /resources/:id   | 200 + objeto    |
+| Substituir| PUT    | /resources/:id   | 200 + objeto    |
+| Deletar   | DELETE | /resources/:id   | 204 (no content)|
+```
+
+PADRAO DE RESPOSTA DE ERRO:
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Email invalido",
+    "field": "email",
+    "request_id": "req_abc123"
+  }
+}
+```
+
+EXEMPLO ERRADO:
+```python
+@app.get("/getUsers")           # verbo no path
+@app.post("/user/create")       # singular + verbo
+@app.post("/delete-user/{id}")  # POST pra delete?
+```
+
+EXEMPLO CORRETO:
+```python
+@router.get("")                              # GET /users
+async def list_users(): ...
+
+@router.get("/{user_id}")                    # GET /users/:id
+async def get_user(user_id: UUID): ...
+
+@router.post("", status_code=201)            # POST /users
+async def create_user(payload: UserCreate): ...
+
+@router.patch("/{user_id}")                  # PATCH /users/:id
+async def update_user(user_id: UUID, payload: UserUpdate): ...
+
+@router.delete("/{user_id}", status_code=204) # DELETE /users/:id
+async def delete_user(user_id: UUID): ...
+```

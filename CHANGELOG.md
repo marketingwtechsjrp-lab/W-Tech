@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.7 (2026-05-20) - Suíte de testes do Mercado Pago e melhorias no checkout
+- Adicionado painel de teste de sandbox para Mercado Pago
+- Melhoria visual de carregamento na tela de Inscricao Confirmada para pagamentos pendentes
+- Ajuste de host e porta do servidor de desenvolvimento Vite
+- Adicionado Playwright para automacao de testes
+
 ## v3.0.6 (2026-04-29) - Fix: Mapeamento de Link Personalizado no Calendário
 - Corrigido mapeamento custom_link -> customLink no fetch de cursos.
 

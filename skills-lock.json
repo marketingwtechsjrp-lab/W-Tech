@@ -1,10 +1,60 @@
 {
   "version": 1,
   "skills": {
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/webapp-testing/SKILL.md"
+    },
+    "threejs-animation": {
+      "source": "CloudAI-X/threejs-skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/threejs-animation/SKILL.md"
+    },
+    "seo-audit": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/seo-audit/SKILL.md"
+    },
+    "react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/react-best-practices/SKILL.md"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/find-skills/SKILL.md"
+    },
     "landing-page-design": {
       "source": "tool-belt/skills",
       "sourceType": "github",
-      "computedHash": "081e388a6bd35c8e11a7b08de47fea59e64fc5422bf1bb898f2d94175ab0eda3"
+      "skillPath": ".claude/skills/landing-page-design/SKILL.md"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/frontend-design/SKILL.md"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/web-design-guidelines/SKILL.md"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md"
+    },
+    "lenis-smooth-scroll": {
+      "source": "local",
+      "sourceType": "local",
+      "skillPath": ".claude/skills/lenis-smooth-scroll/SKILL.md"
+    },
+    "playwright": {
+      "source": "local",
+      "sourceType": "local",
+      "skillPath": ".claude/skills/playwright/SKILL.md"
     }
   }
 }

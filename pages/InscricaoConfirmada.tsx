@@ -243,9 +243,16 @@ const InscricaoConfirmada: React.FC = () => {
                                         <div className="flex items-center gap-3 border-t border-gray-200 pt-4">
                                             <div className="flex-1">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase">Valor Pago</p>
-                                                <p className="text-xl font-black text-green-600">
-                                                    {currencySymbol} {(enrollment?.amount_paid || 0).toFixed(2).replace('.', ',')}
-                                                </p>
+                                                {enrollment?.status === 'Confirmed' ? (
+                                                    <p className="text-xl font-black text-green-600">
+                                                        {currencySymbol} {(enrollment.amount_paid || 0).toFixed(2).replace('.', ',')}
+                                                    </p>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <Loader2 size={14} className="animate-spin text-wtech-gold" />
+                                                        <span className="text-sm font-bold text-gray-400">Confirmando com o banco...</span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase">Aluno</p>

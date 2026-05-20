@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart } from 'lucide-react';
+import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle } from 'lucide-react';
 import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
 import { getAsaasConfig } from '../../lib/asaas';
 import { getStripeConfig } from '../../lib/stripe';
+import { createMercadoPagoPreference } from '../../lib/mercadopago';
 
 const AdminIntegrations = () => {
     const { user } = useAuth();
@@ -23,6 +24,18 @@ const AdminIntegrations = () => {
     });
 
     const [loading, setLoading] = useState(false);
+
+    // MP Integration Test State
+    const [mpTest, setMpTest] = useState<{
+        status: 'idle' | 'creating' | 'waiting' | 'confirmed' | 'error';
+        enrollmentId: string | null;
+        initPoint: string | null;
+        isSandbox: boolean;
+        amountPaid: number;
+        transactionId: string | null;
+        errorMsg: string | null;
+    }>({ status: 'idle', enrollmentId: null, initPoint: null, isSandbox: false, amountPaid: 0, transactionId: null, errorMsg: null });
+    const [mpTestPollCount, setMpTestPollCount] = useState(0);
 
     // Test Sending State
     const [testPhone, setTestPhone] = useState('');
@@ -54,6 +67,91 @@ const AdminIntegrations = () => {
                 ga4PropertyId: configMap['ga4_property_id'] || ''
             });
         }
+    };
+
+    // Polling: verifica enrollment a cada 3s enquanto aguardando webhook (máx 2 min)
+    useEffect(() => {
+        if (mpTest.status !== 'waiting' || !mpTest.enrollmentId || mpTestPollCount >= 40) return;
+        const timer = setTimeout(async () => {
+            const { data: enr } = await supabase
+                .from('SITE_Enrollments')
+                .select('status, amount_paid')
+                .eq('id', mpTest.enrollmentId)
+                .single();
+
+            if (enr?.status === 'Confirmed') {
+                const { data: tx } = await supabase
+                    .from('SITE_Transactions')
+                    .select('id')
+                    .eq('enrollment_id', mpTest.enrollmentId)
+                    .single();
+                setMpTest(prev => ({ ...prev, status: 'confirmed', amountPaid: enr.amount_paid, transactionId: tx?.id || null }));
+            } else {
+                setMpTestPollCount(prev => prev + 1);
+            }
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [mpTest.status, mpTest.enrollmentId, mpTestPollCount]);
+
+    const handleMpTest = async () => {
+        if (!globalConfig.mercadoPagoKey) return alert('Configure o Access Token do Mercado Pago antes de testar.');
+        const isSandbox = globalConfig.mercadoPagoKey.startsWith('APP_TEST');
+        setMpTest({ status: 'creating', enrollmentId: null, initPoint: null, isSandbox, amountPaid: 0, transactionId: null, errorMsg: null });
+        setMpTestPollCount(0);
+
+        try {
+            // Pega o primeiro curso disponível para satisfazer a FK
+            const { data: course, error: courseErr } = await supabase
+                .from('SITE_Courses')
+                .select('id, title')
+                .limit(1)
+                .single();
+            if (courseErr || !course) throw new Error('Nenhum curso cadastrado. Crie ao menos um curso antes de testar.');
+
+            // Cria enrollment de teste
+            const { data: enrollment, error: enrollError } = await supabase
+                .from('SITE_Enrollments')
+                .insert([{
+                    course_id: course.id,
+                    student_name: '⚠️ TESTE INTEGRAÇÃO MP',
+                    student_email: user?.email || 'teste@w-tech.com',
+                    student_cpf: '00000000000',
+                    student_phone: '11900000000',
+                    status: 'Pending',
+                    payment_method: 'Mercado Pago',
+                    total_amount: 1.00,
+                    amount_paid: 0,
+                    currency: 'BRL'
+                }])
+                .select('id')
+                .single();
+
+            if (enrollError || !enrollment) throw new Error(enrollError?.message || 'Erro ao criar inscrição de teste.');
+
+            // Cria preferência no MP
+            const mpResult = await createMercadoPagoPreference({
+                course: { id: course.id, title: '⚠️ TESTE INTEGRAÇÃO MP', price: 1.00 },
+                customer: { name: 'Teste Integração W-Tech', email: user?.email || 'teste@w-tech.com', cpf: '00000000000', phone: '11900000000' },
+                enrollmentId: enrollment.id,
+            });
+
+            if (!mpResult.success) throw new Error(mpResult.error || 'Erro ao criar preferência MP.');
+
+            const point = isSandbox ? mpResult.sandbox_init_point : mpResult.init_point;
+            setMpTest(prev => ({ ...prev, status: 'waiting', enrollmentId: enrollment.id, initPoint: point || null }));
+            if (point) window.open(point, '_blank');
+
+        } catch (err: any) {
+            setMpTest(prev => ({ ...prev, status: 'error', errorMsg: err.message }));
+        }
+    };
+
+    const handleMpTestCleanup = async () => {
+        if (!mpTest.enrollmentId) return;
+        await supabase.from('SITE_Transactions').delete().eq('enrollment_id', mpTest.enrollmentId);
+        await supabase.from('SITE_Enrollments').delete().eq('id', mpTest.enrollmentId);
+        setMpTest({ status: 'idle', enrollmentId: null, initPoint: null, isSandbox: false, amountPaid: 0, transactionId: null, errorMsg: null });
+        setMpTestPollCount(0);
     };
 
     const handleTestText = async () => {
@@ -290,7 +388,139 @@ const AdminIntegrations = () => {
                 </button>
             </div>
 
-            {/* 5. Google Analytics / Search Console Config */}
+            {/* 5. Teste de Integração — Mercado Pago */}
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-[var(--admin-border)] shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                        <FlaskConical size={20} className="text-violet-500" />
+                        <h3 className="font-bold text-[var(--admin-text-primary)]">Teste de Integração — Mercado Pago</h3>
+                    </div>
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${globalConfig.mercadoPagoKey.startsWith('APP_TEST') ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                        {globalConfig.mercadoPagoKey.startsWith('APP_TEST') ? 'Sandbox' : globalConfig.mercadoPagoKey ? 'Produção' : 'Sem token'}
+                    </span>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-5">
+                    Simula uma venda de <strong>R$ 1,00</strong>, abre o checkout do MP e monitora o retorno do webhook em tempo real.
+                </p>
+
+                {/* Idle */}
+                {mpTest.status === 'idle' && (
+                    <button
+                        onClick={handleMpTest}
+                        disabled={!globalConfig.mercadoPagoKey}
+                        className="px-5 py-2.5 bg-violet-600 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-violet-500/20"
+                    >
+                        <FlaskConical size={16} /> Iniciar Teste de Pagamento
+                    </button>
+                )}
+
+                {/* Creating */}
+                {mpTest.status === 'creating' && (
+                    <div className="flex items-center gap-3 text-sm text-[var(--admin-text-secondary)] font-bold">
+                        <Loader2 size={18} className="animate-spin text-violet-500" />
+                        Criando inscrição e preferência no Mercado Pago...
+                    </div>
+                )}
+
+                {/* Waiting for webhook */}
+                {mpTest.status === 'waiting' && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                            <Loader2 size={18} className="animate-spin text-yellow-600 dark:text-yellow-400 shrink-0" />
+                            <div>
+                                <p className="text-sm font-black text-yellow-800 dark:text-yellow-300">Aguardando webhook do Mercado Pago...</p>
+                                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5">Polling a cada 3s · {mpTestPollCount}/40 tentativas</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="bg-[var(--admin-surface-2)] rounded-lg p-3 border border-[var(--admin-border)]">
+                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase mb-1">Enrollment ID</p>
+                                <p className="font-mono text-[var(--admin-text-primary)] truncate">{mpTest.enrollmentId}</p>
+                            </div>
+                            <div className="bg-[var(--admin-surface-2)] rounded-lg p-3 border border-[var(--admin-border)]">
+                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase mb-1">Modo</p>
+                                <p className="font-bold text-[var(--admin-text-primary)]">{mpTest.isSandbox ? '🧪 Sandbox' : '🟢 Produção'}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            {mpTest.initPoint && (
+                                <a
+                                    href={mpTest.initPoint}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2 px-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-lg text-sm font-bold hover:bg-[var(--admin-surface-3)] transition-colors"
+                                >
+                                    <ExternalLink size={14} /> Abrir Checkout MP
+                                </a>
+                            )}
+                            <button
+                                onClick={handleMpTestCleanup}
+                                className="flex items-center gap-2 px-4 py-2 text-red-500 rounded-lg text-sm font-bold hover:bg-red-500/10 transition-colors"
+                            >
+                                <Trash2 size={14} /> Cancelar e Limpar
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirmed — webhook received */}
+                {mpTest.status === 'confirmed' && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                            <CheckCircle2 size={22} className="text-green-600 dark:text-green-400 shrink-0" />
+                            <div>
+                                <p className="text-sm font-black text-green-800 dark:text-green-300">Webhook recebido com sucesso!</p>
+                                <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">Enrollment confirmado · Transação registrada · Lead atualizado</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div className="bg-[var(--admin-surface-2)] rounded-lg p-3 border border-[var(--admin-border)]">
+                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase mb-1">Status</p>
+                                <p className="font-black text-green-600 dark:text-green-400">Confirmed ✓</p>
+                            </div>
+                            <div className="bg-[var(--admin-surface-2)] rounded-lg p-3 border border-[var(--admin-border)]">
+                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase mb-1">Valor Reconhecido</p>
+                                <p className="font-black text-[var(--admin-text-primary)]">R$ {mpTest.amountPaid.toFixed(2)}</p>
+                            </div>
+                            <div className="bg-[var(--admin-surface-2)] rounded-lg p-3 border border-[var(--admin-border)]">
+                                <p className="text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase mb-1">Transação</p>
+                                <p className="font-mono text-[var(--admin-text-primary)] truncate">{mpTest.transactionId ? `#${mpTest.transactionId.slice(-8)}` : '—'}</p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleMpTestCleanup}
+                            className="flex items-center gap-2 px-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] rounded-lg text-sm font-bold hover:bg-red-500/10 hover:text-red-500 hover:border-red-300 transition-all"
+                        >
+                            <Trash2 size={14} /> Limpar dados de teste
+                        </button>
+                    </div>
+                )}
+
+                {/* Error */}
+                {mpTest.status === 'error' && (
+                    <div className="space-y-3">
+                        <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                            <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-black text-red-700 dark:text-red-400">Erro no teste</p>
+                                <p className="text-xs text-red-600 dark:text-red-500 mt-1">{mpTest.errorMsg}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setMpTest(prev => ({ ...prev, status: 'idle' }))}
+                            className="flex items-center gap-2 px-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] rounded-lg text-sm font-bold hover:bg-[var(--admin-surface-3)] transition-colors"
+                        >
+                            <RefreshCw size={14} /> Tentar novamente
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* 6. Google Analytics / Search Console Config */}
             <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-2 mb-4">
                     <BarChart3 className="text-red-500 dark:text-red-400" />

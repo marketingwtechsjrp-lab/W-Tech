@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.0.7",
+    "date": "2026-05-20",
+    "title": "Suíte de testes do Mercado Pago e melhorias no checkout",
+    "changes": [
+      "Adicionado painel de teste de sandbox para Mercado Pago",
+      "Melhoria visual de carregamento na tela de Inscricao Confirmada para pagamentos pendentes",
+      "Ajuste de host e porta do servidor de desenvolvimento Vite",
+      "Adicionado Playwright para automacao de testes"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.6",
     "date": "2026-04-29",
     "title": "Fix: Mapeamento de Link Personalizado no Calendário",
