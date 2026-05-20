@@ -101,17 +101,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://site.w-techbrasil.com.br/#/lp/chao-de-oficina</loc>
+    <lastmod>2026-04-29</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://site.w-techbrasil.com.br/#/lp/curso-suspensao-w-tech</loc>
     <lastmod>2026-01-12</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://site.w-techbrasil.com.br/#/lp/cusro-de-suspenso-w-tech-em-so-jos-do-rio-preto</loc>
-    <lastmod>2026-01-15</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://site.w-techbrasil.com.br/#/lp/cusro-de-suspenso-w-tech-em-so-paulo</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
@@ -153,6 +153,16 @@
   <url>
     <loc>https://site.w-techbrasil.com.br/#/lp/curso-de-suspenso-w-tech-em-chapec</loc>
     <lastmod>2026-03-16</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://site.w-techbrasil.com.br/#/lp/curso-de-suspensao-w-tech-em-sao-paulo</loc>
+    <lastmod>2026-01-15</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://site.w-techbrasil.com.br/#/lp/teste-2026-05-30</loc>
+    <lastmod>2026-05-11</lastmod>
     <priority>0.7</priority>
   </url>
 </urlset>
