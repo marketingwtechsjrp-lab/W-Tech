@@ -9,7 +9,7 @@ import {
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
     Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard, Zap,
-    LayoutGrid, CheckCircle2
+    LayoutGrid, CheckCircle2, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -28,6 +28,8 @@ import { syncStudentToLeads } from '../lib/leads';
 
 import { LandingPageEditor } from './LandingPageEditor';
 import { CreativeHub } from '../components/admin/Courses/CreativeHub';
+import { CourseChecklistConfig } from '../components/admin/Courses/CourseChecklistConfig';
+import { CourseChecklistView } from '../components/admin/Courses/CourseChecklistView';
 import { useSettings } from '../context/SettingsContext';
 import MarketingView from '../components/admin/Marketing/MarketingView';
 import CampaignsView from '../components/admin/Marketing/CampaignsView';
@@ -166,6 +168,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [generateLP, setGenerateLP] = useState(false);
     const [showCreativeHub, setShowCreativeHub] = useState(false);
     const [creativeHubCourse, setCreativeHubCourse] = useState<Course | null>(null);
+    const [checklistCourse, setChecklistCourse] = useState<Course | null>(null);
     const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
 
     // Settle Modal State
@@ -2357,6 +2360,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         {hasPermission('courses_edit_lp') && (
                                             <button onClick={() => { setCreativeHubCourse(course); setShowCreativeHub(true); }} title="Creative Hub" className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"><Wand2 size={14} /></button>
                                         )}
+                                        {hasPermission('courses_print_list') && (
+                                            <button
+                                                onClick={() => setChecklistCourse(course)}
+                                                title="Checklist Final do Curso"
+                                                className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                                            >
+                                                <ClipboardList size={14} />
+                                            </button>
+                                        )}
                                         {hasPermission('courses_edit') && (
                                             <button onClick={() => handleEdit(course)} title="Editar" className="p-2 text-[var(--admin-text-secondary)] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"><Edit size={14} /></button>
                                         )}
@@ -2606,6 +2618,18 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 <CreativeHub
                     course={creativeHubCourse}
                     onClose={() => setShowCreativeHub(false)}
+                />
+            )}
+
+            {checklistCourse && (
+                <CourseChecklistView
+                    course={checklistCourse}
+                    confirmedCount={
+                        enrollments.length > 0 && currentCourse?.id === checklistCourse.id
+                            ? enrollments.filter(e => e.status === 'Confirmed' || e.status === 'CheckedIn').length
+                            : checklistCourse.registeredCount ?? 0
+                    }
+                    onClose={() => setChecklistCourse(null)}
                 />
             )}
         </>
@@ -4975,6 +4999,12 @@ const SettingsView = () => {
             ]
         },
         {
+            group: 'Cursos Presenciais',
+            items: [
+                { id: 'Checklist de Cursos', icon: ClipboardList, label: 'Checklist de Cursos' },
+            ]
+        },
+        {
             group: 'Conteúdo',
             items: [
                 { id: 'SEO', icon: Globe, label: 'SEO' },
@@ -6651,6 +6681,19 @@ const SettingsView = () => {
                 )}
 
                 {/* Permissions Tab (Preserved Logic, just re-rendered if active) */}
+                {activeTab === 'Checklist de Cursos' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="mb-2">
+                            <h3 className="text-lg font-bold text-[var(--admin-text-primary)]">Template do Checklist Final</h3>
+                            <p className="text-sm text-[var(--admin-text-secondary)]">
+                                Defina os itens que serão conferidos antes de cada curso presencial.
+                                Acesse o checklist de um curso específico clicando no ícone <strong>📋</strong> no card do curso.
+                            </p>
+                        </div>
+                        <CourseChecklistConfig />
+                    </div>
+                )}
+
                 {activeTab === 'Permissões & Cargos' && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex justify-between items-center mb-6">

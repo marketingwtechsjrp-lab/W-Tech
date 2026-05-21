@@ -1,5 +1,22 @@
 [
   {
+    "version": "3.0.8",
+    "date": "2026-05-21",
+    "title": "Checklist Final de Cursos + Correções de Integração MP",
+    "changes": [
+      "FEAT: Sistema de Checklist Final para cursos presenciais — template configurável no admin com 27 itens padrão em 7 categorias",
+      "FEAT: Checklist por curso com quantidades calculadas automaticamente por número de alunos confirmados",
+      "FEAT: Impressão profissional do checklist com barra de progresso, grupos por categoria e bloco de assinatura para 2 responsáveis",
+      "FEAT: Autosave do estado de conferência por curso — retoma de onde parou",
+      "FEAT: Seção 'Cursos Presenciais' no admin Settings com editor de template de checklist",
+      "FEAT: Botão de Checklist Final (ícone 📋) em cada card de curso na gestão de cursos",
+      "FEAT: Painel de teste de integração Mercado Pago no admin — simula venda de R$ 1,00 e monitora webhook em tempo real",
+      "FIX: Tela InscricaoConfirmada não exibe mais R$ 0,00 enquanto aguarda confirmação do webhook — mostra spinner de processamento",
+      "CHORE: Removida Edge Function duplicada do Supabase (mercadopago-webhook) — apenas a Vercel serverless é usada"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.7",
     "date": "2026-05-20",
     "title": "Suíte de testes do Mercado Pago e melhorias no checkout",

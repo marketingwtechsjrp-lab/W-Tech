@@ -1,6 +1,17 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.8 (2026-05-21) - Checklist Final de Cursos + Correções de Integração MP
+- FEAT: Sistema de Checklist Final para cursos presenciais — template configurável no admin com 27 itens padrão em 7 categorias (Material do Aluno, Documentos, Alimentação, Marketing & Sinalização, Equipamentos, Ferramentas, Logística)
+- FEAT: Checklist por curso com quantidades calculadas automaticamente: itens "por aluno" multiplicam pelo nº de inscritos confirmados
+- FEAT: Impressão profissional — layout com barra de progresso, grupos por categoria, quantidades, status de cada item e bloco de assinatura para 2 responsáveis
+- FEAT: Autosave automático (1,5s após qualquer mudança) — estado da conferência salvo por curso no banco
+- FEAT: Seção "Cursos Presenciais" no admin Settings com editor completo do template de checklist
+- FEAT: Botão de Checklist Final (ícone 📋) em cada card de curso na gestão de cursos
+- FEAT: Painel de teste de integração Mercado Pago no admin — simula venda de R$ 1,00, abre checkout real e monitora retorno do webhook em tempo real (polling 3s / 2min)
+- FIX: Tela InscricaoConfirmada não exibe mais "R$ 0,00" enquanto aguarda confirmação do webhook — exibe spinner "Confirmando com o banco..."
+- CHORE: Removida Edge Function duplicada do Supabase (mercadopago-webhook) — apenas a Vercel serverless é utilizada
+
 ## v3.0.7 (2026-05-20) - Suíte de testes do Mercado Pago e melhorias no checkout
 - Adicionado painel de teste de sandbox para Mercado Pago
 - Melhoria visual de carregamento na tela de Inscricao Confirmada para pagamentos pendentes
