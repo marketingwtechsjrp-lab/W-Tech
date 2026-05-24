@@ -20,6 +20,7 @@ const Contact = lazy(() => import('./pages/Contact'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const LandingPageViewer = lazy(() => import('./pages/LandingPageViewer'));
+const LandingPageViewerV2 = lazy(() => import('./pages/LandingPageViewerV2'));
 const HomeP2 = lazy(() => import('./pages/HomeP2'));
 const Home3 = lazy(() => import('./pages/Home3'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
@@ -113,6 +114,7 @@ const App = () => {
                     <Route path="/obrigado-suspensao" element={<ObrigadoSuspensao />} />
                     <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
+                    <Route path="/lp2/:slug" element={<LandingPageViewerV2 />} />
 
                     {/* Legal Pages */}
                     <Route path="/termos" element={<Termos />} />

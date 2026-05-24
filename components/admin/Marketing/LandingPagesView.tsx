@@ -147,10 +147,13 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
                                 <span className="flex items-center gap-1 text-green-600 font-bold"><TrendingUp size={12} /> {page.conversionCount} leads</span>
                             </div>
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
+                        <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2 flex-wrap">
                             <button onClick={() => { setFormData(page); setIsEditing(true); }} className="flex-1 py-2 text-xs font-bold bg-white border border-gray-200 rounded hover:bg-gray-100 text-gray-700 transition-colors">Editar</button>
                             <a href={`/#/lp/${page.slug}`} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 text-xs font-bold bg-wtech-black text-white rounded hover:bg-gray-800 text-center flex items-center justify-center gap-1 transition-colors">
-                                Visualizar <ArrowUpRight size={10} />
+                                V1 <ArrowUpRight size={10} />
+                            </a>
+                            <a href={`/#/lp2/${page.slug}`} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 text-xs font-bold bg-gradient-to-r from-yellow-700 to-yellow-600 text-white rounded hover:from-yellow-600 hover:to-yellow-500 text-center flex items-center justify-center gap-1 transition-colors" title="LP Premium — cinematic scroll, countdown, animações">
+                                V2 ✨ <ArrowUpRight size={10} />
                             </a>
                         </div>
                     </div>

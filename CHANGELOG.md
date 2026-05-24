@@ -1,6 +1,28 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.9 (2026-05-24) - Landing Page Premium V2 com Efeitos Cinematográficos
+
+- FEAT: `LandingPageViewerV2` — nova versão premium das Landing Pages de cursos presenciais com design dark gold W-Tech
+- FEAT: Hero com efeito parallax via Framer Motion (`useScroll` + `useTransform`) — imagem de fundo com scroll suave e escala
+- FEAT: Barra de progresso de scroll dourada fixada no topo da página
+- FEAT: Countdown timer em tempo real com animação de flip por dígito — dias, horas, minutos, segundos
+- FEAT: Contador animado de estatísticas (10+ anos, 3.000+ alunos, etc.) com `animate()` do Framer Motion ao entrar em viewport
+- FEAT: Cards de benefícios com entrada em stagger (cada card com 80ms de delay), hover com elevação e glow dourado
+- FEAT: Módulos do curso como timeline expansível com animação de accordion suave
+- FEAT: Seção do instrutor com foto, bio, credenciais em grade e badge "Especialista Certificado"
+- FEAT: Seção de depoimentos em grid com suporte ao campo `testimonials` do LP
+- FEAT: Informações de data/local em cards com ícones e link direto para mapa
+- FEAT: Seção de inscrição com card de preço sticky (inclui scarcity bar), formulário completo e estado de sucesso animado
+- FEAT: FAQ accordion com 5 perguntas padrão (última adaptada ao campo `whatToBring` do curso)
+- FEAT: Banner CTA final cinematográfico com glow e parallax no fundo
+- FEAT: Botão flutuante fixo no mobile com CTA "Garantir Vaga"
+- FEAT: Menu mobile animado com `AnimatePresence`
+- FEAT: Navbar animada com entrada suave e links de scroll suave para todas as seções
+- FEAT: Rota `/lp2/:slug` — acessa o mesmo slug da LP existente mas com o template V2
+- FEAT: Botão "V2 ✨" no admin de Landing Pages para abrir o link premium diretamente
+- CHORE: Rota `/lp/:slug` mantida intacta — V1 e V2 coexistem sem conflito
+
 ## v3.0.8 (2026-05-21) - Checklist Final de Cursos + Correções de Integração MP
 - FEAT: Sistema de Checklist Final para cursos presenciais — template configurável no admin com 27 itens padrão em 7 categorias (Material do Aluno, Documentos, Alimentação, Marketing & Sinalização, Equipamentos, Ferramentas, Logística)
 - FEAT: Checklist por curso com quantidades calculadas automaticamente: itens "por aluno" multiplicam pelo nº de inscritos confirmados
