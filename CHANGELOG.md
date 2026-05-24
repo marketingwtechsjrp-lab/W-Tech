@@ -1,6 +1,20 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.0 (2026-05-24) - Seletor de Template de LP com Galeria Visual no Admin
+
+- FEAT: Galeria de Templates no admin de LPs — tab "Galeria de Templates" com mockups visuais interativos de V1 e V2
+- FEAT: Tabela comparativa completa de recursos entre V1 Classic e V2 Premium com 15 itens
+- FEAT: Seletor de template visual no formulário de edição de LP — dois cards clicáveis com preview miniaturo em tempo real
+- FEAT: Campo `template` salvo por LP no banco — cada LP escolhe seu próprio layout (V1 ou V2)
+- FEAT: Cards de LP no admin redesenhados — thumbnail do mockup do template escolhido, badge de template, status badge colorido
+- FEAT: Auto-redirect inteligente em `/lp/:slug` — se o template salvo for V2, redireciona automaticamente para `/lp2/:slug` (sem trocar o slug)
+- FEAT: Botão de copiar URL em cada LP e nos links internos do sistema
+- FEAT: Link secundário `↗` em cada card para pré-visualizar no template alternativo (V1 ou V2)
+- FEAT: Badge "Novo ✨" nos cards e seletores do template V2
+- FEAT: SQL de migração `add_lp_template_column.sql` — adiciona coluna `template text DEFAULT 'v1'` na tabela `SITE_LandingPages`
+- CHORE: `status` e `template` adicionados à interface `LandingPage` em `types.ts`
+
 ## v3.0.9 (2026-05-24) - Landing Page Premium V2 com Efeitos Cinematográficos
 
 - FEAT: `LandingPageViewerV2` — nova versão premium das Landing Pages de cursos presenciais com design dark gold W-Tech

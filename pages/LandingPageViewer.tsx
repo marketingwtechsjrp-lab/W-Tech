@@ -123,6 +123,12 @@ const LandingPageViewer: React.FC = () => {
             course: mappedCourse,
             courseId: (lpData as any).course_id  // garante disponibilidade para redirect ao checkout
         };
+        // Auto-redirect to V2 if template was set to 'v2' in admin
+        if ((lpData as any).template === 'v2') {
+            navigate(`/lp2/${slug}`, { replace: true });
+            return;
+        }
+
         setLp(mappedData);
 
         // Calculate Scarcity logic...
