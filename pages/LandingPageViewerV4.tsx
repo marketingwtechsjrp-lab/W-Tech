@@ -10,7 +10,7 @@ import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 
-const LandingPageViewer: React.FC = () => {
+const LandingPageViewerV4: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
     const { get } = useSettings();
@@ -136,33 +136,38 @@ const LandingPageViewer: React.FC = () => {
             fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
             course: mappedCourse,
             courseId: (lpData as any).course_id  // garante disponibilidade para redirect ao checkout
-        };
-        // Auto-redirect to V2/V3 if template was set in admin
-        if ((lpData as any).template === 'v2') {
-            navigate(`/lp2/${slug}`, { replace: true });
-            return;
-        }
-        if ((lpData as any).template === 'v3') {
-            navigate(`/lp3/${slug}`, { replace: true });
-            return;
-        }
+         };
 
-        setLp(mappedData);
+         // Auto-redirect to correct viewer template page if different from 'v4'
+         if ((lpData as any).template === 'v1' || !(lpData as any).template) {
+             navigate(`/lp/${slug}`, { replace: true });
+             return;
+         }
+         if ((lpData as any).template === 'v2') {
+             navigate(`/lp2/${slug}`, { replace: true });
+             return;
+         }
+         if ((lpData as any).template === 'v3') {
+             navigate(`/lp3/${slug}`, { replace: true });
+             return;
+         }
 
-        // Calculate Scarcity logic...
-        if (mappedCourse) {
-            const total = mappedCourse.capacity || 20;
-            const enrolled = mappedCourse.registeredCount || 0;
-            const realRemaining = Math.max(0, total - enrolled);
-            setSpotsLeft(realRemaining);
-        }
+         setLp(mappedData);
+
+         // Calculate Scarcity logic...
+         if (mappedCourse) {
+             const total = mappedCourse.capacity || 20;
+             const enrolled = mappedCourse.registeredCount || 0;
+             const realRemaining = Math.max(0, total - enrolled);
+             setSpotsLeft(realRemaining);
+         }
       } else {
           console.error("LP not found");
       }
       setLoading(false);
     };
     fetchLP();
-  }, [slug]);
+  }, [slug, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,8 +231,20 @@ const LandingPageViewer: React.FC = () => {
       }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-black text-white"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-wtech-gold"></div></div>;
-  if (!lp) return <div className="h-screen flex items-center justify-center bg-black text-white">Página não encontrada. Verifique o link.</div>;
+  if (loading) {
+      return (
+          <div className="h-screen flex items-center justify-center bg-gray-50 text-gray-900">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-wtech-gold"></div>
+          </div>
+      );
+  }
+  if (!lp) {
+      return (
+          <div className="h-screen flex items-center justify-center bg-gray-50 text-gray-950 font-medium">
+              Página não encontrada. Verifique o link.
+          </div>
+      );
+  }
 
   const mapQuery = lp.course?.address ? `${lp.course.address}, ${lp.course.city}` : lp.course?.location || 'Sao Paulo';
   const whatsappNumber = lp.whatsappNumber || whatsappGlobal;
@@ -236,12 +253,12 @@ const LandingPageViewer: React.FC = () => {
     : '#';
 
   return (
-    <div className="min-h-screen font-sans bg-[#050505] text-white selection:bg-wtech-gold selection:text-black overflow-x-hidden">
+    <div className="min-h-screen font-sans bg-white text-zinc-900 selection:bg-wtech-gold selection:text-black overflow-x-hidden">
         
         {lp.fakeAlertsEnabled && <FakeSignupAlert courseName={lp.title} />}
 
         {/* Navbar */}
-        <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-md border-b border-white/5 transition-all duration-300">
+        <header className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     {systemLogo ? (
@@ -251,67 +268,71 @@ const LandingPageViewer: React.FC = () => {
                             <span className="transform -rotate-45 font-bold text-black text-xs">W</span>
                         </div>
                     )}
-                    {!systemLogo && <span className="font-bold text-lg tracking-wider">W-TECH <span className="text-wtech-gold">ACADEMY</span></span>}
+                    {!systemLogo && (
+                        <span className="font-bold text-lg tracking-wider text-zinc-950">
+                            W-TECH <span className="text-yellow-600">ACADEMY</span>
+                        </span>
+                    )}
                 </div>
-                <button onClick={scrollToForm} className="hidden md:flex bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-2.5 rounded-lg font-bold uppercase text-xs tracking-widest hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all">
+                <button onClick={scrollToForm} className="hidden md:flex bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-2.5 rounded-lg font-bold uppercase text-xs tracking-widest hover:shadow-[0_4px_14px_rgba(212,175,55,0.4)] transition-all">
                     Garantir Vaga
                 </button>
             </div>
         </header>
 
         {/* Hero Section */}
-        <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden">
+        <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden bg-gray-50/55">
              {/* Dynamic Background with Overlay */}
              <div className="absolute inset-0 z-0">
-                 {lp.heroImage && <img src={lp.heroImage} className="w-full h-full object-cover opacity-40 scale-105 animate-pulse-slow" />}
-                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/90 to-transparent"></div>
-                 <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/60 to-transparent"></div>
+                 {lp.heroImage && <img src={lp.heroImage} alt="Hero Background" className="w-full h-full object-cover opacity-15 scale-105" />}
+                 <div className="absolute inset-0 bg-gradient-to-t from-white via-white/95 to-transparent"></div>
+                 <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
                  {/* Grid Pattern */}
-                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5"></div>
              </div>
 
              <div className="container mx-auto px-6 relative z-10 grid lg:grid-cols-12 gap-12 items-center">
                  
                  {/* TEXT CONTENT */}
-                 <div className="lg:col-span-7 space-y-8 animate-fade-in-up">
+                 <div className="lg:col-span-7 space-y-8">
                      {/* Badges */}
                      <div className="flex flex-wrap gap-3">
-                        <div className="inline-flex items-center gap-1.5 bg-wtech-gold/10 border border-wtech-gold/30 text-wtech-gold px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md">
-                            <Star size={12} className="fill-wtech-gold" /> Certificação Oficial
+                        <div className="inline-flex items-center gap-1.5 bg-wtech-gold/10 border border-wtech-gold/30 text-yellow-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+                            <Star size={12} className="fill-yellow-600 text-yellow-600" /> Certificação Oficial
                         </div>
-                        <div className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 text-gray-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+                        <div className="inline-flex items-center gap-1.5 bg-gray-150 border border-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md">
                             <MapPin size={12} /> {lp.course?.city}
                         </div>
                      </div>
                      
                      {/* Headlines */}
-                     <h1 className="text-5xl md:text-7xl font-black leading-tight uppercase tracking-tight text-white drop-shadow-2xl">
+                     <h1 className="text-5xl md:text-7xl font-black leading-tight uppercase tracking-tight text-zinc-950 drop-shadow-sm">
                          {lp.title}
                      </h1>
                      
-                     <p className="text-xl md:text-2xl text-gray-300 font-light leading-relaxed max-w-2xl border-l-4 border-wtech-gold pl-6">
+                     <p className="text-xl md:text-2xl text-zinc-600 font-light leading-relaxed max-w-2xl border-l-4 border-wtech-gold pl-6">
                          {lp.subtitle}
                      </p>
                      
                      {/* Scarcity OR Status Bar */}
-                     <div className="bg-white/5 border border-white/10 p-4 rounded-xl backdrop-blur-md max-w-md">
+                     <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm max-w-md">
                         {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? (
                             <div className="flex flex-col gap-1">
-                                <div className="flex justify-between text-xs font-bold uppercase text-orange-500">
+                                <div className="flex justify-between text-xs font-bold uppercase text-orange-600">
                                     <span>Inscrições Encerradas</span>
                                     <span className="flex items-center gap-1"><AlertTriangle size={12}/> Vagas Esgotadas</span>
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1">Inscreva-se abaixo para entrar na lista de espera da próxima turma em sua região.</p>
+                                <p className="text-xs text-zinc-500 mt-1">Inscreva-se abaixo para entrar na lista de espera da próxima turma em sua região.</p>
                             </div>
                         ) : (
                             <>
-                                <div className="flex justify-between text-xs font-bold uppercase text-gray-400 mb-2">
+                                <div className="flex justify-between text-xs font-bold uppercase text-gray-500 mb-2">
                                     <span>Inscrições Abertas</span>
-                                    <span className={`flex items-center gap-1 ${spotsLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-wtech-gold'}`}>
+                                    <span className={`flex items-center gap-1 font-bold ${spotsLeft <= 5 ? 'text-red-600 animate-pulse' : 'text-yellow-600'}`}>
                                         {spotsLeft <= 10 ? `🔥 ÚLTIMAS ${spotsLeft} VAGAS!` : 'VAGAS LIMITADAS'}
                                     </span>
                                 </div>
-                                <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                                     <div className="bg-gradient-to-r from-red-600 to-red-500 h-full rounded-full w-[85%] relative overflow-hidden">
                                         <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
                                     </div>
@@ -321,23 +342,23 @@ const LandingPageViewer: React.FC = () => {
                      </div>
 
                      <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                        <button onClick={scrollToForm} className={`${lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'} text-white px-10 py-5 rounded-lg font-black text-lg uppercase tracking-wider hover:scale-105 transition-all shadow-[0_10px_40px_-10px_rgba(220,38,38,0.5)] flex items-center justify-center gap-3 group`}>
+                        <button onClick={scrollToForm} className={`${lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-red-600 hover:bg-red-700'} text-white px-10 py-5 rounded-lg font-black text-lg uppercase tracking-wider hover:scale-[1.02] transition-all shadow-[0_10px_25px_-5px_rgba(220,38,38,0.3)] flex items-center justify-center gap-3 group`}>
                             {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Entrar na Lista de Espera' : 'Quero me Inscrever'} <ArrowRight className="group-hover:translate-x-1 transition-transform" strokeWidth={3} />
                         </button>
-                        <a href="#modules" onClick={handleScrollToModules} className="px-8 py-5 border border-white/20 rounded-lg font-bold text-gray-300 uppercase tracking-widest hover:bg-white/5 transition-all text-center">
+                        <a href="#modules" onClick={handleScrollToModules} className="px-8 py-5 border border-gray-300 rounded-lg font-bold text-zinc-700 uppercase tracking-widest hover:bg-gray-100 transition-all text-center">
                             Ver Programação
                         </a>
                      </div>
                  </div>
                  
-                 {/* GLASS IMAGE (Replaces Form) */}
-                 <div className="lg:col-span-5 relative animate-fade-in-right delay-200">
-                     <div className="absolute -inset-4 bg-gradient-to-tr from-wtech-gold/20 to-transparent rounded-[2rem] blur-2xl opacity-50"></div>
-                     <div className="relative rounded-2xl overflow-hidden group">
+                 {/* WELCOME IMAGE CONTAINER */}
+                 <div className="lg:col-span-5 relative">
+                     <div className="absolute -inset-4 bg-gradient-to-tr from-wtech-gold/15 to-transparent rounded-[2rem] blur-2xl opacity-40"></div>
+                     <div className="relative rounded-2xl overflow-hidden group border border-gray-200/80 shadow-lg">
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
                         <img 
                             src={lp.heroSecondaryImage || "https://lp.w-techbrasil.com.br/wp-content/webp-express/webp-images/uploads/2025/09/boas-vindas-2.png.webp"} 
-                            alt="Welcome" 
+                            alt="Welcome Image" 
                             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
                         />
                          <div className="absolute bottom-6 left-6 z-20">
@@ -353,16 +374,16 @@ const LandingPageViewer: React.FC = () => {
              </div>
         </section>
 
-        {/* INFO BAR (Sticky-ish) */}
-        <div className="border-y border-white/10 bg-zinc-900/50 backdrop-blur-sm">
+        {/* INFO BAR */}
+        <div className="border-y border-gray-200 bg-gray-50/70 backdrop-blur-sm">
             <div className="container mx-auto px-6 py-6 grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-wtech-gold">
-                        <Calendar />
+                    <div className="w-10 h-10 rounded-full bg-wtech-gold/15 flex items-center justify-center text-yellow-700 shrink-0">
+                        <Calendar size={20} />
                     </div>
                     <div>
                         <div className="text-xs text-gray-500 uppercase font-bold">Data</div>
-                        <div className="text-sm font-bold text-white">
+                        <div className="text-sm font-bold text-zinc-900">
                             {lp.course?.date ? (
                                 lp.course.dateEnd ? 
                                 `${formatDateLocal(lp.course.date)} - ${formatDateLocal(lp.course.dateEnd)}` 
@@ -372,30 +393,30 @@ const LandingPageViewer: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-wtech-gold">
-                        <Clock />
+                    <div className="w-10 h-10 rounded-full bg-wtech-gold/15 flex items-center justify-center text-yellow-700 shrink-0">
+                        <Clock size={20} />
                     </div>
                     <div>
                         <div className="text-xs text-gray-500 uppercase font-bold">Horário</div>
-                        <div className="text-sm font-bold text-white">{lp.course?.startTime || '08:00'} - {lp.course?.endTime || '18:00'}</div>
+                        <div className="text-sm font-bold text-zinc-900">{lp.course?.startTime || '08:00'} - {lp.course?.endTime || '18:00'}</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-wtech-gold">
-                        <MapPin />
+                    <div className="w-10 h-10 rounded-full bg-wtech-gold/15 flex items-center justify-center text-yellow-700 shrink-0">
+                        <MapPin size={20} />
                     </div>
                     <div>
                         <div className="text-xs text-gray-500 uppercase font-bold">Local</div>
-                        <div className="text-sm font-bold text-white truncate max-w-[120px]">{lp.course?.city}</div>
+                        <div className="text-sm font-bold text-zinc-900 truncate max-w-[120px]">{lp.course?.city}</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-wtech-gold">
-                        <Users />
+                    <div className="w-10 h-10 rounded-full bg-wtech-gold/15 flex items-center justify-center text-yellow-700 shrink-0">
+                        <Users size={20} />
                     </div>
                     <div>
                         <div className="text-xs text-gray-500 uppercase font-bold">Vagas</div>
-                        <div className="text-sm font-bold text-white">
+                        <div className="text-sm font-bold text-zinc-900">
                             {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Lista de Espera' : `Limitadas (${spotsLeft} Restantes)`}
                         </div>
                     </div>
@@ -404,16 +425,16 @@ const LandingPageViewer: React.FC = () => {
         </div>
 
         {/* DETAILS SECTION */}
-        <section id="details" className="py-24 bg-black relative">
+        <section id="details" className="py-24 bg-white relative">
             <div className="container mx-auto px-6">
                 <div className="grid lg:grid-cols-2 gap-16">
                     {/* VIDEO */}
                     <div className="space-y-6">
-                         <h2 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
+                         <h2 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3 text-zinc-950">
                             <span className="w-12 h-1 bg-wtech-gold"></span>
                             Sobre o Treinamento
                          </h2>
-                        <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-zinc-900 shadow-2xl">
+                        <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white shadow-xl">
                              {lp.videoUrl ? (
                                 <div className="aspect-video">
                                      <iframe 
@@ -425,15 +446,15 @@ const LandingPageViewer: React.FC = () => {
                                      ></iframe>
                                 </div>
                              ) : (
-                                <div className="aspect-video flex items-center justify-center bg-zinc-900">
+                                <div className="aspect-video flex items-center justify-center bg-gray-50">
                                     <div className="text-center p-8">
-                                        <Play size={48} className="mx-auto text-white/20 mb-4" />
-                                        <p className="text-gray-500">Vídeo indisponível</p>
+                                        <Play size={48} className="mx-auto text-gray-300 mb-4" />
+                                        <p className="text-gray-400">Vídeo indisponível</p>
                                     </div>
                                 </div>
                              )}
                         </div>
-                        <p className="text-gray-400 leading-relaxed text-lg">
+                        <p className="text-zinc-600 leading-relaxed text-lg">
                             Esta é sua oportunidade de dominar as técnicas mais avançadas do mercado. 
                             Um conteúdo prático, direto ao ponto e focado em resultados reais para sua oficina.
                         </p>
@@ -443,14 +464,14 @@ const LandingPageViewer: React.FC = () => {
                     <div className="space-y-4">
                         <div className="grid gap-4">
                             {lp.benefits && lp.benefits.map((item, idx) => (
-                                <div key={idx} className="bg-zinc-900/50 p-6 rounded-xl border border-white/5 hover:border-wtech-gold/30 hover:bg-zinc-900 transition-all group cursor-default">
+                                <div key={idx} className="bg-gray-50/50 p-6 rounded-xl border border-gray-150 hover:border-wtech-gold/40 hover:bg-white hover:shadow-md transition-all duration-300 group cursor-default">
                                     <div className="flex gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-wtech-gold/10 text-wtech-gold flex items-center justify-center shrink-0 group-hover:bg-wtech-gold group-hover:text-black transition-colors">
+                                        <div className="w-10 h-10 rounded-full bg-wtech-gold/10 text-yellow-700 flex items-center justify-center shrink-0 group-hover:bg-wtech-gold group-hover:text-black transition-colors">
                                             <Check size={20} strokeWidth={3} />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-lg text-white mb-1 group-hover:text-wtech-gold transition-colors">{item.title}</h3>
-                                            <p className="text-gray-400 text-sm">{item.description}</p>
+                                            <h3 className="font-bold text-lg text-zinc-950 mb-1 group-hover:text-yellow-600 transition-colors">{item.title}</h3>
+                                            <p className="text-zinc-500 text-sm">{item.description}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -463,15 +484,15 @@ const LandingPageViewer: React.FC = () => {
 
         {/* SCHEDULE SECTION */}
         {lp.course?.schedule && (
-            <section id="schedule" className="py-24 bg-black border-t border-white/5">
+            <section id="schedule" className="py-24 bg-white border-t border-gray-100">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                         <span className="text-wtech-gold font-bold uppercase tracking-widest text-xs">Cronograma</span>
-                         <h2 className="text-4xl font-black text-white uppercase mt-2">Programação do Curso</h2>
+                         <span className="text-yellow-600 font-bold uppercase tracking-widest text-xs">Cronograma</span>
+                         <h2 className="text-4xl font-black text-zinc-950 uppercase mt-2">Programação do Curso</h2>
                     </div>
                     
-                    <div className="max-w-4xl mx-auto bg-zinc-900/30 p-8 md:p-12 rounded-3xl border border-white/5">
-                        <div className="prose prose-invert prose-p:text-gray-400 prose-headings:text-white max-w-none" 
+                    <div className="max-w-4xl mx-auto bg-gray-50/50 p-8 md:p-12 rounded-3xl border border-gray-200/80 shadow-sm">
+                        <div className="prose prose-zinc max-w-none text-zinc-700 prose-headings:text-zinc-950 prose-a:text-wtech-gold prose-p:leading-relaxed" 
                              dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
                     </div>
                 </div>
@@ -480,26 +501,26 @@ const LandingPageViewer: React.FC = () => {
 
         {/* MODULES SECTION */}
         {lp.modules && lp.modules.length > 0 && (
-            <section id="modules" className="py-24 bg-zinc-900 border-t border-white/5">
+            <section id="modules" className="py-24 bg-gray-50/70 border-t border-gray-250">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                         <span className="text-wtech-gold font-bold uppercase tracking-widest text-xs">Conteúdo Programático</span>
-                         <h2 className="text-4xl font-black text-white uppercase mt-2">O Que Você Vai Aprender</h2>
+                         <span className="text-yellow-600 font-bold uppercase tracking-widest text-xs">Conteúdo Programático</span>
+                         <h2 className="text-4xl font-black text-zinc-950 uppercase mt-2">O Que Você Vai Aprender</h2>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {lp.modules.map((mod, idx) => (
-                            <div key={idx} className="group relative bg-black border border-white/5 rounded-2xl overflow-hidden hover:border-wtech-gold/30 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                            <div key={idx} className="group relative bg-white border border-gray-200/80 rounded-2xl overflow-hidden hover:border-wtech-gold/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl shadow-sm">
                                 <div className="aspect-video relative overflow-hidden">
-                                     <div className="absolute top-4 right-4 z-20 font-black text-6xl text-white/5 group-hover:text-wtech-gold/10 transition-colors pointer-events-none select-none">
+                                     <div className="absolute top-4 right-4 z-20 font-black text-6xl text-gray-900/5 group-hover:text-wtech-gold/10 transition-colors pointer-events-none select-none">
                                          {idx + 1}
                                      </div>
                                     <img src={mod.image} alt={mod.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 filter grayscale group-hover:grayscale-0" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent opacity-85 group-hover:opacity-65 transition-opacity"></div>
                                 </div>
-                                <div className="p-8 relative">
-                                    <h3 className="text-xl font-bold text-wtech-gold mb-3 uppercase leading-tight group-hover:text-white transition-colors">{mod.title}</h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed">{mod.description}</p>
+                                <div className="p-8 relative bg-white">
+                                    <h3 className="text-xl font-bold text-zinc-950 mb-3 uppercase leading-tight group-hover:text-yellow-600 transition-colors">{mod.title}</h3>
+                                    <p className="text-zinc-650 text-sm leading-relaxed">{mod.description}</p>
                                 </div>
                             </div>
                         ))}
@@ -509,20 +530,20 @@ const LandingPageViewer: React.FC = () => {
         )}
         
         {/* INSTRUCTOR */}
-        <section className="py-24 bg-gradient-to-b from-zinc-900 to-black border-t border-white/5">
+        <section className="py-24 bg-gradient-to-b from-gray-50/80 to-white border-t border-gray-200">
             <div className="container mx-auto px-6 flex flex-col items-center">
-                 <span className="text-wtech-gold font-bold uppercase tracking-widest text-xs mb-4">Seu Mentor</span>
-                 <h2 className="text-4xl font-black text-white uppercase mb-16">Conheça o Instrutor</h2>
+                 <span className="text-yellow-600 font-bold uppercase tracking-widest text-xs mb-4">Seu Mentor</span>
+                 <h2 className="text-4xl font-black text-zinc-950 uppercase mb-16">Conheça o Instrutor</h2>
                  
-                 <div className="bg-zinc-900/50 border border-white/5 p-8 md:p-12 rounded-3xl max-w-5xl w-full flex flex-col md:flex-row gap-12 items-center hover:border-white/10 transition-colors">
+                 <div className="bg-white border border-gray-200/80 p-8 md:p-12 rounded-3xl max-w-5xl w-full flex flex-col md:flex-row gap-12 items-center hover:border-gray-300 hover:shadow-lg transition-all duration-300">
                      <div className="w-48 h-48 md:w-64 md:h-64 shrink-0 relative">
                          <div className="absolute inset-0 bg-wtech-gold rounded-2xl rotate-6 opacity-20 group-hover:rotate-12 transition-transform"></div>
-                         <img src={lp.instructorImage || "https://github.com/shadcn.png"} alt={lp.instructorName} className="w-full h-full object-cover rounded-2xl relative z-10 shadow-2xl grayscale hover:grayscale-0 transition-all duration-500" />
+                         <img src={lp.instructorImage || "https://github.com/shadcn.png"} alt={lp.instructorName} className="w-full h-full object-cover rounded-2xl relative z-10 shadow-xl grayscale hover:grayscale-0 transition-all duration-500" />
                      </div>
                      <div className="text-center md:text-left">
-                         <h3 className="text-3xl font-bold text-white mb-2">{lp.instructorName}</h3>
+                         <h3 className="text-3xl font-bold text-zinc-950 mb-2">{lp.instructorName}</h3>
                          <div className="w-12 h-1 bg-wtech-gold mx-auto md:mx-0 mb-6"></div>
-                         <div className="prose prose-invert prose-p:text-gray-400 text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.instructorBio?.replace(/\n/g, '<br/>') || '') }} />
+                         <div className="prose prose-zinc text-zinc-650 text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.instructorBio?.replace(/\n/g, '<br/>') || '') }} />
                      </div>
                  </div>
             </div>
@@ -530,11 +551,11 @@ const LandingPageViewer: React.FC = () => {
 
         {/* TESTIMONIALS */}
         {lp.testimonials && lp.testimonials.length > 0 && (
-            <section className="py-24 bg-[#080808] border-t border-white/5">
+            <section className="py-24 bg-gray-50/60 border-t border-gray-150">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                        <span className="text-wtech-gold font-bold uppercase tracking-widest text-xs mb-4 block">Prova Social</span>
-                        <h2 className="text-4xl font-black text-white uppercase">O Que Dizem Nossos Alunos</h2>
+                        <span className="text-yellow-600 font-bold uppercase tracking-widest text-xs mb-4 block">Prova Social</span>
+                        <h2 className="text-4xl font-black text-zinc-950 uppercase">O Que Dizem Nossos Alunos</h2>
                         <div className="w-16 h-1 bg-wtech-gold mx-auto mt-4"></div>
                     </div>
 
@@ -547,39 +568,39 @@ const LandingPageViewer: React.FC = () => {
                             })() : '';
 
                             return (
-                                <div key={idx} className="bg-zinc-900 border border-white/5 rounded-3xl p-6 relative flex flex-col justify-between hover:border-white/10 transition-all duration-300 group shadow-lg">
+                                <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 relative flex flex-col justify-between hover:border-wtech-gold/30 hover:shadow-xl transition-all duration-300 group shadow-sm">
                                     {ytId ? (
                                         /* Video Testimonial */
                                         <div className="space-y-4 flex-1 flex flex-col justify-between">
-                                            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 group-hover:border-wtech-gold/30 transition-colors bg-[#111] cursor-pointer"
+                                            <div className="relative aspect-video rounded-2xl overflow-hidden border border-gray-200 group-hover:border-wtech-gold/30 transition-colors bg-gray-100 cursor-pointer"
                                                 onClick={() => setActiveVideo(ytId)}>
-                                                <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt={test.name} />
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                    <div className="w-14 h-14 bg-wtech-gold/90 text-black rounded-full flex items-center justify-center shadow-lg group-hover:bg-wtech-gold group-hover:scale-110 active:scale-95 transition-all duration-300">
+                                                <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" alt={test.name} />
+                                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                                    <div className="w-14 h-14 bg-wtech-gold text-black rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 active:scale-95 transition-all duration-300">
                                                         <Play size={20} className="fill-black text-black ml-1" />
                                                     </div>
                                                 </div>
                                             </div>
-                                            <p className="text-gray-400 text-sm italic leading-relaxed">"{test.text}"</p>
+                                            <p className="text-zinc-600 text-sm italic leading-relaxed">"{test.text}"</p>
                                         </div>
                                     ) : (
                                         /* Text Testimonial */
                                         <div className="space-y-4 flex-1">
-                                            <Quote size={32} className="text-wtech-gold/10" />
-                                            <p className="text-gray-300 text-sm leading-relaxed">"{test.text}"</p>
+                                            <Quote size={32} className="text-wtech-gold/15" />
+                                            <p className="text-zinc-700 text-sm leading-relaxed">"{test.text}"</p>
                                         </div>
                                     )}
 
-                                    <div className="flex items-center gap-4 mt-6 pt-6 border-t border-white/5">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-wtech-gold/20 bg-zinc-800 flex items-center justify-center">
+                                    <div className="flex items-center gap-4 mt-6 pt-6 border-t border-gray-100">
+                                        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-wtech-gold/20 bg-gray-50 flex items-center justify-center">
                                             {test.image ? (
                                                 <img src={test.image} className="w-full h-full object-cover" alt={test.name} />
                                             ) : (
-                                                <div className="font-black text-wtech-gold text-lg">{test.name[0]}</div>
+                                                <div className="font-black text-yellow-700 text-lg">{test.name[0]}</div>
                                             )}
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-white text-sm">{test.name}</h4>
+                                            <h4 className="font-bold text-zinc-900 text-sm">{test.name}</h4>
                                             <div className="flex gap-0.5 mt-1">
                                                 {[...Array(5)].map((_, j) => <Star key={j} size={11} className="fill-wtech-gold text-wtech-gold" />)}
                                             </div>
@@ -594,102 +615,102 @@ const LandingPageViewer: React.FC = () => {
         )}
 
         {/* LOCATION & MAP */}
-        <section className="py-24 relative overflow-hidden bg-[#0a0a0a]">
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-white/5 skew-x-12 translate-x-1/4"></div>
+        <section className="py-24 relative overflow-hidden bg-white">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gray-50/70 skew-x-12 translate-x-1/4"></div>
             
             <div className="container mx-auto px-6 relative z-10">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     <div className="space-y-8">
-                         <h2 className="text-4xl font-black uppercase text-white">
+                         <h2 className="text-4xl font-black uppercase text-zinc-950">
                             Local do Evento
                          </h2>
                          <div className="space-y-6">
                             <div className="flex items-start gap-4">
-                                <div className="p-3 bg-white/5 rounded-lg text-wtech-gold">
+                                <div className="p-3 bg-wtech-gold/15 rounded-lg text-yellow-700">
                                     <MapPin size={24} />
                                 </div>
                                 <div>
                                     <h4 className="text-gray-400 text-xs font-bold uppercase mb-1">Endereço</h4>
-                                    <p className="text-xl font-medium text-white max-w-xs">{lp.course?.address || 'Endereço a ser confirmado'}</p>
+                                    <p className="text-xl font-medium text-zinc-950 max-w-xs">{lp.course?.address || 'Endereço a ser confirmado'}</p>
                                     <p className="text-gray-500">{lp.course?.addressNeighborhood}, {lp.course?.city} - {lp.course?.state}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
-                                <div className="p-3 bg-white/5 rounded-lg text-wtech-gold">
+                                <div className="p-3 bg-wtech-gold/15 rounded-lg text-yellow-700">
                                     <Navigation size={24} />
                                 </div>
                                 <div>
                                     <h4 className="text-gray-400 text-xs font-bold uppercase mb-1">Como Chegar</h4>
-                                    <a target="_blank" href={lp.course?.mapUrl ? lp.course.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="text-blue-400 hover:text-blue-300 underline font-medium">
+                                    <a target="_blank" rel="noreferrer" href={lp.course?.mapUrl ? lp.course.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="text-blue-600 hover:text-blue-500 underline font-medium">
                                         Abrir no Google Maps
                                     </a>
                                 </div>
                             </div>
                          </div>
                          
-                         <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-4">
-                             <AlertTriangle className="text-red-500 shrink-0" />
-                             <p className="text-red-200 text-sm">
-                                 <strong className="text-white block font-bold uppercase mb-1">Vagas Limitadas para Presencial</strong>
-                                 Devido à capacidade do local, as vagas são extremamente limitadas. Garanta a sua.
+                         <div className="p-6 bg-red-50 border border-red-200 rounded-xl flex items-center gap-4">
+                             <AlertTriangle className="text-red-600 shrink-0" />
+                             <p className="text-red-800 text-sm">
+                                  <strong className="text-red-950 block font-bold uppercase mb-1">Vagas Limitadas para Presencial</strong>
+                                  Devido à capacidade do local, as vagas são extremamente limitadas. Garanta a sua.
                              </p>
                          </div>
-                    </div>
+                     </div>
 
-                    <div className="h-[400px] w-full bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10 grayscale hover:grayscale-0 transition-all duration-700">
+                     <div className="h-[400px] w-full bg-gray-50 rounded-2xl overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-all duration-300">
                         <iframe 
                             width="100%" 
                             height="100%" 
                             src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                            className="w-full h-full filter invert contrast-125 saturate-0 hover:invert-0 hover:filter-none transition-all duration-500"
+                            className="w-full h-full border-0"
                             title="Mapa do Local"
                         ></iframe>
-                    </div>
+                     </div>
                 </div>
             </div>
         </section>
 
         {/* FORM FINAL SECTION */}
-        <section className="py-24 bg-gradient-to-b from-[#050505] to-black relative overflow-hidden" id="enroll-form">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5"></div>
+        <section className="py-24 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden" id="enroll-form">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.02] pointer-events-none"></div>
             
             <div className="container mx-auto px-6 relative z-10">
                 <div className="max-w-2xl mx-auto text-center mb-12">
-                     <h2 className="text-4xl md:text-5xl font-black uppercase mb-4 text-white">
+                     <h2 className="text-4xl md:text-5xl font-black uppercase mb-4 text-zinc-950">
                         {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Lista de Espera' : 'Garanta Sua Vaga'}
                      </h2>
-                     <p className="text-xl text-gray-400">
+                     <p className="text-xl text-zinc-650">
                         {lp.course?.status === 'Full' || lp.course?.status === 'Completed' 
                             ? 'Este curso já preencheu todas as vagas ou já foi realizado, mas você pode deixar seus dados para a próxima turma na sua região.' 
                             : 'Junte-se à elite da mecânica de suspensões. Preencha o formulário abaixo para iniciar sua inscrição.'}
                     </p>
                 </div>
 
-                <div className="max-w-xl mx-auto bg-white/5 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-3xl shadow-2xl relative group">
-                     <div className="absolute -inset-1 bg-gradient-to-r from-wtech-gold to-transparent opacity-20 rounded-3xl blur group-hover:opacity-40 transition-opacity duration-1000"></div>
-                     <div className="relative">
+                <div className="max-w-xl mx-auto bg-white border border-gray-200 p-8 md:p-12 rounded-3xl shadow-2xl relative group">
+                     <div className="absolute -inset-1 bg-gradient-to-r from-wtech-gold/15 to-transparent opacity-30 rounded-3xl blur group-hover:opacity-50 transition-opacity duration-1000"></div>
+                     <div className="relative bg-white">
                         {lp.quizEnabled ? (
                             <QualificationQuiz lp={lp} onComplete={() => setSubmitted(true)} whatsappGlobalNumber={whatsappGlobal} />
                         ) : (
                             submitted ? (
-                                    <div className="text-center py-12 animate-fade-in bg-green-500/10 rounded-xl border border-green-500/20">
-                                        <div className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-900/20">
+                                    <div className="text-center py-12 animate-fade-in bg-green-50 rounded-xl border border-green-200">
+                                        <div className="w-20 h-20 bg-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md shadow-green-950/20">
                                             <Check size={40} strokeWidth={3} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-white mb-2">Inscrição Recebida!</h3>
-                                        <p className="text-green-200">Em breve entraremos em contato pelo WhatsApp.</p>
+                                        <h3 className="text-2xl font-bold text-zinc-900 mb-2">Inscrição Recebida!</h3>
+                                        <p className="text-green-700">Em breve entraremos em contato pelo WhatsApp.</p>
                                     </div>
                             ) : (
                                     <form onSubmit={handleSubmit} className="space-y-6">
                                         <div className="group-form">
                                             <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Nome Completo</label>
                                             <div className="relative">
-                                                <User className="absolute left-4 top-3.5 text-gray-500" size={20} />
+                                                <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
                                                 <input 
                                                     required 
                                                     value={form.name} 
                                                     onChange={e => setForm({...form, name: e.target.value})}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:border-wtech-gold/50 focus:ring-1 focus:ring-wtech-gold/50 outline-none transition-all placeholder:text-gray-700" 
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-4 pl-12 pr-4 text-zinc-900 placeholder:text-gray-400 focus:bg-white focus:border-wtech-gold focus:ring-2 focus:ring-wtech-gold/25 outline-none transition-all" 
                                                     placeholder="Digite seu nome" 
                                                 />
                                             </div>
@@ -697,12 +718,12 @@ const LandingPageViewer: React.FC = () => {
                                         <div className="group-form">
                                             <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">WhatsApp</label>
                                             <div className="relative">
-                                                <span className="absolute left-4 top-4 text-gray-500 font-bold text-xs">BR</span>
+                                                <span className="absolute left-4 top-4 text-gray-400 font-bold text-xs">BR</span>
                                                 <input 
                                                     required 
                                                     value={form.phone} 
                                                     onChange={e => setForm({...form, phone: e.target.value})}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:border-wtech-gold/50 focus:ring-1 focus:ring-wtech-gold/50 outline-none transition-all placeholder:text-gray-700" 
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-4 pl-12 pr-4 text-zinc-900 placeholder:text-gray-400 focus:bg-white focus:border-wtech-gold focus:ring-2 focus:ring-wtech-gold/25 outline-none transition-all" 
                                                     placeholder="(00) 00000-0000" 
                                                 />
                                             </div>
@@ -710,24 +731,26 @@ const LandingPageViewer: React.FC = () => {
                                         <div className="group-form">
                                             <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">E-mail</label>
                                             <div className="relative">
-                                                <div className="absolute left-4 top-4 text-gray-500">@</div>
+                                                <div className="absolute left-4 top-4 text-gray-400">@</div>
                                                 <input 
                                                     required 
                                                     type="email"
                                                     value={form.email} 
                                                     onChange={e => setForm({...form, email: e.target.value})}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:border-wtech-gold/50 focus:ring-1 focus:ring-wtech-gold/50 outline-none transition-all placeholder:text-gray-700" 
-                                                    placeholder="seu@email.com" 
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-4 pl-12 pr-4 text-zinc-900 placeholder:text-gray-400 focus:bg-white focus:border-wtech-gold focus:ring-2 focus:ring-wtech-gold/25 outline-none transition-all" 
+                                                    placeholder="Digite seu e-mail" 
                                                 />
                                             </div>
                                         </div>
-                                        
-                                        <button className={`w-full ${lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'bg-orange-600' : 'bg-wtech-gold'} text-black font-black text-xl py-5 rounded-xl hover:bg-white hover:scale-[1.02] transition-all uppercase tracking-wide shadow-xl flex items-center justify-center gap-3`}>
-                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Entrar na Lista de Espera' : 'Fazer Pré-Inscrição'} <ArrowRight strokeWidth={3} />
+
+                                        <button type="submit" className="w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black py-4.5 rounded-xl font-black text-lg uppercase tracking-wider hover:shadow-[0_10px_20px_rgba(212,175,55,0.3)] hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
+                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Entrar na Lista' : 'Confirmar Inscrição'} <ArrowRight size={20} strokeWidth={3} />
                                         </button>
-                                        
-                                        <div className="text-center text-xs text-gray-600 flex items-center justify-center gap-2">
-                                            <ShieldCheck size={12} /> Seus dados estão protegidos. Sem spam.
+
+                                        <div className="flex items-center justify-center gap-6 pt-4 border-t border-gray-100 text-gray-400 text-xs font-bold uppercase">
+                                            <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-green-600" /> Seus dados estão seguros</span>
+                                            <span>•</span>
+                                            <span>Oficial W-Tech</span>
                                         </div>
                                     </form>
                             )
@@ -737,54 +760,55 @@ const LandingPageViewer: React.FC = () => {
             </div>
         </section>
 
-        <footer className="py-12 bg-[#050505] text-center text-gray-700 border-t border-white/5">
-            <div className="flex justify-center mb-6 opacity-30">
-                 <div className="w-12 h-12 rounded-sm flex items-center justify-center overflow-hidden">
-                    {systemLogo ? <img src={systemLogo} alt={siteTitle} className="w-full h-full object-contain grayscale hover:grayscale-0 transition-all opacity-50 hover:opacity-100" /> : <WTechLogo />}
+        {/* Footer */}
+        <footer className="bg-gray-950 text-gray-500 py-12 border-t border-gray-900 text-center text-sm">
+            <div className="container mx-auto px-6 space-y-4">
+                <p>© {new Date().getFullYear()} W-Tech Academy. Todos os direitos reservados.</p>
+                <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-wider">
+                    <a href="/termos" className="hover:text-white transition-colors">Termos de Uso</a>
+                    <span>•</span>
+                    <a href="/privacidade" className="hover:text-white transition-colors">Privacidade</a>
                 </div>
             </div>
-            <p className="text-sm">&copy; {new Date().getFullYear()} W-Tech Suspensões. Todos os direitos reservados.</p>
         </footer>
 
-        {/* VIDEO MODAL POPUP */}
+        {/* Mobile Floating CTA (Fixed Bottom) */}
+        {showFloatingCTA && (
+            <div className="fixed bottom-0 left-0 w-full z-45 bg-white/95 backdrop-blur-md border-t border-gray-200 py-4 px-6 md:hidden flex items-center justify-between shadow-[0_-5px_15px_rgba(0,0,0,0.05)] animate-slide-up">
+                <div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Curso Oficial</div>
+                    <div className="text-sm font-black text-zinc-950 max-w-[150px] truncate">{lp.title}</div>
+                </div>
+                <button onClick={scrollToForm} className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all">
+                    Garantir Vaga
+                </button>
+            </div>
+        )}
+
+        {/* TESTIMONIAL VIDEO MODAL (Keep Dark Backdrop and Dark Focus for Premium Video Playback) */}
         {activeVideo && (
-            <div className="fixed inset-0 bg-black/95 z-[999] flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300" onClick={() => setActiveVideo(null)}>
-                <div className="relative w-full max-w-4xl aspect-video bg-[#111] rounded-3xl overflow-hidden border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setActiveVideo(null)} className="absolute top-4 right-4 z-50 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-colors">
+            <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-fade-in">
+                <div className="absolute inset-0" onClick={() => setActiveVideo(null)}></div>
+                <div className="bg-zinc-900 rounded-3xl overflow-hidden border border-white/10 w-full max-w-4xl aspect-video relative z-10 shadow-2xl">
+                    <button 
+                        onClick={() => setActiveVideo(null)} 
+                        className="absolute top-4 right-4 text-white hover:text-wtech-gold bg-black/40 hover:bg-black/80 w-10 h-10 rounded-full flex items-center justify-center transition-colors z-20"
+                    >
                         <X size={20} />
                     </button>
-                    <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`} title="Depoimento Aluno" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                    <iframe 
+                        src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`} 
+                        className="w-full h-full" 
+                        title="Video testimonial player"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                    ></iframe>
                 </div>
             </div>
         )}
 
-        {/* MOBILE STICKY FLOATING CTA BAR */}
-        {showFloatingCTA && (
-            <div className="fixed bottom-0 left-0 right-0 bg-[#0c0c0c]/90 border-t border-white/10 backdrop-blur-md p-4 z-50 flex items-center justify-between gap-4 md:hidden animate-slide-up">
-                <div className="text-left shrink-0">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Curso de Suspensão</span>
-                    <span className="text-wtech-gold font-black text-sm">Preço Especial</span>
-                </div>
-                <div className="flex gap-2 w-full max-w-xs justify-end">
-                    <button onClick={scrollToForm} className="bg-wtech-gold text-black text-xs font-black px-4 py-3 rounded-xl uppercase tracking-wider flex-1 text-center shadow-lg">
-                        Garantir Vaga
-                    </button>
-                    {whatsappNumber && (
-                        <a href={waLink} target="_blank" rel="noreferrer" className="bg-green-600 text-white px-3 py-3 rounded-xl flex items-center justify-center shadow-lg">
-                            <Play size={12} className="fill-white" />
-                        </a>
-                    )}
-                </div>
-            </div>
-        )}
     </div>
   );
 };
 
-const WTechLogo = () => (
-    <div className="w-12 h-12 bg-wtech-gold transform rotate-45 flex items-center justify-center">
-        <span className="transform -rotate-45 font-black text-black text-xl">W</span>
-    </div>
-);
-
-export default LandingPageViewer;
+export default LandingPageViewerV4;

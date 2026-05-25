@@ -79,7 +79,7 @@ const WTechLisboa: React.FC = () => {
                 currency: 'eur',
                 email: form.email,
                 enrollmentId: enrollmentData.id,
-                successUrl: window.location.origin + `/#/obrigado-lisboa?eid=${enrollmentData.id}&session_id={CHECKOUT_SESSION_ID}`
+                successUrl: window.location.origin + `/obrigado-lisboa?eid=${enrollmentData.id}&session_id={CHECKOUT_SESSION_ID}`
             });
 
             if (stripeResult.success && stripeResult.url) {

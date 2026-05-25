@@ -163,6 +163,20 @@ const LandingPageViewerV2: React.FC = () => {
   const [checkoutDiretoEnabled, setCheckoutDiretoEnabled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModule, setActiveModule] = useState<number | null>(null);
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const [showFloatingCTA, setShowFloatingCTA] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowFloatingCTA(true);
+      } else {
+        setShowFloatingCTA(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Form
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
@@ -859,34 +873,62 @@ const LandingPageViewerV2: React.FC = () => {
           </Reveal>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {lp.testimonials.map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="bg-white/3 border border-white/8 rounded-2xl p-6 relative"
-              >
-                <Quote size={28} className="text-wtech-gold/20 mb-4" />
-                <p className="text-gray-300 text-sm leading-relaxed mb-6">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  {t.image ? (
-                    <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-wtech-gold/30" />
+            {lp.testimonials.map((t, i) => {
+              const ytId = t.videoUrl ? (() => {
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = t.videoUrl.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : '';
+              })() : '';
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 25 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                  className="bg-white/3 border border-white/8 rounded-2xl p-6 relative flex flex-col justify-between hover:border-wtech-gold/20 transition-all duration-300 group"
+                >
+                  {ytId ? (
+                    /* Video Testimonial */
+                    <div className="space-y-4 flex-1 flex flex-col justify-between">
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10 group-hover:border-wtech-gold/30 transition-colors bg-black/40 cursor-pointer"
+                        onClick={() => setActiveVideo(ytId)}>
+                        <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt={t.name} />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <div className="w-12 h-12 bg-wtech-gold/90 text-black rounded-full flex items-center justify-center shadow-lg group-hover:bg-wtech-gold group-hover:scale-110 active:scale-95 transition-all duration-300">
+                            <Play size={16} className="fill-black text-black ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-gray-400 text-sm italic leading-relaxed mb-4">"{t.text}"</p>
+                    </div>
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-wtech-gold/20 flex items-center justify-center text-wtech-gold font-black text-sm">
-                      {t.name[0]}
+                    /* Text Testimonial */
+                    <div className="space-y-4 flex-1">
+                      <Quote size={28} className="text-wtech-gold/20 mb-2" />
+                      <p className="text-gray-300 text-sm leading-relaxed mb-6">"{t.text}"</p>
                     </div>
                   )}
-                  <div>
-                    <div className="font-black text-white text-sm">{t.name}</div>
-                    <div className="flex gap-0.5 mt-0.5">
-                      {[...Array(5)].map((_, j) => <Star key={j} size={11} className="fill-wtech-gold text-wtech-gold" />)}
+
+                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
+                    {t.image ? (
+                      <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-wtech-gold/30" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-wtech-gold/20 flex items-center justify-center text-wtech-gold font-black text-sm">
+                        {t.name[0]}
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-black text-white text-sm">{t.name}</div>
+                      <div className="flex gap-0.5 mt-0.5">
+                        {[...Array(5)].map((_, j) => <Star key={j} size={11} className="fill-wtech-gold text-wtech-gold" />)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -1191,6 +1233,18 @@ const LandingPageViewerV2: React.FC = () => {
           {isFull ? 'Lista de espera' : 'Garantir Vaga'} <ArrowRight size={15} />
         </button>
       </motion.div>
+
+      {/* VIDEO MODAL POPUP */}
+      {activeVideo && (
+        <div className="fixed inset-0 bg-black/95 z-[999] flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300" onClick={() => setActiveVideo(null)}>
+          <div className="relative w-full max-w-4xl aspect-video bg-[#111] rounded-3xl overflow-hidden border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setActiveVideo(null)} className="absolute top-4 right-4 z-50 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-colors">
+              <X size={20} />
+            </button>
+            <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`} title="Depoimento Aluno" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+          </div>
+        </div>
+      )}
 
       {/* Quiz overlay */}
       {lp.quizEnabled && <QualificationQuiz lp={lp} onComplete={() => {}} whatsappGlobalNumber={whatsapp || ''} />}

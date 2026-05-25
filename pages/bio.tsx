@@ -88,7 +88,7 @@ const BioPage = () => {
             <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center">
                 <h1 className="text-2xl font-bold mb-4">Página de BIO não configurada</h1>
                 <p className="text-gray-400">Entre no painel administrativo para configurar sua página de links.</p>
-                <a href="/#/admin" className="mt-8 bg-wtech-gold text-black px-6 py-2 rounded-lg font-bold">Ir para Admin</a>
+                <a href="/admin" className="mt-8 bg-wtech-gold text-black px-6 py-2 rounded-lg font-bold">Ir para Admin</a>
             </div>
         );
     }
@@ -237,7 +237,7 @@ const BioPage = () => {
                         {courses.map((course, idx) => (
                             <motion.a
                                 key={course.id}
-                                href={`/#/lp/${course.slug || course.id}`}
+                                href={`/lp/${course.slug || course.id}`}
                                 className="block w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all group"
                             >
                                 <div className="flex items-center gap-4">

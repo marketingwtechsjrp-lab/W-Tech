@@ -7,8 +7,8 @@
     <script>
         // Pega os parâmetros da URL (como ?code=...)
         const search = window.location.search;
-        // Redireciona para a rota interna do React usando HashRouter
-        window.location.href = window.location.origin + '/#/auth/google/callback' + search;
+        // Redireciona para a rota interna do React usando BrowserRouter
+        window.location.href = window.location.origin + '/auth/google/callback' + search;
     </script>
 </body>
 </html>

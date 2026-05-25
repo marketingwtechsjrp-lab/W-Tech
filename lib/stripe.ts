@@ -45,9 +45,9 @@ export const createStripePaymentLink = async ({
         if (successUrl) {
             finalSuccessUrl = successUrl;
         } else if (orderId) {
-            finalSuccessUrl = window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}&oid=${orderId}`;
+            finalSuccessUrl = window.location.origin + `/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}&oid=${orderId}`;
         } else {
-            finalSuccessUrl = window.location.origin + `/#/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`;
+            finalSuccessUrl = window.location.origin + `/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`;
         }
 
         params.append('success_url', finalSuccessUrl);

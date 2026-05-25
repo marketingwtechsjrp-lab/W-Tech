@@ -28,26 +28,26 @@ export const generateSitemapXml = async () => {
     // Static Pages
     staticPages.forEach(p => {
         const priority = p === '' ? '1.0' : '0.8';
-        sitemap += `  <url>\n    <loc>${baseUrl}/#/${p}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
+        sitemap += `  <url>\n    <loc>${baseUrl}/${p}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>\n`;
     });
 
     // Landing Pages
     lpData?.forEach(lp => {
         if (lp.slug) {
-            sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(lp.slug)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
+            sitemap += `  <url>\n    <loc>${baseUrl}/lp/${escapeXml(lp.slug)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
         }
     });
 
     // Courses
     courseData?.forEach(c => {
         const identifier = c.slug || c.id;
-        sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(identifier)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
+        sitemap += `  <url>\n    <loc>${baseUrl}/lp/${escapeXml(identifier)}</loc>\n    <priority>0.7</priority>\n  </url>\n`;
     });
 
     // Blog Posts
     blogData?.forEach(b => {
         if (b.slug) {
-            sitemap += `  <url>\n    <loc>${baseUrl}/#/blog/${escapeXml(b.slug)}</loc>\n    <priority>0.6</priority>\n  </url>\n`;
+            sitemap += `  <url>\n    <loc>${baseUrl}/blog/${escapeXml(b.slug)}</loc>\n    <priority>0.6</priority>\n  </url>\n`;
         }
     });
 

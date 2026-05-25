@@ -36,10 +36,10 @@ const ClientPortal = () => {
 
     // Load session from local storage or URL parameter
     useEffect(() => {
-        // Handle code from URL (HashRouter format: #/meus-pedidos?code=ABC)
+        // Handle code from URL (supports both HashRouter format: #/meus-pedidos?code=ABC and BrowserRouter format: /meus-pedidos?code=ABC)
         const hash = window.location.hash;
-        const queryPart = hash.split('?')[1];
-        const urlParams = new URLSearchParams(queryPart);
+        const hashQueryPart = hash.split('?')[1];
+        const urlParams = new URLSearchParams(hashQueryPart || window.location.search);
         const urlCode = urlParams.get('code');
 
         if (urlCode) {
@@ -727,7 +727,7 @@ const ClientPortal = () => {
                                                     MATRICULAR AGORA
                                                 </button>
                                                 <a 
-                                                    href={course.slug ? `/#/lp/${course.slug}` : `/#/courses`}
+                                                    href={course.slug ? `/lp/${course.slug}` : `/cursos`}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className={`${isDarkMode ? 'bg-white/5 border-white/10 text-gray-400 hover:text-white' : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-indigo-600'} p-4 rounded-2xl border transition-all`}

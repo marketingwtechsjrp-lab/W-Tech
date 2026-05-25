@@ -79,7 +79,7 @@ async function generateSitemap() {
 
   // Static Pages
   staticPages.forEach(p => {
-    sitemap += `  <url>\n    <loc>${baseUrl}/#/${p}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${p === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
+    sitemap += `  <url>\n    <loc>${baseUrl}/${p}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${p === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
   });
 
   // Landing Pages
@@ -94,7 +94,7 @@ async function generateSitemap() {
   lpData?.forEach(lp => {
     if (lp.slug && !slugsSeen.has(lp.slug)) {
       const lastmod = formatDate(lp.updated_at);
-      sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(lp.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.7</priority>\n  </url>\n`;
+      sitemap += `  <url>\n    <loc>${baseUrl}/lp/${escapeXml(lp.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.7</priority>\n  </url>\n`;
       slugsSeen.add(lp.slug);
     }
   });
@@ -104,7 +104,7 @@ async function generateSitemap() {
     const identifier = c.slug || c.id;
     if (identifier && !slugsSeen.has(identifier)) {
       const lastmod = formatDate(c.updated_at || c.date);
-      sitemap += `  <url>\n    <loc>${baseUrl}/#/lp/${escapeXml(identifier)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.7</priority>\n  </url>\n`;
+      sitemap += `  <url>\n    <loc>${baseUrl}/lp/${escapeXml(identifier)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.7</priority>\n  </url>\n`;
       slugsSeen.add(identifier);
     }
   });
@@ -113,7 +113,7 @@ async function generateSitemap() {
   blogData?.forEach(b => {
     if (b.slug) {
       const lastmod = formatDate(b.updated_at);
-      sitemap += `  <url>\n    <loc>${baseUrl}/#/blog/${escapeXml(b.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.6</priority>\n  </url>\n`;
+      sitemap += `  <url>\n    <loc>${baseUrl}/blog/${escapeXml(b.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.6</priority>\n  </url>\n`;
     }
   });
 

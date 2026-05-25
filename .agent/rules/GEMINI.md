@@ -92,6 +92,13 @@ When user's prompt is NOT in English:
 - **Performance**: Measure first. Adhere to 2025 standards (Core Web Vitals).
 - **Infra/Safety**: 5-Phase Deployment. Verify secrets security.
 
+### 🌐 Web Automation & Testing (agent-browser)
+
+**MANDATORY:** For any web page interaction, E2E testing, visual validation, or Core Web Vitals profiling, you MUST prioritize using the native `agent-browser` tool.
+- **Priority Rules:** Read and adhere strictly to `file:///.agent/rules/005 - agent-browser.md`.
+- **Flow:** Start the dev server → `agent-browser open` → `agent-browser snapshot -i` → re-snapshot after EVERY interactive click/fill.
+- **Profiling:** Use `agent-browser vitals` to audit TTFB, LCP, CLS, and INP metrics.
+
 ### 📁 File Dependency Awareness
 
 **Before modifying ANY file:**

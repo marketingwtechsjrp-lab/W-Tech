@@ -36,10 +36,10 @@
 
     if (status === 'failed' && cid) {
       // Falha → volta ao checkout com mensagem de erro
-      window.location.replace('/#/checkout-curso/' + cid + '?error=payment_failed');
+      window.location.replace('/checkout-curso/' + cid + '?error=payment_failed');
     } else {
       // Sucesso ou pendente → página de confirmação
-      window.location.replace('/#/inscricao-confirmada?eid=' + eid + '&status=' + status);
+      window.location.replace('/inscricao-confirmada?eid=' + eid + '&status=' + status);
     }
   </script>
 </body>

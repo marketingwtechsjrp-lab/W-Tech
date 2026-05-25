@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Course, LandingPage } from '../types';
-import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check } from 'lucide-react';
+import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star } from 'lucide-react';
 
 interface LandingPageEditorProps {
     course: Course;
@@ -11,7 +11,7 @@ interface LandingPageEditorProps {
 export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'template' | 'hero' | 'content' | 'modules' | 'instructor'>('template');
+    const [activeTab, setActiveTab] = useState<'template' | 'hero' | 'content' | 'modules' | 'instructor' | 'testimonials'>('template');
     
     // Initial State Template
     const [lp, setLp] = useState<Partial<LandingPage>>({
@@ -42,7 +42,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         instructorImage: 'https://w-techbrasil.com.br/wp-content/uploads/2021/05/alex-crepaldi.jpg',
         whatsappNumber: '5511999999999',
         videoUrl: 'https://www.youtube.com/watch?v=RePclscnxDM',
-        template: 'v1'
+        template: 'v1',
+        testimonials: []
     });
 
     useEffect(() => {
@@ -71,7 +72,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                 modules: data.modules || [], // Ensure array
                 quizEnabled: data.quiz_enabled,
                 fakeAlertsEnabled: data.fake_alerts_enabled,
-                template: data.template || 'v1'
+                template: data.template || 'v1',
+                testimonials: data.testimonials || []
             });
         }
         setLoading(false);
@@ -98,7 +100,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     whatsapp_number: lp.whatsappNumber,
                     quiz_enabled: lp.quizEnabled,
                     fake_alerts_enabled: lp.fakeAlertsEnabled,
-                    template: lp.template || 'v1'
+                    template: lp.template || 'v1',
+                    testimonials: lp.testimonials || []
                 }, { onConflict: 'course_id' })
                 .select()
                 .single();
@@ -118,7 +121,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     whatsappNumber: data.whatsapp_number,
                     modules: data.modules,
                     quizEnabled: data.quiz_enabled,
-                    fakeAlertsEnabled: data.fake_alerts_enabled
+                    fakeAlertsEnabled: data.fake_alerts_enabled,
+                    testimonials: data.testimonials || []
                 }));
             }
             alert('Página salva com sucesso!');
@@ -167,6 +171,43 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         setLp({ ...lp, modules: newModules });
     };
 
+    // Testimonials Handlers
+    const updateTestimonial = (index: number, field: string, value: string) => {
+        const newTestimonials = [...(lp.testimonials || [])];
+        newTestimonials[index] = { ...newTestimonials[index], [field]: value };
+        setLp({ ...lp, testimonials: newTestimonials });
+    };
+
+    const addTestimonial = () => {
+        setLp({
+            ...lp,
+            testimonials: [
+                ...(lp.testimonials || []),
+                { name: 'Novo Aluno', text: 'Excelente curso! Aprendi muito sobre revalvulação de suspensões...', image: '', videoUrl: '' }
+            ]
+        });
+    };
+
+    const removeTestimonial = (index: number) => {
+        const newTestimonials = [...(lp.testimonials || [])];
+        newTestimonials.splice(index, 1);
+        setLp({ ...lp, testimonials: newTestimonials });
+    };
+
+    const moveTestimonial = (index: number, direction: 'up' | 'down') => {
+        const list = [...(lp.testimonials || [])];
+        if (direction === 'up' && index > 0) {
+            const temp = list[index];
+            list[index] = list[index - 1];
+            list[index - 1] = temp;
+        } else if (direction === 'down' && index < list.length - 1) {
+            const temp = list[index];
+            list[index] = list[index + 1];
+            list[index + 1] = temp;
+        }
+        setLp({ ...lp, testimonials: list });
+    };
+
     if (loading) return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white p-8 rounded-lg flex items-center gap-4">
@@ -188,10 +229,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                         <p className="text-gray-500 text-sm">Editando página para: <span className="font-semibold text-black">{course.title}</span></p>
                     </div>
                     <div className="flex gap-3">
-                         <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                         <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : lp.template === 'v4' ? 'lp4' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : lp.template === 'v4' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                             <LinkIcon size={16} />
-                            Visualizar {lp.template === 'v2' ? '(V2 ✨)' : lp.template === 'v3' ? '(V3 ☀️)' : '(V1)'}
+                            Visualizar {lp.template === 'v2' ? '(V2 ✨)' : lp.template === 'v3' ? '(V3 ☀️)' : lp.template === 'v4' ? '(V4 🍃)' : '(V1)'}
                         </a>
                         <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
                             <X size={24} />
@@ -213,6 +254,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 ? <span className="text-[9px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><Sparkles size={7} />V2</span>
                                 : lp.template === 'v3'
                                 ? <span className="text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">V3</span>
+                                : lp.template === 'v4'
+                                ? <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">V4</span>
                                 : <span className="text-[9px] font-bold bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">V1</span>
                             }
                         </button>
@@ -229,6 +272,9 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                         <button onClick={() => setActiveTab('instructor')} className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'instructor' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
                             <User size={18} /> Instrutor
                         </button>
+                        <button onClick={() => setActiveTab('testimonials')} className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'testimonials' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <MessageSquare size={18} /> Depoimentos
+                        </button>
                     </div>
 
                     {/* Form Area */}
@@ -242,14 +288,16 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                     <p className="text-sm text-gray-500 mb-6">Define o visual e os efeitos desta Landing Page. Pode trocar a qualquer momento e salvar novamente.</p>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {([
                                         { id: 'v1', name: 'Classic Dark', tagline: 'Sólido e direto', isNew: false,
                                           features: ['Hero com imagem de fundo', 'Seção de benefícios', 'Lista de módulos', 'Formulário de inscrição', 'WhatsApp CTA'] },
                                         { id: 'v2', name: 'Premium Cinematic', tagline: 'Parallax e efeitos', isNew: false,
                                           features: ['Parallax hero + barra de scroll', 'Countdown em tempo real', 'Contadores animados', 'Cards com stagger', 'FAQ accordion', 'CTA flutuante mobile'] },
-                                        { id: 'v3', name: 'White Clean', tagline: 'Branco e cronograma', isNew: true,
-                                          features: ['Design branco/claro', 'Cronograma visual', 'Cards com borda dourada', 'Countdown branco', 'Formulário lateral'] }
+                                        { id: 'v3', name: 'White Clean', tagline: 'Branco e cronograma', isNew: false,
+                                          features: ['Design branco/claro', 'Cronograma visual', 'Cards com borda dourada', 'Countdown branco', 'Formulário lateral'] },
+                                        { id: 'v4', name: 'Classic Light', tagline: 'Claro e objetivo', isNew: true,
+                                          features: ['Hero claro / imagem direita', 'Seção de benefícios em grid', 'Módulos em cards claros', 'Formulário de inscrição premium', 'WhatsApp CTA'] }
                                     ] as const).map(t => (
                                         <button key={t.id} type="button" onClick={() => setLp({ ...lp, template: t.id })}
                                             className={`relative rounded-xl border-2 overflow-hidden text-left transition-all duration-200 w-full ${
@@ -330,7 +378,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                             <div className="h-1.5 w-20 bg-yellow-500 rounded-sm" />
                                                         </div>
                                                     </div>
-                                                ) : (
+                                                ) : t.id === 'v3' ? (
                                                     /* V3 mockup — white clean */
                                                     <div className="w-full h-full bg-white select-none">
                                                         <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 w-full" />
@@ -377,6 +425,38 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                             ))}
                                                         </div>
                                                     </div>
+                                                ) : (
+                                                    /* V4 mockup — classic light */
+                                                    <div className="w-full h-full bg-gray-50 select-none">
+                                                        <div className="h-5 bg-white flex items-center px-2 gap-1 border-b border-gray-200">
+                                                            <div className="w-8 h-1.5 bg-yellow-500/60 rounded-full" />
+                                                            <div className="flex-1" />
+                                                            <div className="w-10 h-2 bg-yellow-500 rounded-sm" />
+                                                        </div>
+                                                        <div className="relative h-20 bg-gradient-to-br from-gray-100 to-white">
+                                                            <div className="absolute bottom-2 left-3 space-y-1">
+                                                                <div className="flex gap-1">
+                                                                    <div className="h-1.5 w-12 bg-yellow-500/50 rounded-full" />
+                                                                    <div className="h-1.5 w-8 bg-gray-300 rounded-full" />
+                                                                </div>
+                                                                <div className="h-3.5 w-28 bg-gray-800 rounded" />
+                                                                <div className="h-2 w-20 bg-gray-400 rounded" />
+                                                                <div className="flex gap-1 mt-0.5">
+                                                                    <div className="h-2.5 w-14 bg-yellow-500 rounded" />
+                                                                    <div className="h-2.5 w-12 bg-white border border-gray-300 rounded" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-2 grid grid-cols-3 gap-1">
+                                                            {[1,2,3].map(i => (
+                                                                <div key={i} className="bg-white border border-gray-200 rounded p-1.5 space-y-1">
+                                                                    <div className="w-3 h-3 bg-yellow-500/20 rounded" />
+                                                                    <div className="h-1.5 w-full bg-gray-700/30 rounded-full" />
+                                                                    <div className="h-1 w-3/4 bg-gray-300/50 rounded-full" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 )}
                                                 {/* NEW badge */}
                                                 {t.isNew && (
@@ -417,7 +497,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 </div>
 
                                 {/* Info box */}
-                                <div className={`rounded-xl p-4 border text-sm ${lp.template === 'v2' ? 'bg-yellow-50 border-yellow-200' : lp.template === 'v3' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                                <div className={`rounded-xl p-4 border text-sm ${lp.template === 'v2' ? 'bg-yellow-50 border-yellow-200' : lp.template === 'v3' ? 'bg-blue-50 border-blue-200' : lp.template === 'v4' ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
                                     {lp.template === 'v2' ? (
                                         <div className="flex gap-3">
                                             <Sparkles size={16} className="text-yellow-600 flex-shrink-0 mt-0.5" />
@@ -432,6 +512,14 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                             <div>
                                                 <p className="font-black text-blue-800 mb-0.5">Template White Clean selecionado</p>
                                                 <p className="text-blue-700 text-xs leading-relaxed">Design branco/claro com cronograma visual do curso, countdown em cards brancos e formulário lateral. O campo <strong>Cronograma / Conteúdo</strong> do curso aparece automaticamente.</p>
+                                            </div>
+                                        </div>
+                                    ) : lp.template === 'v4' ? (
+                                        <div className="flex gap-3">
+                                            <Layers size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-black text-emerald-800 mb-0.5">Template Classic Light selecionado</p>
+                                                <p className="text-emerald-700 text-xs leading-relaxed">Baseado inteiramente na estrutura do V1, mas com um visual totalmente claro, luminoso e elegante. Perfeito para conversão premium.</p>
                                             </div>
                                         </div>
                                     ) : (
@@ -452,10 +540,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                         Salvar Template
                                     </button>
                                     {lp.slug && (
-                                        <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-colors ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                                        <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : lp.template === 'v4' ? 'lp4' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-colors ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : lp.template === 'v4' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                                             <LinkIcon size={15} />
-                                            Visualizar {lp.template === 'v2' ? 'V2 ✨' : lp.template === 'v3' ? 'V3 ☀️' : 'V1'}
+                                            Visualizar {lp.template === 'v2' ? 'V2 ✨' : lp.template === 'v3' ? 'V3 ☀️' : lp.template === 'v4' ? 'V4 🍃' : 'V1'}
                                         </a>
                                     )}
                                 </div>
@@ -618,6 +706,115 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 </div>
                             </div>
                         )}
+
+                        {activeTab === 'testimonials' && (
+                             <div className="space-y-6 animate-fade-in">
+                                 <div className="flex items-center justify-between border-b pb-2 mb-4">
+                                     <div>
+                                         <h3 className="text-xl font-bold">Depoimentos dos Alunos</h3>
+                                         <p className="text-sm text-gray-500">Adicione depoimentos em texto ou vídeo (YouTube) para impulsionar a prova social e conversão.</p>
+                                     </div>
+                                     <button onClick={addTestimonial} className="text-sm bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800">
+                                         <Plus size={16} /> Adicionar Depoimento
+                                     </button>
+                                 </div>
+
+                                 <div className="space-y-6">
+                                     {(!lp.testimonials || lp.testimonials.length === 0) ? (
+                                         <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                             <MessageSquare className="mx-auto text-gray-300 mb-3" size={40} />
+                                             <p className="text-gray-500 font-medium">Nenhum depoimento cadastrado ainda.</p>
+                                             <button onClick={addTestimonial} className="mt-3 text-xs bg-black text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-gray-800">
+                                                 <Plus size={12} /> Começar a Cadastrar
+                                             </button>
+                                         </div>
+                                     ) : (
+                                         lp.testimonials.map((test, idx) => {
+                                             const ytId = test.videoUrl ? (() => {
+                                                 const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                                 const match = test.videoUrl.match(regExp);
+                                                 return (match && match[2].length === 11) ? match[2] : '';
+                                             })() : '';
+
+                                             return (
+                                                 <div key={idx} className="p-5 bg-gray-50 rounded-2xl border border-gray-200 flex gap-4 items-start relative group shadow-sm transition-all hover:border-yellow-500/40">
+                                                     {/* Move buttons */}
+                                                     <div className="flex flex-col gap-1 shrink-0">
+                                                         <button onClick={() => moveTestimonial(idx, 'up')} disabled={idx === 0}
+                                                             className="p-1 hover:bg-gray-200 rounded text-gray-500 disabled:opacity-30">
+                                                             <ArrowUp size={16} />
+                                                        </button>
+                                                         <span className="text-[10px] text-center font-bold text-gray-400">{idx + 1}</span>
+                                                         <button onClick={() => moveTestimonial(idx, 'down')} disabled={idx === (lp.testimonials?.length || 0) - 1}
+                                                             className="p-1 hover:bg-gray-200 rounded text-gray-500 disabled:opacity-30">
+                                                             <ArrowDown size={16} />
+                                                         </button>
+                                                     </div>
+
+                                                     {/* Image Avatar */}
+                                                     <div className="w-20 h-20 rounded-xl shrink-0 overflow-hidden border border-gray-300 bg-white relative">
+                                                         {ytId ? (
+                                                             /* Show YouTube video thumbnail if videoUrl is provided */
+                                                             <div className="w-full h-full relative">
+                                                                 <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} className="w-full h-full object-cover" alt="YT cover" />
+                                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                                     <Video size={16} className="text-white" />
+                                                                 </div>
+                                                             </div>
+                                                         ) : test.image ? (
+                                                             <img src={test.image} className="w-full h-full object-cover" alt={test.name} />
+                                                         ) : (
+                                                             <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                                 <User size={24} />
+                                                             </div>
+                                                         )}
+                                                     </div>
+
+                                                     {/* Fields */}
+                                                     <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                         <div className="space-y-3 md:col-span-2">
+                                                             <div className="flex gap-4">
+                                                                 <div className="flex-1">
+                                                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nome do Aluno</label>
+                                                                     <input className="w-full bg-white border border-gray-200 p-2.5 rounded-lg text-sm font-bold focus:ring-1 focus:ring-black outline-none" value={test.name} placeholder="Ex: João da Silva" onChange={e => updateTestimonial(idx, 'name', e.target.value)} />
+                                                                 </div>
+                                                                 <div className="flex-1">
+                                                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Foto URL (Opcional)</label>
+                                                                     <input className="w-full bg-white border border-gray-200 p-2.5 rounded-lg text-xs text-gray-600 focus:ring-1 focus:ring-black outline-none" value={test.image || ''} placeholder="https://..." onChange={e => updateTestimonial(idx, 'image', e.target.value)} />
+                                                                 </div>
+                                                             </div>
+                                                         </div>
+
+                                                         <div className="space-y-3 md:col-span-2">
+                                                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Link de Vídeo do YouTube (Opcional)</label>
+                                                             <p className="text-[10px] text-gray-400 -mt-2">Cole o link completo do vídeo de depoimento do aluno no YouTube.</p>
+                                                             <div className="flex gap-2">
+                                                                 <input className="flex-1 bg-white border border-gray-200 p-2.5 rounded-lg text-xs text-gray-600 focus:ring-1 focus:ring-black outline-none" value={test.videoUrl || ''} placeholder="https://www.youtube.com/watch?v=..." onChange={e => updateTestimonial(idx, 'videoUrl', e.target.value)} />
+                                                                 {ytId && (
+                                                                     <span className="bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2.5 py-1 rounded-md self-center flex items-center gap-1">
+                                                                         <Check size={10} strokeWidth={3} /> Vídeo Detectado
+                                                                     </span>
+                                                                 )}
+                                                             </div>
+                                                         </div>
+
+                                                         <div className="space-y-3 md:col-span-2">
+                                                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Texto do Depoimento</label>
+                                                             <textarea rows={3} className="w-full bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-600 focus:ring-1 focus:ring-black outline-none" value={test.text} placeholder="Escreva o relato do aluno aqui..." onChange={e => updateTestimonial(idx, 'text', e.target.value)} />
+                                                         </div>
+                                                     </div>
+
+                                                     {/* Delete Button */}
+                                                     <button onClick={() => removeTestimonial(idx)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors shrink-0">
+                                                         <Trash2 size={20} />
+                                                     </button>
+                                                 </div>
+                                             );
+                                         })
+                                     )}
+                                 </div>
+                             </div>
+                         )}
                         
                     </div>
                 </div>

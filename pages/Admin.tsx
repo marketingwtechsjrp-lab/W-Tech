@@ -701,7 +701,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     <p><strong>Data:</strong> ${formatDateLocal(course.date)} às ${course.startTime}</p>
                     <p><strong>Local:</strong> ${course.location}</p>
                     <div style="margin-top: 20px;">
-                        <a href="https://w-techbrasil.com.br/#/lp/${course.slug || course.id}" style="background-color: #000; color: #D4AF37; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">GARANTIR VAGA</a>
+                        <a href="https://w-techbrasil.com.br/lp/${course.slug || course.id}" style="background-color: #000; color: #D4AF37; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">GARANTIR VAGA</a>
                     </div>
                 </div>
             `,
@@ -814,7 +814,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     console.error('Error creating/updating Auto LP:', lpError);
                     alert('Curso salvo, mas erro ao processar LP: ' + lpError.message);
                 } else {
-                    alert(`LP processada com sucesso!\nURL: w-tech.com/#/lp/${slug}`);
+                    alert(`LP processada com sucesso!\nURL: w-tech.com/lp/${slug}`);
                 }
             } catch (err) {
                 console.error('LP Gen Error:', err);
