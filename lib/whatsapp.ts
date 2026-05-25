@@ -53,13 +53,20 @@ export const getUserWhatsAppConfig = async (userId: string): Promise<WhatsAppCon
 };
 
 export const sendWhatsAppMessage = async (to: string, message: string, userId?: string) => {
-    // If userId provided, use User Config. If not, try Global (Admin fallback) or fail.
-    // For now, let's assume automation ALWAYS provides a userId.
+    // If userId provided, use User Config or direct instanceName if it is not a UUID.
     
     let config: WhatsAppConfig | null = null;
 
     if (userId) {
-        config = await getUserWhatsAppConfig(userId);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+        if (isUuid) {
+            config = await getUserWhatsAppConfig(userId);
+        } else {
+            const globalC = await getGlobalWhatsAppConfig();
+            if (globalC) {
+                config = { ...globalC, instanceName: userId };
+            }
+        }
     } 
     
     // Fallback logic could go here if we want a "System Instance", but let's stick to user instances as requested.
@@ -114,7 +121,15 @@ export const sendWhatsAppMedia = async (to: string, mediaUrl: string, caption: s
     let config: WhatsAppConfig | null = null;
 
     if (userId) {
-        config = await getUserWhatsAppConfig(userId);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+        if (isUuid) {
+            config = await getUserWhatsAppConfig(userId);
+        } else {
+            const globalC = await getGlobalWhatsAppConfig();
+            if (globalC) {
+                config = { ...globalC, instanceName: userId };
+            }
+        }
     } 
     
     if (!config) {
