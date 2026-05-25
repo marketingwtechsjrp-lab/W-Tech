@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -21,6 +21,7 @@ const Blog = lazy(() => import('./pages/Blog'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const LandingPageViewer = lazy(() => import('./pages/LandingPageViewer'));
 const LandingPageViewerV2 = lazy(() => import('./pages/LandingPageViewerV2'));
+const LandingPageViewerV3 = lazy(() => import('./pages/LandingPageViewerV3'));
 const HomeP2 = lazy(() => import('./pages/HomeP2'));
 const Home3 = lazy(() => import('./pages/Home3'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
@@ -115,6 +116,7 @@ const App = () => {
                     <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
                     <Route path="/lp2/:slug" element={<LandingPageViewerV2 />} />
+                    <Route path="/lp3/:slug" element={<LandingPageViewerV3 />} />
 
                     {/* Legal Pages */}
                     <Route path="/termos" element={<Termos />} />

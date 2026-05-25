@@ -188,10 +188,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                         <p className="text-gray-500 text-sm">Editando página para: <span className="font-semibold text-black">{course.title}</span></p>
                     </div>
                     <div className="flex gap-3">
-                         <a href={`#/${lp.template === 'v2' ? 'lp2' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                         <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                             <LinkIcon size={16} />
-                            Visualizar {lp.template === 'v2' ? '(V2 ✨)' : '(V1)'}
+                            Visualizar {lp.template === 'v2' ? '(V2 ✨)' : lp.template === 'v3' ? '(V3 ☀️)' : '(V1)'}
                         </a>
                         <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
                             <X size={24} />
@@ -211,6 +211,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                             <span className="flex-1">Template</span>
                             {lp.template === 'v2'
                                 ? <span className="text-[9px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><Sparkles size={7} />V2</span>
+                                : lp.template === 'v3'
+                                ? <span className="text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">V3</span>
                                 : <span className="text-[9px] font-bold bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">V1</span>
                             }
                         </button>
@@ -240,13 +242,14 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                     <p className="text-sm text-gray-500 mb-6">Define o visual e os efeitos desta Landing Page. Pode trocar a qualquer momento e salvar novamente.</p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-5">
-                                    {/* V1 */}
+                                <div className="grid grid-cols-3 gap-4">
                                     {([
-                                        { id: 'v1', name: 'Classic Dark', tagline: 'Sólido e direto ao ponto', isNew: false,
+                                        { id: 'v1', name: 'Classic Dark', tagline: 'Sólido e direto', isNew: false,
                                           features: ['Hero com imagem de fundo', 'Seção de benefícios', 'Lista de módulos', 'Formulário de inscrição', 'WhatsApp CTA'] },
-                                        { id: 'v2', name: 'Premium Cinematic', tagline: 'Cinematográfico e alta conversão', isNew: true,
-                                          features: ['Parallax hero + barra de scroll', 'Countdown em tempo real', 'Contadores animados', 'Cards com stagger', 'FAQ accordion', 'CTA flutuante mobile'] }
+                                        { id: 'v2', name: 'Premium Cinematic', tagline: 'Parallax e efeitos', isNew: false,
+                                          features: ['Parallax hero + barra de scroll', 'Countdown em tempo real', 'Contadores animados', 'Cards com stagger', 'FAQ accordion', 'CTA flutuante mobile'] },
+                                        { id: 'v3', name: 'White Clean', tagline: 'Branco e cronograma', isNew: true,
+                                          features: ['Design branco/claro', 'Cronograma visual', 'Cards com borda dourada', 'Countdown branco', 'Formulário lateral'] }
                                     ] as const).map(t => (
                                         <button key={t.id} type="button" onClick={() => setLp({ ...lp, template: t.id })}
                                             className={`relative rounded-xl border-2 overflow-hidden text-left transition-all duration-200 w-full ${
@@ -256,9 +259,9 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                             }`}
                                         >
                                             {/* Mini mockup */}
-                                            <div className="h-40 bg-[#050505] overflow-hidden pointer-events-none relative">
+                                            <div className="h-40 overflow-hidden pointer-events-none relative">
                                                 {t.id === 'v1' ? (
-                                                    /* V1 mockup */
+                                                    /* V1 mockup — dark */
                                                     <div className="w-full h-full bg-[#0a0a0a] select-none">
                                                         <div className="h-5 bg-black/80 flex items-center px-2 gap-1 border-b border-white/5">
                                                             <div className="w-8 h-1.5 bg-yellow-500/60 rounded-full" />
@@ -290,8 +293,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                             ))}
                                                         </div>
                                                     </div>
-                                                ) : (
-                                                    /* V2 mockup */
+                                                ) : t.id === 'v2' ? (
+                                                    /* V2 mockup — dark cinematic */
                                                     <div className="w-full h-full bg-[#050505] select-none">
                                                         <div className="h-0.5 bg-yellow-500 w-2/3" />
                                                         <div className="h-5 bg-black/80 flex items-center px-2 gap-1 border-b border-white/5">
@@ -303,14 +306,9 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                             <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 60% 50%, rgba(212,175,55,0.15) 0%, transparent 60%)' }} />
                                                             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent" />
                                                             <div className="absolute top-2 left-3 space-y-0.5">
-                                                                <div className="flex gap-1">
-                                                                    <div className="h-1.5 w-14 bg-yellow-500/20 border border-yellow-500/30 rounded-full" />
-                                                                    <div className="h-1.5 w-8 bg-white/8 rounded-full" />
-                                                                </div>
                                                                 <div className="h-3.5 w-24 bg-white/90 rounded" />
                                                                 <div className="h-1.5 w-16 bg-white/40 rounded" />
                                                             </div>
-                                                            {/* countdown */}
                                                             <div className="absolute bottom-1.5 right-2 flex gap-1">
                                                                 {[1,2,3,4].map(i => (
                                                                     <div key={i} className="w-5 h-5 bg-black/60 border border-yellow-500/30 rounded flex items-center justify-center">
@@ -318,27 +316,65 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                            {/* scarcity bar */}
-                                                            <div className="absolute bottom-1.5 left-3 space-y-0.5 w-20">
-                                                                <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                                                    <div className="h-full w-3/4 bg-yellow-500 rounded-full" />
-                                                                </div>
-                                                            </div>
                                                         </div>
                                                         <div className="p-2 grid grid-cols-3 gap-1">
                                                             {[0,1,2].map(i => (
                                                                 <div key={i} className="bg-white/3 border border-white/8 rounded p-1.5 space-y-1" style={{ opacity: 1 - i * 0.1 }}>
-                                                                    <div className="w-4 h-4 bg-yellow-500/15 border border-yellow-500/20 rounded flex items-center justify-center">
-                                                                        <div className="w-2 h-2 bg-yellow-500/60 rounded-sm" />
-                                                                    </div>
+                                                                    <div className="w-4 h-4 bg-yellow-500/15 border border-yellow-500/20 rounded" />
                                                                     <div className="h-1.5 w-full bg-white/30 rounded-full" />
                                                                     <div className="h-1 w-3/4 bg-white/15 rounded-full" />
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                        {/* sticky cta */}
                                                         <div className="h-3 bg-black/90 border-t border-white/10 flex items-center justify-center">
                                                             <div className="h-1.5 w-20 bg-yellow-500 rounded-sm" />
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    /* V3 mockup — white clean */
+                                                    <div className="w-full h-full bg-white select-none">
+                                                        <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 w-full" />
+                                                        <div className="h-5 bg-white flex items-center px-2 gap-1 border-b border-gray-100 shadow-sm">
+                                                            <div className="w-7 h-2 bg-yellow-500 rounded-sm" />
+                                                            <div className="flex-1" />
+                                                            <div className="w-12 h-2.5 bg-yellow-500 rounded-lg" />
+                                                        </div>
+                                                        <div className="relative h-20 bg-gradient-to-br from-gray-50 to-yellow-50/30 flex">
+                                                            <div className="flex-1 p-2 space-y-1">
+                                                                <div className="h-1.5 w-16 bg-yellow-500/30 border border-yellow-500/40 rounded-full" />
+                                                                <div className="h-3 w-24 bg-gray-800 rounded" />
+                                                                <div className="h-1.5 w-1/2 bg-yellow-500 rounded-full" style={{ height: '2px', width: '24px' }} />
+                                                                <div className="h-1.5 w-20 bg-gray-400/50 rounded-full" />
+                                                                <div className="flex gap-1 mt-1">
+                                                                    <div className="h-3 w-12 bg-yellow-500 rounded-lg" />
+                                                                    <div className="h-3 w-10 bg-white border border-gray-200 rounded-lg" />
+                                                                </div>
+                                                            </div>
+                                                            {/* right — image + countdown */}
+                                                            <div className="w-16 p-1 space-y-1">
+                                                                <div className="h-10 bg-gray-200 rounded-lg border border-gray-100" />
+                                                                <div className="bg-white border border-gray-200 rounded p-1 flex gap-0.5 justify-center shadow-sm">
+                                                                    {[1,2,3,4].map(i => (
+                                                                        <div key={i} className="w-3 h-3 bg-white border border-yellow-400/50 rounded flex items-center justify-center">
+                                                                            <div className="h-1 w-2 bg-gray-700/60 rounded-full" />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {/* stats strip */}
+                                                        <div className="bg-gray-800 h-4 flex items-center justify-around px-2">
+                                                            {[1,2,3,4].map(i => <div key={i} className="h-1 w-6 bg-yellow-500/50 rounded-full" />)}
+                                                        </div>
+                                                        {/* benefit cards */}
+                                                        <div className="p-1.5 grid grid-cols-3 gap-1">
+                                                            {[1,2,3].map(i => (
+                                                                <div key={i} className="bg-white border border-gray-200 rounded p-1 space-y-0.5 shadow-sm">
+                                                                    <div className="w-3 h-3 bg-yellow-500/15 border border-yellow-500/20 rounded" />
+                                                                    <div className="h-1.5 w-full bg-gray-700/30 rounded-full" />
+                                                                    <div className="h-1 w-3/4 bg-gray-300/50 rounded-full" />
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 )}
@@ -359,21 +395,21 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                             {/* Label */}
                                             <div className="p-3 bg-white border-t border-gray-100">
                                                 <div className="flex items-center justify-between mb-0.5">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5">
                                                         <span className="text-[9px] font-black bg-gray-900 text-white px-1.5 py-0.5 rounded">{t.id.toUpperCase()}</span>
-                                                        <span className="font-black text-gray-900 text-sm">{t.name}</span>
+                                                        <span className="font-black text-gray-900 text-xs">{t.name}</span>
                                                     </div>
                                                     {lp.template === t.id && <span className="text-[10px] text-yellow-600 font-black">✓ Ativo</span>}
                                                 </div>
-                                                <p className="text-[11px] text-yellow-600 font-semibold mb-2">{t.tagline}</p>
+                                                <p className="text-[10px] text-yellow-600 font-semibold mb-1.5">{t.tagline}</p>
                                                 <ul className="space-y-0.5">
                                                     {t.features.slice(0, 3).map((f, i) => (
-                                                        <li key={i} className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                                                        <li key={i} className="flex items-center gap-1 text-[9px] text-gray-500">
                                                             <div className="w-1 h-1 bg-yellow-400 rounded-full flex-shrink-0" />
                                                             {f}
                                                         </li>
                                                     ))}
-                                                    {t.features.length > 3 && <li className="text-[10px] text-gray-400 pl-2.5">+{t.features.length - 3} recursos...</li>}
+                                                    {t.features.length > 3 && <li className="text-[9px] text-gray-400 pl-2">+{t.features.length - 3} mais...</li>}
                                                 </ul>
                                             </div>
                                         </button>
@@ -381,13 +417,21 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 </div>
 
                                 {/* Info box */}
-                                <div className={`rounded-xl p-4 border text-sm ${lp.template === 'v2' ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'}`}>
+                                <div className={`rounded-xl p-4 border text-sm ${lp.template === 'v2' ? 'bg-yellow-50 border-yellow-200' : lp.template === 'v3' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
                                     {lp.template === 'v2' ? (
                                         <div className="flex gap-3">
                                             <Sparkles size={16} className="text-yellow-600 flex-shrink-0 mt-0.5" />
                                             <div>
                                                 <p className="font-black text-yellow-800 mb-0.5">Template Premium Cinematic selecionado</p>
-                                                <p className="text-yellow-700 text-xs leading-relaxed">Esta LP vai usar parallax, countdown ao vivo, animações de entrada, FAQ e CTA flutuante mobile. Clique em <strong>Salvar Página</strong> para confirmar, depois em <strong>Visualizar (V2 ✨)</strong> para ver.</p>
+                                                <p className="text-yellow-700 text-xs leading-relaxed">Esta LP vai usar parallax, countdown ao vivo, animações de entrada, FAQ e CTA flutuante mobile. Clique em <strong>Salvar Página</strong> para confirmar.</p>
+                                            </div>
+                                        </div>
+                                    ) : lp.template === 'v3' ? (
+                                        <div className="flex gap-3">
+                                            <Layers size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-black text-blue-800 mb-0.5">Template White Clean selecionado</p>
+                                                <p className="text-blue-700 text-xs leading-relaxed">Design branco/claro com cronograma visual do curso, countdown em cards brancos e formulário lateral. O campo <strong>Cronograma / Conteúdo</strong> do curso aparece automaticamente.</p>
                                             </div>
                                         </div>
                                     ) : (
@@ -408,10 +452,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                         Salvar Template
                                     </button>
                                     {lp.slug && (
-                                        <a href={`#/${lp.template === 'v2' ? 'lp2' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-colors ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                                        <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-colors ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                                             <LinkIcon size={15} />
-                                            Visualizar {lp.template === 'v2' ? 'V2 ✨' : 'V1'}
+                                            Visualizar {lp.template === 'v2' ? 'V2 ✨' : lp.template === 'v3' ? 'V3 ☀️' : 'V1'}
                                         </a>
                                     )}
                                 </div>
@@ -433,7 +477,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 <div>
                                     <label className="block text-sm font-bold text-gray-500 mb-1">URL Slug (ex: curso-bh)</label>
                                     <div className="flex items-center">
-                                        <span className="p-3 bg-gray-100 border border-r-0 border-gray-200 text-gray-500 rounded-l-lg text-sm">w-techbrasil.com.br/#/lp/</span>
+                                        <span className="p-3 bg-gray-100 border border-r-0 border-gray-200 text-gray-500 rounded-l-lg text-sm">w-techbrasil.com.br/lp/</span>
                                         <input className="flex-1 bg-white border border-gray-200 p-3 rounded-r-lg focus:ring-2 focus:ring-black outline-none transition-all" value={lp.slug || ''} onChange={e => setLp({ ...lp, slug: e.target.value.toLowerCase().trim().replace(/[^a-z0-9-]+/g, '') })} />
                                     </div>
                                 </div>

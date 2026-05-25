@@ -29,11 +29,22 @@ const TEMPLATES = [
     features: ['Parallax hero + barra de progresso scroll', 'Countdown em tempo real', 'Contadores animados', 'Cards com entrada em stagger', 'Timeline de módulos expansível', 'FAQ accordion', 'CTA flutuante mobile'],
     color: '#050505',
     accent: '#D4AF37',
+    isNew: false,
+  },
+  {
+    id: 'v3' as const,
+    name: 'White Clean',
+    badge: 'V3',
+    tagline: 'Branco, leve e cronograma visual',
+    description: 'Design claro/branco com cronograma do curso em timeline, countdown em card branco e formulário lateral.',
+    features: ['Hero branco com imagem lateral', 'Cronograma visual automático (do curso)', 'Countdown em cards brancos', 'Seção de benefícios com hover dourado', 'Formulário com card de preço lateral', 'FAQ accordion', 'CTA flutuante mobile'],
+    color: '#ffffff',
+    accent: '#D4AF37',
     isNew: true,
   },
 ] as const;
 
-type TemplateId = 'v1' | 'v2';
+type TemplateId = 'v1' | 'v2' | 'v3';
 
 // ─── Visual Mockup — V1 ───────────────────────────────────────────────────────
 const MockupV1 = () => (
@@ -164,6 +175,98 @@ const MockupV2 = () => (
   </div>
 );
 
+// ─── Visual Mockup — V3 ───────────────────────────────────────────────────────
+const MockupV3 = () => (
+  <div className="w-full h-full bg-white overflow-hidden rounded-t-lg relative select-none">
+    {/* gold top stripe */}
+    <div className="h-0.5 bg-gradient-to-r from-[#D4AF37] to-yellow-400 w-full" />
+    {/* navbar */}
+    <div className="h-5 bg-white flex items-center px-2 gap-1 border-b border-gray-100 shadow-sm">
+      <div className="w-7 h-2 bg-[#D4AF37] rounded-sm" />
+      <div className="flex-1" />
+      <div className="hidden sm:flex gap-3 mr-2">
+        <div className="h-1 w-6 bg-gray-300 rounded-full" />
+        <div className="h-1 w-6 bg-gray-300 rounded-full" />
+      </div>
+      <div className="w-12 h-2.5 bg-[#D4AF37] rounded-lg" />
+    </div>
+    {/* hero */}
+    <div className="relative h-28 bg-gradient-to-br from-gray-50 to-yellow-50/20 flex overflow-hidden">
+      {/* left */}
+      <div className="flex-1 p-2 space-y-1">
+        <div className="h-2 w-20 bg-[#D4AF37]/20 border border-[#D4AF37]/30 rounded-full" />
+        <div className="h-4 w-24 bg-gray-800 rounded" />
+        <div className="h-0.5 w-6 bg-[#D4AF37] rounded-full" />
+        <div className="h-2 w-28 bg-gray-400/40 rounded-full" />
+        <div className="flex gap-1.5 mt-1.5">
+          <div className="h-3 w-14 bg-[#D4AF37] rounded-lg shadow-sm" />
+          <div className="h-3 w-12 bg-white border border-gray-200 rounded-lg shadow-sm" />
+        </div>
+        {/* date pill */}
+        <div className="flex gap-1 mt-1">
+          <div className="h-2.5 w-16 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center px-1 gap-0.5">
+            <div className="w-1.5 h-1.5 bg-[#D4AF37] rounded-sm" />
+            <div className="h-1 w-8 bg-gray-400/50 rounded-full" />
+          </div>
+        </div>
+      </div>
+      {/* right — image + countdown */}
+      <div className="w-24 p-1.5 flex flex-col gap-1">
+        <div className="flex-1 bg-gray-100 rounded-xl border border-gray-200 shadow-sm" />
+        <div className="bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+          <div className="flex gap-0.5 justify-center mb-0.5">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="w-4 h-4 bg-white border border-[#D4AF37]/40 rounded-md flex items-center justify-center shadow-sm">
+                <div className="h-1 w-2.5 bg-gray-700/60 rounded-full" />
+              </div>
+            ))}
+          </div>
+          <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full w-2/3 bg-[#D4AF37] rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+    {/* stats dark strip */}
+    <div className="h-6 bg-gray-900 flex items-center justify-around px-2">
+      {[1,2,3,4].map(i => (
+        <div key={i} className="flex flex-col items-center gap-0.5">
+          <div className="h-2 w-5 bg-[#D4AF37] rounded-full" />
+          <div className="h-1 w-7 bg-white/20 rounded-full" />
+        </div>
+      ))}
+    </div>
+    {/* schedule timeline */}
+    <div className="p-2 space-y-1.5">
+      {[1,2,3].map(i => (
+        <div key={i} className="flex items-start gap-1.5">
+          <div className={`w-5 h-5 rounded-lg flex-shrink-0 flex items-center justify-center ${i === 1 ? 'bg-[#D4AF37]' : 'bg-gray-100 border border-gray-200'}`}>
+            <div className={`h-1 w-3 rounded-full ${i === 1 ? 'bg-black/50' : 'bg-gray-400/50'}`} />
+          </div>
+          <div className="space-y-0.5 flex-1">
+            <div className="h-1.5 w-20 bg-gray-700/40 rounded-full" />
+            <div className="h-1 w-14 bg-gray-300/60 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+    {/* benefit cards */}
+    <div className="px-2 grid grid-cols-3 gap-1">
+      {[1,2,3].map(i => (
+        <div key={i} className="bg-white border border-gray-200 rounded-lg p-1.5 space-y-0.5 shadow-sm">
+          <div className="w-3 h-3 bg-[#D4AF37]/15 border border-[#D4AF37]/25 rounded" />
+          <div className="h-1.5 w-full bg-gray-700/30 rounded-full" />
+          <div className="h-1 w-3/4 bg-gray-300/50 rounded-full" />
+        </div>
+      ))}
+    </div>
+    {/* mobile sticky cta */}
+    <div className="absolute bottom-0 left-0 right-0 h-4 bg-white border-t border-gray-200 flex items-center justify-center shadow-md">
+      <div className="h-2.5 w-24 bg-[#D4AF37] rounded-lg" />
+    </div>
+  </div>
+);
+
 // ─── Template Card (gallery) ─────────────────────────────────────────────────
 const TemplateGalleryCard = ({
   template, selected, onSelect
@@ -182,7 +285,7 @@ const TemplateGalleryCard = ({
   >
     {/* Mockup preview */}
     <div className="h-52 relative overflow-hidden bg-[#050505]">
-      {template.id === 'v1' ? <MockupV1 /> : <MockupV2 />}
+      {template.id === 'v1' ? <MockupV1 /> : template.id === 'v2' ? <MockupV2 /> : <MockupV3 />}
       {/* NEW badge */}
       {template.isNew && (
         <div className="absolute top-2 left-2 z-10 bg-yellow-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5">
@@ -232,6 +335,8 @@ const TemplateBadge = ({ template }: { template?: TemplateId }) => {
     <span className={`inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
       t.id === 'v2'
         ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+        : t.id === 'v3'
+        ? 'bg-blue-50 text-blue-700 border border-blue-200'
         : 'bg-gray-100 text-gray-600 border border-gray-200'
     }`}>
       {t.id === 'v2' && <Sparkles size={7} />}
@@ -266,14 +371,14 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
   const [gallerySelected, setGallerySelected] = useState<TemplateId>('v2');
 
   const systemLinks = [
-    { label: 'Home (Início)', url: 'https://w-techbrasil.com.br/#/' },
-    { label: 'Cursos & Agenda', url: 'https://w-techbrasil.com.br/#/cursos' },
-    { label: 'Mapa da Rede', url: 'https://w-techbrasil.com.br/#/mapa' },
-    { label: 'Blog', url: 'https://w-techbrasil.com.br/#/blog' },
-    { label: 'Glossário Técnico', url: 'https://w-techbrasil.com.br/#/glossario' },
-    { label: 'Contato', url: 'https://w-techbrasil.com.br/#/contato' },
-    { label: 'Cadastro de Mecânico', url: 'https://w-techbrasil.com.br/#/sou-mecanico' },
-    { label: 'Painel Admin', url: 'https://w-techbrasil.com.br/#/admin' },
+    { label: 'Home (Início)', url: 'https://w-techbrasil.com.br/' },
+    { label: 'Cursos & Agenda', url: 'https://w-techbrasil.com.br/cursos' },
+    { label: 'Mapa da Rede', url: 'https://w-techbrasil.com.br/mapa' },
+    { label: 'Blog', url: 'https://w-techbrasil.com.br/blog' },
+    { label: 'Glossário Técnico', url: 'https://w-techbrasil.com.br/glossario' },
+    { label: 'Contato', url: 'https://w-techbrasil.com.br/contato' },
+    { label: 'Cadastro de Mecânico', url: 'https://w-techbrasil.com.br/sou-mecanico' },
+    { label: 'Painel Admin', url: 'https://w-techbrasil.com.br/admin' },
   ];
 
   useEffect(() => { fetchPages(); }, []);
@@ -328,8 +433,8 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
 
   const lpUrl = (page: typeof pages[number]) => {
     const base = window.location.origin;
-    const route = page.template === 'v2' ? 'lp2' : 'lp';
-    return `${base}/#/${route}/${page.slug}`;
+    const route = page.template === 'v2' ? 'lp2' : page.template === 'v3' ? 'lp3' : 'lp';
+    return `${base}/${route}/${page.slug}`;
   };
 
   // ── EDIT FORM ───────────────────────────────────────────────────────────────
@@ -365,7 +470,7 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
                 >
                   {/* Mini mockup */}
                   <div className="h-32 bg-[#050505] overflow-hidden pointer-events-none">
-                    {t.id === 'v1' ? <MockupV1 /> : <MockupV2 />}
+                    {t.id === 'v1' ? <MockupV1 /> : t.id === 'v2' ? <MockupV2 /> : <MockupV3 />}
                   </div>
                   {/* Label */}
                   <div className="p-3 bg-white border-t border-gray-100 flex items-center justify-between">
@@ -649,9 +754,9 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
 
                   {/* Mockup thumbnail */}
                   <div className="h-36 bg-[#050505] relative overflow-hidden cursor-pointer"
-                    onClick={() => window.open(`/#/${tpl.id === 'v2' ? 'lp2' : 'lp'}/${page.slug}`, '_blank')}>
+                    onClick={() => window.open(`/${tpl.id === 'v2' ? 'lp2' : tpl.id === 'v3' ? 'lp3' : 'lp'}/${page.slug}`, '_blank')}>
                     <div className="w-full h-full scale-[0.8] origin-top-left" style={{ width: '125%', height: '125%' }}>
-                      {tpl.id === 'v1' ? <MockupV1 /> : <MockupV2 />}
+                      {tpl.id === 'v1' ? <MockupV1 /> : tpl.id === 'v2' ? <MockupV2 /> : <MockupV3 />}
                     </div>
                     {/* overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-3">
@@ -693,26 +798,18 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
                       Editar
                     </button>
                     <a
-                      href={`/#/${tpl.id === 'v2' ? 'lp2' : 'lp'}/${page.slug}`}
+                      href={`/${tpl.id === 'v2' ? 'lp2' : tpl.id === 'v3' ? 'lp3' : 'lp'}/${page.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`flex-1 py-2 text-xs font-black rounded-lg text-center flex items-center justify-center gap-1 transition-colors ${
                         tpl.id === 'v2'
                           ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-black hover:from-yellow-400'
+                          : tpl.id === 'v3'
+                          ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                           : 'bg-gray-900 text-white hover:bg-gray-700'
                       }`}
                     >
                       {tpl.badge} <ExternalLink size={10} />
-                    </a>
-                    {/* Secondary link to other version */}
-                    <a
-                      href={`/#/${tpl.id === 'v2' ? 'lp' : 'lp2'}/${page.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={`Ver no template ${tpl.id === 'v2' ? 'V1' : 'V2'}`}
-                      className="p-2 text-xs font-bold border border-gray-200 rounded-lg text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors flex items-center"
-                    >
-                      <ArrowUpRight size={13} />
                     </a>
                   </div>
                 </div>

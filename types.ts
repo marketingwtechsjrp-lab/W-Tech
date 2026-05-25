@@ -184,7 +184,7 @@ export interface LandingPage {
   heroSecondaryImage?: string;
   quizEnabled?: boolean; // Mapped from quiz_enabled
   fakeAlertsEnabled?: boolean; // Mapped from fake_alerts_enabled
-  template?: 'v1' | 'v2'; // Layout template — v1: Classic, v2: Premium Cinematic
+  template?: 'v1' | 'v2' | 'v3'; // Layout template — v1: Classic, v2: Premium Cinematic, v3: White Clean
   status?: 'Draft' | 'Published'; // Publication status
 }
 
