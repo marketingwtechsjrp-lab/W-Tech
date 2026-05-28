@@ -82,38 +82,12 @@ const ObrigadoSuspensao: React.FC = () => {
                         </motion.p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 mb-12">
-                        {/* Video / Video Poster Card */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="relative rounded-[2rem] border border-white/5 overflow-hidden aspect-video flex items-center justify-center group shadow-2xl bg-zinc-950/80 backdrop-blur-md"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent z-10" />
-                            <div className="z-20 text-center p-6">
-                                <motion.div 
-                                    whileHover={{ scale: 1.08 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="w-16 h-16 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-black flex items-center justify-center mx-auto mb-4 cursor-pointer shadow-lg shadow-amber-500/40 hover:shadow-amber-500/60 transition-all"
-                                >
-                                    <Play fill="currentColor" size={28} className="ml-1" />
-                                </motion.div>
-                                <p className="text-xs font-bold uppercase tracking-[0.25em] text-white">Assista ao recado do Alex</p>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Orientações importantes sobre as aulas</p>
-                            </div>
-                            <img 
-                                src="https://images.unsplash.com/photo-1558981403-c5f91cbba527?auto=format&fit=crop&q=80" 
-                                alt="Workshop Background" 
-                                className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity duration-500"
-                            />
-                        </motion.div>
-
+                    <div className="max-w-2xl mx-auto mb-12">
                         {/* Step By Step Instructions Card */}
                         <motion.div 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
                             className="bg-zinc-950/40 rounded-[2rem] border border-white/5 p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-md"
                         >
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
