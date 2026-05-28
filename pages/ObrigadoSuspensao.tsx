@@ -9,10 +9,19 @@ import {
     Sparkles, 
     ArrowRight,
     Play,
-    Users
+    Users,
+    Wrench
 } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 const ObrigadoSuspensao: React.FC = () => {
+    const { get } = useSettings();
+    
+    // Load technical support number dynamically from database (fallback to original default if empty)
+    const supportPhone = get('whatsapp_suporte', '5512982976468');
+    const cleanSupportPhone = supportPhone.replace(/\D/g, '');
+    const supportWhatsAppLink = `https://wa.me/${cleanSupportPhone}?text=Olá!%20Acabei%20de%20me%20matricular%20no%20Curso%20de%20Suspensão%20e%20preciso%20de%20suporte%20técnico.`;
+
     const whatsappGroupLink = 'https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy';
     const kiwifyMembersLink = 'https://cursos.w-techbrasil.com.br/';
 
@@ -134,18 +143,18 @@ const ObrigadoSuspensao: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="flex flex-col sm:flex-row gap-5 justify-center items-center"
+                        className="flex flex-col md:flex-row gap-4 justify-center items-center w-full"
                     >
                         {/* Primary Button - WhatsApp VIP Group */}
                         <a 
                             href={whatsappGroupLink} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 text-white font-black uppercase tracking-widest text-[13px] text-center hover:scale-[1.03] active:scale-95 transition-all shadow-[0_0_35px_rgba(16,185,129,0.25)] flex items-center justify-center gap-3 overflow-hidden"
+                            className="group relative w-full md:w-auto px-6 py-4.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 text-white font-black uppercase tracking-widest text-[12px] text-center hover:scale-[1.03] active:scale-95 transition-all shadow-[0_0_35px_rgba(16,185,129,0.2)] flex items-center justify-center gap-2 overflow-hidden"
                         >
-                            <MessageCircle size={20} className="group-hover:animate-bounce" />
-                            Entrar no Grupo de Alunos
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                            <MessageCircle size={18} className="group-hover:animate-bounce" />
+                            Grupo de Alunos
+                            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                         </a>
 
@@ -154,10 +163,21 @@ const ObrigadoSuspensao: React.FC = () => {
                             href={kiwifyMembersLink} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="group w-full sm:w-auto px-10 py-5 rounded-2xl bg-transparent border-2 border-amber-500/50 hover:border-amber-500 text-white font-black uppercase tracking-widest text-[13px] text-center hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 backdrop-blur-sm shadow-[0_0_20px_rgba(212,175,55,0.05)]"
+                            className="group w-full md:w-auto px-6 py-4.5 rounded-2xl bg-transparent border-2 border-amber-500/50 hover:border-amber-500 text-white font-black uppercase tracking-widest text-[12px] text-center hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-2 backdrop-blur-sm shadow-[0_0_20px_rgba(212,175,55,0.02)]"
                         >
-                            <ExternalLink size={20} className="group-hover:rotate-12 transition-transform" />
-                            Acessar Área de Membros
+                            <ExternalLink size={18} className="group-hover:rotate-12 transition-transform" />
+                            Área de Membros
+                        </a>
+
+                        {/* Third Button - Technical Support */}
+                        <a 
+                            href={supportWhatsAppLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="group w-full md:w-auto px-6 py-4.5 rounded-2xl bg-transparent border-2 border-red-500/30 hover:border-red-500/70 text-white font-black uppercase tracking-widest text-[12px] text-center hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-2 backdrop-blur-sm shadow-[0_0_20px_rgba(230,36,29,0.02)]"
+                        >
+                            <Wrench size={18} className="group-hover:rotate-45 transition-transform" />
+                            Suporte Técnico
                         </a>
                     </motion.div>
 

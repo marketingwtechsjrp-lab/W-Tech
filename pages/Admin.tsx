@@ -5238,6 +5238,7 @@ const SettingsView = () => {
                                 </div>
                                 <div className="space-y-3">
                                     {[
+                                        { k: 'whatsapp_suporte', l: 'WhatsApp Suporte Técnico (Obrigado)' },
                                         { k: 'cnpj', l: 'CNPJ da Empresa' },
                                         { k: 'address', l: 'Endereço Completo' },
                                         { k: 'phone_main', l: 'Telefone Principal' },
