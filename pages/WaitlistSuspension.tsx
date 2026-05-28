@@ -44,10 +44,10 @@ const RegistrationForm = () => {
                 assigned_to: noemiId
             });
 
-            // 2. WhatsApp Dispatch - Secured via custom instance wtech-suporte-curso
-            const message = `Olá, ${formData.name}! Tudo bem?\n\nAqui é da equipe oficial da W-Tech. 🛠️🏁\n\nSua inscrição na FILA DE ESPERA para o *Curso de Regulagem de Suspensão Para Piloto* foi confirmada com sucesso!\n\nE trago uma excelente notícia: por ter entrado na fila, a sua *PROMOÇÃO EXCLUSIVA está 100% GARANTIDA*!\n\nVocê garantiu o preço especial de lançamento com desconto máximo: de R$ 997,00 por apenas *R$ 347,00* + bônus inéditos que não serão oferecidos para mais ninguém.\n\nAbrimos as vagas nesta quinta-feira (dia 28) às 20h. Fique atento ao seu WhatsApp, pois você receberá o link de inscrição com prioridade máxima de 24h antes do público geral.\n\nAcelere com a gente! 🚀`;
+            // 2. WhatsApp Dispatch - Secured via active connected instance NoemiMarketing
+            const message = `Olá, ${formData.name}! Tudo bem?\n\nAqui é a Noemi da equipe oficial da W-Tech. 🛠️🏁\n\nSua inscrição na FILA DE ESPERA para o *Curso de Regulagem de Suspensão Para Piloto* foi confirmada com sucesso!\n\nE trago uma excelente notícia: por ter entrado na fila hoje, a sua *PROMOÇÃO EXCLUSIVA de R$ 997,00 por apenas R$ 347,00 está 100% GARANTIDA*!\n\nPara receber o link de matrícula com antecedência de 24h e garantir os seus bônus exclusivos, entre agora mesmo no nosso grupo VIP de alunos:\n👉 https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy 🚀\n\nAcelere com a gente!`;
             
-            await sendWhatsAppMessage(formData.phone, message, 'wtech-suporte-curso');
+            await sendWhatsAppMessage(formData.phone, message, 'NoemiMarketing');
 
             setSuccess(true);
         } catch (err: any) {
@@ -58,24 +58,53 @@ const RegistrationForm = () => {
         }
     };
 
+    // Automatic redirect to WhatsApp Group after 3 seconds
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => {
+                window.location.href = 'https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy';
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
     if (success) {
         return (
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-10"
+                className="text-center py-6 space-y-6"
             >
-                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                     <CheckCircle2 size={40} />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-3">Você está na fila!</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed">
-                    Recebemos seu contato com sucesso. <br/>
-                    Fique atento ao seu WhatsApp, você será o primeiro a ser avisado sobre a nova turma!
-                </p>
-                <div className="p-4 bg-wtech-gold/10 border border-wtech-gold/20 rounded-xl">
-                    <p className="text-wtech-gold text-xs font-bold uppercase tracking-widest">Inscrição Confirmada & Promoção Garantida</p>
+                <div>
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight italic">Inscrição Confirmada!</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                        Seus dados foram salvos e a sua promoção de lançamento está 100% garantida!
+                    </p>
                 </div>
+                
+                <div className="p-4 bg-wtech-gold/10 border border-wtech-gold/20 rounded-2xl space-y-3">
+                    <p className="text-gray-300 text-xs font-bold leading-normal">
+                        Redirecionando você para o **Grupo VIP do WhatsApp** em alguns segundos...
+                    </p>
+                    <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                        <motion.div 
+                            initial={{ width: '0%' }}
+                            animate={{ width: '100%' }}
+                            transition={{ duration: 3, ease: 'linear' }}
+                            className="bg-gradient-to-r from-wtech-gold to-yellow-500 h-full"
+                        />
+                    </div>
+                </div>
+
+                <a 
+                    href="https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy"
+                    className="inline-flex w-full items-center justify-center gap-3 bg-gradient-to-r from-green-600 to-green-500 text-white font-black py-4 px-6 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_35px_rgba(34,197,94,0.3)] animate-pulse"
+                >
+                    ENTRAR NO GRUPO VIP AGORA <ArrowRight size={18} />
+                </a>
             </motion.div>
         );
     }
