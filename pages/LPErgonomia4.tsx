@@ -529,7 +529,7 @@ const LPErgonomia4: React.FC = () => {
                                     <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">O Curso Completo + Bônus</h3>
                                     <p className="text-gray-400 text-sm mb-8">Mais de R$ 997 em Planilhas e Material Complementar Grátis.</p>
 
-                                    <div className="text-gray-500 font-medium text-sm line-through mb-2">De R$ 1.697,00 por</div>
+                                    <div className="text-gray-500 font-medium text-sm line-through mb-2">De R$ 997,00 por</div>
                                     <div className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight">
                                         12x <span className="lp4-text-gradient">R$ 34,70</span>
                                     </div>

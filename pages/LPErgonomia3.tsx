@@ -1143,7 +1143,7 @@ const LPErgonomia3: React.FC = () => {
 
                             {/* Price */}
                             <div className="text-gray-500 font-bold text-sm tracking-wider mb-3 line-through">
-                                De R$ 1.697,00 por
+                                De R$ 997,00 por
                             </div>
                             <div className="text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.1] mb-2">
                                 12x <span className="text-amber-400 lp3-glow-text">R$ 34,70</span>

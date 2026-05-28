@@ -1078,7 +1078,7 @@ const LPErgonomia: React.FC = () => {
                         </p>
 
                         <div className="text-gray-400 font-bold uppercase text-xs md:text-sm tracking-[0.15em] mb-2 line-through decoration-red-500/70 decoration-2">
-                            De R$ 1.697,00 por
+                            De R$ 997,00 por
                         </div>
 
                         <div className="mb-2 flex flex-col items-center justify-center">
