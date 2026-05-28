@@ -10,11 +10,11 @@ export const triggerWebhook = async (triggerKey: 'webhook_lead' | 'webhook_order
       .single();
 
     if (data && data.value && data.value.startsWith('http')) {
-      // 2. Fire and Forget (don't await response to not block UI)
+      // Use text/plain to avoid CORS preflight (OPTIONS) which is not supported by Google Apps Script / custom webhooks.
       fetch(data.value, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/plain',
         },
         body: JSON.stringify({
             timestamp: new Date().toISOString(),
