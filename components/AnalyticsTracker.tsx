@@ -94,7 +94,15 @@ export const AnalyticsTracker = () => {
             }
         };
 
-        trackPageView();
+        // Analytics nunca deve bloquear o render: roda quando a thread estiver ociosa.
+        const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, opts?: any) => number);
+        if (ric) {
+            const id = ric(() => trackPageView(), { timeout: 4000 });
+            return () => (window as any).cancelIdleCallback?.(id);
+        } else {
+            const t = setTimeout(trackPageView, 1500);
+            return () => clearTimeout(t);
+        }
     }, [location, gaId]);
 
     return null;

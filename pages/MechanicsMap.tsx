@@ -6,6 +6,33 @@ import SEO from '../components/SEO';
 
 declare const L: any; // Leaflet Global from CDN
 
+/** Carrega o Leaflet (CSS+JS) sob demanda — antes ficava render-blocking no index.html (afetava todas as páginas). */
+let leafletPromise: Promise<void> | null = null;
+const loadLeaflet = (): Promise<void> => {
+  if (typeof L !== 'undefined') return Promise.resolve();
+  if (leafletPromise) return leafletPromise;
+  leafletPromise = new Promise((resolve, reject) => {
+    if (!document.querySelector('link[data-leaflet]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+      link.crossOrigin = '';
+      link.setAttribute('data-leaflet', 'true');
+      document.head.appendChild(link);
+    }
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+    script.crossOrigin = '';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Falha ao carregar Leaflet'));
+    document.body.appendChild(script);
+  });
+  return leafletPromise;
+};
+
 const MechanicsMap: React.FC = () => {
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +70,10 @@ const MechanicsMap: React.FC = () => {
     setLoading(false);
   };
 
-  const initMap = () => {
+  const initMap = async () => {
+    // Garante que o Leaflet foi carregado (lazy) antes de usar a global L
+    await loadLeaflet();
+    if (!mapContainerRef.current || mapRef.current) return;
     // Center on Brazil roughly
     mapRef.current = L.map(mapContainerRef.current).setView([-15.793889, -47.882778], 4);
 

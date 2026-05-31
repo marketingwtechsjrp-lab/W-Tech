@@ -23,7 +23,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     useEffect(() => {
         fetchSettings();
 
-        // Realtime Subscription
+        // Realtime só no /admin (live preview das configurações). Em páginas públicas/LP
+        // o WebSocket persistente é desnecessário e só pesa no carregamento — settings
+        // são lidos uma vez no fetch inicial e atualizados num reload.
+        const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+        if (!isAdmin) return;
+
         const channel = supabase
             .channel('settings_changes')
             .on(
