@@ -52,6 +52,7 @@ const CourseCheckout = lazy(() => import('./pages/CourseCheckout'));
 const InscricaoConfirmada = lazy(() => import('./pages/InscricaoConfirmada'));
 const LPGasGarage = lazy(() => import('./pages/LPGasGarage'));
 const ObrigadoSuspensao = lazy(() => import('./pages/ObrigadoSuspensao'));
+const AffiliatesManagerView = lazy(() => import('./components/admin/Marketing/AffiliatesManagerView'));
 
 
 
@@ -132,6 +133,10 @@ const App = () => {
                     <Route path="/pagamento-sucesso" element={<PaymentSuccess />} />
                     <Route path="/checkout-curso/:courseId" element={<CourseCheckout />} />
                     <Route path="/inscricao-confirmada" element={<InscricaoConfirmada />} />
+
+                    {/* Affiliates Public Portal */}
+                    <Route path="/afiliados" element={<AffiliatesManagerView publicMode={true} />} />
+                    <Route path="/portal-afiliados" element={<Navigate to="/afiliados" replace />} />
 
 
                     {/* Order Portals */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Users, Search, DollarSign, Award, Download, Copy, Check, MessageSquare, 
     Share2, ArrowRight, ShieldCheck, Flame, BookOpen, Layers, CheckCircle
@@ -96,13 +96,19 @@ const AFFILIATES_DATA: Affiliate[] = [
   { "name": "Mariajuliapedrosa5", "email": "mariajuliapedrosa5@gmail.com", "company": "", "doc": "", "status": "active" }
 ];
 
-const AffiliatesManagerView = () => {
+const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean }) => {
     const [activeTab, setActiveTab] = useState<'admin' | 'portal'>('portal'); // Render resource portal by default
     const [searchTerm, setSearchTerm] = useState('');
     
     // Portal Specific states
     const [monthlySales, setMonthlySales] = useState(15);
     const [copiedSwipeId, setCopiedSwipeId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (publicMode) {
+            setActiveTab('portal');
+        }
+    }, [publicMode]);
 
     // Filtered affiliates for Admin view
     const filteredAffiliates = AFFILIATES_DATA.filter(aff => 
@@ -173,29 +179,31 @@ const AffiliatesManagerView = () => {
                         </p>
                     </div>
 
-                    {/* Navigation tabs */}
-                    <div className="bg-neutral-900 p-1 rounded-xl border border-neutral-800 flex">
-                        <button 
-                            onClick={() => setActiveTab('portal')}
-                            className={`px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                                activeTab === 'portal' 
-                                    ? 'bg-yellow-500 text-black font-extrabold shadow' 
-                                    : 'text-gray-400 hover:text-white'
-                            }`}
-                        >
-                            <Flame size={14} /> Portal de Criativos
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('admin')}
-                            className={`px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                                activeTab === 'admin' 
-                                    ? 'bg-yellow-500 text-black font-extrabold shadow' 
-                                    : 'text-gray-400 hover:text-white'
-                            }`}
-                        >
-                            <Users size={14} /> Gestão de Afiliados ({AFFILIATES_DATA.length})
-                        </button>
-                    </div>
+                    {/* Navigation tabs - Hidden in public mode */}
+                    {!publicMode && (
+                        <div className="bg-neutral-900 p-1 rounded-xl border border-neutral-800 flex">
+                            <button 
+                                onClick={() => setActiveTab('portal')}
+                                className={`px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                                    activeTab === 'portal' 
+                                        ? 'bg-yellow-500 text-black font-extrabold shadow' 
+                                        : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                <Flame size={14} /> Portal de Criativos
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('admin')}
+                                className={`px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                                    activeTab === 'admin' 
+                                        ? 'bg-yellow-500 text-black font-extrabold shadow' 
+                                        : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                <Users size={14} /> Gestão de Afiliados ({AFFILIATES_DATA.length})
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
