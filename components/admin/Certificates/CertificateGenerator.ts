@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { CertificateLayout, Enrollment, Course } from '../../../types';
 import { formatDateLocal, formatDateRange } from '../../../lib/utils';
 import QRCode from 'qrcode';
+import { toJsPdfStyle, ensurePdfFont } from './certificateFonts';
 
 export const generateCertificatesPDF = async (
     layout: CertificateLayout,
@@ -20,6 +21,9 @@ export const generateCertificatesPDF = async (
         unit: 'pt',
         format: format
     });
+
+    // Fontes embutidas já registradas neste PDF (evita re-registrar a cada página)
+    const registeredFonts = new Set<string>();
 
     for (let i = 0; i < enrollments.length; i++) {
         const enrollment = enrollments[i];
@@ -41,7 +45,10 @@ export const generateCertificatesPDF = async (
         // 2. Add Elements
         for (const el of layout.elements) {
             if (el.type === 'Text') {
-                pdf.setFont(el.fontFamily || 'helvetica');
+                // Registra a fonte (nativa ou embutida) e aplica estilo (negrito/itálico)
+                const desiredStyle = toJsPdfStyle(el.fontWeight, el.fontStyle);
+                const f = await ensurePdfFont(pdf, registeredFonts, el.fontFamily, desiredStyle);
+                pdf.setFont(f.family, f.style);
                 pdf.setFontSize(el.fontSize || 12);
                 pdf.setTextColor(el.color || '#000000');
                 

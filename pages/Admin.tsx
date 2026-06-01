@@ -57,6 +57,9 @@ import AffiliatesManagerView from '../components/admin/Marketing/AffiliatesManag
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import AdminSidebar from '../components/admin/AdminSidebar';
+import { AdminKeyboardProvider, useRegisterPage } from '../components/admin/keyboard/AdminKeyboardProvider';
+import CommandPalette from '../components/admin/keyboard/CommandPalette';
+import ShortcutsHelp from '../components/admin/keyboard/ShortcutsHelp';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
@@ -579,6 +582,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
+    const coursesSearchRef = useRef<HTMLInputElement>(null);
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [showPastCourses, setShowPastCourses] = useState(true);
     const [calendarViewMode, setCalendarViewMode] = useState<'Month' | 'Week' | 'Year'>('Month');
@@ -664,6 +668,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    // Contexto de teclado: n = novo curso, / = focar busca
+    useRegisterPage({
+        title: 'Cursos & Alunos',
+        newLabel: 'Novo curso / evento',
+        onNew: () => handleEdit(),
+        onFocusSearch: () => coursesSearchRef.current?.focus(),
+    }, []);
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -2656,8 +2668,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     {/* Search Bar */}
                     <div className="relative flex-1 md:flex-none">
                         <input
+                            ref={coursesSearchRef}
                             className="pl-8 pr-4 py-2 border border-[var(--admin-border)] rounded-xl focus:outline-none focus:border-wtech-gold w-full md:w-56 bg-[var(--admin-surface-2)] text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)]"
-                            placeholder="Buscar curso..."
+                            placeholder="Buscar curso...   ( / )"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -7540,6 +7553,7 @@ const Admin = () => {
     if (loading || !user) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wtech-gold"></div></div>;
 
     return (
+        <AdminKeyboardProvider onNavigate={setCurrentView} hasPermission={hasPermission} urgentTasksCount={urgentTasksCount}>
         <div className={`flex h-screen bg-[#F8F9FA] dark:bg-black overflow-hidden transition-colors duration-300`}>
 
             {/* Sidebar (Desktop Only) */}
@@ -7727,7 +7741,12 @@ const Admin = () => {
             <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
 
             {config?.enable_dev_panel === 'true' && <DevUserSwitcher />}
+
+            {/* Controle por teclado: paleta de comandos (⌘K) + ajuda de atalhos (?) */}
+            <CommandPalette />
+            <ShortcutsHelp />
         </div>
+        </AdminKeyboardProvider>
     );
 };
 export default Admin;

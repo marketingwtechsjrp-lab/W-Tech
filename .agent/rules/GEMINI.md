@@ -99,6 +99,13 @@ When user's prompt is NOT in English:
 - **Flow:** Start the dev server → `agent-browser open` → `agent-browser snapshot -i` → re-snapshot after EVERY interactive click/fill.
 - **Profiling:** Use `agent-browser vitals` to audit TTFB, LCP, CLS, and INP metrics.
 
+### 📈 Versionamento, Releases e Histórico de Atualizações (Global Mandatório)
+
+**MANDATORY:** Todo sistema desenvolvido deve possuir controle de versão (SemVer), releases no GitHub e uma seção interna/página para exibir o histórico de atualizações.
+- **Priority Rules:** Leia e aplique rigorosamente as diretrizes em `file:///.agent/rules/009 - atualizações e versionamento.md` (ou `file:///.claude/.agent/rules/009 - atualizações e versionamento.md` no workspace global).
+- **Interface**: Adicione uma tela, rota ou aba no dashboard com o histórico amigável de atualizações e a versão atual visível.
+- **GitHub**: Crie tags de release semânticas (ex: `v1.2.0`) e publique notas de versão detalhadas no GitHub.
+
 ### 📁 File Dependency Awareness
 
 **Before modifying ANY file:**

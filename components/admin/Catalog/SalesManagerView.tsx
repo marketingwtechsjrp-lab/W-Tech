@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     Search, Plus, CreditCard, CheckCircle2, Clock, Wrench, Truck,
     LayoutGrid, List, RefreshCcw, ShoppingCart, MessageCircle, BadgeCheck, Ban
@@ -10,6 +10,7 @@ import { OrdersKanbanBoard } from './OrdersKanbanBoard';
 import { NewOrderModal } from './OrderEditor';
 import { cn } from '../../../lib/utils';
 import type { Lead } from '../../../types';
+import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
 
 // ── Status config (explicit classes — Tailwind purge safe) ─────────────────
 
@@ -48,6 +49,7 @@ const SalesManagerView: React.FC<{
     const [dateFilter, setDateFilter]   = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate]     = useState('');
+    const searchRef = useRef<HTMLInputElement>(null);
     const [usersList, setUsersList]     = useState<{ id: string; name: string }[]>([]);
     const [viewMode, setViewMode]       = useState<'list' | 'kanban'>('kanban');
 
@@ -114,6 +116,15 @@ const SalesManagerView: React.FC<{
         setCurrentSaleItems([]);
         setIsEditMode(true);
     };
+
+    // Contexto de teclado: n = novo pedido, / = focar busca, r = atualizar
+    useRegisterPage({
+        title: 'Pedidos',
+        newLabel: 'Novo pedido',
+        onNew: handleCreateSale,
+        onFocusSearch: () => searchRef.current?.focus(),
+        actions: [{ id: 'orders-refresh', label: 'Atualizar pedidos', key: 'r', run: () => fetchSales() }],
+    }, []);
 
     const handleEditSale = async (saleId: string) => {
         setLoading(true);
@@ -355,8 +366,9 @@ const SalesManagerView: React.FC<{
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-2.5 text-[var(--admin-text-tertiary)]" size={16} />
                             <input
+                                ref={searchRef}
                                 type="text"
-                                placeholder="Buscar por cliente ou ID..."
+                                placeholder="Buscar por cliente ou ID...   ( / )"
                                 className={cn(inputCls, 'pl-9 w-full')}
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}

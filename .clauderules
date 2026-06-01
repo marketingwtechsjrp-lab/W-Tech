@@ -15,7 +15,8 @@ Antes de realizar qualquer alteração de código, arquitetura ou design, você 
 1.  **Regra Suprema (GEMINI.md)**: `file:///.agent/rules/GEMINI.md` (Contém Socratic Gate, Request Classifier e regras mandatórias globais).
 2.  **Segurança (Leis Supabase/DB)**: `file:///.agent/rules/001 - segurança.md` (Isolamento rígido de API, CSP, e proibição absoluta de Service Role no Frontend).
 3.  **Desenvolvimento**: `file:///.agent/rules/` (Erros, Async, API, HTML5, grid de 8px, Animações e cores CSS).
-4.  **Agente Especialista**: Carregue a persona e regras do especialista adequado em `file:///.agent/agents/` (ex: frontend-specialist para layouts, backend-specialist para lógica de negócio, debugger para correção de bugs).
+4.  **Atualizações e Versionamento**: `file:///.agent/rules/009 - atualizações e versionamento.md` (Controle SemVer, seção interna de novidades e releases estruturadas no GitHub).
+5.  **Agente Especialista**: Carregue a persona e regras do especialista adequado em `file:///.agent/agents/` (ex: frontend-specialist para layouts, backend-specialist para lógica de negócio, debugger para correção de bugs).
 
 ---
 

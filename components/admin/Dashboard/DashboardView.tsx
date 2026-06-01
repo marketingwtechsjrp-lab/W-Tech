@@ -13,6 +13,9 @@ import {
     BarChart, Bar, Cell
 } from 'recharts';
 import { FunnelChart } from '../../ui/funnel-chart';
+import { PageHeader } from '../ui/PageHeader';
+import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
+import { LayoutDashboard } from 'lucide-react';
 
 // --- Types ---
 interface KpiData {
@@ -60,7 +63,15 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
 
     useEffect(() => {
         if (effectiveUserId) fetchDashboardData();
-    }, [effectiveUserId, filterPeriod]); 
+    }, [effectiveUserId, filterPeriod]);
+
+    // Atalhos de contexto desta página
+    useRegisterPage({
+        title: 'Visão Geral',
+        actions: [
+            { id: 'dash-refresh', label: 'Atualizar dados', key: 'r', run: () => fetchDashboardData() },
+        ],
+    }, []);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -410,25 +421,19 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
     );
 
     return (
-        <div className="space-y-8 pb-12 w-full font-sans">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 bg-[var(--admin-surface-1)] p-8 rounded-[2.5rem] border border-[var(--admin-border)] shadow-sm">
-                <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="w-2 h-2 rounded-full bg-wtech-gold animate-pulse"></span>
-                        <span className="text-xs font-black text-wtech-gold uppercase tracking-[0.2em]">Live Dashboard</span>
-                    </div>
-                    <h2 className="text-4xl font-black text-[var(--admin-text-primary)] tracking-tighter">
-                        Visão Geral <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Corporativa</span>
-                    </h2>
-                </div>
-
-                <div className="flex p-1 bg-[var(--admin-surface-3)] rounded-xl border border-[var(--admin-border)] gap-0.5 overflow-x-auto max-w-full">
+        <div className="space-y-6 pb-12 w-full font-sans">
+            {/* Header clean/empresarial + filtro de período */}
+            <PageHeader
+                icon={LayoutDashboard}
+                title="Visão Geral"
+                subtitle="Resumo operacional e financeiro em tempo real"
+            >
+                <div className="flex p-1 bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)] gap-0.5 overflow-x-auto max-w-full">
                     {['today', '7d', '30d', '90d', 'YYYY'].map((key) => (
                         <button
                             key={key}
                             onClick={() => setFilterPeriod(key)}
-                            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterPeriod === key
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterPeriod === key
                                 ? 'bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] shadow-sm border border-[var(--admin-border)]'
                                 : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]'
                             }`}
@@ -437,7 +442,7 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                         </button>
                     ))}
                 </div>
-            </div>
+            </PageHeader>
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

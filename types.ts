@@ -103,7 +103,9 @@ export interface CertificateElement {
   width?: number; // For images/QR
   height?: number; // For images/QR
   fontSize?: number;
-  fontFamily?: string;
+  fontFamily?: string; // 'helvetica' | 'times' | 'courier' (compatível com jsPDF)
+  fontWeight?: 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
   color?: string;
   align?: 'left' | 'center' | 'right';
   content: string; // Can contains {{student_name}}, {{course_name}}, etc.

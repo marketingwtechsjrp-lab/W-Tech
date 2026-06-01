@@ -36,3 +36,5 @@ public/images/Pronello.mov
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+.claude/
+.playwright-mcp/

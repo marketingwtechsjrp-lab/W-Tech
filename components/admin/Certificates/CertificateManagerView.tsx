@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { CertificateLayout, CertificateElement } from '../../../types';
-import { Plus, Trash2, Save, Image as ImageIcon, Type, LayoutTemplate, QrCode } from 'lucide-react';
+import { Plus, Trash2, Save, Image as ImageIcon, Type, LayoutTemplate, QrCode, Bold, Italic } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { FONTS, getFontDef, toCssFont, fontSupportsBold, fontSupportsItalic, injectCertificateFontFaces } from './certificateFonts';
 
 const CertificateManagerView = () => {
     const [layouts, setLayouts] = useState<CertificateLayout[]>([]);
@@ -20,6 +21,7 @@ const CertificateManagerView = () => {
 
     useEffect(() => {
         fetchLayouts();
+        injectCertificateFontFaces(); // carrega as fontes embutidas para o preview
     }, []);
 
     const fetchLayouts = async () => {
@@ -103,6 +105,9 @@ const CertificateManagerView = () => {
             x: canvasSize.width / 2,
             y: canvasSize.height / 2,
             fontSize: 20,
+            fontFamily: 'helvetica',
+            fontWeight: 'normal',
+            fontStyle: 'normal',
             color: '#000000',
             content: type === 'Text' ? 'Novo Texto' : 'https://w-techbrasil.com.br/#/validar/{{enrollment_id}}',
             align: 'center',
@@ -192,7 +197,9 @@ const CertificateManagerView = () => {
                                         left: el.x,
                                         top: el.y,
                                         fontSize: el.fontSize,
-                                        fontFamily: el.fontFamily || 'Arial',
+                                        fontFamily: toCssFont(el.fontFamily),
+                                        fontWeight: el.fontWeight === 'bold' ? 700 : 400,
+                                        fontStyle: el.fontStyle === 'italic' ? 'italic' : 'normal',
                                         color: el.color,
                                         textAlign: el.align || 'left',
                                         whiteSpace: 'nowrap',
@@ -297,6 +304,73 @@ const CertificateManagerView = () => {
                                                             <option value="right">Direita</option>
                                                         </select>
                                                     </div>
+
+                                                    {/* ── Tipografia: fonte + negrito + itálico ── */}
+                                                    {(() => {
+                                                        const def = getFontDef(el.fontFamily);
+                                                        const canBold = fontSupportsBold(el.fontFamily);
+                                                        const canItalic = fontSupportsItalic(el.fontFamily);
+                                                        const groups = Array.from(new Set(FONTS.map(o => o.group)));
+                                                        return (
+                                                            <>
+                                                                <div>
+                                                                    <label className="text-xs font-bold block mb-1">Fonte</label>
+                                                                    <select
+                                                                        className="w-full border rounded p-1.5 text-sm bg-white"
+                                                                        value={def.key}
+                                                                        onChange={e => {
+                                                                            const next = getFontDef(e.target.value);
+                                                                            updateElement(el.id, {
+                                                                                fontFamily: next.key,
+                                                                                // zera estilos não suportados pela nova fonte
+                                                                                fontWeight: next.supportsBold ? el.fontWeight : 'normal',
+                                                                                fontStyle: next.supportsItalic ? el.fontStyle : 'normal',
+                                                                            });
+                                                                        }}
+                                                                        style={{ fontFamily: toCssFont(el.fontFamily), fontSize: 15 }}
+                                                                    >
+                                                                        {groups.map(g => (
+                                                                            <optgroup key={g} label={g}>
+                                                                                {FONTS.filter(o => o.group === g).map(o => (
+                                                                                    <option key={o.key} value={o.key} style={{ fontFamily: o.css }}>{o.label}</option>
+                                                                                ))}
+                                                                            </optgroup>
+                                                                        ))}
+                                                                    </select>
+                                                                    {/* Amostra ao vivo da fonte escolhida */}
+                                                                    <div className="mt-1.5 px-2 py-1.5 rounded bg-gray-50 border text-center text-gray-800 truncate"
+                                                                        style={{ fontFamily: toCssFont(el.fontFamily), fontWeight: el.fontWeight === 'bold' ? 700 : 400, fontStyle: el.fontStyle === 'italic' ? 'italic' : 'normal', fontSize: 20 }}>
+                                                                        {def.group === 'Assinatura' ? 'Nome do Aluno' : 'AaBbCc 123'}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold block mb-1">Estilo</label>
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={!canBold}
+                                                                            onClick={() => updateElement(el.id, { fontWeight: el.fontWeight === 'bold' ? 'normal' : 'bold' })}
+                                                                            aria-pressed={el.fontWeight === 'bold'}
+                                                                            title={canBold ? 'Negrito' : 'Esta fonte não tem negrito'}
+                                                                            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded border text-sm transition-colors ${!canBold ? 'opacity-40 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' : el.fontWeight === 'bold' ? 'bg-wtech-gold border-wtech-gold text-black font-bold' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                                                                        >
+                                                                            <Bold size={15} /> Negrito
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={!canItalic}
+                                                                            onClick={() => updateElement(el.id, { fontStyle: el.fontStyle === 'italic' ? 'normal' : 'italic' })}
+                                                                            aria-pressed={el.fontStyle === 'italic'}
+                                                                            title={canItalic ? 'Itálico' : 'Esta fonte não tem itálico'}
+                                                                            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded border text-sm transition-colors ${!canItalic ? 'opacity-40 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' : el.fontStyle === 'italic' ? 'bg-wtech-gold border-wtech-gold text-black font-bold' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                                                                        >
+                                                                            <Italic size={15} /> Itálico
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </>
                                             )}
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, User, UserPlus, Phone, Mail, Filter, Shield, Users, Plus, X, Upload, FileSpreadsheet, Trash2, Download, FileText } from 'lucide-react';
+import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
@@ -49,6 +50,7 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
     const [filterLP, setFilterLP] = useState('all');
+    const searchRef = useRef<HTMLInputElement>(null);
 
     // Selection & Groups State
     const [selectedClients, setSelectedClients] = useState<string[]>([]);
@@ -633,6 +635,14 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const leadsCount = visibleClients.filter(c => c.type === 'Lead').length;
     const mechanicsCount = visibleClients.filter(c => c.type === 'Credenciado').length;
 
+    // Contexto de teclado: n = novo cliente, / = focar busca
+    useRegisterPage({
+        title: 'Clientes',
+        newLabel: 'Novo cliente',
+        onNew: () => setSelectedClientForEdit({ type: 'Lead' }),
+        onFocusSearch: () => searchRef.current?.focus(),
+    }, []);
+
     return (
         <div className="p-6 space-y-5">
             {/* Header */}
@@ -743,8 +753,9 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-2.5 text-[var(--admin-text-tertiary)]" size={16} />
                             <input
+                                ref={searchRef}
                                 type="text"
-                                placeholder="Buscar por nome, email ou telefone..."
+                                placeholder="Buscar por nome, email ou telefone...   ( / )"
                                 className="w-full bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl py-2.5 pl-9 pr-4 text-sm text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] outline-none focus:border-wtech-gold transition-colors"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}

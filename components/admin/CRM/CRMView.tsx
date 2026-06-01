@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
 import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare, Mail, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
@@ -816,6 +817,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     // New Advanced Filters
     const [searchQuery, setSearchQuery] = useState('');
+    const searchRef = useRef<HTMLInputElement>(null);
     const [contextFilter, setContextFilter] = useState('All');
     const [selectedUserFilter, setSelectedUserFilter] = useState('All'); // NEW
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -1691,6 +1693,15 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         });
     }, [filteredLeads, activeFilter]);
 
+    // Contexto de teclado: n = novo lead, / = focar busca, r = atualizar
+    useRegisterPage({
+        title: 'Leads & CRM',
+        newLabel: 'Novo lead',
+        onNew: () => setIsCreateModalOpen(true),
+        onFocusSearch: () => searchRef.current?.focus(),
+        actions: [{ id: 'crm-refresh', label: 'Atualizar leads', key: 'r', run: () => fetchData() }],
+    }, []);
+
     return (
         <DragContext.Provider value={{ draggedId, setDraggedId }}>
             <div className="h-full flex flex-col w-full max-w-full overflow-hidden relative">
@@ -1796,8 +1807,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-3 text-gray-400" />
                             <input
+                                ref={searchRef}
                                 className="pl-9 pr-4 py-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] placeholder:text-[var(--admin-text-tertiary)] rounded-lg text-xs font-bold w-64 focus:border-wtech-gold outline-none transition-all"
-                                placeholder="Buscar por nome, email, telefone..."
+                                placeholder="Buscar leads...   ( / )"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />

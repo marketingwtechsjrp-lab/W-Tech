@@ -1,14 +1,13 @@
 import React from 'react';
 import {
-    LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
-    ShoppingBag, GraduationCap, Package, FileText, DollarSign,
-    Megaphone, Rocket, Sparkles, Users, Settings,
-    ChevronLeft, ArrowRight, LogOut, MessageSquare, Share2, type LucideIcon
+    Settings, ChevronLeft, ArrowRight, LogOut, Search, type LucideIcon
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { ToggleTheme } from '../ui/toggle-theme';
 import changelogData from '../../CHANGELOG.json';
 import { cn } from '../../lib/utils';
+import { NAV_GROUPS } from './nav';
+import { useAdminKeyboard } from './keyboard/AdminKeyboardProvider';
+import { Kbd } from './ui/Kbd';
 
 // ── Props ──────────────────────────────────────────────────────────────────
 
@@ -24,67 +23,6 @@ interface AdminSidebarProps {
     onOpenProfile: () => void;
     urgentTasksCount?: number;
 }
-
-// ── Navigation Groups ──────────────────────────────────────────────────────
-
-type NavItem = {
-    icon: LucideIcon;
-    label: string;
-    view: string;
-    permission: string;
-    badge?: 'urgent_tasks';
-};
-
-type NavGroup = {
-    label: string;
-    items: NavItem[];
-};
-
-const NAV_GROUPS: NavGroup[] = [
-    {
-        label: 'Core',
-        items: [
-            { icon: LayoutDashboard, label: 'Visão Geral', view: 'dashboard', permission: 'dashboard_view' },
-        ]
-    },
-    {
-        label: 'Operacional',
-        items: [
-            { icon: KanbanSquare, label: 'Leads & CRM',     view: 'crm',             permission: 'crm_view' },
-            { icon: CheckCircle,  label: 'Tarefas',          view: 'tasks',           permission: 'tasks_view', badge: 'urgent_tasks' },
-            { icon: UserCheck,    label: 'Clientes',         view: 'clients',         permission: 'clients_view' },
-            { icon: Wrench,       label: 'Rede Credenciada', view: 'mechanics',       permission: 'accredited_view' },
-        ]
-    },
-    {
-        label: 'Vendas',
-        items: [
-            { icon: ShoppingBag,   label: 'Pedidos',              view: 'orders',           permission: 'orders_view' },
-            { icon: GraduationCap, label: 'Cursos & Alunos',      view: 'courses_manager',  permission: 'courses_view' },
-            { icon: MessageSquare, label: 'Recuperação WhatsApp', view: 'sales_recovery',   permission: 'orders_view' },
-            { icon: Package,       label: 'Catálogo',             view: 'catalog_manager',  permission: 'catalog_view' },
-            { icon: FileText,      label: 'Notas Fiscais',        view: 'invoices',         permission: 'invoices_view' },
-            { icon: DollarSign,    label: 'Financeiro',           view: 'finance',          permission: 'financial_view' },
-        ]
-    },
-    {
-        label: 'Marketing',
-        items: [
-            { icon: Megaphone, label: 'Campanhas',            view: 'email_marketing',     permission: 'marketing_view' },
-            { icon: Rocket,    label: 'Marketing Hub',        view: 'marketing_hub',       permission: 'marketing_view' },
-            { icon: Sparkles,  label: 'W-Intelligence',       view: 'intelligence',        permission: 'intelligence_view' },
-            { icon: Share2,    label: 'Central de Afiliados', view: 'affiliates_manager',  permission: 'marketing_view' },
-        ]
-    },
-    {
-        label: 'Sistema',
-        items: [
-            { icon: Users,    label: 'Equipe & Acesso', view: 'team',     permission: 'manage_users' },
-            { icon: Settings, label: 'Configurações',   view: 'settings', permission: 'manage_settings' },
-        ]
-    },
-];
-
 // ── SidebarItem ────────────────────────────────────────────────────────────
 
 const SidebarItem = ({
@@ -135,6 +73,33 @@ const SidebarItem = ({
         )}
     </button>
 );
+
+// ── CommandTrigger (botão de busca ⌘K) ──────────────────────────────────────
+
+const CommandTrigger = ({ collapsed }: { collapsed: boolean }) => {
+    const { openPalette } = useAdminKeyboard();
+    return (
+        <button
+            onClick={openPalette}
+            title="Buscar (Ctrl/Cmd + K)"
+            className={cn(
+                'mb-2 flex items-center gap-2 min-h-[40px] rounded-lg shrink-0 transition-colors',
+                'bg-white/5 border border-white/10 hover:bg-white/10 text-[var(--admin-sidebar-text)]',
+                collapsed ? 'justify-center w-10 h-10 mx-auto px-0' : 'w-full px-3'
+            )}
+        >
+            <Search size={15} className="shrink-0 text-gray-500" />
+            {!collapsed && (
+                <>
+                    <span className="text-[13px] font-medium tracking-tight">Buscar…</span>
+                    <span className="ml-auto flex items-center gap-0.5">
+                        <Kbd>⌘</Kbd><Kbd>K</Kbd>
+                    </span>
+                </>
+            )}
+        </button>
+    );
+};
 
 // ── AdminSidebar ───────────────────────────────────────────────────────────
 
@@ -268,6 +233,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         </button>
                     )}
                 </div>
+
+                {/* ── Command Palette trigger (⌘K) ── */}
+                <CommandTrigger collapsed={isCollapsed} />
 
                 {/* ── Navigation Groups ── */}
                 <nav className="flex-1 overflow-y-auto min-h-0 py-1 custom-scrollbar">
