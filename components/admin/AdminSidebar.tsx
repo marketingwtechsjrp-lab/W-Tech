@@ -3,7 +3,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings,
-    ChevronLeft, ArrowRight, LogOut, type LucideIcon
+    ChevronLeft, ArrowRight, LogOut, MessageSquare, Share2, type LucideIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ToggleTheme } from '../ui/toggle-theme';
@@ -59,19 +59,21 @@ const NAV_GROUPS: NavGroup[] = [
     {
         label: 'Vendas',
         items: [
-            { icon: ShoppingBag,   label: 'Pedidos',         view: 'orders',          permission: 'orders_view' },
-            { icon: GraduationCap, label: 'Cursos & Alunos', view: 'courses_manager', permission: 'courses_view' },
-            { icon: Package,       label: 'Catálogo',        view: 'catalog_manager', permission: 'catalog_view' },
-            { icon: FileText,      label: 'Notas Fiscais',   view: 'invoices',        permission: 'invoices_view' },
-            { icon: DollarSign,    label: 'Financeiro',      view: 'finance',         permission: 'financial_view' },
+            { icon: ShoppingBag,   label: 'Pedidos',              view: 'orders',           permission: 'orders_view' },
+            { icon: GraduationCap, label: 'Cursos & Alunos',      view: 'courses_manager',  permission: 'courses_view' },
+            { icon: MessageSquare, label: 'Recuperação WhatsApp', view: 'sales_recovery',   permission: 'orders_view' },
+            { icon: Package,       label: 'Catálogo',             view: 'catalog_manager',  permission: 'catalog_view' },
+            { icon: FileText,      label: 'Notas Fiscais',        view: 'invoices',         permission: 'invoices_view' },
+            { icon: DollarSign,    label: 'Financeiro',           view: 'finance',          permission: 'financial_view' },
         ]
     },
     {
         label: 'Marketing',
         items: [
-            { icon: Megaphone, label: 'Campanhas',      view: 'email_marketing', permission: 'marketing_view' },
-            { icon: Rocket,    label: 'Marketing Hub',  view: 'marketing_hub',   permission: 'marketing_view' },
-            { icon: Sparkles,  label: 'W-Intelligence', view: 'intelligence',    permission: 'intelligence_view' },
+            { icon: Megaphone, label: 'Campanhas',            view: 'email_marketing',     permission: 'marketing_view' },
+            { icon: Rocket,    label: 'Marketing Hub',        view: 'marketing_hub',       permission: 'marketing_view' },
+            { icon: Sparkles,  label: 'W-Intelligence',       view: 'intelligence',        permission: 'intelligence_view' },
+            { icon: Share2,    label: 'Central de Afiliados', view: 'affiliates_manager',  permission: 'marketing_view' },
         ]
     },
     {

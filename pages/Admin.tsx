@@ -52,6 +52,8 @@ import AdminIntegrations from '../components/admin/AdminIntegrations';
 import { TaskCategoryList } from '../components/admin/TaskCategoryList';
 import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
+import SalesRecoveryView from '../components/admin/WhatsApp/SalesRecoveryView';
+import AffiliatesManagerView from '../components/admin/Marketing/AffiliatesManagerView';
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -100,7 +102,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -7679,6 +7681,8 @@ const Admin = () => {
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
                         {currentView === 'clients' && hasPermission('clients_view') && <ClientsManagerView permissions={livePermissions} />}
                         {currentView === 'invoices' && hasPermission('invoices_view') && <InvoicesManagerView />}
+                        {currentView === 'sales_recovery' && (hasPermission('orders_view') || hasPermission('marketing_view')) && <SalesRecoveryView />}
+                        {currentView === 'affiliates_manager' && hasPermission('marketing_view') && <AffiliatesManagerView />}
                     </motion.div>
                 </AnimatePresence>
             </div>
