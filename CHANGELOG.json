@@ -1,6 +1,17 @@
 [
   {
     "version": "3.0.8",
+    "date": "2026-06-01",
+    "title": "Correção de Upload e Customização do Fundo de Certificados",
+    "changes": [
+      "🐛 [Correções de Bugs] Corrigido erro 'Invalid key' ao carregar imagens com acentos ou espaços no Supabase Storage",
+      "🚀 [Novidades / Funcionalidades] Painel interativo de propriedades do fundo com controles de ajuste (cover, contain, stretch e custom) e sliders de largura, altura e posições X/Y",
+      "⚡ [Melhorias] Motor de mapeamento geométrico exato em jsPDF para exportação de PDFs com fidelidade absoluta de renderização do fundo"
+    ],
+    "author": "daniel"
+  },
+  {
+    "version": "3.0.8",
     "date": "2026-05-21",
     "title": "Checklist Final de Cursos + Correções de Integração MP",
     "changes": [

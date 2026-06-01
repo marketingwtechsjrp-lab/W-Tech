@@ -14,7 +14,25 @@ const CertificateManagerView = () => {
     // Editor State
     const [elements, setElements] = useState<CertificateElement[]>([]);
     const [backgroundUrl, setBackgroundUrl] = useState('');
-    const [canvasSize, setCanvasSize] = useState({ width: 842, height: 595 }); // A4 Landscape (approx)
+    const [canvasSize, setCanvasSize] = useState<{
+        width: number;
+        height: number;
+        bgSize?: 'cover' | 'contain' | '100% 100%' | 'custom';
+        bgPosition?: 'center' | 'top' | 'bottom' | 'left' | 'right' | 'custom';
+        bgX?: number;
+        bgY?: number;
+        bgW?: number;
+        bgH?: number;
+    }>({ 
+        width: 842, 
+        height: 595,
+        bgSize: 'cover',
+        bgPosition: 'center',
+        bgX: 50,
+        bgY: 50,
+        bgW: 100,
+        bgH: 100
+    });
     const [layoutName, setLayoutName] = useState('');
     const [layoutType, setLayoutType] = useState<'Certificate' | 'Badge'>('Certificate');
     const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
@@ -42,7 +60,16 @@ const CertificateManagerView = () => {
         setBackgroundUrl('');
         setLayoutName('Novo Layout');
         setLayoutType('Certificate');
-        setCanvasSize({ width: 842, height: 595 });
+        setCanvasSize({ 
+            width: 842, 
+            height: 595,
+            bgSize: 'cover',
+            bgPosition: 'center',
+            bgX: 50,
+            bgY: 50,
+            bgW: 100,
+            bgH: 100
+        });
         setIsEditing(true);
     };
 
@@ -52,7 +79,18 @@ const CertificateManagerView = () => {
         setBackgroundUrl(layout.backgroundUrl || '');
         setLayoutName(layout.name);
         setLayoutType(layout.type);
-        setCanvasSize(layout.dimensions || { width: 842, height: 595 });
+        
+        const dims = layout.dimensions || { width: 842, height: 595 };
+        setCanvasSize({
+            width: dims.width,
+            height: dims.height,
+            bgSize: dims.bgSize || 'cover',
+            bgPosition: dims.bgPosition || 'center',
+            bgX: dims.bgX !== undefined ? dims.bgX : 50,
+            bgY: dims.bgY !== undefined ? dims.bgY : 50,
+            bgW: dims.bgW !== undefined ? dims.bgW : 100,
+            bgH: dims.bgH !== undefined ? dims.bgH : 100
+        });
         setIsEditing(true);
     };
 
@@ -88,7 +126,8 @@ const CertificateManagerView = () => {
     const handleUploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
         const file = e.target.files[0];
-        const fileName = `certificates/bg_${Math.random()}_${file.name}`;
+        const fileExt = file.name.split('.').pop() || 'png';
+        const fileName = `certificates/bg_${Date.now()}_${Math.floor(Math.random() * 1000000)}.${fileExt}`;
         
         const { error } = await supabase.storage.from('site-assets').upload(fileName, file);
         if (error) return alert('Erro upload: ' + error.message);
@@ -183,8 +222,13 @@ const CertificateManagerView = () => {
                                 width: canvasSize.width, 
                                 height: canvasSize.height,
                                 backgroundImage: `url(${backgroundUrl})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center'
+                                backgroundSize: canvasSize.bgSize === 'custom'
+                                    ? `${canvasSize.bgW ?? 100}% ${canvasSize.bgH ?? 100}%`
+                                    : canvasSize.bgSize || 'cover',
+                                backgroundPosition: (canvasSize.bgSize === 'custom' || canvasSize.bgPosition === 'custom')
+                                    ? `${canvasSize.bgX ?? 50}% ${canvasSize.bgY ?? 50}%`
+                                    : canvasSize.bgPosition || 'center',
+                                backgroundRepeat: 'no-repeat'
                             }}
                         >
                             {!backgroundUrl && <div className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none">Sem Fundo</div>}
@@ -397,7 +441,121 @@ const CertificateManagerView = () => {
                                 })()}
                             </div>
                         ) : (
-                             <p className="text-sm text-gray-400">Selecione um elemento para editar.</p>
+                            <div className="space-y-4 text-sm text-gray-700">
+                                <div>
+                                    <h4 className="font-bold text-xs uppercase text-gray-500 mb-2">Propriedades do Fundo</h4>
+                                    {backgroundUrl ? (
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="text-xs font-bold block mb-1">Ajuste do Fundo</label>
+                                                <select 
+                                                    className="w-full border rounded p-1 text-sm bg-white"
+                                                    value={canvasSize.bgSize || 'cover'}
+                                                    onChange={e => setCanvasSize(prev => ({ ...prev, bgSize: e.target.value as any }))}
+                                                >
+                                                    <option value="cover">Preencher Proporcional (Cortar)</option>
+                                                    <option value="contain">Ajustar Proporcional (Inteira)</option>
+                                                    <option value="100% 100%">Esticar Imagem</option>
+                                                    <option value="custom">Ajuste Manual / Personalizado</option>
+                                                </select>
+                                            </div>
+
+                                            {canvasSize.bgSize !== 'custom' ? (
+                                                <div>
+                                                    <label className="text-xs font-bold block mb-1">Posição do Fundo</label>
+                                                    <select 
+                                                        className="w-full border rounded p-1 text-sm bg-white"
+                                                        value={canvasSize.bgPosition || 'center'}
+                                                        onChange={e => setCanvasSize(prev => ({ ...prev, bgPosition: e.target.value as any }))}
+                                                    >
+                                                        <option value="center">Centro</option>
+                                                        <option value="top">Topo</option>
+                                                        <option value="bottom">Base</option>
+                                                        <option value="left">Esquerda</option>
+                                                        <option value="right">Direita</option>
+                                                    </select>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 border-t pt-3">
+                                                    <div>
+                                                        <div className="flex justify-between text-xs font-bold mb-1">
+                                                            <span>Largura do Fundo ({canvasSize.bgW ?? 100}%)</span>
+                                                            <button onClick={() => setCanvasSize(prev => ({ ...prev, bgW: 100 }))} className="text-[10px] text-blue-500 underline font-normal">Reset</button>
+                                                        </div>
+                                                        <input 
+                                                            type="range" min="10" max="500" className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-wtech-gold"
+                                                            value={canvasSize.bgW ?? 100} 
+                                                            onChange={e => setCanvasSize(prev => ({ ...prev, bgW: Number(e.target.value) }))} 
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex justify-between text-xs font-bold mb-1">
+                                                            <span>Altura do Fundo ({canvasSize.bgH ?? 100}%)</span>
+                                                            <button onClick={() => setCanvasSize(prev => ({ ...prev, bgH: 100 }))} className="text-[10px] text-blue-500 underline font-normal">Reset</button>
+                                                        </div>
+                                                        <input 
+                                                            type="range" min="10" max="500" className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-wtech-gold"
+                                                            value={canvasSize.bgH ?? 100} 
+                                                            onChange={e => setCanvasSize(prev => ({ ...prev, bgH: Number(e.target.value) }))} 
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex justify-between text-xs font-bold mb-1">
+                                                            <span>Deslocar Horizontal X ({canvasSize.bgX ?? 50}%)</span>
+                                                            <button onClick={() => setCanvasSize(prev => ({ ...prev, bgX: 50 }))} className="text-[10px] text-blue-500 underline font-normal">Reset</button>
+                                                        </div>
+                                                        <input 
+                                                            type="range" min="-100" max="200" className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-wtech-gold"
+                                                            value={canvasSize.bgX ?? 50} 
+                                                            onChange={e => setCanvasSize(prev => ({ ...prev, bgX: Number(e.target.value) }))} 
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex justify-between text-xs font-bold mb-1">
+                                                            <span>Deslocar Vertical Y ({canvasSize.bgY ?? 50}%)</span>
+                                                            <button onClick={() => setCanvasSize(prev => ({ ...prev, bgY: 50 }))} className="text-[10px] text-blue-500 underline font-normal">Reset</button>
+                                                        </div>
+                                                        <input 
+                                                            type="range" min="-100" max="200" className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-wtech-gold"
+                                                            value={canvasSize.bgY ?? 50} 
+                                                            onChange={e => setCanvasSize(prev => ({ ...prev, bgY: Number(e.target.value) }))} 
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <button 
+                                                onClick={() => {
+                                                    if(confirm('Deseja remover a imagem de fundo?')) setBackgroundUrl('');
+                                                }}
+                                                className="w-full mt-2 text-xs text-red-500 bg-red-50 hover:bg-red-100 py-1.5 px-3 border border-red-200 rounded transition-colors"
+                                            >
+                                                Remover Fundo
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 border border-dashed rounded-lg text-center bg-gray-50">
+                                            <p className="text-xs text-gray-400 mb-2">Sem imagem de fundo</p>
+                                            <button 
+                                                onClick={() => document.getElementById('bg-upload')?.click()}
+                                                className="text-xs bg-wtech-gold font-bold px-3 py-1.5 rounded shadow-sm hover:scale-[1.02] active:scale-95 transition-transform text-black"
+                                            >
+                                                Escolher Imagem
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="border-t pt-4">
+                                    <h4 className="font-bold text-xs uppercase text-gray-500 mb-2">Dica do Editor</h4>
+                                    <p className="text-xs text-gray-500 leading-relaxed">
+                                        Clique em qualquer elemento de texto ou QR Code no canvas para editar suas fontes, cores e tamanhos.
+                                    </p>
+                                    <p className="text-xs text-gray-500 leading-relaxed mt-2">
+                                        Arraste os elementos para ajustar a posição de forma visual.
+                                    </p>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

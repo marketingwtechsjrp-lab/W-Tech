@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.8 (2026-06-01) - Correção de Upload e Customização do Fundo de Certificados
+- 🐛 [Correções de Bugs] Corrigido erro 'Invalid key' ao carregar imagens com acentos ou espaços no Supabase Storage
+- 🚀 [Novidades / Funcionalidades] Painel interativo de propriedades do fundo com controles de ajuste (cover, contain, stretch e custom) e sliders de largura, altura e posições X/Y
+- ⚡ [Melhorias] Motor de mapeamento geométrico exato em jsPDF para exportação de PDFs com fidelidade absoluta de renderização do fundo
+
 ## v3.1.0 (2026-05-24) - Seletor de Template de LP com Galeria Visual no Admin
 
 - FEAT: Galeria de Templates no admin de LPs — tab "Galeria de Templates" com mockups visuais interativos de V1 e V2

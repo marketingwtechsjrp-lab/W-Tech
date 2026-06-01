@@ -86,7 +86,8 @@ const CertificateManagerView = () => {
     const handleUploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
         const file = e.target.files[0];
-        const fileName = `certificates/bg_${Math.random()}_${file.name}`;
+        const fileExt = file.name.split('.').pop() || 'png';
+        const fileName = `certificates/bg_${Date.now()}_${Math.floor(Math.random() * 1000000)}.${fileExt}`;
         
         const { error } = await supabase.storage.from('site-assets').upload(fileName, file);
         if (error) return alert('Erro upload: ' + error.message);

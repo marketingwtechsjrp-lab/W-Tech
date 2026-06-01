@@ -32,11 +32,59 @@ export const generateCertificatesPDF = async (
         // 1. Add Background
         if (layout.backgroundUrl) {
             try {
-                 // Optimization: Load image once outside loop if possible, but jsPDF handles it ok.
-                 // We need to fetch the image to base64 or provide URL if CORS allows.
-                 // For now, we assume the URL is accessible.
                  const imgProps = pdf.getImageProperties(layout.backgroundUrl);
-                 pdf.addImage(layout.backgroundUrl, 'JPEG', 0, 0, layout.dimensions.width, layout.dimensions.height);
+                 const cw = layout.dimensions.width;
+                 const ch = layout.dimensions.height;
+                 const iw = imgProps.width;
+                 const ih = imgProps.height;
+                 
+                 const bgSize = layout.dimensions.bgSize || 'cover';
+                 const bgPosition = layout.dimensions.bgPosition || 'center';
+                 const bgX = layout.dimensions.bgX !== undefined ? layout.dimensions.bgX : 50;
+                 const bgY = layout.dimensions.bgY !== undefined ? layout.dimensions.bgY : 50;
+                 const bgW = layout.dimensions.bgW !== undefined ? layout.dimensions.bgW : 100;
+                 const bgH = layout.dimensions.bgH !== undefined ? layout.dimensions.bgH : 100;
+                 
+                 let x = 0, y = 0, w = cw, h = ch;
+                 
+                 if (bgSize === '100% 100%') {
+                     x = 0;
+                     y = 0;
+                     w = cw;
+                     h = ch;
+                 } else if (bgSize === 'cover' || bgSize === 'contain') {
+                     const scale = bgSize === 'cover' 
+                         ? Math.max(cw / iw, ch / ih)
+                         : Math.min(cw / iw, ch / ih);
+                     
+                     w = iw * scale;
+                     h = ih * scale;
+                     
+                     // Align horizontal
+                     if (bgPosition === 'left') {
+                         x = 0;
+                     } else if (bgPosition === 'right') {
+                         x = cw - w;
+                     } else {
+                         x = (cw - w) / 2;
+                     }
+                     
+                     // Align vertical
+                     if (bgPosition === 'top') {
+                         y = 0;
+                     } else if (bgPosition === 'bottom') {
+                         y = ch - h;
+                     } else {
+                         y = (ch - h) / 2;
+                     }
+                 } else if (bgSize === 'custom') {
+                     w = cw * (bgW / 100);
+                     h = ch * (bgH / 100);
+                     x = (cw - w) * (bgX / 100);
+                     y = (ch - h) * (bgY / 100);
+                 }
+                 
+                 pdf.addImage(layout.backgroundUrl, 'JPEG', x, y, w, h);
             } catch (e) {
                 console.error('Error loading background:', e);
             }

@@ -90,7 +90,16 @@ export interface CertificateLayout {
   type: 'Certificate' | 'Badge';
   backgroundUrl: string; // Mapped from background_url
   elements: CertificateElement[];
-  dimensions: { width: number, height: number };
+  dimensions: { 
+    width: number; 
+    height: number;
+    bgSize?: 'cover' | 'contain' | '100% 100%' | 'custom';
+    bgPosition?: 'center' | 'top' | 'bottom' | 'left' | 'right' | 'custom';
+    bgX?: number;
+    bgY?: number;
+    bgW?: number;
+    bgH?: number;
+  };
   createdAt: string;
 }
 
