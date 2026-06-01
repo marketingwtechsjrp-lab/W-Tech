@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.0.9",
+    "date": "2026-06-01",
+    "title": "Atalhos de Teclado, Portal de Afiliados e Recuperação de Vendas",
+    "changes": [
+      "🚀 [Novidades] Novo portal de recursos e rota pública para Afiliados (/afiliados)",
+      "🚀 [Novidades] Painel de Recuperação de Carrinho Kiwify com automação de Pix, teste A/B e estatísticas (ROI)",
+      "⚡ [Melhorias] Atalhos de teclado para navegação no painel admin, suporte a fontes customizadas em certificados e otimizações de dashboard"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.8",
     "date": "2026-06-01",
     "title": "Correção de Upload e Customização do Fundo de Certificados",

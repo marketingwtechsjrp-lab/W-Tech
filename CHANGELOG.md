@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.9 (2026-06-01) - Atalhos de Teclado, Portal de Afiliados e Recuperação de Vendas
+- 🚀 [Novidades] Novo portal de recursos e rota pública para Afiliados (/afiliados)
+- 🚀 [Novidades] Painel de Recuperação de Carrinho Kiwify com automação de Pix, teste A/B e estatísticas (ROI)
+- ⚡ [Melhorias] Atalhos de teclado para navegação no painel admin, suporte a fontes customizadas em certificados e otimizações de dashboard
+
 ## v3.0.8 (2026-06-01) - Correção de Upload e Customização do Fundo de Certificados
 - 🐛 [Correções de Bugs] Corrigido erro 'Invalid key' ao carregar imagens com acentos ou espaços no Supabase Storage
 - 🚀 [Novidades / Funcionalidades] Painel interativo de propriedades do fundo com controles de ajuste (cover, contain, stretch e custom) e sliders de largura, altura e posições X/Y
