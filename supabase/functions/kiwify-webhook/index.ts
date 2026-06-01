@@ -11,6 +11,9 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Minutos até o disparo do follow-up de escassez (caso o Pix não seja pago)
+const FOLLOWUP_DELAY_MIN = 15;
+
 // URLs of the videos to send
 const VIDEOS = {
   cart_abandoned: "https://w-techstore.com.br/wp-content/uploads/2026/05/carrinho-abandonado.mov",
@@ -22,8 +25,12 @@ const CAPTIONS = {
   // Carrinho abandonado SEM pix gerado (só interesse) — mantém link de checkout
   cart_abandoned: (name: string, link: string) => `🏁 *${name}, aqui é o Alex Crepaldi da W-Tech!* \n\nVi que você demonstrou interesse no nosso treinamento de *Regulagem de Suspensão*, mas acabou não finalizando a sua inscrição. ⚠️\n\nEu sei que esse é um assunto que gera muitas dúvidas, mas dominar o ajuste da moto é o que separa quem anda no limite do risco de quem tem performance com segurança. 🏍️💨\n\nAlguma dúvida técnica ou dificuldade no checkout te travou? \n\nSe estiver tudo certo, vou deixar o seu link de acesso aqui embaixo para você garantir sua vaga agora e não ficar de fora dessa turma: 🛠️\n\n🔗 ${link}\n\n*Bora pra cima!* 🤝`,
 
-  // Pix gerado mas ainda não pago — manda o Pix pronto (vídeo do Alex)
-  pix_video: (name: string, expira: string) => `🏁 *${name}, aqui é o Alex Crepaldi da W-Tech!* \n\nVi que você já gerou o Pix pra entrar no treinamento de *Regulagem de Suspensão*, mas o pagamento ainda não caiu. ⚠️\n\nPra não te deixar na mão, já preparei tudo: é só pagar o Pix aqui embaixo que sua vaga é garantida na hora. 🛠️🏍️${expira ? `\n\n⏳ *Atenção:* esse Pix expira ${expira}. Garanta agora antes que feche!` : ''}\n\nVou te mandar o QR Code e o código *Copia e Cola* na sequência. 👇`,
+  // --- A/B: vídeo do Alex no "Pix gerado" (ainda não pago) ---
+  // Variante A — empática/técnica (a validada ao vivo)
+  pix_video_A: (name: string, expira: string) => `🏁 *${name}, aqui é o Alex Crepaldi da W-Tech!* \n\nVi que você já gerou o Pix pra entrar no treinamento de *Regulagem de Suspensão*, mas o pagamento ainda não caiu. ⚠️\n\nPra não te deixar na mão, já preparei tudo: é só pagar o Pix aqui embaixo que sua vaga é garantida na hora. 🛠️🏍️${expira ? `\n\n⏳ *Atenção:* esse Pix expira ${expira}. Garanta agora antes que feche!` : ''}\n\nVou te mandar o QR Code e o código *Copia e Cola* na sequência. 👇`,
+
+  // Variante B — escassez/prova social na frente
+  pix_video_B: (name: string, expira: string) => `🏁 *${name}!* Alex Crepaldi aqui, da W-Tech. \n\nFaltou só 1 passo: seu Pix do treinamento de *Regulagem de Suspensão* foi gerado, mas ainda não foi pago. 👀\n\nAs vagas dessa turma piloto estão acabando — e o melhor: pagando por Pix, seu acesso libera *na hora*. 🚀🏍️${expira ? `\n\n⏳ *Seu Pix expira ${expira}* — não deixe a vaga escapar por causa de um clique!` : ''}\n\nTe mando agora o QR Code e o *Copia e Cola* pra garantir. 👇`,
 
   // Legenda da imagem do QR Code
   pix_qr: () => `📲 *Pague pelo QR Code:* abra o app do seu banco, escolha *Pix > Pagar com QR Code* e aponte a câmera.\n\nSe estiver lendo pelo celular, role pra baixo 👇 que vou te mandar o código *Copia e Cola* (é só copiar e colar no banco).`,
@@ -31,8 +38,18 @@ const CAPTIONS = {
   // Instrução antes do código copia e cola
   pix_copy_intro: () => `👇 *Pix Copia e Cola* — toque e segure na mensagem abaixo para copiar, depois cole no seu banco em *Pix > Copia e Cola*:`,
 
+  // Follow-up de escassez (+FOLLOWUP_DELAY_MIN min) enviado pelo cron se não pagar
+  pix_followup: (name: string, pixCode: string, link: string) => `⏳ *${name}, seu Pix ainda está aberto — mas não por muito tempo!* \n\nNão perca a vaga da turma piloto de *Regulagem de Suspensão* por causa de um clique. Pagando agora, seu acesso cai na hora. 🏍️💨\n\n🔑 *Pix Copia e Cola* (toque e segure pra copiar):\n${pixCode}\n\nPrefere o checkout? 👉 ${link}\n\nQualquer dúvida é só me chamar aqui. Bora garantir! 🤝`,
+
   welcome: (name: string) => `🎉 *Parabéns, ${name}! É oficial!* \n\nAlex Crepaldi aqui pra te dar as boas-vindas ao treinamento de *Regulagem de Suspensão* da W-Tech. ✅\n\nVocê acaba de tomar a decisão certa pra dominar a ciclística da sua moto ou dos seus clientes. O seu acesso já foi disparado pelo Kiwify pro seu e-mail. Dá uma conferida lá agora! 📧\n\nAssista aos módulos iniciais, entenda a base teórica e se prepare: a partir de agora você vai entender exatamente o que cada clique faz na suspensão. 👨‍🏫🏍️\n\nQualquer coisa, o nosso suporte está à disposição. Nos vemos nas aulas! 🚀`,
 };
+
+// Seleciona variante A/B de forma determinística pelo order_id (split ~50/50)
+function pickVariant(orderId: string): 'A' | 'B' {
+  let sum = 0;
+  for (const ch of String(orderId)) sum += ch.charCodeAt(0);
+  return sum % 2 === 0 ? 'A' : 'B';
+}
 
 // Normaliza telefone para o formato da Evolution (55 + DDD + número)
 function formatPhone(phone: string): string {
@@ -158,12 +175,13 @@ function formatExpiration(raw: string): string {
   return `às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`;
 }
 
-// Sequência de recuperação com Pix pronto: vídeo -> QR -> copia e cola.
-async function sendPixRecovery(phone: string, name: string, pixCode: string, expiration: string): Promise<boolean> {
+// Sequência de recuperação com Pix pronto: vídeo (variante) -> QR -> copia e cola.
+async function sendPixRecovery(phone: string, name: string, pixCode: string, expiration: string, variant: 'A' | 'B'): Promise<boolean> {
   const expiraTxt = formatExpiration(expiration);
+  const videoCaption = variant === 'B' ? CAPTIONS.pix_video_B(name, expiraTxt) : CAPTIONS.pix_video_A(name, expiraTxt);
 
-  // 1. Vídeo do Alex contextualizando
-  const okVideo = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.pix_video(name, expiraTxt));
+  // 1. Vídeo do Alex contextualizando (variante A/B)
+  const okVideo = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, videoCaption);
 
   // 2. Imagem do QR Code (gerado a partir do copia e cola)
   const qrUrl = buildQrImageUrl(pixCode);
@@ -219,7 +237,7 @@ serve(async (req) => {
       .eq('order_id', orderId)
       .single();
 
-    // 1. Pix gerado (aguardando pagamento) — ENVIO IMEDIATO do Pix pronto (QR + copia e cola)
+    // 1. Pix gerado (aguardando pagamento) — ENVIO IMEDIATO do Pix + follow-up de escassez agendado
     if (status === 'waiting_payment') {
       if (existing) {
         return new Response(JSON.stringify({ message: "Already handled" }), { status: 200 });
@@ -230,19 +248,35 @@ serve(async (req) => {
       const checkoutUrl = formatLink(rawLink);
 
       if (pixCode) {
-        console.log(`Pix gerado para ${phone}. Enviando QR + copia e cola IMEDIATAMENTE.`);
+        const variant = pickVariant(orderId);
+        console.log(`Pix gerado para ${phone}. Variante=${variant}. Enviando QR + copia e cola IMEDIATAMENTE.`);
 
-        // Registra ANTES de enviar (processed=true) para dedup e para o cron externo NÃO reenviar
+        // Agenda o FOLLOW-UP de escassez (processed=false): o cron processar_fila_whatsapp() envia em +FOLLOWUP_DELAY_MIN min.
+        // Quando o pagamento é aprovado, o handler 'paid' deleta esta linha e cancela o follow-up.
+        // Esta linha também serve como registro de dedup (a checagem 'existing' acima a encontra).
+        const followupAt = new Date(Date.now() + FOLLOWUP_DELAY_MIN * 60 * 1000).toISOString();
         await supabase.from('SITE_Automacao_Fila').insert({
           order_id: orderId,
           phone: phone,
           video_url: VIDEOS.cart_abandoned,
-          caption: CAPTIONS.pix_video(name, formatExpiration(expiration)),
-          send_at: new Date().toISOString(),
-          processed: true,
+          caption: CAPTIONS.pix_followup(name, pixCode, checkoutUrl),
+          send_at: followupAt,
+          processed: false,
         });
 
-        success = await sendPixRecovery(phone, name, pixCode, expiration);
+        // Tracking de recuperação (tabela isolada) — mede conversão e resultado do A/B
+        await supabase.from('SITE_Pix_Recovery_Stats').upsert({
+          order_id: orderId,
+          phone: phone,
+          name: name,
+          variant: variant,
+          pix_sent: true,
+          followup_scheduled: true,
+          recovered: false,
+          sent_at: new Date().toISOString(),
+        }, { onConflict: 'order_id' });
+
+        success = await sendPixRecovery(phone, name, pixCode, expiration, variant);
       } else {
         // Sem código Pix no payload (ex: boleto ou versão sem o campo) -> mantém fluxo antigo agendado (+5min)
         console.log(`waiting_payment sem pix_code no payload para ${phone}. Agendando msg de link (+5min). Verifique os logs do payload acima para mapear o campo correto.`);
@@ -270,7 +304,14 @@ serve(async (req) => {
 
       console.log(`Payment approved for ${phone}. Cancelling any scheduled message and sending welcome video.`);
 
-      // Cancel scheduled message if exists
+      // Marca recuperação no tracking se havia um Pix de recuperação pendente para este pedido
+      await supabase
+        .from('SITE_Pix_Recovery_Stats')
+        .update({ recovered: true, recovered_at: new Date().toISOString() })
+        .eq('order_id', orderId)
+        .eq('recovered', false);
+
+      // Cancel scheduled message (incl. follow-up de escassez) if exists
       await supabase.from('SITE_Automacao_Fila').delete().eq('order_id', orderId);
 
       // Mark as processed in a log-like way (using upsert to keep a record)
@@ -287,7 +328,7 @@ serve(async (req) => {
       success = await sendWhatsAppVideo(phone, VIDEOS.welcome, CAPTIONS.welcome(name));
     }
 
-    // 3. Logic for Manual Abandonment (Kiwify direct) — sem pix, manda vídeo + link
+    // 3. Logic for Manual Abandonment (Kiwify direct) — com pix manda QR+copia e cola, senão vídeo + link
     else if (status === 'cart_abandoned' || status === 'abandoned') {
       // If we already sent an immediate message or have one scheduled, skip to avoid duplicates
       if (existing) {
@@ -297,20 +338,31 @@ serve(async (req) => {
       const { code: pixCode, expiration } = extractPix(orderData, payload);
       const rawLink = orderData.checkout_url || orderData.checkout_link;
       const checkoutUrl = formatLink(rawLink);
+      const variant = pickVariant(orderId);
 
       // Record that we are sending it now
       await supabase.from('SITE_Automacao_Fila').insert({
         order_id: orderId,
         phone: phone,
         video_url: VIDEOS.cart_abandoned,
-        caption: pixCode ? CAPTIONS.pix_video(name, formatExpiration(expiration)) : CAPTIONS.cart_abandoned(name, checkoutUrl),
+        caption: pixCode ? CAPTIONS.pix_video_A(name, formatExpiration(expiration)) : CAPTIONS.cart_abandoned(name, checkoutUrl),
         send_at: new Date().toISOString(),
         processed: true
       });
 
       if (pixCode) {
-        console.log(`Cart abandoned COM pix para ${phone}. Enviando QR + copia e cola.`);
-        success = await sendPixRecovery(phone, name, pixCode, expiration);
+        console.log(`Cart abandoned COM pix para ${phone}. Variante=${variant}. Enviando QR + copia e cola.`);
+        await supabase.from('SITE_Pix_Recovery_Stats').upsert({
+          order_id: orderId,
+          phone: phone,
+          name: name,
+          variant: variant,
+          pix_sent: true,
+          followup_scheduled: false,
+          recovered: false,
+          sent_at: new Date().toISOString(),
+        }, { onConflict: 'order_id' });
+        success = await sendPixRecovery(phone, name, pixCode, expiration, variant);
       } else {
         console.log(`Cart abandoned para ${phone}. Enviando vídeo + link.`);
         success = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.cart_abandoned(name, checkoutUrl));
