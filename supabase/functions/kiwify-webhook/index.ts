@@ -19,51 +19,161 @@ const VIDEOS = {
 
 // Captions for the videos
 const CAPTIONS = {
+  // Carrinho abandonado SEM pix gerado (só interesse) — mantém link de checkout
   cart_abandoned: (name: string, link: string) => `🏁 *${name}, aqui é o Alex Crepaldi da W-Tech!* \n\nVi que você demonstrou interesse no nosso treinamento de *Regulagem de Suspensão*, mas acabou não finalizando a sua inscrição. ⚠️\n\nEu sei que esse é um assunto que gera muitas dúvidas, mas dominar o ajuste da moto é o que separa quem anda no limite do risco de quem tem performance com segurança. 🏍️💨\n\nAlguma dúvida técnica ou dificuldade no checkout te travou? \n\nSe estiver tudo certo, vou deixar o seu link de acesso aqui embaixo para você garantir sua vaga agora e não ficar de fora dessa turma: 🛠️\n\n🔗 ${link}\n\n*Bora pra cima!* 🤝`,
-  
+
+  // Pix gerado mas ainda não pago — manda o Pix pronto (vídeo do Alex)
+  pix_video: (name: string, expira: string) => `🏁 *${name}, aqui é o Alex Crepaldi da W-Tech!* \n\nVi que você já gerou o Pix pra entrar no treinamento de *Regulagem de Suspensão*, mas o pagamento ainda não caiu. ⚠️\n\nPra não te deixar na mão, já preparei tudo: é só pagar o Pix aqui embaixo que sua vaga é garantida na hora. 🛠️🏍️${expira ? `\n\n⏳ *Atenção:* esse Pix expira ${expira}. Garanta agora antes que feche!` : ''}\n\nVou te mandar o QR Code e o código *Copia e Cola* na sequência. 👇`,
+
+  // Legenda da imagem do QR Code
+  pix_qr: () => `📲 *Pague pelo QR Code:* abra o app do seu banco, escolha *Pix > Pagar com QR Code* e aponte a câmera.\n\nSe estiver lendo pelo celular, role pra baixo 👇 que vou te mandar o código *Copia e Cola* (é só copiar e colar no banco).`,
+
+  // Instrução antes do código copia e cola
+  pix_copy_intro: () => `👇 *Pix Copia e Cola* — toque e segure na mensagem abaixo para copiar, depois cole no seu banco em *Pix > Copia e Cola*:`,
+
   welcome: (name: string) => `🎉 *Parabéns, ${name}! É oficial!* \n\nAlex Crepaldi aqui pra te dar as boas-vindas ao treinamento de *Regulagem de Suspensão* da W-Tech. ✅\n\nVocê acaba de tomar a decisão certa pra dominar a ciclística da sua moto ou dos seus clientes. O seu acesso já foi disparado pelo Kiwify pro seu e-mail. Dá uma conferida lá agora! 📧\n\nAssista aos módulos iniciais, entenda a base teórica e se prepare: a partir de agora você vai entender exatamente o que cada clique faz na suspensão. 👨‍🏫🏍️\n\nQualquer coisa, o nosso suporte está à disposição. Nos vemos nas aulas! 🚀`,
 };
 
-async function sendWhatsAppVideo(phone: string, videoUrl: string, caption: string) {
+// Normaliza telefone para o formato da Evolution (55 + DDD + número)
+function formatPhone(phone: string): string {
+  let formatted = phone.replace(/\D/g, '');
+  if (formatted.length <= 11) {
+    formatted = '55' + formatted;
+  }
+  return formatted;
+}
+
+function evolutionReady(): boolean {
   if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY || !EVOLUTION_INSTANCE) {
     console.error("Evolution API credentials missing in environment variables.");
     return false;
   }
+  return true;
+}
 
-  let formattedPhone = phone.replace(/\D/g, '');
-  if (formattedPhone.length <= 11) {
-    formattedPhone = '55' + formattedPhone;
-  }
+// Envio de mídia (vídeo/imagem/documento) via Evolution API
+async function sendWhatsAppMedia(
+  phone: string,
+  mediaUrl: string,
+  caption: string,
+  mediatype: 'image' | 'video' | 'document' = 'video',
+  delay = 1500,
+): Promise<boolean> {
+  if (!evolutionReady()) return false;
 
   const baseUrl = EVOLUTION_API_URL.replace(/\/$/, '');
   const endpoint = `${baseUrl}/message/sendMedia/${EVOLUTION_INSTANCE}`;
-  
+
   const payload = {
-    number: formattedPhone,
-    mediatype: "video",
-    media: videoUrl,
-    fileName: "video.mp4",
-    caption: caption,
-    delay: 1500
+    number: formatPhone(phone),
+    mediatype,
+    media: mediaUrl,
+    fileName: mediatype === 'video' ? 'video.mp4' : 'pix-qrcode.png',
+    caption,
+    delay,
   };
 
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': EVOLUTION_API_KEY
-      },
-      body: JSON.stringify(payload)
+      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+      body: JSON.stringify(payload),
     });
-
     const data = await response.json();
-    console.log("Evolution API Response:", data);
+    console.log("Evolution sendMedia response:", data);
     return response.ok;
   } catch (error) {
-    console.error("Error sending WhatsApp video:", error);
+    console.error("Error sending WhatsApp media:", error);
     return false;
   }
+}
+
+// Envio de texto puro via Evolution API
+async function sendWhatsAppText(phone: string, text: string, delay = 1200): Promise<boolean> {
+  if (!evolutionReady()) return false;
+
+  const baseUrl = EVOLUTION_API_URL.replace(/\/$/, '');
+  const endpoint = `${baseUrl}/message/sendText/${EVOLUTION_INSTANCE}`;
+
+  const payload = {
+    number: formatPhone(phone),
+    text,
+    delay,
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    console.log("Evolution sendText response:", data);
+    return response.ok;
+  } catch (error) {
+    console.error("Error sending WhatsApp text:", error);
+    return false;
+  }
+}
+
+// Backward-compat helper usado pelos fluxos antigos
+async function sendWhatsAppVideo(phone: string, videoUrl: string, caption: string): Promise<boolean> {
+  return await sendWhatsAppMedia(phone, videoUrl, caption, 'video', 1500);
+}
+
+// Extrai o código Pix (copia e cola) e a expiração do payload da Kiwify.
+// A Kiwify varia o formato entre versões, então cobrimos os campos conhecidos.
+function extractPix(orderData: any, payload: any): { code: string; expiration: string } {
+  const code =
+    orderData.pix_code ||
+    orderData.pix?.qrcode ||
+    orderData.pix?.pix_code ||
+    orderData.pix?.code ||
+    orderData.Charges?.pix?.code ||
+    orderData.charges?.pix?.code ||
+    payload.pix_code ||
+    payload.pix?.qrcode ||
+    '';
+
+  const expiration =
+    orderData.pix_expiration ||
+    orderData.pix?.expiration_date ||
+    orderData.pix?.expiration ||
+    payload.pix_expiration ||
+    '';
+
+  return { code: String(code || ''), expiration: String(expiration || '') };
+}
+
+// Monta a URL de imagem do QR Code a partir do payload Pix copia e cola.
+function buildQrImageUrl(pixCode: string): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=12&data=${encodeURIComponent(pixCode)}`;
+}
+
+// Formata a expiração de forma amigável (se vier uma data ISO).
+function formatExpiration(raw: string): string {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return '';
+  return `às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`;
+}
+
+// Sequência de recuperação com Pix pronto: vídeo -> QR -> copia e cola.
+async function sendPixRecovery(phone: string, name: string, pixCode: string, expiration: string): Promise<boolean> {
+  const expiraTxt = formatExpiration(expiration);
+
+  // 1. Vídeo do Alex contextualizando
+  const okVideo = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.pix_video(name, expiraTxt));
+
+  // 2. Imagem do QR Code (gerado a partir do copia e cola)
+  const qrUrl = buildQrImageUrl(pixCode);
+  const okQr = await sendWhatsAppMedia(phone, qrUrl, CAPTIONS.pix_qr(), 'image', 1200);
+
+  // 3. Instrução + código copia e cola ISOLADO (pra cópia limpa no mobile)
+  await sendWhatsAppText(phone, CAPTIONS.pix_copy_intro(), 1000);
+  const okCode = await sendWhatsAppText(phone, pixCode, 600);
+
+  return okVideo && okQr && okCode;
 }
 
 serve(async (req) => {
@@ -79,16 +189,16 @@ serve(async (req) => {
     const orderData = payload.order || payload.cart || payload;
     const status = orderData.order_status || orderData.status;
     const orderId = orderData.order_id || orderData.id;
-    
+
     const customer = orderData.Customer || orderData.customer || orderData;
     const phone = customer.mobile || customer.phone;
     const name = customer.first_name || customer.full_name || "Amigo";
 
     if (!phone) {
       console.log("Webhook received but no phone found in any known field. Returning 200.");
-      return new Response(JSON.stringify({ message: "Acknowledged, but no action taken (no phone)" }), { 
+      return new Response(JSON.stringify({ message: "Acknowledged, but no action taken (no phone)" }), {
         headers: { "Content-Type": "application/json" },
-        status: 200 
+        status: 200
       });
     }
 
@@ -109,30 +219,46 @@ serve(async (req) => {
       .eq('order_id', orderId)
       .single();
 
-    // 1. Logic for Pix Generated (Waiting Payment) - ADD TO QUEUE WITH DELAY
+    // 1. Pix gerado (aguardando pagamento) — ENVIO IMEDIATO do Pix pronto (QR + copia e cola)
     if (status === 'waiting_payment') {
       if (existing) {
-        return new Response(JSON.stringify({ message: "Already in queue" }), { status: 200 });
+        return new Response(JSON.stringify({ message: "Already handled" }), { status: 200 });
       }
 
-      console.log(`Pix generated for ${phone}. Scheduling message for 5 minutes from now.`);
-      
+      const { code: pixCode, expiration } = extractPix(orderData, payload);
       const rawLink = orderData.checkout_url || orderData.checkout_link;
       const checkoutUrl = formatLink(rawLink);
-      const sendAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // Now + 5 minutes
 
-      const { error } = await supabase
-        .from('SITE_Automacao_Fila')
-        .insert({
+      if (pixCode) {
+        console.log(`Pix gerado para ${phone}. Enviando QR + copia e cola IMEDIATAMENTE.`);
+
+        // Registra ANTES de enviar (processed=true) para dedup e para o cron externo NÃO reenviar
+        await supabase.from('SITE_Automacao_Fila').insert({
           order_id: orderId,
           phone: phone,
           video_url: VIDEOS.cart_abandoned,
-          caption: CAPTIONS.cart_abandoned(name, checkoutUrl),
-          send_at: sendAt,
-          processed: false
+          caption: CAPTIONS.pix_video(name, formatExpiration(expiration)),
+          send_at: new Date().toISOString(),
+          processed: true,
         });
 
-      if (error) console.error("Error scheduling message:", error);
+        success = await sendPixRecovery(phone, name, pixCode, expiration);
+      } else {
+        // Sem código Pix no payload (ex: boleto ou versão sem o campo) -> mantém fluxo antigo agendado (+5min)
+        console.log(`waiting_payment sem pix_code no payload para ${phone}. Agendando msg de link (+5min). Verifique os logs do payload acima para mapear o campo correto.`);
+        const sendAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        const { error } = await supabase
+          .from('SITE_Automacao_Fila')
+          .insert({
+            order_id: orderId,
+            phone: phone,
+            video_url: VIDEOS.cart_abandoned,
+            caption: CAPTIONS.cart_abandoned(name, checkoutUrl),
+            send_at: sendAt,
+            processed: false,
+          });
+        if (error) console.error("Error scheduling message:", error);
+      }
     }
 
     // 2. Logic for Payment Approved - CANCEL QUEUE AND SEND WELCOME
@@ -143,10 +269,10 @@ serve(async (req) => {
       }
 
       console.log(`Payment approved for ${phone}. Cancelling any scheduled message and sending welcome video.`);
-      
+
       // Cancel scheduled message if exists
       await supabase.from('SITE_Automacao_Fila').delete().eq('order_id', orderId);
-      
+
       // Mark as processed in a log-like way (using upsert to keep a record)
       await supabase.from('SITE_Automacao_Fila').upsert({
         order_id: orderId,
@@ -161,14 +287,14 @@ serve(async (req) => {
       success = await sendWhatsAppVideo(phone, VIDEOS.welcome, CAPTIONS.welcome(name));
     }
 
-    // 3. Logic for Manual Abandonment (Kiwify direct)
+    // 3. Logic for Manual Abandonment (Kiwify direct) — sem pix, manda vídeo + link
     else if (status === 'cart_abandoned' || status === 'abandoned') {
       // If we already sent an immediate message or have one scheduled, skip to avoid duplicates
       if (existing) {
         return new Response(JSON.stringify({ message: "Already handled" }), { status: 200 });
       }
 
-      console.log(`Cart abandoned for ${phone}. Sending immediate video.`);
+      const { code: pixCode, expiration } = extractPix(orderData, payload);
       const rawLink = orderData.checkout_url || orderData.checkout_link;
       const checkoutUrl = formatLink(rawLink);
 
@@ -177,12 +303,18 @@ serve(async (req) => {
         order_id: orderId,
         phone: phone,
         video_url: VIDEOS.cart_abandoned,
-        caption: CAPTIONS.cart_abandoned(name, checkoutUrl),
+        caption: pixCode ? CAPTIONS.pix_video(name, formatExpiration(expiration)) : CAPTIONS.cart_abandoned(name, checkoutUrl),
         send_at: new Date().toISOString(),
         processed: true
       });
 
-      success = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.cart_abandoned(name, checkoutUrl));
+      if (pixCode) {
+        console.log(`Cart abandoned COM pix para ${phone}. Enviando QR + copia e cola.`);
+        success = await sendPixRecovery(phone, name, pixCode, expiration);
+      } else {
+        console.log(`Cart abandoned para ${phone}. Enviando vídeo + link.`);
+        success = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.cart_abandoned(name, checkoutUrl));
+      }
     }
 
     return new Response(
