@@ -2,13 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GridVignetteBackground } from '../../ui/vignette-grid-background';
 import { 
-    Users, Search, DollarSign, Award, Download, Copy, Check, MessageSquare, 
-    Share2, ArrowRight, ShieldCheck, Flame, BookOpen, Layers, CheckCircle,
-    ExternalLink, Coins, Sparkles, AlertCircle, Terminal, HelpCircle, Eye,
-    Link, Code, Clock, Lock, ChevronRight, FolderOpen, TrendingUp,
-    Bike, Mountain, Wrench, Globe, Star, Monitor, Play, CalendarDays, ChevronDown, ArrowLeft, Zap, Gauge, Activity, Move
+    Users, Search, Flame, CheckCircle, ExternalLink, FolderOpen
 } from 'lucide-react';
-import { Marquee } from '../../ui/marquee';
 import { supabase } from '../../../lib/supabaseClient';
 
 interface Affiliate {
@@ -103,63 +98,14 @@ const AFFILIATES_DATA: Affiliate[] = [
   { "name": "Mariajuliapedrosa5", "email": "mariajuliapedrosa5@gmail.com", "company": "", "doc": "", "status": "active" }
 ];
 
-const FAQItem = ({ q, a }: { q: string; a: string }) => {
-    const [open, setOpen] = useState(false);
-    return (
-        <div className="border border-white/10 bg-zinc-900/50 rounded-2xl overflow-hidden hover:border-[#D4AF37]/40 transition-colors">
-            <button
-                onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between gap-4 p-5 text-left group"
-            >
-                <span className="font-bold text-gray-200 text-xs md:text-sm group-hover:text-white transition-colors duration-150">{q}</span>
-                <div className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-[#D4AF37]' : 'text-gray-500'}`}>
-                    <ChevronDown size={18} />
-                </div>
-            </button>
-            <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
-            >
-                <div className="px-5 pb-5 text-neutral-400 text-xs leading-relaxed font-medium">{a}</div>
-            </div>
-        </div>
-    );
-};
-
 const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean }) => {
     const [activeTab, setActiveTab] = useState<'admin' | 'portal'>('portal');
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Portal states
-    const [monthlySales, setMonthlySales] = useState(15);
-    const [copiedSwipeId, setCopiedSwipeId] = useState<number | null>(null);
-    const [copiedElementId, setCopiedElementId] = useState<string | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
-    
     // Config states
-    const [driveUrl, setDriveUrl] = useState('https://drive.google.com/drive/folders/1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A');
+    const [driveUrl, setDriveUrl] = useState('https://drive.google.com/drive/folders/1NDeFZ01IQ8W1c9j8S5uH47LqGzPElgoC?usp=sharing');
     const [affiliates, setAffiliates] = useState<Affiliate[]>(AFFILIATES_DATA);
     const [loadingAffiliates, setLoadingAffiliates] = useState(false);
-    
-    // Link tracking generator states
-    const [affiliateLink, setAffiliateLink] = useState('https://pay.kiwify.com.br/19v4nIa');
-    const [utmSource, setUtmSource] = useState('instagram_bio');
-    const [generatedLink, setGeneratedLink] = useState('');
-
-    // Video VSL states
-    const [videoPlaying, setVideoPlaying] = useState(false);
-    const [videoActivated, setVideoActivated] = useState(false);
-    const videoRef = React.useRef<HTMLVideoElement>(null);
-
-    const handlePlayVideo = () => {
-        setVideoActivated(true);
-        requestAnimationFrame(() => {
-            if (videoRef.current) {
-                videoRef.current.load();
-                videoRef.current.play().catch(() => { });
-                setVideoPlaying(true);
-            }
-        });
-    };
 
     useEffect(() => {
         if (publicMode) {
@@ -211,17 +157,6 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
         }
     }, [activeTab, publicMode]);
 
-    // Live update for tracking link generator
-    useEffect(() => {
-        try {
-            const url = new URL(affiliateLink);
-            url.searchParams.set('src', utmSource);
-            setGeneratedLink(url.toString());
-        } catch (e) {
-            setGeneratedLink(`${affiliateLink}${affiliateLink.includes('?') ? '&' : '?'}src=${utmSource}`);
-        }
-    }, [affiliateLink, utmSource]);
-
     // Filtered affiliates for Admin view
     const filteredAffiliates = affiliates.filter(aff => 
         (aff.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -229,54 +164,6 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
         (aff.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (aff.doc || '').includes(searchTerm)
     );
-
-    // Sales calculator values
-    const coursePrice = 347.00;
-    const commissionRate = 0.20;
-    const commissionPerSale = coursePrice * commissionRate; // R$ 69.40
-    const estimatedEarnings = monthlySales * commissionPerSale;
-
-    const getEarningLevel = (earnings: number) => {
-        if (earnings >= 10000) return { label: '🏆 W-Tech Black Legend', color: 'from-[#D4AF37] via-amber-500 to-[#D4AF37]', text: 'text-black font-black' };
-        if (earnings >= 5000) return { label: '🔥 W-Tech Platinum Elite', color: 'from-neutral-900 via-[#D4AF37] to-neutral-900', text: 'text-[#D4AF37] font-black border border-[#D4AF37]/30' };
-        if (earnings >= 2500) return { label: '🌟 W-Tech Gold Partner', color: 'from-[#D4AF37] to-amber-500', text: 'text-black font-black' };
-        if (earnings >= 1000) return { label: '✨ W-Tech Silver Partner', color: 'from-zinc-300 to-zinc-500', text: 'text-black font-bold' };
-        return { label: '🏁 W-Tech Bronze Affiliate', color: 'from-amber-700 to-amber-900', text: 'text-white' };
-    };
-
-    const earningLevel = getEarningLevel(estimatedEarnings);
-
-    // Copywriting swipes data
-    const SWIPES = [
-        {
-            id: 1,
-            title: "📱 WhatsApp (Abordagem Direta para Pilotos)",
-            text: "Olá! Tudo bem? Vi que você é piloto e está sempre acelerando forte. Cara, o Alex da W-Tech liberou uma oportunidade única do novo Curso Online de Regulagem de Suspensão Para Pilotos.\n\nEles estão fechando as últimas vagas com desconto exclusivo: de R$ 997 por apenas R$ 347. É o melhor investimento para aprender a regular cliques, sag e hidráulica em casa, ganhando segurança e tempo de volta.\n\nConfere os detalhes na página oficial deles:\n\n👉 [LINK-GERADO-ABAIXO]"
-        },
-        {
-            id: 2,
-            title: "📸 Stories / Direct Instagram (Gatilho de Urgência)",
-            text: "🚨 ALERTA: Restam pouquíssimas vagas com 65% de desconto no Curso de Suspensão W-Tech!\n\nChega de andar com a moto jogando de lado ou dura nas costelas. Aprenda como ajustar sua suspensão de forma simplificada.\n\nDe R$ 997,00 por apenas R$ 347,00 (ou em até 12x no cartão).\n\n👉 Arrasta ou clica no link da minha bio para garantir antes do aumento!"
-        },
-        {
-            id: 3,
-            title: "💬 Script Direct / Comentários (Quebra de Objeções)",
-            text: "E aí, blz? Cara, vi sua dúvida sobre suspensão. O método da W-Tech é 100% prático e serve tanto para quem faz trilha quanto motocross ou enduro. Você tem suporte direto e garantia de 7 dias.\n\nComo o preço promocional de R$ 347 vai expirar nos próximos dias, recomendo garantir a vaga agora.\n\nSe quiser conferir a apresentação completa, o link seguro é esse:\n\n👉 [LINK-GERADO-ABAIXO]"
-        }
-    ];
-
-    const handleCopyText = (text: string, id: string) => {
-        navigator.clipboard.writeText(text);
-        setCopiedElementId(id);
-        setTimeout(() => setCopiedElementId(null), 2000);
-    };
-
-    const handleCopySwipe = (text: string, id: number) => {
-        const parsedText = text.replace("[LINK-GERADO-ABAIXO]", generatedLink);
-        navigator.clipboard.writeText(parsedText);
-        setCopiedSwipeId(id);
-        setTimeout(() => setCopiedSwipeId(null), 2000);
-    };
 
     // Entrance animations mapping
     const containerVariants = {
@@ -295,146 +182,6 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
             transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
         }
     };
-
-    // Visual assets data directly linked from the Sales LP
-    const CREATIVES = [
-        {
-            title: 'Banner Hero Oficial (Desktop)',
-            size: '1920x1280px',
-            type: 'Hero Web',
-            category: 'Capa & Banners',
-            image: '/hero-desktop-alex.webp',
-            previewText: 'Alex Regulando Suspensão'
-        },
-        {
-            title: 'Banner Hero Oficial (Mobile)',
-            size: '1080x1920px',
-            type: 'Hero Mobile',
-            category: 'Capa & Banners',
-            image: '/hero-mobile-alex.webp',
-            previewText: 'Alex Regulando Suspensão'
-        },
-        {
-            title: 'Capa do Vídeo de Vendas (VSL)',
-            size: '1920x1080px',
-            type: 'Thumbnail',
-            category: 'Capa & Banners',
-            image: '/images/vsl-thumbnail.webp',
-            previewText: 'Assista a VSL W-Tech'
-        },
-        {
-            title: 'Banner Paschoalin (Módulo Bônus)',
-            size: '1920x1080px',
-            type: 'Banner',
-            category: 'Capa & Banners',
-            image: '/paschoalin.webp',
-            previewText: 'Rafa Paschoalin - Prática na Pista'
-        },
-        {
-            title: 'Banner Alex Crepaldi (Mentor)',
-            size: '1920x1080px',
-            type: 'Banner',
-            category: 'Capa & Banners',
-            image: '/images/alex-webp.webp',
-            previewText: 'Alex Crepaldi W-Tech'
-        },
-        {
-            title: 'Card Módulo 1: Boas-Vindas & Métodos',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO.webp',
-            previewText: 'Módulo 1'
-        },
-        {
-            title: 'Card Módulo 2: Ergonomia - Cockpit',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-1.webp',
-            previewText: 'Módulo 2'
-        },
-        {
-            title: 'Card Módulo 3: Equilíbrio',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-2.webp',
-            previewText: 'Módulo 3'
-        },
-        {
-            title: 'Card Módulo 4: Molas & Particularidades',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3.webp',
-            previewText: 'Módulo 4'
-        },
-        {
-            title: 'Card Módulo 5: O SAG - Geometria',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4.webp',
-            previewText: 'Módulo 5'
-        },
-        {
-            title: 'Card Módulo 6: Óleo e Viscosidades',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/lp-curso/oleo-e-viscosidades.webp',
-            previewText: 'Módulo 6'
-        },
-        {
-            title: 'Card Módulo 7: Desmistificando Cliques',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3-1.webp',
-            previewText: 'Módulo 7'
-        },
-        {
-            title: 'Card Módulo 8: Dianteira & Bengala',
-            size: '1080x1350px',
-            type: 'Card do Curso',
-            category: 'Módulos do Curso',
-            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4-1.webp',
-            previewText: 'Módulo 8'
-        },
-        {
-            title: 'Bento Asset 1: Piloto Amador',
-            size: '800x600px',
-            type: 'Bento Grid',
-            category: 'Público-Alvo',
-            image: '/images/lp-curso/1.webp',
-            previewText: 'Para Piloto Amador'
-        },
-        {
-            title: 'Bento Asset 2: Trilha e Enduro',
-            size: '800x600px',
-            type: 'Bento Grid',
-            category: 'Público-Alvo',
-            image: '/images/lp-curso/2.webp',
-            previewText: 'Para Trilha e Enduro'
-        },
-        {
-            title: 'Bento Asset 3: Mecânico Preparador',
-            size: '800x600px',
-            type: 'Bento Grid',
-            category: 'Público-Alvo',
-            image: '/images/lp-curso/3.webp',
-            previewText: 'Para Mecânico Preparador'
-        },
-        {
-            title: 'Bento Asset 4: Dono de Oficina',
-            size: '800x600px',
-            type: 'Bento Grid',
-            category: 'Público-Alvo',
-            image: '/images/lp-curso/4.webp',
-            previewText: 'Para Dono de Oficina'
-        }
-    ];
 
 
     return (
@@ -470,7 +217,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                             Central de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-yellow-400 to-amber-600">Parceiros</span>
                         </motion.h1>
                         <motion.p variants={itemVariants} className="text-xs md:text-sm text-neutral-400 font-medium max-w-xl leading-relaxed">
-                            Monitore materiais de alta comissão, use as imagens da página de vendas oficial e acompanhe o passo a passo para alavancar suas vendas de suspensão Off-Road.
+                            Acesse criativos, vídeos, fotos e materiais oficiais da W-Tech para começar suas divulgações e campanhas.
                         </motion.p>
                     </div>
 
@@ -503,593 +250,66 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
 
                 {/* TAB CONTENT: AFFILIATES RESOURCE PORTAL */}
                 {activeTab === 'portal' && (
-                    <div className="space-y-10 animate-in fade-in duration-300">
-                        
-                        {/* Traffic Proof & ROI Section */}
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] py-12 animate-in fade-in duration-300">
                         <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 25 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.1 }}
-                            className="bg-zinc-900/40 border border-white/5 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/20 transition-all duration-300"
+                            transition={{ duration: 0.5 }}
+                            className="w-full max-w-2xl bg-zinc-900/50 border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300 text-center space-y-8"
                         >
                             <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/5 rounded-full blur-[100px] pointer-events-none" />
                             <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
                             
-                            <div className="grid md:grid-cols-5 gap-8 items-center relative z-10">
-                                {/* Left: Persuasive Text Content (3 columns) */}
-                                <div className="md:col-span-3 space-y-6">
-                                    <div className="inline-flex items-center gap-2 border border-[#D4AF37]/20 bg-[#D4AF37]/5 backdrop-blur-md px-3.5 py-1 rounded-full">
-                                        <TrendingUp size={12} className="text-[#D4AF37]" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D4AF37]">Oportunidade Única de Mercado</span>
-                                    </div>
-                                    <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-tight text-white leading-none">
-                                        Produto Único, Demanda Represada <br />
-                                        e <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-yellow-400 to-amber-600">ROI Comprovado</span>
-                                    </h2>
-                                    <p className="text-xs text-neutral-400 leading-relaxed font-medium">
-                                        Diferente de nichos saturados e genéricos do marketing digital, o <span className="text-white">Curso de Regulagem de Suspensão W-Tech</span> atende a uma necessidade real, técnica e extremamente dolorosa para os pilotos Off-Road (motocross, trilha e enduro). Pilotos sofrem constantemente com suspensões mal reguladas que causam fadiga, perda de rendimento e riscos de queda. O curso ensina o método profissional de acerto prático de cliques, sag e hidráulica em casa, eliminando a dependência de oficinas caras.
-                                    </p>
-                                    
-                                    <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-2 hover:border-[#D4AF37]/10 transition-colors">
-                                            <h4 className="text-xs font-black uppercase text-white flex items-center gap-2">
-                                                <span className="flex h-2 w-2 relative shrink-0">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                                </span>
-                                                Sem Concorrência Direta
-                                            </h4>
-                                            <p className="text-[10px] text-neutral-400 leading-relaxed">
-                                                Não há outro curso prático de suspensão Off-Road focado em pilotos no Brasil. A autoridade inquestionável do Alex Crepaldi no acerto técnico converte cliques de forma muito mais simples.
-                                            </p>
-                                        </div>
-                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-2 hover:border-[#D4AF37]/10 transition-colors">
-                                            <h4 className="text-xs font-black uppercase text-[#D4AF37] flex items-center gap-1.5">
-                                                <Coins size={14} /> Ticket Baixo & Alto ROI
-                                            </h4>
-                                            <p className="text-[10px] text-neutral-400 leading-relaxed">
-                                                O valor promocional de R$ 347,00 (em até 12x de R$ 34,70) estimula a compra imediata por impulso, maximizando o ROI e minimizando o custo de aquisição (CPA) nas suas campanhas.
-                                            </p>
-                                        </div>
-                                    </div>
+                            <div className="flex flex-col items-center space-y-4 relative z-10">
+                                <div className="w-16 h-16 rounded-2xl bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] border border-[#D4AF37]/20 shadow-lg shadow-[#D4AF37]/5">
+                                    <FolderOpen size={32} />
                                 </div>
-                                
-                                {/* Right: Image Proof Showcase (2 columns) */}
-                                <div className="md:col-span-2 flex flex-col gap-4">
-                                    <div className="bg-black/60 border border-white/10 rounded-2xl p-2.5 shadow-lg group-hover:border-[#D4AF37]/25 transition-all duration-300 overflow-hidden relative">
-                                        <div className="absolute top-2 right-2 bg-green-500/20 text-green-400 border border-green-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-full tracking-wider z-10">
-                                            ROI & Vendas
-                                        </div>
-                                        <img 
-                                            src="/images/traffic-stats-1.jpeg" 
-                                            alt="Métricas reais de ROI" 
-                                            className="w-full h-auto rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-[1.02]" 
-                                        />
-                                    </div>
-                                    <div className="bg-black/60 border border-white/10 rounded-2xl p-2.5 shadow-lg group-hover:border-[#D4AF37]/25 transition-all duration-300 overflow-hidden relative">
-                                        <div className="absolute top-2 right-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-full tracking-wider z-10">
-                                            Alcance & Custo
-                                        </div>
-                                        <img 
-                                            src="/images/traffic-stats-2.jpeg" 
-                                            alt="Métricas reais de custo e alcance" 
-                                            className="w-full h-auto rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-[1.02]" 
-                                        />
-                                    </div>
+                                <h2 className="font-display text-2xl md:text-3xl font-black uppercase tracking-tight text-white mt-4">
+                                    Materiais de Divulgação W-Tech
+                                </h2>
+                                <p className="text-sm text-neutral-400 max-w-md leading-relaxed font-medium">
+                                    Acesse a nossa pasta oficial no Google Drive para fazer download de criativos, vídeos, fotos, copys de vendas e materiais de suporte.
+                                </p>
+                            </div>
+
+                            <div className="grid sm:grid-cols-3 gap-4 text-left relative z-10 pt-4">
+                                <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                                    <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Vídeos & VSL</span>
+                                    <h4 className="text-xs font-bold text-white mb-1">Vídeos de Vendas</h4>
+                                    <p className="text-[10px] text-neutral-400 leading-relaxed">Vídeos e VSL oficiais prontos para campanhas.</p>
+                                </div>
+                                <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                                    <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Fotos & Capas</span>
+                                    <h4 className="text-xs font-bold text-white mb-1">Banners & Mockups</h4>
+                                    <p className="text-[10px] text-neutral-400 leading-relaxed">Imagens de divulgação, logos e artes oficiais.</p>
+                                </div>
+                                <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                                    <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Roteiros & Textos</span>
+                                    <h4 className="text-xs font-bold text-white mb-1">Copys de Suporte</h4>
+                                    <p className="text-[10px] text-neutral-400 leading-relaxed">Roteiros de abordagem e quebra de objeções.</p>
                                 </div>
                             </div>
-                        </motion.div>
 
-                        <div className="grid lg:grid-cols-3 gap-8 items-start">
-                        
-                        {/* Left & Middle columns: Resources, Simulator, Copys, and Strategy Guides */}
-                        <div className="lg:col-span-2 space-y-10">
-                            
-                            {/* Interactive Commissions Calculator */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300"
-                            >
-                                <div className="absolute top-0 right-0 w-60 h-60 bg-[#D4AF37]/5 rounded-full blur-[80px]" />
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 pb-5 mb-6 gap-3">
-                                    <div>
-                                        <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2.5">
-                                            <Coins size={22} className="text-[#D4AF37]" /> Simule seus Ganhos Mensais
-                                        </h3>
-                                        <p className="text-xs text-neutral-400 mt-1">Arrasta o slider abaixo para simular sua comissão de {(commissionRate * 100)}% direta.</p>
-                                    </div>
-                                    <span className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30 text-[9px] font-black uppercase px-3.5 py-1.5 rounded-full tracking-widest shrink-0">
-                                        Comissão por venda: R$ {commissionPerSale.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-8 items-center">
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-center text-xs font-black text-neutral-400 uppercase tracking-wider">
-                                            <span>Meta de Indicações</span>
-                                            <span className="text-[#D4AF37] text-lg font-mono font-black bg-black/60 px-4 py-1.5 rounded-xl border border-white/10">
-                                                {monthlySales} {monthlySales === 1 ? 'venda' : 'vendas'}
-                                            </span>
-                                        </div>
-                                        <input 
-                                            type="range"
-                                            min="1"
-                                            max="100"
-                                            className="w-full h-2 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-[#D4AF37] hover:accent-[#D4AF37]/80 transition-all"
-                                            value={monthlySales}
-                                            onChange={e => setMonthlySales(parseInt(e.target.value))}
-                                        />
-                                        <div className="flex justify-between text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
-                                            <span>1 Venda</span>
-                                            <span>50 Vendas</span>
-                                            <span>100 Vendas</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-[#050505]/95 border border-white/10 p-6 rounded-2xl flex flex-col items-center text-center space-y-3 shadow-inner relative overflow-hidden">
-                                        <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
-                                            Sua comissão estimada:
-                                        </span>
-                                        <span className="text-4xl font-black text-green-400 font-mono tracking-tight animate-pulse">
-                                            R$ {estimatedEarnings.toFixed(2)}
-                                        </span>
-                                        <div className={`bg-gradient-to-r ${earningLevel.color} ${earningLevel.text} text-[9px] font-black uppercase px-3.5 py-1.5 rounded-xl tracking-widest mt-1 shadow-lg transition-all duration-300`}>
-                                            {earningLevel.label}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* STRATEGY GUIDE: HOW TO USE THE SALES LP */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.1 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6"
-                            >
-                                <div className="border-b border-white/10 pb-5">
-                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                        <Sparkles size={20} className="text-[#D4AF37]" /> Estratégia do Funil: Como Usar a LP de Vendas
-                                    </h3>
-                                    <p className="text-xs text-neutral-400 mt-1">Conheça os elementos psicológicos integrados no nosso funil que garantem a conversão.</p>
-                                </div>
-
-                                <div className="grid md:grid-cols-5 gap-8 items-center">
-                                    {/* Visual Mockup of the landing page (iPhone style) */}
-                                    <div className="md:col-span-2 bg-[#090909] border border-white/10 p-5 rounded-[2.5rem] shadow-xl relative max-w-[260px] mx-auto w-full">
-                                        {/* Notch */}
-                                        <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-20 flex items-center justify-center">
-                                            <div className="w-12 h-1 bg-neutral-900 rounded-full" />
-                                        </div>
-                                        
-                                        {/* Content Screen */}
-                                        <div className="bg-[#121212] rounded-[2rem] p-4 border border-neutral-900 space-y-3.5 text-[9px] text-neutral-400 relative overflow-hidden pt-7">
-                                            <div className="flex justify-between items-center text-[7px] text-neutral-600 font-mono">
-                                                <span>W-Tech LP</span>
-                                                <span>09:41 AM</span>
-                                            </div>
-
-                                            {/* Fake Video Player using actual poster from LP */}
-                                            <div className="w-full h-24 bg-black rounded-xl flex flex-col items-center justify-center border border-white/10 relative overflow-hidden group">
-                                                <img 
-                                                    src="/images/vsl-thumbnail.webp" 
-                                                    alt="VSL Playback Preview"
-                                                    className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-300"
-                                                />
-                                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
-                                                <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-black shadow-lg relative z-10 group-hover:scale-110 transition-transform">
-                                                    <div className="w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[7px] border-l-black ml-0.5" />
-                                                </div>
-                                                <span className="text-[7px] font-black text-white uppercase tracking-wider mt-2 z-10">Ver Vídeo Oficial</span>
-                                            </div>
-
-                                            <div className="text-center space-y-1">
-                                                <span className="text-[7px] text-[#D4AF37] font-black uppercase tracking-widest">Curso Regulagem de Suspensão</span>
-                                                <h4 className="font-black text-white uppercase leading-tight text-[10px]">Ajuste Como Um Profissional</h4>
-                                            </div>
-
-                                            <div className="space-y-1.5 bg-neutral-950/60 p-2.5 rounded-xl border border-neutral-900">
-                                                <div className="flex items-center gap-1.5 text-[7px]">
-                                                    <CheckCircle size={9} className="text-[#D4AF37] shrink-0" />
-                                                    <span>Ajuste de Sag & Cliques na prática</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-[7px]">
-                                                    <CheckCircle size={9} className="text-[#D4AF37] shrink-0" />
-                                                    <span>Para Motocross, Enduro e Trilha</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="bg-gradient-to-r from-[#D4AF37] to-amber-600 text-black text-center font-black py-2 rounded-xl text-[8px] uppercase tracking-widest font-sans shadow-md shadow-[#D4AF37]/10">
-                                                Garantir Inscrição R$ 347
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="text-[8px] text-neutral-500 text-center font-bold uppercase tracking-widest mt-3.5">
-                                            Mockup da LP de Vendas
-                                        </div>
-                                    </div>
-
-                                    {/* Instructing how to drive traffic and convert */}
-                                    <div className="md:col-span-3 space-y-5">
-                                        <h4 className="font-display text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                                            <Award size={18} className="text-[#D4AF37]" /> Os Três Pilares da LP
-                                        </h4>
-                                        
-                                        <div className="space-y-4 text-xs text-neutral-400">
-                                            <div className="border-l-2 border-[#D4AF37]/40 pl-3.5 py-0.5 space-y-1">
-                                                <strong className="text-white text-xs block">1. A Apresentação de Alex Crepaldi</strong>
-                                                <p className="leading-relaxed">
-                                                    A página exibe um vídeo detalhado onde o Alex destrincha por que 90% dos pilotos andam com suspensão desregulada. Direcione o cliente a assistir o vídeo explicativo.
-                                                </p>
-                                            </div>
-                                            <div className="border-l-2 border-[#D4AF37]/40 pl-3.5 py-0.5 space-y-1">
-                                                <strong className="text-white text-xs block">2. Prova Social e Depoimentos</strong>
-                                                <p className="leading-relaxed">
-                                                    Pilotos reais mostram seus tempos de volta abaixando e a moto colando no chão após aplicarem o sag correto. Use isso no seu fechamento.
-                                                </p>
-                                            </div>
-                                            <div className="border-l-2 border-[#D4AF37]/40 pl-3.5 py-0.5 space-y-1">
-                                                <strong className="text-white text-xs block">3. Lote VIP de Escassez (R$ 347)</strong>
-                                                <p className="leading-relaxed">
-                                                    O valor de tabela do curso é R$ 997, mas a página está travada na promoção de R$ 347 por tempo limitado. Sempre lembre seu cliente dessa diferença.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* INTERACTIVE LINK GENERATOR & ONBOARDING */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.15 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6"
-                            >
-                                <div className="border-b border-white/10 pb-5">
-                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                        <Link size={20} className="text-[#D4AF37]" /> Gerador Inteligente de Link de Afiliado
-                                    </h3>
-                                    <p className="text-xs text-neutral-400 mt-1">Esqueça links bagunçados. Insira seu link de afiliado Kiwify e gere URLs rastreadas automaticamente.</p>
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1.5 font-mono">
-                                                <Lock size={12} className="text-[#D4AF37]" /> Seu Link Base da Kiwify
-                                            </label>
-                                            <input 
-                                                type="text" 
-                                                value={affiliateLink} 
-                                                onChange={e => setAffiliateLink(e.target.value)}
-                                                className="w-full bg-[#050505] border border-white/10 rounded-xl px-4 py-3 text-xs font-mono text-neutral-300 outline-none focus:border-[#D4AF37] transition-colors"
-                                                placeholder="Ex: https://pay.kiwify.com.br/19v4nIa"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 flex items-center gap-1.5 font-mono">
-                                                <Search size={12} className="text-[#D4AF37]" /> Origem de Tráfego (Rastreamento SRC)
-                                            </label>
-                                            <select 
-                                                value={utmSource} 
-                                                onChange={e => setUtmSource(e.target.value)}
-                                                className="w-full bg-[#050505] border border-white/10 rounded-xl px-4 py-3 text-xs text-neutral-300 outline-none focus:border-[#D4AF37] cursor-pointer"
-                                            >
-                                                <option value="instagram_bio">Instagram Bio</option>
-                                                <option value="instagram_stories">Instagram Stories</option>
-                                                <option value="whatsapp_direto">WhatsApp Direto</option>
-                                                <option value="grupo_motos">Grupo de WhatsApp de Motos</option>
-                                                <option value="facebook_ads">Anúncios Patrocinados</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-[#050505]/80 border border-white/10 p-5 rounded-2xl flex flex-col justify-between space-y-4 shadow-inner">
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-[9px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-1">
-                                                    <ShieldCheck size={10} className="text-green-500" /> Link Rastreável Ready
-                                                </span>
-                                                <span className="bg-green-500/10 text-green-400 border border-green-500/25 text-[8px] font-black uppercase px-2 py-0.5 rounded">Ativo</span>
-                                            </div>
-                                            <div className="bg-zinc-950 border border-white/5 rounded-xl p-3.5 font-mono text-[10px] text-[#D4AF37] break-all select-all">
-                                                {generatedLink}
-                                            </div>
-                                        </div>
-
-                                        <button 
-                                            onClick={() => handleCopyText(generatedLink, 'tracking_link')}
-                                            className={`w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                                                copiedElementId === 'tracking_link'
-                                                    ? 'bg-green-600 text-white shadow-lg shadow-green-500/10'
-                                                    : 'bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 shadow-lg shadow-[#D4AF37]/15 active:scale-[0.98]'
-                                            }`}
-                                        >
-                                            {copiedElementId === 'tracking_link' ? (
-                                                <>
-                                                    <Check size={14} className="stroke-[3]" /> Link Copiado!
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Copy size={14} /> Copiar Link Otimizado
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="bg-[#050505] rounded-2xl border border-white/5 p-4 flex gap-3 items-start text-xs text-neutral-400">
-                                    <Clock className="text-[#D4AF37] shrink-0 mt-0.5" size={16} />
-                                    <div>
-                                        <strong className="text-white block font-black uppercase text-[10px] tracking-wider mb-0.5">Como funcionam os Cookies na Kiwify?</strong>
-                                        Os cookies de indicação duram <strong className="text-[#D4AF37]">180 dias</strong>. A comissão é atribuída pelo modelo de <strong className="text-white">Último Clique</strong> (se o cliente clicar em múltiplos links, quem mandou o último link leva a comissão).
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Copywriting swipes */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.2 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 shadow-xl space-y-6"
-                            >
-                                <div className="border-b border-white/10 pb-4">
-                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                        <Layers size={18} className="text-[#D4AF37]" /> Legendas e Copys Prontas (Abordagem de Alto Impacto)
-                                    </h3>
-                                    <p className="text-xs text-neutral-400 mt-1">
-                                        Copie os scripts de vendas abaixo. Ao clicar em copiar, o link personalizado gerado acima será anexado automaticamente no texto.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {SWIPES.map(swipe => (
-                                        <div key={swipe.id} className="bg-zinc-950 border border-white/10 rounded-xl overflow-hidden">
-                                            <div className="bg-zinc-900/40 px-4 py-3 border-b border-white/10 flex justify-between items-center">
-                                                <span className="text-xs font-bold text-white tracking-tight">{swipe.title}</span>
-                                                <button
-                                                    onClick={() => handleCopySwipe(swipe.text, swipe.id)}
-                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                                                        copiedSwipeId === swipe.id 
-                                                            ? 'bg-green-600 text-white' 
-                                                            : 'bg-black text-neutral-300 hover:text-white border border-white/10'
-                                                    }`}
-                                                >
-                                                    {copiedSwipeId === swipe.id ? (
-                                                        <>
-                                                            <Check size={12} className="stroke-[3]" /> Copiado com Link!
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Copy size={12} /> Copiar Texto
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                            <div className="p-4 text-xs text-neutral-400 font-medium whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto custom-scrollbar bg-black/40 font-mono">
-                                                {swipe.text.replace("[LINK-GERADO-ABAIXO]", generatedLink)}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-
-                            {/* Materials and Google Drive Access Card */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.25 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl space-y-6 relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300"
-                            >
-                                <div className="absolute top-0 right-0 w-60 h-60 bg-[#D4AF37]/5 rounded-full blur-[80px]" />
-                                <div className="border-b border-white/10 pb-5">
-                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                        <FolderOpen size={22} className="text-[#D4AF37]" /> Central de Materiais e Criativos
-                                    </h3>
-                                    <p className="text-xs text-neutral-400 mt-1 font-sans">
-                                        Acesse a nossa pasta no Google Drive com todas as imagens, vídeos, criativos para anúncios e recursos de divulgação para o Curso W-Tech.
-                                    </p>
-                                </div>
-
-                                <div className="grid md:grid-cols-3 gap-6">
-                                    <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
-                                        <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Vídeos & VSL</span>
-                                        <h4 className="text-xs font-bold text-white mb-1">Vídeos de Vendas</h4>
-                                        <p className="text-[10px] text-neutral-400 leading-relaxed">Vídeos em alta definição, depoimento de alunos e trechos das aulas prontas para rodar anúncios ou enviar direto no WhatsApp.</p>
-                                    </div>
-                                    <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
-                                        <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Fotos & Capas</span>
-                                        <h4 className="text-xs font-bold text-white mb-1">Banners & Mockups</h4>
-                                        <p className="text-[10px] text-neutral-400 leading-relaxed">Artes dos módulos, fotos do Alex ajustando motos, mockups da área de membros e logos oficiais em fundo transparente.</p>
-                                    </div>
-                                    <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
-                                        <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Roteiros & Textos</span>
-                                        <h4 className="text-xs font-bold text-white mb-1">Estrutura de Vendas</h4>
-                                        <p className="text-[10px] text-neutral-400 leading-relaxed">Sugestões de copys prontas para Stories, sequências de quebra de objeção no direct e scripts validados de fechamento.</p>
-                                    </div>
-                                </div>
-
+                            <div className="relative z-10 pt-6">
                                 <a 
                                     href={driveUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="w-full bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 text-sm font-black uppercase tracking-wider py-4 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-[#D4AF37]/10 hover:shadow-[#D4AF37]/20 active:scale-[0.99] text-center font-sans"
+                                    className="w-full bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 text-sm font-black uppercase tracking-wider py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all shadow-xl shadow-[#D4AF37]/10 hover:shadow-[#D4AF37]/20 active:scale-[0.99] text-center font-sans"
                                 >
                                     <span className="flex items-center justify-center gap-2">
                                         <ExternalLink size={18} className="stroke-[2.5]" /> Acessar Pasta de Criativos no Google Drive
                                     </span>
-                                    <span className="text-[10px] text-neutral-850 font-bold max-w-xl normal-case block">
-                                        Clique aqui para ter acesso aos materiais para você aprender a como vender e faturar com o curso de suspensão de regulagem para piloto da Wtech.
+                                    <span className="text-[10px] text-black/60 font-bold max-w-md normal-case block leading-tight">
+                                        Faça o download das mídias oficiais da W-Tech para começar suas divulgações e campanhas.
                                     </span>
                                 </a>
-                            </motion.div>
-
-                            {/* DEVELOPER HUB: KIWIFY WEBHOOK INTEGRATION */}
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.3 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6"
-                            >
-                                <div className="border-b border-white/10 pb-5">
-                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                        <Code size={20} className="text-[#D4AF37]" /> Integração Técnica: Webhooks & API
-                                    </h3>
-                                    <p className="text-xs text-neutral-400 mt-1">Quer automatizar sua entrega, rastrear em tempo real no seu CRM ou rodar scripts de funil? Configure Webhooks.</p>
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-8 items-start">
-                                    <div className="space-y-4 text-xs text-neutral-400 leading-relaxed">
-                                        <h4 className="font-display text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                                            <Terminal size={14} className="text-[#D4AF37]" /> Fluxo de Integração
-                                        </h4>
-                                        <p>
-                                            A Kiwify permite cadastrar URLs de webhook que disparam alertas instantâneos no momento exato em que uma compra é aprovada ou gerada.
-                                        </p>
-                                        <div className="space-y-3 bg-zinc-950 p-4 rounded-xl border border-white/10">
-                                            <div className="flex gap-2">
-                                                <span className="bg-[#D4AF37]/10 text-[#D4AF37] text-[9px] font-black px-1.5 py-0.5 rounded h-max">1</span>
-                                                <p className="text-[11px]">Vá no painel Kiwify {"->"} Aplicativos {"->"} Webhooks.</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="bg-[#D4AF37]/10 text-[#D4AF37] text-[9px] font-black px-1.5 py-0.5 rounded h-max">2</span>
-                                                <p className="text-[11px]">Crie um webhook para o evento "Compra Aprovada".</p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <span className="bg-[#D4AF37]/10 text-[#D4AF37] text-[9px] font-black px-1.5 py-0.5 rounded h-max">3</span>
-                                                <p className="text-[11px]">Caso utilize um webhook nosso para dashboard de afiliados, nos forneça o seu Token Secreto.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Mock Terminal */}
-                                    <div className="bg-[#050505] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                                        <div className="bg-zinc-950 px-4 py-2 border-b border-white/10 flex justify-between items-center">
-                                            <div className="flex gap-1.5">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-                                                <div className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]/75" />
-                                                <div className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
-                                            </div>
-                                            <span className="text-[9px] font-mono text-neutral-500">payload_example.json</span>
-                                        </div>
-                                        <div className="p-4 font-mono text-[9px] text-neutral-400 overflow-x-auto select-all max-h-56">
-                                            <pre className="leading-5">
-                                                <span className="text-neutral-500">{`{`}</span><br />
-                                                {`  `}
-                                                <span className="text-[#D4AF37]">"event"</span>: <span className="text-green-400">"ORDER_APPROVED"</span>,<br />
-                                                {`  `}
-                                                <span className="text-[#D4AF37]">"order_status"</span>: <span className="text-green-400">"approved"</span>,<br />
-                                                {`  `}
-                                                <span className="text-[#D4AF37]">"payment_method"</span>: <span className="text-green-400">"pix"</span>,<br />
-                                                {`  `}
-                                                <span className="text-[#D4AF37]">"total_amount"</span>: <span className="text-blue-400">347.00</span>,<br />
-                                                {`  `}
-                                                <span className="text-[#D4AF37]">"commission"</span>: <span className="text-neutral-500">{`{`}</span><br />
-                                                {`    `}
-                                                <span className="text-[#D4AF37]">"amount"</span>: <span className="text-blue-400">69.40</span>,<br />
-                                                {`    `}
-                                                <span className="text-[#D4AF37]">"percentage"</span>: <span className="text-blue-400">20</span><br />
-                                                {`  `}
-                                                <span className="text-neutral-500">{`}`}</span>,<br />
-                                                {`  `}
-                                                <span className="text-[#D4AF37]">"affiliate"</span>: <span className="text-neutral-500">{`{`}</span><br />
-                                                {`    `}
-                                                <span className="text-[#D4AF37]">"email"</span>: <span className="text-green-400">"seu-email@afiliados.com"</span><br />
-                                                {`  `}
-                                                <span className="text-neutral-500">{`}`}</span><br />
-                                                <span className="text-neutral-500">{`}`}</span>
-                                            </pre>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        {/* Right side: Step-by-step Sales Guide & VIP WhatsApp link */}
-                        <div className="lg:col-span-1 space-y-6">
-                            
-                            {/* VIP WhatsApp Group widget */}
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.4 }}
-                                className="bg-zinc-900/50 border border-green-500/30 rounded-3xl p-6 shadow-xl space-y-4 relative overflow-hidden hover:border-green-500/40 transition-colors"
-                            >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-[40px]" />
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-black shadow-lg shadow-green-500/20 shrink-0">
-                                        <MessageSquare size={22} fill="black" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-display font-black text-sm text-white uppercase tracking-tight">Grupo VIP de Afiliados</h4>
-                                        <span className="text-[9px] text-green-400 font-bold uppercase tracking-wider block mt-0.5">Suporte Direto</span>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-neutral-400 leading-relaxed font-medium">
-                                    Entre no grupo oficial dos parceiros de vendas da W-Tech. Receba atualizações de estoque, campanhas exclusivas e suporte individual de prospecção.
-                                </p>
-                                <a 
-                                    href="https://wa.me/5512997146957"
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-black py-4 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:from-green-400 hover:to-green-500 transition-all active:scale-[0.98] shadow-lg shadow-green-500/10 text-center font-display"
-                                >
-                                    Acessar Grupo VIP <ArrowRight size={14} strokeWidth={2.5} />
-                                </a>
-                            </motion.div>
-
-                            {/* Step-by-step Quick Sales Guide */}
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.4, delay: 0.1 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 shadow-xl space-y-5"
-                            >
-                                <h3 className="font-display text-sm font-black uppercase tracking-widest text-white border-b border-white/10 pb-3 flex items-center gap-2">
-                                    <BookOpen size={16} className="text-[#D4AF37]" /> Manual do Parceiro W-Tech
-                                </h3>
-
-                                <div className="space-y-4">
-                                    {[
-                                        {
-                                            step: '01',
-                                            title: 'Onboarding & Afiliação',
-                                            text: 'Acesse o convite da Kiwify enviado pelo produtor W-Tech e confirme a afiliação para liberar seu painel.'
-                                        },
-                                        {
-                                            step: '02',
-                                            title: 'Copie seu Checkout',
-                                            text: 'Copie o link seguro do checkout promocional (R$ 347,00) na aba de links da Kiwify.'
-                                        },
-                                        {
-                                            step: '03',
-                                            title: 'Insira no Rastreamento',
-                                            text: 'Use o gerador de link desta página para anexar a origem (Ex: instagram) e acompanhar de onde vem cada clique.'
-                                        },
-                                        {
-                                            step: '04',
-                                            title: 'Aborde Pilotos',
-                                            text: 'Foque em grupos de motocross, trilha e fóruns. Quebre objeções tirando dúvidas técnicas simples e oferte o lote promocional.'
-                                        }
-                                    ].map((manual, idx) => (
-                                        <div key={idx} className="flex gap-3.5 bg-[#050505]/40 p-4 rounded-xl border border-white/5 hover:border-[#D4AF37]/10 transition-colors">
-                                            <span className="text-xs font-mono font-black text-[#D4AF37] shrink-0 mt-0.5">{manual.step}</span>
-                                            <div className="space-y-1">
-                                                <h4 className="text-xs font-bold text-white leading-tight">{manual.title}</h4>
-                                                <p className="text-[11px] text-neutral-400 font-medium leading-relaxed">{manual.text}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        </div>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
                 )}
+
+
 
                 {/* TAB CONTENT: ADMIN AFFILIATE GESTION LIST */}
                 {activeTab === 'admin' && !publicMode && (
