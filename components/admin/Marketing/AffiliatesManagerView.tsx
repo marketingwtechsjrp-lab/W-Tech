@@ -546,9 +546,9 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                         
                                         <div className="space-y-4 text-xs text-neutral-400">
                                             <div className="border-l-2 border-[#D4AF37]/40 pl-3.5 py-0.5 space-y-1">
-                                                <strong className="text-white text-xs block">1. A Apresentação de Vinícius Saldanha</strong>
+                                                <strong className="text-white text-xs block">1. A Apresentação de Alex Crepaldi</strong>
                                                 <p className="leading-relaxed">
-                                                    A página exibe um vídeo detalhado onde o Vinícius destrincha por que 90% dos pilotos andam com suspensão desregulada. Direcione o cliente a assistir o vídeo explicativo.
+                                                    A página exibe um vídeo detalhado onde o Alex destrincha por que 90% dos pilotos andam com suspensão desregulada. Direcione o cliente a assistir o vídeo explicativo.
                                                 </p>
                                             </div>
                                             <div className="border-l-2 border-[#D4AF37]/40 pl-3.5 py-0.5 space-y-1">
