@@ -5,7 +5,7 @@ import {
     Users, Search, DollarSign, Award, Download, Copy, Check, MessageSquare, 
     Share2, ArrowRight, ShieldCheck, Flame, BookOpen, Layers, CheckCircle,
     ExternalLink, Coins, Sparkles, AlertCircle, Terminal, HelpCircle, Eye,
-    Link, Code, Clock, Lock, ChevronRight, FolderOpen
+    Link, Code, Clock, Lock, ChevronRight, FolderOpen, TrendingUp
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 
@@ -464,7 +464,84 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
 
                 {/* TAB CONTENT: AFFILIATES RESOURCE PORTAL */}
                 {activeTab === 'portal' && (
-                    <div className="grid lg:grid-cols-3 gap-8 items-start">
+                    <div className="space-y-10 animate-in fade-in duration-300">
+                        
+                        {/* Traffic Proof & ROI Section */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.1 }}
+                            className="bg-zinc-900/40 border border-white/5 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/20 transition-all duration-300"
+                        >
+                            <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/5 rounded-full blur-[100px] pointer-events-none" />
+                            <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
+                            
+                            <div className="grid md:grid-cols-5 gap-8 items-center relative z-10">
+                                {/* Left: Persuasive Text Content (3 columns) */}
+                                <div className="md:col-span-3 space-y-6">
+                                    <div className="inline-flex items-center gap-2 border border-[#D4AF37]/20 bg-[#D4AF37]/5 backdrop-blur-md px-3.5 py-1 rounded-full">
+                                        <TrendingUp size={12} className="text-[#D4AF37]" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#D4AF37]">Oportunidade Única de Mercado</span>
+                                    </div>
+                                    <h2 className="font-display text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-tight text-white leading-none">
+                                        Produto Único, Demanda Represada <br />
+                                        e <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-yellow-400 to-amber-600">ROI Comprovado</span>
+                                    </h2>
+                                    <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+                                        Diferente de nichos saturados e genéricos do marketing digital, o <span className="text-white">Curso de Regulagem de Suspensão W-Tech</span> atende a uma necessidade real, técnica e extremamente dolorosa para os pilotos Off-Road (motocross, trilha e enduro). Pilotos sofrem constantemente com suspensões mal reguladas que causam fadiga, perda de rendimento e riscos de queda. O curso ensina o método profissional de acerto prático de cliques, sag e hidráulica em casa, eliminando a dependência de oficinas caras.
+                                    </p>
+                                    
+                                    <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-2 hover:border-[#D4AF37]/10 transition-colors">
+                                            <h4 className="text-xs font-black uppercase text-white flex items-center gap-2">
+                                                <span className="flex h-2 w-2 relative shrink-0">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                                </span>
+                                                Sem Concorrência Direta
+                                            </h4>
+                                            <p className="text-[10px] text-neutral-400 leading-relaxed">
+                                                Não há outro curso prático de suspensão Off-Road focado em pilotos no Brasil. A autoridade inquestionável do Alex Crepaldi no acerto técnico converte cliques de forma muito mais simples.
+                                            </p>
+                                        </div>
+                                        <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-2 hover:border-[#D4AF37]/10 transition-colors">
+                                            <h4 className="text-xs font-black uppercase text-[#D4AF37] flex items-center gap-1.5">
+                                                <Coins size={14} /> Ticket Baixo & Alto ROI
+                                            </h4>
+                                            <p className="text-[10px] text-neutral-400 leading-relaxed">
+                                                O valor promocional de R$ 347,00 (em até 12x de R$ 34,70) estimula a compra imediata por impulso, maximizando o ROI e minimizando o custo de aquisição (CPA) nas suas campanhas.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Right: Image Proof Showcase (2 columns) */}
+                                <div className="md:col-span-2 flex flex-col gap-4">
+                                    <div className="bg-black/60 border border-white/10 rounded-2xl p-2.5 shadow-lg group-hover:border-[#D4AF37]/25 transition-all duration-300 overflow-hidden relative">
+                                        <div className="absolute top-2 right-2 bg-green-500/20 text-green-400 border border-green-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-full tracking-wider z-10">
+                                            ROI & Vendas
+                                        </div>
+                                        <img 
+                                            src="/images/traffic-stats-1.png" 
+                                            alt="Métricas reais de ROI" 
+                                            className="w-full h-auto rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-[1.02]" 
+                                        />
+                                    </div>
+                                    <div className="bg-black/60 border border-white/10 rounded-2xl p-2.5 shadow-lg group-hover:border-[#D4AF37]/25 transition-all duration-300 overflow-hidden relative">
+                                        <div className="absolute top-2 right-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-full tracking-wider z-10">
+                                            Alcance & Custo
+                                        </div>
+                                        <img 
+                                            src="/images/traffic-stats-2.png" 
+                                            alt="Métricas reais de custo e alcance" 
+                                            className="w-full h-auto rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-[1.02]" 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        <div className="grid lg:grid-cols-3 gap-8 items-start">
                         
                         {/* Left & Middle columns: Resources, Simulator, Copys, and Strategy Guides */}
                         <div className="lg:col-span-2 space-y-10">
@@ -972,6 +1049,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                             </motion.div>
                         </div>
                     </div>
+                </div>
                 )}
 
                 {/* TAB CONTENT: ADMIN AFFILIATE GESTION LIST */}
