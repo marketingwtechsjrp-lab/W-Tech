@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GridVignetteBackground } from '../../ui/vignette-grid-background';
 import { 
-    Users, Search, Flame, CheckCircle, ExternalLink, FolderOpen, MessageSquare, TrendingUp, Coins
+    Users, Search, Flame, CheckCircle, ExternalLink, FolderOpen, MessageSquare, TrendingUp, Coins, Play
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 
@@ -106,6 +106,39 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
     const [driveUrl, setDriveUrl] = useState('https://drive.google.com/drive/folders/1NDeFZ01IQ8W1c9j8S5uH47LqGzPElgoC?usp=sharing');
     const [affiliates, setAffiliates] = useState<Affiliate[]>(AFFILIATES_DATA);
     const [loadingAffiliates, setLoadingAffiliates] = useState(false);
+
+    // Portal VSL and Simulator states
+    const [monthlySales, setMonthlySales] = useState(15);
+    const [videoPlaying, setVideoPlaying] = useState(false);
+    const [videoActivated, setVideoActivated] = useState(false);
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+
+    const handlePlayVideo = () => {
+        setVideoActivated(true);
+        requestAnimationFrame(() => {
+            if (videoRef.current) {
+                videoRef.current.load();
+                videoRef.current.play().catch(() => { });
+                setVideoPlaying(true);
+            }
+        });
+    };
+
+    // Sales calculator values
+    const coursePrice = 347.00;
+    const commissionRate = 0.20;
+    const commissionPerSale = coursePrice * commissionRate; // R$ 69.40
+    const estimatedEarnings = monthlySales * commissionPerSale;
+
+    const getEarningLevel = (earnings: number) => {
+        if (earnings >= 10000) return { label: '🏆 W-Tech Black Legend', color: 'from-[#D4AF37] via-amber-500 to-[#D4AF37]', text: 'text-black font-black' };
+        if (earnings >= 5000) return { label: '🔥 W-Tech Platinum Elite', color: 'from-neutral-900 via-[#D4AF37] to-neutral-900', text: 'text-[#D4AF37] font-black border border-[#D4AF37]/30' };
+        if (earnings >= 2500) return { label: '🌟 W-Tech Gold Partner', color: 'from-[#D4AF37] to-amber-500', text: 'text-black font-black' };
+        if (earnings >= 1000) return { label: '✨ W-Tech Silver Partner', color: 'from-zinc-300 to-zinc-500', text: 'text-black font-bold' };
+        return { label: '🏁 W-Tech Bronze Affiliate', color: 'from-amber-700 to-amber-900', text: 'text-white' };
+    };
+
+    const earningLevel = getEarningLevel(estimatedEarnings);
 
     useEffect(() => {
         if (publicMode) {
@@ -251,6 +284,47 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                 {/* TAB CONTENT: AFFILIATES RESOURCE PORTAL */}
                 {activeTab === 'portal' && (
                     <div className="flex flex-col items-center gap-12 w-full py-12 animate-in fade-in duration-300">
+                        {/* Video VSL Player at the Top */}
+                        <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 text-center">
+                            <span className="text-[#D4AF37] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Apresentação para Parceiros</span>
+                            <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white">
+                                Por que vender o Curso <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-amber-500">W-Tech</span>?
+                            </h2>
+                            <div 
+                                className="relative w-full aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group cursor-pointer mt-2"
+                                onClick={handlePlayVideo}
+                            >
+                                <video
+                                    ref={videoRef}
+                                    poster="/images/vsl-thumbnail.webp"
+                                    controls={videoPlaying}
+                                    playsInline
+                                    preload="none"
+                                    className="w-full h-full object-cover"
+                                    onPlay={() => setVideoPlaying(true)}
+                                    onPause={() => setVideoPlaying(false)}
+                                >
+                                    {videoActivated && (
+                                        <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
+                                    )}
+                                    Seu navegador não suporta vídeos.
+                                </video>
+
+                                {!videoPlaying && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors z-20">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-[#D4AF37]/40 rounded-full animate-ping scale-150 opacity-20" />
+                                            <div className="absolute inset-0 bg-[#D4AF37]/30 rounded-full animate-pulse scale-125 opacity-40" />
+                                            <div className="relative w-20 h-20 bg-[#D4AF37] rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(212,175,55,0.6)] group-hover:scale-110 transition-transform">
+                                                <Play fill="black" size={32} className="text-black ml-1" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 pointer-events-none border-2 border-[#D4AF37]/20 rounded-3xl z-10" />
+                            </div>
+                        </div>
+
                         {/* Resource Card */}
                         <motion.div 
                             initial={{ opacity: 0, y: 25 }}
@@ -318,6 +392,63 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                         Participe do grupo oficial de suporte, novidades e avisos.
                                     </span>
                                 </a>
+                            </div>
+                        </motion.div>
+
+                        {/* Interactive Commissions Calculator */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                            className="bg-zinc-900/50 border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300 w-full"
+                        >
+                            <div className="absolute top-0 right-0 w-60 h-60 bg-[#D4AF37]/5 rounded-full blur-[80px]" />
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 pb-5 mb-6 gap-3 text-left">
+                                <div>
+                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2.5">
+                                        <Coins size={22} className="text-[#D4AF37]" /> Simule seus Ganhos Mensais
+                                    </h3>
+                                    <p className="text-xs text-neutral-400 mt-1">Arrasta o slider abaixo para simular sua comissão de {(commissionRate * 100)}% direta.</p>
+                                </div>
+                                <span className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30 text-[9px] font-black uppercase px-3.5 py-1.5 rounded-full tracking-widest shrink-0 font-sans">
+                                    Comissão por venda: R$ {commissionPerSale.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-8 items-center text-left">
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center text-xs font-black text-neutral-400 uppercase tracking-wider">
+                                        <span>Meta de Indicações</span>
+                                        <span className="text-[#D4AF37] text-lg font-mono font-black bg-black/60 px-4 py-1.5 rounded-xl border border-white/10">
+                                            {monthlySales} {monthlySales === 1 ? 'venda' : 'vendas'}
+                                        </span>
+                                    </div>
+                                    <input 
+                                        type="range"
+                                        min="1"
+                                        max="100"
+                                        className="w-full h-2 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-[#D4AF37] hover:accent-[#D4AF37]/80 transition-all"
+                                        value={monthlySales}
+                                        onChange={e => setMonthlySales(parseInt(e.target.value))}
+                                    />
+                                    <div className="flex justify-between text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
+                                        <span>1 Venda</span>
+                                        <span>50 Vendas</span>
+                                        <span>100 Vendas</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#050505]/95 border border-white/10 p-6 rounded-2xl flex flex-col items-center text-center space-y-3 shadow-inner relative overflow-hidden">
+                                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+                                        Sua comissão estimada:
+                                    </span>
+                                    <span className="text-4xl font-black text-green-400 font-mono tracking-tight animate-pulse">
+                                        R$ {estimatedEarnings.toFixed(2)}
+                                    </span>
+                                    <div className={`bg-gradient-to-r ${earningLevel.color} ${earningLevel.text} text-[9px] font-black uppercase px-3.5 py-1.5 rounded-xl tracking-widest mt-1 shadow-lg transition-all duration-300`}>
+                                        {earningLevel.label}
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
 
