@@ -192,8 +192,8 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
 
     // Sales calculator values
     const coursePrice = 347.00;
-    const commissionRate = 0.30;
-    const commissionPerSale = coursePrice * commissionRate; // R$ 104.10
+    const commissionRate = 0.20;
+    const commissionPerSale = coursePrice * commissionRate; // R$ 69.40
     const estimatedEarnings = monthlySales * commissionPerSale;
 
     const getEarningLevel = (earnings: number) => {
@@ -211,7 +211,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
         {
             id: 1,
             title: "📱 WhatsApp (Abordagem Direta para Pilotos)",
-            text: "Olá! Tudo bem? Vi que você é piloto e está sempre acelerando forte. Cara, o Vinícius da W-Tech liberou uma oportunidade única do novo Curso Online de Regulagem de Suspensão Para Pilotos.\n\nEles estão fechando as últimas vagas com desconto exclusivo: de R$ 997 por apenas R$ 347. É o melhor investimento para aprender a regular cliques, sag e hidráulica em casa, ganhando segurança e tempo de volta.\n\nConfere os detalhes na página oficial deles:\n\n👉 [LINK-GERADO-ABAIXO]"
+            text: "Olá! Tudo bem? Vi que você é piloto e está sempre acelerando forte. Cara, o Alex da W-Tech liberou uma oportunidade única do novo Curso Online de Regulagem de Suspensão Para Pilotos.\n\nEles estão fechando as últimas vagas com desconto exclusivo: de R$ 997 por apenas R$ 347. É o melhor investimento para aprender a regular cliques, sag e hidráulica em casa, ganhando segurança e tempo de volta.\n\nConfere os detalhes na página oficial deles:\n\n👉 [LINK-GERADO-ABAIXO]"
         },
         {
             id: 2,
@@ -482,10 +482,10 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                         <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2.5">
                                             <Coins size={22} className="text-[#D4AF37]" /> Simule seus Ganhos Mensais
                                         </h3>
-                                        <p className="text-xs text-neutral-400 mt-1">Arrasta o slider abaixo para simular sua comissão de 30% direta.</p>
+                                        <p className="text-xs text-neutral-400 mt-1">Arrasta o slider abaixo para simular sua comissão de {(commissionRate * 100)}% direta.</p>
                                     </div>
                                     <span className="bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30 text-[9px] font-black uppercase px-3.5 py-1.5 rounded-full tracking-widest shrink-0">
-                                        Comissão por venda: R$ 104,10
+                                        Comissão por venda: R$ {commissionPerSale.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                 </div>
 
@@ -874,9 +874,9 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                                 {`  `}
                                                 <span className="text-[#D4AF37]">"commission"</span>: <span className="text-neutral-500">{`{`}</span><br />
                                                 {`    `}
-                                                <span className="text-[#D4AF37]">"amount"</span>: <span className="text-blue-400">104.10</span>,<br />
+                                                <span className="text-[#D4AF37]">"amount"</span>: <span className="text-blue-400">69.40</span>,<br />
                                                 {`    `}
-                                                <span className="text-[#D4AF37]">"percentage"</span>: <span className="text-blue-400">30</span><br />
+                                                <span className="text-[#D4AF37]">"percentage"</span>: <span className="text-blue-400">20</span><br />
                                                 {`  `}
                                                 <span className="text-neutral-500">{`}`}</span>,<br />
                                                 {`  `}
