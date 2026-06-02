@@ -283,9 +283,9 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
 
                 {/* TAB CONTENT: AFFILIATES RESOURCE PORTAL */}
                 {activeTab === 'portal' && (
-                    <div className="flex flex-col items-center gap-12 w-full py-12 animate-in fade-in duration-300">
+                    <div className="flex flex-col items-center gap-12 w-full py-12 animate-in fade-in duration-300 max-w-5xl mx-auto">
                         {/* Video VSL Player at the Top */}
-                        <div className="w-full max-w-3xl mx-auto flex flex-col gap-4 text-center">
+                        <div className="w-full flex flex-col gap-4 text-center">
                             <span className="text-[#D4AF37] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Apresentação para Parceiros</span>
                             <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white">
                                 Por que vender o Curso <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-amber-500">W-Tech</span>?
@@ -330,7 +330,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                             initial={{ opacity: 0, y: 25 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
-                            className="w-full max-w-2xl bg-zinc-900/50 border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300 text-center space-y-8"
+                            className="w-full bg-zinc-900/50 border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300 text-center space-y-8"
                         >
                             <div className="absolute top-0 right-0 w-80 h-80 bg-[#D4AF37]/5 rounded-full blur-[100px] pointer-events-none" />
                             <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
