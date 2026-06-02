@@ -20,7 +20,11 @@ const AdminIntegrations = () => {
         checkoutDiretoEnabled: false,
         googleClientId: '',
         googleClientSecret: '',
-        ga4PropertyId: ''
+        ga4PropertyId: '',
+        kiwifyClientId: '',
+        kiwifyClientSecret: '',
+        kiwifyAccountId: '',
+        affiliatesDriveUrl: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -64,7 +68,11 @@ const AdminIntegrations = () => {
                 checkoutDiretoEnabled: configMap['checkout_direto_habilitado'] === 'true',
                 googleClientId: configMap['google_oauth_client_id'] || '',
                 googleClientSecret: configMap['google_oauth_client_secret'] || '',
-                ga4PropertyId: configMap['ga4_property_id'] || ''
+                ga4PropertyId: configMap['ga4_property_id'] || '',
+                kiwifyClientId: configMap['kiwify_client_id'] || '',
+                kiwifyClientSecret: configMap['kiwify_client_secret'] || '',
+                kiwifyAccountId: configMap['kiwify_account_id'] || '',
+                affiliatesDriveUrl: configMap['affiliates_drive_url'] || ''
             });
         }
     };
@@ -194,7 +202,11 @@ const AdminIntegrations = () => {
                 { key: 'checkout_direto_habilitado', value: String(globalConfig.checkoutDiretoEnabled) },
                 { key: 'google_oauth_client_id', value: globalConfig.googleClientId },
                 { key: 'google_oauth_client_secret', value: globalConfig.googleClientSecret },
-                { key: 'ga4_property_id', value: globalConfig.ga4PropertyId }
+                { key: 'ga4_property_id', value: globalConfig.ga4PropertyId },
+                { key: 'kiwify_client_id', value: globalConfig.kiwifyClientId },
+                { key: 'kiwify_client_secret', value: globalConfig.kiwifyClientSecret },
+                { key: 'kiwify_account_id', value: globalConfig.kiwifyAccountId },
+                { key: 'affiliates_drive_url', value: globalConfig.affiliatesDriveUrl }
             ];
 
             for (const update of updates) {
@@ -518,6 +530,63 @@ const AdminIntegrations = () => {
                         </button>
                     </div>
                 )}
+            </div>
+
+            {/* 5.5. Kiwify & Affiliates Config */}
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-2 mb-4">
+                    <Server className="text-purple-600 dark:text-purple-400" />
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Integração Kiwify & Portal de Afiliados</h3>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-6 font-medium">
+                    Configure as credenciais da API Pública da Kiwify para sincronizar a lista de afiliados em tempo real e o link do Google Drive com criativos/materiais promocionais.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Kiwify Client ID</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.kiwifyClientId}
+                            onChange={e => setGlobalConfig({ ...globalConfig, kiwifyClientId: e.target.value })}
+                            placeholder="Obtido em Apps -> API na Kiwify"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Kiwify Client Secret</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            value={globalConfig.kiwifyClientSecret}
+                            onChange={e => setGlobalConfig({ ...globalConfig, kiwifyClientSecret: e.target.value })}
+                            placeholder="client_secret da Kiwify"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Kiwify Account ID</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.kiwifyAccountId}
+                            onChange={e => setGlobalConfig({ ...globalConfig, kiwifyAccountId: e.target.value })}
+                            placeholder="x-kiwify-account-id da Kiwify"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Google Drive (Materiais de Afiliados)</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all"
+                            value={globalConfig.affiliatesDriveUrl}
+                            onChange={e => setGlobalConfig({ ...globalConfig, affiliatesDriveUrl: e.target.value })}
+                            placeholder="https://drive.google.com/drive/folders/..."
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-6">
+                    <button onClick={handleSaveGlobalConfig} disabled={loading} className="bg-gray-800 dark:bg-white text-white dark:text-black px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center gap-2 shadow-sm">
+                        <Save size={14} /> Salvar Integração Kiwify
+                    </button>
+                </div>
             </div>
 
             {/* 6. Google Analytics / Search Console Config */}

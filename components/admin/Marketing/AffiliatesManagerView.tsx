@@ -5,8 +5,9 @@ import {
     Users, Search, DollarSign, Award, Download, Copy, Check, MessageSquare, 
     Share2, ArrowRight, ShieldCheck, Flame, BookOpen, Layers, CheckCircle,
     ExternalLink, Coins, Sparkles, AlertCircle, Terminal, HelpCircle, Eye,
-    Link, Code, Clock, Lock, ChevronRight
+    Link, Code, Clock, Lock, ChevronRight, FolderOpen
 } from 'lucide-react';
+import { supabase } from '../../../lib/supabaseClient';
 
 interface Affiliate {
     name: string;
@@ -110,6 +111,11 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
     const [copiedElementId, setCopiedElementId] = useState<string | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     
+    // Config states
+    const [driveUrl, setDriveUrl] = useState('https://drive.google.com/drive/folders/1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A');
+    const [affiliates, setAffiliates] = useState<Affiliate[]>(AFFILIATES_DATA);
+    const [loadingAffiliates, setLoadingAffiliates] = useState(false);
+    
     // Link tracking generator states
     const [affiliateLink, setAffiliateLink] = useState('https://pay.kiwify.com.br/19v4nIa');
     const [utmSource, setUtmSource] = useState('instagram_bio');
@@ -120,6 +126,50 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
             setActiveTab('portal');
         }
     }, [publicMode]);
+
+    useEffect(() => {
+        const fetchDriveUrl = async () => {
+            try {
+                const { data } = await supabase
+                    .from('SITE_Config')
+                    .select('value')
+                    .eq('key', 'affiliates_drive_url')
+                    .single();
+                if (data && data.value) {
+                    setDriveUrl(data.value);
+                }
+            } catch (e) {
+                console.error("Error fetching drive url:", e);
+            }
+        };
+        fetchDriveUrl();
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'admin' && !publicMode) {
+            const fetchKiwifyAffiliates = async () => {
+                setLoadingAffiliates(true);
+                try {
+                    const { data } = await supabase.functions.invoke('get-kiwify-affiliates');
+                    if (data && data.success && data.affiliates && data.affiliates.length > 0) {
+                        const mapped = data.affiliates.map((aff: any) => ({
+                            name: aff.name || aff.full_name || '',
+                            email: aff.email || '',
+                            company: aff.company_name || '',
+                            doc: aff.cpf_cnpj || '',
+                            status: aff.status || 'active'
+                        }));
+                        setAffiliates(mapped);
+                    }
+                } catch (e) {
+                    console.error("Error fetching Kiwify affiliates:", e);
+                } finally {
+                    setLoadingAffiliates(false);
+                }
+            };
+            fetchKiwifyAffiliates();
+        }
+    }, [activeTab, publicMode]);
 
     // Live update for tracking link generator
     useEffect(() => {
@@ -133,11 +183,11 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
     }, [affiliateLink, utmSource]);
 
     // Filtered affiliates for Admin view
-    const filteredAffiliates = AFFILIATES_DATA.filter(aff => 
-        aff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        aff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        aff.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        aff.doc.includes(searchTerm)
+    const filteredAffiliates = affiliates.filter(aff => 
+        (aff.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (aff.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (aff.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (aff.doc || '').includes(searchTerm)
     );
 
     // Sales calculator values
@@ -705,95 +755,54 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                 </div>
                             </motion.div>
 
-                            {/* Creatives downloads grid (Featuring actual images from the Sales LP) */}
+                            {/* Materials and Google Drive Access Card */}
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, delay: 0.25 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 shadow-xl space-y-6"
+                                className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl space-y-6 relative overflow-hidden group hover:border-[#D4AF37]/30 transition-all duration-300"
                             >
-                                <div className="border-b border-white/10 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div>
-                                        <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                            <Award size={18} className="text-[#D4AF37]" /> Imagens e Criativos Oficiais da LP de Vendas
-                                        </h3>
-                                        <p className="text-xs text-neutral-400 mt-1 font-sans">
-                                            Faça o download das fotos de alta resolução e banners oficiais utilizados na nossa Landing Page para usar em seus anúncios e publicações.
-                                        </p>
+                                <div className="absolute top-0 right-0 w-60 h-60 bg-[#D4AF37]/5 rounded-full blur-[80px]" />
+                                <div className="border-b border-white/10 pb-5">
+                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                                        <FolderOpen size={22} className="text-[#D4AF37]" /> Central de Materiais e Criativos
+                                    </h3>
+                                    <p className="text-xs text-neutral-400 mt-1 font-sans">
+                                        Acesse a nossa pasta no Google Drive com todas as imagens, vídeos, criativos para anúncios e recursos de divulgação para o Curso W-Tech.
+                                    </p>
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-6">
+                                    <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                                        <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Vídeos & VSL</span>
+                                        <h4 className="text-xs font-bold text-white mb-1">Vídeos de Vendas</h4>
+                                        <p className="text-[10px] text-neutral-400 leading-relaxed">Vídeos em alta definição, depoimento de alunos e trechos das aulas prontas para rodar anúncios ou enviar direto no WhatsApp.</p>
+                                    </div>
+                                    <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                                        <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Fotos & Capas</span>
+                                        <h4 className="text-xs font-bold text-white mb-1">Banners & Mockups</h4>
+                                        <p className="text-[10px] text-neutral-400 leading-relaxed">Artes dos módulos, fotos do Alex ajustando motos, mockups da área de membros e logos oficiais em fundo transparente.</p>
+                                    </div>
+                                    <div className="bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                                        <span className="text-[9px] font-black text-[#D4AF37] uppercase tracking-wider block mb-1">Roteiros & Textos</span>
+                                        <h4 className="text-xs font-bold text-white mb-1">Estrutura de Vendas</h4>
+                                        <p className="text-[10px] text-neutral-400 leading-relaxed">Sugestões de copys prontas para Stories, sequências de quebra de objeção no direct e scripts validados de fechamento.</p>
                                     </div>
                                 </div>
 
-                                {/* Category Tabs */}
-                                <div className="flex flex-wrap gap-2 pb-2">
-                                    {[
-                                        { id: 'all', label: 'Todos os Criativos' },
-                                        { id: 'Capa & Banners', label: 'Capa & Banners' },
-                                        { id: 'Módulos do Curso', label: 'Módulos do Curso' },
-                                        { id: 'Público-Alvo', label: 'Público-Alvo' }
-                                    ].map(cat => (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() => setSelectedCategory(cat.id)}
-                                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${
-                                                selectedCategory === cat.id
-                                                    ? 'bg-[#D4AF37] text-black font-extrabold shadow-lg shadow-[#D4AF37]/10'
-                                                    : 'bg-zinc-950 text-neutral-400 border border-white/10 hover:text-white hover:border-[#D4AF37]/30'
-                                            }`}
-                                        >
-                                            {cat.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                                    {filteredCreatives.map((creative, idx) => (
-                                        <motion.div 
-                                            key={`${creative.title}-${idx}`}
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ duration: 0.2 }}
-                                            className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden flex flex-col justify-between p-4 relative group hover:border-[#D4AF37]/30 transition-all duration-300"
-                                        >
-                                            <div className="space-y-3.5">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 px-2.5 py-0.5 rounded-lg inline-block">
-                                                        {creative.type}
-                                                    </span>
-                                                    <span className="text-[9px] text-neutral-500 font-mono">{creative.size}</span>
-                                                </div>
-                                                
-                                                {/* High-fidelity Real Image Preview */}
-                                                <div className="w-full h-40 bg-zinc-900 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
-                                                    <img 
-                                                        src={creative.image} 
-                                                        alt={creative.title} 
-                                                        className="w-full h-full object-cover object-top opacity-70 group-hover:scale-102 group-hover:opacity-90 transition-all duration-300"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                                                    <div className="absolute bottom-3 left-3 right-3 text-left">
-                                                        <span className="text-[7px] font-black text-[#D4AF37] uppercase block tracking-wider mb-0.5">{creative.category}</span>
-                                                        <span className="text-xs font-black text-white uppercase font-display leading-tight tracking-tight">{creative.previewText}</span>
-                                                    </div>
-                                                </div>
-
-                                                <h4 className="text-xs font-bold text-white leading-snug group-hover:text-[#D4AF37] transition-colors">
-                                                    {creative.title}
-                                                </h4>
-                                            </div>
-                                            
-                                            <a 
-                                                href={creative.image}
-                                                download
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="w-full mt-4 bg-[#050505] border border-white/10 text-neutral-300 hover:text-black hover:bg-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm block text-center"
-                                            >
-                                                <Download size={12} /> Download em Alta
-                                            </a>
-                                        </motion.div>
-                                    ))}
-                                </div>
+                                <a 
+                                    href={driveUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-full bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 text-sm font-black uppercase tracking-wider py-4 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-lg shadow-[#D4AF37]/10 hover:shadow-[#D4AF37]/20 active:scale-[0.99] text-center font-sans"
+                                >
+                                    <span className="flex items-center justify-center gap-2">
+                                        <ExternalLink size={18} className="stroke-[2.5]" /> Acessar Pasta de Criativos no Google Drive
+                                    </span>
+                                    <span className="text-[10px] text-neutral-850 font-bold max-w-xl normal-case block">
+                                        Clique aqui para ter acesso aos materiais para você aprender a como vender e faturar com o curso de suspensão de regulagem para piloto da Wtech.
+                                    </span>
+                                </a>
                             </motion.div>
 
                             {/* DEVELOPER HUB: KIWIFY WEBHOOK INTEGRATION */}
@@ -996,27 +1005,34 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {filteredAffiliates.map((aff, idx) => (
-                                        <tr key={idx} className="hover:bg-white/5 transition-colors text-xs font-medium text-neutral-300">
-                                            <td className="p-4 font-bold text-white">{aff.name}</td>
-                                            <td className="p-4 text-neutral-400">{aff.company || '-'}</td>
-                                            <td className="p-4 font-mono text-[11px] text-[#D4AF37]/80">{aff.email}</td>
-                                            <td className="p-4 font-mono">{aff.doc || '-'}</td>
-                                            <td className="p-4">
-                                                <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[9px] font-black uppercase px-2.5 py-0.5 rounded tracking-wide flex items-center gap-1.5 w-max">
-                                                    <CheckCircle size={10} /> Ativo
-                                                </span>
+                                    {loadingAffiliates ? (
+                                        <tr>
+                                            <td colSpan={5} className="p-12 text-center text-neutral-500 font-medium">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4AF37] mx-auto mb-3" />
+                                                <p className="text-sm text-neutral-400 font-medium">Carregando afiliados da Kiwify...</p>
                                             </td>
                                         </tr>
-                                    ))}
-
-                                    {filteredAffiliates.length === 0 && (
+                                    ) : filteredAffiliates.length === 0 ? (
                                         <tr>
                                             <td colSpan={5} className="p-12 text-center text-neutral-500 font-medium">
                                                 <Users className="mx-auto mb-3 opacity-20" size={48} />
                                                 <p className="text-sm">Nenhum afiliado encontrado.</p>
                                             </td>
                                         </tr>
+                                    ) : (
+                                        filteredAffiliates.map((aff, idx) => (
+                                            <tr key={idx} className="hover:bg-white/5 transition-colors text-xs font-medium text-neutral-300">
+                                                <td className="p-4 font-bold text-white">{aff.name}</td>
+                                                <td className="p-4 text-neutral-400">{aff.company || '-'}</td>
+                                                <td className="p-4 font-mono text-[11px] text-[#D4AF37]/80">{aff.email}</td>
+                                                <td className="p-4 font-mono">{aff.doc || '-'}</td>
+                                                <td className="p-4">
+                                                    <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[9px] font-black uppercase px-2.5 py-0.5 rounded tracking-wide flex items-center gap-1.5 w-max">
+                                                        <CheckCircle size={10} /> Ativo
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
                                     )}
                                 </tbody>
                             </table>
