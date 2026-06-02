@@ -522,7 +522,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                             ROI & Vendas
                                         </div>
                                         <img 
-                                            src="/images/traffic-stats-1.png" 
+                                            src="/images/traffic-stats-1.jpeg" 
                                             alt="Métricas reais de ROI" 
                                             className="w-full h-auto rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-[1.02]" 
                                         />
@@ -532,7 +532,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                             Alcance & Custo
                                         </div>
                                         <img 
-                                            src="/images/traffic-stats-2.png" 
+                                            src="/images/traffic-stats-2.jpeg" 
                                             alt="Métricas reais de custo e alcance" 
                                             className="w-full h-auto rounded-xl grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-[1.02]" 
                                         />
