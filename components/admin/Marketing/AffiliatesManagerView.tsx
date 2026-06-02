@@ -108,6 +108,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
     const [monthlySales, setMonthlySales] = useState(15);
     const [copiedSwipeId, setCopiedSwipeId] = useState<number | null>(null);
     const [copiedElementId, setCopiedElementId] = useState<string | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
     
     // Link tracking generator states
     const [affiliateLink, setAffiliateLink] = useState('https://pay.kiwify.com.br/19v4nIa');
@@ -205,6 +206,150 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
         }
     };
 
+    // Visual assets data directly linked from the Sales LP
+    const CREATIVES = [
+        {
+            title: 'Banner Hero Oficial (Desktop)',
+            size: '1920x1280px',
+            type: 'Hero Web',
+            category: 'Capa & Banners',
+            image: '/hero-desktop-alex.webp',
+            previewText: 'Alex Regulando Suspensão'
+        },
+        {
+            title: 'Banner Hero Oficial (Mobile)',
+            size: '1080x1920px',
+            type: 'Hero Mobile',
+            category: 'Capa & Banners',
+            image: '/hero-mobile-alex.webp',
+            previewText: 'Alex Regulando Suspensão'
+        },
+        {
+            title: 'Capa do Vídeo de Vendas (VSL)',
+            size: '1920x1080px',
+            type: 'Thumbnail',
+            category: 'Capa & Banners',
+            image: '/images/vsl-thumbnail.webp',
+            previewText: 'Assista a VSL W-Tech'
+        },
+        {
+            title: 'Banner Paschoalin (Módulo Bônus)',
+            size: '1920x1080px',
+            type: 'Banner',
+            category: 'Capa & Banners',
+            image: '/paschoalin.webp',
+            previewText: 'Rafa Paschoalin - Prática na Pista'
+        },
+        {
+            title: 'Banner Alex Crepaldi (Mentor)',
+            size: '1920x1080px',
+            type: 'Banner',
+            category: 'Capa & Banners',
+            image: '/images/alex-webp.webp',
+            previewText: 'Alex Crepaldi W-Tech'
+        },
+        {
+            title: 'Card Módulo 1: Boas-Vindas & Métodos',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO.webp',
+            previewText: 'Módulo 1'
+        },
+        {
+            title: 'Card Módulo 2: Ergonomia - Cockpit',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-1.webp',
+            previewText: 'Módulo 2'
+        },
+        {
+            title: 'Card Módulo 3: Equilíbrio',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-2.webp',
+            previewText: 'Módulo 3'
+        },
+        {
+            title: 'Card Módulo 4: Molas & Particularidades',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3.webp',
+            previewText: 'Módulo 4'
+        },
+        {
+            title: 'Card Módulo 5: O SAG - Geometria',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4.webp',
+            previewText: 'Módulo 5'
+        },
+        {
+            title: 'Card Módulo 6: Óleo e Viscosidades',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/lp-curso/oleo-e-viscosidades.webp',
+            previewText: 'Módulo 6'
+        },
+        {
+            title: 'Card Módulo 7: Desmistificando Cliques',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3-1.webp',
+            previewText: 'Módulo 7'
+        },
+        {
+            title: 'Card Módulo 8: Dianteira & Bengala',
+            size: '1080x1350px',
+            type: 'Card do Curso',
+            category: 'Módulos do Curso',
+            image: '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4-1.webp',
+            previewText: 'Módulo 8'
+        },
+        {
+            title: 'Bento Asset 1: Piloto Amador',
+            size: '800x600px',
+            type: 'Bento Grid',
+            category: 'Público-Alvo',
+            image: '/images/lp-curso/1.webp',
+            previewText: 'Para Piloto Amador'
+        },
+        {
+            title: 'Bento Asset 2: Trilha e Enduro',
+            size: '800x600px',
+            type: 'Bento Grid',
+            category: 'Público-Alvo',
+            image: '/images/lp-curso/2.webp',
+            previewText: 'Para Trilha e Enduro'
+        },
+        {
+            title: 'Bento Asset 3: Mecânico Preparador',
+            size: '800x600px',
+            type: 'Bento Grid',
+            category: 'Público-Alvo',
+            image: '/images/lp-curso/3.webp',
+            previewText: 'Para Mecânico Preparador'
+        },
+        {
+            title: 'Bento Asset 4: Dono de Oficina',
+            size: '800x600px',
+            type: 'Bento Grid',
+            category: 'Público-Alvo',
+            image: '/images/lp-curso/4.webp',
+            previewText: 'Para Dono de Oficina'
+        }
+    ];
+
+    const filteredCreatives = selectedCategory === 'all'
+        ? CREATIVES
+        : CREATIVES.filter(c => c.category === selectedCategory);
+
     return (
         <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden py-10 md:py-16 px-4 md:px-8 font-sans selection:bg-[#D4AF37] selection:text-black">
             
@@ -229,7 +374,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                             Central de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-yellow-400 to-amber-600">Parceiros</span>
                         </motion.h1>
                         <motion.p variants={itemVariants} className="text-xs md:text-sm text-neutral-400 font-medium max-w-xl leading-relaxed">
-                            Monitore materiais de alta conversão, crie seus links personalizados de afiliados e acompanhe a estratégia estruturada para alavancar suas vendas do Curso de Suspensão.
+                            Monitore materiais de alta comissão, use as imagens da página de vendas oficial e acompanhe o passo a passo para alavancar suas vendas de suspensão Off-Road.
                         </motion.p>
                     </div>
 
@@ -267,7 +412,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                         {/* Left & Middle columns: Resources, Simulator, Copys, and Strategy Guides */}
                         <div className="lg:col-span-2 space-y-10">
                             
-                            {/* Interactive Commissions Calculator (Refined UI matching Sales LP Bento Card) */}
+                            {/* Interactive Commissions Calculator */}
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -353,16 +498,18 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                                 <span>09:41 AM</span>
                                             </div>
 
-                                            {/* Fake Video Player */}
-                                            <div className="w-full h-24 bg-black rounded-xl flex flex-col items-center justify-center border border-white/10 relative overflow-hidden">
-                                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.1)_0%,transparent_100%)]" />
-                                                <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-black shadow-lg relative z-10">
+                                            {/* Fake Video Player using actual poster from LP */}
+                                            <div className="w-full h-24 bg-black rounded-xl flex flex-col items-center justify-center border border-white/10 relative overflow-hidden group">
+                                                <img 
+                                                    src="/images/vsl-thumbnail.webp" 
+                                                    alt="VSL Playback Preview"
+                                                    className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
+                                                <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-black shadow-lg relative z-10 group-hover:scale-110 transition-transform">
                                                     <div className="w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[7px] border-l-black ml-0.5" />
                                                 </div>
-                                                <span className="text-[7px] font-black text-white uppercase tracking-wider mt-2 z-10">Ver Apresentação</span>
-                                                <div className="absolute bottom-2 left-2 right-2 h-1 bg-neutral-900 rounded overflow-hidden">
-                                                    <div className="w-1/3 h-full bg-[#D4AF37]" />
-                                                </div>
+                                                <span className="text-[7px] font-black text-white uppercase tracking-wider mt-2 z-10">Ver Vídeo Oficial</span>
                                             </div>
 
                                             <div className="text-center space-y-1">
@@ -471,7 +618,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-[9px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-1">
-                                                    <ShieldCheck size={10} className="text-green-500" /> Link Rastreável Pronto
+                                                    <ShieldCheck size={10} className="text-green-500" /> Link Rastreável Ready
                                                 </span>
                                                 <span className="bg-green-500/10 text-green-400 border border-green-500/25 text-[8px] font-black uppercase px-2 py-0.5 rounded">Ativo</span>
                                             </div>
@@ -558,195 +705,93 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                 </div>
                             </motion.div>
 
-                            {/* Interactive creatives downloads grid */}
+                            {/* Creatives downloads grid (Featuring actual images from the Sales LP) */}
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, delay: 0.25 }}
                                 className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 shadow-xl space-y-6"
                             >
-                                <div className="border-b border-white/10 pb-4">
-                                    <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
-                                        <Award size={18} className="text-[#D4AF37]" /> Criativos Visuais de Alta Performance (Feed e Stories)
-                                    </h3>
-                                    <p className="text-xs text-neutral-400 mt-1">Preparamos representações gráficas reais dos criativos. Baixe para usar nas suas redes sociais.</p>
+                                <div className="border-b border-white/10 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h3 className="font-display text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                                            <Award size={18} className="text-[#D4AF37]" /> Imagens e Criativos Oficiais da LP de Vendas
+                                        </h3>
+                                        <p className="text-xs text-neutral-400 mt-1 font-sans">
+                                            Faça o download das fotos de alta resolução e banners oficiais utilizados na nossa Landing Page para usar em seus anúncios e publicações.
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {/* Category Tabs */}
+                                <div className="flex flex-wrap gap-2 pb-2">
                                     {[
-                                        { 
-                                            title: 'Feed: Comparativo Duro vs Macio', 
-                                            size: '1080x1080px', 
-                                            type: 'Feed',
-                                            renderPreview: () => (
-                                                <div className="w-full h-36 bg-gradient-to-b from-[#111] to-black rounded-xl border border-white/10 flex flex-col justify-between p-3.5 relative overflow-hidden group">
-                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-600/5 rounded-full blur-xl" />
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-[7px] font-black text-red-500 tracking-wider">MOTO DURA?</span>
-                                                        <span className="text-[7px] font-black text-[#D4AF37] tracking-wider">CONFORTO E CURVA</span>
-                                                    </div>
-                                                    <div className="flex justify-center items-center gap-6 my-1.5">
-                                                        <div className="flex flex-col items-center bg-red-500/10 border border-red-500/20 px-2 py-1 rounded">
-                                                            <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                                                <path d="M12 2v20M8 8h8M9 12h6M10 16h4" />
-                                                            </svg>
-                                                            <span className="text-[6px] font-black text-red-400 mt-1">DE FÁBRICA</span>
-                                                        </div>
-                                                        <span className="text-[8px] font-bold text-neutral-600">VS</span>
-                                                        <div className="flex flex-col items-center bg-[#D4AF37]/10 border border-[#D4AF37]/20 px-2 py-1 rounded">
-                                                            <svg className="w-6 h-6 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                                                <path d="M12 2v20M8 5h8M8 9h8M8 13h8M8 17h8" strokeDasharray="1 1" />
-                                                            </svg>
-                                                            <span className="text-[6px] font-black text-[#D4AF37] mt-1">AJUSTADA</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-[8px] font-black text-white uppercase text-center tracking-tight font-display">Regule em minutos e mude seu tempo</div>
-                                                </div>
-                                            )
-                                        },
-                                        { 
-                                            title: 'Stories: Últimas 7 Vagas VIP', 
-                                            size: '1080x1920px', 
-                                            type: 'Stories',
-                                            renderPreview: () => (
-                                                <div className="w-full h-36 bg-gradient-to-br from-neutral-950 via-neutral-900 to-black rounded-xl border border-white/10 flex flex-col justify-between p-3.5 relative overflow-hidden">
-                                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-[#D4AF37]/5 rounded-full blur-xl" />
-                                                    <div className="text-center">
-                                                        <span className="bg-[#D4AF37] text-black font-black uppercase text-[6px] px-1.5 py-0.5 rounded tracking-widest">OFERTA LIMITADA</span>
-                                                    </div>
-                                                    <div className="text-center space-y-0.5">
-                                                        <span className="text-[12px] font-mono font-black text-[#D4AF37]">65% OFF</span>
-                                                        <span className="text-[6px] text-neutral-400 block font-bold uppercase tracking-wider">RESTAM APENAS 7 VAGAS</span>
-                                                    </div>
-                                                    <div className="flex justify-center gap-1 font-mono text-[7px] text-neutral-500">
-                                                        <span className="bg-neutral-950 px-1 py-0.5 rounded border border-neutral-900">02h</span>
-                                                        <span>:</span>
-                                                        <span className="bg-neutral-950 px-1 py-0.5 rounded border border-neutral-900">45m</span>
-                                                        <span>:</span>
-                                                        <span className="bg-neutral-950 px-1 py-0.5 rounded border border-neutral-900">12s</span>
-                                                    </div>
-                                                </div>
-                                            )
-                                        },
-                                        { 
-                                            title: 'Feed: Módulos do Curso', 
-                                            size: '1080x1080px', 
-                                            type: 'Feed',
-                                            renderPreview: () => (
-                                                <div className="w-full h-36 bg-[#0a0a0a] rounded-xl border border-white/10 flex flex-col justify-between p-3.5 relative overflow-hidden">
-                                                    <div className="space-y-1">
-                                                        <span className="text-[6px] font-black text-[#D4AF37] uppercase tracking-widest">W-TECH CRONOGRAMA</span>
-                                                        <h5 className="text-[8px] font-black text-white uppercase font-display">O que você vai dominar:</h5>
-                                                    </div>
-                                                    <div className="space-y-1.5 my-1">
-                                                        <div className="flex items-center gap-1.5 text-[6px] text-neutral-400">
-                                                            <CheckCircle size={8} className="text-[#D4AF37]" />
-                                                            <span>Módulo 1: Sag Estático e Dinâmico</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-[6px] text-neutral-400">
-                                                            <CheckCircle size={8} className="text-[#D4AF37]" />
-                                                            <span>Módulo 2: Cliques de Compressão</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-[6px] text-neutral-400">
-                                                            <CheckCircle size={8} className="text-[#D4AF37]" />
-                                                            <span>Módulo 3: Retorno e Hidráulica</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className="text-[5px] text-neutral-600 font-mono">100% Online + Suporte individual</span>
-                                                    </div>
-                                                </div>
-                                            )
-                                        },
-                                        { 
-                                            title: 'Stories: Suporte WhatsApp VIP', 
-                                            size: '1080x1920px', 
-                                            type: 'Stories',
-                                            renderPreview: () => (
-                                                <div className="w-full h-36 bg-gradient-to-b from-[#0b0f0a] to-[#050505] rounded-xl border border-white/10 flex flex-col justify-between p-3.5 relative overflow-hidden">
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="text-[6px] text-green-500 font-bold uppercase tracking-widest">Fale com o Instrutor</span>
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                                    </div>
-                                                    <div className="space-y-1.5 my-2">
-                                                        <div className="bg-neutral-900 border border-neutral-800/80 p-2 rounded-lg max-w-[85%] text-[6px] text-neutral-300">
-                                                            "Vinícius, regulei o sag da CRF e sumiu a batida de fim de curso!"
-                                                        </div>
-                                                        <div className="bg-green-500/10 border border-green-500/20 p-2 rounded-lg max-w-[85%] ml-auto text-[6px] text-green-400 text-right">
-                                                            "Show! Agora ajusta o clique de retorno..."
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-center text-[7px] text-neutral-400 font-bold">Acompanhamento de Perto</div>
-                                                </div>
-                                            )
-                                        },
-                                        { 
-                                            title: 'Feed: Mockup do Treinamento', 
-                                            size: '1080x1080px', 
-                                            type: 'Feed',
-                                            renderPreview: () => (
-                                                <div className="w-full h-36 bg-gradient-to-r from-neutral-950 to-neutral-900 rounded-xl border border-white/10 flex flex-col justify-between p-3.5 relative overflow-hidden">
-                                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-[#D4AF37]/5 rounded-full blur-xl" />
-                                                    <span className="text-[6px] font-black text-neutral-400 uppercase tracking-widest">CURSO 100% DIGITAL</span>
-                                                    <div className="flex justify-center items-center my-2">
-                                                        <div className="w-16 h-10 bg-black rounded border border-neutral-800 flex items-center justify-center relative shadow-lg">
-                                                            <svg className="w-4 h-4 text-[#D4AF37]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <rect width="20" height="14" x="2" y="3" rx="2" />
-                                                                <line x1="8" x2="16" y1="21" y2="21" />
-                                                                <line x1="12" x2="12" y1="17" y2="21" />
-                                                            </svg>
-                                                            <div className="absolute bottom-0 right-[-10px] w-6 h-10 bg-[#090909] rounded border border-neutral-800 flex items-center justify-center">
-                                                                <div className="w-1.5 h-1 bg-black rounded-full absolute top-1" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-[7px] font-black text-center text-white uppercase tracking-tight font-display">Estude na pista pelo celular</div>
-                                                </div>
-                                            )
-                                        },
-                                        { 
-                                            title: 'Stories: O que é o Sag Traseiro?', 
-                                            size: '1080x1920px', 
-                                            type: 'Stories',
-                                            renderPreview: () => (
-                                                <div className="w-full h-36 bg-[#000] rounded-xl border border-white/10 flex flex-col justify-between p-3.5 relative overflow-hidden">
-                                                    <div className="flex justify-between items-center text-[6px] text-[#D4AF37] font-bold uppercase tracking-wider">
-                                                        <span>DICA RÁPIDA</span>
-                                                        <span>SAG CORRETO</span>
-                                                    </div>
-                                                    <div className="flex justify-center items-center my-1.5">
-                                                        <svg className="w-10 h-10 text-neutral-600" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <circle cx="50" cy="50" r="30" strokeDasharray="3 3" />
-                                                            <line x1="50" y1="10" x2="50" y2="90" stroke="yellow" strokeWidth="2" />
-                                                            <path d="M45 20l5-10 5 10M45 80l5 10 5-10" stroke="yellow" strokeWidth="2" />
-                                                        </svg>
-                                                        <span className="text-[7px] font-mono text-[#D4AF37] font-bold ml-2">35mm</span>
-                                                    </div>
-                                                    <div className="text-[7px] text-neutral-400 font-bold text-center">Menos que isso a moto joga traseira!</div>
-                                                </div>
-                                            )
-                                        }
-                                    ].map((creative, idx) => (
-                                        <div key={idx} className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden flex flex-col justify-between p-4 relative group hover:border-[#D4AF37]/30 transition-all duration-300">
-                                            <div className="space-y-3">
+                                        { id: 'all', label: 'Todos os Criativos' },
+                                        { id: 'Capa & Banners', label: 'Capa & Banners' },
+                                        { id: 'Módulos do Curso', label: 'Módulos do Curso' },
+                                        { id: 'Público-Alvo', label: 'Público-Alvo' }
+                                    ].map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setSelectedCategory(cat.id)}
+                                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${
+                                                selectedCategory === cat.id
+                                                    ? 'bg-[#D4AF37] text-black font-extrabold shadow-lg shadow-[#D4AF37]/10'
+                                                    : 'bg-zinc-950 text-neutral-400 border border-white/10 hover:text-white hover:border-[#D4AF37]/30'
+                                            }`}
+                                        >
+                                            {cat.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                                    {filteredCreatives.map((creative, idx) => (
+                                        <motion.div 
+                                            key={`${creative.title}-${idx}`}
+                                            layout
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden flex flex-col justify-between p-4 relative group hover:border-[#D4AF37]/30 transition-all duration-300"
+                                        >
+                                            <div className="space-y-3.5">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-0.5 rounded-full inline-block">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 px-2.5 py-0.5 rounded-lg inline-block">
                                                         {creative.type}
                                                     </span>
                                                     <span className="text-[9px] text-neutral-500 font-mono">{creative.size}</span>
                                                 </div>
                                                 
-                                                {creative.renderPreview()}
+                                                {/* High-fidelity Real Image Preview */}
+                                                <div className="w-full h-40 bg-zinc-900 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
+                                                    <img 
+                                                        src={creative.image} 
+                                                        alt={creative.title} 
+                                                        className="w-full h-full object-cover object-top opacity-70 group-hover:scale-102 group-hover:opacity-90 transition-all duration-300"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                                                    <div className="absolute bottom-3 left-3 right-3 text-left">
+                                                        <span className="text-[7px] font-black text-[#D4AF37] uppercase block tracking-wider mb-0.5">{creative.category}</span>
+                                                        <span className="text-xs font-black text-white uppercase font-display leading-tight tracking-tight">{creative.previewText}</span>
+                                                    </div>
+                                                </div>
 
                                                 <h4 className="text-xs font-bold text-white leading-snug group-hover:text-[#D4AF37] transition-colors">
                                                     {creative.title}
                                                 </h4>
                                             </div>
                                             
-                                            <button className="w-full mt-4 bg-black border border-white/10 text-neutral-300 hover:text-black hover:bg-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm">
-                                                <Download size={12} /> Baixar Ativo
-                                            </button>
-                                        </div>
+                                            <a 
+                                                href={creative.image}
+                                                download
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="w-full mt-4 bg-[#050505] border border-white/10 text-neutral-300 hover:text-black hover:bg-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm block text-center"
+                                            >
+                                                <Download size={12} /> Download em Alta
+                                            </a>
+                                        </motion.div>
                                     ))}
                                 </div>
                             </motion.div>
