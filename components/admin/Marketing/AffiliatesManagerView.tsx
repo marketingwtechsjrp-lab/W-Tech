@@ -6,7 +6,7 @@ import {
     Share2, ArrowRight, ShieldCheck, Flame, BookOpen, Layers, CheckCircle,
     ExternalLink, Coins, Sparkles, AlertCircle, Terminal, HelpCircle, Eye,
     Link, Code, Clock, Lock, ChevronRight, FolderOpen, TrendingUp,
-    Bike, Mountain, Wrench, Globe, Star, Monitor, Play, CalendarDays, ChevronDown, ArrowLeft, Zap, Gauge
+    Bike, Mountain, Wrench, Globe, Star, Monitor, Play, CalendarDays, ChevronDown, ArrowLeft, Zap, Gauge, Activity, Move
 } from 'lucide-react';
 import { Marquee } from '../../ui/marquee';
 import { supabase } from '../../../lib/supabaseClient';
