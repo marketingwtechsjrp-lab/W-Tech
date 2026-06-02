@@ -403,8 +403,15 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
     return (
         <div className="relative min-h-screen bg-[#050505] text-white overflow-hidden py-10 md:py-16 px-4 md:px-8 font-sans selection:bg-[#D4AF37] selection:text-black">
             
+            {/* Background image layers to match the Sales LP branding */}
+            <div className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-[url('/blueprint-moto.webp')] opacity-[0.07] pointer-events-none mix-blend-luminosity z-0" />
+            
+            {/* Hero faded background image at the top */}
+            <div className="absolute top-0 left-0 right-0 h-[600px] bg-cover bg-top bg-no-repeat bg-[url('/hero-desktop-alex.webp')] opacity-[0.10] pointer-events-none z-0" />
+            <div className="absolute top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-transparent to-[#050505] pointer-events-none z-0" />
+
             {/* Immersive grid vignette background identical to Sales LP */}
-            <GridVignetteBackground className="opacity-30" size={48} x={50} y={40} intensity={80} horizontalVignetteSize={90} verticalVignetteSize={60} />
+            <GridVignetteBackground className="opacity-35" size={48} x={50} y={40} intensity={80} horizontalVignetteSize={90} verticalVignetteSize={60} />
             
             <div className="relative z-10 space-y-12 max-w-7xl mx-auto">
                 
