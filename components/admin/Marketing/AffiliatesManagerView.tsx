@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GridVignetteBackground } from '../../ui/vignette-grid-background';
 import { 
-    Users, Search, Flame, CheckCircle, ExternalLink, FolderOpen
+    Users, Search, Flame, CheckCircle, ExternalLink, FolderOpen, MessageSquare
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 
@@ -290,18 +290,31 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                 </div>
                             </div>
 
-                            <div className="relative z-10 pt-6">
+                            <div className="grid md:grid-cols-2 gap-4 relative z-10 pt-6">
                                 <a 
                                     href={driveUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="w-full bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 text-sm font-black uppercase tracking-wider py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all shadow-xl shadow-[#D4AF37]/10 hover:shadow-[#D4AF37]/20 active:scale-[0.99] text-center font-sans"
+                                    className="bg-[#D4AF37] text-black hover:bg-[#D4AF37]/90 text-sm font-black uppercase tracking-wider py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all shadow-xl shadow-[#D4AF37]/10 hover:shadow-[#D4AF37]/20 active:scale-[0.99] text-center font-sans w-full"
                                 >
                                     <span className="flex items-center justify-center gap-2">
-                                        <ExternalLink size={18} className="stroke-[2.5]" /> Acessar Pasta de Criativos no Google Drive
+                                        <ExternalLink size={18} className="stroke-[2.5]" /> Pasta de Criativos (Google Drive)
                                     </span>
                                     <span className="text-[10px] text-black/60 font-bold max-w-md normal-case block leading-tight">
-                                        Faça o download das mídias oficiais da W-Tech para começar suas divulgações e campanhas.
+                                        Faça o download das fotos, vídeos de vendas (VSL) e artes oficiais.
+                                    </span>
+                                </a>
+                                <a 
+                                    href="https://chat.whatsapp.com/BN0BZI6Co6f1DivrzfX5bR?mode=gi_t"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="bg-zinc-950 border border-green-500/30 text-white hover:bg-zinc-900 hover:border-green-500/50 text-sm font-black uppercase tracking-wider py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all shadow-xl active:scale-[0.99] text-center font-sans w-full"
+                                >
+                                    <span className="flex items-center justify-center gap-2 text-green-400">
+                                        <MessageSquare size={18} className="stroke-[2.5]" /> Grupo VIP de Afiliados (WhatsApp)
+                                    </span>
+                                    <span className="text-[10px] text-neutral-400 font-bold max-w-md normal-case block leading-tight">
+                                        Participe do grupo oficial de suporte, novidades e avisos.
                                     </span>
                                 </a>
                             </div>
