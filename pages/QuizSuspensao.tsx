@@ -289,8 +289,9 @@ const QuizSuspensao: React.FC = () => {
        1 .. totalQ      → perguntas (1ª é segmentação)
        'vsl'            → vídeo antes do resultado
        'form'           → captura de lead
+       'analyzing'      → barra de progresso "gerando diagnóstico"
        'result'         → resultado + oferta */
-    const [phase, setPhase] = useState<'welcome' | 'questions' | 'vsl' | 'form' | 'result'>('welcome');
+    const [phase, setPhase] = useState<'welcome' | 'questions' | 'vsl' | 'form' | 'analyzing' | 'result'>('welcome');
     const [qIndex, setQIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, { value: string; label: string }>>({});
     const [track, setTrack] = useState<Track | null>(null);
@@ -354,8 +355,8 @@ const QuizSuspensao: React.FC = () => {
                 description="Responda 6 perguntas rápidas e receba um diagnóstico personalizado de suspensão Off-Road — pra piloto ou mecânico. Curso W-Tech com prática real."
             />
 
-            {/* Barra de progresso fixa (some na tela de resultado) */}
-            {phase !== 'result' && phase !== 'welcome' && (
+            {/* Barra de progresso fixa (some na análise, no resultado e na welcome) */}
+            {phase !== 'result' && phase !== 'welcome' && phase !== 'analyzing' && (
                 <div className="sticky top-0 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/5">
                     <div className="container mx-auto px-6 py-3 max-w-3xl">
                         <div className="flex items-center gap-4">
@@ -421,7 +422,14 @@ const QuizSuspensao: React.FC = () => {
                         track={track}
                         answers={answers}
                         attribution={attribution}
-                        onDone={() => { setPhase('result'); scrollTop(); }}
+                        onDone={() => { setPhase('analyzing'); scrollTop(); }}
+                    />
+                )}
+                {phase === 'analyzing' && track && (
+                    <AnalyzingScreen
+                        animate={animate}
+                        track={track}
+                        onComplete={() => { setPhase('result'); scrollTop(); }}
                     />
                 )}
                 {phase === 'result' && track && (
@@ -697,14 +705,17 @@ const LeadFormScreen: React.FC<{
     // Telemetria: o lead chegou na etapa de captura
     useEffect(() => { trackEvent('Quiz', 'form_view', track); }, [track]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const digits = phone.replace(/\D/g, '');
         if (name.trim().length < 2) { setError('Digite seu nome.'); return; }
         if (digits.length < 10) { setError('Digite um WhatsApp válido com DDD.'); return; }
 
-        setLoading(true);
         setError('');
+        setLoading(true);
+
+        // Conversão de lead — evento-chave do funil (GA4 + Supabase)
+        trackEvent('Quiz', 'lead', track);
 
         // quiz_data: snapshot completo das respostas + atribuição (coluna jsonb já existe)
         const quizData = {
@@ -714,34 +725,24 @@ const LeadFormScreen: React.FC<{
             concluido_em: new Date().toISOString(),
         };
 
-        try {
-            await handleLeadUpsert({
-                name: name.trim(),
-                phone,
-                type: 'Quiz_Suspension',
-                status: 'New',
-                context_id: 'Quiz_Suspensao_Piloto',
-                origin: attribution.utm_source || 'quiz-suspensao',
-                tags: ['Quiz_Suspensao', track === 'piloto' ? 'Perfil_Piloto' : 'Perfil_Mecanico'],
-                assigned_to: CRM_OWNER_ID,
-                quiz_data: quizData,
-            });
-        } catch (err) {
-            // Não bloqueia o resultado por falha no CRM — apenas loga
-            console.error('[Quiz] Falha ao salvar lead:', err);
-        }
+        // Persistência em BACKGROUND: a tela de análise (barra de %) cobre o
+        // tempo de UX, então não bloqueamos a transição. Falhas apenas logam.
+        handleLeadUpsert({
+            name: name.trim(),
+            phone,
+            type: 'Quiz_Suspension',
+            status: 'New',
+            context_id: 'Quiz_Suspensao_Piloto',
+            origin: attribution.utm_source || 'quiz-suspensao',
+            tags: ['Quiz_Suspensao', track === 'piloto' ? 'Perfil_Piloto' : 'Perfil_Mecanico'],
+            assigned_to: CRM_OWNER_ID,
+            quiz_data: quizData,
+        }).catch(err => console.error('[Quiz] Falha ao salvar lead:', err));
 
-        try {
-            const message = buildWhatsAppMessage(name, track, answers);
-            await sendWhatsAppMessage(phone, message, SUPPORT_INSTANCE);
-        } catch (err) {
-            console.error('[Quiz] Falha no disparo WhatsApp:', err);
-        }
+        sendWhatsAppMessage(phone, buildWhatsAppMessage(name, track, answers), SUPPORT_INSTANCE)
+            .catch(err => console.error('[Quiz] Falha no disparo WhatsApp:', err));
 
-        // Conversão de lead — evento-chave do funil (GA4 + Supabase)
-        trackEvent('Quiz', 'lead', track);
-
-        setLoading(false);
+        // Vai imediatamente pra tela de análise (barra de progresso em tempo real)
         onDone();
     };
 
@@ -811,6 +812,107 @@ const LeadFormScreen: React.FC<{
                     <ShieldCheck size={12} /> Seus dados estão seguros e criptografados
                 </p>
             </form>
+        </motion.section>
+    );
+};
+
+/* ─────────────────────────────────────────────────────────────
+ *  TELA: ANÁLISE (barra de progresso em tempo real)
+ * ──────────────────────────────────────────────────────────── */
+const AnalyzingScreen: React.FC<{
+    animate: boolean;
+    track: Track;
+    onComplete: () => void;
+}> = ({ animate, track, onComplete }) => {
+    const [pct, setPct] = useState(0);
+    const onCompleteRef = useRef(onComplete);
+    onCompleteRef.current = onComplete;
+
+    // Progresso baseado em tempo real (Date.now): mesmo que o setInterval seja
+    // throttled em aba de fundo, a % salta pro valor correto e SEMPRE conclui —
+    // nunca trava o funil.
+    useEffect(() => {
+        const DURATION = 3800; // ms até 100%
+        const start = Date.now();
+        const id = window.setInterval(() => {
+            const elapsed = Date.now() - start;
+            const p = Math.min(100, Math.round((elapsed / DURATION) * 100));
+            setPct(p);
+            if (p >= 100) {
+                window.clearInterval(id);
+                window.setTimeout(() => onCompleteRef.current(), 550); // respiro no 100%
+            }
+        }, 40);
+        return () => window.clearInterval(id);
+    }, []);
+
+    // Rótulo da etapa conforme a % avança (um deles é específico da trilha)
+    const stages = [
+        { at: 0, label: 'Analisando as suas respostas...' },
+        { at: 28, label: 'Calculando o SAG e os cliques ideais...' },
+        { at: 55, label: track === 'mecanico' ? 'Montando seu plano de faturamento...' : 'Cruzando com o seu terreno e nível...' },
+        { at: 82, label: 'Finalizando seu diagnóstico personalizado...' },
+    ];
+    const currentLabel = [...stages].reverse().find(s => pct >= s.at)?.label ?? stages[0].label;
+
+    // Checklist que vai marcando conforme processa
+    const checks = [
+        { at: 25, label: 'Respostas analisadas' },
+        { at: 55, label: 'Acerto ideal calculado' },
+        { at: 85, label: 'Diagnóstico montado' },
+    ];
+
+    return (
+        <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: animate ? 0.3 : 0 }}
+            className="min-h-[80vh] flex items-center justify-center px-6 py-16"
+        >
+            <div className="w-full max-w-md text-center">
+                {/* Engrenagem girando (tema mecânica) */}
+                <div className="relative w-20 h-20 mx-auto mb-8">
+                    <div className="absolute inset-0 rounded-full bg-wtech-gold/15 blur-xl" />
+                    <div className="relative w-20 h-20 rounded-2xl bg-wtech-gold/10 border border-wtech-gold/30 flex items-center justify-center text-wtech-gold">
+                        <Settings size={36} className={animate ? 'animate-spin' : ''} style={{ animationDuration: '2.4s' }} />
+                    </div>
+                </div>
+
+                <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Gerando seu diagnóstico</span>
+
+                {/* Porcentagem em tempo real */}
+                <div className="text-6xl md:text-7xl font-black tracking-tighter my-4 tabular-nums">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{pct}%</span>
+                </div>
+
+                {/* Barra */}
+                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden mb-6" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Gerando diagnóstico">
+                    <div
+                        className="h-full bg-gradient-to-r from-wtech-gold to-yellow-500 transition-[width] duration-100 ease-linear"
+                        style={{ width: `${pct}%` }}
+                    />
+                </div>
+
+                {/* Rótulo dinâmico da etapa */}
+                <p className="text-gray-300 text-sm md:text-base font-medium mb-8 h-6 transition-all">{currentLabel}</p>
+
+                {/* Checklist progressivo */}
+                <div className="space-y-3 text-left max-w-xs mx-auto">
+                    {checks.map((c) => {
+                        const done = pct >= c.at;
+                        return (
+                            <div key={c.label} className={`flex items-center gap-3 transition-all duration-300 ${done ? 'opacity-100' : 'opacity-35'}`}>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${done ? 'bg-wtech-gold text-black' : 'bg-zinc-800 text-gray-600'}`}>
+                                    {done
+                                        ? <CheckCircle size={14} strokeWidth={3} />
+                                        : <div className="w-2 h-2 rounded-full bg-gray-600" />}
+                                </div>
+                                <span className={`text-sm font-semibold ${done ? 'text-white' : 'text-gray-500'}`}>{c.label}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </motion.section>
     );
 };
