@@ -10,7 +10,17 @@ const AnimatedShaderBackground = () => {
 
         const scene = new THREE.Scene();
         const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
+
+        // WebGL pode falhar (mobile com poucos contextos, GPU bloqueada, etc.).
+        // Se falhar, seguimos SEM o fundo animado em vez de derrubar a página
+        // inteira (tela branca). Protege tanto o quiz quanto a LP.
+        let renderer: THREE.WebGLRenderer;
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
+        } catch (err) {
+            console.warn('[ShaderBG] WebGL indisponível, fundo animado desativado:', err);
+            return;
+        }
 
         // Limit internal rendering resolution aggressively for massive performance gain
         const width = container.clientWidth || window.innerWidth;

@@ -30,6 +30,7 @@ import { sendWhatsAppMessage } from '../lib/whatsapp';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { Marquee } from '../components/ui/marquee';
 import SEO from '../components/SEO';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // Shader pesado: só monta na tela de resultado (sob demanda)
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
@@ -391,54 +392,89 @@ const QuizSuspensao: React.FC = () => {
                 anterior e monta a nova IMEDIATAMENTE (no DOM), tocando só a
                 animação de entrada. Não há exit a "esperar", então nada trava
                 caso o rAF seja throttled (aba em background) — o que evitaria
-                perder o lead no meio do funil. */}
-            <motion.div
-                key={screenKey}
-                initial={{ opacity: 0, y: animate ? 12 : 0 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: animate ? 0.25 : 0, ease: 'easeOut' }}
-            >
-                {phase === 'welcome' && (
-                    <WelcomeScreen animate={animate} onStart={startQuiz} />
-                )}
-                {phase === 'questions' && currentStep && (
-                    <QuestionScreen
-                        step={currentStep}
-                        selected={answers[currentStep.id]?.value}
-                        onSelect={selectOption}
-                        animate={animate}
-                    />
-                )}
-                {phase === 'vsl' && (
-                    <VslScreen
-                        animate={animate}
-                        track={track}
-                        onContinue={() => { setPhase('form'); scrollTop(); }}
-                    />
-                )}
-                {phase === 'form' && track && (
-                    <LeadFormScreen
-                        animate={animate}
-                        track={track}
-                        answers={answers}
-                        attribution={attribution}
-                        onDone={() => { setPhase('analyzing'); scrollTop(); }}
-                    />
-                )}
-                {phase === 'analyzing' && track && (
-                    <AnalyzingScreen
-                        animate={animate}
-                        track={track}
-                        onComplete={() => { setPhase('result'); scrollTop(); }}
-                    />
-                )}
-                {phase === 'result' && track && (
-                    <ResultScreen animate={animate} track={track} answers={answers} attribution={attribution} />
-                )}
-            </motion.div>
+                perder o lead no meio do funil.
+
+                ErrorBoundary externo: se QUALQUER tela quebrar, em vez de tela
+                branca o usuário vê um fallback que ainda leva ao checkout. */}
+            <ErrorBoundary fallback={<QuizCrashFallback checkoutUrl={buildCheckoutUrl(attribution, track ?? 'piloto')} />}>
+                <motion.div
+                    key={screenKey}
+                    initial={{ opacity: 0, y: animate ? 12 : 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: animate ? 0.25 : 0, ease: 'easeOut' }}
+                >
+                    {phase === 'welcome' && (
+                        <WelcomeScreen animate={animate} onStart={startQuiz} />
+                    )}
+                    {phase === 'questions' && currentStep && (
+                        <QuestionScreen
+                            step={currentStep}
+                            selected={answers[currentStep.id]?.value}
+                            onSelect={selectOption}
+                            animate={animate}
+                        />
+                    )}
+                    {phase === 'vsl' && (
+                        <VslScreen
+                            animate={animate}
+                            track={track}
+                            onContinue={() => { setPhase('form'); scrollTop(); }}
+                        />
+                    )}
+                    {phase === 'form' && track && (
+                        <LeadFormScreen
+                            animate={animate}
+                            track={track}
+                            answers={answers}
+                            attribution={attribution}
+                            onDone={() => { setPhase('analyzing'); scrollTop(); }}
+                        />
+                    )}
+                    {phase === 'analyzing' && track && (
+                        <AnalyzingScreen
+                            animate={animate}
+                            track={track}
+                            onComplete={() => { setPhase('result'); scrollTop(); }}
+                        />
+                    )}
+                    {phase === 'result' && track && (
+                        <ResultScreen animate={animate} track={track} answers={answers} attribution={attribution} />
+                    )}
+                </motion.div>
+            </ErrorBoundary>
         </div>
     );
 };
+
+/* ─────────────────────────────────────────────────────────────
+ *  FALLBACK DE CRASH — nunca deixa o usuário sem o caminho de compra
+ * ──────────────────────────────────────────────────────────── */
+const QuizCrashFallback: React.FC<{ checkoutUrl: string }> = ({ checkoutUrl }) => (
+    <section className="min-h-[80vh] flex items-center justify-center px-6 py-16 text-center">
+        <div className="max-w-md">
+            <div className="w-16 h-16 rounded-2xl bg-wtech-gold/10 border border-wtech-gold/30 text-wtech-gold flex items-center justify-center mx-auto mb-6">
+                <ShieldCheck size={32} />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-3">
+                Seu diagnóstico está <span className="text-wtech-gold">pronto</span>
+            </h2>
+            <p className="text-gray-400 text-sm md:text-base mb-8">
+                Tivemos um probleminha ao montar a tela, mas a sua condição de lançamento do
+                <strong className="text-white"> Curso de Regulagem de Suspensão</strong> está garantida.
+            </p>
+            <a
+                href={checkoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackEvent('Quiz', 'checkout_click', 'fallback')}
+                className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all shadow-xl"
+            >
+                Garantir Minha Vaga — 12x R$ 34,70 <ArrowRight strokeWidth={3} size={18} />
+            </a>
+            <p className="text-gray-600 text-xs mt-4">ou R$ 347,00 à vista · Garantia de 7 dias</p>
+        </div>
+    </section>
+);
 
 /* ─────────────────────────────────────────────────────────────
  *  TELA: BOAS-VINDAS
@@ -1026,9 +1062,13 @@ const ResultScreen: React.FC<{
 
             {/* ── Oferta + CTA ── */}
             <section className="relative overflow-hidden bg-black py-16 md:py-24 flex items-center justify-center min-h-[80vh]">
-                <Suspense fallback={null}>
-                    <AnimatedShaderBackground />
-                </Suspense>
+                {/* Fundo animado é enfeite: se o WebGL falhar, cai pra null SEM
+                    derrubar a oferta (que é o que importa nesta tela). */}
+                <ErrorBoundary fallback={null}>
+                    <Suspense fallback={null}>
+                        <AnimatedShaderBackground />
+                    </Suspense>
+                </ErrorBoundary>
 
                 <div className="container mx-auto px-6 relative z-10 flex justify-center">
                     <div className="w-full max-w-3xl bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#E6241D]/20 rounded-2xl relative shadow-[0_0_120px_rgba(230,36,29,0.15)] overflow-hidden p-8 md:p-12 text-center">
