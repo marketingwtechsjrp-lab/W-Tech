@@ -254,20 +254,19 @@ const WTechLisboaNov2026: React.FC = () => {
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
             
             {/* TOP BAR */}
-            <div className="bg-wtech-red text-white text-[10px] md:text-xs font-black uppercase tracking-widest text-center py-2 px-4 sticky top-0 z-50 shadow-2xl">
+            <div className="bg-wtech-red text-white text-[9px] md:text-xs font-black uppercase tracking-wider md:tracking-widest text-center py-2 px-4 sticky top-0 z-50 shadow-2xl">
                 🔥 SEGUNDA EDIÇÃO: INSCRIÇÕES ABERTAS COM DESCONTO DE LANÇAMENTO PARA 14–15 DE NOVEMBRO
             </div>
 
-            {/* NAVIGATION / LOGOS */}
-            <nav className="absolute top-8 left-0 w-full z-30 pointer-events-none">
-                <div className="container mx-auto px-6 flex justify-between items-start">
-                    <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-8 md:h-12 object-contain opacity-90" />
-                    <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-8 md:h-12 object-contain bg-white/10 p-1 rounded backdrop-blur-sm" />
-                </div>
-            </nav>
-
             {/* HERO SECTION */}
             <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
+                {/* NAVIGATION / LOGOS */}
+                <nav className="absolute top-4 md:top-8 left-0 w-full z-30 pointer-events-none">
+                    <div className="container mx-auto px-6 flex justify-between items-start">
+                        <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-8 md:h-12 object-contain opacity-90" />
+                        <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-8 md:h-12 object-contain bg-white/10 p-1 rounded backdrop-blur-sm" />
+                    </div>
+                </nav>
                 {/* Background */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <div className="absolute inset-0 bg-black/65 z-10"></div>
