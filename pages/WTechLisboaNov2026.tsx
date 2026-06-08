@@ -209,12 +209,14 @@ const WTechLisboaNov2026: React.FC = () => {
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <div className="absolute inset-0 bg-black/65 z-10"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.05)_0%,transparent_80%)] z-10"></div>
-                    <iframe 
-                        src="https://www.youtube.com/embed/yWofinvE0Xg?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&playlist=yWofinvE0Xg" 
-                        className="w-full h-full object-cover scale-150 pointer-events-none brightness-[0.25]"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    ></iframe>
+                    <video
+                        src="/videos/abertura.mp4"
+                        className="w-full h-full object-cover scale-[1.3] brightness-[0.25] pointer-events-none"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                    />
                 </div>
 
                 <div className="container mx-auto px-6 relative z-20 text-center">
