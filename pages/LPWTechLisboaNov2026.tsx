@@ -44,6 +44,99 @@ const stagger = {
     visible: { transition: { staggerChildren: 0.1 } },
 };
 
+/* ─── Reusable Premium Video Player with Ambient Glow, Overlays & Pulse Play ─── */
+const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait'; rotate?: boolean }> = ({ src, aspect = 'video', rotate = false }) => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = React.useState(false);
+
+    const togglePlay = () => {
+        if (!videoRef.current) return;
+        if (isPlaying) {
+            videoRef.current.pause();
+        } else {
+            videoRef.current.play();
+        }
+    };
+
+    if (aspect === 'video') {
+        return (
+            <div 
+                onClick={togglePlay}
+                className="relative aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-black group cursor-pointer"
+            >
+                {/* Ambient Glow */}
+                <video
+                    src={src}
+                    className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none"
+                    style={{ transform: rotate ? 'rotate(90deg)' : 'none', width: rotate ? '56.25%' : '100%', height: rotate ? '177.77%' : '100%', top: rotate ? '-38.885%' : '0', left: rotate ? '21.875%' : '0' }}
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                />
+                {/* Main Video */}
+                <video
+                    ref={videoRef}
+                    src={src}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    className="relative z-10"
+                    style={{ transform: rotate ? 'rotate(90deg)' : 'none', width: rotate ? '56.25%' : '100%', height: rotate ? '177.77%' : '100%', top: rotate ? '-38.885%' : '0', left: rotate ? '21.875%' : '0', objectFit: rotate ? 'contain' : 'contain' }}
+                    controls={isPlaying}
+                    playsInline
+                />
+                {/* Pulsing Play Button */}
+                {!isPlaying && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 transition-opacity duration-300">
+                        <div className="w-20 h-20 bg-[#E6241D] text-white rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(230,36,29,0.8)] animate-pulse">
+                            <svg className="w-8 h-8 fill-white translate-x-0.5" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    } else {
+        return (
+            <div 
+                onClick={togglePlay}
+                className="relative aspect-[9/16] w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black group cursor-pointer"
+            >
+                {/* Ambient Glow */}
+                <video
+                    src={src}
+                    className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none"
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                />
+                {/* Main Video */}
+                <video
+                    ref={videoRef}
+                    src={src}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    className="relative z-10 w-full h-full object-cover rounded-2xl"
+                    controls={isPlaying}
+                    playsInline
+                />
+                {/* Pulsing Play Button */}
+                {!isPlaying && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 transition-opacity duration-300">
+                        <div className="w-16 h-16 bg-[#E6241D] text-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(230,36,29,0.8)] animate-pulse">
+                            <svg className="w-6 h-6 fill-white translate-x-0.5" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+};
+
 const LPWTechLisboaNov2026: React.FC = () => {
     const { shouldAnimate } = useMotionConfig();
     const [form, setForm] = useState({ name: '', email: '', phone: '', reason: '' });
@@ -335,23 +428,8 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação técnica e da prática real no nosso primeiro treinamento.</p>
                     </div>
 
-                    <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-black mb-28">
-                        {/* Background Blurred Video */}
-                        <video
-                            src="/videos/como_foi.mp4"
-                            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-20 scale-110 pointer-events-none"
-                            muted
-                            loop
-                            playsInline
-                            autoPlay
-                        />
-                        {/* Sharp Centered Video */}
-                        <video
-                            src="/videos/como_foi.mp4"
-                            className="relative h-full mx-auto object-contain z-10"
-                            controls
-                            playsInline
-                        />
+                    <div className="mb-28">
+                        <PremiumVideoPlayer src="/videos/como_foi.mp4" aspect="video" rotate={true} />
                     </div>
 
                     {/* Part 2: What students said */}
@@ -362,22 +440,8 @@ const LPWTechLisboaNov2026: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
-                        <div className="relative aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 hover:border-[#E6241D]/40 hover:shadow-[0_0_50px_rgba(230,36,29,0.15)] transition-all bg-zinc-950 group">
-                            <video
-                                src="/videos/depoimentos_1.mp4"
-                                className="w-full h-full object-cover"
-                                controls
-                                playsInline
-                            />
-                        </div>
-                        <div className="relative aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 hover:border-[#E6241D]/40 hover:shadow-[0_0_50px_rgba(230,36,29,0.15)] transition-all bg-zinc-950 group">
-                            <video
-                                src="/videos/depoimentos_2.mp4"
-                                className="w-full h-full object-cover"
-                                controls
-                                playsInline
-                            />
-                        </div>
+                        <PremiumVideoPlayer src="/videos/depoimentos_1.mp4" aspect="portrait" />
+                        <PremiumVideoPlayer src="/videos/depoimentos_2.mp4" aspect="portrait" />
                     </div>
                 </div>
             </section>
