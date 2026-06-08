@@ -322,6 +322,66 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 </div>
             </section>
 
+            {/* PAST EDITION & TESTIMONIALS */}
+            <section className="py-24 bg-[#080808] border-y border-white/5 relative overflow-hidden">
+                {/* Accent glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#E6241D]/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+                <div className="container mx-auto px-6 relative z-10">
+                    {/* Part 1: How it went */}
+                    <div className="text-center mb-16">
+                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-xs">Sucesso da 1ª Edição</span>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">Como Foi a <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">1ª Edição em Lisboa</span></h2>
+                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação técnica e da prática real no nosso primeiro treinamento.</p>
+                    </div>
+
+                    <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-black mb-28">
+                        {/* Background Blurred Video */}
+                        <video
+                            src="/videos/como_foi.mp4"
+                            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-20 scale-110 pointer-events-none"
+                            muted
+                            loop
+                            playsInline
+                            autoPlay
+                        />
+                        {/* Sharp Centered Video */}
+                        <video
+                            src="/videos/como_foi.mp4"
+                            className="relative h-full mx-auto object-contain z-10"
+                            controls
+                            playsInline
+                        />
+                    </div>
+
+                    {/* Part 2: What students said */}
+                    <div className="text-center mb-16">
+                        <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-xs">Depoimentos Reais</span>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">O que dizem os <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Nossos Alunos</span></h2>
+                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Quem viveu a experiência na pele partilha o impacto técnico do método W-Tech.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
+                        <div className="relative aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 hover:border-[#E6241D]/40 hover:shadow-[0_0_50px_rgba(230,36,29,0.15)] transition-all bg-zinc-950 group">
+                            <video
+                                src="/videos/depoimentos_1.mp4"
+                                className="w-full h-full object-cover"
+                                controls
+                                playsInline
+                            />
+                        </div>
+                        <div className="relative aspect-[9/16] rounded-3xl overflow-hidden border border-white/10 hover:border-[#E6241D]/40 hover:shadow-[0_0_50px_rgba(230,36,29,0.15)] transition-all bg-zinc-950 group">
+                            <video
+                                src="/videos/depoimentos_2.mp4"
+                                className="w-full h-full object-cover"
+                                controls
+                                playsInline
+                            />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* INSTRUCTOR: ALEX ONLY */}
             <section className="py-24 bg-black">
                 <div className="container mx-auto px-6">
