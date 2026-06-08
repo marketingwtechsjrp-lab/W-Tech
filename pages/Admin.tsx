@@ -5039,6 +5039,7 @@ const SettingsView = () => {
             group: 'Integrações & IA',
             items: [
                 { id: 'IA & Integrações', icon: BrainCircuit, label: 'GPT & Gemini' },
+                { id: 'Google Tools', icon: Globe, label: 'Google Analytics & Search Console' },
                 { id: 'Marketplace & ERP', icon: ShoppingBag, label: 'Marketplace & ERP' },
                 { id: 'Scripts Globais', icon: Code, label: 'Scripts Globais' },
             ]
@@ -6691,6 +6692,100 @@ const SettingsView = () => {
                                         </tbody>
                                     </table>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Tab: Google Tools (New) */}
+                {activeTab === 'Google Tools' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Inputs Column */}
+                            <div className="lg:col-span-1 space-y-6">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-6 shadow-sm">
+                                    <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-3 mb-4 flex items-center gap-2">
+                                        <Globe size={18} className="text-blue-500" /> Rastreamento do Google
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Google Analytics ID (GA4)</label>
+                                            <input
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg font-mono text-sm bg-[var(--admin-surface-2)] font-bold text-[var(--admin-text-primary)]"
+                                                value={config.ga_id || ''}
+                                                onChange={(e) => handleChange('ga_id', e.target.value)}
+                                                placeholder="G-XXXXXXXXXX"
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1">O ID de métricas do GA4 que inicia com "G-".</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-2">Google Search Console</label>
+                                            <input
+                                                className="w-full border border-[var(--admin-border)] p-3 rounded-lg font-mono text-sm bg-[var(--admin-surface-2)] font-bold text-[var(--admin-text-primary)]"
+                                                value={config.seo_google_verification || ''}
+                                                onChange={(e) => handleChange('seo_google_verification', e.target.value)}
+                                                placeholder="Código da tag meta"
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1">Insira o valor do atributo 'content' da tag meta de verificação.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Documentation / Step-by-Step Column */}
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-6 shadow-sm">
+                                    <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-3 mb-4 flex items-center gap-2">
+                                        <BookOpen size={18} className="text-yellow-500" /> Passo a Passo de Configuração
+                                    </h3>
+                                    <div className="space-y-6 text-sm text-[var(--admin-text-secondary)] font-medium">
+                                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 text-blue-800 dark:text-blue-400 rounded-xl flex items-start gap-3">
+                                            <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                                            <div>
+                                                <h4 className="font-bold text-xs uppercase tracking-wider mb-1">Como essas integrações funcionam?</h4>
+                                                <p className="text-xs">
+                                                    Ao preencher estes campos e clicar em <strong>Salvar</strong> no topo direito, o sistema injeta dinamicamente as tags de rastreamento do Google em todas as páginas públicas (LPs, catálogo, checkout, blog). Isso permite que o Google verifique a propriedade do seu domínio e colete estatísticas detalhadas de tráfego.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold text-[var(--admin-text-primary)] flex items-center gap-2 border-b pb-1 text-xs uppercase tracking-wider">
+                                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-black">1</span>
+                                                Configurar o Google Search Console
+                                            </h4>
+                                            <ol className="list-decimal pl-5 space-y-2 text-xs">
+                                                <li>Acesse o <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline font-bold">Google Search Console</a> e faça login.</li>
+                                                <li>Clique em <strong>Adicionar Propriedade</strong> e selecione o tipo de propriedade <strong>Prefixo do URL</strong>.</li>
+                                                <li>Insira o endereço do seu site (ex: <code>https://seudominio.com.br</code>) e clique em continuar.</li>
+                                                <li>Na seção de métodos de verificação alternativos, escolha <strong>Tag HTML</strong>.</li>
+                                                <li>Copie a tag fornecida pelo Google. Ela se parecerá com isso:<br/>
+                                                    <code className="block p-2 bg-[var(--admin-surface-2)] border rounded mt-1 font-mono text-[10px] select-all overflow-x-auto text-[var(--admin-text-primary)]">
+                                                        {"<meta name=\"google-site-verification\" content=\"SEU_CODIGO_AQUI\" />"}
+                                                    </code>
+                                                </li>
+                                                <li>Copie <strong>apenas</strong> o código alfanumérico dentro de <code>content="..."</code> (ex: <code>0i-mmxA30nyMMbDqHvSwePNljm0E_wOCx06ZxvAOLwo</code>).</li>
+                                                <li>Cole no campo <strong>Google Search Console</strong> ao lado, clique em <strong>Salvar</strong> no topo direito da tela e, em seguida, clique em <strong>Verificar</strong> no painel do Search Console do Google.</li>
+                                            </ol>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold text-[var(--admin-text-primary)] flex items-center gap-2 border-b pb-1 text-xs uppercase tracking-wider">
+                                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-600 text-white text-[10px] font-black">2</span>
+                                                Configurar o Google Analytics (GA4)
+                                            </h4>
+                                            <ol className="list-decimal pl-5 space-y-2 text-xs">
+                                                <li>Acesse o <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline font-bold">Google Analytics</a> e faça login com sua conta do Google.</li>
+                                                <li>Se for seu primeiro acesso, crie uma nova conta e propriedade de fluxo da Web para o seu site. Se já tiver, acesse <strong>Administrador (ícone de engrenagem) &gt; Fluxos de Dados</strong>.</li>
+                                                <li>Clique no fluxo da Web configurado para seu site para abrir os detalhes.</li>
+                                                <li>No canto superior direito dos detalhes do fluxo, localize o <strong>ID DA MÉTRICA</strong> (ele sempre começa com <strong>"G-"</strong>, ex: <code>G-XXXXXXXXXX</code>).</li>
+                                                <li>Copie o ID da Métrica completo (incluindo o prefixo "G-").</li>
+                                                <li>Cole no campo <strong>Google Analytics ID (GA4)</strong> ao lado e clique em <strong>Salvar</strong> no topo direito da tela.</li>
+                                                <li>Pronto! O rastreamento começará a coletar dados de visitas e eventos em poucos minutos.</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

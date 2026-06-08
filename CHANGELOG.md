@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.11 (2026-06-08) - Integração de Search Console & Analytics
+- Adicionada meta tag estática do Google Search Console ao index.html
+- Nova aba dedicada nas configurações do Admin para Google Analytics e Search Console
+- Passo a passo interativo e detalhado no painel para facilitar a configuração
+
 ## v3.0.10 (2026-06-08) - Quiz de Suspensão (/quiz-suspensao)
 - Novo quiz interativo de conversão em /quiz-suspensao com funil ramificado Piloto x Mecânico
 - Tela de análise com barra de progresso em tempo real antes do diagnóstico personalizado

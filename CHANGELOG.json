@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.0.11",
+    "date": "2026-06-08",
+    "title": "Integração de Search Console & Analytics",
+    "changes": [
+      "Adicionada meta tag estática do Google Search Console ao index.html",
+      "Nova aba dedicada nas configurações do Admin para Google Analytics e Search Console",
+      "Passo a passo interativo e detalhado no painel para facilitar a configuração"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.10",
     "date": "2026-06-08",
     "title": "Quiz de Suspensão (/quiz-suspensao)",
