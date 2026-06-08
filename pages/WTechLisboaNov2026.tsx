@@ -29,8 +29,20 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
         if (isPlaying) {
             videoRef.current.pause();
         } else {
-            videoRef.current.play();
+            setIsPlaying(true);
+            videoRef.current.muted = false;
+            videoRef.current.currentTime = 0;
+            videoRef.current.play().catch(() => {});
+            if (ambientRef.current) {
+                ambientRef.current.currentTime = 0;
+                ambientRef.current.play().catch(() => {});
+            }
         }
+    };
+
+    const handleContainerClick = (e: React.MouseEvent) => {
+        if (isPlaying) return;
+        togglePlay();
     };
 
     React.useEffect(() => {
@@ -38,36 +50,54 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
         const ambientVideo = ambientRef.current;
         if (!mainVideo || !ambientVideo) return;
 
-        const handlePlay = () => {
-            setIsPlaying(true);
-            ambientVideo.play().catch(() => {});
-        };
-
         const handlePause = () => {
             setIsPlaying(false);
-            ambientVideo.pause();
+            mainVideo.muted = true;
+            mainVideo.play().catch(() => {});
+            ambientVideo.play().catch(() => {});
         };
 
         const handleEnded = () => {
             setIsPlaying(false);
-            ambientVideo.pause();
+            mainVideo.muted = true;
+            mainVideo.currentTime = 0;
+            mainVideo.play().catch(() => {});
+            ambientVideo.currentTime = 0;
+            ambientVideo.play().catch(() => {});
         };
 
-        mainVideo.addEventListener('play', handlePlay);
+        const handleTimeUpdate = () => {
+            if (!isPlaying) {
+                if (mainVideo.currentTime >= 3) {
+                    mainVideo.currentTime = 0;
+                    ambientVideo.currentTime = 0;
+                }
+            }
+        };
+
         mainVideo.addEventListener('pause', handlePause);
         mainVideo.addEventListener('ended', handleEnded);
+        mainVideo.addEventListener('timeupdate', handleTimeUpdate);
+
+        // Start preview mode initially (muted play)
+        if (!isPlaying) {
+            mainVideo.muted = true;
+            ambientVideo.muted = true;
+            mainVideo.play().catch(() => {});
+            ambientVideo.play().catch(() => {});
+        }
 
         return () => {
-            mainVideo.removeEventListener('play', handlePlay);
             mainVideo.removeEventListener('pause', handlePause);
             mainVideo.removeEventListener('ended', handleEnded);
+            mainVideo.removeEventListener('timeupdate', handleTimeUpdate);
         };
-    }, []);
+    }, [isPlaying]);
 
     if (aspect === 'video') {
         return (
             <div 
-                onClick={togglePlay}
+                onClick={handleContainerClick}
                 className="relative aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-black group cursor-pointer"
             >
                 {/* Ambient Glow */}
@@ -79,7 +109,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
                     muted
                     loop
                     playsInline
-                    preload="none"
+                    preload="auto"
                 />
                 {/* Main Video */}
                 <video
@@ -89,7 +119,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
                     style={{ transform: rotate ? 'rotate(90deg)' : 'none', width: rotate ? '56.25%' : '100%', height: rotate ? '177.77%' : '100%', top: rotate ? '-38.885%' : '0', left: rotate ? '21.875%' : '0', objectFit: rotate ? 'contain' : 'contain' }}
                     controls={isPlaying}
                     playsInline
-                    preload="metadata"
+                    preload="auto"
                 />
                 {/* Pulsing Play Button */}
                 {!isPlaying && (
@@ -106,7 +136,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
     } else {
         return (
             <div 
-                onClick={togglePlay}
+                onClick={handleContainerClick}
                 className="relative aspect-[9/16] w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black group cursor-pointer"
             >
                 {/* Ambient Glow */}
@@ -117,7 +147,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
                     muted
                     loop
                     playsInline
-                    preload="none"
+                    preload="auto"
                 />
                 {/* Main Video */}
                 <video
@@ -126,7 +156,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
                     className="relative z-10 w-full h-full object-cover rounded-2xl"
                     controls={isPlaying}
                     playsInline
-                    preload="metadata"
+                    preload="auto"
                 />
                 {/* Pulsing Play Button */}
                 {!isPlaying && (
@@ -465,7 +495,7 @@ const WTechLisboaNov2026: React.FC = () => {
                     </div>
 
                     <div className="mb-28">
-                        <PremiumVideoPlayer src="/videos/como_foi.mp4" aspect="video" rotate={true} />
+                        <PremiumVideoPlayer src="/videos/como_foi.mp4" aspect="video" />
                     </div>
 
                     {/* Part 2: What students said */}
