@@ -47,6 +47,7 @@ const stagger = {
 /* ─── Reusable Premium Video Player with Ambient Glow, Overlays & Pulse Play ─── */
 const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait'; rotate?: boolean }> = ({ src, aspect = 'video', rotate = false }) => {
     const videoRef = React.useRef<HTMLVideoElement>(null);
+    const ambientRef = React.useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = React.useState(false);
 
     const togglePlay = () => {
@@ -58,6 +59,37 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
         }
     };
 
+    React.useEffect(() => {
+        const mainVideo = videoRef.current;
+        const ambientVideo = ambientRef.current;
+        if (!mainVideo || !ambientVideo) return;
+
+        const handlePlay = () => {
+            setIsPlaying(true);
+            ambientVideo.play().catch(() => {});
+        };
+
+        const handlePause = () => {
+            setIsPlaying(false);
+            ambientVideo.pause();
+        };
+
+        const handleEnded = () => {
+            setIsPlaying(false);
+            ambientVideo.pause();
+        };
+
+        mainVideo.addEventListener('play', handlePlay);
+        mainVideo.addEventListener('pause', handlePause);
+        mainVideo.addEventListener('ended', handleEnded);
+
+        return () => {
+            mainVideo.removeEventListener('play', handlePlay);
+            mainVideo.removeEventListener('pause', handlePause);
+            mainVideo.removeEventListener('ended', handleEnded);
+        };
+    }, []);
+
     if (aspect === 'video') {
         return (
             <div 
@@ -66,24 +98,24 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
             >
                 {/* Ambient Glow */}
                 <video
+                    ref={ambientRef}
                     src={src}
                     className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none"
                     style={{ transform: rotate ? 'rotate(90deg)' : 'none', width: rotate ? '56.25%' : '100%', height: rotate ? '177.77%' : '100%', top: rotate ? '-38.885%' : '0', left: rotate ? '21.875%' : '0' }}
                     muted
                     loop
                     playsInline
-                    autoPlay
+                    preload="none"
                 />
                 {/* Main Video */}
                 <video
                     ref={videoRef}
                     src={src}
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
                     className="relative z-10"
                     style={{ transform: rotate ? 'rotate(90deg)' : 'none', width: rotate ? '56.25%' : '100%', height: rotate ? '177.77%' : '100%', top: rotate ? '-38.885%' : '0', left: rotate ? '21.875%' : '0', objectFit: rotate ? 'contain' : 'contain' }}
                     controls={isPlaying}
                     playsInline
+                    preload="metadata"
                 />
                 {/* Pulsing Play Button */}
                 {!isPlaying && (
@@ -105,22 +137,22 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
             >
                 {/* Ambient Glow */}
                 <video
+                    ref={ambientRef}
                     src={src}
                     className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none"
                     muted
                     loop
                     playsInline
-                    autoPlay
+                    preload="none"
                 />
                 {/* Main Video */}
                 <video
                     ref={videoRef}
                     src={src}
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
                     className="relative z-10 w-full h-full object-cover rounded-2xl"
                     controls={isPlaying}
                     playsInline
+                    preload="metadata"
                 />
                 {/* Pulsing Play Button */}
                 {!isPlaying && (
@@ -222,10 +254,10 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-8"
+                        className="text-5xl md:text-8xl lg:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-8 pr-4"
                     >
                         W-Tech<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red via-red-500 to-wtech-gold italic font-bold">Lisboa II</span>
+                        <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-wtech-red via-red-500 to-wtech-gold italic font-bold pr-6 pb-2">Lisboa II</span>
                     </motion.h1>
 
                     <motion.p
@@ -325,8 +357,41 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 </div>
             </section>
 
+            {/* PAST EDITION & TESTIMONIALS */}
+            <section className="py-24 bg-[#080808] border-y border-white/5 relative overflow-hidden">
+                <GridVignetteBackground className="opacity-30 pointer-events-none" />
+                {/* Accent glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#E6241D]/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+                <div className="container mx-auto px-6 relative z-10">
+                    {/* Part 1: How it went */}
+                    <div className="text-center mb-16">
+                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-xs">Sucesso da 1ª Edição</span>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">Como Foi a <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">1ª Edição em Lisboa</span></h2>
+                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação técnica e da prática real no nosso primeiro treinamento.</p>
+                    </div>
+
+                    <div className="mb-28">
+                        <PremiumVideoPlayer src="/videos/como_foi.mp4" aspect="video" rotate={true} />
+                    </div>
+
+                    {/* Part 2: What students said */}
+                    <div className="text-center mb-16">
+                        <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-xs">Depoimentos Reais</span>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">O que dizem os <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Nossos Alunos</span></h2>
+                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Quem viveu a experiência na pele partilha o impacto técnico do método W-Tech.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
+                        <PremiumVideoPlayer src="/videos/depoimentos_1.mp4" aspect="portrait" />
+                        <PremiumVideoPlayer src="/videos/depoimentos_2.mp4" aspect="portrait" />
+                    </div>
+                </div>
+            </section>
+
             {/* CURRICULUM BENTO GRID */}
-            <section className="py-24 bg-black">
+            <section className="py-24 bg-black relative">
+                <GridVignetteBackground className="opacity-30 pointer-events-none" />
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-20">
                         <span className="text-wtech-red font-black uppercase tracking-[0.4em] text-xs">O que você vai dominar</span>
@@ -418,39 +483,9 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 </div>
             </section>
 
-            {/* PAST EDITION & TESTIMONIALS */}
-            <section className="py-24 bg-[#080808] border-y border-white/5 relative overflow-hidden">
-                {/* Accent glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#E6241D]/5 blur-[120px] rounded-full pointer-events-none"></div>
-
-                <div className="container mx-auto px-6 relative z-10">
-                    {/* Part 1: How it went */}
-                    <div className="text-center mb-16">
-                        <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-xs">Sucesso da 1ª Edição</span>
-                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">Como Foi a <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">1ª Edição em Lisboa</span></h2>
-                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação técnica e da prática real no nosso primeiro treinamento.</p>
-                    </div>
-
-                    <div className="mb-28">
-                        <PremiumVideoPlayer src="/videos/como_foi.mp4" aspect="video" rotate={true} />
-                    </div>
-
-                    {/* Part 2: What students said */}
-                    <div className="text-center mb-16">
-                        <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-xs">Depoimentos Reais</span>
-                        <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">O que dizem os <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Nossos Alunos</span></h2>
-                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Quem viveu a experiência na pele partilha o impacto técnico do método W-Tech.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
-                        <PremiumVideoPlayer src="/videos/depoimentos_1.mp4" aspect="portrait" />
-                        <PremiumVideoPlayer src="/videos/depoimentos_2.mp4" aspect="portrait" />
-                    </div>
-                </div>
-            </section>
-
             {/* INSTRUCTOR: ALEX ONLY */}
-            <section className="py-24 bg-black">
+            <section className="py-24 bg-black relative">
+                <GridVignetteBackground className="opacity-25 pointer-events-none" />
                 <div className="container mx-auto px-6">
                     <div className="max-w-6xl mx-auto bg-zinc-900/40 border border-white/5 rounded-[2rem] overflow-hidden">
                         <div className="grid lg:grid-cols-2">
