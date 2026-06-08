@@ -32,5 +32,32 @@ Antes de realizar qualquer alteração de código, arquitetura ou design, você 
 
 ---
 
+
+## 🧹 FORMATAÇÃO OBRIGATÓRIA (PRETTIER)
+
+**Todo projeto TypeScript/JavaScript DEVE ter Prettier instalado e configurado.**
+
+Ao iniciar trabalho neste projeto:
+1. Verificar se Prettier existe: `npx prettier --version 2>/dev/null || echo "ausente"`
+2. Se ausente, instalar imediatamente **antes de qualquer outra tarefa**:
+```bash
+npm install --save-dev prettier
+```
+3. Se não existir `.prettierrc`, criar na raiz:
+```json
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 100
+}
+```
+4. O hook global em `~/.claude/settings.json` já formata automaticamente ao salvar — mas só funciona se o Prettier estiver instalado no projeto.
+
+**Nunca escrever ou commitar código sem Prettier configurado.**
+
+---
+
 ## 🎨 ESTÉTICA DE DESIGN PREMIUM (WOW FACTOR)
 - Em qualquer alteração de Frontend/UI, adote estética avançada e moderna: paletas HSL customizadas, gradientes suaves, Glassmorphism, grid de 8px, transições fluidas e responsividade perfeita. Sem layouts genéricos simples.
