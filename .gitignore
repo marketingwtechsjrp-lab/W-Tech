@@ -38,3 +38,7 @@ public/images/Pronello.mov
 /playwright/.auth/
 .claude/
 .playwright-mcp/
+
+# Scripts de debug locais e temporários (não versionar)
+scratch/
+supabase/.temp/

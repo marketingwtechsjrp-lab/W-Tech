@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.10 (2026-06-08) - Quiz de Suspensão (/quiz-suspensao)
+- Novo quiz interativo de conversão em /quiz-suspensao com funil ramificado Piloto x Mecânico
+- Tela de análise com barra de progresso em tempo real antes do diagnóstico personalizado
+- Tracking de funil no GA4 e repasse de UTM/fbclid para o checkout Kiwify
+- Captura de lead via instância de suporte no WhatsApp + atribuição no CRM
+- Fix: corrige tela branca no resultado quando o WebGL falha (ErrorBoundary + blindagem do shader, protege tambem a LP)
+
 ## v3.0.9 (2026-06-01) - Atalhos de Teclado, Portal de Afiliados e Recuperação de Vendas
 - 🚀 [Novidades] Novo portal de recursos e rota pública para Afiliados (/afiliados)
 - 🚀 [Novidades] Painel de Recuperação de Carrinho Kiwify com automação de Pix, teste A/B e estatísticas (ROI)
