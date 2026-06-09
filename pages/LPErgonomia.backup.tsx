@@ -245,7 +245,6 @@ const LPErgonomia: React.FC = () => {
         { q: 'Recebo certificado?', a: 'Sim. Ao completar todos os módulos, você recebe o certificado digital oficial da W-Tech Brasil.' },
         { q: 'Posso assistir no celular?', a: 'Sim. A plataforma funciona em qualquer dispositivo — celular, tablet ou computador.' },
         { q: 'O curso serve para motocross, enduro e street?', a: 'Sim. Os princípios de ergonomia são universais. O curso aborda aplicações específicas para cada modalidade.' },
-        { q: 'Tem suporte para dúvidas?', a: 'Sim. Você terá acesso a um canal exclusivo para tirar dúvidas diretamente com a equipe W-Tech.' },
         { q: 'Por quanto tempo tenho acesso?', a: 'Acesso vitalício. Você pode reassistir as aulas quantas vezes quiser, para sempre.' },
         { q: 'Tem garantia?', a: 'Sim. Garantia incondicional de 7 dias. Se não gostar, devolvemos 100% do seu investimento.' },
     ];

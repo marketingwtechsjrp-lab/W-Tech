@@ -58,10 +58,10 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
             setIsPlaying(true);
             videoRef.current.muted = false;
             videoRef.current.currentTime = 0;
-            videoRef.current.play().catch(() => {});
+            videoRef.current.play().catch(() => { });
             if (ambientRef.current) {
                 ambientRef.current.currentTime = 0;
-                ambientRef.current.play().catch(() => {});
+                ambientRef.current.play().catch(() => { });
             }
         }
     };
@@ -79,17 +79,17 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
         const handlePause = () => {
             setIsPlaying(false);
             mainVideo.muted = true;
-            mainVideo.play().catch(() => {});
-            ambientVideo.play().catch(() => {});
+            mainVideo.play().catch(() => { });
+            ambientVideo.play().catch(() => { });
         };
 
         const handleEnded = () => {
             setIsPlaying(false);
             mainVideo.muted = true;
             mainVideo.currentTime = 0;
-            mainVideo.play().catch(() => {});
+            mainVideo.play().catch(() => { });
             ambientVideo.currentTime = 0;
-            ambientVideo.play().catch(() => {});
+            ambientVideo.play().catch(() => { });
         };
 
         const handleTimeUpdate = () => {
@@ -109,8 +109,8 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
         if (!isPlaying) {
             mainVideo.muted = true;
             ambientVideo.muted = true;
-            mainVideo.play().catch(() => {});
-            ambientVideo.play().catch(() => {});
+            mainVideo.play().catch(() => { });
+            ambientVideo.play().catch(() => { });
         }
 
         return () => {
@@ -122,7 +122,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
 
     if (aspect === 'video') {
         return (
-            <div 
+            <div
                 onClick={handleContainerClick}
                 className="relative aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] bg-black group cursor-pointer"
             >
@@ -161,7 +161,7 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
         );
     } else {
         return (
-            <div 
+            <div
                 onClick={handleContainerClick}
                 className="relative aspect-[9/16] w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black group cursor-pointer"
             >
@@ -240,21 +240,22 @@ const LPWTechLisboaNov2026: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
-            
+
             {/* TOP BAR / URGENCY */}
-            <div className="bg-gradient-to-r from-wtech-red to-red-800 text-white text-[9px] md:text-xs font-black uppercase tracking-wider md:tracking-[0.3em] text-center py-2.5 px-4 sticky top-0 z-50 shadow-2xl">
+            <div className="bg-gradient-to-r from-wtech-red to-red-800 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-center py-2.5 px-4 sticky top-0 z-50 shadow-2xl">
                 🔥 VAGAS LIMITADAS: PRÉ-INSCRIÇÕES ABERTAS PARA A 2ª EDIÇÃO (LISBOA – 14 E 15 DE NOVEMBRO)
             </div>
 
+            {/* NAVIGATION / LOGOS */}
+            <nav className="absolute top-12 left-0 w-full z-40">
+                <div className="container mx-auto px-6 flex justify-between items-center">
+                    <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-8 md:h-12 object-contain" />
+                    <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-8 md:h-12 object-contain bg-white p-1 rounded shadow-lg" />
+                </div>
+            </nav>
+
             {/* HERO SECTION */}
             <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                {/* NAVIGATION / LOGOS */}
-                <nav className="absolute top-4 md:top-8 left-0 w-full z-40">
-                    <div className="container mx-auto px-6 flex justify-between items-center">
-                        <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-8 md:h-12 object-contain" />
-                        <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-8 md:h-12 object-contain bg-white p-1 rounded shadow-lg" />
-                    </div>
-                </nav>
                 {/* Background Video/Image Overlay */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/50 to-[#050505] z-10"></div>
@@ -601,7 +602,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                             ))}
                         </div>
 
-                         <div className="space-y-8">
+                        <div className="space-y-8">
                             {[
                                 {
                                     num: "04",

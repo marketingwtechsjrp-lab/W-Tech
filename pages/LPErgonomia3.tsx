@@ -342,7 +342,6 @@ const LPErgonomia3: React.FC = () => {
         { q: 'Recebo certificado?', a: 'Sim. Certificado digital oficial da W-Tech Brasil ao concluir todos os módulos.' },
         { q: 'Posso assistir no celular?', a: 'Sim. Funciona em qualquer dispositivo — celular, tablet ou computador.' },
         { q: 'O curso serve para qual tipo de moto?', a: 'Enduro, Motocross, Big Trail e Hard Enduro. Os fundamentos de SAG, molas e hidráulica são universais.' },
-        { q: 'Tem suporte para dúvidas?', a: 'Sim. Canal exclusivo para tirar dúvidas diretamente com a equipe W-Tech.' },
         { q: 'Por quanto tempo tenho acesso?', a: '12 meses (1 Ano). Reassista quando quiser durante este período.' },
         { q: 'Tem garantia?', a: 'Garantia incondicional de 7 dias. Não gostou? 100% do valor devolvido.' },
     ];
