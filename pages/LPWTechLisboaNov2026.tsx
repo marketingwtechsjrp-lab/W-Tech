@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
+import { createStripePaymentLink } from '../lib/stripe';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import {
     CheckCircle,
@@ -205,31 +206,77 @@ const LPWTechLisboaNov2026: React.FC = () => {
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    const COURSE_ID = 'b88e8979-520a-4c37-8cb8-1128e7e5dffc'; // Curso Lisboa II Novembro 2026
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
             const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
-            const payload = {
+            
+            // 1. Criar o Lead no CRM (SITE_Leads)
+            const leadPayload = {
                 name: form.name,
                 email: form.email,
                 phone: form.phone,
                 type: 'Course_Waitlist',
                 status: 'New',
-                context_id: `WTECH EUROPA LISBOA NOVEMBRO 2026`,
-                tags: ['WTECH_LISBOA_NOV_2026', 'WAITLIST'],
+                context_id: `WTECH EUROPA LISBOA NOVEMBRO 2026 (SINAL)`,
+                tags: ['WTECH_LISBOA_NOV_2026', 'WAITLIST_SINAL'],
                 assigned_to: assignedTo,
                 notes: form.reason
             };
 
-            const { error } = await supabase.from('SITE_Leads').insert([payload]);
-            if (error) throw error;
+            const { data: leadData, error: leadError } = await supabase
+                .from('SITE_Leads')
+                .insert([leadPayload])
+                .select()
+                .single();
+                
+            if (leadError) throw leadError;
 
-            await triggerWebhook('webhook_lead', payload);
-            setSubmitted(true);
-        } catch (err) {
-            console.error('Error submitting lead:', err);
-            alert('Erro ao enviar. Tente novamente ou entre em contato via WhatsApp.');
+            // 2. Criar a inscrição (SITE_Enrollments) como pendente
+            const enrollmentPayload = {
+                course_id: COURSE_ID,
+                student_name: form.name,
+                student_email: form.email,
+                student_phone: form.phone,
+                status: 'Pending',
+                amount_paid: 0,
+                total_amount: 380, // Preço total
+                payment_method: 'Stripe'
+            };
+
+            const { data: enrollmentData, error: enrollmentError } = await supabase
+                .from('SITE_Enrollments')
+                .insert([enrollmentPayload])
+                .select()
+                .single();
+
+            if (enrollmentError) throw enrollmentError;
+
+            // 3. Disparar Webhook
+            await triggerWebhook('webhook_lead', { ...enrollmentData, lead_id: leadData.id });
+
+            // 4. Criar link de pagamento do Stripe para o Sinal (€150)
+            const stripeResult = await createStripePaymentLink({
+                title: `Sinal: W-Tech Lisboa II (Nov 2026) - ${form.name}`,
+                price: 150, // €150 de sinal
+                currency: 'eur',
+                email: form.email,
+                enrollmentId: enrollmentData.id,
+                successUrl: window.location.origin + `/obrigado-lisboa?eid=${enrollmentData.id}&session_id={CHECKOUT_SESSION_ID}&type=deposit`
+            });
+
+            if (stripeResult.success && stripeResult.url) {
+                window.location.href = stripeResult.url;
+            } else {
+                throw new Error(stripeResult.error || 'Erro ao gerar link de pagamento.');
+            }
+
+        } catch (err: any) {
+            console.error('Error submitting pre-registration:', err);
+            alert('Erro ao processar sua pré-inscrição: ' + err.message);
         }
         setLoading(false);
     };
@@ -243,7 +290,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
 
             {/* TOP BAR / URGENCY */}
             <div className="bg-gradient-to-r from-wtech-red to-red-800 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-center py-2.5 px-4 sticky top-0 z-50 shadow-2xl">
-                🔥 VAGAS LIMITADAS: PRÉ-INSCRIÇÕES ABERTAS PARA A 2ª EDIÇÃO (LISBOA – 14 E 15 DE NOVEMBRO)
+                🔥 VAGAS LIMITADAS: GARANTA SUA RESERVA DE VAGA PARA A 2ª EDIÇÃO (LISBOA – 14 E 15 DE NOVEMBRO)
             </div>
 
             {/* NAVIGATION / LOGOS */}
@@ -297,7 +344,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         className="max-w-3xl mx-auto text-lg md:text-2xl text-gray-400 font-medium mb-12 leading-relaxed"
                     >
                         A segunda edição da imersão que eleva o ajuste de suspensão ao <span className="text-white font-black">Padrão Internacional</span>. <br className="hidden md:block" />
-                        Aprenda com quem desenvolve a tecnologia.
+                        Garanta sua vaga pagando um sinal de reserva de <span className="text-white font-black">€150</span> (investimento total de €380).
                     </motion.p>
 
                     <motion.div
@@ -309,7 +356,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                             onClick={scrollToForm}
                             className="bg-wtech-red hover:bg-white hover:text-black text-white px-12 py-6 rounded-sm font-black text-xl uppercase tracking-widest transition-all hover:scale-105 flex items-center gap-4 mx-auto group shadow-[0_0_50px_rgba(230,0,0,0.4)]"
                         >
-                            Garantir a Minha Vaga <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={3} />
+                            Reservar Minha Vaga (€150) <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={3} />
                         </button>
                     </motion.div>
                 </div>
@@ -680,7 +727,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <div>
                             <h2 className="text-5xl md:text-7xl font-black uppercase mb-8 tracking-tighter leading-[0.9]">2ª Edição<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red to-wtech-gold text-6xl md:text-8xl font-black">Novembro</span></h2>
                             <p className="text-gray-400 text-lg mb-10 leading-relaxed max-w-md">
-                                As vagas para a segunda edição oficial do curso W-Tech em Sintra são limitadas. Inscreva-se na fila de prioridade para garantir seu lugar no lote de lançamento.
+                                As vagas para a segunda edição oficial do curso W-Tech em Sintra são extremamente limitadas. Reserve sua vaga agora pagando um sinal de entrada de <strong>€150</strong> (valor total do curso de €380).
                             </p>
                             <div className="space-y-4 mb-10">
                                 <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-xl">
@@ -700,9 +747,8 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                     <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
                                         <CheckCircle size={40} />
                                     </div>
-                                    <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">Inscrição Enviada!</h3>
-                                    <p className="text-gray-400 mb-8">Fique atento ao seu Telemóvel/WhatsApp. Entraremos em contacto em breve para confirmar sua vaga.</p>
-                                    <button onClick={() => setSubmitted(false)} className="text-xs font-black uppercase text-gray-500 hover:text-white transition-colors underline tracking-widest">Enviar Outra</button>
+                                    <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">Sinal Confirmado!</h3>
+                                    <p className="text-gray-400 mb-8">Redirecionando para a confirmação...</p>
                                 </motion.div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -722,7 +768,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                         disabled={loading}
                                         className="w-full bg-wtech-red hover:bg-white hover:text-wtech-red text-white py-6 rounded-xl font-black text-lg uppercase tracking-widest transition-all shadow-[0_20px_40px_rgba(230,0,0,0.3)] disabled:opacity-50"
                                     >
-                                        {loading ? 'A Enviar...' : 'Garantir Prioridade'}
+                                        {loading ? 'A Redirecionar...' : 'Pagar Sinal de Entrada (€150)'}
                                     </button>
                                 </form>
                             )}

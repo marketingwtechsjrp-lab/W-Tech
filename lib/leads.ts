@@ -31,6 +31,18 @@ export async function syncStudentToLeads(enrollment: Partial<Enrollment>) {
             address_state: enrollment.state,
             cpf: enrollment.studentCpf,
             t_shirt_size: enrollment.tShirtSize,
+            workshop_details: {
+                name: enrollment.workshopName || '',
+                has_workshop: enrollment.hasWorkshop || false,
+                works_with_suspensions: enrollment.worksWithSuspensions || false,
+                took_suspension_course: enrollment.tookSuspensionCourse || false,
+                experience_years: enrollment.experienceYears || ''
+            },
+            notes: `Questionário preenchido no checkout:
+- Tem oficina: ${enrollment.hasWorkshop ? 'Sim (' + enrollment.workshopName + ')' : 'Não'}
+- Trabalha com suspensão: ${enrollment.worksWithSuspensions ? 'Sim' : 'Não'}
+- Fez outro curso de suspensão: ${enrollment.tookSuspensionCourse ? 'Sim' : 'Não'}
+- Tempo na área: ${enrollment.experienceYears || 'N/A'}`
         };
 
         if (existing) {

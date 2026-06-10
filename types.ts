@@ -145,6 +145,12 @@ export interface Enrollment {
   currency?: 'BRL' | 'USD' | 'EUR';
   studentCpf?: string;
   tShirtSize?: string;
+  hasWorkshop?: boolean;
+  workshopName?: string;
+  worksWithSuspensions?: boolean;
+  tookSuspensionCourse?: boolean;
+  experienceYears?: string;
+  enrolledByName?: string;
 }
 
 export interface PostComment {

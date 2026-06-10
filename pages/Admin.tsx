@@ -1143,8 +1143,33 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         setCurrentCourse(course);
         setShowEnrollments(true);
         const { data } = await supabase.from('SITE_Enrollments').select('*').eq('course_id', course.id);
-        if (data) setEnrollments(data.map((c: any) => ({ ...c, courseId: c.course_id, studentName: c.student_name, studentEmail: c.student_email, studentPhone: c.student_phone, createdAt: c.created_at, reminder5dSent: c.reminder_5d_sent, reminder1dSent: c.reminder_1d_sent })));
-        else setEnrollments([]);
+        if (data) {
+            setEnrollments(data.map((c: any) => ({
+                ...c,
+                courseId: c.course_id,
+                studentName: c.student_name,
+                studentEmail: c.student_email,
+                studentPhone: c.student_phone,
+                createdAt: c.created_at,
+                reminder5dSent: c.reminder_5d_sent,
+                reminder1dSent: c.reminder_1d_sent,
+                address: c.address,
+                city: c.city,
+                state: c.state,
+                zipCode: c.zip_code,
+                isCredentialed: c.is_credentialed,
+                totalAmount: c.total_amount,
+                studentCpf: c.student_cpf,
+                tShirtSize: c.t_shirt_size,
+                hasWorkshop: c.has_workshop,
+                workshopName: c.workshop_name,
+                worksWithSuspensions: c.works_with_suspensions,
+                tookSuspensionCourse: c.took_suspension_course,
+                experienceYears: c.experience_years
+            })));
+        } else {
+            setEnrollments([]);
+        }
     };
 
     const handleSendManualReminder = async (enr: Enrollment) => {
@@ -1432,7 +1457,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                 isCredentialed: e.is_credentialed,
                 totalAmount: e.total_amount,
                 studentCpf: e.student_cpf,
-                tShirtSize: e.t_shirt_size
+                tShirtSize: e.t_shirt_size,
+                hasWorkshop: e.has_workshop,
+                workshopName: e.workshop_name,
+                worksWithSuspensions: e.works_with_suspensions,
+                tookSuspensionCourse: e.took_suspension_course,
+                experienceYears: e.experience_years
             })));
         }
     };
@@ -1469,7 +1499,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             is_credentialed: editingEnrollment.isCredentialed,
             total_amount: editingEnrollment.totalAmount,
             student_cpf: editingEnrollment.studentCpf,
-            t_shirt_size: editingEnrollment.tShirtSize
+            t_shirt_size: editingEnrollment.tShirtSize,
+            has_workshop: editingEnrollment.hasWorkshop,
+            workshop_name: editingEnrollment.workshopName,
+            works_with_suspensions: editingEnrollment.worksWithSuspensions,
+            took_suspension_course: editingEnrollment.tookSuspensionCourse,
+            experience_years: editingEnrollment.experienceYears
         };
         // Save attendant name only on new enrollments (not on edits)
         if (!editingEnrollment.id && user?.name) {
@@ -1495,7 +1530,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     zipCode: payload.zip_code,
                     isCredentialed: payload.is_credentialed,
                     studentCpf: payload.student_cpf,
-                    tShirtSize: payload.t_shirt_size
+                    tShirtSize: payload.t_shirt_size,
+                    hasWorkshop: payload.has_workshop,
+                    workshopName: payload.workshop_name,
+                    worksWithSuspensions: payload.works_with_suspensions,
+                    tookSuspensionCourse: payload.took_suspension_course,
+                    experienceYears: payload.experience_years
                 } as Enrollment : enr));
                 setEditingEnrollment(null);
                 // SYNC TO UNIFIED LEADS
@@ -1524,7 +1564,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     isCredentialed: data.is_credentialed,
                     totalAmount: data.total_amount,
                     studentCpf: data.student_cpf,
-                    tShirtSize: data.t_shirt_size
+                    tShirtSize: data.t_shirt_size,
+                    hasWorkshop: data.has_workshop,
+                    workshopName: data.workshop_name,
+                    worksWithSuspensions: data.works_with_suspensions,
+                    tookSuspensionCourse: data.took_suspension_course,
+                    experienceYears: data.experience_years
                 };
                 setEnrollments(prev => [...prev, newEnrollment]);
                 setEditingEnrollment(null);
@@ -1875,6 +1920,63 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         </div>
                                     </div>
 
+                                    {/* Experience Questionnaire Section */}
+                                    <div className="md:col-span-2 border-t border-[var(--admin-border)] pt-4 mt-2">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)] flex items-center gap-1.5 mb-3">
+                                            <ClipboardList size={13} /> Questionário de Experiência
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex items-center gap-2 bg-[var(--admin-surface-1)] p-2.5 rounded border border-[var(--admin-border)]">
+                                                <input
+                                                    type="checkbox"
+                                                    id="hasWorkshop"
+                                                    className="w-4 h-4 text-wtech-gold rounded"
+                                                    checked={editingEnrollment.hasWorkshop || false}
+                                                    onChange={e => setEditingEnrollment({ ...editingEnrollment, hasWorkshop: e.target.checked })}
+                                                />
+                                                <label htmlFor="hasWorkshop" className="text-xs font-bold text-[var(--admin-text-primary)] cursor-pointer">Possui Oficina</label>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Nome da Oficina</label>
+                                                <input
+                                                    className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
+                                                    value={editingEnrollment.workshopName || ''}
+                                                    onChange={e => setEditingEnrollment({ ...editingEnrollment, workshopName: e.target.value })}
+                                                    disabled={!editingEnrollment.hasWorkshop}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-[var(--admin-surface-1)] p-2.5 rounded border border-[var(--admin-border)]">
+                                                <input
+                                                    type="checkbox"
+                                                    id="worksWithSuspensions"
+                                                    className="w-4 h-4 text-wtech-gold rounded"
+                                                    checked={editingEnrollment.worksWithSuspensions || false}
+                                                    onChange={e => setEditingEnrollment({ ...editingEnrollment, worksWithSuspensions: e.target.checked })}
+                                                />
+                                                <label htmlFor="worksWithSuspensions" className="text-xs font-bold text-[var(--admin-text-primary)] cursor-pointer">Trabalha com Suspensões</label>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-[var(--admin-surface-1)] p-2.5 rounded border border-[var(--admin-border)]">
+                                                <input
+                                                    type="checkbox"
+                                                    id="tookSuspensionCourse"
+                                                    className="w-4 h-4 text-wtech-gold rounded"
+                                                    checked={editingEnrollment.tookSuspensionCourse || false}
+                                                    onChange={e => setEditingEnrollment({ ...editingEnrollment, tookSuspensionCourse: e.target.checked })}
+                                                />
+                                                <label htmlFor="tookSuspensionCourse" className="text-xs font-bold text-[var(--admin-text-primary)] cursor-pointer">Já fez Curso de Suspensão</label>
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Tempo na Área / Experiência</label>
+                                                <input
+                                                    className="w-full p-2.5 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-2)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
+                                                    placeholder="Ex: 2 anos, iniciante, etc."
+                                                    value={editingEnrollment.experienceYears || ''}
+                                                    onChange={e => setEditingEnrollment({ ...editingEnrollment, experienceYears: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* Attendant Edit Field - Permission Gated */}
                                     {hasPermission('courses_edit_attendant') && (
                                         <div className="md:col-span-2 mt-2 p-3 rounded-lg border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800">
@@ -2037,7 +2139,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
                                 <div className="flex gap-3">
                                     <button
-                                        onClick={() => setStripeReconcileModal({ isOpen: false, enrollment: null })}
+                                        onClick={() => setStripeReconcileModal({ isOpen: false, enrollment: null, stripeId: '', amount: 0 })}
                                         className="flex-1 py-3 border border-[var(--admin-border)] rounded-lg font-bold text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-2)]"
                                     >
                                         Cancelar
