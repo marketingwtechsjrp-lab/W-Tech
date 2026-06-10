@@ -527,7 +527,7 @@ const ObrigadoLisboa: React.FC = () => {
                             </a>
                             {qSubmitted ? (
                                 <a 
-                                    href="https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy" 
+                                    href="https://chat.whatsapp.com/DpbyOLZ7QrN2D5rFQRv3WQ?mode=gi_t" 
                                     target="_blank"
                                     rel="noreferrer"
                                     className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black transition-colors py-4 rounded-lg uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(22,163,74,0.4)] relative overflow-hidden animate-pulse"
