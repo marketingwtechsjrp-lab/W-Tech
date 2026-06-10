@@ -314,7 +314,6 @@ const ObrigadoLisboa: React.FC = () => {
                                     <div className="space-y-2">
                                         <label className="text-xs font-black uppercase tracking-wider text-gray-400">Nome Completo (para o Certificado)</label>
                                         <input
-                                            required
                                             value={qForm.fullName}
                                             onChange={e => setQForm({ ...qForm, fullName: e.target.value })}
                                             className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -327,7 +326,6 @@ const ObrigadoLisboa: React.FC = () => {
                                         <div className="space-y-2">
                                             <label className="text-xs font-black uppercase tracking-wider text-gray-400">CPF / NIF / Documento</label>
                                             <input
-                                                required
                                                 value={qForm.cpf}
                                                 onChange={e => setQForm({ ...qForm, cpf: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -363,7 +361,6 @@ const ObrigadoLisboa: React.FC = () => {
                                         <div className="space-y-2">
                                             <label className="text-xs font-black uppercase tracking-wider text-gray-400">Código Postal / CEP</label>
                                             <input
-                                                required
                                                 value={qForm.zipCode}
                                                 onChange={e => setQForm({ ...qForm, zipCode: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -375,7 +372,6 @@ const ObrigadoLisboa: React.FC = () => {
                                         <div className="space-y-2">
                                             <label className="text-xs font-black uppercase tracking-wider text-gray-400">Cidade</label>
                                             <input
-                                                required
                                                 value={qForm.city}
                                                 onChange={e => setQForm({ ...qForm, city: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -387,7 +383,6 @@ const ObrigadoLisboa: React.FC = () => {
                                         <div className="space-y-2">
                                             <label className="text-xs font-black uppercase tracking-wider text-gray-400">Estado / Distrito</label>
                                             <input
-                                                required
                                                 value={qForm.state}
                                                 onChange={e => setQForm({ ...qForm, state: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -401,7 +396,6 @@ const ObrigadoLisboa: React.FC = () => {
                                         <div className="md:col-span-2 space-y-2">
                                             <label className="text-xs font-black uppercase tracking-wider text-gray-400">Logradouro / Rua</label>
                                             <input
-                                                required
                                                 value={qForm.address}
                                                 onChange={e => setQForm({ ...qForm, address: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -413,7 +407,6 @@ const ObrigadoLisboa: React.FC = () => {
                                         <div className="space-y-2">
                                             <label className="text-xs font-black uppercase tracking-wider text-gray-400">Número</label>
                                             <input
-                                                required
                                                 value={qForm.addressNumber}
                                                 onChange={e => setQForm({ ...qForm, addressNumber: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -425,7 +418,6 @@ const ObrigadoLisboa: React.FC = () => {
                                     <div className="space-y-2">
                                         <label className="text-xs font-black uppercase tracking-wider text-gray-400">Freguesia / Bairro / Complemento</label>
                                         <input
-                                            required
                                             value={qForm.addressNeighborhood}
                                             onChange={e => setQForm({ ...qForm, addressNeighborhood: e.target.value })}
                                             className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -458,7 +450,6 @@ const ObrigadoLisboa: React.FC = () => {
                                             <div className="space-y-2">
                                                 <label className="text-xs font-black uppercase tracking-wider text-gray-400">Nome da Oficina</label>
                                                 <input
-                                                    required
                                                     value={qForm.workshopName}
                                                     onChange={e => setQForm({ ...qForm, workshopName: e.target.value })}
                                                     className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -500,7 +491,6 @@ const ObrigadoLisboa: React.FC = () => {
                                     <div className="space-y-2">
                                         <label className="text-xs font-black uppercase tracking-wider text-gray-400">Há quanto tempo trabalha na área mecânica?</label>
                                         <input
-                                            required
                                             value={qForm.experienceYears}
                                             onChange={e => setQForm({ ...qForm, experienceYears: e.target.value })}
                                             className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
@@ -535,12 +525,23 @@ const ObrigadoLisboa: React.FC = () => {
                             >
                                 <Instagram size={18} /> Seguir no Instagram
                             </a>
-                            <button 
-                                onClick={() => navigate('/')}
-                                className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 transition-colors py-4 rounded-lg font-bold uppercase text-xs tracking-widest"
-                            >
-                                <Globe size={18} /> Voltar ao Site
-                            </button>
+                            {qSubmitted ? (
+                                <a 
+                                    href="https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy" 
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black transition-colors py-4 rounded-lg uppercase text-xs tracking-widest shadow-[0_0_20px_rgba(22,163,74,0.4)] relative overflow-hidden animate-pulse"
+                                >
+                                    <MessageCircle size={18} /> Grupo VIP de Lisboa no WhatsApp
+                                </a>
+                            ) : (
+                                <button 
+                                    onClick={() => navigate('/')}
+                                    className="flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-200 transition-colors py-4 rounded-lg font-bold uppercase text-xs tracking-widest"
+                                >
+                                    <Globe size={18} /> Voltar ao Site
+                                </button>
+                            )}
                         </div>
 
                         <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-center gap-4">
