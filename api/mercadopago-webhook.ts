@@ -130,6 +130,7 @@ export default async function handler(req: any, res: any) {
         amount_paid: amountPaid,
         payment_id: String(paymentId),
         payment_method: 'Mercado Pago',
+        enrolled_by_name: 'Automático',
         updated_at: new Date().toISOString()
       })
       .eq('id', enrollmentId);

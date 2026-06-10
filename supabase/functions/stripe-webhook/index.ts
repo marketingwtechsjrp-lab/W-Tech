@@ -63,12 +63,42 @@ serve(async (req) => {
 
       const { error: updateError } = await supabase
         .from('SITE_Enrollments')
-        .update({ amount_paid: newTotalPaid, status: 'Confirmed' })
+        .update({ amount_paid: newTotalPaid, status: 'Confirmed', enrolled_by_name: 'Automático' })
         .eq('id', enrollmentId)
 
       if (updateError) {
         console.error('Update enrollment error', updateError)
         return new Response('Update error', { status: 500 })
+      }
+
+      // Also update lead status to 'Converted' (Approved/Won) in CRM
+      if (enrollment.student_email) {
+        try {
+          const { data: existingLead } = await supabase
+            .from('SITE_Leads')
+            .select('id, tags')
+            .eq('email', enrollment.student_email)
+            .maybeSingle();
+
+          const autoTags = ['checkout_automatico', 'sem_comissao', 'venda_stripe', 'checkout_direto'];
+          const existingTags = existingLead?.tags || [];
+          const mergedTags = Array.from(new Set([...existingTags, ...autoTags]));
+
+          await supabase
+            .from('SITE_Leads')
+            .update({
+              status: 'Converted',
+              tags: mergedTags,
+              conversion_value: newTotalPaid,
+              conversion_summary: `Venda automática via Checkout Direto (Stripe). Curso: ${enrollment.course_id}. Sem atendimento humano.`,
+              conversion_type: 'Course_Purchase',
+              updated_at: new Date().toISOString()
+            })
+            .eq('email', enrollment.student_email);
+          console.log(`Lead status updated to Converted for ${enrollment.student_email}`);
+        } catch (leadErr) {
+          console.error('Non-fatal: Error updating lead status in Stripe webhook:', leadErr);
+        }
       }
 
       const { error: transError } = await supabase

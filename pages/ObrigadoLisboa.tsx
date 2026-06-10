@@ -112,7 +112,8 @@ const ObrigadoLisboa: React.FC = () => {
                     .update({
                         status: 'Confirmed',
                         amount_paid: amount,
-                        payment_method: 'Stripe'
+                        payment_method: 'Stripe',
+                        enrolled_by_name: 'Automático'
                     })
                     .eq('id', enrollmentId);
 
