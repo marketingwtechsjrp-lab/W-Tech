@@ -1,7 +1,7 @@
 import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
-    Megaphone, Rocket, Sparkles, Users, Settings, BarChart3,
+    Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -67,6 +67,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
         items: [
             { icon: Users, label: 'Equipe & Acesso', view: 'team', permission: 'manage_users', goKey: 'e', keywords: 'usuarios cargos permissoes equipe' },
             { icon: Settings, label: 'Configurações', view: 'settings', permission: 'manage_settings', goKey: 's', keywords: 'ajustes preferencias config' },
+            { icon: ClipboardList, label: 'Logs do Sistema', view: 'system_logs', permission: 'manage_settings', goKey: 'g', keywords: 'logs auditoria acessos operacoes' },
         ],
     },
 ];

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { User, UserRole } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useTheme } from 'next-themes';
+import { logUserActivity } from '../lib/auditLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +11,7 @@ interface AuthContextType {
   logout: () => void;
   showLoginModal: boolean;
   refreshUser: () => Promise<void>;
+  impersonateUser?: (newUser: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,6 +130,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         theme: userData.theme,
       };
 
+      // Log User Login
+      await logUserActivity({
+        action_type: 'ACCESS',
+        screen: 'login',
+        details: `Usuário efetuou login no sistema`
+      }, { id: loggedUser.id, name: loggedUser.name });
+
       setUser(loggedUser);
       localStorage.setItem('wtech_user', JSON.stringify(loggedUser));
       setShowLoginModal(false);
@@ -142,6 +151,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    if (user) {
+      logUserActivity({
+        action_type: 'ACCESS',
+        screen: 'logout',
+        details: `Usuário efetuou logout do sistema`
+      }, { id: user.id, name: user.name }).catch(err => console.error("Error logging logout:", err));
+    }
     setUser(null);
     localStorage.removeItem('wtech_user');
     window.location.href = '/';

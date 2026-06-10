@@ -19,7 +19,8 @@ import { generateSitemapXml } from '../lib/sitemapUtils';
 import { generateSEOContent } from '../lib/ai';
 import { seedDatabase } from '../lib/seedData';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { logUserActivity } from '../lib/auditLogger';
 import { PaymentMethodsManager } from '../components/admin/Financial/PaymentMethodsManager';
 import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
 import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
@@ -105,7 +106,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -3946,8 +3947,8 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
         return !!(user.role.permissions && user.role.permissions[key]);
     };
 
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [events, setEvents] = useState<Event[]>([]);
+    const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+    const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
     const [filterReference, setFilterReference] = useState<{ type: 'Course' | 'Event' | 'All', id: string }>({ type: 'All', id: '' });
 
     // Form State for Link
@@ -4782,6 +4783,300 @@ const OrdersView = () => {
                         )}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    );
+};
+
+// --- View: Audit Logs Tab ---
+const SCREEN_LABELS: Record<string, string> = {
+    dashboard: 'Visão Geral (Dashboard)',
+    crm: 'CRM & Leads',
+    team: 'Equipe & Acessos',
+    orders: 'Loja Virtual',
+    catalog_manager: 'Catálogo & Estoque',
+    clients: 'Clientes',
+    courses_manager: 'Cursos & Treinamentos',
+    mechanics: 'Rede Credenciada',
+    finance: 'Financeiro',
+    tasks: 'Gestão de Tarefas',
+    marketing_hub: 'Marketing Center',
+    settings: 'Configurações',
+    certificates: 'Certificados & Crachás',
+    intelligence: 'Relatórios IA',
+};
+
+const AuditLogsTab = () => {
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [users, setUsers] = useState<any[]>([]);
+    const [screens, setScreens] = useState<string[]>([]);
+    
+    // Filters
+    const [actionTypeFilter, setActionTypeFilter] = useState('all');
+    const [userFilter, setUserFilter] = useState('all');
+    const [screenFilter, setScreenFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+    
+    // Pagination
+    const [page, setPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const pageSize = 20;
+
+    useEffect(() => {
+        fetchFilterData();
+    }, []);
+
+    useEffect(() => {
+        setPage(1);
+    }, [actionTypeFilter, userFilter, screenFilter]);
+
+    useEffect(() => {
+        fetchLogs();
+    }, [page, actionTypeFilter, userFilter, screenFilter]);
+
+    const fetchFilterData = async () => {
+        try {
+            // Fetch users for the filter
+            const { data: usersData } = await supabase
+                .from('SITE_Users')
+                .select('id, name')
+                .order('name');
+            if (usersData) setUsers(usersData);
+
+            // Fetch distinct screen list from logs
+            const { data: screensData } = await supabase
+                .from('SITE_AuditLogs')
+                .select('screen');
+            if (screensData) {
+                const uniqueScreens = Array.from(new Set(screensData.map((item: any) => item.screen))).filter(Boolean);
+                setScreens(uniqueScreens as string[]);
+            }
+        } catch (error) {
+            console.error('Error fetching filter data:', error);
+        }
+    };
+
+    const fetchLogs = async () => {
+        setLoading(true);
+        try {
+            let query = supabase
+                .from('SITE_AuditLogs')
+                .select('*', { count: 'exact' });
+
+            if (actionTypeFilter !== 'all') {
+                query = query.eq('action_type', actionTypeFilter);
+            }
+            if (userFilter !== 'all') {
+                query = query.eq('user_id', userFilter);
+            }
+            if (screenFilter !== 'all') {
+                query = query.eq('screen', screenFilter);
+            }
+            if (searchTerm.trim()) {
+                query = query.ilike('details', `%${searchTerm}%`);
+            }
+
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize - 1;
+
+            const { data, count, error } = await query
+                .order('created_at', { ascending: false })
+                .range(from, to);
+
+            if (error) throw error;
+
+            setLogs(data || []);
+            setTotalCount(count || 0);
+        } catch (error) {
+            console.error('Error fetching audit logs:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setPage(1);
+        fetchLogs();
+    };
+
+    const getScreenLabel = (screenName: string) => {
+        return SCREEN_LABELS[screenName] || screenName;
+    };
+
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+            <div>
+                <h3 className="text-lg font-bold text-[var(--admin-text-primary)]">Logs de Auditoria</h3>
+                <p className="text-sm text-[var(--admin-text-secondary)]">Histórico de acessos e modificações de todos os usuários do sistema.</p>
+            </div>
+
+            {/* Filters Bar */}
+            <form onSubmit={handleSearchSubmit} className="bg-[var(--admin-surface-2)] p-4 rounded-xl border border-[var(--admin-border)] grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label className="block text-[10px] font-bold text-[var(--admin-text-secondary)] uppercase mb-1.5">Tipo de Operação</label>
+                    <select
+                        value={actionTypeFilter}
+                        onChange={(e) => setActionTypeFilter(e.target.value)}
+                        className="w-full border border-[var(--admin-border)] rounded-lg p-2.5 text-xs bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
+                    >
+                        <option value="all">Todos os tipos</option>
+                        <option value="ACCESS">Acessos (ACCESS)</option>
+                        <option value="MODIFICATION">Modificações (MODIFICATION)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block text-[10px] font-bold text-[var(--admin-text-secondary)] uppercase mb-1.5">Usuário</label>
+                    <select
+                        value={userFilter}
+                        onChange={(e) => setUserFilter(e.target.value)}
+                        className="w-full border border-[var(--admin-border)] rounded-lg p-2.5 text-xs bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
+                    >
+                        <option value="all">Todos os usuários</option>
+                        {users.map((u) => (
+                            <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block text-[10px] font-bold text-[var(--admin-text-secondary)] uppercase mb-1.5">Tela / Módulo</label>
+                    <select
+                        value={screenFilter}
+                        onChange={(e) => setScreenFilter(e.target.value)}
+                        className="w-full border border-[var(--admin-border)] rounded-lg p-2.5 text-xs bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
+                    >
+                        <option value="all">Todas as telas</option>
+                        {screens.map((s) => (
+                            <option key={s} value={s}>{getScreenLabel(s)}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="md:col-span-2 flex gap-2">
+                    <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-[var(--admin-text-secondary)] uppercase mb-1.5">Buscar Detalhes</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Buscar por descrição..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full border border-[var(--admin-border)] rounded-lg pl-3 pr-8 py-2.5 text-xs bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all"
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setSearchTerm(''); setTimeout(fetchLogs, 0); }}
+                                    className="absolute right-2.5 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        type="submit"
+                        className="bg-gray-900 text-white dark:bg-white dark:text-black font-black text-xs uppercase px-5 h-[38px] rounded-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                        <Search size={14} /> Filtrar
+                    </button>
+                </div>
+            </form>
+
+            {/* Table or Empty State or Loading */}
+            <div className="bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm overflow-hidden min-h-[400px] flex flex-col justify-between">
+                {loading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-20 text-[var(--admin-text-secondary)]">
+                        <Loader2 size={36} className="animate-spin text-[var(--admin-accent-gold)] mb-4" />
+                        <p className="text-xs font-bold uppercase tracking-wider">Carregando logs...</p>
+                    </div>
+                ) : logs.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center py-20 text-[var(--admin-text-secondary)]">
+                        <ClipboardList size={48} className="text-gray-300 dark:text-gray-700 mb-4" />
+                        <p className="text-sm font-bold">Nenhum log encontrado</p>
+                        <p className="text-xs text-gray-400 mt-1">Tente ajustar seus filtros de pesquisa.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-[var(--admin-border)] bg-[var(--admin-surface-2)]">
+                                    <th className="px-6 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider">Usuário</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider">Tipo</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider">Tela / Módulo</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider">Descrição / Detalhes</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-wider">Data / Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {logs.map((log) => (
+                                    <tr key={log.id} className="border-b border-[var(--admin-border)] hover:bg-[var(--admin-surface-2)]/50 transition-colors">
+                                        <td className="px-6 py-4 text-xs font-bold text-[var(--admin-text-primary)]">
+                                            {log.user_name}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs">
+                                            {log.action_type === 'ACCESS' ? (
+                                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black tracking-wide uppercase bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 font-bold">
+                                                    Acesso
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black tracking-wide uppercase bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 font-bold">
+                                                    Modificação
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs font-medium text-[var(--admin-text-secondary)]">
+                                            <span className="px-2 py-1 bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] rounded-md border border-[var(--admin-border)] font-bold text-[10px]">
+                                                {getScreenLabel(log.screen)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-xs text-[var(--admin-text-primary)] max-w-md break-words">
+                                            {log.details}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs text-[var(--admin-text-secondary)] whitespace-nowrap">
+                                            {formatDateLocal ? formatDateLocal(log.created_at) : new Date(log.created_at).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* Footer Pagination */}
+                {totalPages > 1 && (
+                    <div className="border-t border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-6 py-4 flex items-center justify-between">
+                        <span className="text-xs text-[var(--admin-text-secondary)]">
+                            Mostrando <strong className="text-[var(--admin-text-primary)]">{((page - 1) * pageSize) + 1}</strong> a{' '}
+                            <strong className="text-[var(--admin-text-primary)]">{Math.min(page * pageSize, totalCount)}</strong> de{' '}
+                            <strong className="text-[var(--admin-text-primary)]">{totalCount}</strong> logs
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                                disabled={page === 1}
+                                className="p-2 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-1)] hover:bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="px-4 py-2 text-xs font-black text-[var(--admin-text-primary)] select-none">
+                                {page} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                                disabled={page === totalPages}
+                                className="p-2 border border-[var(--admin-border)] rounded-lg bg-[var(--admin-surface-1)] hover:bg-[var(--admin-surface-3)] text-[var(--admin-text-secondary)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -7389,19 +7684,48 @@ const Admin = () => {
     const [collapsed, setCollapsed] = useState(false);
 
     // State for View Switching
-    const [currentView, _setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence'>('dashboard');
+    // Deep-linking: a view é espelhada na URL (?view=crm) para permitir links
+    // compartilháveis e botão voltar/avançar do navegador. O estado continua
+    // sendo a fonte de verdade da navegação interna (fluxos de conversão intactos).
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [currentView, _setCurrentView] = useState<View | 'marketing' | 'certificates' | 'intelligence' | 'marketing_hub'>(
+        () => (searchParams.get('view') as any) || 'dashboard'
+    );
     const [pendingOrderLead, setPendingOrderLead] = useState<Lead | null>(null);
 
-    // Reset scroll on view change
+    // Reset scroll on view change & Log Screen Access
     useEffect(() => {
         if (mainContentRef.current) {
             mainContentRef.current.scrollTop = 0;
         }
-    }, [currentView]);
+        if (currentView && user) {
+            logUserActivity({
+                action_type: 'ACCESS',
+                screen: currentView,
+                details: `Acessou a tela: ${currentView}`
+            }, { id: user.id, name: user.name });
+        }
+    }, [currentView, user]);
 
     const setCurrentView = (view: any) => {
         _setCurrentView(view);
+        // Espelha a view atual na URL (mantém demais params). Não cria entrada
+        // de histórico extra por troca de aba — usa replace para navegação fluida.
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.set('view', view);
+            return next;
+        }, { replace: true });
     };
+
+    // Sincroniza estado quando a URL muda por voltar/avançar do navegador.
+    useEffect(() => {
+        const urlView = searchParams.get('view');
+        if (urlView && urlView !== currentView) {
+            _setCurrentView(urlView as any);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     // --- Global Task Notifications & State ---
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
@@ -7890,6 +8214,11 @@ const Admin = () => {
                         {currentView === 'intelligence' && hasPermission('intelligence_view') && <IntelligenceView permissions={livePermissions} />}
                         {currentView === 'tasks' && hasPermission('tasks_view') && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}
+                        {currentView === 'system_logs' && hasPermission('manage_settings') && (
+                            <div className="p-6 h-full overflow-y-auto">
+                                <AuditLogsTab />
+                            </div>
+                        )}
                         {currentView === 'clients' && hasPermission('clients_view') && <ClientsManagerView permissions={livePermissions} />}
                         {currentView === 'invoices' && hasPermission('invoices_view') && <InvoicesManagerView />}
                         {currentView === 'sales_recovery' && (hasPermission('orders_view') || hasPermission('marketing_view')) && <SalesRecoveryView />}

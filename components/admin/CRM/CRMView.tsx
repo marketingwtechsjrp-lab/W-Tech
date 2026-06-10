@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare, Mail, User } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare, Mail, User, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FileDown, FileText, FileSpreadsheet, Download } from 'lucide-react';
+import { logUserActivity } from '../../../lib/auditLogger';
 
 // Helper for Drag & Drop
 const DragContext = React.createContext<{
@@ -523,7 +524,7 @@ const LeadCard: React.FC<{
 };
 
 interface CRMViewProps {
-    onConvertLead?: (lead: Lead) => void;
+    onConvertLead?: (lead: Lead, conversionData?: any) => void;
 }
 
 const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
@@ -575,10 +576,38 @@ const NewLeadModal = ({ isOpen, onClose, onSave }: any) => {
     );
 };
 
+const STATUS_LABELS: Record<string, string> = {
+    New: 'Novo', Contacted: 'Contactado', Qualified: 'Qualificado', Negotiating: 'Em Negociação',
+    Converted: 'Ganho', Matriculated: 'Matriculado', Cold: 'Frio', Rejected: 'Perdido', Lost: 'Perdido'
+};
+
 const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users }: any) => {
     const [form, setForm] = useState({ ...lead });
     // Tags Local State for Modal
     const [tagInput, setTagInput] = useState('');
+
+    // Histórico de movimentações (quem moveu o lead, de/para qual status, quando)
+    const [history, setHistory] = useState<any[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen || !lead?.id) return;
+        let active = true;
+        const loadHistory = async () => {
+            setLoadingHistory(true);
+            const { data } = await supabase
+                .from('SITE_LeadHistory')
+                .select('*')
+                .eq('lead_id', lead.id)
+                .order('created_at', { ascending: false });
+            if (active) {
+                setHistory(data || []);
+                setLoadingHistory(false);
+            }
+        };
+        loadHistory();
+        return () => { active = false; };
+    }, [isOpen, lead?.id]);
 
     const generateCode = (name: string) => {
         const first = name.substring(0, 3).toUpperCase();
@@ -751,6 +780,49 @@ const EditLeadModal = ({ lead, isOpen, onClose, onSave, onDelete, onTasks, users
                         </div>
 
                         <div className="col-span-2">
+                            <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                <Clock size={12} /> Histórico de Movimentações
+                            </label>
+                            <div className="bg-[var(--admin-surface-2)] rounded-xl border border-[var(--admin-border)] max-h-48 overflow-y-auto custom-scrollbar">
+                                {loadingHistory ? (
+                                    <p className="text-xs text-[var(--admin-text-tertiary)] p-3 text-center">Carregando...</p>
+                                ) : history.length === 0 ? (
+                                    <p className="text-xs text-[var(--admin-text-tertiary)] p-3 text-center italic">
+                                        Nenhuma movimentação registrada ainda.
+                                    </p>
+                                ) : (
+                                    <ul className="divide-y divide-[var(--admin-border-subtle)]">
+                                        {history.map((h: any) => (
+                                            <li key={h.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                                                <div className="flex items-center gap-1.5 text-xs min-w-0">
+                                                    {h.from_status && (
+                                                        <>
+                                                            <span className="text-[var(--admin-text-tertiary)] truncate">
+                                                                {STATUS_LABELS[h.from_status] || h.from_status}
+                                                            </span>
+                                                            <ArrowRight size={11} className="text-[var(--admin-text-tertiary)] flex-shrink-0" />
+                                                        </>
+                                                    )}
+                                                    <span className="font-bold text-[var(--admin-text-primary)] truncate">
+                                                        {STATUS_LABELS[h.to_status] || h.to_status}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <span className="text-[10px] font-bold bg-wtech-gold/10 text-wtech-gold px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                                        <User size={9} /> {h.moved_by_name || 'Sistema'}
+                                                    </span>
+                                                    <span className="text-[10px] text-[var(--admin-text-tertiary)] font-mono">
+                                                        {new Date(h.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="col-span-2">
                             <label className="block text-[10px] font-black text-[var(--admin-text-tertiary)] uppercase tracking-widest mb-1.5">Tags</label>
                             <div className="flex flex-wrap gap-2 mb-2">
                                 {form.tags?.map((tag: string, idx: number) => (
@@ -825,8 +897,10 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const notificationRef = useRef<SplashedPushNotificationsHandle>(null);
     const { user } = useAuth();
 
-    // View Mode: Kanban or List
-    const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+    // View Mode: Kanban or List or Logs
+    const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'logs'>('kanban');
+    const [leadHistory, setLeadHistory] = useState<any[]>([]);
+    const [loadingHistoryList, setLoadingHistoryList] = useState(false);
 
     const [distMode, setDistMode] = useState<'Manual' | 'Random'>('Manual');
     const [showSettings, setShowSettings] = useState(false);
@@ -875,11 +949,47 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             .in('id', ids);
 
         if (!error) {
-            notificationRef.current?.createNotification('success', 'Leads Atribuídos', `${count} leads foram atribuídos a ${usersMap[userId] || 'outro atendente'}.`);
+            logUserActivity({
+                action_type: 'MODIFICATION',
+                screen: 'crm',
+                details: `Atribuiu em massa ${count} leads para o usuário ${usersMap[userId] || userId}`
+            }, user ? { id: user.id, name: user.name } : null);
+            notificationRef.current?.createNotification('help', 'Leads Atribuídos', `${count} leads foram atribuídos a ${usersMap[userId] || 'outro atendente'}.`);
             setSelectedLeadIds(new Set());
         } else {
             console.error("Bulk Assign Error:", error);
             alert('Erro ao atribuir leads em massa: ' + error.message);
+            fetchData(); // Revert
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedLeadIds.size === 0) return;
+
+        const count = selectedLeadIds.size;
+        if (!window.confirm(`Tem certeza que deseja excluir permanentemente ${count} leads? Esta ação não pode ser desfeita.`)) return;
+
+        const ids = Array.from(selectedLeadIds);
+
+        // Optimistic Update
+        setLeads(prev => prev.filter(l => !ids.includes(l.id)));
+
+        const { error } = await supabase
+            .from('SITE_Leads')
+            .delete()
+            .in('id', ids);
+
+        if (!error) {
+            logUserActivity({
+                action_type: 'MODIFICATION',
+                screen: 'crm',
+                details: `Excluiu em massa ${count} leads`
+            }, user ? { id: user.id, name: user.name } : null);
+            notificationRef.current?.createNotification('success', 'Leads Excluídos', `${count} leads foram excluídos com sucesso.`);
+            setSelectedLeadIds(new Set());
+        } else {
+            console.error("Bulk Delete Error:", error);
+            alert('Erro ao excluir leads em massa: ' + error.message);
             fetchData(); // Revert
         }
     };
@@ -903,7 +1013,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             setNewLeadForm({ name: '', email: '', phone: '' });
             handleLeadClick(existingLead); // Open the existing lead details
             if (notificationRef.current) {
-                notificationRef.current.createNotification('info', 'Lead Duplicado', `O lead ${existingLead.name} já existe.`);
+                notificationRef.current.createNotification('help', 'Lead Duplicado', `O lead ${existingLead.name} já existe.`);
             }
             return;
         }
@@ -926,6 +1036,11 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         if (error) {
             alert("Erro ao criar lead: " + error.message);
         } else if (data) {
+            logUserActivity({
+                action_type: 'MODIFICATION',
+                screen: 'crm',
+                details: `Criou lead manualmente: ${payload.name} (Telefone: ${payload.phone})`
+            }, user ? { id: user.id, name: user.name } : null);
             setLeads(prev => [data, ...prev]);
             setIsCreateModalOpen(false);
             setNewLeadForm({ name: '', email: '', phone: '' });
@@ -973,6 +1088,26 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         const converted = leads.filter(l => l.status === 'Converted').length;
         return Math.round((converted / leads.length) * 100);
     }, [leads]);
+
+    const filteredHistory = useMemo(() => {
+        if (!leadHistory) return [];
+        return leadHistory.filter(h => {
+            const leadName = h.lead?.name?.toLowerCase() || '';
+            const leadEmail = h.lead?.email?.toLowerCase() || '';
+            const leadPhone = h.lead?.phone?.toLowerCase() || '';
+            const moverName = h.moved_by_name?.toLowerCase() || '';
+            const search = searchQuery.toLowerCase();
+            
+            const matchesSearch = leadName.includes(search) || 
+                                  leadEmail.includes(search) || 
+                                  leadPhone.includes(search) || 
+                                  moverName.includes(search);
+                                  
+            const matchesUser = selectedUserFilter === 'All' || h.moved_by === selectedUserFilter;
+            
+            return matchesSearch && matchesUser;
+        });
+    }, [leadHistory, searchQuery, selectedUserFilter]);
 
     // Fetch Settings & Leads & Users
     useEffect(() => {
@@ -1045,6 +1180,78 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         }
     }
 
+    const fetchLeadHistory = async () => {
+        setLoadingHistoryList(true);
+        try {
+            let query = supabase
+                .from('SITE_LeadHistory')
+                .select('*, lead:SITE_Leads(name, email, phone)')
+                .order('created_at', { ascending: false });
+
+            // Apply date filters matching the current selections
+            const now = new Date();
+            if (filterType === 'Period') {
+                if (filterPeriod !== 9999) {
+                    const since = new Date(now.getTime() - filterPeriod * 24 * 60 * 60 * 1000).toISOString();
+                    query = query.gte('created_at', since);
+                }
+            } else if (filterType === 'Month') {
+                const year = selectedMonth.split('-')[0];
+                const month = selectedMonth.split('-')[1];
+                const start = new Date(parseInt(year), parseInt(month) - 1, 1).toISOString();
+                const end = new Date(parseInt(year), parseInt(month), 1).toISOString();
+                query = query.gte('created_at', start).lt('created_at', end);
+            } else if (filterType === 'Custom') {
+                if (customRange.start) {
+                    query = query.gte('created_at', new Date(customRange.start).toISOString());
+                }
+                if (customRange.end) {
+                    const endOfDay = new Date(customRange.end);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    query = query.lte('created_at', endOfDay.toISOString());
+                }
+            }
+
+            const { data, error } = await query;
+            if (error) {
+                console.error("Error fetching lead history:", error);
+            } else {
+                setLeadHistory(data || []);
+            }
+        } catch (e) {
+            console.error("Error in fetchLeadHistory:", e);
+        } finally {
+            setLoadingHistoryList(false);
+        }
+    };
+
+    useEffect(() => {
+        if (viewMode === 'logs') {
+            fetchLeadHistory();
+        }
+    }, [viewMode, filterPeriod, filterType, selectedMonth, customRange]);
+
+    const handleHistoryLeadClick = async (leadId: string) => {
+        const { data, error } = await supabase.from('SITE_Leads').select('*').eq('id', leadId).single();
+        if (error || !data) {
+            alert("Erro ao buscar dados do lead: " + (error?.message || "Lead não encontrado"));
+            return;
+        }
+        const mappedLead = {
+            ...data,
+            contextId: data.context_id,
+            createdAt: data.created_at,
+            updated_at: data.updated_at || data.created_at,
+            assignedTo: data.assigned_to,
+            internalNotes: data.internal_notes,
+            quiz_data: data.quiz_data,
+            conversion_value: data.conversion_value,
+            conversion_summary: data.conversion_summary,
+            conversion_type: data.conversion_type
+        };
+        handleLeadClick(mappedLead);
+    };
+
 
 
     // Refs for Realtime Cleanup (Avoid Stale Closures)
@@ -1100,7 +1307,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                 return [mapLead(newRecord), ...prev];
                             });
                             if (!newRecord.assigned_to || newRecord.assigned_to === user?.id) {
-                                notificationRef.current?.createNotification('info', 'Novo Lead', `${newRecord.name || 'Um novo lead'} chegou no CRM.`);
+                                notificationRef.current?.createNotification('help', 'Novo Lead', `${newRecord.name || 'Um novo lead'} chegou no CRM.`);
                             }
                         }
                     } else if (eventType === 'UPDATE') {
@@ -1210,6 +1417,29 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         }
     }, [conversionModal.isOpen, conversionType]);
 
+    // Registra uma movimentação de status na trilha de auditoria (SITE_LeadHistory).
+    // Falha de log nunca deve quebrar a movimentação do lead — apenas avisa no console.
+    const logLeadHistory = async (
+        leadId: string,
+        fromStatus: string | null | undefined,
+        toStatus: string,
+        source: 'drag' | 'quick' | 'modal' | 'lost' | 'conversion' = 'drag'
+    ) => {
+        if (fromStatus === toStatus) return; // Sem mudança real, não registra
+        try {
+            await supabase.from('SITE_LeadHistory').insert({
+                lead_id: leadId,
+                from_status: fromStatus ?? null,
+                to_status: toStatus,
+                moved_by: user?.id ?? null,
+                moved_by_name: (user?.id && usersMap[user.id]) || user?.name || 'Sistema',
+                source
+            });
+        } catch (e) {
+            console.error('Falha ao registrar histórico do lead:', e);
+        }
+    };
+
     // Drag & Drop Handler
     const onDropLead = async (leadId: string, newStatus: string) => {
         const currentLead = leads.find(l => l.id === leadId);
@@ -1262,6 +1492,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             console.error("Move Lead Error:", error);
             alert(`Falha ao mover lead: ${error.message}`);
             fetchData(); // Revert
+        } else {
+            logUserActivity({
+                action_type: 'MODIFICATION',
+                screen: 'crm',
+                details: `Moveu o lead ${currentLead.name} para o status: ${newStatus}`
+            }, user ? { id: user.id, name: user.name } : null);
+            logLeadHistory(leadId, currentLead.status, newStatus, 'drag');
         }
     };
 
@@ -1330,7 +1567,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             alert(`Falha ao mover lead: ${error.message}`);
             fetchData(); // Revert
         } else {
-            notificationRef.current?.createNotification('info', 'Lead Atualizado', 'Motivo da perda registrado.');
+            logUserActivity({
+                action_type: 'MODIFICATION',
+                screen: 'crm',
+                details: `Moveu o lead ${lead.name} para status de perda: ${targetStatus} (Motivo: ${lostReason})`
+            }, user ? { id: user.id, name: user.name } : null);
+            logLeadHistory(lead.id, lead.status, targetStatus, 'lost');
+            notificationRef.current?.createNotification('help', 'Lead Atualizado', 'Motivo da perda registrado.');
         }
 
         setLostReasonModal({ isOpen: false, lead: null, targetStatus: '' });
@@ -1374,6 +1617,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             console.error("Error updating lead:", error);
             alert('Erro ao salvar alterações: ' + error.message);
             return;
+        }
+
+        logUserActivity({
+            action_type: 'MODIFICATION',
+            screen: 'crm',
+            details: `Atualizou os dados do lead: ${dbPayload.name} (ID: ${editingLead.id})`
+        }, user ? { id: user.id, name: user.name } : null);
+
+        // Registra mudança de status feita pelo dropdown do modal de edição
+        if (editingLead.status !== dbPayload.status) {
+            logLeadHistory(editingLead.id, editingLead.status, dbPayload.status, 'modal');
         }
 
         // --- Create Sales Record if status is Converted/Won and has value ---
@@ -1453,11 +1707,108 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         const { error } = await supabase.from('SITE_Leads').delete().eq('id', editingLead.id);
 
         if (!error) {
+            logUserActivity({
+                action_type: 'MODIFICATION',
+                screen: 'crm',
+                details: `Excluiu o lead: ${editingLead.name} (ID: ${editingLead.id})`
+            }, user ? { id: user.id, name: user.name } : null);
             setLeads(prev => prev.filter(l => l.id !== editingLead.id));
             setEditingLead(null);
         } else {
             console.error("Error deleting lead:", error);
             alert('Erro ao excluir lead: ' + error.message);
+        }
+    };
+
+    const exportHistoryToPDF = () => {
+        if (filteredHistory.length === 0) {
+            alert("Nenhum histórico encontrado para exportar.");
+            return;
+        }
+
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('pt-BR');
+        const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        // Header
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Relatório de Movimentações do CRM - W-TECH', 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100);
+        doc.text(`Gerado em: ${dateStr} às ${timeStr}`, 14, 27);
+        doc.text(`Total de registros: ${filteredHistory.length}`, 14, 32);
+
+        // Filter Info
+        let filterText = "Filtro: ";
+        filterText += filterType === 'Period' ? `${filterPeriod === 9999 ? 'Todo o Período' : `Últimos ${filterPeriod} dias`}` : 
+                      filterType === 'Month' ? `Mês: ${selectedMonth}` : 'Período Customizado';
+        if (selectedUserFilter !== 'All') filterText += ` | Movido por: ${usersMap[selectedUserFilter] || 'Sem Nome'}`;
+        doc.text(filterText, 14, 37);
+
+        // Table
+        const tableHeaders = [['Lead', 'De Status', 'Para Status', 'Movido por', 'Origem', 'Data/Hora']];
+        const tableData = filteredHistory.map(h => [
+            h.lead?.name || 'Lead Removido',
+            STATUS_LABELS[h.from_status as keyof typeof STATUS_LABELS] || h.from_status || 'Novo Lead',
+            STATUS_LABELS[h.to_status as keyof typeof STATUS_LABELS] || h.to_status || 'N/A',
+            h.moved_by_name || 'Sistema',
+            h.source === 'drag' ? 'Arrastar' : h.source === 'quick' ? 'Rápido' : h.source === 'modal' ? 'Modal' : h.source === 'lost' ? 'Perda' : h.source === 'conversion' ? 'Conversão' : h.source || 'N/A',
+            new Date(h.created_at).toLocaleString('pt-BR')
+        ]);
+
+        autoTable(doc, {
+            startY: 45,
+            head: tableHeaders,
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 8, cellPadding: 2 },
+            columnStyles: {
+                0: { cellWidth: 50 }, // Lead Name
+                1: { cellWidth: 35 }, // From
+                2: { cellWidth: 35 }, // To
+                3: { cellWidth: 40 }, // Mover
+                4: { cellWidth: 35 }, // Source
+                5: { cellWidth: 45 }  // Date
+            }
+        });
+
+        doc.save(`historico_movimentacao_crm_${now.getTime()}.pdf`);
+        
+        if (notificationRef.current) {
+            notificationRef.current.createNotification('success', 'PDF Gerado', 'O relatório de movimentações foi baixado com sucesso.');
+        }
+    };
+
+    const exportHistoryToCSV = () => {
+        if (filteredHistory.length === 0) {
+            alert("Nenhum histórico encontrado para exportar.");
+            return;
+        }
+
+        const now = new Date();
+        
+        const data = filteredHistory.map(h => ({
+            'Lead': h.lead?.name || 'Lead Removido',
+            'De Status': STATUS_LABELS[h.from_status as keyof typeof STATUS_LABELS] || h.from_status || 'Novo Lead',
+            'Para Status': STATUS_LABELS[h.to_status as keyof typeof STATUS_LABELS] || h.to_status || 'N/A',
+            'Movido por': h.moved_by_name || 'Sistema',
+            'Origem da Mudança': h.source || 'N/A',
+            'Data/Hora': new Date(h.created_at).toLocaleString('pt-BR')
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Movimentações");
+        
+        XLSX.writeFile(wb, `historico_movimentacao_crm_${now.getTime()}.csv`, { bookType: 'csv' });
+
+        if (notificationRef.current) {
+            notificationRef.current.createNotification('success', 'CSV Gerado', 'O arquivo CSV de movimentações foi baixado.');
         }
     };
 
@@ -1773,12 +2124,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        if (window.confirm(`Deseja remover ${selectedLeadIds.size} leads permanentemente?`)) {
-                                            // Handle bulk delete if needed later, for now just focus on assignment
-                                            alert("Função disponível em breve. Focando na atribuição agora.");
-                                        }
-                                    }}
+                                    onClick={handleBulkDelete}
                                     className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-500/10 rounded-xl transition-all"
                                     title="Remover Selecionados"
                                 >
@@ -1865,28 +2211,30 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         <div className="flex items-center gap-2">
                             <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
                                 <button
-                                    onClick={() => exportLeadsToPDF(false)}
+                                    onClick={() => viewMode === 'logs' ? exportHistoryToPDF() : exportLeadsToPDF(false)}
                                     className="p-2 text-[var(--admin-text-tertiary)] hover:text-red-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
                                     title="Exportar para PDF"
                                 >
                                     <FileText size={16} />
                                 </button>
                                 <button
-                                    onClick={() => exportLeadsToCSV(false)}
+                                    onClick={() => viewMode === 'logs' ? exportHistoryToCSV() : exportLeadsToCSV(false)}
                                     className="p-2 text-[var(--admin-text-tertiary)] hover:text-green-500 hover:bg-[var(--admin-surface-1)] rounded-md transition-all"
                                     title="Exportar para CSV"
                                 >
                                     <FileSpreadsheet size={16} />
                                 </button>
                             </div>
-                            <button
-                                onClick={exportFilteredToXLS}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg text-xs font-black hover:bg-green-100 dark:hover:bg-green-900/40 transition-all active:scale-95"
-                                title={`Exportar ${filteredLeads.length} leads filtrados em XLS`}
-                            >
-                                <Download size={14} />
-                                XLS ({filteredLeads.length})
-                            </button>
+                            {viewMode !== 'logs' && (
+                                <button
+                                    onClick={exportFilteredToXLS}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg text-xs font-black hover:bg-green-100 dark:hover:bg-green-900/40 transition-all active:scale-95"
+                                    title={`Exportar ${filteredLeads.length} leads filtrados em XLS`}
+                                >
+                                    <Download size={14} />
+                                    XLS ({filteredLeads.length})
+                                </button>
+                            )}
                         </div>
 
                         {/* Date Filter Compact */}
@@ -1936,6 +2284,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             >
                                 <List size={16} />
                             </button>
+                            <button
+                                onClick={() => setViewMode('logs')}
+                                className={`p-2 rounded-md transition-all ${viewMode === 'logs' ? 'bg-[var(--admin-surface-1)] shadow text-[var(--admin-text-primary)]' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
+                                title="Histórico de Movimentações"
+                            >
+                                <History size={16} />
+                            </button>
                         </div>
 
                         <button
@@ -1973,7 +2328,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     );
                 })()}
 
-                {/* Board or List */}
+                {/* Board, List or Logs */}
                 {viewMode === 'kanban' ? (
                     <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar flex-1 w-full min-h-0">
                         <KanbanColumn
@@ -2037,7 +2392,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             onToggleSelection={toggleLeadSelection}
                         />
                     </div>
-                ) : (
+                ) : viewMode === 'list' ? (
                     <div className="flex-1 bg-[var(--admin-surface-1)] rounded-xl shadow-sm border border-[var(--admin-border)] overflow-hidden flex flex-col">
                         <div className="overflow-y-auto flex-1 custom-scrollbar">
                             <table className="w-full text-left border-collapse">
@@ -2056,7 +2411,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     {filteredLeads.map(lead => {
                                         // Status Config
                                         let statusColor = 'bg-gray-100 text-[var(--admin-text-secondary)]';
-                                        let statusLabel = lead.status;
+                                        let statusLabel: string = lead.status;
                                         if (lead.status === 'New') { statusColor = 'bg-wtech-black text-white'; statusLabel = 'NOVO'; }
                                         else if (lead.status === 'Contacted') { statusColor = 'bg-blue-100 text-blue-700'; statusLabel = 'EM ATENDIMENTO'; }
                                         else if (lead.status === 'Qualified' || lead.status === 'Negotiating') { statusColor = 'bg-purple-100 text-purple-700 border border-purple-200'; statusLabel = 'NEGOCIAÇÃO'; }
@@ -2135,6 +2490,111 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                             {filteredLeads.length === 0 && (
                                 <div className="p-10 text-center text-[var(--admin-text-tertiary)] text-sm">Nenhum lead encontrado com os filtros atuais.</div>
                             )}
+                        </div>
+                    </div>
+                ) : (
+                    // Render Movement Logs Table
+                    <div className="flex-1 bg-[var(--admin-surface-1)] rounded-xl shadow-sm border border-[var(--admin-border)] overflow-hidden flex flex-col">
+                        <div className="overflow-y-auto flex-1 custom-scrollbar">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)] text-[10px] uppercase font-bold tracking-wider sticky top-0 z-10">
+                                    <tr>
+                                        <th className="px-6 py-4">Data/Hora</th>
+                                        <th className="px-6 py-4">Lead</th>
+                                        <th className="px-6 py-4">De Status</th>
+                                        <th className="px-6 py-4">Para Status</th>
+                                        <th className="px-6 py-4">Movido Por</th>
+                                        <th className="px-6 py-4">Origem</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--admin-border)] text-sm">
+                                    {loadingHistoryList ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-10 text-center text-[var(--admin-text-secondary)]">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <RefreshCw size={16} className="animate-spin text-wtech-gold" />
+                                                    Carregando histórico de movimentações...
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : filteredHistory.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-10 text-center text-[var(--admin-text-tertiary)]">
+                                                Nenhuma movimentação registrada no CRM com os filtros atuais.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredHistory.map(h => {
+                                            const getStatusBadge = (status: string | null) => {
+                                                if (!status) return <span className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">Novo Lead</span>;
+                                                let statusColor = 'bg-gray-100 text-[var(--admin-text-secondary)]';
+                                                let label = STATUS_LABELS[status as keyof typeof STATUS_LABELS] || status.toUpperCase();
+                                                if (status === 'New') statusColor = 'bg-wtech-black text-white';
+                                                else if (status === 'Contacted') statusColor = 'bg-blue-100 text-blue-700';
+                                                else if (status === 'Qualified' || status === 'Negotiating') statusColor = 'bg-purple-100 text-purple-700 border border-purple-200';
+                                                else if (status === 'Converted' || status === 'Matriculated') statusColor = 'bg-green-100 text-green-700 border border-green-200';
+                                                else if (status === 'Cold' || status === 'Rejected' || status === 'Lost') statusColor = 'bg-red-50 text-red-400 border border-red-100';
+                                                return (
+                                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${statusColor}`}>
+                                                        {label}
+                                                    </span>
+                                                );
+                                            };
+
+                                            const sourceLabel = h.source === 'drag' ? 'Arrastar' : 
+                                                                h.source === 'quick' ? 'Rápido' : 
+                                                                h.source === 'modal' ? 'Modal' : 
+                                                                h.source === 'lost' ? 'Perda' : 
+                                                                h.source === 'conversion' ? 'Conversão' : h.source || 'N/A';
+
+                                            return (
+                                                <tr 
+                                                    key={h.id} 
+                                                    className="hover:bg-[var(--admin-surface-2)] transition-colors group cursor-pointer"
+                                                    onClick={() => handleHistoryLeadClick(h.lead_id)}
+                                                >
+                                                    <td className="px-6 py-4 whitespace-nowrap text-xs text-[var(--admin-text-secondary)]">
+                                                        <div className="flex items-center gap-1.5 font-bold">
+                                                            <Clock size={12} className="text-gray-400" />
+                                                            {new Date(h.created_at).toLocaleString('pt-BR')}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div>
+                                                            <div className="font-bold text-[var(--admin-text-primary)] group-hover:text-wtech-gold transition-colors">{h.lead?.name || 'Lead Removido'}</div>
+                                                            <div className="text-xs text-[var(--admin-text-tertiary)]">{h.lead?.email || h.lead?.phone || 'Sem contato'}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        {getStatusBadge(h.from_status)}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center gap-2">
+                                                            <ArrowRight size={12} className="text-gray-400" />
+                                                            {getStatusBadge(h.to_status)}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-6 h-6 rounded-full bg-[var(--admin-surface-3)] flex items-center justify-center text-[10px] font-bold overflow-hidden border border-[var(--admin-border)]">
+                                                                {h.moved_by_name?.charAt(0).toUpperCase() || 'S'}
+                                                            </div>
+                                                            <span className="text-xs text-[var(--admin-text-primary)] font-bold">
+                                                                {h.moved_by_name || 'Sistema'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-xs text-[var(--admin-text-secondary)] font-bold">
+                                                        <span className="px-2 py-0.5 rounded bg-[var(--admin-surface-3)] border border-[var(--admin-border)] text-gray-500">
+                                                            {sourceLabel}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}
