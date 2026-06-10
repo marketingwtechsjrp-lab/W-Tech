@@ -5,16 +5,19 @@ import { Enrollment } from '../types';
  * Syncs a student (enrollment) to the unified SITE_Leads table.
  * This ensures students appear in unified search and can be used in orders.
  */
-export async function syncStudentToLeads(enrollment: Partial<Enrollment>) {
-    if (!enrollment.studentEmail && !enrollment.studentPhone) return null;
+export async function syncStudentToLeads(enrollment: any) {
+    const email = enrollment.studentEmail || enrollment.student_email;
+    const phone = enrollment.studentPhone || enrollment.student_phone;
+
+    if (!email && !phone) return null;
 
     try {
         // 1. Try to find existing lead by email or phone
         let query = supabase.from('SITE_Leads').select('*');
-        if (enrollment.studentEmail) {
-            query = query.eq('email', enrollment.studentEmail);
+        if (email) {
+            query = query.eq('email', email);
         } else {
-            query = query.eq('phone', enrollment.studentPhone);
+            query = query.eq('phone', phone);
         }
 
         const { data: existingLeads } = await query;
@@ -22,8 +25,6 @@ export async function syncStudentToLeads(enrollment: Partial<Enrollment>) {
 
         // Support both camelCase and snake_case properties
         const name = enrollment.studentName || enrollment.student_name;
-        const email = enrollment.studentEmail || enrollment.student_email;
-        const phone = enrollment.studentPhone || enrollment.student_phone;
         const zipCode = enrollment.zipCode || enrollment.zip_code;
         const city = enrollment.city;
         const state = enrollment.state;
