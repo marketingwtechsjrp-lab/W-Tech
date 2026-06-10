@@ -118,6 +118,27 @@ const ObrigadoLisboa: React.FC = () => {
 
                 if (updateError) throw updateError;
 
+                // Sync the confirmed payment to update lead status to 'Converted' (Approved/Won) in CRM
+                await syncStudentToLeads({
+                    ...enr,
+                    status: 'Confirmed',
+                    amountPaid: amount,
+                    paymentMethod: 'Stripe',
+                    studentName: enr.student_name,
+                    studentEmail: enr.student_email,
+                    studentPhone: enr.student_phone,
+                    zipCode: enr.zip_code,
+                    city: enr.city,
+                    state: enr.state,
+                    studentCpf: enr.student_cpf,
+                    tShirtSize: enr.t_shirt_size,
+                    hasWorkshop: enr.has_workshop,
+                    workshopName: enr.workshop_name,
+                    worksWithSuspensions: enr.works_with_suspensions,
+                    tookSuspensionCourse: enr.took_suspension_course,
+                    experienceYears: enr.experience_years
+                });
+
                 // 3. Also insert a transaction for financial control
                 const { data: existingTx } = await supabase
                     .from('SITE_Transactions')

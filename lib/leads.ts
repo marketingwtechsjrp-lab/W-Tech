@@ -25,7 +25,7 @@ export async function syncStudentToLeads(enrollment: Partial<Enrollment>) {
             email: enrollment.studentEmail,
             phone: enrollment.studentPhone,
             type: 'Course_Registration',
-            status: 'Qualified', // Default status for course students
+            status: (enrollment.status === 'Confirmed' || enrollment.status === 'CheckedIn' || (enrollment.amountPaid && enrollment.amountPaid > 0)) ? 'Converted' : 'Qualified',
             zip_code: enrollment.zipCode,
             address_city: enrollment.city,
             address_state: enrollment.state,
