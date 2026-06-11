@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.0.16",
+    "date": "2026-06-11",
+    "title": "Adiciona coluna updated_at e correções de banco de dados",
+    "changes": [
+      "Fallback resiliente de webhook",
+      "Adicionado coluna updated_at nas tabelas de inscricao",
+      "Ajustes de sincronizacao de banco"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.15",
     "date": "2026-06-11",
     "title": "Correções de webhook e atendente automático",

@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.16 (2026-06-11) - Adiciona coluna updated_at e correções de banco de dados
+- Fallback resiliente de webhook
+- Adicionado coluna updated_at nas tabelas de inscricao
+- Ajustes de sincronizacao de banco
+
 ## v3.0.15 (2026-06-11) - Correções de webhook e atendente automático
 - Definir atendente padrao como Automatico no checkout
 - Validação de webhook resiliente com fallback para API MP
