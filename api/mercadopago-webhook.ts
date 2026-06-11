@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { recoverLeadToRoulette } from './_roleta';
+import { recoverLeadToRoulette } from './_roleta.js';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.

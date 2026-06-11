@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { recoverLeadToRoulette } from './_roleta';
+import { recoverLeadToRoulette } from './_roleta.js';
 
 /**
  * Vercel Serverless Function — Recuperação de Checkout Abandonado/Falho
