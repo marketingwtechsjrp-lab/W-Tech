@@ -217,9 +217,12 @@ export default async function handler(req: any, res: any) {
       return res.status(502).json({ error: `Mercado Pago erro: ${errMsg}` });
     }
 
+    const isSandbox = mpToken.startsWith('TEST-');
+    const redirectUrl = isSandbox ? data.sandbox_init_point : data.init_point;
+
     return res.status(200).json({
       success: true,
-      init_point: data.init_point,
+      init_point: redirectUrl,
       sandbox_init_point: data.sandbox_init_point,
       id: data.id,
       enrollmentId

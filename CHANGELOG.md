@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.14 (2026-06-11) - Correção do redirecionamento do checkout
+- FIX: Redirecionamento dinâmico para sandbox_init_point se token começar com TEST-
+
 ## v3.0.13 (2026-06-11) - Opção de Pré-Inscrição nas Landing Pages
 - FEAT: Seleção de pré-inscrição de R$ 400 selecionável nas Landing Pages (V1, V2, V3 e V4)
 - FEAT: Integração do checkout respeitando a opção selecionada pelo aluno na LP
