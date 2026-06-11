@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.18 (2026-06-11) - Webhook MP confirma pagamento de verdade (schema corrigido)
+- Remove updated_at do UPDATE de SITE_Enrollments (coluna não existe — fazia a confirmação falhar)
+- SITE_Transactions: usa course_id/lead_id no lugar de enrollment_id inexistente
+- SITE_Leads: não grava string em assigned_to (coluna UUID)
+- Timeout de 10s no fetch do Mercado Pago e etapas secundárias limitadas — webhook nunca mais pendura
+
 ## v3.0.17 (2026-06-11) - Correção crítica do webhook do Mercado Pago
 - Corrige imports ESM (.js) que derrubavam o webhook com 500 em produção
 - Pagamentos voltam a confirmar a inscrição automaticamente

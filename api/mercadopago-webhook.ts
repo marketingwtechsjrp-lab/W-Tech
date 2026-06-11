@@ -147,10 +147,18 @@ export default async function handler(req: any, res: any) {
       return res.status(500).json({ error: 'MP token not configured' });
     }
 
-    // ── 2. Consulta pagamento no MP ─────────────────────────────────────────
-    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: { Authorization: `Bearer ${mpToken}` }
-    });
+    // ── 2. Consulta pagamento no MP (com timeout para nunca pendurar) ───────
+    const mpController = new AbortController();
+    const mpTimeout = setTimeout(() => mpController.abort(), 10000);
+    let mpRes: Response;
+    try {
+      mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        headers: { Authorization: `Bearer ${mpToken}` },
+        signal: mpController.signal
+      });
+    } finally {
+      clearTimeout(mpTimeout);
+    }
 
     if (mpRes.status === 404) {
       // Pagamento inexistente: notificação de simulação do painel MP ou ID inválido.
@@ -226,6 +234,8 @@ export default async function handler(req: any, res: any) {
     }
 
     // ── 4. Atualiza SITE_Enrollments → Confirmed ────────────────────────────
+    // OBS: SITE_Enrollments NÃO possui coluna updated_at — não incluir aqui,
+    // senão o PostgREST rejeita o UPDATE inteiro e a inscrição nunca confirma.
     const { error: updateError } = await supabase
       .from('SITE_Enrollments')
       .update({
@@ -233,8 +243,7 @@ export default async function handler(req: any, res: any) {
         amount_paid: amountPaid,
         payment_id: String(paymentId),
         payment_method: 'Mercado Pago',
-        enrolled_by_name: 'Automático',
-        updated_at: new Date().toISOString()
+        enrolled_by_name: 'Automático'
       })
       .eq('id', enrollmentId);
 
@@ -244,65 +253,91 @@ export default async function handler(req: any, res: any) {
     }
     console.log(`[MP Webhook] Enrollment ${enrollmentId} → Confirmed ✓`);
 
-    // ── 5. Atualiza SITE_Leads → Converted (não-fatal) ──────────────────────
-    const leadIdFromMeta = payment.metadata?.lead_id;
-    let leadQuery = supabase.from('SITE_Leads').select('id, tags, conversion_value');
-    
-    if (leadIdFromMeta) {
-      leadQuery = leadQuery.eq('id', leadIdFromMeta);
-    } else if (enrollment.student_email) {
-      leadQuery = leadQuery.eq('email', enrollment.student_email);
-    } else {
-      leadQuery = null;
-    }
+    // ── 5 & 6. Tarefas secundárias (não-fatais) ─────────────────────────────
+    // A inscrição já está confirmada. Estas etapas (lead + transação) são
+    // best-effort e cada uma é limitada por timeout para NUNCA pendurar a
+    // resposta ao Mercado Pago — uma etapa lenta/travada não pode impedir o ack.
+    const withTimeout = <T,>(p: PromiseLike<T>, ms: number, label: string): Promise<T | null> =>
+      Promise.race([
+        Promise.resolve(p),
+        new Promise<null>((resolve) =>
+          setTimeout(() => {
+            console.error(`[MP Webhook] ${label} excedeu ${ms}ms — ignorado (não-fatal).`);
+            resolve(null);
+          }, ms)
+        )
+      ]) as Promise<T | null>;
 
-    if (leadQuery) {
-      const { data: existingLead } = await leadQuery.maybeSingle();
-      const leadIdToUpdate = existingLead?.id || leadIdFromMeta;
+    try {
+      // ── 5. Atualiza SITE_Leads → Converted ───────────────────────────────
+      // OBS: assigned_to é UUID — NÃO gravar string ('Automático') ali.
+      const leadIdFromMeta = payment.metadata?.lead_id;
+      let leadQuery = supabase.from('SITE_Leads').select('id, tags');
 
-      if (leadIdToUpdate) {
-        const autoTags = ['checkout_automatico', 'sem_comissao', 'venda_mp', 'checkout_direto'];
-        const existingTags: string[] = existingLead?.tags || [];
-        const mergedTags = Array.from(new Set([...existingTags, ...autoTags]));
+      if (leadIdFromMeta) {
+        leadQuery = leadQuery.eq('id', leadIdFromMeta);
+      } else if (enrollment.student_email) {
+        leadQuery = leadQuery.eq('email', enrollment.student_email);
+      } else {
+        leadQuery = null;
+      }
 
-        const { error: leadError } = await supabase
-          .from('SITE_Leads')
-          .update({
-            status: 'Converted',
-            tags: mergedTags,
-            conversion_value: amountPaid,
-            conversion_summary: `Venda automática via Checkout Direto (Mercado Pago). Curso: ${enrollment.course_id}. Sem atendimento humano.`,
-            conversion_type: 'Course_Purchase',
-            assigned_to: 'Automático',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', leadIdToUpdate);
+      if (leadQuery) {
+        const leadRes = await withTimeout(leadQuery.maybeSingle(), 5000, 'SELECT lead');
+        const existingLead = leadRes?.data as { id: string; tags?: string[] } | undefined;
+        const leadIdToUpdate = existingLead?.id || leadIdFromMeta;
 
-        if (leadError) {
-          console.error('[MP Webhook] Lead update error (non-fatal):', leadError);
-        } else {
-          console.log(`[MP Webhook] Lead ${leadIdToUpdate} → Converted & assigned to Automático ✓`);
+        if (leadIdToUpdate) {
+          const autoTags = ['checkout_automatico', 'sem_comissao', 'venda_mp', 'checkout_direto'];
+          const existingTags: string[] = existingLead?.tags || [];
+          const mergedTags = Array.from(new Set([...existingTags, ...autoTags]));
+
+          const upd = await withTimeout(
+            supabase
+              .from('SITE_Leads')
+              .update({
+                status: 'Converted',
+                tags: mergedTags,
+                conversion_value: amountPaid,
+                conversion_summary: `Venda automática via Checkout Direto (Mercado Pago). Curso: ${enrollment.course_id}. Sem atendimento humano.`,
+                conversion_type: 'Course_Purchase',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', leadIdToUpdate),
+            5000,
+            'UPDATE lead'
+          );
+          if (upd?.error) {
+            console.error('[MP Webhook] Lead update error (non-fatal):', upd.error);
+          } else if (upd) {
+            console.log(`[MP Webhook] Lead ${leadIdToUpdate} → Converted ✓`);
+          }
         }
       }
-    }
 
-    // ── 6. Registra em SITE_Transactions (não-fatal) ────────────────────────
-    const { error: transError } = await supabase
-      .from('SITE_Transactions')
-      .insert([{
-        description: `Pagamento Mercado Pago: ${String(paymentId).slice(-12)}`,
-        amount: amountPaid,
-        type: 'Income',
-        category: 'Sales',
-        status: 'Completed',
-        payment_method: 'Mercado Pago',
-        enrollment_id: enrollmentId,
-        currency,
-        date: new Date().toISOString()
-      }]);
-
-    if (transError) {
-      console.error('[MP Webhook] Transaction insert error (non-fatal):', transError);
+      // ── 6. Registra em SITE_Transactions ─────────────────────────────────
+      // OBS: a tabela NÃO tem coluna enrollment_id — usar course_id/lead_id.
+      const transRes = await withTimeout(
+        supabase.from('SITE_Transactions').insert([{
+          description: `Pagamento Mercado Pago: ${String(paymentId).slice(-12)}`,
+          amount: amountPaid,
+          type: 'Income',
+          category: 'Sales',
+          status: 'Completed',
+          payment_method: 'Mercado Pago',
+          course_id: enrollment.course_id,
+          lead_id: payment.metadata?.lead_id || null,
+          currency,
+          date: new Date().toISOString()
+        }]),
+        5000,
+        'INSERT transaction'
+      );
+      if (transRes?.error) {
+        console.error('[MP Webhook] Transaction insert error (non-fatal):', transRes.error);
+      }
+    } catch (sideError: any) {
+      console.error('[MP Webhook] Erro em tarefa secundária (não-fatal):', sideError?.message);
     }
 
     console.log(`[MP Webhook] Done. Enrollment ${enrollmentId} confirmed. Amount: ${amountPaid} ${currency}`);
