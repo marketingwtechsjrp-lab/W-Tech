@@ -1,7 +1,7 @@
 # 📘 Guia Completo do Sistema W-Tech Platform
 
 **Última Atualização:** 11/06/2026
-**Versão:** 3.0.14 (Baseada no `package.json`)
+**Versão:** 3.0.15 (Baseada no `package.json`)
 
 Este documento serve como a "Fonte de Verdade" para o funcionamento, arquitetura e manutenção de toda a plataforma W-Tech.
 
