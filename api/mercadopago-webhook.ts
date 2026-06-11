@@ -133,6 +133,42 @@ export default async function handler(req: any, res: any) {
     );
   }
 
+  // ── MODO DIAGNÓSTICO (?debug=1) ─────────────────────────────────────────────
+  // Cronometra cada passo com timeout individual e SEMPRE retorna, apontando
+  // qual etapa pendura em produção. Remover após diagnóstico.
+  if (req.query?.debug === '1') {
+    const trace: any[] = [];
+    const step = async (label: string, fn: () => PromiseLike<any>, ms = 8000) => {
+      const t = Date.now();
+      let timedOut = false;
+      const result = await Promise.race([
+        Promise.resolve(fn()).then((r) => ({ ok: true, r })).catch((e: any) => ({ ok: false, err: e?.message })),
+        new Promise((resolve) => setTimeout(() => { timedOut = true; resolve({ ok: false, err: `TIMEOUT ${ms}ms` }); }, ms))
+      ]) as any;
+      const entry: any = { label, ms: Date.now() - t, ok: result.ok && !timedOut };
+      if (result.err) entry.err = result.err;
+      if (result.r?.error) entry.dbError = result.r.error.message;
+      trace.push(entry);
+      return result.r;
+    };
+
+    const cfg = await step('SELECT SITE_Config token', () =>
+      supabase.from('SITE_Config').select('value').eq('key', 'mercadopago_access_token').single());
+    const tok = cfg?.data?.value;
+    await step('FETCH MP payment', async () => {
+      const ac = new AbortController();
+      const to = setTimeout(() => ac.abort(), 8000);
+      try {
+        const r = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, { headers: { Authorization: `Bearer ${tok}` }, signal: ac.signal });
+        return { status: r.status };
+      } finally { clearTimeout(to); }
+    });
+    await step('SELECT enrollment', () =>
+      supabase.from('SITE_Enrollments').select('id, status').eq('id', String(paymentId)).maybeSingle());
+
+    return res.status(200).json({ debug: true, paymentId, trace });
+  }
+
   try {
     // ── 1. Busca token MP da SITE_Config ────────────────────────────────────
     const { data: configRow } = await supabase
