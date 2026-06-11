@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.0.14",
+    "date": "2026-06-11",
+    "title": "Correção do redirecionamento do checkout",
+    "changes": [
+      "FIX: Redirecionamento dinâmico para sandbox_init_point se token começar com TEST-"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.13",
     "date": "2026-06-11",
     "title": "Opção de Pré-Inscrição nas Landing Pages",
