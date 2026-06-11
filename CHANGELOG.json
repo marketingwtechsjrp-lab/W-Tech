@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.0.12",
+    "date": "2026-06-11",
+    "title": "Fluxo de Inscrição e Pagamento Mercado Pago (Brasil)",
+    "changes": [
+      "Opção de pagamento de Sinal/Reserva de Vaga configurável por curso no checkout",
+      "Campos administrativos para 'Valor da Reserva (Sinal)' e 'Link do Grupo VIP de WhatsApp'",
+      "Questionário complementar de matrícula exibido na tela de confirmação de inscrição",
+      "Exibição do saldo devedor e link direto com login automático para a área do cliente",
+      "Renomeada a aba 'WhatsApp API' sob Comunicação para 'Integrações'"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.11",
     "date": "2026-06-08",
     "title": "Integração de Search Console & Analytics",

@@ -640,7 +640,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             badgeLayoutId: c.badge_layout_id,
             isInternational: c.is_international,
             currency: c.currency || 'BRL',
-            customLink: c.custom_link
+            customLink: c.custom_link,
+            depositPrice: c.deposit_price != null ? Number(c.deposit_price) : undefined,
+            whatsappGroupLink: c.whatsapp_group_link
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
@@ -771,7 +773,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             badge_layout_id: formData.badgeLayoutId || null,
             is_international: formData.isInternational || false,
             currency: formData.currency || 'BRL',
-            custom_link: formData.customLink ? formData.customLink.replace(/^\/?#\/?/, '/') : null
+            custom_link: formData.customLink ? formData.customLink.replace(/^\/?#\/?/, '/') : null,
+            deposit_price: formData.depositPrice !== undefined ? formData.depositPrice : null,
+            whatsapp_group_link: formData.whatsappGroupLink || null
         };
 
         let error;
@@ -3104,7 +3108,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 <input type="number" className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)]" value={formData.capacity || ''} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) })} placeholder="Ex: 50" />
                             </div>
 
-                            <div className="md:col-span-3 grid grid-cols-2 gap-4 pt-4 border-t border-[var(--admin-border)]">
+                            <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-[var(--admin-border)]">
                                 <div>
                                     <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">
                                         Valor do Curso ({formData.currency || 'BRL'})
@@ -3121,6 +3125,15 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                     <div className="relative">
                                         <span className="absolute left-3 top-3 text-gray-400 font-bold">{formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : 'R$'}</span>
                                         <input type="number" step="0.01" className="w-full border border-[var(--admin-border)] p-2.5 pl-10 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-black" value={formData.recyclingPrice || ''} onChange={e => setFormData({ ...formData, recyclingPrice: parseFloat(e.target.value) })} placeholder="0.00" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">
+                                        Sinal da Reserva ({formData.currency || 'BRL'})
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-3 text-gray-400 font-bold">{formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : 'R$'}</span>
+                                        <input type="number" step="0.01" className="w-full border border-[var(--admin-border)] p-2.5 pl-10 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-black animate-in fade-in" value={formData.depositPrice || ''} onChange={e => setFormData({ ...formData, depositPrice: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="400.00" />
                                     </div>
                                 </div>
                             </div>
@@ -3185,6 +3198,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                             <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Link de Destino Personalizado (Ignora LP Automática)</label>
                             <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.customLink || ''} onChange={e => setFormData({ ...formData, customLink: e.target.value })} placeholder="Ex: /chao-de-oficina ou https://..." />
                             <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-1">Se preenchido, o calendário usará este link em vez da Landing Page gerada automaticamente. Use caminhos internos como "/chao-de-oficina" (sem o #).</p>
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-1.5">Link do Grupo de WhatsApp do Curso</label>
+                            <input className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.whatsappGroupLink || ''} onChange={e => setFormData({ ...formData, whatsappGroupLink: e.target.value })} placeholder="Ex: https://chat.whatsapp.com/..." />
+                            <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-1 font-bold">Link de convite para o grupo VIP de alunos que será exibido na página de confirmação de inscrição.</p>
                         </div>
 
                         <div className="md:col-span-2">
@@ -5428,7 +5447,7 @@ const SettingsView = () => {
             group: 'Comunicação',
             items: [
                 { id: 'E-mail', icon: Mail, label: 'E-mail (SMTP)' },
-                { id: 'WhatsApp API', icon: MessageCircle, label: 'WhatsApp API' },
+                { id: 'WhatsApp API', icon: MessageCircle, label: 'Integrações' },
                 { id: 'Modelos Msg', icon: MessageSquare, label: 'Modelos de Msg' },
             ]
         },

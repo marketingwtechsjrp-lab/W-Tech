@@ -82,6 +82,8 @@ export interface Course {
   isInternational?: boolean; // Mapped from is_international
   currency?: 'BRL' | 'USD' | 'EUR';
   customLink?: string; // Mapped from custom_link
+  depositPrice?: number; // Mapped from deposit_price
+  whatsappGroupLink?: string; // Mapped from whatsapp_group_link
 }
 
 export interface CertificateLayout {

@@ -1,4 +1,47 @@
 import { createClient } from '@supabase/supabase-js';
+import { createHmac, timingSafeEqual } from 'crypto';
+
+/**
+ * Valida a assinatura HMAC do webhook do Mercado Pago.
+ */
+function validarAssinaturaMP(input: {
+  xSignature: string | null;
+  xRequestId: string | null;
+  dataId: string;
+}): boolean {
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  if (!secret) {
+    console.warn(
+      '[MP Webhook] MERCADOPAGO_WEBHOOK_SECRET não configurado — assinatura do webhook NÃO validada.'
+    );
+    return true;
+  }
+
+  if (!input.xSignature) return false;
+
+  let ts = '';
+  let v1 = '';
+  for (const parte of input.xSignature.split(',')) {
+    const [chave, valor] = parte.split('=').map((s) => s?.trim());
+    if (chave === 'ts') ts = valor ?? '';
+    if (chave === 'v1') v1 = valor ?? '';
+  }
+  if (!ts || !v1) return false;
+
+  let manifesto = `id:${input.dataId.toLowerCase()};`;
+  if (input.xRequestId) manifesto += `request-id:${input.xRequestId};`;
+  manifesto += `ts:${ts};`;
+
+  const esperado = createHmac('sha256', secret).update(manifesto).digest('hex');
+
+  try {
+    const a = Buffer.from(esperado, 'hex');
+    const b = Buffer.from(v1, 'hex');
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Vercel Serverless Function — Mercado Pago Webhook
@@ -57,6 +100,21 @@ export default async function handler(req: any, res: any) {
   const validActions = ['payment.updated', 'payment.created'];
   if (action && !validActions.includes(action)) {
     return res.status(200).json({ received: true, skipped: `action not tracked: ${action}` });
+  }
+
+  // Validação da assinatura do webhook do Mercado Pago (anti-spoofing)
+  const xSignature = req.headers['x-signature'] as string | undefined;
+  const xRequestId = req.headers['x-request-id'] as string | undefined;
+
+  const assinaturaOk = validarAssinaturaMP({
+    xSignature: xSignature || null,
+    xRequestId: xRequestId || null,
+    dataId: String(paymentId)
+  });
+
+  if (!assinaturaOk) {
+    console.warn(`[MP Webhook] Assinatura inválida para o paymentId ${paymentId} — requisição rejeitada.`);
+    return res.status(401).json({ error: 'Assinatura inválida' });
   }
 
   try {

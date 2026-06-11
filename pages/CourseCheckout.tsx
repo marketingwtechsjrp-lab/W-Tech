@@ -23,6 +23,7 @@ interface CourseData {
     image?: string;
     capacity?: number;
     start_time?: string;
+    deposit_price?: number;
     SITE_Enrollments?: { count: number }[];
 }
 
@@ -59,6 +60,7 @@ const CourseCheckout: React.FC = () => {
     const [pageLoading, setPageLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [redirecting, setRedirecting] = useState(false);
+    const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
     const [error, setError] = useState<string | null>(
         errorParam === 'payment_failed' ? 'Houve um problema com o pagamento. Por favor, tente novamente.' : null
     );
@@ -80,7 +82,7 @@ const CourseCheckout: React.FC = () => {
 
             const { data: courseData, error: courseError } = await supabase
                 .from('SITE_Courses')
-                .select('id, title, date, date_end, city, state, location_type, price, currency, image, capacity, start_time, SITE_Enrollments(count)')
+                .select('id, title, date, date_end, city, state, location_type, price, currency, image, capacity, start_time, deposit_price, SITE_Enrollments(count)')
                 .eq('id', courseId)
                 .single();
 
@@ -140,51 +142,18 @@ const CourseCheckout: React.FC = () => {
         trackEvent('Checkout', 'submit_attempt', course.title);
 
         try {
-            // 1. Cria enrollment com status Pending
-            const { data: enrollment, error: enrollError } = await supabase
-                .from('SITE_Enrollments')
-                .insert([{
-                    course_id: courseId,
-                    student_name: form.name.trim(),
-                    student_email: form.email.trim().toLowerCase(),
-                    student_cpf: form.cpf.replace(/\D/g, ''),
-                    student_phone: form.phone.replace(/\D/g, ''),
-                    birth_date: form.birthDate || null,
-                    status: 'Pending',
-                    payment_method: 'Mercado Pago',
-                    total_amount: course.price,
-                    amount_paid: 0,
-                    currency: course.currency || 'BRL'
-                }])
-                .select('id')
-                .single();
-
-            if (enrollError || !enrollment) {
-                throw new Error(enrollError?.message || 'Erro ao criar inscrição.');
-            }
-
-            // 2. Atualiza status do lead para Negotiating (não-fatal)
-            if (lid) {
-                supabase
-                    .from('SITE_Leads')
-                    .update({ status: 'Negotiating', updated_at: new Date().toISOString() })
-                    .eq('id', lid)
-                    .then(({ error }) => {
-                        if (error) console.warn('Lead update non-fatal:', error);
-                    });
-            }
-
-            // 3. Cria preferência no Mercado Pago
+            // 1. Cria preferência no Mercado Pago (o backend cuidará de criar a inscrição, atualizar o lead e gerar a preferência)
             const mpResult = await createMercadoPagoPreference({
-                course: { id: course.id, title: course.title, price: course.price },
+                courseId: course.id,
                 customer: {
                     name: form.name.trim(),
                     email: form.email.trim().toLowerCase(),
                     cpf: form.cpf,
-                    phone: form.phone
+                    phone: form.phone,
+                    birthDate: form.birthDate || undefined
                 },
-                enrollmentId: enrollment.id,
-                leadId: lid || undefined
+                leadId: lid || undefined,
+                paymentType
             });
 
             if (!mpResult.success || !mpResult.init_point) {
@@ -198,7 +167,6 @@ const CourseCheckout: React.FC = () => {
             setTimeout(() => {
                 window.location.href = mpResult.init_point!;
             }, 800);
-
         } catch (err: any) {
             console.error('Checkout error:', err);
             setError(err.message || 'Erro inesperado. Tente novamente.');
@@ -209,6 +177,12 @@ const CourseCheckout: React.FC = () => {
     const spotsLeft = course
         ? Math.max(0, (course.capacity || 0) - (course.SITE_Enrollments?.[0]?.count || 0))
         : 0;
+
+    const depositPrice = course?.deposit_price != null && Number(course.deposit_price) > 0
+        ? Number(course.deposit_price)
+        : 400.00;
+
+    const selectedPrice = paymentType === 'deposit' ? depositPrice : (course?.price || 0);
 
     const currencySymbol = course?.currency === 'EUR' ? '€' : course?.currency === 'USD' ? '$' : 'R$';
 
@@ -329,13 +303,21 @@ const CourseCheckout: React.FC = () => {
                                     )}
                                 </div>
 
-                                <div className="mt-5 pt-4 border-t border-gray-100">
+                                <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
                                     <div className="flex items-baseline justify-between">
-                                        <span className="text-xs font-bold text-gray-400 uppercase">Total</span>
-                                        <span className="text-3xl font-black text-gray-900">
+                                        <span className="text-xs font-bold text-gray-400 uppercase">Total do Curso</span>
+                                        <span className="text-lg font-bold text-gray-600">
                                             {currencySymbol} {course!.price.toFixed(2).replace('.', ',')}
                                         </span>
                                     </div>
+                                    {paymentType === 'deposit' && (
+                                        <div className="flex items-baseline justify-between border-t border-dashed border-gray-100 pt-2 animate-in fade-in">
+                                            <span className="text-xs font-black text-wtech-gold uppercase">Sinal da Reserva</span>
+                                            <span className="text-3xl font-black text-gray-900">
+                                                {currencySymbol} {depositPrice.toFixed(2).replace('.', ',')}
+                                            </span>
+                                        </div>
+                                    )}
                                     {spotsLeft > 0 && spotsLeft <= 10 && (
                                         <p className="text-xs text-red-500 font-black mt-1 text-right animate-pulse">
                                             ⚡ Apenas {spotsLeft} {spotsLeft === 1 ? 'vaga' : 'vagas'} restante{spotsLeft === 1 ? '' : 's'}!
@@ -393,6 +375,60 @@ const CourseCheckout: React.FC = () => {
                             </AnimatePresence>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Opção de Pagamento */}
+                                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 mb-6">
+                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-3">
+                                        Opção de Pagamento
+                                    </label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {/* Card: Integral */}
+                                        <div
+                                            onClick={() => setPaymentType('full')}
+                                            className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
+                                                paymentType === 'full'
+                                                    ? 'border-wtech-gold bg-yellow-50/20 shadow-sm'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Valor Integral</span>
+                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                    paymentType === 'full' ? 'border-wtech-gold' : 'border-gray-300'
+                                                }`}>
+                                                    {paymentType === 'full' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
+                                                </div>
+                                            </div>
+                                            <span className="text-lg font-black text-gray-900">
+                                                {currencySymbol} {course!.price.toFixed(2).replace('.', ',')}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Quitação integral e acesso garantido</span>
+                                        </div>
+
+                                        {/* Card: Sinal */}
+                                        <div
+                                            onClick={() => setPaymentType('deposit')}
+                                            className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
+                                                paymentType === 'deposit'
+                                                    ? 'border-wtech-gold bg-yellow-50/20 shadow-sm'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Reservar Vaga (Sinal)</span>
+                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                    paymentType === 'deposit' ? 'border-wtech-gold' : 'border-gray-300'
+                                                }`}>
+                                                    {paymentType === 'deposit' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
+                                                </div>
+                                            </div>
+                                            <span className="text-lg font-black text-gray-900">
+                                                {currencySymbol} {depositPrice.toFixed(2).replace('.', ',')}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Garanta sua vaga hoje. Pague o restante depois</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Nome */}
                                 <div>
                                     <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1.5">
@@ -485,9 +521,9 @@ const CourseCheckout: React.FC = () => {
                                 {/* Resumo e CTA */}
                                 <div className="pt-2">
                                     <div className="flex justify-between items-center text-sm mb-4 bg-gray-50 rounded-xl p-4">
-                                        <span className="font-bold text-gray-500">Total a pagar</span>
-                                        <span className="text-xl font-black text-gray-900">
-                                            {currencySymbol} {course!.price.toFixed(2).replace('.', ',')}
+                                        <span className="font-bold text-gray-500">Total a pagar agora</span>
+                                        <span className="text-xl font-black text-gray-950">
+                                            {currencySymbol} {selectedPrice.toFixed(2).replace('.', ',')}
                                         </span>
                                     </div>
 

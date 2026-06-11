@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.12 (2026-06-11) - Fluxo de Inscrição e Pagamento Mercado Pago (Brasil)
+- Opção de pagamento de Sinal/Reserva de Vaga configurável por curso no checkout
+- Campos administrativos para 'Valor da Reserva (Sinal)' e 'Link do Grupo VIP de WhatsApp'
+- Questionário complementar de matrícula exibido na tela de confirmação de inscrição
+- Exibição do saldo devedor e link direto com login automático para a área do cliente
+- Renomeada a aba 'WhatsApp API' sob Comunicação para 'Integrações'
+
 ## v3.0.11 (2026-06-08) - Integração de Search Console & Analytics
 - Adicionada meta tag estática do Google Search Console ao index.html
 - Nova aba dedicada nas configurações do Admin para Google Analytics e Search Console
