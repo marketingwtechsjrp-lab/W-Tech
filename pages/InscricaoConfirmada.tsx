@@ -51,6 +51,8 @@ const InscricaoConfirmada: React.FC = () => {
     // Formulário do Questionário
     const [qForm, setQForm] = useState({
         fullName: '',
+        email: '',
+        phone: '',
         tShirtSize: 'M',
         cpf: '',
         zipCode: '',
@@ -59,9 +61,12 @@ const InscricaoConfirmada: React.FC = () => {
         addressNeighborhood: '',
         city: '',
         state: '',
+        isMechanic: 'no',
         hasWorkshop: 'no',
         workshopName: '',
+        workshopAddress: '',
         worksWithSuspensions: 'no',
+        tookWtechCourse: 'no',
         tookSuspensionCourse: 'no',
         experienceYears: ''
     });
@@ -100,6 +105,8 @@ const InscricaoConfirmada: React.FC = () => {
             setQForm(prev => ({
                 ...prev,
                 fullName: enrData.student_name || '',
+                email: enrData.student_email || '',
+                phone: enrData.student_phone || '',
                 cpf: enrData.student_cpf || '',
                 tShirtSize: enrData.t_shirt_size || 'M',
                 zipCode: enrData.zip_code || '',
@@ -189,6 +196,8 @@ const InscricaoConfirmada: React.FC = () => {
         try {
             const payload = {
                 student_name: qForm.fullName,
+                student_email: qForm.email.trim().toLowerCase(),
+                student_phone: qForm.phone.replace(/\D/g, ''),
                 t_shirt_size: qForm.tShirtSize,
                 student_cpf: qForm.cpf.replace(/\D/g, ''),
                 zip_code: qForm.zipCode,
@@ -196,7 +205,15 @@ const InscricaoConfirmada: React.FC = () => {
                 address_number: qForm.addressNumber,
                 address_neighborhood: qForm.addressNeighborhood,
                 city: qForm.city,
-                state: qForm.state
+                state: qForm.state,
+                is_mechanic: qForm.isMechanic === 'yes',
+                has_workshop: qForm.hasWorkshop === 'yes',
+                workshop_name: qForm.hasWorkshop === 'yes' ? qForm.workshopName : '',
+                workshop_address: qForm.hasWorkshop === 'yes' ? qForm.workshopAddress : '',
+                works_with_suspensions: qForm.worksWithSuspensions === 'yes',
+                took_wtech_course: qForm.tookWtechCourse === 'yes',
+                took_suspension_course: qForm.tookSuspensionCourse === 'yes',
+                experience_years: qForm.experienceYears
             };
 
             // 1. Atualiza SITE_Enrollments
@@ -212,6 +229,8 @@ const InscricaoConfirmada: React.FC = () => {
             const updatedEnrollment = {
                 ...enrollment,
                 studentName: qForm.fullName,
+                studentEmail: qForm.email.trim().toLowerCase(),
+                studentPhone: qForm.phone.replace(/\D/g, ''),
                 tShirtSize: qForm.tShirtSize,
                 studentCpf: qForm.cpf,
                 zipCode: qForm.zipCode,
@@ -220,9 +239,12 @@ const InscricaoConfirmada: React.FC = () => {
                 addressNeighborhood: qForm.addressNeighborhood,
                 city: qForm.city,
                 state: qForm.state,
+                isMechanic: qForm.isMechanic === 'yes',
                 hasWorkshop: qForm.hasWorkshop === 'yes',
                 workshopName: qForm.hasWorkshop === 'yes' ? qForm.workshopName : '',
+                workshopAddress: qForm.hasWorkshop === 'yes' ? qForm.workshopAddress : '',
                 worksWithSuspensions: qForm.worksWithSuspensions === 'yes',
+                tookWtechCourse: qForm.tookWtechCourse === 'yes',
                 tookSuspensionCourse: qForm.tookSuspensionCourse === 'yes',
                 experienceYears: qForm.experienceYears
             };
@@ -515,6 +537,34 @@ const InscricaoConfirmada: React.FC = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-3">
+                                                    {/* E-mail */}
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">E-mail *</label>
+                                                        <input
+                                                            type="email"
+                                                            required
+                                                            value={qForm.email}
+                                                            onChange={e => setQForm({ ...qForm, email: e.target.value })}
+                                                            className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-wtech-gold transition-colors bg-gray-50/50"
+                                                            placeholder="seu@email.com"
+                                                        />
+                                                    </div>
+
+                                                    {/* Telefone */}
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Telefone / WhatsApp *</label>
+                                                        <input
+                                                            type="tel"
+                                                            required
+                                                            value={qForm.phone}
+                                                            onChange={e => setQForm({ ...qForm, phone: e.target.value })}
+                                                            className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-wtech-gold transition-colors bg-gray-50/50"
+                                                            placeholder="(00) 00000-0000"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
                                                     {/* CPF */}
                                                     <div>
                                                         <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">CPF *</label>
@@ -642,9 +692,22 @@ const InscricaoConfirmada: React.FC = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-3">
-                                                    {/* Tem oficina */}
+                                                    {/* Já é mecânico */}
                                                     <div>
-                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Tem Oficina Própria?</label>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Já é Mecânico?</label>
+                                                        <select
+                                                            value={qForm.isMechanic}
+                                                            onChange={e => setQForm({ ...qForm, isMechanic: e.target.value })}
+                                                            className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-wtech-gold transition-colors bg-gray-50/50"
+                                                        >
+                                                            <option value="no">Não</option>
+                                                            <option value="yes">Sim</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Trabalha em mecânica/oficina */}
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Trabalha em Mecânica / Oficina?</label>
                                                         <select
                                                             value={qForm.hasWorkshop}
                                                             onChange={e => setQForm({ ...qForm, hasWorkshop: e.target.value })}
@@ -654,22 +717,37 @@ const InscricaoConfirmada: React.FC = () => {
                                                             <option value="yes">Sim</option>
                                                         </select>
                                                     </div>
+                                                </div>
 
-                                                    {/* Nome Oficina */}
-                                                    {qForm.hasWorkshop === 'yes' && (
-                                                        <div className="animate-in slide-in-from-left-2 duration-150">
-                                                            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome da Oficina *</label>
+                                                {qForm.hasWorkshop === 'yes' && (
+                                                    <div className="grid grid-cols-2 gap-3 animate-in slide-in-from-left-2 duration-150">
+                                                        {/* Nome da Mecânica */}
+                                                        <div>
+                                                            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Qual Mecânica Trabalha? *</label>
                                                             <input
                                                                 type="text"
                                                                 required
                                                                 value={qForm.workshopName}
                                                                 onChange={e => setQForm({ ...qForm, workshopName: e.target.value })}
                                                                 className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-wtech-gold transition-colors bg-gray-50/50"
-                                                                placeholder="Sua oficina"
+                                                                placeholder="Nome da mecânica/oficina"
                                                             />
                                                         </div>
-                                                    )}
-                                                </div>
+
+                                                        {/* Endereço da Mecânica */}
+                                                        <div>
+                                                            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Endereço da Mecânica *</label>
+                                                            <input
+                                                                type="text"
+                                                                required
+                                                                value={qForm.workshopAddress}
+                                                                onChange={e => setQForm({ ...qForm, workshopAddress: e.target.value })}
+                                                                className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-wtech-gold transition-colors bg-gray-50/50"
+                                                                placeholder="Rua, número, cidade"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {/* Já trabalha com suspensão */}
@@ -702,9 +780,22 @@ const InscricaoConfirmada: React.FC = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-3">
-                                                    {/* Já fez curso */}
+                                                    {/* Já fez curso W-Tech */}
                                                     <div>
-                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Já Fez Outro Curso?</label>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Já Fez Curso da W-Tech?</label>
+                                                        <select
+                                                            value={qForm.tookWtechCourse}
+                                                            onChange={e => setQForm({ ...qForm, tookWtechCourse: e.target.value })}
+                                                            className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-800 focus:outline-none focus:border-wtech-gold transition-colors bg-gray-50/50"
+                                                        >
+                                                            <option value="no">Não</option>
+                                                            <option value="yes">Sim</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Curso de suspensão fora da W-Tech */}
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Curso de Suspensão Fora da W-Tech?</label>
                                                         <select
                                                             value={qForm.tookSuspensionCourse}
                                                             onChange={e => setQForm({ ...qForm, tookSuspensionCourse: e.target.value })}

@@ -8,7 +8,11 @@
       "Bash(grep -rn \"GRANT.*SITE_Enrollments\\\\|SITE_Enrollments.*GRANT\" /Users/daniel/Documents/Sistemas/Programar/Site-Wtech/*.sql)",
       "Bash(npx tsc:*)",
       "Bash(git worktree *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk tsc *)",
+      "Bash(rtk read *)",
+      "Bash(lsof -nP -iTCP -sTCP:LISTEN)"
     ]
   }
 }

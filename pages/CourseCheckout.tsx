@@ -55,12 +55,15 @@ const CourseCheckout: React.FC = () => {
     const [searchParams] = useSearchParams();
     const lid = searchParams.get('lid');
     const errorParam = searchParams.get('error');
+    const failedEid = searchParams.get('eid');
 
     const [course, setCourse] = useState<CourseData | null>(null);
     const [pageLoading, setPageLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [redirecting, setRedirecting] = useState(false);
-    const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
+    
+    const initialType = searchParams.get('type') === 'deposit' ? 'deposit' : 'full';
+    const [paymentType, setPaymentType] = useState<'full' | 'deposit'>(initialType);
     const [error, setError] = useState<string | null>(
         errorParam === 'payment_failed' ? 'Houve um problema com o pagamento. Por favor, tente novamente.' : null
     );
@@ -72,6 +75,17 @@ const CourseCheckout: React.FC = () => {
         phone: '',
         birthDate: ''
     });
+
+    // Pagamento falhou no MP → devolve o lead para a roleta de atendentes no CRM
+    useEffect(() => {
+        if (errorParam === 'payment_failed' && failedEid) {
+            fetch('/api/checkout-recovery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enrollmentId: failedEid })
+            }).catch(err => console.error('Checkout recovery error (non-fatal):', err));
+        }
+    }, [errorParam, failedEid]);
 
     // Busca dados do curso e prefill do lead
     useEffect(() => {

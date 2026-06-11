@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.13 (2026-06-11) - Opção de Pré-Inscrição nas Landing Pages
+- FEAT: Seleção de pré-inscrição de R$ 400 selecionável nas Landing Pages (V1, V2, V3 e V4)
+- FEAT: Integração do checkout respeitando a opção selecionada pelo aluno na LP
+- FIX: Ajustada validação do card de oferta para mostrar a pré-inscrição independentemente do preço total
+
 ## v3.0.12 (2026-06-11) - Fluxo de Inscrição e Pagamento Mercado Pago (Brasil)
 - Opção de pagamento de Sinal/Reserva de Vaga configurável por curso no checkout
 - Campos administrativos para 'Valor da Reserva (Sinal)' e 'Link do Grupo VIP de WhatsApp'

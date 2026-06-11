@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { recoverLeadToRoulette } from './_roleta';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.
@@ -164,6 +165,28 @@ export default async function handler(req: any, res: any) {
 
     const payment = await mpRes.json();
     console.log(`[MP Webhook] Payment ${paymentId} → status: ${payment.status}`);
+
+    // Pagamento recusado/cancelado → devolve o lead para a roleta de atendentes
+    if (payment.status === 'rejected' || payment.status === 'cancelled') {
+      const refId = payment.external_reference as string | undefined;
+      if (refId) {
+        const { data: failedEnrollment } = await supabase
+          .from('SITE_Enrollments')
+          .select('id, status, student_email, student_phone, student_name')
+          .eq('id', refId)
+          .maybeSingle();
+
+        if (failedEnrollment) {
+          const result = await recoverLeadToRoulette(
+            supabase,
+            failedEnrollment,
+            `Pagamento ${payment.status} no Mercado Pago (payment ${paymentId})`
+          );
+          console.log(`[MP Webhook] Payment ${payment.status} → recovery: ${result.detail}`);
+        }
+      }
+      return res.status(200).json({ received: true, status: payment.status, recovery: 'attempted' });
+    }
 
     // Apenas processar pagamentos aprovados
     if (payment.status !== 'approved') {

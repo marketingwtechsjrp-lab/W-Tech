@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import CheckoutOfferCard from '../components/CheckoutOfferCard';
 import { LandingPage, Course } from '../types';
 import { CheckCircle, ShieldCheck, ArrowRight, Star, Play, MapPin, Calendar, Clock, Check, User, Users, AlertTriangle, Navigation, X, Quote } from 'lucide-react';
 import { triggerWebhook } from '../lib/webhooks';
@@ -28,6 +29,7 @@ const LandingPageViewerV4: React.FC = () => {
 
     // Form State
     const [form, setForm] = useState({ name: '', email: '', phone: '' });
+    const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
     const [submitted, setSubmitted] = useState(false);
     const [spotsLeft, setSpotsLeft] = useState<number>(5); // Default simulated scarcity
     const [activeVideo, setActiveVideo] = useState<string | null>(null);
@@ -200,7 +202,7 @@ const LandingPageViewerV4: React.FC = () => {
         // Redireciona ao checkout se: habilitado + curso nacional + tem course_id
         const courseIdForCheckout = (lp as any).courseId || (lp as any).course_id;
         if (checkoutAtivoParaLP && courseIdForCheckout && leadResult?.id) {
-            navigate(`/checkout-curso/${courseIdForCheckout}?lid=${leadResult.id}`);
+            navigate(`/checkout-curso/${courseIdForCheckout}?lid=${leadResult.id}&type=${paymentType}`);
             return;
         }
 
@@ -703,6 +705,92 @@ const LandingPageViewerV4: React.FC = () => {
                                     </div>
                             ) : (
                                     <form onSubmit={handleSubmit} className="space-y-6">
+                                        {/* Aviso do Checkout Direto: explica o fluxo de pagamento e o sinal de reserva */}
+                                        {(() => {
+                                            const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
+                                            const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
+                                            const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternationalCourse && !isFullOrDone;
+                                            if (!checkoutAtivo) return null;
+
+                                            return (
+                                                <div className="text-left">
+                                                    <CheckoutOfferCard
+                                                        theme="light"
+                                                        coursePrice={Number((lp.course as any)?.price || 0)}
+                                                        depositPrice={Number((lp.course as any)?.deposit_price || 0)}
+                                                    />
+                                                </div>
+                                            );
+                                        })()}
+
+                                        {/* Selector de Opção de Pagamento */}
+                                        {(() => {
+                                            const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
+                                            const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
+                                            const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternationalCourse && !isFullOrDone;
+                                            if (!checkoutAtivo) return null;
+
+                                            const depositPrice = lp.course?.deposit_price != null && Number(lp.course.deposit_price) > 0
+                                                ? Number(lp.course.deposit_price)
+                                                : 400.00;
+                                            const coursePrice = Number(lp.course?.price || 0);
+
+                                            return (
+                                                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 mb-6 text-left">
+                                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-3">
+                                                        Opção de Inscrição
+                                                    </label>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        {/* Card: Integral */}
+                                                        <div
+                                                            onClick={() => setPaymentType('full')}
+                                                            className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
+                                                                paymentType === 'full'
+                                                                    ? 'border-wtech-gold bg-yellow-50/30 shadow-sm'
+                                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Valor Integral</span>
+                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                                    paymentType === 'full' ? 'border-wtech-gold' : 'border-gray-350'
+                                                                }`}>
+                                                                    {paymentType === 'full' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-lg font-black text-gray-900">
+                                                                R$ {coursePrice.toFixed(2).replace('.', ',')}
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Acesso integral garantido</span>
+                                                        </div>
+
+                                                        {/* Card: Sinal */}
+                                                        <div
+                                                            onClick={() => setPaymentType('deposit')}
+                                                            className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
+                                                                paymentType === 'deposit'
+                                                                    ? 'border-wtech-gold bg-yellow-50/30 shadow-sm'
+                                                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Reservar Vaga</span>
+                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                                    paymentType === 'deposit' ? 'border-wtech-gold' : 'border-gray-350'
+                                                                }`}>
+                                                                    {paymentType === 'deposit' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-lg font-black text-gray-900">
+                                                                R$ {depositPrice.toFixed(2).replace('.', ',')}
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Sinal da pré-inscrição para assegurar a vaga</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
                                         <div className="group-form">
                                             <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Nome Completo</label>
                                             <div className="relative">
@@ -745,7 +833,11 @@ const LandingPageViewerV4: React.FC = () => {
                                         </div>
 
                                         <button type="submit" className="w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black py-4.5 rounded-xl font-black text-lg uppercase tracking-wider hover:shadow-[0_10px_20px_rgba(212,175,55,0.3)] hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
-                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' ? 'Entrar na Lista' : 'Confirmar Inscrição'} <ArrowRight size={20} strokeWidth={3} />
+                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' 
+                                                ? 'Entrar na Lista' 
+                                                : paymentType === 'deposit' 
+                                                    ? 'Garantir Vaga (Pré-Inscrição)' 
+                                                    : 'Garantir Vaga (Inscrição Integral)'} <ArrowRight size={20} strokeWidth={3} />
                                         </button>
 
                                         <div className="flex items-center justify-center gap-6 pt-4 border-t border-gray-100 text-gray-400 text-xs font-bold uppercase">

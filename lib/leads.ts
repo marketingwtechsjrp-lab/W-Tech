@@ -36,9 +36,12 @@ export async function syncStudentToLeads(enrollment: any) {
         const totalAmount = enrollment.totalAmount || enrollment.total_amount;
         const amountPaid = enrollment.amountPaid || enrollment.amount_paid;
 
+        const isMechanic = enrollment.isMechanic !== undefined ? enrollment.isMechanic : enrollment.is_mechanic;
         const hasWorkshop = enrollment.hasWorkshop !== undefined ? enrollment.hasWorkshop : enrollment.has_workshop;
         const workshopName = enrollment.workshopName || enrollment.workshop_name;
+        const workshopAddress = enrollment.workshopAddress || enrollment.workshop_address;
         const worksWithSuspensions = enrollment.worksWithSuspensions !== undefined ? enrollment.worksWithSuspensions : enrollment.works_with_suspensions;
+        const tookWtechCourse = enrollment.tookWtechCourse !== undefined ? enrollment.tookWtechCourse : enrollment.took_wtech_course;
         const tookSuspensionCourse = enrollment.tookSuspensionCourse !== undefined ? enrollment.tookSuspensionCourse : enrollment.took_suspension_course;
         const experienceYears = enrollment.experienceYears || enrollment.experience_years;
 
@@ -60,20 +63,25 @@ export async function syncStudentToLeads(enrollment: any) {
             cpf: cpf,
             t_shirt_size: tShirtSize,
             conversion_value: totalAmount || 380,
-            conversion_summary: 'Matrícula Confirmada: Lisboa Nov 2026',
+            conversion_summary: 'Matrícula Confirmada via Checkout',
             conversion_type: 'Course_Registration',
             ...(enrolledByName && { assigned_to: enrolledByName }),
             workshop_details: {
                 name: workshopName || '',
+                address: workshopAddress || '',
+                is_mechanic: isMechanic || false,
                 has_workshop: hasWorkshop || false,
                 works_with_suspensions: worksWithSuspensions || false,
+                took_wtech_course: tookWtechCourse || false,
                 took_suspension_course: tookSuspensionCourse || false,
                 experience_years: experienceYears || ''
             },
             notes: `Questionário preenchido no checkout:
-- Tem oficina: ${hasWorkshop ? 'Sim (' + workshopName + ')' : 'Não'}
+- Já é mecânico: ${isMechanic ? 'Sim' : 'Não'}
+- Trabalha em mecânica: ${hasWorkshop ? 'Sim (' + workshopName + (workshopAddress ? ' — ' + workshopAddress : '') + ')' : 'Não'}
 - Trabalha com suspensão: ${worksWithSuspensions ? 'Sim' : 'Não'}
-- Fez outro curso de suspensão: ${tookSuspensionCourse ? 'Sim' : 'Não'}
+- Já fez curso da W-Tech: ${tookWtechCourse ? 'Sim' : 'Não'}
+- Curso de suspensão fora da W-Tech: ${tookSuspensionCourse ? 'Sim' : 'Não'}
 - Tempo na área: ${experienceYears || 'N/A'}`
         };
 

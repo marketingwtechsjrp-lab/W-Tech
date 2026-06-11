@@ -35,8 +35,8 @@
     var cid    = params.get('cid')    || '';
 
     if (status === 'failed' && cid) {
-      // Falha → volta ao checkout com mensagem de erro
-      window.location.replace('/checkout-curso/' + cid + '?error=payment_failed');
+      // Falha → volta ao checkout com mensagem de erro (eid permite devolver o lead à roleta)
+      window.location.replace('/checkout-curso/' + cid + '?error=payment_failed&eid=' + eid);
     } else {
       // Sucesso ou pendente → página de confirmação
       window.location.replace('/inscricao-confirmada?eid=' + eid + '&status=' + status);

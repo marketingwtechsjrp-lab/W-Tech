@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.0.13",
+    "date": "2026-06-11",
+    "title": "Opção de Pré-Inscrição nas Landing Pages",
+    "changes": [
+      "FEAT: Seleção de pré-inscrição de R$ 400 selecionável nas Landing Pages (V1, V2, V3 e V4)",
+      "FEAT: Integração do checkout respeitando a opção selecionada pelo aluno na LP",
+      "FIX: Ajustada validação do card de oferta para mostrar a pré-inscrição independentemente do preço total"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.12",
     "date": "2026-06-11",
     "title": "Fluxo de Inscrição e Pagamento Mercado Pago (Brasil)",
