@@ -74,15 +74,70 @@ export default async function handler(req: any, res: any) {
 
     const enrollmentId = enrollment.id;
 
-    // 3. Atualiza status do lead para 'Negotiating' (não-fatal)
-    if (leadId) {
+    // 3. Garante a criação/atualização do lead com status 'New' e atribuído ao robô
+    let finalLeadId = leadId;
+    const cleanEmail = customer.email.trim().toLowerCase();
+    const cleanPhone = customer.phone.replace(/\D/g, '');
+
+    if (!finalLeadId) {
+      const { data: foundLead } = await supabase
+        .from('SITE_Leads')
+        .select('id')
+        .or(`email.eq.${cleanEmail},phone.eq.${cleanPhone}`)
+        .limit(1)
+        .maybeSingle();
+      if (foundLead) {
+        finalLeadId = foundLead.id;
+      }
+    }
+
+    const leadPayload: any = {
+      name: customer.name.trim(),
+      email: cleanEmail,
+      phone: cleanPhone,
+      status: 'New', // Sempre reseta como Novo no preenchimento do checkout
+      assigned_to: 'Automático', // Atribuído ao Robô
+      origin: 'Checkout Automatizado',
+      updated_at: new Date().toISOString()
+    };
+
+    if (finalLeadId) {
+      const { data: existingLead } = await supabase
+        .from('SITE_Leads')
+        .select('tags')
+        .eq('id', finalLeadId)
+        .single();
+      
+      const existingTags = existingLead?.tags || [];
+      const mergedTags = Array.from(new Set([...existingTags, 'checkout_automatico', 'checkout_direto']));
+      
       const { error: leadError } = await supabase
         .from('SITE_Leads')
-        .update({ status: 'Negotiating', updated_at: new Date().toISOString() })
-        .eq('id', leadId);
+        .update({
+          ...leadPayload,
+          tags: mergedTags
+        })
+        .eq('id', finalLeadId);
 
       if (leadError) {
         console.warn('[MP Checkout] Lead update failed (non-fatal):', leadError);
+      }
+    } else {
+      const { data: newLead, error: leadError } = await supabase
+        .from('SITE_Leads')
+        .insert([{
+          ...leadPayload,
+          type: 'Course_Registration',
+          tags: ['checkout_automatico', 'checkout_direto'],
+          created_at: new Date().toISOString()
+        }])
+        .select('id')
+        .single();
+
+      if (leadError) {
+        console.warn('[MP Checkout] Lead creation failed (non-fatal):', leadError);
+      } else if (newLead) {
+        finalLeadId = newLead.id;
       }
     }
 
@@ -138,7 +193,7 @@ export default async function handler(req: any, res: any) {
       external_reference: enrollmentId,
       metadata: {
         enrollment_id: enrollmentId,
-        lead_id: leadId || null,
+        lead_id: finalLeadId || null,
         payment_type: paymentType
       },
       statement_descriptor: 'WTECH'

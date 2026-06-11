@@ -84,6 +84,7 @@ export interface Course {
   customLink?: string; // Mapped from custom_link
   depositPrice?: number; // Mapped from deposit_price
   whatsappGroupLink?: string; // Mapped from whatsapp_group_link
+  checkoutType?: 'manual' | 'automated'; // Mapped from checkout_type
 }
 
 export interface CertificateLayout {

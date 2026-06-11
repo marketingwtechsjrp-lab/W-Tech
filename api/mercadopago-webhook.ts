@@ -32,15 +32,29 @@ function validarAssinaturaMP(input: {
   if (input.xRequestId) manifesto += `request-id:${input.xRequestId};`;
   manifesto += `ts:${ts};`;
 
-  const esperado = createHmac('sha256', secret).update(manifesto).digest('hex');
-
-  try {
-    const a = Buffer.from(esperado, 'hex');
-    const b = Buffer.from(v1, 'hex');
-    return a.length === b.length && timingSafeEqual(a, b);
-  } catch {
-    return false;
+  // Suporta múltiplos segredos separados por vírgula (ex: segredo_teste,segredo_producao)
+  const secrets = secret.split(',').map((s) => s.trim()).filter(Boolean);
+  if (secrets.length === 0) {
+    console.warn(
+      '[MP Webhook] MERCADOPAGO_WEBHOOK_SECRET está vazio após processamento — assinatura não validada.'
+    );
+    return true;
   }
+
+  for (const s of secrets) {
+    const esperado = createHmac('sha256', s).update(manifesto).digest('hex');
+    try {
+      const a = Buffer.from(esperado, 'hex');
+      const b = Buffer.from(v1, 'hex');
+      if (a.length === b.length && timingSafeEqual(a, b)) {
+        return true;
+      }
+    } catch {
+      // Ignora erro neste segredo e tenta o próximo
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -200,33 +214,44 @@ export default async function handler(req: any, res: any) {
     console.log(`[MP Webhook] Enrollment ${enrollmentId} → Confirmed ✓`);
 
     // ── 5. Atualiza SITE_Leads → Converted (não-fatal) ──────────────────────
-    if (enrollment.student_email) {
-      const { data: existingLead } = await supabase
-        .from('SITE_Leads')
-        .select('id, tags, conversion_value')
-        .eq('email', enrollment.student_email)
-        .single();
+    const leadIdFromMeta = payment.metadata?.lead_id;
+    let leadQuery = supabase.from('SITE_Leads').select('id, tags, conversion_value');
+    
+    if (leadIdFromMeta) {
+      leadQuery = leadQuery.eq('id', leadIdFromMeta);
+    } else if (enrollment.student_email) {
+      leadQuery = leadQuery.eq('email', enrollment.student_email);
+    } else {
+      leadQuery = null;
+    }
 
-      const autoTags = ['checkout_automatico', 'sem_comissao', 'venda_mp', 'checkout_direto'];
-      const existingTags: string[] = (existingLead as any)?.tags || [];
-      const mergedTags = Array.from(new Set([...existingTags, ...autoTags]));
+    if (leadQuery) {
+      const { data: existingLead } = await leadQuery.maybeSingle();
+      const leadIdToUpdate = existingLead?.id || leadIdFromMeta;
 
-      const { error: leadError } = await supabase
-        .from('SITE_Leads')
-        .update({
-          status: 'Converted',
-          tags: mergedTags,
-          conversion_value: amountPaid,
-          conversion_summary: `Venda automática via Checkout Direto (Mercado Pago). Curso: ${enrollment.course_id}. Sem atendimento humano.`,
-          conversion_type: 'Course_Purchase',
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', enrollment.student_email);
+      if (leadIdToUpdate) {
+        const autoTags = ['checkout_automatico', 'sem_comissao', 'venda_mp', 'checkout_direto'];
+        const existingTags: string[] = existingLead?.tags || [];
+        const mergedTags = Array.from(new Set([...existingTags, ...autoTags]));
 
-      if (leadError) {
-        console.error('[MP Webhook] Lead update error (non-fatal):', leadError);
-      } else {
-        console.log(`[MP Webhook] Lead ${enrollment.student_email} → Converted ✓`);
+        const { error: leadError } = await supabase
+          .from('SITE_Leads')
+          .update({
+            status: 'Converted',
+            tags: mergedTags,
+            conversion_value: amountPaid,
+            conversion_summary: `Venda automática via Checkout Direto (Mercado Pago). Curso: ${enrollment.course_id}. Sem atendimento humano.`,
+            conversion_type: 'Course_Purchase',
+            assigned_to: 'Automático',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', leadIdToUpdate);
+
+        if (leadError) {
+          console.error('[MP Webhook] Lead update error (non-fatal):', leadError);
+        } else {
+          console.log(`[MP Webhook] Lead ${leadIdToUpdate} → Converted & assigned to Automático ✓`);
+        }
       }
     }
 

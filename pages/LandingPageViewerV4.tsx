@@ -114,7 +114,8 @@ const LandingPageViewerV4: React.FC = () => {
             mapUrl: rawCourse.map_url,
             zipCode: rawCourse.zip_code,
             addressNumber: rawCourse.address_number,
-            addressNeighborhood: rawCourse.address_neighborhood
+            addressNeighborhood: rawCourse.address_neighborhood,
+            checkoutType: rawCourse.checkout_type
         } : null;
 
         const mappedData: LandingPageWithCourse = {
@@ -175,7 +176,7 @@ const LandingPageViewerV4: React.FC = () => {
 
     try {
         const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
-        const checkoutAtivoParaLP = checkoutDiretoEnabled && !isInternationalCourse;
+        const checkoutAtivoParaLP = lp.course?.checkoutType === 'automated' && !isInternationalCourse;
 
         const payload = {
             name: form.name,

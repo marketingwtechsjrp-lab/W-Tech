@@ -642,7 +642,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             currency: c.currency || 'BRL',
             customLink: c.custom_link,
             depositPrice: c.deposit_price != null ? Number(c.deposit_price) : undefined,
-            whatsappGroupLink: c.whatsapp_group_link
+            whatsappGroupLink: c.whatsapp_group_link,
+            checkoutType: c.checkout_type
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
@@ -775,7 +776,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             currency: formData.currency || 'BRL',
             custom_link: formData.customLink ? formData.customLink.replace(/^\/?#\/?/, '/') : null,
             deposit_price: formData.depositPrice !== undefined ? formData.depositPrice : null,
-            whatsapp_group_link: formData.whatsappGroupLink || null
+            whatsapp_group_link: formData.whatsappGroupLink || null,
+            checkout_type: formData.checkoutType || 'manual'
         };
 
         let error;
@@ -3087,7 +3089,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                 </div>
                             </div>
 
-                            {formData.isInternational && (
+                            {formData.isInternational ? (
                                 <div className="animate-in fade-in slide-in-from-left-2">
                                     <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Moeda</label>
                                     <select
@@ -3099,9 +3101,21 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         <option value="EUR">Euro (€)</option>
                                     </select>
                                 </div>
+                            ) : (
+                                <div className="animate-in fade-in slide-in-from-left-2">
+                                    <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">Modo de Inscrição</label>
+                                    <select
+                                        className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] font-bold"
+                                        value={formData.checkoutType || 'manual'}
+                                        onChange={e => setFormData({ ...formData, checkoutType: e.target.value as any })}
+                                    >
+                                        <option value="manual">Lead Manual (CRM)</option>
+                                        <option value="automated">Pagamento Automatizado (Mercado Pago)</option>
+                                    </select>
+                                </div>
                             )}
 
-                            <div className={!formData.isInternational ? 'md:col-span-2' : ''}>
+                            <div>
                                 <label className="block text-sm font-bold mb-1 text-[var(--admin-text-primary)]">
                                     Vagas / Cotas
                                 </label>

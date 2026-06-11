@@ -298,6 +298,7 @@ const LandingPageViewerV3: React.FC = () => {
           addressNeighborhood: rawCourse.address_neighborhood,
           schedule: rawCourse.schedule,
           whatToBring: rawCourse.what_to_bring,
+          checkoutType: rawCourse.checkout_type,
         } : null;
 
         const mapped: LandingPageWithCourse = {
@@ -331,8 +332,8 @@ const LandingPageViewerV3: React.FC = () => {
     if (!lp || submitting) return;
     setSubmitting(true);
     try {
-      const isInternational = (lp.course as any)?.is_international;
-      const checkoutAtivo = checkoutDiretoEnabled && !isInternational;
+      const isInternational = (lp.course as any)?.is_international || lp.course?.isInternational;
+      const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternational;
       const result = await handleLeadUpsert({
         name: form.name, email: form.email, phone: form.phone,
         type: 'Course_Registration', status: 'New',

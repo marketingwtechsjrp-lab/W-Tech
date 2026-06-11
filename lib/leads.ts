@@ -43,6 +43,7 @@ export async function syncStudentToLeads(enrollment: any) {
         const experienceYears = enrollment.experienceYears || enrollment.experience_years;
 
         const isPaid = enrollment.status === 'Confirmed' || enrollment.status === 'CheckedIn' || (amountPaid && amountPaid > 0);
+        const enrolledByName = enrollment.enrolledByName || enrollment.enrolled_by_name;
 
         const leadData: any = {
             name: name,
@@ -61,6 +62,7 @@ export async function syncStudentToLeads(enrollment: any) {
             conversion_value: totalAmount || 380,
             conversion_summary: 'Matrícula Confirmada: Lisboa Nov 2026',
             conversion_type: 'Course_Registration',
+            ...(enrolledByName && { assigned_to: enrolledByName }),
             workshop_details: {
                 name: workshopName || '',
                 has_workshop: hasWorkshop || false,
