@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.0.19",
+    "date": "2026-06-11",
+    "title": "Webhook MP validado em produção — remove modo debug",
+    "changes": [
+      "Confirmação automática de pagamento validada ponta a ponta (status, valor e payment_id gravados pelo webhook)",
+      "Remove o modo de diagnóstico temporário do webhook"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.18",
     "date": "2026-06-11",
     "title": "Webhook MP confirma pagamento de verdade (schema corrigido)",

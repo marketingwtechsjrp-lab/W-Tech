@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.19 (2026-06-11) - Webhook MP validado em produção — remove modo debug
+- Confirmação automática de pagamento validada ponta a ponta (status, valor e payment_id gravados pelo webhook)
+- Remove o modo de diagnóstico temporário do webhook
+
 ## v3.0.18 (2026-06-11) - Webhook MP confirma pagamento de verdade (schema corrigido)
 - Remove updated_at do UPDATE de SITE_Enrollments (coluna não existe — fazia a confirmação falhar)
 - SITE_Transactions: usa course_id/lead_id no lugar de enrollment_id inexistente
