@@ -150,6 +150,13 @@ export default async function handler(req: any, res: any) {
       headers: { Authorization: `Bearer ${mpToken}` }
     });
 
+    if (mpRes.status === 404) {
+      // Pagamento inexistente: notificação de simulação do painel MP ou ID inválido.
+      // Responde 200 para o MP não marcar o webhook como falho nem reenviar.
+      console.log(`[MP Webhook] Payment ${paymentId} not found on MP (simulation/test). Acknowledged.`);
+      return res.status(200).json({ received: true, skipped: 'payment not found (simulation or invalid id)' });
+    }
+
     if (!mpRes.ok) {
       console.error(`[MP Webhook] MP API error: ${mpRes.status} ${mpRes.statusText}`);
       return res.status(502).json({ error: `MP API error: ${mpRes.status}` });
