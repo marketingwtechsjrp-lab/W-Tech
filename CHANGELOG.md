@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.15 (2026-06-11) - Correções de webhook e atendente automático
+- Definir atendente padrao como Automatico no checkout
+- Validação de webhook resiliente com fallback para API MP
+- Redirecionamento preservando parametros de consulta
+- Verificação direta client-side e liberacao de questionario
+
 ## v3.0.14 (2026-06-11) - Correção do redirecionamento do checkout
 - FIX: Redirecionamento dinâmico para sandbox_init_point se token começar com TEST-
 

@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.0.15",
+    "date": "2026-06-11",
+    "title": "Correções de webhook e atendente automático",
+    "changes": [
+      "Definir atendente padrao como Automatico no checkout",
+      "Validação de webhook resiliente com fallback para API MP",
+      "Redirecionamento preservando parametros de consulta",
+      "Verificação direta client-side e liberacao de questionario"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.14",
     "date": "2026-06-11",
     "title": "Correção do redirecionamento do checkout",

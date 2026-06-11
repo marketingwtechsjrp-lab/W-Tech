@@ -62,7 +62,8 @@ export default async function handler(req: any, res: any) {
         payment_method: 'Mercado Pago',
         total_amount: course.price,
         amount_paid: 0,
-        currency: course.currency || 'BRL'
+        currency: course.currency || 'BRL',
+        enrolled_by_name: 'Automático'
       }])
       .select('id')
       .single();

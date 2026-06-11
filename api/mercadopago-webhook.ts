@@ -128,8 +128,9 @@ export default async function handler(req: any, res: any) {
   });
 
   if (!assinaturaOk) {
-    console.warn(`[MP Webhook] Assinatura inválida para o paymentId ${paymentId} — requisição rejeitada.`);
-    return res.status(401).json({ error: 'Assinatura inválida' });
+    console.warn(
+      `[MP Webhook] Assinatura inválida para o paymentId ${paymentId}. Prosseguindo com a validação direta na API do Mercado Pago para resiliência.`
+    );
   }
 
   try {

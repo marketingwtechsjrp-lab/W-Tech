@@ -29,7 +29,8 @@
   <div class="spinner"></div>
   <script>
     // Lê os parâmetros enviados pelo Mercado Pago e redireciona para a SPA (HashRouter)
-    var params = new URLSearchParams(window.location.search);
+    var search = window.location.search;
+    var params = new URLSearchParams(search);
     var eid    = params.get('eid')    || '';
     var status = params.get('status') || 'approved';
     var cid    = params.get('cid')    || '';
@@ -38,8 +39,8 @@
       // Falha → volta ao checkout com mensagem de erro (eid permite devolver o lead à roleta)
       window.location.replace('/checkout-curso/' + cid + '?error=payment_failed&eid=' + eid);
     } else {
-      // Sucesso ou pendente → página de confirmação
-      window.location.replace('/inscricao-confirmada?eid=' + eid + '&status=' + status);
+      // Sucesso ou pendente → página de confirmação (preserva todos os parâmetros)
+      window.location.replace('/inscricao-confirmada' + search);
     }
   </script>
 </body>

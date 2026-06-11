@@ -40,6 +40,7 @@ const InscricaoConfirmada: React.FC = () => {
     const [searchParams] = useSearchParams();
     const enrollmentId = searchParams.get('eid');
     const urlStatus = searchParams.get('status') || 'approved';
+    const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id');
 
     const [loading, setLoading] = useState(true);
     const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
@@ -144,6 +145,25 @@ const InscricaoConfirmada: React.FC = () => {
 
         return () => clearInterval(interval);
     }, [enrollment?.status, pollCount]);
+
+    // Sincronização direta no carregamento (se houver paymentId do checkout)
+    useEffect(() => {
+        if (enrollment && enrollment.status === 'Pending' && paymentId) {
+            console.log('[Direct Verification] Triggering webhook sync for payment:', paymentId);
+            fetch(`/api/mercadopago-webhook?id=${paymentId}&topic=payment`, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[Direct Verification] Webhook call returned:', data);
+                // Força recarregar dados do enrollment imediatamente
+                fetchEnrollment(false);
+            })
+            .catch(err => {
+                console.error('[Direct Verification] Webhook call failed:', err);
+            });
+        }
+    }, [enrollment?.status, paymentId]);
 
     // Busca client_code na SITE_Leads quando o e-mail estiver disponível
     useEffect(() => {
@@ -512,7 +532,7 @@ const InscricaoConfirmada: React.FC = () => {
                                     </div>
 
                                     {/* QUESTIONNAIRE FORM */}
-                                    {!qSubmitted && enrollment?.status === 'Confirmed' && (
+                                    {!qSubmitted && isConfirmed && (
                                         <div className="mt-8 border-t border-gray-200 pt-8 text-left animate-in fade-in duration-300">
                                             <h3 className="text-base font-black uppercase text-gray-900 mb-1.5 tracking-tight flex items-center gap-2">
                                                 <span className="w-1 h-5 bg-wtech-gold rounded-sm inline-block shrink-0"></span>
