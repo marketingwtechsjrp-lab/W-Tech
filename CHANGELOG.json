@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.0.17",
+    "date": "2026-06-11",
+    "title": "Correção crítica do webhook do Mercado Pago",
+    "changes": [
+      "Corrige imports ESM (.js) que derrubavam o webhook com 500 em produção",
+      "Pagamentos voltam a confirmar a inscrição automaticamente",
+      "Endpoint de recuperação de checkout restaurado"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.16",
     "date": "2026-06-11",
     "title": "Adiciona coluna updated_at e correções de banco de dados",

@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.0.17 (2026-06-11) - Correção crítica do webhook do Mercado Pago
+- Corrige imports ESM (.js) que derrubavam o webhook com 500 em produção
+- Pagamentos voltam a confirmar a inscrição automaticamente
+- Endpoint de recuperação de checkout restaurado
+
 ## v3.0.16 (2026-06-11) - Adiciona coluna updated_at e correções de banco de dados
 - Fallback resiliente de webhook
 - Adicionado coluna updated_at nas tabelas de inscricao
