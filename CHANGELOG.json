@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.2.0",
+    "date": "2026-06-12",
+    "title": "Automações de Marketing: boas-vindas, pós-compra e lançamento por cidade",
+    "changes": [
+      "Lead novo no CRM entra automaticamente no fluxo de boas-vindas (3 e-mails)",
+      "Comprador entra automaticamente no fluxo de pós-compra (preparação, portal, indicação)",
+      "Lançamento de curso por cidade: botão no editor da LP segmenta a base e cria cadência de 3 e-mails",
+      "Endpoint /api/launch-course-campaign com prévia de público e trava de 500 contatos",
+      "MARKETING_PLANO.md com o planejamento de marketing estruturado"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.1.5",
     "date": "2026-06-12",
     "title": "Encaminhamento Dinamico de UTMs para Checkouts",

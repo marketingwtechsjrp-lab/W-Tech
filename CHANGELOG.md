@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.2.0 (2026-06-12) - Automações de Marketing: boas-vindas, pós-compra e lançamento por cidade
+- Lead novo no CRM entra automaticamente no fluxo "Boas-vindas — Novo Lead" (3 e-mails)
+- Comprador entra automaticamente no fluxo "Pós-compra — Onboarding do Aluno" (preparação, portal, indicação)
+- Lançamento de curso por cidade: botão "📣 Lançar p/ Base da Região" no editor da LP segmenta a base (cidade/estado, inclui perdidos) e cria cadência de 3 e-mails
+- Novo endpoint /api/launch-course-campaign com prévia de público (dry run) e trava de 500 contatos
+- MARKETING_PLANO.md: planejamento de marketing estruturado (funil, cadências, métricas, roadmap)
+
 ## v3.1.5 (2026-06-12) - Encaminhamento Dinamico de UTMs para Checkouts
 - Implementada captura dinamica de parametros de consulta (search/hashQuery) nas LPs de Ergonomia
 - Atualizados os botoes de checkout Kiwify para concatenar parametros UTM e sck automaticamente

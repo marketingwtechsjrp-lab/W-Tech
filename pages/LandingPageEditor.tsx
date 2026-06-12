@@ -20,6 +20,54 @@ const TEMPLATE_DISPLAY: Record<string, string> = {
 export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [launching, setLaunching] = useState(false);
+
+    /**
+     * Lançamento por região: consulta o público (dry run), confirma com o
+     * usuário e dispara a cadência de e-mails para os leads da base com a
+     * cidade/estado do curso (inclui leads perdidos, para reaquecimento).
+     */
+    const handleLaunchCampaign = async () => {
+        setLaunching(true);
+        try {
+            const preview = await fetch('/api/launch-course-campaign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ courseId: course.id, dryRun: true })
+            }).then(r => r.json());
+
+            if (!preview.ok) {
+                alert('Não foi possível montar o público: ' + (preview.error || 'erro desconhecido'));
+                return;
+            }
+            const go = window.confirm(
+                `Lançamento "${preview.course}" — ${preview.city}${preview.state ? '/' + preview.state : ''}\n\n` +
+                `Público encontrado na base: ${preview.audienceTotal} contatos\n` +
+                ` • Mesma cidade: ${preview.cityMatches}\n` +
+                ` • Mesmo estado: ${preview.stateMatches}\n` +
+                ` • Leads perdidos (reaquecimento): ${preview.lostIncluded}\n\n` +
+                `Será criada uma cadência de 3 e-mails (anúncio, prova social e última chamada) apontando para:\n${preview.lpUrl}\n\n` +
+                `Confirmar o lançamento?`
+            );
+            if (!go) return;
+
+            const result = await fetch('/api/launch-course-campaign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ courseId: course.id })
+            }).then(r => r.json());
+
+            if (result.ok) {
+                alert(`✅ Lançamento criado!\n\n${result.enrolled} contatos entraram na cadência "${'Lançamento — ' + result.course}".\nOs e-mails saem pelo processador diário de fluxos (requer Brevo ativo).`);
+            } else {
+                alert('Falha no lançamento: ' + (result.error || 'erro desconhecido'));
+            }
+        } catch (err: any) {
+            alert('Erro ao lançar campanha: ' + err.message);
+        } finally {
+            setLaunching(false);
+        }
+    };
     const [activeTab, setActiveTab] = useState<'template' | 'hero' | 'content' | 'modules' | 'instructor' | 'testimonials'>('template');
     
     // Initial State Template
@@ -238,7 +286,13 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                         <p className="text-gray-500 text-sm">Editando página para: <span className="font-semibold text-black">{course.title}</span></p>
                     </div>
                     <div className="flex gap-3">
-                         <a href={`/${lpPathOf(lp.template)}/${lp.slug}`} target="_blank" rel="noreferrer"
+                         <button type="button" onClick={handleLaunchCampaign} disabled={launching}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                            title="Envia a cadência de lançamento por e-mail para os leads da base com cidade/estado do curso">
+                            {launching ? <Loader2 size={16} className="animate-spin" /> : <span>📣</span>}
+                            Lançar p/ Base da Região
+                        </button>
+                        <a href={`/${lpPathOf(lp.template)}/${lp.slug}`} target="_blank" rel="noreferrer"
                             className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm bg-yellow-500 text-black hover:bg-yellow-400">
                             <LinkIcon size={16} />
                             Visualizar ({(lp.template || 'v1').toUpperCase()})

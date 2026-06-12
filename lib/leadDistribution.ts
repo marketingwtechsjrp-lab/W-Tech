@@ -103,6 +103,15 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
 
             await triggerWebhook('webhook_lead', payload);
 
+            // Automação: inscreve o lead NOVO nos fluxos de boas-vindas
+            // (gatilho NovoCadastro). Não-fatal e fire-and-forget — nunca
+            // atrapalha a criação do lead. Recadastros não entram de novo.
+            import('./flows')
+                .then(({ enrollContactInFlowsClient }) =>
+                    enrollContactInFlowsClient({ email: payload.email, name: payload.name, triggerType: 'NovoCadastro' })
+                )
+                .catch(err => console.error('[LeadUpsert] Enroll NovoCadastro falhou (não-fatal):', err));
+
             return { action: 'created', id: newLead.id, assigned_to: payload.assigned_to };
         }
 
