@@ -190,7 +190,10 @@ export function useLandingPage(ownTemplate: string) {
 
             const courseIdForCheckout = lp.courseId || (lp as any).course_id;
             if (checkoutAtivo && courseIdForCheckout && leadResult?.id) {
-                navigate(`/checkout-curso/${courseIdForCheckout}?lid=${leadResult.id}&type=${paymentType}`);
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.set('lid', leadResult.id);
+                searchParams.set('type', paymentType);
+                navigate(`/checkout-curso/${courseIdForCheckout}?${searchParams.toString()}`);
                 return;
             }
             setSubmitted(true);

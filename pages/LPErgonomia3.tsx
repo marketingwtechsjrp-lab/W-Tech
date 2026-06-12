@@ -227,6 +227,19 @@ const SectionLabel: React.FC<{ children: React.ReactNode; color?: string }> = ({
 const LPErgonomia3: React.FC = () => {
     const prefersReduced = useReducedMotion();
     const [timeLeft, setTimeLeft] = useState(7 * 60);
+
+    const [checkoutUrl, setCheckoutUrl] = useState("https://pay.kiwify.com.br/19v4nIa");
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+            const sp = new URLSearchParams(window.location.search || hashQuery);
+            const paramsString = sp.toString();
+            if (paramsString) {
+                setCheckoutUrl(`https://pay.kiwify.com.br/19v4nIa?${paramsString}`);
+            }
+        }
+    }, []);
     const [showBuyer, setShowBuyer] = useState(false);
     const [currentBuyer, setCurrentBuyer] = useState<{ name: string; role: string; city: string } | null>(null);
 
@@ -1194,7 +1207,7 @@ const LPErgonomia3: React.FC = () => {
 
                             {/* Main CTA */}
                             <motion.a
-                                href="https://pay.kiwify.com.br/19v4nIa"
+                                href={checkoutUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 id="kiwify-checkout-btn-lp-ergonomia3"

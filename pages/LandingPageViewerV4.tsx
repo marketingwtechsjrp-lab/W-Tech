@@ -195,7 +195,10 @@ const LandingPageViewerV4: React.FC = () => {
         // Redireciona ao checkout se: habilitado + curso nacional + tem course_id
         const courseIdForCheckout = (lp as any).courseId || (lp as any).course_id;
         if (checkoutAtivoParaLP && courseIdForCheckout && leadResult?.id) {
-            navigate(`/checkout-curso/${courseIdForCheckout}?lid=${leadResult.id}&type=${paymentType}`);
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('lid', leadResult.id);
+            searchParams.set('type', paymentType);
+            navigate(`/checkout-curso/${courseIdForCheckout}?${searchParams.toString()}`);
             return;
         }
 

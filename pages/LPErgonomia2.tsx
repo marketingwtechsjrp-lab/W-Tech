@@ -174,6 +174,19 @@ const LPErgonomia2: React.FC = () => {
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
 
+    const [checkoutUrl, setCheckoutUrl] = useState("https://pay.kiwify.com.br/19v4nIa");
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+            const sp = new URLSearchParams(window.location.search || hashQuery);
+            const paramsString = sp.toString();
+            if (paramsString) {
+                setCheckoutUrl(`https://pay.kiwify.com.br/19v4nIa?${paramsString}`);
+            }
+        }
+    }, []);
+
     const scrollTo = (id: string) => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -1119,7 +1132,7 @@ const LPErgonomia2: React.FC = () => {
                         </div>
 
                         <motion.a
-                            href="https://pay.kiwify.com.br/19v4nIa"
+                            href={checkoutUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             id="kiwify-checkout-btn-lp-ergonomia2"

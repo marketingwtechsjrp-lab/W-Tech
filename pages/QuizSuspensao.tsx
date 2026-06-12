@@ -53,8 +53,7 @@ const getAttributionParams = (): Record<string, string> => {
     const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
     const sp = new URLSearchParams(window.location.search || hashQuery);
     const out: Record<string, string> = {};
-    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid'].forEach(k => {
-        const val = sp.get(k);
+    sp.forEach((val, k) => {
         if (val) out[k] = val;
     });
     return out;

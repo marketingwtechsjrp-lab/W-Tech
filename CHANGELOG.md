@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.5 (2026-06-12) - Encaminhamento Dinamico de UTMs para Checkouts
+- Implementada captura dinamica de parametros de consulta (search/hashQuery) nas LPs de Ergonomia
+- Atualizados os botoes de checkout Kiwify para concatenar parametros UTM e sck automaticamente
+- Modificado o getAttributionParams do Quiz para retornar todos os parametros de query sem filtros
+- Modificada a navegacao das Landing Pages dinamicas presenciais para repassar UTMs para a pagina de checkout
+
 ## v3.1.4 (2026-06-12) - Rastreamento Nativo GTM em Botoes de Redirecionamento
 - Conversao de botoes e motion.buttons de redirecionamento para tags a e motion.a nativas
 - Adicionado atributo id de rastreamento exclusivo em todas as LPs para compatibilidade com o listener gtm.linkClick

@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.1.5",
+    "date": "2026-06-12",
+    "title": "Encaminhamento Dinamico de UTMs para Checkouts",
+    "changes": [
+      "Implementada captura dinamica de parametros de consulta (search/hashQuery) nas LPs de Ergonomia",
+      "Atualizados os botoes de checkout Kiwify para concatenar parametros UTM e sck automaticamente",
+      "Modificado o getAttributionParams do Quiz para retornar todos os parametros de query sem filtros",
+      "Modificada a navegacao das Landing Pages dinamicas presenciais para repassar UTMs para a pagina de checkout"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.1.4",
     "date": "2026-06-12",
     "title": "Rastreamento Nativo GTM em Botoes de Redirecionamento",

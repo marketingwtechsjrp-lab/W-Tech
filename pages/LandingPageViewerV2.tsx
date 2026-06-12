@@ -294,7 +294,10 @@ const LandingPageViewerV2: React.FC = () => {
       const result = await handleLeadUpsert(payload);
       const courseId = (lp as any).courseId || (lp as any).course_id;
       if (checkoutAtivo && courseId && result?.id) {
-        navigate(`/checkout-curso/${courseId}?lid=${result.id}&type=${paymentType}`);
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.set('lid', result.id);
+        searchParams.set('type', paymentType);
+        navigate(`/checkout-curso/${courseId}?${searchParams.toString()}`);
         return;
       }
       setSubmitted(true);
