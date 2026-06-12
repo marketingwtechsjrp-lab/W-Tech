@@ -140,13 +140,10 @@ const LandingPageViewer: React.FC = () => {
             course: mappedCourse,
             courseId: (lpData as any).course_id  // garante disponibilidade para redirect ao checkout
         };
-        // Auto-redirect to V2/V3 if template was set in admin
-        if ((lpData as any).template === 'v2') {
-            navigate(`/lp2/${slug}`, { replace: true });
-            return;
-        }
-        if ((lpData as any).template === 'v3') {
-            navigate(`/lp3/${slug}`, { replace: true });
+        // Auto-redirect para o viewer do template salvo no admin (v2..v8)
+        const savedTemplate = (lpData as any).template;
+        if (savedTemplate && savedTemplate !== 'v1') {
+            navigate(`/lp${String(savedTemplate).replace('v', '')}/${slug}`, { replace: true });
             return;
         }
 

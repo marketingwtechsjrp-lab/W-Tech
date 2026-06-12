@@ -12,7 +12,13 @@
       "Bash(rtk grep *)",
       "Bash(rtk tsc *)",
       "Bash(rtk read *)",
-      "Bash(lsof -nP -iTCP -sTCP:LISTEN)"
+      "Bash(lsof -nP -iTCP -sTCP:LISTEN)",
+      "Bash(rtk git *)",
+      "Bash(rtk ls *)",
+      "Bash(echo \"---exit: $?\")",
+      "Bash(rtk npm *)",
+      "Bash(rtk curl *)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)"
     ]
   }
 }

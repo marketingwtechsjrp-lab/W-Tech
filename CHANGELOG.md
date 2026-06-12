@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.3 (2026-06-12) - Novos Templates de Landing Pages (V5 a V8) e melhorias no Editor
+- Novos layouts de Landing Pages: V5 (Gold Brutal), V6 (Carbon Racing), V7 (Editorial Light) e V8 (Swiss Tech)
+- Suporte para depoimentos com vídeo (videoUrl) nos templates
+- Ajuste no campo de preço de reserva (deposit_price) do banco nos viewers de LP
+- Novas rotas de navegação /lp5, /lp6, /lp7 e /lp8 com lazy loading
+
 ## v3.1.2 (2026-06-12) - Follow-up automático de leads perdidos no CRM
 - Novo gatilho "Perda no CRM" nos fluxos de e-mail
 - Lead marcado como perdido entra automaticamente no fluxo de recuperação

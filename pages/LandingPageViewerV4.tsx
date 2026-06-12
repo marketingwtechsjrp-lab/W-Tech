@@ -141,17 +141,10 @@ const LandingPageViewerV4: React.FC = () => {
             courseId: (lpData as any).course_id  // garante disponibilidade para redirect ao checkout
          };
 
-         // Auto-redirect to correct viewer template page if different from 'v4'
-         if ((lpData as any).template === 'v1' || !(lpData as any).template) {
-             navigate(`/lp/${slug}`, { replace: true });
-             return;
-         }
-         if ((lpData as any).template === 'v2') {
-             navigate(`/lp2/${slug}`, { replace: true });
-             return;
-         }
-         if ((lpData as any).template === 'v3') {
-             navigate(`/lp3/${slug}`, { replace: true });
+         // Auto-redirect para o viewer do template salvo, se diferente de 'v4'
+         const savedTemplate = (lpData as any).template || 'v1';
+         if (savedTemplate !== 'v4') {
+             navigate(savedTemplate === 'v1' ? `/lp/${slug}` : `/lp${String(savedTemplate).replace('v', '')}/${slug}`, { replace: true });
              return;
          }
 

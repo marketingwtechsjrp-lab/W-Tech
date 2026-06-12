@@ -111,6 +111,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://site.w-techbrasil.com.br/lp/curso-de-teste</loc>
+    <lastmod>2026-06-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://site.w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-so-jos-do-rio-preto</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
@@ -158,11 +163,6 @@
   <url>
     <loc>https://site.w-techbrasil.com.br/lp/curso-de-suspensao-w-tech-em-sao-paulo</loc>
     <lastmod>2026-01-15</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://site.w-techbrasil.com.br/lp/teste-2026-05-30</loc>
-    <lastmod>2026-05-11</lastmod>
     <priority>0.7</priority>
   </url>
 </urlset>

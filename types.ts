@@ -83,6 +83,7 @@ export interface Course {
   currency?: 'BRL' | 'USD' | 'EUR';
   customLink?: string; // Mapped from custom_link
   depositPrice?: number; // Mapped from deposit_price
+  deposit_price?: number; // Campo cru do banco (snake_case) — usado nos viewers de LP
   whatsappGroupLink?: string; // Mapped from whatsapp_group_link
   checkoutType?: 'manual' | 'automated'; // Mapped from checkout_type
 }
@@ -197,14 +198,14 @@ export interface LandingPage {
   instructorName: string;
   instructorBio: string;
   instructorImage: string;
-  testimonials?: { name: string; text: string; image?: string }[];
+  testimonials?: { name: string; text: string; image?: string; videoUrl?: string }[];
   whatsappNumber?: string; // For CTA
   pixelId?: string; // Facebook Pixel
   modules?: { title: string; description: string; image: string }[];
   heroSecondaryImage?: string;
   quizEnabled?: boolean; // Mapped from quiz_enabled
   fakeAlertsEnabled?: boolean; // Mapped from fake_alerts_enabled
-  template?: 'v1' | 'v2' | 'v3' | 'v4'; // Layout template — v1: Classic, v2: Premium Cinematic, v3: White Clean, v4: Classic Light
+  template?: 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7' | 'v8'; // Layout — v1 Classic Dark, v2 Premium Cinematic, v3 White Clean, v4 Classic Light, v5 Gold Brutal, v6 Carbon Racing, v7 Editorial Light, v8 Swiss Tech
   status?: 'Draft' | 'Published'; // Publication status
 }
 

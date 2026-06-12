@@ -8,6 +8,15 @@ interface LandingPageEditorProps {
     onClose: () => void;
 }
 
+/** Rota pública de cada template (v1 → /lp, v2..v8 → /lp2../lp8). */
+const lpPathOf = (t?: string) => (!t || t === 'v1' ? 'lp' : `lp${t.replace('v', '')}`);
+
+/** Nome de exibição de cada template (usado em badges/avisos). */
+const TEMPLATE_DISPLAY: Record<string, string> = {
+    v1: 'Classic Dark', v2: 'Premium Cinematic', v3: 'White Clean', v4: 'Classic Light',
+    v5: 'Gold Brutal', v6: 'Carbon Racing', v7: 'Editorial Light', v8: 'Swiss Tech'
+};
+
 export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -229,10 +238,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                         <p className="text-gray-500 text-sm">Editando página para: <span className="font-semibold text-black">{course.title}</span></p>
                     </div>
                     <div className="flex gap-3">
-                         <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : lp.template === 'v4' ? 'lp4' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : lp.template === 'v4' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                         <a href={`/${lpPathOf(lp.template)}/${lp.slug}`} target="_blank" rel="noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm bg-yellow-500 text-black hover:bg-yellow-400">
                             <LinkIcon size={16} />
-                            Visualizar {lp.template === 'v2' ? '(V2 ✨)' : lp.template === 'v3' ? '(V3 ☀️)' : lp.template === 'v4' ? '(V4 🍃)' : '(V1)'}
+                            Visualizar ({(lp.template || 'v1').toUpperCase()})
                         </a>
                         <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
                             <X size={24} />
@@ -250,14 +259,9 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                             className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'template' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
                             <Layers size={18} />
                             <span className="flex-1">Template</span>
-                            {lp.template === 'v2'
-                                ? <span className="text-[9px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><Sparkles size={7} />V2</span>
-                                : lp.template === 'v3'
-                                ? <span className="text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">V3</span>
-                                : lp.template === 'v4'
-                                ? <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">V4</span>
-                                : <span className="text-[9px] font-bold bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full">V1</span>
-                            }
+                            <span className="text-[9px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                <Sparkles size={7} />{(lp.template || 'v1').toUpperCase()}
+                            </span>
                         </button>
                         <div className="h-px bg-gray-200 my-1" />
                         <button onClick={() => setActiveTab('hero')} className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'hero' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
@@ -296,8 +300,16 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                           features: ['Parallax hero + barra de scroll', 'Countdown em tempo real', 'Contadores animados', 'Cards com stagger', 'FAQ accordion', 'CTA flutuante mobile'] },
                                         { id: 'v3', name: 'White Clean', tagline: 'Branco e cronograma', isNew: false,
                                           features: ['Design branco/claro', 'Cronograma visual', 'Cards com borda dourada', 'Countdown branco', 'Formulário lateral'] },
-                                        { id: 'v4', name: 'Classic Light', tagline: 'Claro e objetivo', isNew: true,
-                                          features: ['Hero claro / imagem direita', 'Seção de benefícios em grid', 'Módulos em cards claros', 'Formulário de inscrição premium', 'WhatsApp CTA'] }
+                                        { id: 'v4', name: 'Classic Light', tagline: 'Claro e objetivo', isNew: false,
+                                          features: ['Hero claro / imagem direita', 'Seção de benefícios em grid', 'Módulos em cards claros', 'Formulário de inscrição premium', 'WhatsApp CTA'] },
+                                        { id: 'v5', name: 'Gold Brutal', tagline: 'Dark impactante', isNew: true,
+                                          features: ['Neo-brutalista escuro', 'Marquee de urgência', 'Tipografia gigante', 'Bordas e sombras douradas', 'Módulos numerados', 'CTA flutuante mobile'] },
+                                        { id: 'v6', name: 'Carbon Racing', tagline: 'Dark de pista', isNew: true,
+                                          features: ['Textura fibra de carbono', 'Faixa racing dourada', 'Stats de autoridade', 'Módulos em pit-lane (timeline)', 'Hero cinematográfico', 'CTA flutuante mobile'] },
+                                        { id: 'v7', name: 'Editorial Light', tagline: 'Revista premium', isNew: true,
+                                          features: ['Fundo creme + serifa', 'Benefícios numerados editoriais', 'Depoimentos em pull quote', 'Módulos estilo revista', 'Muito respiro visual', 'CTA flutuante mobile'] },
+                                        { id: 'v8', name: 'Swiss Tech', tagline: 'Grid técnico claro', isNew: true,
+                                          features: ['Grid suíço com bordas', 'Seções numeradas 01–08', 'Labels monoespaçados', 'Tabela de módulos', 'Precisão técnica', 'CTA flutuante mobile'] }
                                     ] as const).map(t => (
                                         <button key={t.id} type="button" onClick={() => setLp({ ...lp, template: t.id })}
                                             className={`relative rounded-xl border-2 overflow-hidden text-left transition-all duration-200 w-full ${
@@ -425,7 +437,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                             ))}
                                                         </div>
                                                     </div>
-                                                ) : (
+                                                ) : t.id === 'v4' ? (
                                                     /* V4 mockup — classic light */
                                                     <div className="w-full h-full bg-gray-50 select-none">
                                                         <div className="h-5 bg-white flex items-center px-2 gap-1 border-b border-gray-200">
@@ -455,6 +467,131 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                                     <div className="h-1 w-3/4 bg-gray-300/50 rounded-full" />
                                                                 </div>
                                                             ))}
+                                                        </div>
+                                                    </div>
+                                                ) : t.id === 'v5' ? (
+                                                    /* V5 mockup — gold brutal (dark) */
+                                                    <div className="w-full h-full bg-[#0A0A0A] select-none">
+                                                        <div className="h-2 bg-yellow-500 flex items-center overflow-hidden">
+                                                            <div className="text-[5px] font-black text-black whitespace-nowrap px-1">● VAGAS LIMITADAS ● CERTIFICADO OFICIAL ● VAGAS LIMITADAS ●</div>
+                                                        </div>
+                                                        <div className="h-4 border-b-2 border-yellow-500 flex items-center px-2 gap-1">
+                                                            <div className="w-7 h-1.5 bg-white/70 rounded-sm" />
+                                                            <div className="flex-1" />
+                                                            <div className="w-9 h-2 bg-yellow-500 border border-black shadow-[1px_1px_0_#000]" />
+                                                        </div>
+                                                        <div className="p-2.5 space-y-1.5">
+                                                            <div className="h-4 w-32 bg-white rounded-sm" />
+                                                            <div className="h-4 w-24 bg-white rounded-sm" />
+                                                            <div className="h-1.5 w-20 bg-white/30 rounded-full border-l-2 border-yellow-500" />
+                                                            <div className="flex gap-1.5 mt-1">
+                                                                <div className="h-3.5 w-16 bg-red-600 border border-white shadow-[2px_2px_0_#D4AF37]" />
+                                                                <div className="h-3.5 w-12 bg-black border-2 border-yellow-500 shadow-[2px_2px_0_#D4AF37]" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="px-2 grid grid-cols-3 gap-1">
+                                                            {[1,2,3].map(i => (
+                                                                <div key={i} className="bg-black border border-white/20 p-1 space-y-0.5">
+                                                                    <div className="text-[7px] font-black text-yellow-500/50">0{i}</div>
+                                                                    <div className="h-1 w-full bg-white/40" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : t.id === 'v6' ? (
+                                                    /* V6 mockup — carbon racing (dark) */
+                                                    <div className="w-full h-full bg-[#08090B] select-none">
+                                                        <div className="h-4 bg-black/80 border-b border-yellow-500/40 flex items-center px-2 gap-1">
+                                                            <div className="w-8 h-1.5 bg-white/70 rounded-sm italic" />
+                                                            <div className="flex-1" />
+                                                            <div className="w-9 h-2 bg-yellow-500 skew-x-[-8deg]" />
+                                                        </div>
+                                                        <div className="relative h-16 bg-gradient-to-r from-gray-800/60 to-transparent p-2 space-y-1">
+                                                            <div className="h-1 w-12 border border-yellow-500/60 rounded-sm" />
+                                                            <div className="h-3.5 w-28 bg-white/90 rounded-sm skew-x-[-3deg]" />
+                                                            <div className="h-1.5 w-20 bg-white/30 rounded-full" />
+                                                            <div className="h-3 w-16 bg-yellow-500 skew-x-[-8deg] mt-1" />
+                                                        </div>
+                                                        <div className="h-1.5 bg-[repeating-linear-gradient(45deg,#D4AF37_0,#D4AF37_4px,#08090B_4px,#08090B_8px)]" />
+                                                        <div className="flex justify-around py-1.5 bg-black/60">
+                                                            {['+15','+5K','#1'].map((s,i) => (
+                                                                <div key={i} className="text-center">
+                                                                    <div className="text-[8px] font-black italic text-yellow-500">{s}</div>
+                                                                    <div className="h-0.5 w-5 bg-white/20 mx-auto mt-0.5" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="p-1.5 pl-3 space-y-1 relative">
+                                                            <div className="absolute left-1.5 top-1.5 bottom-1 w-px bg-yellow-500/60" />
+                                                            {[1,2].map(i => (
+                                                                <div key={i} className="bg-white/5 border border-white/10 rounded p-1 ml-1">
+                                                                    <div className="h-1 w-3/4 bg-white/40 rounded-full" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : t.id === 'v7' ? (
+                                                    /* V7 mockup — editorial light (creme) */
+                                                    <div className="w-full h-full bg-[#FAF7F1] select-none">
+                                                        <div className="h-4 border-b border-gray-200 flex items-center px-2 gap-1">
+                                                            <div className="w-9 h-2 bg-gray-800 rounded-sm" style={{ fontStyle: 'italic' }} />
+                                                            <div className="flex-1" />
+                                                            <div className="w-10 h-2.5 bg-gray-900 rounded-full" />
+                                                        </div>
+                                                        <div className="text-center pt-2.5 space-y-1.5">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <div className="h-px w-6 bg-gray-300" />
+                                                                <div className="h-1 w-12 bg-gray-300 rounded-full" />
+                                                                <div className="h-px w-6 bg-gray-300" />
+                                                            </div>
+                                                            <div className="h-4 w-32 bg-gray-900 rounded-sm mx-auto" />
+                                                            <div className="h-1.5 w-24 bg-gray-400/60 rounded-full mx-auto italic" />
+                                                            <div className="h-3 w-16 bg-gray-900 rounded-full mx-auto mt-1" />
+                                                        </div>
+                                                        <div className="mx-3 mt-2 h-9 bg-gray-300 rounded-sm" />
+                                                        <div className="px-3 mt-1.5 space-y-1">
+                                                            {[1,2].map(i => (
+                                                                <div key={i} className="flex gap-1.5 items-center border-t border-gray-200 pt-1">
+                                                                    <div className="text-[9px] font-serif text-yellow-700/60">0{i}</div>
+                                                                    <div className="h-1 flex-1 bg-gray-400/40 rounded-full" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    /* V8 mockup — swiss tech (branco/grid) */
+                                                    <div className="w-full h-full bg-white select-none">
+                                                        <div className="h-4 border-b-2 border-gray-900 flex items-center px-2 gap-1">
+                                                            <div className="w-8 h-2 bg-gray-900 rounded-sm" />
+                                                            <div className="flex-1" />
+                                                            <div className="w-9 h-2.5 bg-gray-900" />
+                                                        </div>
+                                                        <div className="grid grid-cols-12 h-16 border-b-2 border-gray-900">
+                                                            <div className="col-span-7 border-r-2 border-gray-900 p-1.5 space-y-1">
+                                                                <div className="flex items-center gap-0.5">
+                                                                    <div className="w-1 h-1 bg-yellow-500" />
+                                                                    <div className="h-1 w-10 bg-yellow-600/50" />
+                                                                </div>
+                                                                <div className="h-3 w-full bg-gray-900 rounded-sm" />
+                                                                <div className="h-3 w-3/4 bg-gray-900 rounded-sm" />
+                                                                <div className="flex gap-1 mt-0.5">
+                                                                    <div className="h-2.5 w-12 bg-gray-900" />
+                                                                    <div className="h-2.5 w-10 border-2 border-gray-900" />
+                                                                </div>
+                                                            </div>
+                                                            <div className="col-span-5 bg-gray-200" />
+                                                        </div>
+                                                        <div className="grid grid-cols-4 divide-x-2 divide-gray-900 border-b-2 border-gray-900">
+                                                            {[1,2,3,4].map(i => (
+                                                                <div key={i} className="p-1">
+                                                                    <div className="w-1.5 h-1.5 bg-yellow-500 mb-0.5" />
+                                                                    <div className="h-1 w-full bg-gray-400/50" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="p-1.5 flex justify-between items-center">
+                                                            <div className="h-1.5 w-16 bg-gray-900" />
+                                                            <div className="text-[7px] font-mono text-gray-400">/01</div>
                                                         </div>
                                                     </div>
                                                 )}
@@ -522,6 +659,16 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                 <p className="text-emerald-700 text-xs leading-relaxed">Baseado inteiramente na estrutura do V1, mas com um visual totalmente claro, luminoso e elegante. Perfeito para conversão premium.</p>
                                             </div>
                                         </div>
+                                    ) : ['v5', 'v6', 'v7', 'v8'].includes(lp.template || '') ? (
+                                        <div className="flex gap-3">
+                                            <Sparkles size={16} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-black text-yellow-800 mb-0.5">Template {TEMPLATE_DISPLAY[lp.template || ''] || lp.template} selecionado</p>
+                                                <p className="text-yellow-700 text-xs leading-relaxed">
+                                                    Template persuasivo da nova geração. Importante: o <strong>preço do curso só aparece quando o Checkout Automático está ativo</strong> no curso — sem ele, a página converte para o formulário/WhatsApp sem citar valores. Clique em <strong>Salvar Página</strong> para confirmar.
+                                                </p>
+                                            </div>
+                                        </div>
                                     ) : (
                                         <div className="flex gap-3">
                                             <Layers size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
@@ -540,10 +687,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                         Salvar Template
                                     </button>
                                     {lp.slug && (
-                                        <a href={`/${lp.template === 'v2' ? 'lp2' : lp.template === 'v3' ? 'lp3' : lp.template === 'v4' ? 'lp4' : 'lp'}/${lp.slug}`} target="_blank" rel="noreferrer"
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-colors ${lp.template === 'v2' ? 'bg-yellow-500 text-black hover:bg-yellow-400' : lp.template === 'v3' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : lp.template === 'v4' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                                        <a href={`/${lpPathOf(lp.template)}/${lp.slug}`} target="_blank" rel="noreferrer"
+                                            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-colors bg-yellow-500 text-black hover:bg-yellow-400">
                                             <LinkIcon size={15} />
-                                            Visualizar {lp.template === 'v2' ? 'V2 ✨' : lp.template === 'v3' ? 'V3 ☀️' : lp.template === 'v4' ? 'V4 🍃' : 'V1'}
+                                            Visualizar {(lp.template || 'v1').toUpperCase()}
                                         </a>
                                     )}
                                 </div>

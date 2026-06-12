@@ -23,6 +23,10 @@ const LandingPageViewer = lazy(() => import('./pages/LandingPageViewer'));
 const LandingPageViewerV2 = lazy(() => import('./pages/LandingPageViewerV2'));
 const LandingPageViewerV3 = lazy(() => import('./pages/LandingPageViewerV3'));
 const LandingPageViewerV4 = lazy(() => import('./pages/LandingPageViewerV4'));
+const LandingPageViewerV5 = lazy(() => import('./pages/LandingPageViewerV5'));
+const LandingPageViewerV6 = lazy(() => import('./pages/LandingPageViewerV6'));
+const LandingPageViewerV7 = lazy(() => import('./pages/LandingPageViewerV7'));
+const LandingPageViewerV8 = lazy(() => import('./pages/LandingPageViewerV8'));
 const HomeP2 = lazy(() => import('./pages/HomeP2'));
 const Home3 = lazy(() => import('./pages/Home3'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
@@ -126,6 +130,10 @@ const App = () => {
                     <Route path="/lp2/:slug" element={<LandingPageViewerV2 />} />
                     <Route path="/lp3/:slug" element={<LandingPageViewerV3 />} />
                     <Route path="/lp4/:slug" element={<LandingPageViewerV4 />} />
+                    <Route path="/lp5/:slug" element={<LandingPageViewerV5 />} />
+                    <Route path="/lp6/:slug" element={<LandingPageViewerV6 />} />
+                    <Route path="/lp7/:slug" element={<LandingPageViewerV7 />} />
+                    <Route path="/lp8/:slug" element={<LandingPageViewerV8 />} />
 
                     {/* Legal Pages */}
                     <Route path="/termos" element={<Termos />} />
