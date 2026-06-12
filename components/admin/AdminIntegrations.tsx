@@ -24,7 +24,14 @@ const AdminIntegrations = () => {
         kiwifyClientId: '',
         kiwifyClientSecret: '',
         kiwifyAccountId: '',
-        affiliatesDriveUrl: ''
+        affiliatesDriveUrl: '',
+        brevoEnabled: false,
+        brevoSmtpHost: 'smtp-relay.brevo.com',
+        brevoSmtpPort: '587',
+        brevoSmtpLogin: '',
+        brevoSmtpKey: '',
+        brevoSenderEmail: '',
+        brevoSenderName: 'W-Tech Brasil'
     });
 
     const [loading, setLoading] = useState(false);
@@ -40,6 +47,10 @@ const AdminIntegrations = () => {
         errorMsg: string | null;
     }>({ status: 'idle', enrollmentId: null, initPoint: null, isSandbox: false, amountPaid: 0, transactionId: null, errorMsg: null });
     const [mpTestPollCount, setMpTestPollCount] = useState(0);
+
+    // Brevo Test Email State
+    const [testEmailTo, setTestEmailTo] = useState('');
+    const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
     // Test Sending State
     const [testPhone, setTestPhone] = useState('');
@@ -72,7 +83,14 @@ const AdminIntegrations = () => {
                 kiwifyClientId: configMap['kiwify_client_id'] || '',
                 kiwifyClientSecret: configMap['kiwify_client_secret'] || '',
                 kiwifyAccountId: configMap['kiwify_account_id'] || '',
-                affiliatesDriveUrl: configMap['affiliates_drive_url'] || ''
+                affiliatesDriveUrl: configMap['affiliates_drive_url'] || '',
+                brevoEnabled: configMap['brevo_enabled'] === 'true',
+                brevoSmtpHost: configMap['brevo_smtp_host'] || 'smtp-relay.brevo.com',
+                brevoSmtpPort: configMap['brevo_smtp_port'] || '587',
+                brevoSmtpLogin: configMap['brevo_smtp_login'] || '',
+                brevoSmtpKey: configMap['brevo_smtp_key'] || '',
+                brevoSenderEmail: configMap['brevo_sender_email'] || '',
+                brevoSenderName: configMap['brevo_sender_name'] || 'W-Tech Brasil'
             });
         }
     };
@@ -206,7 +224,14 @@ const AdminIntegrations = () => {
                 { key: 'kiwify_client_id', value: globalConfig.kiwifyClientId },
                 { key: 'kiwify_client_secret', value: globalConfig.kiwifyClientSecret },
                 { key: 'kiwify_account_id', value: globalConfig.kiwifyAccountId },
-                { key: 'affiliates_drive_url', value: globalConfig.affiliatesDriveUrl }
+                { key: 'affiliates_drive_url', value: globalConfig.affiliatesDriveUrl },
+                { key: 'brevo_enabled', value: String(globalConfig.brevoEnabled) },
+                { key: 'brevo_smtp_host', value: globalConfig.brevoSmtpHost },
+                { key: 'brevo_smtp_port', value: globalConfig.brevoSmtpPort },
+                { key: 'brevo_smtp_login', value: globalConfig.brevoSmtpLogin },
+                { key: 'brevo_smtp_key', value: globalConfig.brevoSmtpKey },
+                { key: 'brevo_sender_email', value: globalConfig.brevoSenderEmail },
+                { key: 'brevo_sender_name', value: globalConfig.brevoSenderName }
             ];
 
             for (const update of updates) {
@@ -228,6 +253,31 @@ const AdminIntegrations = () => {
             { key: 'checkout_direto_habilitado', value: String(newValue) },
             { onConflict: 'key' }
         );
+    };
+
+    const handleSendTestEmail = async () => {
+        if (!testEmailTo.trim()) return alert('Informe um e-mail de destino para o teste.');
+        if (!globalConfig.brevoSmtpKey || !globalConfig.brevoSenderEmail) {
+            return alert('Preencha a SMTP Key e o e-mail remetente do Brevo, e salve, antes de testar.');
+        }
+        setIsSendingTestEmail(true);
+        try {
+            const res = await fetch('/api/send-test-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ to: testEmailTo.trim() })
+            });
+            const data = await res.json();
+            if (res.ok && data.sent) {
+                alert(`E-mail de teste enviado para ${testEmailTo}. Verifique a caixa de entrada (e o spam).`);
+            } else {
+                alert('Falha no envio: ' + (data.error || `HTTP ${res.status}`));
+            }
+        } catch (err: any) {
+            alert('Erro ao enviar e-mail de teste: ' + err.message);
+        } finally {
+            setIsSendingTestEmail(false);
+        }
     };
 
     const handleGoogleAuth = () => {
@@ -342,6 +392,64 @@ const AdminIntegrations = () => {
                 <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
                     <Save size={14} /> Salvar Stripe
                 </button>
+            </div>
+
+            {/* 3.5. Brevo E-mail (SMTP) Config */}
+            <div className={`p-6 rounded-xl border-2 shadow-sm transition-all md:col-span-2 ${globalConfig.brevoEnabled ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800' : 'bg-[var(--admin-surface-1)] border-gray-200 '}`}>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <Send className="text-amber-600 dark:text-amber-400" />
+                        <h3 className="font-bold text-[var(--admin-text-primary)]">E-mail (Brevo SMTP)</h3>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setGlobalConfig({ ...globalConfig, brevoEnabled: !globalConfig.brevoEnabled })}
+                        className="flex items-center gap-2 text-sm font-bold text-[var(--admin-text-secondary)]"
+                    >
+                        {globalConfig.brevoEnabled ? <ToggleRight size={28} className="text-amber-500" /> : <ToggleLeft size={28} className="text-gray-400" />}
+                        {globalConfig.brevoEnabled ? 'Ativo' : 'Inativo'}
+                    </button>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-6">
+                    Credenciais SMTP do Brevo para envio de e-mails transacionais (confirmação de inscrição) e fluxos de follow-up. Pegue a SMTP Key em Brevo → SMTP &amp; API → SMTP.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Servidor SMTP</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono transition-colors outline-none" type="text" value={globalConfig.brevoSmtpHost} onChange={e => setGlobalConfig({ ...globalConfig, brevoSmtpHost: e.target.value })} placeholder="smtp-relay.brevo.com" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Porta</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono transition-colors outline-none" type="text" value={globalConfig.brevoSmtpPort} onChange={e => setGlobalConfig({ ...globalConfig, brevoSmtpPort: e.target.value })} placeholder="587" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Login SMTP</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono transition-colors outline-none" type="text" value={globalConfig.brevoSmtpLogin} onChange={e => setGlobalConfig({ ...globalConfig, brevoSmtpLogin: e.target.value })} placeholder="xxxxxx@smtp-brevo.com" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">SMTP Key (senha)</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono transition-colors outline-none" type="password" value={globalConfig.brevoSmtpKey} onChange={e => setGlobalConfig({ ...globalConfig, brevoSmtpKey: e.target.value })} placeholder="xsmtpsib-..." />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">E-mail Remetente (verificado)</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] transition-colors outline-none" type="email" value={globalConfig.brevoSenderEmail} onChange={e => setGlobalConfig({ ...globalConfig, brevoSenderEmail: e.target.value })} placeholder="contato@w-techbrasil.com.br" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Nome do Remetente</label>
+                        <input className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] transition-colors outline-none" type="text" value={globalConfig.brevoSenderName} onChange={e => setGlobalConfig({ ...globalConfig, brevoSenderName: e.target.value })} placeholder="W-Tech Brasil" />
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 mt-4">
+                    <button onClick={handleSaveGlobalConfig} disabled={loading} className="bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
+                        <Save size={14} /> Salvar Brevo
+                    </button>
+                    <div className="flex items-center gap-2 flex-1 min-w-[260px]">
+                        <input className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] transition-colors outline-none" type="email" value={testEmailTo} onChange={e => setTestEmailTo(e.target.value)} placeholder="enviar teste para..." />
+                        <button onClick={handleSendTestEmail} disabled={isSendingTestEmail} className="bg-amber-500 text-black px-4 py-2 rounded text-sm font-bold hover:bg-amber-600 transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+                            {isSendingTestEmail ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Testar
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* 4. Mercado Pago Config */}
