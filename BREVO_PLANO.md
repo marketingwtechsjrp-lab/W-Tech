@@ -61,11 +61,15 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 - [x] Idempotência via `alreadySent(enrollmentId, 'confirmacao_inscricao')`.
 - [ ] ⏳ Testar ponta a ponta (depende de Daniel rodar migration + configurar/ativar Brevo).
 
-### FASE 4 — Follow-up (flowup) de clientes
-- [ ] `api/process-email-flows.ts`: cron diário (registrar em `vercel.json`) — varre `SITE_FlowEnrollments` com passo devido, envia via `_email.ts`, loga, avança `current_step`/agenda próximo.
-- [ ] Inscrição automática: gatilho `CompraRecente` no webhook (venda confirmada) e `NovoCadastro` na criação de lead (`lib/leads.ts`).
-- [ ] Ligar `EmailFlowsView` ao motor (hoje só salva config).
-- [ ] Cron em `vercel.json` (ex.: `0 13 * * *`).
+### FASE 4 — Follow-up (flowup) de clientes ✅ FEITO (core)
+- [x] `api/_flows.ts`: `enrollContactInFlows()` (idempotente) + `processDueFlowEnrollments()` (walker: Email envia, Delay agenda next_run_at, Exit/Completed encerram, Condition passa adiante v1).
+- [x] `api/process-email-flows.ts`: rota do cron.
+- [x] `lib/emailTemplates.ts`: `renderRawEmail()` envelopa o corpo custom do fluxo na identidade W-Tech.
+- [x] Gatilho `CompraRecente` no webhook (passo 8, após confirmação).
+- [x] Cron em `vercel.json`: `/api/process-email-flows` a cada 4h.
+- [x] `EmailFlowsView` já grava em SITE_EmailFlows/Steps → motor lê fluxos `status='Active'`. Para ativar um fluxo, mudar status para `Active` na UI.
+- [ ] ⏳ Melhoria futura: auto-enroll `NovoCadastro` na criação de lead (leads nascem em vários pontos do cliente — fazer via trigger no banco ou ponto único). Documentado, não bloqueia o follow-up de compra.
+- Condition steps: v1 passa adiante (sem tracking de abertura/clique ainda).
 
 ### FASE 5 — Testes e validação
 - [ ] Botão de teste no admin → caixa de entrada.

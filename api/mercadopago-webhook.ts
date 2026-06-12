@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { recoverLeadToRoulette } from './_roleta.js';
 import { sendTemplate, alreadySent } from './_email.js';
+import { enrollContactInFlows } from './_flows.js';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.
@@ -403,6 +404,18 @@ export default async function handler(req: any, res: any) {
         if ((emailRes as any)?.sent) {
           console.log(`[MP Webhook] E-mail de confirmação enviado para ${enrollment.student_email} ✓`);
         }
+
+        // ── 8. Inscreve o comprador em fluxos de follow-up (gatilho CompraRecente) ──
+        await withTimeout(
+          enrollContactInFlows({
+            email: enrollment.student_email,
+            name: enrollment.student_name,
+            triggerType: 'CompraRecente',
+            client: supabase
+          }),
+          5000,
+          'Enroll em fluxos CompraRecente'
+        );
       }
     } catch (sideError: any) {
       console.error('[MP Webhook] Erro em tarefa secundária (não-fatal):', sideError?.message);

@@ -170,3 +170,18 @@ export function renderTemplate(name: string, vars: Record<string, unknown> = {})
     if (!fn) throw new Error(`Template de e-mail desconhecido: ${name}`);
     return fn(vars);
 }
+
+/**
+ * Renderiza um e-mail a partir de assunto + corpo HTML arbitrário (ex.: corpo
+ * autorado no editor de fluxos), interpolando variáveis ({{nome}}) e
+ * envelopando o corpo na identidade W-Tech. Usado pelo motor de follow-up.
+ */
+export function renderRawEmail(subject: string, bodyHtml: string, vars: Record<string, unknown> = {}): RenderedEmail {
+    const interpolatedSubject = interpolate(subject || '', vars);
+    // body do editor pode conter HTML; tratamos como HTML cru e só trocamos variáveis
+    const interpolatedBody = bodyHtml.replace(/\{\{(\w+)\}\}/g, (_, k) => esc(vars[k]));
+    return {
+        subject: interpolatedSubject,
+        html: baseLayout({ title: interpolatedSubject || 'W-Tech Brasil', bodyHtml: interpolatedBody })
+    };
+}
