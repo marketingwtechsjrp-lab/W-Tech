@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.3.0",
+    "date": "2026-06-12",
+    "title": "Cobrança automática de saldo pendente por e-mail e WhatsApp",
+    "changes": [
+      "Lembretes automáticos em 3 estágios para inscrições confirmadas com saldo em aberto (2 dias, 9 dias e a 7 dias do curso)",
+      "Cada estágio dispara e-mail (template saldo_pendente) e WhatsApp via Evolution API com valores e CTA para quitar",
+      "Idempotência por inscrição/canal via SITE_EmailLogs; cursos já realizados nunca são cobrados",
+      "Processado no cron diário de /api/process-email-flows + rota manual /api/balance-reminders com dryRun",
+      "Kill switch saldo_reminders_enabled e gates seguros para Brevo/Evolution não configurados"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.2.0",
     "date": "2026-06-12",
     "title": "Automações de Marketing: boas-vindas, pós-compra e lançamento por cidade",

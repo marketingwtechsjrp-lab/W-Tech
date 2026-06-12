@@ -1,11 +1,15 @@
 import { processDueFlowEnrollments } from './_flows.js';
+import { processBalanceReminders } from './_balance.js';
 
 /**
- * Vercel Serverless Function — Processador de fluxos de e-mail (follow-up).
+ * Vercel Serverless Function — Processador diário de automações de e-mail.
  * URL: /api/process-email-flows
  *
  * Acionado pelo cron da Vercel (ver vercel.json). Também pode ser chamado
- * manualmente (GET/POST) para processar a fila de inscrições devidas.
+ * manualmente (GET/POST). Executa, em sequência:
+ *   1. Fluxos de follow-up (SITE_EmailFlows / SITE_FlowEnrollments)
+ *   2. Lembretes de saldo pendente (e-mail + WhatsApp) — ver api/_balance.ts
+ * (O plano Hobby da Vercel limita a 2 crons, por isso compartilham o horário.)
  */
 export default async function handler(req: any, res: any) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -15,7 +19,19 @@ export default async function handler(req: any, res: any) {
     try {
         const result = await processDueFlowEnrollments(50);
         console.log(`[Flows] Processadas=${result.processed} enviadas=${result.sent} erros=${result.errors}`);
-        return res.status(200).json({ ok: true, ...result, ts: new Date().toISOString() });
+
+        // Lembretes de saldo pendente — não-fatal: erro aqui não derruba os fluxos
+        let balance: Record<string, unknown> = {};
+        try {
+            const b = await processBalanceReminders(30);
+            console.log(`[Saldo] elegíveis=${b.eligible} emails=${b.emailsSent} whatsapp=${b.whatsappSent} erros=${b.errors}`);
+            balance = { eligible: b.eligible, emailsSent: b.emailsSent, whatsappSent: b.whatsappSent, errors: b.errors, skipped: b.skipped };
+        } catch (e: any) {
+            console.error('[Saldo] Erro nos lembretes de saldo (não-fatal):', e?.message);
+            balance = { error: e?.message };
+        }
+
+        return res.status(200).json({ ok: true, ...result, balanceReminders: balance, ts: new Date().toISOString() });
     } catch (e: any) {
         console.error('[Flows] Erro no processamento:', e?.message);
         return res.status(500).json({ ok: false, error: e?.message });

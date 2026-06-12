@@ -145,6 +145,70 @@ function confirmacaoInscricao(vars: Record<string, unknown>): RenderedEmail {
     };
 }
 
+/**
+ * Template: lembrete de saldo pendente da inscrição (cobrança amigável).
+ * Variáveis esperadas:
+ *   studentName, courseTitle, courseDate, courseLocation,
+ *   amountPaid, totalAmount, remainingBalance, currencySymbol,
+ *   whatsappLink, stage (1|2|3 — muda assunto e tom),
+ *   daysToCourse (opcional, usado no stage 3)
+ */
+function saldoPendente(vars: Record<string, unknown>): RenderedEmail {
+    const cur = esc(vars.currencySymbol || 'R$');
+    const stage = Number(vars.stage || 1);
+
+    const subjects: Record<number, string> = {
+        1: `Sua vaga está garantida — falta só completar a inscrição 🤝`,
+        2: `${esc(vars.studentName || '')}, falta pouco para quitar sua inscrição`,
+        3: `⏰ Seu curso está chegando — complete sua inscrição`
+    };
+
+    const intro: Record<number, string> = {
+        1: `Sua reserva no curso está confirmada! Para deixar tudo pronto, falta apenas o saldo restante da inscrição. Você pode quitar quando preferir — nossa equipe te ajuda com as opções de pagamento.`,
+        2: `Passando para lembrar que sua inscrição ainda tem um saldo em aberto. Quitando agora, você garante sua vaga sem preocupação e chega no dia do curso com tudo resolvido.`,
+        3: `Seu curso está chegando${vars.daysToCourse ? ` (faltam ${esc(vars.daysToCourse)} dias!)` : ''} e identificamos que ainda há um saldo em aberto na sua inscrição. Complete o pagamento para garantir seu acesso à turma.`
+    };
+
+    const body = `
+    <h1 style="margin:8px 0 2px;text-align:center;font-size:22px;color:${BRAND.black};text-transform:uppercase;">Complete sua Inscrição</h1>
+    <p style="margin:0 0 20px;text-align:center;font-size:12px;font-weight:bold;letter-spacing:2px;color:${BRAND.gold};text-transform:uppercase;">Olá, {{studentName}}!</p>
+
+    <p style="margin:0 0 20px;font-size:14px;line-height:1.6;">${intro[stage] || intro[1]}</p>
+
+    <div style="background:#FAFAFA;border:1px solid ${BRAND.border};border-radius:14px;padding:18px 20px;margin-bottom:18px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${row('Curso', '{{courseTitle}}')}
+        ${row('Data', '{{courseDate}}')}
+        ${row('Local', '{{courseLocation}}')}
+        ${row('Valor Total', `${cur} {{totalAmount}}`)}
+        ${row('Já Pago', `<span style="color:#22A45D;">${cur} {{amountPaid}}</span>`)}
+        ${row('Saldo Restante', `<span style="color:#C98A00;font-size:16px;">${cur} {{remainingBalance}}</span>`)}
+      </table>
+    </div>
+
+    <div style="text-align:center;margin-bottom:18px;">
+      ${btn(String(vars.whatsappLink || '#'), '💬 Quitar pelo WhatsApp')}
+      <p style="margin:8px 0 0;font-size:11px;color:${BRAND.muted};">Fale com nossa equipe — Pix, cartão ou parcelamento.</p>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:${BRAND.muted};text-align:center;">
+      Já quitou? Desconsidere este e-mail — a baixa pode levar algumas horas.
+    </p>
+    `;
+
+    return {
+        subject: subjects[stage] || subjects[1],
+        html: interpolate(
+            baseLayout({
+                title: 'Complete sua Inscrição',
+                preheader: `Saldo restante de ${cur} ${esc(vars.remainingBalance)} — ${esc(vars.courseTitle)}`,
+                bodyHtml: body
+            }),
+            vars
+        )
+    };
+}
+
 /** Template genérico de teste. */
 function teste(vars: Record<string, unknown>): RenderedEmail {
     const body = `
@@ -161,6 +225,7 @@ function teste(vars: Record<string, unknown>): RenderedEmail {
 
 const TEMPLATES: Record<string, (vars: Record<string, unknown>) => RenderedEmail> = {
     confirmacao_inscricao: confirmacaoInscricao,
+    saldo_pendente: saldoPendente,
     teste
 };
 

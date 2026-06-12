@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.3.0 (2026-06-12) - Cobrança automática de saldo pendente por e-mail e WhatsApp
+- Inscrições confirmadas com saldo em aberto (pagou só a reserva) recebem lembretes automáticos em 3 estágios: 2 dias após a inscrição, 9 dias após, e a 7 dias do curso
+- Cada estágio dispara e-mail (template "saldo_pendente" na identidade W-Tech) e mensagem de WhatsApp via Evolution API, com valores, curso e CTA para quitar
+- Canais independentes e idempotentes: cada lembrete sai uma única vez por inscrição/canal (registrado em SITE_EmailLogs); cursos já realizados nunca são cobrados
+- Processamento no cron diário existente (/api/process-email-flows) + rota manual /api/balance-reminders com prévia (?dryRun=1)
+- Kill switch: SITE_Config.saldo_reminders_enabled='false' desativa tudo; Brevo/Evolution desconfigurados são pulados com segurança
+
 ## v3.2.0 (2026-06-12) - Automações de Marketing: boas-vindas, pós-compra e lançamento por cidade
 - Lead novo no CRM entra automaticamente no fluxo "Boas-vindas — Novo Lead" (3 e-mails)
 - Comprador entra automaticamente no fluxo "Pós-compra — Onboarding do Aluno" (preparação, portal, indicação)
