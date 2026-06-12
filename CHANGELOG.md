@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.0 (2026-06-11) - Integração de e-mail (Brevo): confirmação de inscrição + follow-up
+- Card "E-mail (Brevo SMTP)" em Integrações com botão de teste de envio
+- E-mail automático de confirmação de inscrição ao aluno após pagamento aprovado
+- Motor de follow-up (flows) com cron a cada 4h e auto-inscrição em compra recente
+- Templates HTML com identidade W-Tech e logs de envio em SITE_EmailLogs
+- Requer rodar migrations/brevo_email_integration.sql e configurar o Brevo no admin
+
 ## v3.0.19 (2026-06-11) - Webhook MP validado em produção — remove modo debug
 - Confirmação automática de pagamento validada ponta a ponta (status, valor e payment_id gravados pelo webhook)
 - Remove o modo de diagnóstico temporário do webhook

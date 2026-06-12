@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.1.0",
+    "date": "2026-06-11",
+    "title": "Integração de e-mail (Brevo): confirmação de inscrição + follow-up",
+    "changes": [
+      "Card 'E-mail (Brevo SMTP)' em Integrações com teste de envio",
+      "E-mail automático de confirmação de inscrição ao aluno após pagamento aprovado",
+      "Motor de follow-up (flows) com cron a cada 4h e auto-inscrição em compra recente",
+      "Templates HTML com identidade W-Tech e logs de envio em SITE_EmailLogs",
+      "Requer rodar migrations/brevo_email_integration.sql e configurar o Brevo no admin"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.0.19",
     "date": "2026-06-11",
     "title": "Webhook MP validado em produção — remove modo debug",

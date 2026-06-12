@@ -71,11 +71,13 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 - [ ] ⏳ Melhoria futura: auto-enroll `NovoCadastro` na criação de lead (leads nascem em vários pontos do cliente — fazer via trigger no banco ou ponto único). Documentado, não bloqueia o follow-up de compra.
 - Condition steps: v1 passa adiante (sem tracking de abertura/clique ainda).
 
-### FASE 5 — Testes e validação
-- [ ] Botão de teste no admin → caixa de entrada.
-- [ ] Inscrição ponta a ponta → e-mail de confirmação chega.
-- [ ] Conferir `SITE_EmailLogs`.
-- [ ] Validar cron do flowup.
+### FASE 5 — Testes e validação ✅ CÓDIGO PRONTO (validação depende do Daniel)
+- [x] Build de produção OK; v3.1.0 commitada e deployada.
+- [ ] ⏳ Daniel: rodar `migrations/brevo_email_integration.sql` no Supabase.
+- [ ] ⏳ Daniel: admin → Integrações → preencher SMTP Brevo, salvar, ativar, "Testar".
+- [ ] ⏳ Inscrição ponta a ponta → e-mail de confirmação chega.
+- [ ] ⏳ Conferir `SITE_EmailLogs`.
+- [ ] ⏳ Criar um fluxo `Active` com gatilho `CompraRecente` e validar o cron.
 
 ---
 
@@ -89,7 +91,10 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 Seguir o padrão: bump `package.json` + entradas em `CHANGELOG.json` e `CHANGELOG.md`, commit `vX.Y.Z: <título>`, push `origin main`. Última versão: **3.0.19**. Próxima: 3.1.0 (feature de e-mail).
 
 ## Status atual
-- 2026-06-11: plano criado. Webhook MP corrigido e validado (v3.0.19).
-- 2026-06-11: **FASE 1 e 2 concluídas e commitadas.** Config Brevo no admin + motor de envio + templates + rota de teste.
-- **Próximo passo: FASE 3** (e-mail de confirmação no webhook). Depois Fase 4 (flowup) e Fase 5 (release/bump 3.1.0).
-- **Ação do Daniel:** rodar `migrations/brevo_email_integration.sql` no Supabase; no admin → Integrações, preencher SMTP do Brevo, ativar e testar.
+- 2026-06-11: **TODAS AS FASES DE CÓDIGO CONCLUÍDAS — v3.1.0 deployada.**
+  - Fase 1 ✅ config Brevo no admin · Fase 2 ✅ motor de envio · Fase 3 ✅ e-mail de confirmação · Fase 4 ✅ follow-up/cron · Fase 5 ✅ build/release.
+- **Pendências (ação do Daniel) para ativar de fato:**
+  1. Rodar `migrations/brevo_email_integration.sql` no SQL Editor do Supabase.
+  2. Admin → Integrações → card "E-mail (Brevo SMTP)": preencher Login SMTP, SMTP Key, e-mail remetente verificado → Salvar Brevo → ativar o toggle → "Testar".
+  3. Testar uma inscrição real e confirmar que o e-mail chega.
+- **Melhoria futura aberta:** auto-enroll `NovoCadastro` (lead nurture) — ver Fase 4.
