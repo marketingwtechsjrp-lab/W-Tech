@@ -55,11 +55,11 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 - [x] Migration de extensão dos logs incluída no mesmo arquivo da Fase 1.
 - ⚠️ Pendência p/ funcionar 100%: Daniel rodar `migrations/brevo_email_integration.sql` e preencher/ativar Brevo no admin.
 
-### FASE 3 — E-mail de confirmação de inscrição (transacional) ⭐ prioridade
-- [ ] Template `confirmacao_inscricao` em `lib/emailTemplates.ts` (curso, datas, local, valor pago, saldo, código de acesso, próximos passos, link grupo WhatsApp).
-- [ ] Disparo em `api/mercadopago-webhook.ts` após enrollment `Confirmed` (passo 4.5), **não-fatal + timeout** (usar o `withTimeout` já presente no arquivo). Buscar `client_code` em `SITE_Leads`.
-- [ ] Idempotência: não reenviar se já houver log `type='confirmacao_inscricao'` para o `enrollment_id`.
-- [ ] Testar ponta a ponta com pagamento real (ver método de teste abaixo).
+### FASE 3 — E-mail de confirmação de inscrição (transacional) ✅ FEITO
+- [x] Template `confirmacao_inscricao` em `lib/emailTemplates.ts` (usa `showBalance` boolean p/ saldo).
+- [x] Disparo em `api/mercadopago-webhook.ts` passo 7 (dentro do bloco de tarefas secundárias, `withTimeout` 14s, não-fatal). Busca curso + `client_code`, monta portalUrl `/meus-pedidos?code=`.
+- [x] Idempotência via `alreadySent(enrollmentId, 'confirmacao_inscricao')`.
+- [ ] ⏳ Testar ponta a ponta (depende de Daniel rodar migration + configurar/ativar Brevo).
 
 ### FASE 4 — Follow-up (flowup) de clientes
 - [ ] `api/process-email-flows.ts`: cron diário (registrar em `vercel.json`) — varre `SITE_FlowEnrollments` com passo devido, envia via `_email.ts`, loga, avança `current_step`/agenda próximo.

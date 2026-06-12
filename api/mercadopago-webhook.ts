@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { recoverLeadToRoulette } from './_roleta.js';
+import { sendTemplate, alreadySent } from './_email.js';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.
@@ -335,6 +336,73 @@ export default async function handler(req: any, res: any) {
       );
       if (transRes?.error) {
         console.error('[MP Webhook] Transaction insert error (non-fatal):', transRes.error);
+      }
+
+      // ── 7. E-mail de confirmação ao aluno (transacional, não-fatal) ──────
+      if (enrollment.student_email && !(await alreadySent(enrollmentId, 'confirmacao_inscricao'))) {
+        const courseRes = await withTimeout(
+          supabase
+            .from('SITE_Courses')
+            .select('title, date, date_end, city, state, start_time, what_to_bring, whatsapp_group_link, currency')
+            .eq('id', enrollment.course_id)
+            .maybeSingle(),
+          5000,
+          'SELECT course (email)'
+        );
+        const course: any = courseRes?.data || {};
+
+        const codeRes = await withTimeout(
+          supabase.from('SITE_Leads').select('client_code').eq('email', enrollment.student_email).maybeSingle(),
+          5000,
+          'SELECT client_code (email)'
+        );
+        const clientCode = (codeRes?.data as any)?.client_code || '';
+
+        const cur = (course.currency || enrollment.currency || 'BRL').toUpperCase();
+        const symbol = cur === 'EUR' ? '€' : cur === 'USD' ? '$' : 'R$';
+        const fmt = (n: number) => Number(n || 0).toFixed(2).replace('.', ',');
+        const fmtDate = (d?: string) => {
+          if (!d) return '';
+          const [y, m, day] = String(d).slice(0, 10).split('-');
+          return `${day}/${m}/${y}`;
+        };
+        const dateStr = course.date
+          ? (course.date_end && course.date_end !== course.date
+              ? `${fmtDate(course.date)} a ${fmtDate(course.date_end)}`
+              : fmtDate(course.date)) + (course.start_time ? ` · ${course.start_time}` : '')
+          : 'A definir';
+        const location = [course.city, course.state].filter(Boolean).join(', ') || 'A definir';
+        const total = enrollment.total_amount || 0;
+        const remaining = Math.max(0, total - amountPaid);
+        const baseUrl = `https://${req.headers['x-forwarded-host'] || req.headers.host || 'site.w-techbrasil.com.br'}`;
+
+        const emailRes = await withTimeout(
+          sendTemplate(
+            enrollment.student_email,
+            'confirmacao_inscricao',
+            {
+              studentName: (enrollment.student_name || '').split(' ')[0] || enrollment.student_name || 'Aluno',
+              courseTitle: course.title || 'Curso W-Tech',
+              courseDate: dateStr,
+              courseLocation: location,
+              amountPaid: fmt(amountPaid),
+              totalAmount: fmt(total),
+              remainingBalance: fmt(remaining),
+              showBalance: remaining > 0,
+              currencySymbol: symbol,
+              clientCode,
+              portalUrl: clientCode ? `${baseUrl}/meus-pedidos?code=${clientCode}` : '',
+              whatsappGroupLink: course.whatsapp_group_link || '',
+              whatToBring: course.what_to_bring || ''
+            },
+            { type: 'confirmacao_inscricao', enrollmentId }
+          ),
+          14000,
+          'Envio e-mail de confirmação'
+        );
+        if ((emailRes as any)?.sent) {
+          console.log(`[MP Webhook] E-mail de confirmação enviado para ${enrollment.student_email} ✓`);
+        }
       }
     } catch (sideError: any) {
       console.error('[MP Webhook] Erro em tarefa secundária (não-fatal):', sideError?.message);

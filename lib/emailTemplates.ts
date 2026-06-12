@@ -87,7 +87,7 @@ export interface RenderedEmail {
  *   whatsappGroupLink (opcional), whatToBring (opcional)
  */
 function confirmacaoInscricao(vars: Record<string, unknown>): RenderedEmail {
-    const hasBalance = Number(vars.remainingBalance || 0) > 0;
+    const hasBalance = vars.showBalance === true;
     const cur = esc(vars.currencySymbol || 'R$');
 
     const body = `
