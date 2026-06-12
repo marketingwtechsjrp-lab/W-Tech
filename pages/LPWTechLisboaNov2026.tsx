@@ -533,12 +533,19 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                         <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><MapPin size={20} /></div>
                                         <span className="text-sm font-bold">2710-089 Sintra – Portugal</span>
                                     </div>
-                                    <div className="flex items-center gap-4 text-gray-300">
+                                    <a
+                                        id="lisboa-nov2026-instagram-liquimoly-link"
+                                        href="https://www.instagram.com/liquimolyiberia"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors"
+                                    >
                                         <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><Instagram size={20} /></div>
                                         <span className="text-sm font-bold">@liquimolyiberia</span>
-                                    </div>
+                                    </a>
                                 </div>
                                 <a
+                                    id="lisboa-nov2026-map-link"
                                     href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9"
                                     target="_blank"
                                     rel="noreferrer"

@@ -79,7 +79,7 @@ const LandingPageViewerV6: React.FC = () => {
                             <button onClick={scrollToForm} className="bg-wtech-gold text-black px-10 py-5 rounded-sm font-black text-lg uppercase tracking-wider skew-x-[-8deg] hover:bg-yellow-400 hover:shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-all">
                                 <span className="inline-flex items-center gap-3 skew-x-[8deg]">{isFullOrDone ? 'Entrar na Lista' : 'Garantir Meu Grid'} <ArrowRight strokeWidth={3} /></span>
                             </button>
-                            <a href={waLink} target="_blank" rel="noopener noreferrer" className="px-8 py-5 border border-white/25 rounded-sm font-bold text-white/80 uppercase tracking-widest hover:border-wtech-gold hover:text-wtech-gold transition-colors text-center">
+                            <a href={waLink} target="_blank" rel="noopener noreferrer" id="lp-v6-whatsapp-hero-btn" className="px-8 py-5 border border-white/25 rounded-sm font-bold text-white/80 uppercase tracking-widest hover:border-wtech-gold hover:text-wtech-gold transition-colors text-center">
                                 Falar no WhatsApp
                             </a>
                         </div>
@@ -294,7 +294,7 @@ const LandingPageViewerV6: React.FC = () => {
                                 <p className="text-white/50">{lp.course?.addressNeighborhood ? `${lp.course.addressNeighborhood}, ` : ''}{lp.course?.city} - {lp.course?.state}</p>
                             </div>
                         </div>
-                        <a target="_blank" rel="noreferrer" href={lp.course?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="inline-flex items-center gap-2 text-wtech-gold font-black uppercase text-sm tracking-wider hover:underline">
+                        <a target="_blank" id="lp-v6-map-link" rel="noreferrer" href={lp.course?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="inline-flex items-center gap-2 text-wtech-gold font-black uppercase text-sm tracking-wider hover:underline">
                             <Navigation size={16} /> Traçar rota no Google Maps
                         </a>
                         <div className="bg-red-500/10 border border-red-500/40 rounded-lg p-5 flex items-center gap-4">

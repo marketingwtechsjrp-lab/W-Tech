@@ -308,6 +308,7 @@ const WTechLisboa: React.FC = () => {
                                 <span className="block text-blue-400 font-bold mb-6 italic tracking-tight underline underline-offset-4 decoration-blue-600/30">2710-089 Sintra – Portugal</span>
 
                                 <a 
+                                    id="lisboa-map-link"
                                     href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9" 
                                     target="_blank" 
                                     rel="noreferrer" 
@@ -316,7 +317,7 @@ const WTechLisboa: React.FC = () => {
                                     <MapPin size={18} className="group-hover/map:animate-bounce" /> Abrir no Google Maps
                                 </a>
                                 
-                                <a href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
+                                <a id="lisboa-instagram-liquimoly-link" href="https://www.instagram.com/liquimolyiberia" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-blue-400 font-bold hover:text-white transition-colors text-sm">
                                     <Instagram size={16} /> @liquimolyiberia
                                 </a>
                              </address>
@@ -728,7 +729,7 @@ const WTechLisboa: React.FC = () => {
                 <div className="container mx-auto px-6 text-center">
                     <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-10 md:h-14 mx-auto mb-16 opacity-70" />
                     <div className="flex justify-center gap-12 mb-12">
-                        <a href="https://instagram.com/wtechbrasil" target="_blank" rel="noreferrer" className="text-gray-600 hover:text-wtech-red transition-all flex flex-col items-center gap-2 group">
+                        <a id="lisboa-instagram-wtech-link" href="https://instagram.com/wtechbrasil" target="_blank" rel="noreferrer" className="text-gray-600 hover:text-wtech-red transition-all flex flex-col items-center gap-2 group">
                              <Instagram size={32} className="group-hover:scale-110 transition-transform" />
                              <span className="text-[10px] font-black uppercase tracking-widest">Siga no Instagram</span>
                         </a>

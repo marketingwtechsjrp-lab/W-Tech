@@ -544,7 +544,7 @@ const LandingPageViewerV2: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-wtech-gold opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
               {whatsapp && (
-                <a href={waLink} target="_blank" rel="noreferrer"
+                <a href={waLink} target="_blank" rel="noreferrer" id="lp-v2-whatsapp-floating-btn"
                   className="flex items-center gap-2 border border-white/20 text-white px-6 py-4 rounded-xl font-bold text-sm hover:border-wtech-gold/50 hover:bg-white/5 transition-all">
                   <MessageCircle size={16} className="text-green-400" /> Falar no WhatsApp
                 </a>
@@ -1065,7 +1065,7 @@ const LandingPageViewerV2: React.FC = () => {
                 </div>
 
                 {whatsapp && (
-                  <a href={waLink} target="_blank" rel="noreferrer"
+                  <a href={waLink} target="_blank" rel="noreferrer" id="lp-v2-whatsapp-card-btn"
                     className="mt-4 flex items-center justify-center gap-2 border border-green-500/30 text-green-400 hover:bg-green-500/10 py-3 rounded-xl text-sm font-bold transition-colors">
                     <MessageCircle size={16} /> Dúvidas? WhatsApp
                   </a>
@@ -1088,7 +1088,7 @@ const LandingPageViewerV2: React.FC = () => {
                     <h3 className="text-2xl font-black text-white mb-2">Inscrição enviada!</h3>
                     <p className="text-gray-400 text-sm max-w-xs mx-auto">Nossa equipe entrará em contato em breve para confirmar sua vaga e orientar sobre o pagamento.</p>
                     {whatsapp && (
-                      <a href={waLink} target="_blank" rel="noreferrer"
+                      <a href={waLink} target="_blank" rel="noreferrer" id="lp-v2-whatsapp-success-btn"
                         className="inline-flex items-center gap-2 bg-wtech-gold text-black font-black px-6 py-3 rounded-xl mt-6 text-sm hover:bg-yellow-400 transition-colors">
                         <MessageCircle size={15} /> Falar no WhatsApp
                       </a>
@@ -1280,7 +1280,7 @@ const LandingPageViewerV2: React.FC = () => {
                 Garantir minha vaga <ArrowRight size={16} />
               </button>
               {whatsapp && (
-                <a href={waLink} target="_blank" rel="noreferrer"
+                <a href={waLink} target="_blank" rel="noreferrer" id="lp-v2-whatsapp-footer-btn"
                   className="border border-white/20 text-white font-bold px-8 py-4 rounded-xl text-sm hover:border-wtech-gold/50 hover:bg-white/5 transition-all flex items-center gap-2">
                   <MessageCircle size={16} className="text-green-400" /> WhatsApp
                 </a>

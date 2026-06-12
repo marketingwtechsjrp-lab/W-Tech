@@ -1118,15 +1118,18 @@ const LPErgonomia2: React.FC = () => {
                             </div>
                         </div>
 
-                        <motion.button
-                            onClick={() => window.open('https://pay.kiwify.com.br/19v4nIa', '_blank')}
+                        <motion.a
+                            href="https://pay.kiwify.com.br/19v4nIa"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            id="kiwify-checkout-btn-lp-ergonomia2"
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}
-                            className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group"
+                            className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"
                         >
                             <div className="absolute inset-0 w-full h-full bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                             <span className="relative z-10">Quero Regular Minha Suspensão Agora</span>
-                        </motion.button>
+                        </motion.a>
                         <p className="text-gray-600 text-xs mb-8">Acesso imediato após a confirmação do pagamento</p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-10 pt-8 border-t border-white/5">
