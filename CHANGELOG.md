@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.1 (2026-06-12) - Correções de SEO/compartilhamento e deploy do cron de e-mails
+- Imagem de preview nas redes sociais corrigida (og:image apontava para arquivo 404 — agora usa a imagem configurada no admin)
+- og:url, twitter:url e canonical alinhados para site.w-techbrasil.com.br
+- Cron de fluxos de e-mail ajustado para diário (frequência maior derrubava o deploy no plano Hobby)
+- Documentação de memória do sistema de pagamentos (PAGAMENTOS_MEMORIA.md) com playbook de diagnóstico
+
 ## v3.1.0 (2026-06-11) - Integração de e-mail (Brevo): confirmação de inscrição + follow-up
 - Card "E-mail (Brevo SMTP)" em Integrações com botão de teste de envio
 - E-mail automático de confirmação de inscrição ao aluno após pagamento aprovado

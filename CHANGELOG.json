@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.1.1",
+    "date": "2026-06-12",
+    "title": "Correções de SEO/compartilhamento e deploy do cron de e-mails",
+    "changes": [
+      "Imagem de preview nas redes sociais corrigida (og:image apontava para arquivo 404 — agora usa a imagem configurada no admin)",
+      "og:url, twitter:url e canonical alinhados para site.w-techbrasil.com.br",
+      "Cron de fluxos de e-mail ajustado para diário (frequência maior derrubava o deploy no plano Hobby)",
+      "Documentação de memória do sistema de pagamentos (PAGAMENTOS_MEMORIA.md) com playbook de diagnóstico"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.1.0",
     "date": "2026-06-11",
     "title": "Integração de e-mail (Brevo): confirmação de inscrição + follow-up",
