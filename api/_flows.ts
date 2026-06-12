@@ -32,7 +32,7 @@ const MS = { hours: 3600_000, days: 86_400_000 };
 export async function enrollContactInFlows(input: {
     email: string;
     name?: string;
-    triggerType: 'NovoCadastro' | 'CompraRecente' | 'Inatividade' | 'Tag' | 'Segmento';
+    triggerType: 'NovoCadastro' | 'CompraRecente' | 'Inatividade' | 'Perda' | 'Tag' | 'Segmento';
     client?: SB;
 }): Promise<{ enrolled: number }> {
     const supabase = input.client || getServiceClient();
@@ -74,9 +74,21 @@ export async function enrollContactInFlows(input: {
 }
 
 /** Processa um lote de inscrições devidas (chamado pelo cron). */
-export async function processDueFlowEnrollments(limit = 50): Promise<{ processed: number; sent: number; errors: number }> {
+export async function processDueFlowEnrollments(limit = 50): Promise<{ processed: number; sent: number; errors: number; skipped?: string }> {
     const supabase = getServiceClient();
     const nowIso = new Date().toISOString();
+
+    // Gate: com o Brevo desligado, NÃO processar — senão os passos avançam
+    // sem nenhum e-mail sair e a sequência "queima" em silêncio.
+    const { data: enabledRow } = await supabase
+        .from('SITE_Config')
+        .select('value')
+        .eq('key', 'brevo_enabled')
+        .maybeSingle();
+    if (enabledRow?.value !== 'true') {
+        console.log('[Flows] brevo_enabled != true — processamento adiado (inscrições preservadas).');
+        return { processed: 0, sent: 0, errors: 0, skipped: 'brevo disabled' };
+    }
 
     const { data: due } = await supabase
         .from('SITE_FlowEnrollments')

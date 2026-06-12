@@ -70,6 +70,7 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 - [x] `EmailFlowsView` já grava em SITE_EmailFlows/Steps → motor lê fluxos `status='Active'`. Para ativar um fluxo, mudar status para `Active` na UI.
 - [ ] ⏳ Melhoria futura: auto-enroll `NovoCadastro` na criação de lead (leads nascem em vários pontos do cliente — fazer via trigger no banco ou ponto único). Documentado, não bloqueia o follow-up de compra.
 - Condition steps: v1 passa adiante (sem tracking de abertura/clique ainda).
+- [x] (v3.1.2) Gatilho **`Perda`**: lead marcado como perdido no CRM (`handleConfirmLost` em CRMView) é inscrito via `lib/flows.ts` → `enrollContactInFlowsClient`. Fluxo "Recuperação de Perda — CRM" (id `44fb123d-bdb2-4463-aae9-75b1f1dbcf74`) Active no banco: Email imediato → 3d → Email → 7d → Email. Processador tem gate `brevo_enabled` — não avança passos com Brevo desligado.
 
 ### FASE 5 — Testes e validação ✅ CÓDIGO PRONTO (validação depende do Daniel)
 - [x] Build de produção OK; v3.1.0 commitada e deployada.

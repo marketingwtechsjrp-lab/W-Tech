@@ -9,7 +9,7 @@ import { useAuth } from '../../../context/AuthContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type FlowStatus = 'Active' | 'Paused' | 'Draft';
-type TriggerType = 'NovoCadastro' | 'Inatividade' | 'CompraRecente' | 'CliqueLinkEspecifico' | 'Tag' | 'Segmento' | 'Manual';
+type TriggerType = 'NovoCadastro' | 'Inatividade' | 'CompraRecente' | 'Perda' | 'CliqueLinkEspecifico' | 'Tag' | 'Segmento' | 'Manual';
 type StepType = 'Email' | 'Delay' | 'Condition' | 'Exit';
 
 interface FlowStep {
@@ -45,6 +45,7 @@ const TRIGGER_LABELS: Record<TriggerType, string> = {
     NovoCadastro: 'Novo Cadastro',
     Inatividade: 'Inatividade',
     CompraRecente: 'Compra Recente',
+    Perda: 'Perda no CRM',
     CliqueLinkEspecifico: 'Clique em Link',
     Tag: 'Tag Específica',
     Segmento: 'Segmento',
@@ -55,6 +56,7 @@ const TRIGGER_COLORS: Record<TriggerType, string> = {
     NovoCadastro: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     Inatividade: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     CompraRecente: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+    Perda: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     CliqueLinkEspecifico: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     Tag: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
     Segmento: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',

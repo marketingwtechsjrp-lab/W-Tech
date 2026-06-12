@@ -1574,6 +1574,18 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             }, user ? { id: user.id, name: user.name } : null);
             logLeadHistory(lead.id, lead.status, targetStatus, 'lost');
             notificationRef.current?.createNotification('help', 'Lead Atualizado', 'Motivo da perda registrado.');
+
+            // Inscreve o lead nos fluxos de follow-up com gatilho "Perda" (não-fatal)
+            import('../../../lib/flows')
+                .then(({ enrollContactInFlowsClient }) =>
+                    enrollContactInFlowsClient({ email: lead.email, name: lead.name, triggerType: 'Perda' })
+                )
+                .then(r => {
+                    if (r && r.enrolled > 0) {
+                        notificationRef.current?.createNotification('help', 'Follow-up Ativado', `Lead inscrito em ${r.enrolled} fluxo(s) de recuperação por e-mail.`);
+                    }
+                })
+                .catch(err => console.error('Enroll em fluxo de perda falhou (não-fatal):', err));
         }
 
         setLostReasonModal({ isOpen: false, lead: null, targetStatus: '' });

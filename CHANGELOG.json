@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.1.2",
+    "date": "2026-06-12",
+    "title": "Follow-up automático de leads perdidos no CRM",
+    "changes": [
+      "Novo gatilho 'Perda no CRM' nos fluxos de e-mail",
+      "Lead marcado como perdido entra automaticamente no fluxo de recuperação",
+      "Fluxo 'Recuperação de Perda — CRM' criado e ativo: 3 e-mails em 10 dias (imediato, +3d, +10d)",
+      "Processador de fluxos não avança passos com o Brevo desligado (sequência preservada)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.1.1",
     "date": "2026-06-12",
     "title": "Correções de SEO/compartilhamento e deploy do cron de e-mails",

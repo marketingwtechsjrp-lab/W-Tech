@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.2 (2026-06-12) - Follow-up automático de leads perdidos no CRM
+- Novo gatilho "Perda no CRM" nos fluxos de e-mail
+- Lead marcado como perdido entra automaticamente no fluxo de recuperação
+- Fluxo "Recuperação de Perda — CRM" criado e ativo: 3 e-mails em 10 dias (imediato, +3d, +10d)
+- Processador de fluxos não avança passos com o Brevo desligado (sequência preservada)
+
 ## v3.1.1 (2026-06-12) - Correções de SEO/compartilhamento e deploy do cron de e-mails
 - Imagem de preview nas redes sociais corrigida (og:image apontava para arquivo 404 — agora usa a imagem configurada no admin)
 - og:url, twitter:url e canonical alinhados para site.w-techbrasil.com.br
