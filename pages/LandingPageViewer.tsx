@@ -620,7 +620,7 @@ const LandingPageViewer: React.FC = () => {
                                 </div>
                                 <div>
                                     <h4 className="text-gray-400 text-xs font-bold uppercase mb-1">Como Chegar</h4>
-                                    <a target="_blank" href={lp.course?.mapUrl ? lp.course.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="text-blue-400 hover:text-blue-300 underline font-medium">
+                                    <a target="_blank" id="lp-map-link" href={lp.course?.mapUrl ? lp.course.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="text-blue-400 hover:text-blue-300 underline font-medium">
                                         Abrir no Google Maps
                                     </a>
                                 </div>
@@ -857,7 +857,7 @@ const LandingPageViewer: React.FC = () => {
                         Garantir Vaga
                     </button>
                     {whatsappNumber && (
-                        <a href={waLink} target="_blank" rel="noreferrer" className="bg-green-600 text-white px-3 py-3 rounded-xl flex items-center justify-center shadow-lg">
+                        <a href={waLink} target="_blank" rel="noreferrer" id="lp-whatsapp-floating-btn" className="bg-green-600 text-white px-3 py-3 rounded-xl flex items-center justify-center shadow-lg">
                             <Play size={12} className="fill-white" />
                         </a>
                     )}

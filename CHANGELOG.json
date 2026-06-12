@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.1.4",
+    "date": "2026-06-12",
+    "title": "Rastreamento Nativo GTM em Botoes de Redirecionamento",
+    "changes": [
+      "Conversao de botoes e motion.buttons de redirecionamento para tags a e motion.a nativas",
+      "Adicionado atributo id de rastreamento exclusivo em todas as LPs para compatibilidade com o listener gtm.linkClick",
+      "Modificadas as Landing Pages de Ergonomia (1, 2, 3, 4), Quiz de Suspensao, Waitlist de Suspensao e LPs dinamicas (V1 a V8)",
+      "Modificados os links de localizacao e redes sociais das Imersoes de Lisboa (WTechLisboa e LPWTechLisboaNov2026)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.1.3",
     "date": "2026-06-12",
     "title": "Novos Templates de Landing Pages (V5 a V8) e melhorias no Editor",

@@ -101,6 +101,7 @@ const RegistrationForm = () => {
 
                 <a 
                     href="https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy"
+                    id="waitlist-whatsapp-group-btn"
                     className="inline-flex w-full items-center justify-center gap-3 bg-gradient-to-r from-green-600 to-green-500 text-white font-black py-4 px-6 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_35px_rgba(34,197,94,0.3)] animate-pulse"
                 >
                     ENTRAR NO GRUPO VIP AGORA <ArrowRight size={18} />

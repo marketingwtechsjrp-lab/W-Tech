@@ -1193,16 +1193,19 @@ const LPErgonomia3: React.FC = () => {
                             </div>
 
                             {/* Main CTA */}
-                            <motion.button
-                                onClick={() => window.open('https://pay.kiwify.com.br/19v4nIa', '_blank')}
+                            <motion.a
+                                href="https://pay.kiwify.com.br/19v4nIa"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                id="kiwify-checkout-btn-lp-ergonomia3"
                                 whileHover={!prefersReduced ? { scale: 1.03 } : undefined}
                                 whileTap={!prefersReduced ? { scale: 0.97 } : undefined}
-                                className="lp3-btn-primary w-full max-w-xl mx-auto text-black font-black text-sm uppercase tracking-widest px-8 py-6 rounded-2xl flex items-center justify-center gap-3 transition-all relative overflow-hidden lp3-shimmer-sweep"
+                                className="lp3-btn-primary w-full max-w-xl mx-auto text-black font-black text-sm uppercase tracking-widest px-8 py-6 rounded-2xl flex items-center justify-center gap-3 transition-all relative overflow-hidden lp3-shimmer-sweep flex justify-center items-center"
                             >
                                 <span className="relative z-10 flex items-center gap-2">
                                     Quero Regular Minha Suspensão Agora <ArrowRight strokeWidth={2.5} size={18} />
                                 </span>
-                            </motion.button>
+                            </motion.a>
                             <p className="text-gray-600 text-xs mt-4 mb-8">Acesso imediato após confirmação do pagamento</p>
 
                             {/* Trust row */}

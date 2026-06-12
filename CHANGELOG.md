@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.1.4 (2026-06-12) - Rastreamento Nativo GTM em Botoes de Redirecionamento
+- Conversao de botoes e motion.buttons de redirecionamento para tags a e motion.a nativas
+- Adicionado atributo id de rastreamento exclusivo em todas as LPs para compatibilidade com o listener gtm.linkClick
+- Modificadas as Landing Pages de Ergonomia (1, 2, 3, 4), Quiz de Suspensao, Waitlist de Suspensao e LPs dinamicas (V1 a V8)
+- Modificados os links de localizacao e redes sociais das Imersoes de Lisboa (WTechLisboa e LPWTechLisboaNov2026)
+
 ## v3.1.3 (2026-06-12) - Novos Templates de Landing Pages (V5 a V8) e melhorias no Editor
 - Novos layouts de Landing Pages: V5 (Gold Brutal), V6 (Carbon Racing), V7 (Editorial Light) e V8 (Swiss Tech)
 - Suporte para depoimentos com vídeo (videoUrl) nos templates

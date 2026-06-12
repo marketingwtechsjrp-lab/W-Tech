@@ -285,7 +285,7 @@ const LandingPageViewerV5: React.FC = () => {
                                 <p className="text-white/50">{lp.course?.addressNeighborhood ? `${lp.course.addressNeighborhood}, ` : ''}{lp.course?.city} - {lp.course?.state}</p>
                             </div>
                         </div>
-                        <a target="_blank" rel="noreferrer" href={lp.course?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="inline-flex items-center gap-2 text-wtech-gold font-black uppercase text-sm tracking-wider hover:underline">
+                        <a target="_blank" id="lp-v5-map-link" rel="noreferrer" href={lp.course?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="inline-flex items-center gap-2 text-wtech-gold font-black uppercase text-sm tracking-wider hover:underline">
                             <Navigation size={16} /> Abrir no Google Maps
                         </a>
                         <div className="bg-red-600/15 border-2 border-red-600 p-5 flex items-center gap-4">
@@ -321,7 +321,7 @@ const LandingPageViewerV5: React.FC = () => {
                         />
                     </div>
                     <div className="text-center mt-8">
-                        <a href={waLink} target="_blank" rel="noopener noreferrer" className="text-white/40 text-sm font-bold hover:text-wtech-gold transition-colors">
+                        <a href={waLink} target="_blank" id="lp-v5-whatsapp-footer-link" rel="noopener noreferrer" className="text-white/40 text-sm font-bold hover:text-wtech-gold transition-colors">
                             Prefere falar com a gente? Chama no WhatsApp →
                         </a>
                     </div>

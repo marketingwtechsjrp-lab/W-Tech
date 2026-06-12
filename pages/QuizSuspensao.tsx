@@ -466,6 +466,7 @@ const QuizCrashFallback: React.FC<{ checkoutUrl: string }> = ({ checkoutUrl }) =
                 href={checkoutUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                id="quiz-fallback-checkout-btn"
                 onClick={() => trackEvent('Quiz', 'checkout_click', 'fallback')}
                 className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all shadow-xl"
             >
@@ -1131,17 +1132,21 @@ const ResultScreen: React.FC<{
                             <span className="text-wtech-gold font-black uppercase text-[11px] sm:text-xs tracking-widest">Garantia Incondicional de 7 Dias</span>
                         </div>
 
-                        <motion.button
-                            onClick={goCheckout}
+                        <motion.a
+                            href={checkoutUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            id="quiz-checkout-btn"
+                            onClick={() => trackEvent('Quiz', 'checkout_click', track)}
                             whileHover={animate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={animate ? { scale: 0.98 } : undefined}
-                            className="group w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-3 shadow-xl relative overflow-hidden"
+                            className="group w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-3 shadow-xl relative overflow-hidden flex justify-center items-center"
                         >
                             <div className="absolute inset-0 w-full h-full bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                             <span className="relative z-10">
                                 {track === 'mecanico' ? 'Quero Faturar Mais Com Suspensão' : 'Quero Regular Minha Suspensão Agora'}
                             </span>
-                        </motion.button>
+                        </motion.a>
                         <p className="text-gray-600 text-xs">Acesso imediato após a confirmação do pagamento</p>
                     </div>
                 </div>
@@ -1156,13 +1161,17 @@ const ResultScreen: React.FC<{
             {/* CTA sticky no mobile: a oferta fica longe da dobra inicial,
                 então mantemos o botão de compra sempre ao alcance do polegar. */}
             <div className="md:hidden fixed bottom-0 inset-x-0 z-50 p-3 bg-[#050505]/95 backdrop-blur-md border-t border-[#E6241D]/30">
-                <button
-                    onClick={goCheckout}
-                    className="w-full bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform"
+                <a
+                    href={checkoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    id="quiz-sticky-checkout-btn"
+                    onClick={() => trackEvent('Quiz', 'checkout_click', track)}
+                    className="w-full bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform flex justify-center items-center"
                 >
                     {track === 'mecanico' ? 'Quero Faturar Mais' : 'Quero Regular Agora'} · 12x R$ 34,70
                     <ArrowRight strokeWidth={3} size={16} />
-                </button>
+                </a>
             </div>
         </motion.div>
     );

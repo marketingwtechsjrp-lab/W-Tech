@@ -637,7 +637,7 @@ const LandingPageViewerV4: React.FC = () => {
                                 </div>
                                 <div>
                                     <h4 className="text-gray-400 text-xs font-bold uppercase mb-1">Como Chegar</h4>
-                                    <a target="_blank" rel="noreferrer" href={lp.course?.mapUrl ? lp.course.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="text-blue-600 hover:text-blue-500 underline font-medium">
+                                    <a target="_blank" id="lp-v4-map-link" rel="noreferrer" href={lp.course?.mapUrl ? lp.course.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} className="text-blue-600 hover:text-blue-500 underline font-medium">
                                         Abrir no Google Maps
                                     </a>
                                 </div>

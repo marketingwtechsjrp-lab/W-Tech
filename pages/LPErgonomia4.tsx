@@ -535,12 +535,15 @@ const LPErgonomia4: React.FC = () => {
                                     </div>
                                     <p className="text-amber-500 text-sm font-semibold mb-10">ou apenas R$ 347,00 à vista</p>
 
-                                    <button 
-                                        onClick={() => window.open('https://pay.kiwify.com.br/19v4nIa', '_blank')}
+                                    <a 
+                                        href="https://pay.kiwify.com.br/19v4nIa"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        id="kiwify-checkout-btn-lp-ergonomia4"
                                         className="lp4-btn-primary w-full py-5 rounded-2xl font-black text-[15px] uppercase tracking-widest flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
                                     >
                                         Quero Minha Vaga Agora <ArrowRight size={20} />
-                                    </button>
+                                    </a>
                                     <p className="text-gray-500 text-xs mt-4">Acesso liberado automaticamente em seu e-mail.</p>
                                 </div>
                             </motion.div>
