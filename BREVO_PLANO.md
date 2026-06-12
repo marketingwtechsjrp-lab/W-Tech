@@ -66,7 +66,7 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 - [x] `api/process-email-flows.ts`: rota do cron.
 - [x] `lib/emailTemplates.ts`: `renderRawEmail()` envelopa o corpo custom do fluxo na identidade W-Tech.
 - [x] Gatilho `CompraRecente` no webhook (passo 8, após confirmação).
-- [x] Cron em `vercel.json`: `/api/process-email-flows` a cada 4h.
+- [x] Cron em `vercel.json`: `/api/process-email-flows` diário `0 13 * * *` (10h Brasília). ⚠️ Plano Hobby da Vercel só aceita cron diário — frequência maior (ex. `*/4h`) **derruba o deploy inteiro silenciosamente** (foi o que deixou a v3.1.0 fora do ar até 2026-06-12). Delays de fluxo em horas só fazem sentido com plano Pro ou agendador externo.
 - [x] `EmailFlowsView` já grava em SITE_EmailFlows/Steps → motor lê fluxos `status='Active'`. Para ativar um fluxo, mudar status para `Active` na UI.
 - [ ] ⏳ Melhoria futura: auto-enroll `NovoCadastro` na criação de lead (leads nascem em vários pontos do cliente — fazer via trigger no banco ou ponto único). Documentado, não bloqueia o follow-up de compra.
 - Condition steps: v1 passa adiante (sem tracking de abertura/clique ainda).
@@ -91,6 +91,7 @@ Código de acesso do aluno: `SITE_Leads.client_code` (por email).
 Seguir o padrão: bump `package.json` + entradas em `CHANGELOG.json` e `CHANGELOG.md`, commit `vX.Y.Z: <título>`, push `origin main`. Última versão: **3.0.19**. Próxima: 3.1.0 (feature de e-mail).
 
 ## Status atual
+- 2026-06-12: **Deploy validado em produção.** `/api/process-email-flows` → `{"ok":true}`, `/api/send-test-email` validando input, webhook online. (O deploy da v3.1.0 ficou preso por cron `*/4h` inválido no plano Hobby — corrigido para diário.)
 - 2026-06-11: **TODAS AS FASES DE CÓDIGO CONCLUÍDAS — v3.1.0 deployada.**
   - Fase 1 ✅ config Brevo no admin · Fase 2 ✅ motor de envio · Fase 3 ✅ e-mail de confirmação · Fase 4 ✅ follow-up/cron · Fase 5 ✅ build/release.
 - **Pendências (ação do Daniel) para ativar de fato:**
