@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
 
     try {
         const result = await processBalanceReminders(30, dryRun);
-        console.log(`[Saldo] dryRun=${dryRun} elegíveis=${result.eligible} emails=${result.emailsSent} whatsapp=${result.whatsappSent} erros=${result.errors}`);
+        console.log(`[Saldo] dryRun=${dryRun} escopo=${result.scope || 'auto'} elegíveis=${result.eligible} emails=${result.emailsSent} whatsapp=${result.whatsappSent} erros=${result.errors}`);
         return res.status(200).json({ ok: true, dryRun, ...result, ts: new Date().toISOString() });
     } catch (e: any) {
         console.error('[Saldo] Erro no processamento:', e?.message);

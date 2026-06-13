@@ -18,11 +18,23 @@ import { sendWhatsAppText } from './_whatsapp.js';
  * respeita seu próprio gate de configuração e falha de um não bloqueia o outro.
  *
  * Kill switch: SITE_Config.saldo_reminders_enabled = 'false' desativa tudo.
+ *
+ * Escopo (SITE_Config.saldo_reminders_scope):
+ *   - 'auto' (padrão) → cobra apenas inscrições geradas automaticamente pelo
+ *     sistema (checkout/webhook/landing page), identificadas por
+ *     enrolled_by_name = 'Automático'. Inscrições feitas manualmente por um
+ *     atendente NÃO recebem cobrança automática.
+ *   - 'all' → cobra todas as inscrições com saldo, independente da origem.
  */
 
 const STAGE_1_MIN_DAYS_ENROLLED = 2;
 const STAGE_2_MIN_DAYS_ENROLLED = 9;
 const STAGE_3_MAX_DAYS_TO_COURSE = 7;
+
+// Marcador gravado em SITE_Enrollments.enrolled_by_name quando a inscrição é
+// criada pelo próprio sistema (checkout Mercado Pago, webhooks, landing pages).
+// Inscrições manuais gravam o nome do atendente. Veja add_enrolled_by.sql.
+const SYSTEM_ENROLLED_MARKER = 'Automático';
 
 // ── Anti-bloqueio do WhatsApp ───────────────────────────────────────────────
 // Mensagens idênticas em sequência rápida derrubam o número. Por isso:
@@ -44,6 +56,7 @@ export interface BalanceRunResult {
     whatsappSent: number;
     errors: number;
     skipped?: string;
+    scope?: 'auto' | 'all';
     details: Array<{
         enrollmentId: string;
         student: string;
@@ -172,11 +185,29 @@ export async function processBalanceReminders(limit = 30, dryRun = false): Promi
         return { ...result, skipped: 'saldo_reminders disabled' };
     }
 
-    const { data: enrollments, error } = await supabase
+    // Escopo da cobrança: 'auto' (padrão) cobra só inscrições do sistema;
+    // 'all' cobra todas. Qualquer valor diferente de 'all' cai no padrão seguro.
+    const { data: scopeRow } = await supabase
+        .from('SITE_Config')
+        .select('value')
+        .eq('key', 'saldo_reminders_scope')
+        .maybeSingle();
+    const scope: 'auto' | 'all' = scopeRow?.value === 'all' ? 'all' : 'auto';
+    result.scope = scope;
+
+    let query = supabase
         .from('SITE_Enrollments')
-        .select('id, student_name, student_email, student_phone, status, created_at, amount_paid, total_amount, currency, course:SITE_Courses(id, title, date, city, state, currency, whatsapp_group_link)')
+        .select('id, student_name, student_email, student_phone, status, created_at, amount_paid, total_amount, currency, enrolled_by_name, course:SITE_Courses(id, title, date, city, state, currency, whatsapp_group_link)')
         .eq('status', 'Confirmed')
         .gt('total_amount', 0);
+
+    // Em modo 'auto', exclui inscrições feitas manualmente por atendentes —
+    // só passam as criadas pelo próprio sistema (enrolled_by_name = 'Automático').
+    if (scope === 'auto') {
+        query = query.eq('enrolled_by_name', SYSTEM_ENROLLED_MARKER);
+    }
+
+    const { data: enrollments, error } = await query;
 
     if (error) throw new Error(`Falha ao buscar inscrições: ${error.message}`);
 

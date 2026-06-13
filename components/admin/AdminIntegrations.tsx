@@ -16,6 +16,8 @@ const AdminIntegrations = () => {
         apiKey: '',
         automationInstance: '',
         fallbackInstance: '',
+        saldoRemindersEnabled: true,
+        saldoRemindersScope: 'auto' as 'auto' | 'all',
         asaasKey: '',
         stripeKey: '',
         mercadoPagoKey: '',
@@ -84,6 +86,8 @@ const AdminIntegrations = () => {
                 apiKey: configMap['evolution_api_key'] || '',
                 automationInstance: configMap['automation_whatsapp_instance'] || '',
                 fallbackInstance: configMap['evolution_instance_name'] || '',
+                saldoRemindersEnabled: configMap['saldo_reminders_enabled'] !== 'false',
+                saldoRemindersScope: configMap['saldo_reminders_scope'] === 'all' ? 'all' : 'auto',
                 asaasKey: configMap['asaas_api_key'] || '',
                 stripeKey: configMap['stripe_api_key'] || '',
                 mercadoPagoKey: configMap['mercadopago_access_token'] || '',
@@ -361,6 +365,8 @@ const AdminIntegrations = () => {
                 { key: 'evolution_api_url', value: globalConfig.serverUrl },
                 { key: 'evolution_api_key', value: globalConfig.apiKey },
                 { key: 'automation_whatsapp_instance', value: globalConfig.automationInstance.trim() },
+                { key: 'saldo_reminders_enabled', value: String(globalConfig.saldoRemindersEnabled) },
+                { key: 'saldo_reminders_scope', value: globalConfig.saldoRemindersScope },
                 { key: 'asaas_api_key', value: globalConfig.asaasKey },
                 { key: 'stripe_api_key', value: globalConfig.stripeKey },
                 { key: 'mercadopago_access_token', value: globalConfig.mercadoPagoKey },
@@ -572,6 +578,78 @@ const AdminIntegrations = () => {
                             {isTestingAutomation ? 'Enviando...' : 'Testar Envio'}
                         </button>
                     </div>
+                </div>
+
+                {/* Cobrança Automática de Saldo Pendente */}
+                <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <Banknote size={16} className="text-wtech-gold" />
+                            <label className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Cobrança Automática de Saldo Pendente</label>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setGlobalConfig({ ...globalConfig, saldoRemindersEnabled: !globalConfig.saldoRemindersEnabled })}
+                            className="flex items-center gap-1.5 text-xs font-bold uppercase"
+                            title={globalConfig.saldoRemindersEnabled ? 'Cobrança ligada' : 'Cobrança desligada'}
+                        >
+                            {globalConfig.saldoRemindersEnabled
+                                ? <><ToggleRight size={26} className="text-green-600" /> <span className="text-green-700">Ativa</span></>
+                                : <><ToggleLeft size={26} className="text-gray-400" /> <span className="text-gray-500">Desativada</span></>}
+                        </button>
+                    </div>
+                    <p className="text-xs text-[var(--admin-text-secondary)] mb-3">
+                        Define quem recebe os lembretes automáticos de saldo pendente (e-mail + WhatsApp em 3 estágios).
+                    </p>
+
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 transition-opacity ${globalConfig.saldoRemindersEnabled ? '' : 'opacity-40 pointer-events-none'}`}>
+                        <button
+                            type="button"
+                            onClick={() => setGlobalConfig({ ...globalConfig, saldoRemindersScope: 'auto' })}
+                            className={`text-left p-3 rounded-lg border transition-colors ${
+                                globalConfig.saldoRemindersScope === 'auto'
+                                    ? 'border-wtech-gold bg-wtech-gold/10'
+                                    : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)] hover:border-wtech-gold/40'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-0.5">
+                                {globalConfig.saldoRemindersScope === 'auto'
+                                    ? <CheckCircle2 size={15} className="text-wtech-gold" />
+                                    : <Bot size={15} className="text-[var(--admin-text-secondary)]" />}
+                                <span className="text-sm font-bold text-[var(--admin-text-primary)]">Somente leads do sistema</span>
+                            </div>
+                            <p className="text-[11px] text-[var(--admin-text-secondary)] leading-snug">
+                                Apenas inscrições criadas automaticamente (checkout, site, webhook). Quem foi cadastrado por um atendente <strong>não</strong> recebe cobrança automática.
+                            </p>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setGlobalConfig({ ...globalConfig, saldoRemindersScope: 'all' })}
+                            className={`text-left p-3 rounded-lg border transition-colors ${
+                                globalConfig.saldoRemindersScope === 'all'
+                                    ? 'border-wtech-gold bg-wtech-gold/10'
+                                    : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)] hover:border-wtech-gold/40'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-0.5">
+                                {globalConfig.saldoRemindersScope === 'all'
+                                    ? <CheckCircle2 size={15} className="text-wtech-gold" />
+                                    : <Globe size={15} className="text-[var(--admin-text-secondary)]" />}
+                                <span className="text-sm font-bold text-[var(--admin-text-primary)]">Todos os alunos com saldo</span>
+                            </div>
+                            <p className="text-[11px] text-[var(--admin-text-secondary)] leading-snug">
+                                Cobra qualquer inscrição com saldo em aberto, inclusive as cadastradas manualmente por atendentes.
+                            </p>
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={handleSaveGlobalConfig}
+                        disabled={loading}
+                        className="mt-3 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-xs font-bold uppercase hover:bg-gray-900 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm"
+                    >
+                        <Save size={14} /> Salvar Cobrança
+                    </button>
                 </div>
             </div>
 
