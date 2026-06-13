@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle } from 'lucide-react';
+import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot } from 'lucide-react';
 import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
 import { getAsaasConfig } from '../../lib/asaas';
 import { getStripeConfig } from '../../lib/stripe';
@@ -14,6 +14,8 @@ const AdminIntegrations = () => {
     const [globalConfig, setGlobalConfig] = useState({
         serverUrl: '',
         apiKey: '',
+        automationInstance: '',
+        fallbackInstance: '',
         asaasKey: '',
         stripeKey: '',
         mercadoPagoKey: '',
@@ -52,6 +54,10 @@ const AdminIntegrations = () => {
     const [testEmailTo, setTestEmailTo] = useState('');
     const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
+    // Automation Instance Test State
+    const [automationTestPhone, setAutomationTestPhone] = useState('');
+    const [isTestingAutomation, setIsTestingAutomation] = useState(false);
+
     // Test Sending State
     const [testPhone, setTestPhone] = useState('');
     const [testMessage, setTestMessage] = useState('Teste de mensagem do sistema W-Tech.');
@@ -73,6 +79,8 @@ const AdminIntegrations = () => {
             setGlobalConfig({
                 serverUrl: configMap['evolution_api_url'] || '',
                 apiKey: configMap['evolution_api_key'] || '',
+                automationInstance: configMap['automation_whatsapp_instance'] || '',
+                fallbackInstance: configMap['evolution_instance_name'] || '',
                 asaasKey: configMap['asaas_api_key'] || '',
                 stripeKey: configMap['stripe_api_key'] || '',
                 mercadoPagoKey: configMap['mercadopago_access_token'] || '',
@@ -208,12 +216,33 @@ const AdminIntegrations = () => {
         }
     };
 
+    const handleTestAutomationInstance = async () => {
+        if (!automationTestPhone.trim()) return alert('Informe um telefone (DDD + número) para o teste.');
+        const instance = globalConfig.automationInstance.trim() || globalConfig.fallbackInstance.trim();
+        if (!instance) return alert('Preencha o nome da instância de automação (ou configure a instância padrão) antes de testar.');
+        setIsTestingAutomation(true);
+        try {
+            const { success, error } = await sendWhatsAppMessage(
+                automationTestPhone,
+                '🤖 Teste da instância de automação do sistema W-Tech.\n\nSe você recebeu esta mensagem, os alertas, cobranças e remarketing automáticos sairão por este número.',
+                instance
+            );
+            if (success) alert(`Mensagem de teste enviada pela instância "${instance}"!`);
+            else alert('Erro ao enviar: ' + JSON.stringify(error));
+        } catch (e: any) {
+            alert('Erro: ' + e.message);
+        } finally {
+            setIsTestingAutomation(false);
+        }
+    };
+
     const handleSaveGlobalConfig = async () => {
         setLoading(true);
         try {
             const updates = [
                 { key: 'evolution_api_url', value: globalConfig.serverUrl },
                 { key: 'evolution_api_key', value: globalConfig.apiKey },
+                { key: 'automation_whatsapp_instance', value: globalConfig.automationInstance.trim() },
                 { key: 'asaas_api_key', value: globalConfig.asaasKey },
                 { key: 'stripe_api_key', value: globalConfig.stripeKey },
                 { key: 'mercadopago_access_token', value: globalConfig.mercadoPagoKey },
@@ -342,6 +371,43 @@ const AdminIntegrations = () => {
                             value={globalConfig.apiKey}
                             onChange={e => setGlobalConfig({ ...globalConfig, apiKey: e.target.value })}
                         />
+                    </div>
+                </div>
+
+                {/* Instância de Automação do Sistema */}
+                <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Bot size={16} className="text-wtech-gold" />
+                        <label className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Instância de Automação do Sistema</label>
+                    </div>
+                    <p className="text-xs text-[var(--admin-text-secondary)] mb-3">
+                        Instância da Evolution usada pelo <strong>robô do sistema</strong> para alertas, cobranças de saldo pendente e remarketing automático.
+                        {globalConfig.fallbackInstance && !globalConfig.automationInstance && (
+                            <span className="text-amber-600 dark:text-amber-400"> Vazio = usa a instância padrão "{globalConfig.fallbackInstance}".</span>
+                        )}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            value={globalConfig.automationInstance}
+                            onChange={e => setGlobalConfig({ ...globalConfig, automationInstance: e.target.value })}
+                            placeholder="ex: automacao-wtech (nome da instância na Evolution)"
+                        />
+                        <div className="flex gap-2">
+                            <input
+                                className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                                value={automationTestPhone}
+                                onChange={e => setAutomationTestPhone(e.target.value)}
+                                placeholder="Telefone p/ teste (DDD + número)"
+                            />
+                            <button
+                                onClick={handleTestAutomationInstance}
+                                disabled={isTestingAutomation}
+                                className="px-4 py-2 bg-wtech-gold text-black rounded text-xs font-bold uppercase hover:bg-yellow-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                            >
+                                {isTestingAutomation ? 'Enviando...' : 'Testar'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -37,7 +37,10 @@ async function loadEvolutionConfig(): Promise<EvolutionConfig | null> {
 
         const serverUrl = (map['evolution_api_url'] || '').trim().replace(/\/$/, '');
         const apiKey = (map['evolution_api_key'] || '').trim();
-        const instanceName = (map['evolution_instance_name'] || '').trim();
+        // Instância dedicada do robô (alertas/cobranças/remarketing), com
+        // fallback para a instância padrão do sistema.
+        const instanceName = (map['automation_whatsapp_instance'] || '').trim()
+            || (map['evolution_instance_name'] || '').trim();
 
         if (!serverUrl || !apiKey || !instanceName) return null;
         return { serverUrl, apiKey, instanceName };
