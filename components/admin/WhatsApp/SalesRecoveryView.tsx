@@ -43,11 +43,11 @@ const SalesRecoveryView = () => {
     
     // Message templates
     const [refusedTemplate, setRefusedTemplate] = useState(
-        "Oi *{{name}}*, tudo bem? Aqui é do suporte do Curso W-Tech. 🛠️\n\nPercebemos que sua inscrição na *{{product}}* não pôde ser concluída porque o pagamento foi recusado por: *{{reason}}*.\n\nIsso é super comum! Geralmente o próprio banco bloqueia compras na internet por segurança.\n\n⚠️ *Atenção:* O preço promocional está nas últimas vagas! Como restam *apenas 7 vagas promocionais* antes de voltar ao valor original, separei o seu link direto e seguro para tentar novamente (com outro cartão ou Pix):\n\n🔗 *Acesse para garantir a promoção:* https://pay.kiwify.com.br/19v4nIa\n\nSe precisar de qualquer ajuda ou preferir outra forma, me avise por aqui!"
+        "{Oi|Olá|E aí} *{{name}}*, {tudo bem?|tudo certo?|como vai?} Aqui é do suporte do Curso W-Tech. 🛠️\n\n{Percebemos|Vimos aqui|Notamos} que sua inscrição na *{{product}}* não pôde ser concluída porque o pagamento foi recusado por: *{{reason}}*.\n\nIsso é super comum! Geralmente o próprio banco bloqueia compras na internet por segurança.\n\n⚠️ *Atenção:* O preço promocional está nas últimas vagas! Como restam *apenas 7 vagas promocionais* antes de voltar ao valor original, separei o seu link direto e seguro para tentar novamente (com outro cartão ou Pix):\n\n🔗 *Acesse para garantir a promoção:* https://pay.kiwify.com.br/19v4nIa\n\nSe precisar de qualquer ajuda ou preferir outra forma, me avise por aqui!"
     );
     
     const [pendingTemplate, setPendingTemplate] = useState(
-        "Olá *{{name}}*! Tudo bem? Aqui é o suporte da W-Tech. ⚡\n\nVi que você gerou o Pix para a sua inscrição no *{{product}}*, mas a confirmação ainda não constou em nosso sistema.\n\n⚠️ *Importante:* Estamos nas últimas *7 vagas promocionais* deste lote. Assim que forem preenchidas, o preço retornará ao valor original.\n\nCaso o código Pix tenha expirado ou você queira garantir a vaga parcelando no cartão, você pode usar o link direto abaixo:\n\n🔗 *Garantir vaga promocional agora:* https://pay.kiwify.com.br/19v4nIa\n\nSe você já realizou o pagamento, basta me enviar o comprovante por aqui para liberarmos seu acesso imediatamente!"
+        "{Olá|Oi|E aí} *{{name}}*! {Tudo bem?|Tudo certo?|Beleza?} Aqui é o suporte da W-Tech. ⚡\n\n{Vi que|Notei que|Consta aqui que} você gerou o Pix para a sua inscrição no *{{product}}*, mas a confirmação ainda não constou em nosso sistema.\n\n⚠️ *Importante:* Estamos nas últimas *7 vagas promocionais* deste lote. Assim que forem preenchidas, o preço retornará ao valor original.\n\nCaso o código Pix tenha expirado ou você queira garantir a vaga parcelando no cartão, você pode usar o link direto abaixo:\n\n🔗 *Garantir vaga promocional agora:* https://pay.kiwify.com.br/19v4nIa\n\nSe você já realizou o pagamento, basta me enviar o comprovante por aqui para liberarmos seu acesso imediatamente!"
     );
 
     // Fetch instances from database to populate dropdown
@@ -90,9 +90,19 @@ const SalesRecoveryView = () => {
         fetchWhatsAppInstances();
     }, []);
 
+    /**
+     * Spintax anti-bloqueio: {opção1|opção2|opção3} no template vira uma das
+     * opções, sorteada por lead — evita que todos recebam texto idêntico.
+     */
+    const resolveSpintax = (text: string): string =>
+        text.replace(/\{([^{}|]+(?:\|[^{}|]+)+)\}/g, (_, group: string) => {
+            const options = group.split('|');
+            return options[Math.floor(Math.random() * options.length)];
+        });
+
     // Re-generate message text when templates change
     const generateMessage = (lead: Omit<RecoveryLead, 'messageText' | 'sendStatus'>): string => {
-        const template = lead.status === 'refused' ? refusedTemplate : pendingTemplate;
+        const template = resolveSpintax(lead.status === 'refused' ? refusedTemplate : pendingTemplate);
         
         let reasonTranslated = 'Transação negada';
         if (lead.declineReason === 'antifraud') reasonTranslated = 'Bloqueio de segurança / Antifraude do cartão';
@@ -287,10 +297,12 @@ const SalesRecoveryView = () => {
                 setLeads(prev => prev.map((l, idx) => idx === i ? { ...l, sendStatus: 'error', sendError: err.message } : l));
             }
 
-            // Wait for delay before next item (if there are more to send)
+            // Intervalo ALEATÓRIO em torno do delay configurado (60%–180%) —
+            // envios em ritmo fixo são um dos gatilhos de bloqueio do WhatsApp
             const isLast = i === leads.length - 1 || !leads.slice(i + 1).some(l => selectedLeads.includes(l.id) && l.sendStatus !== 'success');
             if (!isLast) {
-                await new Promise(resolve => setTimeout(resolve, sendDelay * 1000));
+                const jitterMs = sendDelay * 1000 * (0.6 + Math.random() * 1.2);
+                await new Promise(resolve => setTimeout(resolve, Math.round(jitterMs)));
             }
         }
 

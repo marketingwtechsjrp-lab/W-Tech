@@ -197,6 +197,16 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [stripeReconcileModal, setStripeReconcileModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, stripeId: string, amount: number }>({ isOpen: false, enrollment: null, stripeId: '', amount: 0 });
     const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
 
+    // Disparo manual de mensagens para alunos (cobrança / info do curso).
+    // scope 'single' = uma inscrição; 'all' = todos os elegíveis do curso.
+    const [notifyModal, setNotifyModal] = useState<{
+        isOpen: boolean;
+        action: 'balance' | 'course-info';
+        scope: 'single' | 'all';
+        enrollment: Enrollment | null;
+    }>({ isOpen: false, action: 'balance', scope: 'single', enrollment: null });
+    const [notifying, setNotifying] = useState(false);
+
     // Fetch Layouts & Exchange Rates
     useEffect(() => {
         const loadInitialData = async () => {
@@ -1203,6 +1213,65 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
     };
 
+    /** Dispara o envio (cobrança ou info do curso) pelo endpoint server-side. */
+    const submitNotify = async (channel: 'whatsapp' | 'email' | 'both') => {
+        if (!currentCourse) return;
+        const { action, scope, enrollment } = notifyModal;
+        setNotifying(true);
+        try {
+            const resp = await fetch('/api/notify-students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseId: currentCourse.id,
+                    action,
+                    channel,
+                    enrollmentId: scope === 'single' ? enrollment?.id : undefined
+                })
+            });
+            // A resposta pode não ser JSON (ex.: 404 quando rodando em "npm run dev",
+            // onde as rotas /api não existem — só na Vercel ou via "vercel dev").
+            const text = await resp.text();
+            let res: any = null;
+            try { res = text ? JSON.parse(text) : null; } catch { /* não-JSON */ }
+
+            if (!resp.ok || !res) {
+                if (resp.status === 404) {
+                    alert('A função de envio (/api/notify-students) não está disponível neste ambiente.\n\nNo desenvolvimento local (npm run dev) as rotas /api não rodam. Teste no site publicado, ou rode "vercel dev".');
+                } else {
+                    alert('Falha no envio: ' + (res?.error || `HTTP ${resp.status}`));
+                }
+                return;
+            }
+            if (!res.ok) {
+                alert('Falha no envio: ' + (res.error || 'erro desconhecido'));
+                return;
+            }
+            const parts: string[] = [];
+            if (res.emailsSent) parts.push(`${res.emailsSent} e-mail(s)`);
+            if (res.whatsappSent) parts.push(`${res.whatsappSent} WhatsApp`);
+            const sentMsg = parts.length ? parts.join(' + ') : 'nenhuma mensagem';
+            let msg = `✅ Enviado: ${sentMsg}.\nElegíveis: ${res.eligible} • Falhas: ${res.failed}`;
+            if (res.whatsappRemaining > 0) {
+                msg += `\n\n⏳ ${res.whatsappRemaining} WhatsApp ficaram para um próximo envio (teto anti-bloqueio). Clique de novo em alguns minutos para continuar.`;
+            }
+            if (res.eligible === 0) {
+                msg = action === 'balance' ? 'Nenhum aluno com saldo em aberto.' : 'Nenhum aluno elegível encontrado.';
+            } else if (!res.emailsSent && !res.whatsappSent) {
+                // Nada saiu: provavelmente canal não configurado (Brevo off / WhatsApp desconectado).
+                const reason = res.details?.find((d: any) => d.email !== 'pulado' || d.whatsapp !== 'pulado');
+                const hint = reason ? ` Motivo: ${[reason.email, reason.whatsapp].filter((s: string) => s && s !== 'pulado').join(' / ')}.` : '';
+                msg = `Nenhuma mensagem enviada (${res.eligible} elegíveis).${hint}\n\nVerifique se o canal está ativo em Admin → Integrações (Brevo / instância de WhatsApp).`;
+            }
+            alert(msg);
+            setNotifyModal({ isOpen: false, action: 'balance', scope: 'single', enrollment: null });
+        } catch (err: any) {
+            alert('Erro ao enviar: ' + err.message);
+        } finally {
+            setNotifying(false);
+        }
+    };
+
     const toggleCheckIn = async (enrollmentId: string, currentStatus: string) => {
         const newStatus = currentStatus === 'CheckedIn' ? 'Confirmed' : 'CheckedIn';
         await supabase.from('SITE_Enrollments').update({ status: newStatus }).eq('id', enrollmentId);
@@ -1254,25 +1323,24 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                     description: `Curso: ${currentCourse.title}`
                 });
             } else if (settleMethod === 'Mercado_Pago') {
-                const { createMercadoPagoPreference } = await import('../lib/mercadopago');
-                const mpResult = await createMercadoPagoPreference({
-                    course: {
-                        id: currentCourse.id,
-                        title: currentCourse.title,
-                        price: settleModal.linkAmount
-                    },
-                    customer: {
-                        name: settleModal.enrollment.studentName,
-                        email: settleModal.enrollment.studentEmail,
-                        cpf: (settleModal.enrollment as any).studentCpf || '',
-                        phone: settleModal.enrollment.studentPhone || ''
-                    },
-                    enrollmentId: settleModal.enrollment.id
+                // Link do SALDO de uma inscrição existente (não cria inscrição nova).
+                const resp = await fetch('/api/mercadopago-balance-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enrollmentId: settleModal.enrollment.id, amount: settleModal.linkAmount })
                 });
-                if (mpResult.success) {
-                    result = { success: true, url: mpResult.init_point, invoiceUrl: mpResult.init_point };
+                const text = await resp.text();
+                let mpData: any = null;
+                try { mpData = text ? JSON.parse(text) : null; } catch { /* não-JSON */ }
+                if (!resp.ok || !mpData?.success) {
+                    result = {
+                        success: false,
+                        error: resp.status === 404
+                            ? 'Endpoint /api/mercadopago-balance-link indisponível neste ambiente. Teste no site publicado ou rode "vercel dev".'
+                            : (mpData?.error || `HTTP ${resp.status}`)
+                    };
                 } else {
-                    result = { success: false, error: mpResult.error };
+                    result = { success: true, url: mpData.init_point, invoiceUrl: mpData.init_point };
                 }
             }
 
@@ -1734,6 +1802,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     if (showEnrollments && currentCourse) {
         const totalPaid = enrollments.reduce((acc, curr) => acc + (curr.amountPaid || 0), 0);
         const totalPotential = enrollments.length * (currentCourse.price || 0);
+        const debtorsCount = enrollments.filter(e => ((e.totalAmount ?? currentCourse.price ?? 0) - (e.amountPaid || 0)) > 0).length;
 
         return (
             <div className="bg-[var(--admin-surface-1)] p-8 rounded-2xl shadow-sm border border-[var(--admin-border)] min-h-screen">
@@ -1764,6 +1833,20 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </button>
                         <button onClick={() => handleGenerateCertificates(true)} className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-[var(--admin-border)] bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)] transition-all" title="Gerar Crachás em PDF">
                             <User size={15} /> Crachás
+                        </button>
+                        <button
+                            onClick={() => setNotifyModal({ isOpen: true, action: 'balance', scope: 'all', enrollment: null })}
+                            disabled={debtorsCount === 0}
+                            className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-orange-300 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={debtorsCount > 0 ? `Cobrar os ${debtorsCount} alunos com saldo pendente` : 'Nenhum aluno em débito'}>
+                            <Bell size={15} /> Cobrar Devedores{debtorsCount > 0 ? ` (${debtorsCount})` : ''}
+                        </button>
+                        <button
+                            onClick={() => setNotifyModal({ isOpen: true, action: 'course-info', scope: 'all', enrollment: null })}
+                            disabled={enrollments.length === 0}
+                            className="px-3 py-2.5 rounded-lg font-bold flex items-center gap-1.5 text-xs border border-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Enviar endereço, data, horário e o que levar para todos os inscritos">
+                            <MapPin size={15} /> Info do Curso
                         </button>
                     </div>
                 </div>
@@ -2080,6 +2163,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         </button>
                                                     )}
 
+                                                    {balance > 0 && (
+                                                        <button onClick={() => setNotifyModal({ isOpen: true, action: 'balance', scope: 'single', enrollment: enr })} title="Cobrar saldo pendente (WhatsApp / E-mail)" className="p-1.5 text-orange-600 hover:bg-orange-50 rounded border border-orange-200 bg-orange-50/40">
+                                                            <Bell size={16} />
+                                                        </button>
+                                                    )}
+
                                                     <button onClick={() => handleSendManualReminder(enr)} title="Enviar Lembrete (WhatsApp)" className="p-1.5 text-green-500 hover:bg-green-50 rounded border border-green-100">
                                                         <Send size={16} />
                                                     </button>
@@ -2114,6 +2203,61 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </tbody>
                     </table>
                 </div>
+
+                {/* Notify Modal — cobrança / info do curso (WhatsApp / E-mail) */}
+                {notifyModal.isOpen && (() => {
+                    const isBalance = notifyModal.action === 'balance';
+                    const isSingle = notifyModal.scope === 'single';
+                    const targetLabel = isSingle
+                        ? (notifyModal.enrollment?.studentName || 'aluno')
+                        : isBalance
+                            ? `${debtorsCount} aluno${debtorsCount !== 1 ? 's' : ''} em débito`
+                            : `${enrollments.length} aluno${enrollments.length !== 1 ? 's' : ''} inscrito${enrollments.length !== 1 ? 's' : ''}`;
+                    const title = isBalance ? 'Cobrar Saldo Pendente' : 'Enviar Informações do Curso';
+                    const desc = isBalance
+                        ? 'Mensagem de cobrança do valor em aberto da inscrição.'
+                        : 'Endereço, data, horário de chegada e o que levar.';
+                    return (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                            <div className="bg-[var(--admin-surface-1)] w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                                <div className="flex items-start justify-between mb-1">
+                                    <h3 className="text-2xl font-black text-[var(--admin-text-primary)]">{title}</h3>
+                                    <button onClick={() => setNotifyModal({ isOpen: false, action: 'balance', scope: 'single', enrollment: null })} className="p-1.5 -mr-2 -mt-1 hover:bg-[var(--admin-surface-3)] rounded-lg text-[var(--admin-text-secondary)] hover:text-red-500 transition-colors"><X size={18} /></button>
+                                </div>
+                                <p className="text-[var(--admin-text-secondary)] text-sm mb-1">{desc}</p>
+                                <div className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-lg px-4 py-3 my-5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--admin-text-tertiary)]">Destinatário{isSingle ? '' : 's'}</span>
+                                    <p className="font-bold text-[var(--admin-text-primary)]">{targetLabel}</p>
+                                </div>
+                                <label className="block text-xs font-black uppercase text-[var(--admin-text-tertiary)] mb-3 tracking-widest">Enviar por</label>
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    <button onClick={() => submitNotify('whatsapp')} disabled={notifying}
+                                        className="flex flex-col items-center gap-1.5 py-4 rounded-xl border border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-800 text-green-700 dark:text-green-400 font-bold hover:bg-green-100 dark:hover:bg-green-900/40 transition-all disabled:opacity-50">
+                                        <MessageCircle size={20} /> <span className="text-xs">WhatsApp</span>
+                                    </button>
+                                    <button onClick={() => submitNotify('email')} disabled={notifying}
+                                        className="flex flex-col items-center gap-1.5 py-4 rounded-xl border border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all disabled:opacity-50">
+                                        <Mail size={20} /> <span className="text-xs">E-mail</span>
+                                    </button>
+                                    <button onClick={() => submitNotify('both')} disabled={notifying}
+                                        className="flex flex-col items-center gap-1.5 py-4 rounded-xl border border-wtech-gold bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-500 font-bold hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-all disabled:opacity-50">
+                                        <Send size={20} /> <span className="text-xs">Ambos</span>
+                                    </button>
+                                </div>
+                                {notifying && (
+                                    <p className="flex items-center justify-center gap-2 text-sm text-[var(--admin-text-secondary)] mt-4">
+                                        <Loader2 size={15} className="animate-spin" /> Enviando… {!isSingle && 'pode levar alguns segundos (ritmo anti-bloqueio)'}
+                                    </p>
+                                )}
+                                {!isSingle && !notifying && (
+                                    <p className="text-[11px] text-[var(--admin-text-tertiary)] mt-3 leading-relaxed">
+                                        WhatsApp sai pela instância de automação, com intervalo entre envios. Em turmas grandes, parte fica para um próximo clique.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* Stripe Reconciliation Modal */}
                 {
@@ -2303,15 +2447,38 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         </div>
                                     )}
 
-                                    {generatedLink && (
-                                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded-lg animate-in fade-in">
-                                            <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase mb-2">Link Gerado:</p>
-                                            <div className="flex gap-2">
-                                                <input readOnly className="flex-1 text-xs p-2 border rounded bg-[var(--admin-surface-1)]" value={generatedLink} />
-                                                <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} className="p-2 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] rounded hover:bg-[var(--admin-surface-2)]"><Copy size={14} /></button>
+                                    {generatedLink && (() => {
+                                        const sym = settleModal.targetCurrency === 'EUR' ? '€' : settleModal.targetCurrency === 'USD' ? '$' : 'R$';
+                                        const amt = Number(settleModal.linkAmount || 0).toFixed(2).replace('.', ',');
+                                        const firstName = (settleModal.enrollment?.studentName || '').split(' ')[0] || 'Aluno';
+                                        const digits = (settleModal.enrollment?.studentPhone || '').replace(/\D/g, '');
+                                        const waPhone = digits ? (digits.length <= 11 ? '55' + digits : digits) : '';
+                                        const waMsg = `Olá ${firstName}! 👋 Aqui é da W-Tech Brasil.\n\nSegue o link para quitar o saldo de ${sym} ${amt} da sua inscrição no curso *${currentCourse.title}*:\n\n${generatedLink}\n\nQualquer dúvida é só responder por aqui. 🤝`;
+                                        const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}` : '';
+                                        return (
+                                            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded-lg animate-in fade-in">
+                                                <p className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase mb-2">Link Gerado:</p>
+                                                <div className="flex gap-2">
+                                                    <input readOnly className="flex-1 text-xs p-2 border rounded bg-[var(--admin-surface-1)]" value={generatedLink} />
+                                                    <button onClick={() => { navigator.clipboard.writeText(generatedLink); alert('Link copiado!'); }} title="Copiar link" className="p-2 bg-[var(--admin-surface-3)] border border-[var(--admin-border)] rounded hover:bg-[var(--admin-surface-2)]"><Copy size={14} /></button>
+                                                </div>
+                                                <div className="flex gap-2 mt-2">
+                                                    <button
+                                                        onClick={() => { navigator.clipboard.writeText(waMsg); alert('Mensagem com o link copiada! Cole no WhatsApp do aluno.'); }}
+                                                        className="flex-1 py-2 text-xs font-bold rounded border border-[var(--admin-border)] bg-[var(--admin-surface-1)] hover:bg-[var(--admin-surface-2)] flex items-center justify-center gap-1.5 text-[var(--admin-text-secondary)]">
+                                                        <Copy size={13} /> Copiar mensagem
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { if (waUrl) window.open(waUrl, '_blank'); else alert('Aluno sem telefone cadastrado.'); }}
+                                                        disabled={!waPhone}
+                                                        title={waPhone ? 'Abrir WhatsApp com a mensagem pronta' : 'Aluno sem telefone cadastrado'}
+                                                        className="flex-1 py-2 text-xs font-bold rounded border border-green-300 bg-green-100 dark:bg-green-900/40 dark:border-green-800 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/60 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                        <MessageCircle size={13} /> Enviar no WhatsApp
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
                                 </div>
 
                                 <div className="flex gap-3">

@@ -27,8 +27,19 @@ export const createMercadoPagoPreference = async ({
             })
         });
 
-        const data = await res.json();
+        // A resposta pode vir vazia/HTML (ex.: 404 em "npm run dev", onde as rotas
+        // /api não existem — só rodam na Vercel ou via "vercel dev").
+        const text = await res.text();
+        let data: any = null;
+        try { data = text ? JSON.parse(text) : null; } catch { /* não-JSON */ }
 
+        if (!data) {
+            throw new Error(
+                res.status === 404
+                    ? 'Endpoint /api/mercadopago-checkout indisponível neste ambiente. Teste no site publicado ou rode "vercel dev".'
+                    : `Resposta inválida do servidor (HTTP ${res.status}).`
+            );
+        }
         if (!res.ok || !data.success) {
             const errMsg = data.error || 'Erro desconhecido ao processar transação.';
             throw new Error(errMsg);

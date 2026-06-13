@@ -110,7 +110,10 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
         return <CampaignBuilder permissions={permissions} onClose={() => { setIsBuilderOpen(false); fetchCampaigns(); }} />;
     }
 
-    const activeProcessingCampaign = campaigns.find(c => c.status === 'Processing');
+    // Só o WhatsApp usa o processador do navegador (instância pessoal, aba aberta).
+    // Campanhas de e-mail são disparadas automaticamente pelo servidor (cron).
+    const activeProcessingCampaign = campaigns.find(c => c.status === 'Processing' && c.channel === 'WhatsApp');
+    const activeEmailCampaign = campaigns.find(c => c.status === 'Processing' && c.channel === 'Email');
     const filteredCampaigns = campaigns.filter(c => 
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -118,9 +121,22 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
     return (
         <div className="space-y-6">
             
-            {/* Active Processor Widget */}
+            {/* Active Processor Widget (WhatsApp — navegador) */}
             {activeProcessingCampaign && (
                 <QueueProcessor campaign={activeProcessingCampaign} onComplete={fetchCampaigns} />
+            )}
+
+            {/* Campanha de e-mail em andamento (servidor) */}
+            {activeEmailCampaign && (
+                <div className="bg-[var(--admin-surface-1)] border-l-4 border-blue-500 shadow-lg rounded-r-lg p-4 flex items-center gap-4">
+                    <Mail className="text-blue-500 shrink-0" />
+                    <div>
+                        <h4 className="font-bold text-[var(--admin-text-primary)]">Campanha de e-mail em disparo automático: {activeEmailCampaign.name}</h4>
+                        <p className="text-xs text-[var(--admin-text-secondary)] mt-0.5">
+                            O servidor envia em lotes automaticamente — você pode fechar esta aba. Acompanhe o progresso pelos números da campanha abaixo.
+                        </p>
+                    </div>
+                </div>
             )}
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--admin-surface-1)] p-6 rounded-2xl shadow-sm border border-[var(--admin-border)]">

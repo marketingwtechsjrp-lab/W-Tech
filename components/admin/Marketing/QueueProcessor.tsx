@@ -151,7 +151,15 @@ const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete })
 
                 success = true;
             } else {
-                 success = true; 
+                // Canal E-mail (e qualquer outro não-WhatsApp) é disparado pelo
+                // servidor no cron (api/_campaigns.ts). O navegador NÃO deve
+                // marcar como enviado — devolve o item para a fila para o
+                // servidor processar. Evita falso "Enviado" sem envio real.
+                await supabase.from('SITE_CampaignQueue').update({ status: 'Pending' }).eq('id', item.id);
+                isProcessingItem.current = false;
+                setLastProcessed(`${item.recipient_name} (envio automático pelo servidor)`);
+                fetchQueueStats();
+                return;
             }
         } catch (err: any) {
             lastError = err.message;

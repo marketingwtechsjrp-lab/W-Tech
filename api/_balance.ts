@@ -24,6 +24,19 @@ const STAGE_1_MIN_DAYS_ENROLLED = 2;
 const STAGE_2_MIN_DAYS_ENROLLED = 9;
 const STAGE_3_MAX_DAYS_TO_COURSE = 7;
 
+// ── Anti-bloqueio do WhatsApp ───────────────────────────────────────────────
+// Mensagens idênticas em sequência rápida derrubam o número. Por isso:
+//  - teto de envios de WhatsApp por execução (o resto fica para o dia seguinte)
+//  - intervalo aleatório entre envios (parece digitação humana)
+//  - 3 variantes de texto por estágio, sorteadas por contato
+const MAX_WA_SENDS_PER_RUN = 6;
+const WA_DELAY_MIN_MS = 8_000;
+const WA_DELAY_MAX_MS = 20_000;
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+const randomBetween = (min: number, max: number) => min + Math.floor(Math.random() * (max - min + 1));
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
 export interface BalanceRunResult {
     scanned: number;
     eligible: number;
@@ -103,16 +116,42 @@ function buildWhatsAppMessage(input: {
     daysToCourse: number;
 }): string {
     const { firstName, courseTitle, courseDate, remaining, paid, total, symbol, stage, daysToCourse } = input;
-    const header = `Olá, ${firstName}! Aqui é da equipe W-Tech Brasil 👋`;
-    const saldo = `Sua vaga no curso *${courseTitle}* (${courseDate}) está confirmada, e consta um saldo em aberto na inscrição:\n\n✅ Pago: ${symbol} ${paid}\n💰 Total: ${symbol} ${total}\n⏳ *Restante: ${symbol} ${remaining}*`;
 
+    // Variantes sorteadas — nenhum contato recebe texto idêntico ao do vizinho
+    const header = pick([
+        `Olá, ${firstName}! Aqui é da equipe W-Tech Brasil 👋`,
+        `Oi ${firstName}, tudo bem? Sou da equipe W-Tech Brasil 🛠️`,
+        `${firstName}, tudo certo? Aqui é do suporte da W-Tech Brasil 👊`
+    ]);
+
+    const saldo = pick([
+        `Sua vaga no curso *${courseTitle}* (${courseDate}) está confirmada, e consta um saldo em aberto na inscrição:\n\n✅ Pago: ${symbol} ${paid}\n💰 Total: ${symbol} ${total}\n⏳ *Restante: ${symbol} ${remaining}*`,
+        `Vi aqui que sua inscrição no *${courseTitle}* (${courseDate}) está garantida, mas ainda falta uma parte do pagamento:\n\n💰 Valor do curso: ${symbol} ${total}\n✅ Você já pagou: ${symbol} ${paid}\n⏳ *Falta: ${symbol} ${remaining}*`,
+        `Sobre sua inscrição no curso *${courseTitle}* (${courseDate}): a vaga está reservada e o que falta é só o restante do valor:\n\n✅ Entrada paga: ${symbol} ${paid} de ${symbol} ${total}\n⏳ *Saldo: ${symbol} ${remaining}*`
+    ]);
+
+    let cta: string;
     if (stage === 3) {
-        return `${header}\n\n⏰ *Seu curso está chegando${daysToCourse > 0 ? ` — faltam ${daysToCourse} dias!` : '!'}*\n\n${saldo}\n\nPara garantir seu acesso à turma, complete o pagamento até o dia do curso. Responda esta mensagem que resolvemos juntos agora — aceitamos Pix, cartão e parcelamento. 🤝`;
+        cta = pick([
+            `⏰ *Seu curso está chegando${daysToCourse > 0 ? ` — faltam ${daysToCourse} dias!` : '!'}* Para garantir seu acesso à turma, complete o pagamento até o dia do curso. Responda esta mensagem que resolvemos juntos agora — aceitamos Pix, cartão e parcelamento. 🤝`,
+            `⏰ ${daysToCourse > 0 ? `Faltam só ${daysToCourse} dias para o curso!` : 'O curso é daqui a pouco!'} Me responde por aqui que te passo o Pix ou o link do cartão agora mesmo, rapidinho. 🤝`,
+            `⏰ A turma já está sendo fechada${daysToCourse > 0 ? ` (curso em ${daysToCourse} dias)` : ''}. Quita comigo por aqui — Pix, cartão ou parcelado — e chega no dia só com a bagagem. 💪`
+        ]);
+    } else if (stage === 2) {
+        cta = pick([
+            `Quitando agora você chega no dia do curso com tudo resolvido. Posso te mandar o Pix ou prefere cartão/parcelamento? É só responder aqui. 😊`,
+            `Quer aproveitar e deixar isso resolvido hoje? Me fala se prefere Pix ou cartão que te mando tudo por aqui. 😉`,
+            `Se quiser, parcelamos o restante no cartão. Me responde aqui que organizo pra você sem burocracia. 👍`
+        ]);
+    } else {
+        cta = pick([
+            `Quando quiser quitar, é só responder esta mensagem — te passamos as opções de pagamento (Pix, cartão ou parcelamento). Qualquer dúvida sobre o curso, estamos por aqui! 🛠️`,
+            `Sem pressa: quando quiser acertar o restante, me chama por aqui que te passo Pix ou cartão. E qualquer dúvida sobre o curso, é só perguntar! 🛠️`,
+            `Pode quitar quando for melhor pra você — é só responder aqui. Aproveito pra avisar que estamos à disposição pra qualquer dúvida sobre o treinamento. 🤝`
+        ]);
     }
-    if (stage === 2) {
-        return `${header}\n\n${saldo}\n\nQuitando agora você chega no dia do curso com tudo resolvido. Posso te mandar o Pix ou prefere cartão/parcelamento? É só responder aqui. 😊`;
-    }
-    return `${header}\n\n${saldo}\n\nQuando quiser quitar, é só responder esta mensagem — te passamos as opções de pagamento (Pix, cartão ou parcelamento). Qualquer dúvida sobre o curso, estamos por aqui! 🛠️`;
+
+    return `${header}\n\n${saldo}\n\n${cta}`;
 }
 
 /**
@@ -151,6 +190,7 @@ export async function processBalanceReminders(limit = 30, dryRun = false): Promi
 
     const now = new Date();
     const today = new Date(now.toISOString().slice(0, 10));
+    let waSentThisRun = 0;
 
     for (const enr of (enrollments || []) as any[]) {
         result.scanned++;
@@ -234,9 +274,15 @@ export async function processBalanceReminders(limit = 30, dryRun = false): Promi
             }
         }
 
-        // ── Canal 2: WhatsApp ────────────────────────────────────────────
-        if (waDue) {
+        // ── Canal 2: WhatsApp (com teto por execução e ritmo humano) ────
+        if (waDue && waSentThisRun >= MAX_WA_SENDS_PER_RUN) {
+            waStatus = 'adiado (teto diário anti-bloqueio)';
+        } else if (waDue) {
             try {
+                // Intervalo aleatório entre envios — nunca metralhar a fila
+                if (waSentThisRun > 0) {
+                    await sleep(randomBetween(WA_DELAY_MIN_MS, WA_DELAY_MAX_MS));
+                }
                 const message = buildWhatsAppMessage({
                     firstName,
                     courseTitle: course.title || 'Curso W-Tech',
@@ -252,6 +298,7 @@ export async function processBalanceReminders(limit = 30, dryRun = false): Promi
                 waStatus = sent.sent ? 'enviado' : sent.skipped || sent.error || 'falhou';
                 if (sent.sent) {
                     result.whatsappSent++;
+                    waSentThisRun++;
                     await logWhatsApp(supabase, enr.id, waType, enr.student_email || enr.student_phone, 'Sent');
                 } else if (sent.error) {
                     result.errors++;

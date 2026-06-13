@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.4.0",
+    "date": "2026-06-13",
+    "title": "Integração de Campanhas, Cobrança Manual, Link de Saldo MP e Webhook",
+    "changes": [
+      "Campanhas de e-mail e automação de marketing no painel administrativo",
+      "Sistema de cobrança manual de saldo pendente por e-mail e WhatsApp",
+      "Geração de link de saldo Mercado Pago direto com login automático",
+      "Validação e otimização do webhook do Mercado Pago"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.3.0",
     "date": "2026-06-12",
     "title": "Cobrança automática de saldo pendente por e-mail e WhatsApp",

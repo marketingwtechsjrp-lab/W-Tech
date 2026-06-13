@@ -24,6 +24,8 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
         name: '',
         channel: 'WhatsApp',
         listId: '',
+        dormantDays: 60,
+        subject: '',
         templateId: '',
         content: '',
         imageUrl: '',
@@ -31,6 +33,9 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
         part_delay: 0,
         throttling: { delay_seconds: 120, batch_size: 1 } // Default 2 mins to be safe
     });
+
+    /** Pseudo-lista embutida: leads adormecidos (sem atividade há N dias). */
+    const DORMANT_LIST_ID = '__dormant__';
     
     // Preview
     const [audienceCount, setAudienceCount] = useState<number | null>(null);
@@ -61,10 +66,28 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
         if (formData.listId) {
              calculateAudience(formData.listId);
         }
-    }, [formData.listId]);
+    }, [formData.listId, formData.dormantDays, formData.channel]);
+
+    /** Query base de leads adormecidos: sem atividade há N dias e não convertidos. */
+    const dormantQuery = (head: boolean) => {
+        const cutoff = new Date(Date.now() - formData.dormantDays * 86400000).toISOString();
+        let q = supabase
+            .from('SITE_Leads')
+            .select('*', head ? { count: 'exact', head: true } : undefined)
+            .lt('updated_at', cutoff)
+            .neq('status', 'Converted');
+        // Só conta quem tem o contato do canal escolhido
+        q = formData.channel === 'Email' ? q.not('email', 'is', null) : q.not('phone', 'is', null);
+        return q;
+    };
 
     const calculateAudience = async (listId: string) => {
         setAudienceCount(null);
+        if (listId === DORMANT_LIST_ID) {
+            const { count } = await dormantQuery(true);
+            setAudienceCount(count || 0);
+            return;
+        }
         const list = lists.find(l => l.id === listId);
         if (!list) return;
 
@@ -93,15 +116,23 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
 
     const handleCreateCampaign = async () => {
         if (!formData.name || !formData.listId) return alert('Preencha os campos obrigatórios');
-        
+        if (formData.channel === 'Email' && !formData.subject.trim()) return alert('Defina o assunto do e-mail.');
+        if (!formData.content.trim()) return alert('Escreva o conteúdo da mensagem.');
+
         setIsLoading(true);
         try {
+            const isDormant = formData.listId === DORMANT_LIST_ID;
+
             // 1. Create Campaign
             const { data: campaign, error } = await supabase.from('SITE_MarketingCampaigns').insert([{
                 name: formData.name,
                 channel: formData.channel,
                 status: 'Processing', // Start immediately for now (or 'Scheduled')
-                list_id: formData.listId,
+                list_id: isDormant ? null : formData.listId,
+                target_audience_summary: isDormant
+                    ? `Leads adormecidos (${formData.dormantDays}+ dias sem atividade)`
+                    : null,
+                subject: formData.channel === 'Email' ? formData.subject.trim() : null,
                 template_id: formData.templateId || null,
                 content: formData.content,
                 imageUrl: formData.imageUrl || null,
@@ -118,7 +149,22 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
             const list = lists.find(l => l.id === formData.listId);
             let recipients: any[] = [];
 
-            if (list?.type === 'Static') {
+            if (isDormant) {
+                const { data, error: dormantError } = await dormantQuery(false);
+                if (dormantError) console.error('Error fetching dormant leads:', dormantError);
+                recipients = (data || []).map((lead: any) => ({
+                    recipient_name: lead.name,
+                    recipient_phone: lead.phone,
+                    recipient_email: lead.email,
+                    lead_id: lead.id,
+                    recipient_data: {
+                        status: lead.status,
+                        tipo: lead.type,
+                        origem: lead.context_id || 'Indefinida',
+                        id: lead.id
+                    }
+                }));
+            } else if (list?.type === 'Static') {
                 const { data } = await supabase.from('SITE_MarketingListMembers').select('*').eq('list_id', list.id);
                 recipients = data || [];
             } else {
@@ -254,13 +300,13 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                         <Smartphone size={32} />
                                         <span className="font-black uppercase tracking-tight">WhatsApp</span>
                                     </button>
-                                    <button 
-                                        onClick={() => setFormData({...formData, channel: 'Email'})} // Assuming Email logic exists or is planned
-                                        disabled // Disabled based on previous code usually disable email
-                                        className={`p-6 rounded-2xl border-2 border-[var(--admin-border)] flex flex-col items-center gap-3 text-[var(--admin-text-tertiary)] cursor-not-allowed grayscale bg-[var(--admin-surface-2)]/50`}
+                                    <button
+                                        onClick={() => setFormData({...formData, channel: 'Email'})}
+                                        className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${formData.channel === 'Email' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 shadow-xl shadow-blue-100 dark:shadow-none' : 'border-[var(--admin-border)] hover:border-gray-300 text-gray-400 hover:bg-[var(--admin-surface-2)]'}`}
                                     >
                                         <Mail size={32} />
-                                        <span className="font-black uppercase tracking-tight">Email (Em breve)</span>
+                                        <span className="font-black uppercase tracking-tight">Email</span>
+                                        <span className="text-[10px] font-bold opacity-70">Disparo automático diário pelo servidor</span>
                                     </button>
                                 </div>
                             </div>
@@ -278,14 +324,44 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({ onClose, permissions 
                                     onChange={e => setFormData({...formData, listId: e.target.value})}
                                 >
                                     <option value="">Selecione...</option>
+                                    <option value={DORMANT_LIST_ID}>🌙 Leads Adormecidos (sem atividade no CRM)</option>
                                     {lists.map(l => <option key={l.id} value={l.id}>{l.name} ({l.type})</option>)}
                                 </select>
+                                {formData.listId === DORMANT_LIST_ID && (
+                                    <div className="flex items-center gap-3 mt-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl p-3">
+                                        <span className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Adormecido há pelo menos</span>
+                                        <select
+                                            className="border border-[var(--admin-border)] rounded-lg p-2 text-sm font-bold bg-[var(--admin-surface-1)] text-[var(--admin-text-primary)] outline-none"
+                                            value={formData.dormantDays}
+                                            onChange={e => setFormData({...formData, dormantDays: Number(e.target.value)})}
+                                        >
+                                            <option value={30}>30 dias</option>
+                                            <option value={60}>60 dias</option>
+                                            <option value={90}>90 dias</option>
+                                            <option value={180}>180 dias</option>
+                                        </select>
+                                        <span className="text-[10px] text-[var(--admin-text-tertiary)]">Exclui convertidos; só inclui quem tem {formData.channel === 'Email' ? 'e-mail' : 'telefone'}.</span>
+                                    </div>
+                                )}
                                 {formData.listId && (
                                     <div className="mt-2 text-sm text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg inline-block shadow-sm">
                                         {audienceCount === null ? 'Calculando...' : `${audienceCount} destinatários estimados`}
                                     </div>
                                 )}
                             </div>
+
+                            {formData.channel === 'Email' && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Assunto do E-mail</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[var(--admin-surface-2)] border-2 border-transparent focus:border-blue-500 focus:bg-[var(--admin-surface-1)] rounded-2xl px-6 py-4 text-lg font-bold outline-none transition-all text-[var(--admin-text-primary)]"
+                                        placeholder="Ex: {{nome}}, sentimos sua falta — novidades na W-Tech"
+                                        value={formData.subject}
+                                        onChange={e => setFormData({...formData, subject: e.target.value})}
+                                    />
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Modelo de Mensagem</label>

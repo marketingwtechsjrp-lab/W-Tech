@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.4.0 (2026-06-13) - Integração de Campanhas, Cobrança Manual, Link de Saldo MP e Webhook
+- Campanhas de e-mail e automação de marketing no painel administrativo
+- Sistema de cobrança manual de saldo pendente por e-mail e WhatsApp
+- Geração de link de saldo Mercado Pago direto com login automático
+- Validação e otimização do webhook do Mercado Pago
+
 ## v3.3.0 (2026-06-12) - Cobrança automática de saldo pendente por e-mail e WhatsApp
 - Inscrições confirmadas com saldo em aberto (pagou só a reserva) recebem lembretes automáticos em 3 estágios: 2 dias após a inscrição, 9 dias após, e a 7 dias do curso
 - Cada estágio dispara e-mail (template "saldo_pendente" na identidade W-Tech) e mensagem de WhatsApp via Evolution API, com valores, curso e CTA para quitar

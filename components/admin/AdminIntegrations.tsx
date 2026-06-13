@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot } from 'lucide-react';
+import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot, QrCode } from 'lucide-react';
 import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
 import { getAsaasConfig } from '../../lib/asaas';
 import { getStripeConfig } from '../../lib/stripe';
@@ -54,9 +54,12 @@ const AdminIntegrations = () => {
     const [testEmailTo, setTestEmailTo] = useState('');
     const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
-    // Automation Instance Test State
+    // Automation Instance State (criação/conexão/QR da instância do robô)
     const [automationTestPhone, setAutomationTestPhone] = useState('');
     const [isTestingAutomation, setIsTestingAutomation] = useState(false);
+    const [automationStatus, setAutomationStatus] = useState<string>('desconhecido');
+    const [automationQr, setAutomationQr] = useState<string | null>(null);
+    const [isManagingAutomation, setIsManagingAutomation] = useState(false);
 
     // Test Sending State
     const [testPhone, setTestPhone] = useState('');
@@ -215,6 +218,121 @@ const AdminIntegrations = () => {
             setIsSendingTest(false);
         }
     };
+
+    /** Consulta o estado real da instância de automação na Evolution. */
+    const checkAutomationState = async (instanceOverride?: string) => {
+        const instance = (instanceOverride ?? globalConfig.automationInstance).trim();
+        if (!globalConfig.serverUrl || !globalConfig.apiKey || !instance) return;
+        try {
+            const response = await fetch(`${globalConfig.serverUrl}/instance/connectionState/${instance}`, {
+                method: 'GET',
+                headers: { apikey: globalConfig.apiKey }
+            });
+            const data = await response.json();
+            const state = data?.instance?.state || data?.state || data?.connectionStatus?.state || 'disconnected';
+            setAutomationStatus(state);
+            if (state === 'open') setAutomationQr(null);
+        } catch {
+            setAutomationStatus('erro');
+        }
+    };
+
+    /** Cria a instância do robô na Evolution e abre o QR Code para escanear. */
+    const handleCreateAutomationInstance = async () => {
+        const instance = globalConfig.automationInstance.trim();
+        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!instance) return alert('Digite um nome para a instância de automação (ex: automacao-wtech).');
+        setIsManagingAutomation(true);
+        setAutomationQr(null);
+        try {
+            const response = await fetch(`${globalConfig.serverUrl}/instance/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', apikey: globalConfig.apiKey },
+                body: JSON.stringify({ instanceName: instance, token: '', qrcode: true, integration: 'WHATSAPP-BAILEYS' })
+            });
+            const data = await response.json();
+
+            const created = !!(data.instance || data.hash);
+            const alreadyExists = JSON.stringify(data).includes('already');
+            if (!created && !alreadyExists) {
+                return alert('Erro ao criar instância: ' + JSON.stringify(data).slice(0, 300));
+            }
+
+            // Persiste o nome para o robô do servidor usar imediatamente
+            await supabase.from('SITE_Config').upsert(
+                { key: 'automation_whatsapp_instance', value: instance },
+                { onConflict: 'key' }
+            );
+
+            // QR pode vir direto do create; senão, busca no connect
+            if (data.qrcode?.base64) {
+                setAutomationQr(data.qrcode.base64);
+                setAutomationStatus('connecting');
+            } else {
+                await handleConnectAutomationInstance(instance);
+            }
+        } catch (e: any) {
+            alert('Erro de requisição: ' + e.message);
+        } finally {
+            setIsManagingAutomation(false);
+        }
+    };
+
+    /** Busca o QR Code de conexão da instância (ou detecta que já está conectada). */
+    const handleConnectAutomationInstance = async (instanceOverride?: string) => {
+        const instance = (instanceOverride ?? globalConfig.automationInstance).trim();
+        if (!globalConfig.serverUrl || !globalConfig.apiKey || !instance) return;
+        setIsManagingAutomation(true);
+        try {
+            const response = await fetch(`${globalConfig.serverUrl}/instance/connect/${instance}`, {
+                method: 'GET',
+                headers: { apikey: globalConfig.apiKey }
+            });
+            const data = await response.json();
+            if (data.base64) {
+                setAutomationQr(data.base64);
+                setAutomationStatus('connecting');
+            } else if (data.instance?.state === 'open') {
+                setAutomationStatus('open');
+                setAutomationQr(null);
+                alert('Esta instância já está conectada!');
+            } else {
+                alert('Não foi possível obter o QR Code. Tente "Criar / Conectar" novamente.');
+            }
+        } catch (e: any) {
+            alert('Erro: ' + e.message);
+        } finally {
+            setIsManagingAutomation(false);
+        }
+    };
+
+    /** Desconecta e apaga a instância do robô no servidor Evolution. */
+    const handleDeleteAutomationInstance = async () => {
+        const instance = globalConfig.automationInstance.trim();
+        if (!instance) return;
+        if (!confirm(`ATENÇÃO: isso desconecta e APAGA a instância "${instance}" do servidor Evolution. As automações (cobranças/remarketing) param de enviar até reconectar. Continuar?`)) return;
+        setIsManagingAutomation(true);
+        try {
+            await fetch(`${globalConfig.serverUrl}/instance/delete/${instance}`, {
+                method: 'DELETE',
+                headers: { apikey: globalConfig.apiKey }
+            });
+            setAutomationStatus('disconnected');
+            setAutomationQr(null);
+            alert('Instância de automação removida do servidor.');
+        } catch (e: any) {
+            alert('Erro ao apagar: ' + e.message);
+        } finally {
+            setIsManagingAutomation(false);
+        }
+    };
+
+    // Enquanto o QR estiver na tela, checa a cada 5s se foi escaneado
+    useEffect(() => {
+        if (!automationQr) return;
+        const timer = setInterval(() => checkAutomationState(), 5000);
+        return () => clearInterval(timer);
+    }, [automationQr, globalConfig.automationInstance, globalConfig.serverUrl, globalConfig.apiKey]);
 
     const handleTestAutomationInstance = async () => {
         if (!automationTestPhone.trim()) return alert('Informe um telefone (DDD + número) para o teste.');
@@ -376,38 +494,83 @@ const AdminIntegrations = () => {
 
                 {/* Instância de Automação do Sistema */}
                 <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Bot size={16} className="text-wtech-gold" />
-                        <label className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Instância de Automação do Sistema</label>
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <Bot size={16} className="text-wtech-gold" />
+                            <label className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Instância de Automação do Sistema</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                                automationStatus === 'open' ? 'bg-green-100 text-green-700' :
+                                automationStatus === 'connecting' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-600'
+                            }`}>
+                                {automationStatus === 'open' ? 'Conectado' : automationStatus === 'connecting' ? 'Aguardando QR' : automationStatus}
+                            </span>
+                            <button
+                                onClick={() => checkAutomationState()}
+                                className="p-1.5 hover:bg-[var(--admin-surface-2)] rounded-full"
+                                title="Atualizar status"
+                            >
+                                <RefreshCw size={14} />
+                            </button>
+                        </div>
                     </div>
                     <p className="text-xs text-[var(--admin-text-secondary)] mb-3">
-                        Instância da Evolution usada pelo <strong>robô do sistema</strong> para alertas, cobranças de saldo pendente e remarketing automático.
+                        Número usado pelo <strong>robô do sistema</strong> para alertas, cobranças de saldo pendente e remarketing.
+                        Crie a instância, escaneie o QR Code com o chip dedicado e pronto.
                         {globalConfig.fallbackInstance && !globalConfig.automationInstance && (
                             <span className="text-amber-600 dark:text-amber-400"> Vazio = usa a instância padrão "{globalConfig.fallbackInstance}".</span>
                         )}
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col md:flex-row gap-2">
                         <input
-                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
                             value={globalConfig.automationInstance}
                             onChange={e => setGlobalConfig({ ...globalConfig, automationInstance: e.target.value })}
                             placeholder="ex: automacao-wtech (nome da instância na Evolution)"
                         />
-                        <div className="flex gap-2">
-                            <input
-                                className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
-                                value={automationTestPhone}
-                                onChange={e => setAutomationTestPhone(e.target.value)}
-                                placeholder="Telefone p/ teste (DDD + número)"
-                            />
+                        <button
+                            onClick={handleCreateAutomationInstance}
+                            disabled={isManagingAutomation || automationStatus === 'open'}
+                            className="bg-green-600 text-white px-4 py-2 rounded flex items-center justify-center gap-2 text-xs font-bold uppercase hover:bg-green-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        >
+                            <QrCode size={15} /> {automationStatus === 'open' ? 'Conectado' : isManagingAutomation ? 'Aguarde...' : 'Criar / Conectar (QR)'}
+                        </button>
+                        {globalConfig.automationInstance.trim() && (
                             <button
-                                onClick={handleTestAutomationInstance}
-                                disabled={isTestingAutomation}
-                                className="px-4 py-2 bg-wtech-gold text-black rounded text-xs font-bold uppercase hover:bg-yellow-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                                onClick={handleDeleteAutomationInstance}
+                                disabled={isManagingAutomation}
+                                className="bg-red-600 text-white px-3 py-2 rounded flex items-center justify-center gap-1 text-xs font-bold uppercase hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                title="Desconectar e apagar instância"
                             >
-                                {isTestingAutomation ? 'Enviando...' : 'Testar'}
+                                <Trash2 size={14} />
                             </button>
+                        )}
+                    </div>
+
+                    {automationQr && (
+                        <div className="mt-4 p-4 bg-[var(--admin-surface-2)] rounded-lg flex flex-col items-center border border-[var(--admin-border)]">
+                            <h4 className="font-bold text-sm text-[var(--admin-text-primary)] mb-2">Escaneie o QR Code com o número da automação</h4>
+                            <img src={automationQr} alt="QR Code WhatsApp Automação" className="w-56 h-56 border-4 border-white shadow-lg rounded-lg bg-white" />
+                            <p className="text-xs text-[var(--admin-text-secondary)] mt-2">WhatsApp → Aparelhos Conectados → Conectar Aparelho. O status atualiza sozinho ao conectar.</p>
                         </div>
+                    )}
+
+                    <div className="flex gap-2 mt-3">
+                        <input
+                            className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            value={automationTestPhone}
+                            onChange={e => setAutomationTestPhone(e.target.value)}
+                            placeholder="Telefone p/ teste (DDD + número)"
+                        />
+                        <button
+                            onClick={handleTestAutomationInstance}
+                            disabled={isTestingAutomation}
+                            className="px-4 py-2 bg-wtech-gold text-black rounded text-xs font-bold uppercase hover:bg-yellow-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        >
+                            {isTestingAutomation ? 'Enviando...' : 'Testar Envio'}
+                        </button>
                     </div>
                 </div>
             </div>

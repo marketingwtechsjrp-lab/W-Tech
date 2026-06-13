@@ -177,8 +177,14 @@ export default async function handler(req: any, res: any) {
     const payment = await mpRes.json();
     console.log(`[MP Webhook] Payment ${paymentId} → status: ${payment.status}`);
 
-    // Pagamento recusado/cancelado → devolve o lead para a roleta de atendentes
+    const isBalancePayment = payment.metadata?.payment_type === 'balance';
+
+    // Pagamento recusado/cancelado → devolve o lead para a roleta de atendentes.
+    // Exceção: cobrança de saldo (aluno já matriculado) não vai para a roleta.
     if (payment.status === 'rejected' || payment.status === 'cancelled') {
+      if (isBalancePayment) {
+        return res.status(200).json({ received: true, status: payment.status, skipped: 'balance payment rejected' });
+      }
       const refId = payment.external_reference as string | undefined;
       if (refId) {
         const { data: failedEnrollment } = await supabase
@@ -227,6 +233,32 @@ export default async function handler(req: any, res: any) {
     if (fetchError || !enrollment) {
       console.error('[MP Webhook] Enrollment not found:', fetchError);
       return res.status(404).json({ error: 'Enrollment not found' });
+    }
+
+    // ── Pagamento de SALDO (link gerado no painel) ──────────────────────────
+    // Soma ao amount_paid existente em vez de sobrescrever. Idempotente: se o
+    // mesmo payment_id já foi creditado, ignora (o MP reenvia o webhook).
+    if (isBalancePayment) {
+      if (enrollment.payment_id && String(enrollment.payment_id) === String(paymentId)) {
+        console.log(`[MP Webhook] Saldo ${paymentId} já creditado. Skipping.`);
+        return res.status(200).json({ received: true, already_processed: true });
+      }
+      const newPaid = Number(enrollment.amount_paid || 0) + Number(amountPaid || 0);
+      const { error: balErr } = await supabase
+        .from('SITE_Enrollments')
+        .update({
+          amount_paid: newPaid,
+          status: 'Confirmed',
+          payment_id: String(paymentId),
+          payment_method: 'Mercado Pago'
+        })
+        .eq('id', enrollmentId);
+      if (balErr) {
+        console.error('[MP Webhook] Falha ao creditar saldo:', balErr);
+        return res.status(500).json({ error: 'Failed to credit balance' });
+      }
+      console.log(`[MP Webhook] Saldo de ${amountPaid} creditado na inscrição ${enrollmentId} → total pago ${newPaid} ✓`);
+      return res.status(200).json({ received: true, balance_credited: amountPaid, new_amount_paid: newPaid });
     }
 
     // Idempotência: já confirmado → não duplicar
