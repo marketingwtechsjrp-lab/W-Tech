@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.5.0",
+    "date": "2026-06-14",
+    "title": "Rastreamento de campanha no checkout e loader Stape com suporte a Safari/ITP",
+    "changes": [
+      "Propagação completa das UTMs, fbclid e gclid das campanhas para o checkout da Kiwify, com persistência durante a navegação",
+      "Envio dos cookies _fbp/_fbc (Meta) e _ga (Google Analytics) para o checkout, melhorando o match quality da CAPI",
+      "Botão de checkout passa a abrir na mesma janela",
+      "Atualização do Stape Custom Loader (GTM server-side) com stapeUserId para contornar o ITP do Safari e preservar a identificação entre sessões"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.4.0",
     "date": "2026-06-13",
     "title": "Integração de Campanhas, Cobrança Manual, Link de Saldo MP e Webhook",
