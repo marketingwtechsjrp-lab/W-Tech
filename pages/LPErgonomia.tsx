@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
+import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
 import {
@@ -176,17 +177,13 @@ const LPErgonomia: React.FC = () => {
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
 
-    const [checkoutUrl, setCheckoutUrl] = useState("https://pay.kiwify.com.br/19v4nIa");
+    const KIWIFY_BASE = "https://pay.kiwify.com.br/19v4nIa";
+    const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
-            const sp = new URLSearchParams(window.location.search || hashQuery);
-            const paramsString = sp.toString();
-            if (paramsString) {
-                setCheckoutUrl(`https://pay.kiwify.com.br/19v4nIa?${paramsString}`);
-            }
-        }
+        // Persiste as UTMs/IDs de clique da campanha e monta o link com toda a atribuição.
+        captureTrackingParams();
+        setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
     }, []);
 
     const scrollTo = (id: string) => {
@@ -1238,8 +1235,6 @@ const LPErgonomia: React.FC = () => {
 
                         <motion.a
                             href={checkoutUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             id="kiwify-checkout-btn-lp-ergonomia"
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}

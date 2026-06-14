@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
+import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import {
     CheckCircle, ArrowRight, ChevronDown, ChevronRight,
     Play, Monitor, Clock, ShieldCheck, Settings, Zap, Award,
@@ -228,17 +229,12 @@ const LPErgonomia3: React.FC = () => {
     const prefersReduced = useReducedMotion();
     const [timeLeft, setTimeLeft] = useState(7 * 60);
 
-    const [checkoutUrl, setCheckoutUrl] = useState("https://pay.kiwify.com.br/19v4nIa");
+    const KIWIFY_BASE = "https://pay.kiwify.com.br/19v4nIa";
+    const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
-            const sp = new URLSearchParams(window.location.search || hashQuery);
-            const paramsString = sp.toString();
-            if (paramsString) {
-                setCheckoutUrl(`https://pay.kiwify.com.br/19v4nIa?${paramsString}`);
-            }
-        }
+        captureTrackingParams();
+        setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
     }, []);
     const [showBuyer, setShowBuyer] = useState(false);
     const [currentBuyer, setCurrentBuyer] = useState<{ name: string; role: string; city: string } | null>(null);
@@ -1208,8 +1204,6 @@ const LPErgonomia3: React.FC = () => {
                             {/* Main CTA */}
                             <motion.a
                                 href={checkoutUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
                                 id="kiwify-checkout-btn-lp-ergonomia3"
                                 whileHover={!prefersReduced ? { scale: 1.03 } : undefined}
                                 whileTap={!prefersReduced ? { scale: 0.97 } : undefined}

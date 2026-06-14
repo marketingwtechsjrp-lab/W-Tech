@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
+import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import AnimatedShaderBackground from '../components/ui/animated-shader-background';
 import {
     CheckCircle,
@@ -174,17 +175,12 @@ const LPErgonomia2: React.FC = () => {
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
 
-    const [checkoutUrl, setCheckoutUrl] = useState("https://pay.kiwify.com.br/19v4nIa");
+    const KIWIFY_BASE = "https://pay.kiwify.com.br/19v4nIa";
+    const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
-            const sp = new URLSearchParams(window.location.search || hashQuery);
-            const paramsString = sp.toString();
-            if (paramsString) {
-                setCheckoutUrl(`https://pay.kiwify.com.br/19v4nIa?${paramsString}`);
-            }
-        }
+        captureTrackingParams();
+        setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
     }, []);
 
     const scrollTo = (id: string) => {
@@ -1133,8 +1129,6 @@ const LPErgonomia2: React.FC = () => {
 
                         <motion.a
                             href={checkoutUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             id="kiwify-checkout-btn-lp-ergonomia2"
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}
