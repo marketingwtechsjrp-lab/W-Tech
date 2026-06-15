@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.5.2",
+    "date": "2026-06-15",
+    "title": "Ajustes de layout na LP Ergonomia v2 e vídeo internacional da Europa",
+    "changes": [
+      "Remoção da seção Bento Grid (\"Você se identifica?\") e das seções individuais Rafa/Alex",
+      "Depoimentos de alunos (\"O Que Dizem Nossos Alunos\") movidos para o topo, abaixo do Hero VSL",
+      "Inclusão de 4 novos depoimentos em vídeo via YouTube Shorts na LP (total de 8)",
+      "Criação de nova seção com vídeo de treinamento internacional da W-Tech na Europa (Abril 2026) tocando inline",
+      "Destaque no preço à vista com desconto de R$ 267,00 e remoção do timer de contagem regressiva da oferta"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.5.1",
     "date": "2026-06-15",
     "title": "Depoimentos em vídeo, cronograma por módulo e novo fluxo de pré-inscrição",

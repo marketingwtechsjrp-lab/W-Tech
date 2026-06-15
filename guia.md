@@ -1,7 +1,7 @@
 # 📘 Guia Completo do Sistema W-Tech Platform
 
 **Última Atualização:** 15/06/2026
-**Versão:** 3.5.1 (Baseada no `package.json`)
+**Versão:** 3.5.2 (Baseada no `package.json`)
 
 Este documento serve como a "Fonte de Verdade" para o funcionamento, arquitetura e manutenção de toda a plataforma W-Tech.
 
@@ -113,6 +113,7 @@ Este comando executa o script `scripts/deploy-update.js`, que:
 
 ## 📝 6. Histórico de Manutenção (Últimas 5 Modificações)
 
+- **15/06/2026**: Versão v3.5.2 - Ajustes de layout na LP Ergonomia v2: remoção do Bento Grid e seções Rafa/Alex, depoimentos no topo, inserção de vídeo da Europa tocando inline e 4 novos Shorts.
 - **11/06/2026**: Versão v3.0.12 - Fluxo de Inscrição e Pagamento Mercado Pago (Brasil). Opção de Sinal/Reserva de Vaga configurável, questionário complementar com ViaCEP e saldo devedor na confirmação de inscrição. Aba 'WhatsApp API' renomeada para 'Integrações'.
 - **29/04/2026**: Versão v3.0.4 - Implementação de redirecionamentos manuais para Landing Pages. Adicionado campo `customLink` no Admin para permitir que cursos/eventos apontem para URLs personalizadas, ignorando a LP automática.
 - **16/04/2026**: Versão v3.0.3 - Fix crítico de crash no módulo de cursos e redesign completo da UI de matrículas/cursos para padrão premium.

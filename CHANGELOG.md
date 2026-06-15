@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.5.2 (2026-06-15) - Ajustes de layout na LP Ergonomia v2 e vídeo internacional da Europa
+- Remoção da seção Bento Grid ("Você se identifica?") e das seções individuais Rafa/Alex
+- Depoimentos de alunos ("O Que Dizem Nossos Alunos") movidos para o topo, abaixo do Hero VSL
+- Inclusão de 4 novos depoimentos em vídeo via YouTube Shorts na LP (total de 8)
+- Criação de nova seção com vídeo de treinamento internacional da W-Tech na Europa (Abril 2026) tocando inline
+- Destaque no preço à vista com desconto de R$ 267,00 e remoção do timer de contagem regressiva da oferta
+
 ## v3.5.1 (2026-06-15) - Depoimentos em vídeo, cronograma por módulo e novo fluxo de pré-inscrição
 - Depoimentos das landing pages agora exibem somente vídeos do YouTube (Shorts incluídos), com 4 depoimentos padrão da W-Tech em todas as páginas de cursos presenciais
 - Cronograma do curso reformulado: estruturado por módulo (título, objetivo, tópicos e resultado), editado no Editor de Landing Page, com modelo padrão e renderização visual em todos os 8 templates; o texto é espelhado para o curso (WhatsApp/lembretes)
