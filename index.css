@@ -150,3 +150,43 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+
+/* ── CTA: brilho (shine) + glow contínuo para chamar atenção ── */
+@keyframes ctaShine {
+  0% { transform: translateX(-160%) skewX(-20deg); }
+  55%, 100% { transform: translateX(320%) skewX(-20deg); }
+}
+@keyframes ctaGlowGold {
+  0%, 100% { box-shadow: 0 0 18px rgba(212,175,55,0.35), 0 8px 24px rgba(0,0,0,0.35); }
+  50% { box-shadow: 0 0 44px rgba(212,175,55,0.8), 0 8px 24px rgba(0,0,0,0.35); }
+}
+@keyframes ctaGlowRed {
+  0%, 100% { box-shadow: 0 0 18px rgba(230,36,29,0.4), 0 8px 24px rgba(0,0,0,0.35); }
+  50% { box-shadow: 0 0 48px rgba(230,36,29,0.9), 0 8px 24px rgba(0,0,0,0.35); }
+}
+.cta-attention {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.cta-attention::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.55), transparent);
+  transform: translateX(-160%) skewX(-20deg);
+  animation: ctaShine 3.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.cta-gold { animation: ctaGlowGold 1.8s ease-in-out infinite; }
+.cta-red { animation: ctaGlowRed 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-attention::after,
+  .cta-gold,
+  .cta-red { animation: none; }
+}

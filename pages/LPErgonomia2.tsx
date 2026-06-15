@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
-import AnimatedShaderBackground from '../components/ui/animated-shader-background';
+// Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
+const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
 import {
     CheckCircle,
     ArrowRight,
@@ -48,7 +49,7 @@ const useMotionConfig = () => {
     };
 };
 
-/* ─── Animation Variants ─── */
+/* ─── Animation Variants (respecting prefers-reduced-motion via hook) ─── */
 const fadeUp = {
     hidden: { opacity: 0, y: 24 },
     visible: (i: number = 0) => ({
@@ -86,6 +87,7 @@ const slideFromRight = {
     visible: { opacity: 1, x: 0, transition: { duration: 0.25, ease: 'easeOut' } },
 };
 
+/* ─── Hover configs ─── */
 const cardHover = {
     y: -6,
     transition: { duration: 0.18, ease: 'easeOut' },
@@ -171,14 +173,61 @@ const Reveal: React.FC<{
 };
 
 /* ─── Main Component ─── */
+// Depoimentos reais em vídeo (YouTube Shorts) — substituem os depoimentos de texto
+const SHORT_TESTIMONIALS = ['_K7qfx_hC-k', 'mYoN-gxpnq0', 'rY3M9H6qE4M', '8TaJ_e8o14Q'];
+
+// Fachada leve: mostra a thumbnail do YouTube e só carrega o iframe ao clicar (performance)
+const YoutubeShort: React.FC<{ id: string }> = ({ id }) => {
+    const [playing, setPlaying] = useState(false);
+    return (
+        <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-xl">
+            {playing ? (
+                <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`}
+                    title="Depoimento de aluno W-Tech"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 h-full w-full"
+                />
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setPlaying(true)}
+                    aria-label="Assistir depoimento"
+                    className="group absolute inset-0 h-full w-full"
+                >
+                    <img
+                        src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+                        alt="Depoimento de aluno do curso de suspensão W-Tech"
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/30 transition-colors group-hover:bg-black/20" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-wtech-gold shadow-[0_0_40px_rgba(212,175,55,0.5)] transition-transform group-hover:scale-110">
+                            <Play fill="black" size={26} className="ml-1 text-black" />
+                        </div>
+                    </div>
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1">
+                        {[...Array(5)].map((_, j) => (
+                            <Star key={j} size={12} className="text-wtech-gold fill-wtech-gold drop-shadow" />
+                        ))}
+                    </div>
+                </button>
+            )}
+        </div>
+    );
+};
+
 const LPErgonomia2: React.FC = () => {
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
 
-    const KIWIFY_BASE = "https://pay.kiwify.com.br/19v4nIa";
+    const KIWIFY_BASE = "https://pay.kiwify.com.br/5zdsgcS";
     const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
 
     useEffect(() => {
+        // Persiste as UTMs/IDs de clique da campanha e monta o link com toda a atribuição.
         captureTrackingParams();
         setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
     }, []);
@@ -187,11 +236,32 @@ const LPErgonomia2: React.FC = () => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    /* ─── SALES HOOKS ─── */
-    const [timeLeft, setTimeLeft] = useState(7 * 60);
+    /* ─── SALES HOOKS HOOKS ─── */
+    const [videoPlaying, setVideoPlaying] = useState(false);
+    const [videoActivated, setVideoActivated] = useState(false); // o MP4 só é anexado após o clique
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    // CTA final: só monta o shader pesado quando a seção se aproxima da viewport
+    const ctaRef = useRef<HTMLElement>(null);
+    const ctaInView = useInView(ctaRef, { once: true, margin: '300px' });
+
+    const handlePlayVideo = () => {
+        setVideoActivated(true);
+        // aguarda o <source> ser injetado no DOM antes de carregar/dar play
+        requestAnimationFrame(() => {
+            if (videoRef.current) {
+                videoRef.current.load();
+                videoRef.current.play().catch(() => { });
+                setVideoPlaying(true);
+            }
+        });
+    };
+
+    const [timeLeft, setTimeLeft] = useState(7 * 60); // 7 minutes in seconds
     const [showBuyer, setShowBuyer] = useState(false);
     const [currentBuyer, setCurrentBuyer] = useState<{ name: string, role: string, city: string } | null>(null);
 
+    // Countdown Timer logic
     useEffect(() => {
         if (timeLeft <= 0) return;
         const timer = setInterval(() => {
@@ -203,6 +273,7 @@ const LPErgonomia2: React.FC = () => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
 
+    // Fake Buyers Notification Logic (Men, amateur pilots, and mechanics only)
     const buyers = [
         { name: 'Roberto S.', role: 'Piloto Amador', city: 'São Paulo, SP' },
         { name: 'Daniel M.', role: 'Mecânico', city: 'Belo Horizonte, MG' },
@@ -217,63 +288,86 @@ const LPErgonomia2: React.FC = () => {
             const randomBuyer = buyers[Math.floor(Math.random() * buyers.length)];
             setCurrentBuyer(randomBuyer);
             setShowBuyer(true);
-            setTimeout(() => { setShowBuyer(false); }, 5000);
-        }, 18000);
+
+            // Hide after 5 seconds
+            setTimeout(() => {
+                setShowBuyer(false);
+            }, 5000);
+        }, 18000); // 18 seconds between each popup
+
         return () => clearInterval(interval);
+    }, []);
+
+    /* ─── SEO: canonical próprio + Open Graph específicos do curso ─── */
+    /* (SPA: Google executa JS e lê isto; para preview garantido no WhatsApp seria
+        necessário SSR/prerender — mantemos as tags corretas mesmo assim.) */
+    useEffect(() => {
+        const COURSE_URL = 'https://site.w-techbrasil.com.br/curso-suspensao-piloto';
+        const OG_IMAGE = 'https://site.w-techbrasil.com.br/hero-desktop-alex.webp';
+        const prevTitle = document.title;
+        document.title = 'Curso de Suspensão Off-Road | Regule a Suspensão da Sua Moto — W-Tech';
+
+        const upsertMeta = (selector: string, attr: string, key: string, content: string) => {
+            let el = document.head.querySelector<HTMLMetaElement>(selector);
+            if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el); }
+            el.setAttribute('content', content);
+        };
+        const setCanonical = (href: string) => {
+            let el = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+            if (!el) { el = document.createElement('link'); el.rel = 'canonical'; document.head.appendChild(el); }
+            const prev = el.href; el.href = href; return prev;
+        };
+
+        const prevCanonical = setCanonical(COURSE_URL);
+        upsertMeta('meta[name="description"]', 'name', 'description', 'Curso online de regulagem de suspensão Off-Road: SAG, molas, cliques, óleo e ergonomia. Do zero ao acerto, com prática real na moto. Acesso por 12 meses + bônus.');
+        upsertMeta('meta[property="og:title"]', 'property', 'og:title', 'Curso de Suspensão Off-Road — W-Tech Brasil');
+        upsertMeta('meta[property="og:description"]', 'property', 'og:description', 'Aprenda a regular a suspensão da sua moto do zero: SAG, molas, cliques e ergonomia, com prática real. 11 módulos + bônus Paschoalin.');
+        upsertMeta('meta[property="og:url"]', 'property', 'og:url', COURSE_URL);
+        upsertMeta('meta[property="og:image"]', 'property', 'og:image', OG_IMAGE);
+        upsertMeta('meta[property="twitter:title"]', 'property', 'twitter:title', 'Curso de Suspensão Off-Road — W-Tech Brasil');
+        upsertMeta('meta[property="twitter:url"]', 'property', 'twitter:url', COURSE_URL);
+        upsertMeta('meta[property="twitter:image"]', 'property', 'twitter:image', OG_IMAGE);
+
+        return () => {
+            document.title = prevTitle;
+            setCanonical(prevCanonical || 'https://w-techbrasil.com.br/');
+        };
     }, []);
 
     /* ━━━ SECTION DATA ━━━ */
 
-    // [TIPO 2] — Profiles com copy atualizado
     const profiles = [
         {
             icon: <Bike size={28} />,
             tag: 'Para Todo Piloto',
-            title: 'Piloto',
-            pain: 'Seus braços cansam rápido, sente falta de performance ou tração, desempenho e equilíbrio — e isso te cansa rápido. Isso não é normal. Quer melhorar e não sabe por onde começar? Este curso é um guia definitivo do zero para o acerto da sua moto.',
+            title: 'Piloto Amador',
+            pain: 'Sente a moto "quicar" demais e os braços cansarem rápido. Sabe que algo está errado na suspensão, mas não sabe por onde começar — nem quantos cliques dar. Este curso é o seu guia definitivo do zero ao acerto.',
         },
         {
             icon: <Mountain size={28} />,
-            tag: 'Trilha - Off Road',
-            title: 'Trilha / Off-Road',
-            pain: 'Sua moto perde tração em subidas ou falta nos buracos? Não é falta de preparo físico — a suspensão está ajustada de forma incorreta.',
+            tag: 'Trilha & Enduro',
+            title: 'Trilha / Enduro',
+            pain: 'Perde tração em subidas, sofre com fim de curso em saltos e buracos, ou sente a frente "espalhar" nas curvas. Termina a trilha exausto antes do tempo — não é falta de preparo físico, é a suspensão errada.',
         },
         {
             icon: <Wrench size={28} />,
             tag: 'Serviço Nobre',
             title: 'Mecânico / Preparador',
-            pain: 'Este curso vai elevar seu nível na questão de ajustes e acertos, com informações técnicas que você vai poder usar para realizar todo o acerto técnico nas motos de todos os seus clientes — melhorando seu nível de entrega.',
+            pain: 'Quer agregar o serviço mais lucrativo da oficina: o acerto de suspensão. Saia das revisões básicas e entre no mundo das bengalas, amortecedores e preparações — e ainda ensine seus clientes a regular a ergonomia.',
         },
         {
             icon: <Settings size={28} />,
             tag: 'Diferencial Competitivo',
             title: 'Dono de Oficina',
-            pain: 'Seus clientes pedem ajustes de cliques que a equipe não sabe resolver, perdendo serviço e fidelidade para oficinas especializadas de Off-Road. Dê esse diferencial à sua equipe e melhore o nível de entrega para seus clientes.',
+            pain: 'Seus clientes pedem ajustes de cliques que sua equipe não sabe resolver, perdendo serviço — e fidelidade — para oficinas especializadas. Mostre aos seus clientes como regular a ergonomia e dê dicas de suspensão que os farão voltar sempre.',
         },
     ];
 
-    // [TIPO 2] — Ergo Blocks com copy atualizado
     const ergoBlocks = [
-        {
-            icon: <CircleDot size={24} />,
-            title: 'O SAG',
-            desc: 'É o ajuste da folga da suspensão. Com o primeiro terço de funcionamento preservado, você garante uma moto equilibrada e segura — o ponto de partida obrigatório antes de qualquer ajuste.',
-        },
-        {
-            icon: <Activity size={24} />,
-            title: 'Molas',
-            desc: 'Um dos itens mais importantes da suspensão: sustenta o peso do piloto e da moto, equilibrando absorção e retorno para cada tipo de peso e nível.',
-        },
-        {
-            icon: <Move size={24} />,
-            title: 'Ergonomia',
-            desc: 'Ajuste da moto onde você adequa toda a estrutura ao piloto — altura e ângulo de guidão, pedaleiras e sua integração à suspensão.',
-        },
-        {
-            icon: <Disc size={24} />,
-            title: 'Pneus e Tração',
-            desc: 'É onde começa a suspensão da moto. Tudo começa pelo pneu — a escolha correta e a calibragem são a ponte final entre o chão e a sua válvula de suspensão.',
-        },
+        { icon: <CircleDot size={24} />, title: 'O SAG', desc: 'A geometria sagrada da moto. O ponto de partida obrigatório antes de encostar na chave de fenda.' },
+        { icon: <Activity size={24} />, title: 'Molas', desc: 'O equilíbrio exato entre absorção e retorno (os famosos "cliques") para cada tipo de peso e nível.' },
+        { icon: <Move size={24} />, title: 'Ergonomia (Cockpit)', desc: 'Como você se integra à suspensão ajustada: altura e ângulo de guidão e pedaleira.' },
+        { icon: <Disc size={24} />, title: 'Pneus e Tração', desc: 'A escolha correta e a calibragem - a ponte final entre o chão e a sua válvula de suspensão.' },
     ];
 
     const modules = [
@@ -284,8 +378,7 @@ const LPErgonomia2: React.FC = () => {
         { num: '05', title: 'O SAG — A Geometria Sagrada', desc: 'Medição e ajuste prático do SAG estático e dinâmico, do zero', aulas: 2 },
         { num: '06', title: 'Óleo e Viscosidades', desc: 'Como o fluido controla a dinâmica da suspensão e quando substituir', aulas: 1 },
         { num: '07', title: 'Desmistificando os "Cliques"', desc: 'Compressão, retorno: o que cada clique faz e como ajustar na prática', aulas: 2 },
-        // [TIPO 2] — Módulo 08 com título atualizado
-        { num: '08', title: 'Suspensão e Eixo Dianteiro', desc: 'As bengalas, o ritual de instalação da roda e porque a frente para de funcionar', aulas: 2 },
+        { num: '08', title: 'Suspensão do Eixo Dianteiro', desc: 'As bengalas, o ritual de instalação da roda e por que a frente dura te machuca', aulas: 2 },
         { num: '09', title: 'Pneus e Tração', desc: 'Pressão correta, regulagem de PSI e como o pneu determina a tração', aulas: 2 },
         { num: '10', title: 'Relação e Corrente', desc: 'Ajustes de relação que impactam diretamente a entrega de potência', aulas: 2 },
         { num: '11', title: 'Kits e Ferramentas', desc: 'O setup ideal da sua bancada para regular suspensão como um profissional', aulas: 1 },
@@ -334,113 +427,158 @@ const LPErgonomia2: React.FC = () => {
         { q: 'Posso assistir no celular?', a: 'Sim. A plataforma funciona em qualquer dispositivo — celular, tablet ou computador.' },
         { q: 'O curso serve para qual tipo de moto?', a: 'Os princípios ensinados se aplicam a Enduro, Motocross, Big Trail e até mesmo Hard Enduro. As teorias de molas, hidráulica e SAG são fundamentos universais para o Off-Road.' },
         { q: 'Por quanto tempo tenho acesso?', a: 'O seu acesso é válido por 12 meses (1 Ano). Você pode reassistir as aulas quantas vezes quiser durante este período.' },
-        { q: 'Tem garantia?', a: 'Sim. Garantia incondicional de 7 dias. Se não gostar, devolvemos 100% do seu investimento.' },
+        { q: 'Tem garantia?', a: 'Sim. Garantia incondicional de 30 dias. Se não gostar, devolvemos 100% do seu investimento.' },
     ];
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden pb-20 lg:pb-0">
 
             {/* ═══════════════════════════════════════════ */}
             {/* 0 · BANNER DE ESCASSEZ                     */}
             {/* ═══════════════════════════════════════════ */}
+            {/* Mecanismo único de escassez: vagas do lote (sem misturar com "preço sobe") */}
             <div className="bg-gradient-to-r from-wtech-red to-red-900 text-white py-2.5 px-4 text-center sticky top-0 z-50 shadow-md">
-                <div className="container mx-auto flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-xs md:text-sm font-bold uppercase tracking-widest">
-                    <span className="flex items-center gap-2">
-                        <Zap size={16} className="text-yellow-300 animate-pulse" />
-                        Últimas vagas do lote atual!
-                    </span>
-                    <span className="hidden md:inline text-white/50">•</span>
-                    <span>O valor promocional expira em breve</span>
+                <div className="container mx-auto flex items-center justify-center gap-2 md:gap-3 text-xs md:text-sm font-bold uppercase tracking-widest">
+                    <Zap size={16} className="text-yellow-300 animate-pulse shrink-0" />
+                    <span>Últimas vagas do lote atual</span>
                 </div>
             </div>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 1 · HERO                                   */}
+            {/* 1 · HERO COMPLETO COM VSL                  */}
             {/* ═══════════════════════════════════════════ */}
             <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-12 md:pt-0">
-                {/* BG */}
+                {/* BG — imagem LCP real (detectável pelo browser) com prioridade alta. */}
+                {/* Sem lazy-load: é o maior elemento above-the-fold. */}
                 <div className="absolute inset-0 z-0">
                     <motion.div
                         initial={{ scale: 1.05 }}
-                        animate={{ scale: 1, opacity: 1 }}
+                        animate={{ scale: 1 }}
                         transition={{ duration: shouldAnimate ? 1.2 : 0, ease: 'easeOut' }}
-                        className="absolute inset-0 bg-cover bg-top lg:bg-center bg-no-repeat bg-[url('/hero-mobile-alex.jpg')] md:bg-[url('/hero-desktop-alex.jpg')]"
-                    />
+                        className="absolute inset-0"
+                    >
+                        <picture>
+                            <source media="(min-width: 768px)" srcSet="/hero-desktop-alex.webp" type="image/webp" />
+                            <img
+                                src="/hero-mobile-alex.webp"
+                                alt="Alex Crepaldi ajustando a suspensão de uma moto Off-Road"
+                                fetchPriority="high"
+                                decoding="async"
+                                width={1920}
+                                height={1280}
+                                className="absolute inset-0 w-full h-full object-cover object-top lg:object-center"
+                            />
+                        </picture>
+                    </motion.div>
                     <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/80 to-black/60 z-10" />
-                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    {/* Overlay reforçado — mais forte no mobile p/ contraste do título */}
+                    <div className="absolute inset-0 bg-black/60 md:bg-black/40 z-10" />
+                    {/* Reforço lateral esquerdo no mobile (onde fica o texto) */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent md:hidden z-10" />
                 </div>
 
                 <div className="container mx-auto px-6 relative z-20 pt-10 pb-20">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center max-w-7xl mx-auto">
 
-                        {/* Text — Left */}
-                        <motion.div initial="hidden" animate="visible" variants={stagger}>
-                            {/* [TIPO 2] Badge Label */}
+                        {/* Text (Left Column) */}
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-1 lg:col-start-1 lg:row-start-1">
                             <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6 max-w-fit">
                                 <Zap size={14} className="text-wtech-gold animate-pulse" />
                                 <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">Curso Online — W-Tech</span>
                             </motion.div>
 
-                            {/* [TIPO 2] H1: foco em piloto aprendendo do zero */}
                             <motion.h1 variants={v} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-6 drop-shadow-2xl">
-                                O único curso que ensina<br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 drop-shadow-none">piloto a regular</span><br />
-                                a suspensão do zero
+                                Regule a <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 drop-shadow-none">Suspensão<br className="hidden lg:block" /></span><br className="lg:hidden" />
+                                <span className="text-3xl md:text-4xl lg:text-5xl">da Sua Moto. Do Zero.</span>
                             </motion.h1>
 
-                            {/* [TIPO 2] Subheadline: foco em desconforto e perda de desempenho */}
-                            <motion.p variants={v} className="text-base md:text-xl text-gray-200 leading-relaxed mb-4 max-w-lg font-bold">
-                                Chega de falta de desempenho e desconforto — perda de tração, insegurança e cansaço não fazem parte de uma moto bem ajustada.
+                            <motion.p variants={v} className="text-base md:text-xl text-gray-200 leading-relaxed mb-6 max-w-lg font-bold">
+                                O único curso que transforma piloto, trilheiro, mecânico e dono de oficina em especialista de suspensão Off-Road — <strong className="text-wtech-gold">com prática real, na moto real.</strong>
                             </motion.p>
 
-                            {/* [TIPO 2] Complemento: primeira volta */}
-                            <motion.p variants={v} className="text-sm text-gray-400 mb-4 max-w-lg border-l-2 border-wtech-gold pl-4 hidden md:block">
-                                Tudo que você precisa para sua moto performar bem — aprenda a acertar SAG, cliques, molas e geometria e sinta a diferença já na <strong className="text-white">primeira volta com a moto.</strong>
+                            <motion.p variants={v} className="text-sm text-gray-400 mb-6 max-w-lg border-l-2 border-wtech-gold pl-4 hidden md:block">
+                                Se a sua moto quica, espalha nas curvas e cansa os seus braços antes da hora, o problema não é você — é a suspensão fora do ponto. Aqui você aprende a acertar do zero: SAG, molas, óleo, cliques e ergonomia.
                             </motion.p>
 
-                            {/* [TIPO 2] Badge zero-knowledge */}
-                            <motion.p variants={v} className="text-xs text-wtech-gold font-bold uppercase tracking-widest mb-8 max-w-lg">
-                                Não importa se você tem conhecimento algum — neste curso você vai aprender o detalhe do zero.
-                            </motion.p>
+                            {/* Âncora de preço logo no topo (não só no rodapé) */}
+                            <motion.div variants={v} className="flex flex-wrap items-center gap-3">
+                                <div className="inline-flex items-center gap-2 bg-black/40 border border-wtech-gold/30 rounded-xl px-4 py-2.5 backdrop-blur-md">
+                                    <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">A partir de</span>
+                                    <span className="text-wtech-gold font-black text-lg leading-none tracking-tight">10x R$ 32,00</span>
+                                </div>
+                                <div className="inline-flex items-center gap-2 text-gray-200 text-xs font-semibold">
+                                    <ShieldCheck size={15} className="text-wtech-gold" /> Garantia de 30 dias
+                                </div>
+                            </motion.div>
+                        </motion.div>
 
-                            <motion.div variants={v} className="flex flex-col sm:flex-row gap-4">
-                                <motion.button
-                                    onClick={() => scrollTo('cta-final')}
-                                    whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(212,175,55,0.4)' } : undefined}
-                                    whileTap={shouldAnimate ? ctaTap : undefined}
-                                    className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(212,175,55,0.25)] flex items-center justify-center gap-3 w-full sm:w-auto hover:brightness-110 relative overflow-hidden group"
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col gap-6 order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+                            <motion.div
+                                variants={v}
+                                className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group cursor-pointer"
+                                onClick={handlePlayVideo}
+                            >
+                                <video
+                                    ref={videoRef}
+                                    poster="/images/vsl-thumbnail.webp"
+                                    controls={videoPlaying}
+                                    playsInline
+                                    preload="none"
+                                    className="w-full h-full object-cover"
+                                    onPlay={() => setVideoPlaying(true)}
+                                    onPause={() => setVideoPlaying(false)}
                                 >
-                                    <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                                    <span className="relative z-10 flex items-center gap-2">Quero Regular Minha Suspensão <ArrowRight strokeWidth={3} size={18} /></span>
-                                </motion.button>
+                                    {/* Fonte anexada só após o clique → evita request falho no carregamento da página */}
+                                    {videoActivated && (
+                                        <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
+                                    )}
+                                    Seu navegador não suporta vídeos.
+                                </video>
+
+                                {!videoPlaying && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors z-20">
+                                        <div className="relative">
+                                            {/* Pulse Rings */}
+                                            <div className="absolute inset-0 bg-wtech-gold/40 rounded-full animate-ping scale-150 opacity-20" />
+                                            <div className="absolute inset-0 bg-wtech-gold/30 rounded-full animate-pulse scale-125 opacity-40" />
+                                            
+                                            {/* Play Button */}
+                                            <div className="relative w-20 h-20 bg-wtech-gold rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(212,175,55,0.6)] group-hover:scale-110 transition-transform">
+                                                <Play fill="black" size={32} className="text-black ml-1" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="absolute inset-0 pointer-events-none border-2 border-wtech-gold/20 rounded-2xl z-10" />
+                            </motion.div>
+
+                            <motion.button
+                                onClick={() => scrollTo('cta-final')}
+                                variants={v}
+                                whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(212,175,55,0.4)' } : undefined}
+                                whileTap={shouldAnimate ? ctaTap : undefined}
+                                className="cta-attention cta-gold bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-8 py-5 rounded-xl font-black text-sm md:text-base uppercase tracking-[0.15em] transition-all shadow-[0_0_40px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 w-full hover:brightness-110 relative overflow-hidden group"
+                            >
+                                <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                                <span className="relative z-10 flex items-center gap-3">
+                                    Quero Regular Minha Suspensão Agora <ArrowRight strokeWidth={3} size={20} />
+                                </span>
+                            </motion.button>
+                        </motion.div>
+
+                        {/* Secondary Button (Below Text on Desktop, Bottom on Mobile) */}
+                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-3 lg:col-start-1 lg:row-start-2 lg:-mt-4">
+                            <motion.div variants={v}>
                                 <motion.button
                                     onClick={() => scrollTo('modulos')}
                                     whileHover={shouldAnimate ? { scale: 1.02 } : undefined}
                                     whileTap={shouldAnimate ? ctaTap : undefined}
-                                    className="border border-white/20 text-white px-8 py-4 rounded-xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 w-full sm:w-auto hover:border-wtech-gold/50 hover:text-wtech-gold"
+                                    className="border border-white/20 text-white px-8 py-4 rounded-xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 w-full hover:border-wtech-gold/50 hover:text-wtech-gold"
                                 >
                                     Ver o Conteúdo <ChevronDown size={16} />
                                 </motion.button>
                             </motion.div>
-                        </motion.div>
-
-                        {/* Video / VSL — Right */}
-                        <motion.div
-                            initial="hidden"
-                            animate="visible"
-                            variants={v}
-                            className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] group bg-zinc-900"
-                        >
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                src="https://www.youtube.com/embed/rbslvR27uT0?autoplay=1&mute=1&controls=1&rel=0&loop=1"
-                                title="Apresentação W-Tech"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="absolute inset-0 w-full h-full"
-                            ></iframe>
                         </motion.div>
                     </div>
                 </div>
@@ -452,39 +590,40 @@ const LPErgonomia2: React.FC = () => {
                     transition={{ delay: shouldAnimate ? 1 : 0, duration: 0.5 }}
                     className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
                 >
-                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-600">Scrolle</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-600">Role</span>
                     <div className="w-5 h-8 border-2 border-gray-600 rounded-full flex items-start justify-center p-1 overflow-hidden">
                         <div className="w-1 h-2 bg-wtech-gold rounded-full animate-scrolldown" />
                     </div>
                 </motion.div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 2 · PARA QUEM É (BENTO GRID)               */}
+            {/* 2 · PARA QUEM É (BENTO GRID)              */}
             {/* ═══════════════════════════════════════════ */}
             <section className="py-24 bg-[#050505] relative overflow-hidden">
                 <GridVignetteBackground className="opacity-80" x={50} y={50} intensity={100} horizontalVignetteSize={50} verticalVignetteSize={30} />
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-gold/40 to-transparent" />
+
+                {/* Background glow */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] bg-wtech-gold/5 blur-[100px] rounded-full z-0" />
 
                 <div className="container mx-auto px-6 relative z-10">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        {/* [TIPO 2] — Removido "Você se identifica?" */}
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Você se identifica?</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter drop-shadow-lg">
                             Este Curso é <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-500">Para Você</span>
                         </motion.h2>
-                        {/* [TIPO 2] — Copy atualizado: zero-knowledge inclusive */}
                         <motion.p variants={v} className="text-gray-400 max-w-2xl mx-auto text-base">
-                            Não importa se você tem conhecimento algum — neste curso você vai aprender o detalhe do zero.
+                            Não importa se você é piloto, trilheiro, mecânico ou dono de oficina.<br className="hidden md:block" /> Se você já sentiu que a sua moto pode dar mais — este curso é a resposta.
                         </motion.p>
                     </motion.div>
 
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="grid grid-cols-1 md:grid-cols-12 auto-rows-[minmax(220px,auto)] gap-4 md:gap-6 max-w-6xl mx-auto">
 
-                        {/* Box 1 - Piloto (Large) */}
+                        {/* Box 1 - Piloto (qualquer nível) - Large */}
                         <motion.div
                             variants={v}
-                            style={{ backgroundImage: `url('/images/lp-curso/1.jpg')` }}
+                            style={{ backgroundImage: `url('/images/lp-curso/1.webp')` }}
                             className="md:col-span-7 bg-zinc-900/80 bg-blend-overlay bg-cover bg-center border border-white/10 rounded-3xl p-8 md:p-10 transition-all hover:bg-zinc-800/80 group overflow-hidden relative shadow-lg cursor-default"
                         >
                             <div className="absolute inset-0 bg-black/65 pointer-events-none z-0" />
@@ -494,16 +633,15 @@ const LPErgonomia2: React.FC = () => {
                             </div>
                             <div className="inline-block text-[9px] font-black uppercase tracking-widest text-wtech-gold/80 border border-wtech-gold/30 px-2 py-1 rounded mb-3 relative z-10">Para Todo Piloto</div>
                             <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">Piloto</h3>
-                            {/* [TIPO 2] Copy atualizado */}
                             <p className="text-gray-300 text-sm md:text-base leading-relaxed relative z-10">
-                                Seus braços cansam rápido, sente falta de performance ou tração, desempenho e equilíbrio — e isso te cansa rápido. <strong className="text-white">Isso não é normal.</strong> Quer melhorar e não sabe por onde começar? Este curso é um guia definitivo do zero para o acerto da sua moto.
+                                Sente a moto "quicar" demais e os braços cansarem rápido. Sabe que algo está errado na suspensão, <strong className="text-white">mas não sabe por onde começar — nem quantos cliques dar.</strong> Este curso é o seu guia definitivo do zero ao acerto.
                             </p>
                         </motion.div>
 
-                        {/* Box 2 - Trilha Off-Road (Medium) */}
+                        {/* Box 2 - Enduro (Medium) */}
                         <motion.div
                             variants={v}
-                            style={{ backgroundImage: `url('/images/lp-curso/2.jpg')` }}
+                            style={{ backgroundImage: `url('/images/lp-curso/2.webp')` }}
                             className="md:col-span-5 bg-zinc-900/80 bg-blend-overlay bg-cover bg-center border border-white/10 rounded-3xl p-8 md:p-10 transition-all hover:bg-zinc-800/80 group overflow-hidden relative shadow-lg cursor-default"
                         >
                             <div className="absolute inset-0 bg-black/65 pointer-events-none z-0" />
@@ -511,19 +649,17 @@ const LPErgonomia2: React.FC = () => {
                             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-wtech-gold mb-4 group-hover:scale-110 transition-transform relative z-10">
                                 <Mountain size={24} />
                             </div>
-                            {/* [TIPO 2] Tag atualizada */}
-                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Trilha - Off Road</div>
-                            <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">Trilha / Off-Road</h3>
-                            {/* [TIPO 2] Copy atualizado */}
+                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Trilha & Enduro</div>
+                            <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">Trilha / Enduro</h3>
                             <p className="text-gray-300 text-sm leading-relaxed relative z-10">
-                                Sua moto perde tração em subidas ou falta nos buracos? <strong className="text-white">Não é falta de preparo físico</strong> — a suspensão está ajustada de forma incorreta.
+                                Perde tração em subidas, sofre com fim de curso em saltos e buracos. Termina a trilha <strong className="text-white">exausto antes do tempo</strong> — não é falta de preparo físico. É a suspensão errada.
                             </p>
                         </motion.div>
 
                         {/* Box 3 - Mecânico (Medium) */}
                         <motion.div
                             variants={v}
-                            style={{ backgroundImage: `url('/images/lp-curso/3.jpg')` }}
+                            style={{ backgroundImage: `url('/images/lp-curso/3.webp')` }}
                             className="md:col-span-5 bg-zinc-900/80 bg-blend-overlay bg-cover bg-center border border-white/10 rounded-3xl p-8 md:p-10 transition-all hover:bg-zinc-800/80 group overflow-hidden relative shadow-lg cursor-default"
                         >
                             <div className="absolute inset-0 bg-black/65 pointer-events-none z-0" />
@@ -533,16 +669,15 @@ const LPErgonomia2: React.FC = () => {
                             </div>
                             <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Serviço Nobre</div>
                             <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">Mecânico / Preparador</h3>
-                            {/* [TIPO 2] Copy atualizado */}
                             <p className="text-gray-300 text-sm leading-relaxed relative z-10">
-                                Este curso vai elevar seu nível na questão de ajustes e acertos, com <strong className="text-white">informações técnicas</strong> que você vai poder usar para realizar todo o acerto técnico nas motos de todos os seus clientes — melhorando seu nível de entrega.
+                                Quer agregar o serviço mais lucrativo da oficina: o acerto de suspensão. Saia das revisões básicas e <strong className="text-white">entre no mundo das bengalas, amortecedores e preparações</strong> — e ainda ensine seus clientes.
                             </p>
                         </motion.div>
 
                         {/* Box 4 - Dono de Oficina (Large) */}
                         <motion.div
                             variants={v}
-                            style={{ backgroundImage: `url('/images/lp-curso/4.jpg')` }}
+                            style={{ backgroundImage: `url('/images/lp-curso/4.webp')` }}
                             className="md:col-span-7 bg-zinc-900/80 bg-blend-overlay bg-cover bg-center border border-white/10 rounded-3xl p-8 md:p-10 transition-all hover:bg-zinc-800/80 group overflow-hidden relative shadow-lg cursor-default"
                         >
                             <div className="absolute inset-0 bg-black/65 pointer-events-none z-0" />
@@ -552,9 +687,8 @@ const LPErgonomia2: React.FC = () => {
                             </div>
                             <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Diferencial Competitivo</div>
                             <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">Dono de Oficina</h3>
-                            {/* [TIPO 2] Copy atualizado: adicionado "melhorar nível de entrega" */}
                             <p className="text-gray-300 text-sm md:text-base leading-relaxed relative z-10">
-                                Seus clientes pedem ajustes de cliques que a equipe não sabe resolver, <strong className="text-white">perdendo serviço e fidelidade</strong> para oficinas especializadas de Off-Road. Dê esse diferencial à sua equipe e melhore o nível de entrega para seus clientes.
+                                Seus clientes pedem ajustes de cliques que a equipe não sabe resolver, <strong className="text-white">perdendo serviço e fidelidade</strong> para oficinas especializadas de Off-Road. Dê esse diferencial à sua equipe.
                             </p>
                         </motion.div>
                     </motion.div>
@@ -566,7 +700,7 @@ const LPErgonomia2: React.FC = () => {
                             variants={v}
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(230,36,29,0.4)' } : undefined}
                             whileTap={shouldAnimate ? ctaTap : undefined}
-                            className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
+                            className="cta-attention cta-red bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                         >
                             Quero Garantir Minha Vaga <ArrowRight strokeWidth={3} size={18} />
                         </motion.button>
@@ -575,10 +709,10 @@ const LPErgonomia2: React.FC = () => {
             </section>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 3 · O SEGREDO DO ACERTO PERFEITO           */}
+            {/* 3 · O QUE É ERGONOMIA NA MOTO              */}
             {/* ═══════════════════════════════════════════ */}
             <section className="py-24 bg-black relative overflow-hidden">
-                <div className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-[url('/blueprint-moto.jpg')] opacity-40" />
+                <div className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-[url('/blueprint-moto.webp')] opacity-40" />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60 pointer-events-none" />
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -591,23 +725,21 @@ const LPErgonomia2: React.FC = () => {
                             <motion.p variants={v} className="text-gray-300 text-lg leading-relaxed mb-4">
                                 Não importa o quanto o motor da sua moto é forte se a suspensão não consegue colocar a potência no chão.
                             </motion.p>
-                            {/* [TIPO 2] Copy atualizado: "minimizando o desgaste físico" */}
                             <motion.p variants={v} className="text-gray-500 leading-relaxed mb-8">
                                 Quando molas, óleo, cliques (retorno/compressão), SAG e pneus estão finamente ajustados para o <strong className="text-white">seu nível e modalidade Off-Road</strong>, tudo muda:
-                                a moto não espalha, a tração é constante nas subidas <strong className="text-white">minimizando o desgaste físico.</strong>
+                                a moto não espalha, a tração é constante nas subidas e os impactos param de moer os seus braços e sua lombar.
                             </motion.p>
-                            {/* [TIPO 2] Quote atualizado */}
                             <motion.div
                                 variants={v}
                                 whileHover={shouldAnimate ? { scale: 1.02 } : undefined}
                                 className="inline-flex items-center gap-3 bg-wtech-gold/10 border border-wtech-gold/20 px-5 py-3 rounded-lg transition-colors"
                             >
                                 <Zap size={18} className="text-wtech-gold flex-shrink-0" />
-                                <span className="text-sm font-bold text-wtech-gold">O ajuste correto da suspensão eleva o nível de performance. É um investimento necessário para obter mais desempenho e segurança.</span>
+                                <span className="text-sm font-bold text-wtech-gold">O acerto da suspensão muda a moto da água para o vinho. É investimento em performance e segurança.</span>
                             </motion.div>
                         </motion.div>
 
-                        {/* Blocks — [TIPO 2] copy atualizado */}
+                        {/* Blocks */}
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="space-y-4">
                             {ergoBlocks.map((b, i) => (
                                 <motion.div
@@ -668,7 +800,7 @@ const LPErgonomia2: React.FC = () => {
                         ))}
                     </motion.div>
 
-                    {/* Module Grid ([TIPO 2] Módulo 08 com título atualizado) */}
+                    {/* Module Grid */}
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto mb-14">
                         {modules.map((mod, i) => (
                             <motion.div
@@ -696,24 +828,29 @@ const LPErgonomia2: React.FC = () => {
                 <div className="relative w-full overflow-hidden flex flex-col gap-6 mb-6">
                     <Marquee pauseOnHover className="[--duration:60s]">
                         {[
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-1.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-2.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-3.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-4.png",
-                            "/images/lp-curso/oleo-e-viscosidades.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-2-1.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-3-1.png",
-                            "http://w-techbrasil.com.br/wp-content/uploads/2026/02/CARDS-KWIFY-CURSO-AVANCADO-4-1.png",
+                            // Assets locais em HTTPS/WebP (antes: HTTP externo = mixed content + ~300KB cada)
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO.webp",
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-1.webp",
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-2.webp",
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3.webp",
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4.webp",
+                            "/images/lp-curso/oleo-e-viscosidades.webp",
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3-1.webp",
+                            "/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4-1.webp",
                         ].map((src, idx) => (
                             <img
                                 key={`row1-${idx}`}
                                 src={src}
                                 alt={`Módulo ${idx + 1}`}
+                                loading="lazy"
+                                decoding="async"
+                                width={320}
+                                height={480}
                                 className="h-[250px] md:h-[300px] w-auto rounded-2xl border border-white/10 shadow-xl object-contain hover:scale-105 transition-transform duration-300"
                             />
                         ))}
                     </Marquee>
+
                     <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-zinc-950 to-transparent"></div>
                     <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-zinc-950 to-transparent"></div>
                 </div>
@@ -725,7 +862,7 @@ const LPErgonomia2: React.FC = () => {
                         variants={v}
                         whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(230,36,29,0.4)' } : undefined}
                         whileTap={shouldAnimate ? ctaTap : undefined}
-                        className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
+                        className="cta-attention cta-red bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                     >
                         Quero Acesso a Todo Este Conteúdo <ArrowRight strokeWidth={3} size={18} />
                     </motion.button>
@@ -733,9 +870,10 @@ const LPErgonomia2: React.FC = () => {
             </section>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 4B · MÓDULO BÔNUS PASCHOALIN               */}
+            {/* 4B · MÓDULO BÔNUS PASCHOALIN (DESTAQUE)   */}
             {/* ═══════════════════════════════════════════ */}
             <section className="py-20 relative overflow-hidden bg-[#06010a]">
+                {/* Background glow */}
                 <div className="absolute -right-[15%] top-[10%] w-[50%] h-[70%] bg-[#7c3aed]/20 blur-[120px] rounded-full z-0 pointer-events-none" />
                 <div className="absolute -left-[10%] bottom-[10%] w-[40%] h-[50%] bg-[#ba1d18]/15 blur-[100px] rounded-full z-0 pointer-events-none" />
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
@@ -750,13 +888,11 @@ const LPErgonomia2: React.FC = () => {
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-2 mb-4 tracking-tighter">
                             Rafa <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-500">Paschoalin</span>
                         </motion.h2>
-                        {/* [TIPO 2] — Subtítulo ajustado */}
                         <motion.h3 variants={v} className="text-xl md:text-2xl font-black text-gray-300 mb-6 uppercase tracking-tight">
                             O Piloto Que Testou Tudo Na Prática — Para Você Ver A Diferença
                         </motion.h3>
-                        {/* [TIPO 2] — Descrição atualizada: "testou dos 2 ambientes" */}
                         <motion.p variants={v} className="text-gray-400 max-w-3xl mx-auto text-base leading-relaxed">
-                            Não basta entender a teoria. Rafa Paschoalin — piloto de alta performance — testou a moto nos 2 ambientes, <strong className="text-white">regulada e desregulada</strong>, para que você veja, na prática, o que muda com cada ajuste. Este é o tipo de conteúdo que você não encontra em nenhum outro lugar.
+                            Não basta entender a teoria. Rafa Paschoalin — piloto de alta performance — pegou a moto, <strong className="text-white">desregulou e regulou cada componente ao vivo</strong>, para que você veja, na prática, o que muda com cada ajuste. Este é o tipo de conteúdo que você não encontra em nenhum outro lugar.
                         </motion.p>
                     </motion.div>
 
@@ -769,12 +905,13 @@ const LPErgonomia2: React.FC = () => {
                                 {/* Photo side */}
                                 <div className="relative h-64 lg:h-auto overflow-hidden">
                                     <img
-                                        src="/paschoalin.jpg"
+                                        src="/paschoalin.webp"
                                         alt="Rafael Paschoalin — Piloto de Alta Performance"
                                         className="w-full h-full object-cover object-top"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent to-zinc-900/80 hidden lg:block" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent lg:hidden" />
+                                    {/* Badge */}
                                     <div className="absolute bottom-4 left-4 bg-purple-600/90 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg flex items-center gap-2">
                                         <Star size={10} className="fill-white" /> Participação Especial
                                     </div>
@@ -784,9 +921,8 @@ const LPErgonomia2: React.FC = () => {
                                 <div className="p-8 md:p-10 relative z-10">
                                     <div className="mb-6">
                                         <p className="text-wtech-gold font-bold uppercase tracking-widest text-xs mb-1">Piloto de Alta Performance</p>
-                                        {/* [TIPO 2] — Bio atualizada */}
                                         <p className="text-gray-400 text-sm leading-relaxed">
-                                            Rafa testou a moto nos 2 ambientes — <strong className="text-white">regulada e desregulada</strong> — e sentiu toda a diferença. Isso é o que transforma conhecimento em resultado real.
+                                            Com experiência em competições de alto nível, Rafa traz a <strong className="text-white">validação 100% prática</strong> da teoria ensinada por Alex Crepaldi. A combinação perfeita: técnica sólida + performance real.
                                         </p>
                                     </div>
 
@@ -811,7 +947,7 @@ const LPErgonomia2: React.FC = () => {
 
                                     <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
                                         <p className="text-sm font-bold text-purple-300 leading-relaxed">
-                                            Rafa testou a moto dos 2 ambientes, <strong className="text-white">regulada e desregulada</strong>, e sentiu toda a diferença. Isso é o que transforma conhecimento em resultado real.
+                                            Rafa pega a moto regulada, <strong className="text-white">desregula ela ao vivo</strong> — e você sente a diferença. Isso é o que transforma conhecimento em resultado real.
                                         </p>
                                     </div>
                                 </div>
@@ -850,11 +986,11 @@ const LPErgonomia2: React.FC = () => {
                                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent" />
                                 </div>
                                 <div className="p-8">
-                                    <div className="inline-block bg-wtech-gold text-black text-[10px] font-black uppercase px-3 py-1 rounded mb-4">Instrutor</div>
+                                    <div className="inline-block bg-wtech-gold text-black text-[10px] font-black uppercase px-3 py-1 rounded mb-4">Instrutor Principal</div>
                                     <h3 className="text-2xl font-black uppercase text-white mb-1">Alex Crepaldi</h3>
                                     <p className="text-wtech-gold text-sm font-medium mb-4">Fundador W-Tech Suspensões</p>
                                     <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                                        Referência nacional no acerto, preparação e revalvulação de <strong className="text-white">suspensões Off-Road</strong>. Mais de <strong className="text-white">3.800 mecânicos e pilotos capacitados</strong> pela escola técnica W-Tech em cursos online e presenciais.
+                                        Referência nacional no acerto, preparação e revalvulação de <strong className="text-white">suspensões Off-Road</strong>. Mais de <strong className="text-white">3.000 mecânicos e pilotos capacitados</strong> pela escola técnica W-Tech em cursos online e presenciais.
                                     </p>
                                     <div className="p-4 bg-black/50 border-l-4 border-wtech-gold text-sm text-gray-400 rounded-r-lg">
                                         👉 Domínio técnico em suspensão: da simples manutenção à personalização profunda com shims, fluídos e kits de revalvulação.
@@ -872,7 +1008,7 @@ const LPErgonomia2: React.FC = () => {
                             >
                                 <div className="h-64 bg-gradient-to-br from-zinc-800 to-black flex items-center justify-center relative overflow-hidden">
                                     <img
-                                        src="/paschoalin.jpg"
+                                        src="/paschoalin.webp"
                                         alt="Rafael Paschoalin"
                                         loading="lazy"
                                         className="w-full h-full object-cover object-top opacity-90 group-hover:scale-105 transition-transform duration-500"
@@ -910,7 +1046,7 @@ const LPErgonomia2: React.FC = () => {
                             variants={v}
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(230,36,29,0.4)' } : undefined}
                             whileTap={shouldAnimate ? ctaTap : undefined}
-                            className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
+                            className="cta-attention cta-red bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                         >
                             Quero Aprender com os Melhores <ArrowRight strokeWidth={3} size={18} />
                         </motion.button>
@@ -919,7 +1055,9 @@ const LPErgonomia2: React.FC = () => {
             </section>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 6 · BÔNUS / EMPILHAMENTO DE VALOR          */}
+
+            {/* ═══════════════════════════════════════════ */}
+            {/* 6 · BÔNUS / EMPILHAMENTO DE VALOR           */}
             {/* ═══════════════════════════════════════════ */}
             <section className="py-24 bg-[#0a0202] relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#E6241D]/40 to-transparent" />
@@ -951,18 +1089,19 @@ const LPErgonomia2: React.FC = () => {
                                 className="flex flex-col gap-4 p-8 bg-zinc-950/80 border border-white/5 hover:border-[#E6241D]/30 rounded-2xl transition-all cursor-default relative overflow-hidden group shadow-lg"
                             >
                                 <div className="absolute right-0 top-0 w-32 h-32 bg-[#E6241D]/10 rounded-full blur-[30px] group-hover:bg-[#E6241D]/20 transition-colors" />
+
                                 <div className="flex items-center gap-4 mb-2 relative z-10">
                                     <div className="w-14 h-14 rounded-xl bg-[#E6241D]/10 flex items-center justify-center text-[#E6241D] shrink-0 border border-[#E6241D]/20 group-hover:scale-110 transition-transform">
                                         {bonus.icon}
                                     </div>
                                     <h3 className="font-black text-white text-lg md:text-xl uppercase tracking-wide leading-snug">{bonus.title}</h3>
                                 </div>
-                                <div className="pt-4 border-t border-white/5 flex flex-col md:flex-row md:items-end justify-between gap-1 relative z-10 mt-2">
-                                    <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest line-through decoration-red-500/50">
-                                        De R$ {bonus.value}
+                                <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-2 relative z-10 mt-2">
+                                    <span className="text-gray-400 font-black text-lg tracking-tight line-through decoration-red-500/60 decoration-2">
+                                        R$ {bonus.value}
                                     </span>
-                                    <span className="text-2xl font-black text-wtech-gold tracking-tighter">
-                                        POR R$ 0,00
+                                    <span className="inline-flex items-center gap-1.5 bg-wtech-gold/15 border border-wtech-gold/40 text-wtech-gold font-black uppercase text-[11px] tracking-widest px-3 py-1.5 rounded-lg">
+                                        <CheckCircle size={13} /> Incluso hoje
                                     </span>
                                 </div>
                             </motion.div>
@@ -998,33 +1137,11 @@ const LPErgonomia2: React.FC = () => {
                         ))}
                     </motion.div>
 
-                    {/* Testimonials */}
-                    <div className="w-full max-w-6xl mx-auto relative cursor-grab active:cursor-grabbing">
-                        <Marquee speed={40} className="py-4">
-                            {testimonials.map((t, i) => (
-                                <div
-                                    key={i}
-                                    className="bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-8 relative w-[300px] md:w-[400px] shrink-0 hover:bg-zinc-800/50 transition-colors"
-                                >
-                                    <Quote size={32} className="text-wtech-gold/10 absolute top-6 right-6" />
-                                    <div className="flex items-center gap-1 mb-4">
-                                        {[...Array(5)].map((_, j) => (
-                                            <Star key={j} size={14} className="text-wtech-gold fill-wtech-gold" />
-                                        ))}
-                                    </div>
-                                    <p className="text-gray-300 text-sm leading-relaxed mb-6 italic whitespace-normal">"{t.text}"</p>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-wtech-gold/10 flex items-center justify-center text-wtech-gold font-black text-sm shrink-0">
-                                            {t.name[0]}
-                                        </div>
-                                        <div className="whitespace-normal">
-                                            <p className="font-bold text-white text-sm">{t.name}</p>
-                                            <p className="text-gray-600 text-xs">{t.role}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </Marquee>
+                    {/* Depoimentos em vídeo (reais) */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
+                        {SHORT_TESTIMONIALS.map((vid) => (
+                            <YoutubeShort key={vid} id={vid} />
+                        ))}
                     </div>
 
                     {/* CTA Intermediário 4 */}
@@ -1034,7 +1151,7 @@ const LPErgonomia2: React.FC = () => {
                             variants={v}
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(230,36,29,0.4)' } : undefined}
                             whileTap={shouldAnimate ? ctaTap : undefined}
-                            className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
+                            className="cta-attention cta-red bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                         >
                             Quero Ser o Próximo <ArrowRight strokeWidth={3} size={18} />
                         </motion.button>
@@ -1043,18 +1160,27 @@ const LPErgonomia2: React.FC = () => {
             </section>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 8 · OFERTA E CTA FINAL                      */}
+            {/* 8 · OFERTA IRRECUSÁVEL E CTA FINAL         */}
             {/* ═══════════════════════════════════════════ */}
-            <section id="cta-final" className="py-24 md:py-32 relative overflow-hidden bg-black flex items-center justify-center min-h-[90vh]">
-                <AnimatedShaderBackground />
+            <section ref={ctaRef} id="cta-final" className="py-24 md:py-32 relative overflow-hidden bg-black flex items-center justify-center min-h-[90vh]">
+                {ctaInView && (
+                    <Suspense fallback={null}>
+                        <AnimatedShaderBackground />
+                    </Suspense>
+                )}
 
                 <div className="container mx-auto px-6 relative z-10 flex justify-center">
+                    {/* Pricing Card - Reference Layout */}
                     <div className="w-full max-w-4xl bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#E6241D]/20 rounded-2xl relative shadow-[0_0_120px_rgba(230,36,29,0.15)] overflow-hidden p-8 md:p-14 text-center transition-all duration-500 hover:shadow-[0_0_150px_rgba(230,36,29,0.25)]">
+                        {/* Inner Red Glow Spotlight */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#E6241D]/15 blur-[100px] rounded-full pointer-events-none" />
+
+                        {/* Top Line */}
                         <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-red-600 via-[#E6241D] to-orange-500 z-10" />
 
+                        {/* Logo */}
                         <div className="flex justify-center mb-8">
-                            <img src="http://w-techbrasil.com.br/wp-content/uploads/2026/02/logo-branca.png" alt="W-Tech Work Suspension" loading="lazy" className="h-10 md:h-12 object-contain" />
+                            <img src="/images/modulos/logo-branca.webp" alt="W-Tech Work Suspension" loading="lazy" width={180} height={48} className="h-10 md:h-12 object-contain" />
                         </div>
 
                         <span className="text-wtech-gold font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs block mb-4">
@@ -1073,13 +1199,13 @@ const LPErgonomia2: React.FC = () => {
                         </div>
 
                         <div className="mb-2 flex flex-col items-center justify-center">
-                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">12x R$ 34,70</span>
+                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">10x R$ 32,00</span>
                         </div>
                         <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-10">
-                            ou R$ 347,00 à vista no Pix/Cartão
+                            ou R$ 267,00 à vista no Pix/Cartão
                         </div>
 
-                        {/* Timer */}
+                        {/* Real Timer */}
                         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-8">
                             <div className="flex flex-col items-center">
                                 <div className="bg-[#111] border border-[#E6241D]/30 rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-3xl font-black text-[#E6241D] shadow-[inset_0_0_15px_rgba(230,36,29,0.2)]">
@@ -1127,12 +1253,18 @@ const LPErgonomia2: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Selo de garantia visível no momento da decisão (ao lado do preço/CTA) */}
+                        <div className="inline-flex items-center gap-2.5 bg-wtech-gold/10 border border-wtech-gold/40 rounded-full px-5 py-2.5 mb-6 mx-auto">
+                            <ShieldCheck size={18} className="text-wtech-gold shrink-0" />
+                            <span className="text-wtech-gold font-black uppercase text-[11px] sm:text-xs tracking-widest">Garantia Incondicional de 30 Dias</span>
+                        </div>
+
                         <motion.a
                             href={checkoutUrl}
-                            id="kiwify-checkout-btn-lp-ergonomia2"
+                            id="kiwify-checkout-btn-lp-ergonomia-v2"
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}
-                            className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"
+                            className="cta-attention cta-red w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"
                         >
                             <div className="absolute inset-0 w-full h-full bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                             <span className="relative z-10">Quero Regular Minha Suspensão Agora</span>
@@ -1141,7 +1273,7 @@ const LPErgonomia2: React.FC = () => {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-10 pt-8 border-t border-white/5">
                             <div className="flex items-center gap-2 text-gray-500 text-[11px] font-semibold uppercase tracking-wider">
-                                <ShieldCheck size={16} className="text-gray-400" /> Garantia Incondicional de 7 Dias
+                                <ShieldCheck size={16} className="text-gray-400" /> Garantia Incondicional de 30 Dias
                             </div>
                             <div className="flex items-center gap-3 text-gray-500 text-[11px] font-semibold uppercase tracking-wider">
                                 <div className="flex -space-x-2">
@@ -1160,6 +1292,7 @@ const LPErgonomia2: React.FC = () => {
             {/* 9 · O MENTOR (ALEX CREPALDI)               */}
             {/* ═══════════════════════════════════════════ */}
             <section className="relative overflow-hidden bg-zinc-950 font-sans">
+                {/* Background da Seção (Apenas Desktop) */}
                 <div
                     className="hidden lg:block absolute inset-0 bg-cover bg-left-top bg-no-repeat z-0 scale-105"
                     style={{ backgroundImage: `url('/images/alex-webp.webp')`, backgroundPosition: 'left top' }}
@@ -1168,18 +1301,25 @@ const LPErgonomia2: React.FC = () => {
                 </div>
 
                 <div className="container mx-auto max-w-7xl pt-16 pb-0 lg:py-24 relative z-10 flex flex-col lg:flex-row lg:justify-end">
+
+                    {/* Imagem Mobile (Escondida no Desktop) */}
                     <div className="lg:hidden w-full h-[400px] sm:h-[500px] relative -mx-0 mb-0 px-6">
                         <img src="/images/alex-webp.webp" alt="Alex Crepaldi" loading="lazy" className="w-full h-full object-cover object-left-top rounded-t-3xl" />
                         <div className="absolute inset-x-6 bottom-0 top-1/2 bg-gradient-to-t from-zinc-950 to-transparent" />
                     </div>
 
+                    {/* Content Card (Macedo Reference Layout) */}
                     <motion.div
                         initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}
                         className="w-full lg:w-[50%] xl:w-[45%] bg-[#0B0B0C] lg:bg-zinc-950/80 backdrop-blur-sm lg:rounded-l-2xl border-t border-b lg:border-l border-white/5 px-8 pt-0 pb-16 lg:p-12 relative shadow-2xl overflow-hidden"
                     >
+                        {/* Red Accent Line */}
                         <div className="absolute top-0 bottom-0 right-0 w-1.5 bg-[#E6241D] shadow-[-5px_0_20px_rgba(230,36,29,0.3)] z-20" />
+
                         <motion.div variants={v} className="relative z-10">
-                            <span className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs mb-2 block">O Mentor</span>
+                            <span className="text-gray-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs mb-2 block">
+                                O Mentor
+                            </span>
                             <h2 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase mb-8 tracking-tighter leading-[0.9]">
                                 <span className="text-white block">Alex</span>
                                 <span className="text-[#E6241D] block">Crepaldi</span>
@@ -1200,7 +1340,7 @@ const LPErgonomia2: React.FC = () => {
                             <motion.div variants={stagger} className="space-y-4 mb-12">
                                 {[
                                     { icon: <Wrench size={18} />, text: 'Especialista em Suspensões' },
-                                    { icon: <Users size={18} />, text: 'Instrutor de +3.800 Alunos' },
+                                    { icon: <Users size={18} />, text: 'Instrutor de +3.000 Alunos' },
                                     { icon: <ShieldCheck size={18} />, text: 'Consultor Técnico W-Tech' },
                                     { icon: <Star size={18} />, text: 'Referência Nacional em Customização' },
                                 ].map((item, i) => (
@@ -1213,7 +1353,7 @@ const LPErgonomia2: React.FC = () => {
 
                             <motion.a
                                 variants={v}
-                                href="#comprar"
+                                href="#cta-final"
                                 className="inline-flex items-center gap-2 text-white font-black text-[11px] md:text-xs tracking-[0.15em] uppercase transition-colors group"
                             >
                                 <span className="group-hover:text-wtech-red transition-colors duration-300">Conheça a história</span>
@@ -1225,7 +1365,7 @@ const LPErgonomia2: React.FC = () => {
             </section>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 10 · FAQ                                   */}
+            {/* 10 · FAQ                                     */}
             {/* ═══════════════════════════════════════════ */}
             <section className="py-24 bg-zinc-950 border-t border-white/5">
                 <div className="container mx-auto px-6">
@@ -1257,25 +1397,25 @@ const LPErgonomia2: React.FC = () => {
                         viewport={{ once: true }}
                         whileHover={shouldAnimate ? { opacity: 1 } : undefined}
                         transition={{ duration: 0.2 }}
-                        src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png"
+                        src="/logo-wtech-branca.webp"
                         alt="W-Tech"
                         className="h-8 md:h-10 mx-auto mb-6"
                     />
-                    <p className="text-gray-600 text-[10px] font-bold uppercase tracking-[0.4em] mb-2">W-Tech Brasil | Curso Online Suspensão para Pilotos Off-Road</p>
-                    <p className="text-gray-700 text-[10px] uppercase tracking-widest">
+                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-2">W-Tech Brasil | Curso Online Suspensão para Pilotos Off-Road</p>
+                    <p className="text-gray-500 text-[10px] uppercase tracking-widest">
                         Todos os direitos reservados © {new Date().getFullYear()}
                     </p>
                 </div>
             </footer>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* BUYERS POPUP FLOAT                          */}
+            {/* BUYERS POPUP FLOAT COMPONENT                 */}
             {/* ═══════════════════════════════════════════ */}
             <motion.div
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: showBuyer ? 1 : 0, y: showBuyer ? 0 : 50, scale: showBuyer ? 1 : 0.9 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="fixed bottom-6 left-6 z-[100] bg-zinc-900 border border-wtech-gold/30 rounded-xl shadow-2xl p-4 flex items-center gap-4 max-w-sm pointer-events-none"
+                className="fixed bottom-28 left-4 sm:bottom-6 sm:left-6 z-[80] bg-zinc-900 border border-wtech-gold/30 rounded-xl shadow-2xl p-4 flex items-center gap-4 max-w-[72vw] sm:max-w-sm pointer-events-none"
             >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#E6241D] to-orange-500 flex items-center justify-center text-white shrink-0 shadow-lg">
                     <CheckCircle size={20} strokeWidth={2.5} />
@@ -1289,7 +1429,37 @@ const LPErgonomia2: React.FC = () => {
                 </div>
             </motion.div>
 
-        </div>
+            {/* ═══════════════════════════════════════════ */}
+            {/* WHATSAPP FLUTUANTE                          */}
+            {/* ═══════════════════════════════════════════ */}
+            <a
+                href="https://wa.me/5512982976468?text=Ol%C3%A1%21%20Vim%20da%20p%C3%A1gina%20do%20Curso%20Online%20de%20Suspens%C3%A3o%20e%20quero%20tirar%20uma%20d%C3%BAvida."
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Falar no WhatsApp"
+                className="fixed right-4 bottom-24 lg:right-6 lg:bottom-6 z-[110] flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] shadow-[0_8px_30px_rgba(37,211,102,0.45)] hover:scale-110 transition-transform"
+            >
+                <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.043zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/></svg>
+            </a>
+
+            {/* ═══════════════════════════════════════════ */}
+            {/* CTA FIXO (MOBILE)                           */}
+            {/* ═══════════════════════════════════════════ */}
+            <div className="lg:hidden fixed inset-x-0 bottom-0 z-[100] bg-[#0a0a0a]/95 backdrop-blur-md border-t border-wtech-gold/30 px-4 py-3 flex items-center gap-3">
+                <div className="leading-tight shrink-0">
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">A partir de</p>
+                    <p className="text-wtech-gold font-black text-base leading-none">10x R$ 32,00</p>
+                </div>
+                <a
+                    href={checkoutUrl}
+                    id="kiwify-checkout-btn-lp-ergonomia-v2-sticky"
+                    className="cta-attention cta-red flex-1 bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white text-center px-4 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg"
+                >
+                    Garantir minha vaga
+                </a>
+            </div>
+
+        </div >
     );
 };
 
