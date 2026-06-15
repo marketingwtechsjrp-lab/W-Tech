@@ -308,7 +308,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/50 to-[#050505] z-10"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.05)_0%,transparent_80%)] z-10"></div>
                     <video
-                        src="/videos/abertura.mp4"
+                        src="/videos/como_foi.mp4"
                         className="w-full h-full object-cover scale-[1.3] brightness-[0.25] pointer-events-none"
                         autoPlay
                         muted
@@ -449,7 +449,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                     </div>
 
                     <div className="mb-28">
-                        <PremiumVideoPlayer src="/videos/como_foi.mp4" aspect="video" />
+                        <PremiumVideoPlayer src="/videos/finalwtech.mp4" aspect="video" />
                     </div>
 
                     {/* Part 2: What students said */}
