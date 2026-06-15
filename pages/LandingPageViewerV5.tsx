@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Calendar, Clock, MapPin, Users, Play, X, Star, Quote, Wrench, Award, AlertTriangle, Navigation, ShieldCheck } from 'lucide-react';
 import { useLandingPage } from '../hooks/useLandingPage';
+import { ScheduleTimeline } from '../components/ScheduleTimeline';
+import { resolveScheduleModules } from '../lib/schedule';
 import LPEnrollForm from '../components/lp/LPEnrollForm';
 import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
@@ -179,16 +181,12 @@ const LandingPageViewerV5: React.FC = () => {
             )}
 
             {/* CRONOGRAMA */}
-            {lp.course?.schedule && (
-                <section className="py-24">
-                    <div className="container mx-auto px-6 max-w-4xl">
-                        <h2 className="text-4xl font-black uppercase tracking-tighter mb-10 text-center">Programação do <span className="text-wtech-gold">Curso</span></h2>
-                        <div className={`bg-black p-8 md:p-12 ${brutalBox}`}>
-                            <div className="prose prose-invert max-w-none text-white/70 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
-                        </div>
-                    </div>
-                </section>
-            )}
+            <section id="cronograma" className="py-24">
+                <div className="container mx-auto px-6 max-w-4xl">
+                    <h2 className="text-4xl font-black uppercase tracking-tighter mb-10 text-center">Programação do <span className="text-wtech-gold">Curso</span></h2>
+                    <ScheduleTimeline modules={resolveScheduleModules(lp.scheduleModules)} variant="dark" />
+                </div>
+            </section>
 
             {/* MÓDULOS */}
             {lp.modules && lp.modules.length > 0 && (
@@ -255,7 +253,7 @@ const LandingPageViewerV5: React.FC = () => {
                                         ) : (
                                             <Quote size={28} className="text-wtech-gold/30 mb-3" />
                                         )}
-                                        <p className="text-white/70 text-sm leading-relaxed flex-1">"{t.text}"</p>
+                                        <p className="text-white/70 text-sm leading-relaxed flex-1">{t.text && `"${t.text}"`}</p>
                                         <div className="flex items-center gap-3 mt-5 pt-5 border-t-2 border-white/10">
                                             <div className="w-10 h-10 border-2 border-wtech-gold overflow-hidden bg-black flex items-center justify-center shrink-0">
                                                 {t.image ? <img src={t.image} className="w-full h-full object-cover" alt={t.name} /> : <span className="font-black text-wtech-gold">{t.name[0]}</span>}

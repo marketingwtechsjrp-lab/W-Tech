@@ -199,6 +199,7 @@ export interface LandingPage {
   instructorBio: string;
   instructorImage: string;
   testimonials?: { name: string; text: string; image?: string; videoUrl?: string }[];
+  scheduleModules?: { title: string; objective?: string; topics: string[]; result?: string }[]; // Cronograma estruturado por módulo (mapeado de schedule_modules)
   whatsappNumber?: string; // For CTA
   pixelId?: string; // Facebook Pixel
   modules?: { title: string; description: string; image: string }[];

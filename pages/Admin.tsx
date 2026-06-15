@@ -63,7 +63,6 @@ import CommandPalette from '../components/admin/keyboard/CommandPalette';
 import ShortcutsHelp from '../components/admin/keyboard/ShortcutsHelp';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
-import { DEFAULT_COURSE_SCHEDULE } from '../start_schedule_const';
 import { formatDateLocal, cn } from '../lib/utils';
 import changelogData from '../CHANGELOG.json';
 import { ExpandableTabs, type TabItem } from '../components/ui/expandable-tabs';
@@ -757,7 +756,8 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             location: formData.location, // Defines the "Display Location" (Header)
             location_type: formData.locationType,
             map_url: formData.mapUrl,
-            schedule: formData.schedule,
+            // Cronograma agora é gerenciado no Editor de Landing Page (schedule_modules),
+            // que espelha o texto em SITE_Courses.schedule. O form do curso não o sobrescreve.
             price: formData.price,
             recycling_price: formData.recyclingPrice, // NEW FIELD
             type: formData.type || 'Course',
@@ -3393,17 +3393,13 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </div>
 
                         <div className="md:col-span-2">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)]">Cronograma / Conteúdo</label>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, schedule: DEFAULT_COURSE_SCHEDULE })}
-                                    className="text-xs bg-[var(--admin-accent-gold-muted)] text-[var(--admin-accent-gold)] border border-[var(--admin-accent-gold)]/20 px-2.5 py-1 rounded-lg font-bold hover:opacity-80 transition-all"
-                                >
-                                    📥 Carregar Modelo: Suspensão
-                                </button>
+                            <div className="rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-2)] p-3 flex items-start gap-2.5">
+                                <span className="text-base leading-none mt-0.5">🗓️</span>
+                                <p className="text-xs text-[var(--admin-text-secondary)] leading-relaxed">
+                                    O <strong className="text-[var(--admin-text-primary)]">Cronograma</strong> agora é editado por módulo dentro do
+                                    <strong className="text-[var(--admin-text-primary)]"> Editor de Landing Page</strong> (aba “Cronograma”), com visual por módulo e modelo padrão. Ele é usado na página e nas mensagens automáticas.
+                                </p>
                             </div>
-                            <textarea rows={8} className="w-full border border-[var(--admin-border)] p-2.5 rounded-lg text-[var(--admin-text-primary)] bg-[var(--admin-surface-2)] focus:ring-2 focus:ring-wtech-gold outline-none transition-all" value={formData.schedule || ''} onChange={e => setFormData({ ...formData, schedule: e.target.value })} placeholder="08:00 - Café da manhã..." />
                         </div>
 
                         <div className="md:col-span-2">

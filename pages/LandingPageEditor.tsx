@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Course, LandingPage } from '../types';
-import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star } from 'lucide-react';
+import { DEFAULT_COURSE_TESTIMONIALS, getYouTubeId } from '../lib/testimonials';
+import { DEFAULT_SCHEDULE_MODULES, scheduleModulesToText, ScheduleModule } from '../lib/schedule';
+import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star, CalendarClock, Target, Trophy } from 'lucide-react';
 
 interface LandingPageEditorProps {
     course: Course;
@@ -68,7 +70,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
             setLaunching(false);
         }
     };
-    const [activeTab, setActiveTab] = useState<'template' | 'hero' | 'content' | 'modules' | 'instructor' | 'testimonials'>('template');
+    const [activeTab, setActiveTab] = useState<'template' | 'hero' | 'content' | 'modules' | 'schedule' | 'instructor' | 'testimonials'>('template');
     
     // Initial State Template
     const [lp, setLp] = useState<Partial<LandingPage>>({
@@ -100,7 +102,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         whatsappNumber: '5511999999999',
         videoUrl: 'https://www.youtube.com/watch?v=RePclscnxDM',
         template: 'v1',
-        testimonials: []
+        testimonials: DEFAULT_COURSE_TESTIMONIALS,
+        scheduleModules: DEFAULT_SCHEDULE_MODULES
     });
 
     useEffect(() => {
@@ -130,7 +133,12 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                 quizEnabled: data.quiz_enabled,
                 fakeAlertsEnabled: data.fake_alerts_enabled,
                 template: data.template || 'v1',
-                testimonials: data.testimonials || []
+                testimonials: (data.testimonials && data.testimonials.length > 0)
+                    ? data.testimonials
+                    : DEFAULT_COURSE_TESTIMONIALS,
+                scheduleModules: (data.schedule_modules && data.schedule_modules.length > 0)
+                    ? data.schedule_modules
+                    : DEFAULT_SCHEDULE_MODULES
             });
         }
         setLoading(false);
@@ -158,12 +166,21 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     quiz_enabled: lp.quizEnabled,
                     fake_alerts_enabled: lp.fakeAlertsEnabled,
                     template: lp.template || 'v1',
-                    testimonials: lp.testimonials || []
+                    testimonials: lp.testimonials || [],
+                    schedule_modules: lp.scheduleModules || []
                 }, { onConflict: 'course_id' })
                 .select()
                 .single();
 
             if (error) throw error;
+
+            // Espelha o cronograma estruturado no campo de texto do curso para
+            // manter WhatsApp/lembretes e a página de detalhe do curso alimentados.
+            const { error: courseErr } = await supabase
+                .from('SITE_Courses')
+                .update({ schedule: scheduleModulesToText(lp.scheduleModules) })
+                .eq('id', course.id);
+            if (courseErr) console.error('Falha ao espelhar cronograma no curso:', courseErr);
 
             if (data) {
                 setLp(prev => ({
@@ -265,6 +282,65 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         setLp({ ...lp, testimonials: list });
     };
 
+    // Schedule (cronograma) Handlers
+    const updateScheduleModule = (index: number, field: 'title' | 'objective' | 'result', value: string) => {
+        const list = [...(lp.scheduleModules || [])];
+        list[index] = { ...list[index], [field]: value };
+        setLp({ ...lp, scheduleModules: list });
+    };
+
+    const addScheduleModule = () => {
+        setLp({
+            ...lp,
+            scheduleModules: [
+                ...(lp.scheduleModules || []),
+                { title: 'Novo Módulo', objective: '', topics: [''], result: '' }
+            ]
+        });
+    };
+
+    const removeScheduleModule = (index: number) => {
+        const list = [...(lp.scheduleModules || [])];
+        list.splice(index, 1);
+        setLp({ ...lp, scheduleModules: list });
+    };
+
+    const moveScheduleModule = (index: number, direction: 'up' | 'down') => {
+        const list = [...(lp.scheduleModules || [])];
+        const target = direction === 'up' ? index - 1 : index + 1;
+        if (target < 0 || target >= list.length) return;
+        [list[index], list[target]] = [list[target], list[index]];
+        setLp({ ...lp, scheduleModules: list });
+    };
+
+    const updateScheduleTopic = (modIndex: number, topicIndex: number, value: string) => {
+        const list = [...(lp.scheduleModules || [])];
+        const topics = [...(list[modIndex].topics || [])];
+        topics[topicIndex] = value;
+        list[modIndex] = { ...list[modIndex], topics };
+        setLp({ ...lp, scheduleModules: list });
+    };
+
+    const addScheduleTopic = (modIndex: number) => {
+        const list = [...(lp.scheduleModules || [])];
+        list[modIndex] = { ...list[modIndex], topics: [...(list[modIndex].topics || []), ''] };
+        setLp({ ...lp, scheduleModules: list });
+    };
+
+    const removeScheduleTopic = (modIndex: number, topicIndex: number) => {
+        const list = [...(lp.scheduleModules || [])];
+        const topics = [...(list[modIndex].topics || [])];
+        topics.splice(topicIndex, 1);
+        list[modIndex] = { ...list[modIndex], topics };
+        setLp({ ...lp, scheduleModules: list });
+    };
+
+    const loadDefaultSchedule = () => {
+        if (lp.scheduleModules && lp.scheduleModules.length > 0
+            && !window.confirm('Substituir o cronograma atual pelo modelo padrão da W-Tech?')) return;
+        setLp({ ...lp, scheduleModules: DEFAULT_SCHEDULE_MODULES.map(m => ({ ...m, topics: [...m.topics] })) });
+    };
+
     if (loading) return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white p-8 rounded-lg flex items-center gap-4">
@@ -326,6 +402,9 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                         </button>
                         <button onClick={() => setActiveTab('modules')} className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'modules' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
                             <Layout size={18} /> Módulos
+                        </button>
+                        <button onClick={() => setActiveTab('schedule')} className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'schedule' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <CalendarClock size={18} /> Cronograma
                         </button>
                         <button onClick={() => setActiveTab('instructor')} className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'instructor' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
                             <User size={18} /> Instrutor
@@ -852,6 +931,87 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                             </div>
                         )}
 
+                        {activeTab === 'schedule' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="flex items-start justify-between border-b pb-3 mb-4 gap-4">
+                                    <div>
+                                        <h3 className="text-xl font-bold">Cronograma do Curso</h3>
+                                        <p className="text-sm text-gray-500">Estruture o conteúdo por módulo (título, objetivo, tópicos e resultado). Aparece de forma visual em todas as landing pages.</p>
+                                    </div>
+                                    <div className="flex gap-2 shrink-0">
+                                        <button onClick={loadDefaultSchedule} className="text-xs bg-[var(--admin-accent-gold-muted,#fdf6e3)] text-amber-700 border border-amber-500/30 px-3 py-2 rounded-lg font-bold hover:opacity-80 transition-all whitespace-nowrap">
+                                            📥 Modelo W-Tech
+                                        </button>
+                                        <button onClick={addScheduleModule} className="text-sm bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 whitespace-nowrap">
+                                            <Plus size={16} /> Adicionar Módulo
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {(!lp.scheduleModules || lp.scheduleModules.length === 0) ? (
+                                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                        <CalendarClock className="mx-auto text-gray-300 mb-3" size={40} />
+                                        <p className="text-gray-500 font-medium">Nenhum módulo no cronograma ainda.</p>
+                                        <button onClick={loadDefaultSchedule} className="mt-3 text-xs bg-black text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-1 hover:bg-gray-800">
+                                            <Plus size={12} /> Carregar Modelo W-Tech
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-5">
+                                        {lp.scheduleModules.map((mod, idx) => (
+                                            <div key={idx} className="p-5 bg-gray-50 rounded-2xl border border-gray-200 flex gap-4 items-start shadow-sm transition-all hover:border-wtech-gold/40">
+                                                {/* Reorder + número */}
+                                                <div className="flex flex-col items-center gap-1 shrink-0">
+                                                    <button onClick={() => moveScheduleModule(idx, 'up')} disabled={idx === 0} className="p-1 hover:bg-gray-200 rounded text-gray-500 disabled:opacity-30"><ArrowUp size={16} /></button>
+                                                    <span className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center text-xs font-black">{String(idx + 1).padStart(2, '0')}</span>
+                                                    <button onClick={() => moveScheduleModule(idx, 'down')} disabled={idx === (lp.scheduleModules?.length || 0) - 1} className="p-1 hover:bg-gray-200 rounded text-gray-500 disabled:opacity-30"><ArrowDown size={16} /></button>
+                                                </div>
+
+                                                {/* Campos do módulo */}
+                                                <div className="flex-1 space-y-3 min-w-0">
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Título do Módulo</label>
+                                                        <input className="w-full bg-white border border-gray-200 p-2.5 rounded-lg text-sm font-bold focus:ring-1 focus:ring-black outline-none" value={mod.title} placeholder="Ex: Fundamentos das Suspensões" onChange={e => updateScheduleModule(idx, 'title', e.target.value)} />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><Target size={11} className="text-wtech-gold" /> Objetivo (opcional)</label>
+                                                        <textarea rows={2} className="w-full bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-600 focus:ring-1 focus:ring-black outline-none" value={mod.objective || ''} placeholder="O que este módulo entrega ao aluno..." onChange={e => updateScheduleModule(idx, 'objective', e.target.value)} />
+                                                    </div>
+
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tópicos (o aluno vai aprender)</label>
+                                                            <button onClick={() => addScheduleTopic(idx)} className="text-[11px] text-gray-600 hover:text-black flex items-center gap-1 font-bold"><Plus size={11} /> Tópico</button>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            {(mod.topics || []).map((topic, tIdx) => (
+                                                                <div key={tIdx} className="flex gap-2 items-center">
+                                                                    <Check size={13} className="text-wtech-gold shrink-0" strokeWidth={3} />
+                                                                    <input className="flex-1 bg-white border border-gray-200 p-2 rounded-lg text-sm text-gray-700 focus:ring-1 focus:ring-black outline-none" value={topic} placeholder="Descreva um tópico..." onChange={e => updateScheduleTopic(idx, tIdx, e.target.value)} />
+                                                                    <button onClick={() => removeScheduleTopic(idx, tIdx)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"><Trash2 size={15} /></button>
+                                                                </div>
+                                                            ))}
+                                                            {(!mod.topics || mod.topics.length === 0) && (
+                                                                <button onClick={() => addScheduleTopic(idx)} className="text-xs text-gray-400 hover:text-gray-600">+ Adicionar primeiro tópico</button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1"><Trophy size={11} className="text-wtech-gold" /> Resultado (opcional)</label>
+                                                        <input className="w-full bg-white border border-gray-200 p-2.5 rounded-lg text-sm text-gray-600 focus:ring-1 focus:ring-black outline-none" value={mod.result || ''} placeholder="Ex: O aluno sabe dimensionar a mola para cada moto." onChange={e => updateScheduleModule(idx, 'result', e.target.value)} />
+                                                    </div>
+                                                </div>
+
+                                                <button onClick={() => removeScheduleModule(idx)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors shrink-0"><Trash2 size={20} /></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'content' && (
                             <div className="space-y-6 animate-fade-in">
                                 <h3 className="text-xl font-bold border-b pb-2 mb-4">Conteúdo e Benefícios (Checklist)</h3>
@@ -931,11 +1091,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                          </div>
                                      ) : (
                                          lp.testimonials.map((test, idx) => {
-                                             const ytId = test.videoUrl ? (() => {
-                                                 const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                                                 const match = test.videoUrl.match(regExp);
-                                                 return (match && match[2].length === 11) ? match[2] : '';
-                                             })() : '';
+                                             const ytId = getYouTubeId(test.videoUrl);
 
                                              return (
                                                  <div key={idx} className="p-5 bg-gray-50 rounded-2xl border border-gray-200 flex gap-4 items-start relative group shadow-sm transition-all hover:border-yellow-500/40">

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Calendar, Clock, MapPin, Users, Play, X, Star, Quote, Gauge, Flag, Trophy, AlertTriangle, Navigation } from 'lucide-react';
 import { useLandingPage } from '../hooks/useLandingPage';
+import { ScheduleTimeline } from '../components/ScheduleTimeline';
+import { resolveScheduleModules } from '../lib/schedule';
 import LPEnrollForm from '../components/lp/LPEnrollForm';
 import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
@@ -184,19 +186,15 @@ const LandingPageViewerV6: React.FC = () => {
             )}
 
             {/* CRONOGRAMA */}
-            {lp.course?.schedule && (
-                <section className="py-24">
-                    <div className="container mx-auto px-6 max-w-4xl">
-                        <div className="text-center mb-10">
-                            <div className="text-wtech-gold font-black uppercase tracking-[0.3em] text-xs mb-2">Plano de prova</div>
-                            <h2 className="text-4xl font-black uppercase italic tracking-tight">Programação</h2>
-                        </div>
-                        <div className="bg-[#0E1013] border border-white/10 rounded-xl p-8 md:p-12">
-                            <div className="prose prose-invert max-w-none text-white/70 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
-                        </div>
+            <section id="cronograma" className="py-24">
+                <div className="container mx-auto px-6 max-w-4xl">
+                    <div className="text-center mb-10">
+                        <div className="text-wtech-gold font-black uppercase tracking-[0.3em] text-xs mb-2">Plano de prova</div>
+                        <h2 className="text-4xl font-black uppercase italic tracking-tight">Programação</h2>
                     </div>
-                </section>
-            )}
+                    <ScheduleTimeline modules={resolveScheduleModules(lp.scheduleModules)} variant="dark" />
+                </div>
+            </section>
 
             {/* MÓDULOS — PIT LANE TIMELINE */}
             {lp.modules && lp.modules.length > 0 && (
@@ -263,7 +261,7 @@ const LandingPageViewerV6: React.FC = () => {
                                         ) : (
                                             <Quote size={28} className="text-wtech-gold/30 mb-3" />
                                         )}
-                                        <p className="text-white/70 text-sm leading-relaxed flex-1 italic">"{t.text}"</p>
+                                        <p className="text-white/70 text-sm leading-relaxed flex-1 italic">{t.text && `"${t.text}"`}</p>
                                         <div className="flex items-center gap-3 mt-5 pt-5 border-t border-white/10">
                                             <div className="w-10 h-10 rounded-full border border-wtech-gold/50 overflow-hidden bg-black flex items-center justify-center shrink-0">
                                                 {t.image ? <img src={t.image} className="w-full h-full object-cover" alt={t.name} /> : <span className="font-black text-wtech-gold">{t.name[0]}</span>}

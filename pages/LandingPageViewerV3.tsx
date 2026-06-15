@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
-import CheckoutOfferCard from '../components/CheckoutOfferCard';
 import { LandingPage, Course } from '../types';
 import { handleLeadUpsert } from '../lib/leadDistribution';
+import { resolveCourseTestimonials } from '../lib/testimonials';
+import { resolveScheduleModules } from '../lib/schedule';
+import { ScheduleTimeline } from '../components/ScheduleTimeline';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal } from '../lib/utils';
 import { QualificationQuiz } from '../components/QualificationQuiz';
@@ -13,7 +15,7 @@ import {
   MapPin, Calendar, Clock, Users, Star, CheckCircle, ArrowRight,
   ChevronDown, Award, Shield, Target, TrendingUp, Zap, Wrench,
   BookOpen, GraduationCap, Trophy, MessageCircle, Quote, Phone,
-  Menu, X, Timer, ClipboardList, Play
+  Menu, X, Timer, Play
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -87,104 +89,6 @@ const CountdownStrip: React.FC<{ date: string }> = ({ date }) => {
   );
 };
 
-// ─── Schedule renderer ────────────────────────────────────────────────────────
-// Parses free-text schedule into visual timeline items
-const ScheduleBlock: React.FC<{ text: string }> = ({ text }) => {
-  const lines = text.split('\n').filter(l => l.trim());
-
-  type Item = { type: 'title' | 'time' | 'module' | 'text'; content: string };
-  const items: Item[] = lines.map(line => {
-    const trimmed = line.trim();
-    if (/^\d{1,2}[h:]\d{2}/i.test(trimmed)) return { type: 'time', content: trimmed };
-    if (/^(🔹|🔸|🛠️|📌|✅|⚡|🎯|🏆|💡|📋|🔑|🔥|•|\*\*|##|\-\s)/i.test(trimmed) || /^[A-ZÁÉÍÓÚ\s]{5,}$/.test(trimmed)) {
-      return { type: 'module', content: trimmed };
-    }
-    if (trimmed.length > 2 && /Módulo|módulo|Objetivo|MÓDULO/i.test(trimmed)) return { type: 'module', content: trimmed };
-    if (trimmed.length > 40 && !trimmed.startsWith('http')) return { type: 'text', content: trimmed };
-    return { type: 'text', content: trimmed };
-  });
-
-  // Group time items + their sub-content
-  const groups: { time?: string; label?: string; details: string[] }[] = [];
-  let current: typeof groups[number] | null = null;
-
-  for (const item of items) {
-    if (item.type === 'time') {
-      // Parse "08:00 - Café da manhã" → time + label
-      const match = item.content.match(/^(\d{1,2}[h:]\d{2})\s*[-–]?\s*(.*)/i);
-      if (match) {
-        current = { time: match[1], label: match[2] || '', details: [] };
-        groups.push(current);
-      }
-    } else if (item.type === 'module') {
-      current = { label: item.content, details: [] };
-      groups.push(current);
-    } else if (current) {
-      if (item.content.trim()) current.details.push(item.content.trim());
-    } else {
-      groups.push({ details: [item.content] });
-    }
-  }
-
-  // If no time/module groups detected, just render as formatted text
-  const hasStructure = groups.some(g => g.time || g.label);
-
-  if (!hasStructure) {
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
-        <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed font-sans">{text}</pre>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-0">
-      {groups.map((g, i) => (
-        <motion.div key={i}
-          initial={{ opacity: 0, x: -16 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.4, delay: i * 0.04 }}
-          className="relative flex gap-4"
-        >
-          {/* Timeline line */}
-          {i < groups.length - 1 && (
-            <div className="absolute left-[19px] top-10 bottom-0 w-px bg-wtech-gold/20" />
-          )}
-
-          {/* Dot */}
-          <div className="flex-shrink-0 mt-1">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${g.time ? 'bg-wtech-gold text-black' : 'bg-gray-100 border border-gray-200'}`}>
-              {g.time
-                ? <span className="text-[10px] font-black leading-none text-center">{g.time.replace(':', 'h')}</span>
-                : <div className="w-2 h-2 bg-wtech-gold rounded-full" />
-              }
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 pb-5">
-            {g.label && (
-              <p className={`font-black leading-snug mb-1 ${g.time ? 'text-gray-900 text-base' : 'text-gray-800 text-sm uppercase tracking-wide'}`}>
-                {g.label.replace(/^[🔹🔸🛠️📌✅⚡🎯🏆💡📋🔑🔥•\-\*#\s]+/, '').trim()}
-              </p>
-            )}
-            {g.details.length > 0 && (
-              <ul className="space-y-0.5">
-                {g.details.map((d, j) => (
-                  <li key={j} className="flex items-start gap-1.5 text-sm text-gray-500">
-                    <div className="w-1 h-1 bg-wtech-gold rounded-full mt-2 flex-shrink-0" />
-                    {d.replace(/^[-•*]\s*/, '')}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
 
 // ─── FAQ Item ─────────────────────────────────────────────────────────────────
 const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
@@ -315,6 +219,8 @@ const LandingPageViewerV3: React.FC = () => {
           heroSecondaryImage: (lpData as any).hero_secondary_image,
           quizEnabled: (lpData as any).quiz_enabled,
           fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
+          testimonials: resolveCourseTestimonials((lpData as any).testimonials),
+          scheduleModules: resolveScheduleModules((lpData as any).schedule_modules),
           course: mappedCourse,
           courseId: (lpData as any).course_id,
         } as any;
@@ -432,7 +338,7 @@ const LandingPageViewerV3: React.FC = () => {
           </div>
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-gray-500">
             <button onClick={() => scrollTo('sobre')} className="hover:text-wtech-gold transition-colors">Sobre</button>
-            {course?.schedule && <button onClick={() => scrollTo('cronograma')} className="hover:text-wtech-gold transition-colors">Cronograma</button>}
+            <button onClick={() => scrollTo('cronograma')} className="hover:text-wtech-gold transition-colors">Cronograma</button>
             <button onClick={() => scrollTo('instrutor')} className="hover:text-wtech-gold transition-colors">Instrutor</button>
             <button onClick={() => scrollTo('inscricao')}
               className="bg-wtech-gold text-black px-5 py-2 rounded-lg hover:bg-yellow-400 transition-colors">
@@ -449,9 +355,7 @@ const LandingPageViewerV3: React.FC = () => {
               exit={{ height: 0, opacity: 0 }} className="md:hidden bg-white border-t border-gray-100 overflow-hidden">
               <div className="px-5 py-4 flex flex-col gap-4">
                 {[['sobre', 'Sobre'], ['cronograma', 'Cronograma'], ['instrutor', 'Instrutor']].map(([id, label]) => (
-                  course?.schedule || id !== 'cronograma' ? (
-                    <button key={id} onClick={() => scrollTo(id)} className="text-left text-sm font-bold uppercase tracking-wider text-gray-600 hover:text-wtech-gold transition-colors">{label}</button>
-                  ) : null
+                  <button key={id} onClick={() => scrollTo(id)} className="text-left text-sm font-bold uppercase tracking-wider text-gray-600 hover:text-wtech-gold transition-colors">{label}</button>
                 ))}
                 <button onClick={() => scrollTo('inscricao')} className="bg-wtech-gold text-black font-black py-3 rounded-lg text-sm uppercase tracking-wider">Garantir Vaga</button>
               </div>
@@ -680,8 +584,7 @@ const LandingPageViewerV3: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* CRONOGRAMA                                                           */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {course?.schedule && (
-        <section id="cronograma" className="py-24 bg-gray-50">
+      <section id="cronograma" className="py-24 bg-gray-50">
           <div className="max-w-4xl mx-auto px-6">
             <Reveal className="text-center mb-14">
               <p className="text-xs font-black uppercase tracking-widest text-wtech-gold mb-2">Programação</p>
@@ -689,24 +592,12 @@ const LandingPageViewerV3: React.FC = () => {
               <h2 className="text-3xl md:text-4xl font-black uppercase text-gray-900">
                 Cronograma <span className="text-wtech-gold">do Curso</span>
               </h2>
-              <p className="text-gray-500 mt-3 max-w-xl mx-auto text-sm">Veja como será organizado o dia de aprendizado intensivo.</p>
+              <p className="text-gray-500 mt-3 max-w-xl mx-auto text-sm">Veja o conteúdo do treinamento, módulo a módulo.</p>
             </Reveal>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-              <div className="flex items-center gap-3 mb-8 pb-6 border-b border-gray-100">
-                <div className="w-10 h-10 bg-wtech-gold/10 rounded-xl flex items-center justify-center">
-                  <ClipboardList size={20} className="text-wtech-gold" />
-                </div>
-                <div>
-                  <p className="font-black text-gray-900">{lp.title}</p>
-                  {course.date && <p className="text-sm text-gray-500">{formatDateLocal(course.date)}{course.startTime ? ` · ${course.startTime}` : ''}{course.endTime ? ` – ${course.endTime}` : ''}</p>}
-                </div>
-              </div>
-              <ScheduleBlock text={course.schedule} />
-            </div>
+            <ScheduleTimeline modules={resolveScheduleModules(lp.scheduleModules)} variant="light" />
           </div>
         </section>
-      )}
 
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* BENEFÍCIOS                                                           */}
@@ -879,13 +770,13 @@ const LandingPageViewerV3: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <p className="text-gray-500 text-sm italic leading-relaxed mb-4">"{t.text}"</p>
+                        <p className="text-gray-500 text-sm italic leading-relaxed mb-4">{t.text && `"${t.text}"`}</p>
                       </div>
                     ) : (
                       /* Text Testimonial */
                       <div className="space-y-4 flex-1">
                         <Quote size={24} className="text-wtech-gold/30 mb-2" />
-                        <p className="text-gray-600 text-sm leading-relaxed mb-5">"{t.text}"</p>
+                        <p className="text-gray-600 text-sm leading-relaxed mb-5">{t.text && `"${t.text}"`}</p>
                       </div>
                     )}
 
@@ -973,7 +864,8 @@ const LandingPageViewerV3: React.FC = () => {
             <Reveal className="lg:col-span-2">
               <div className="bg-white border-2 border-wtech-gold/20 rounded-2xl p-7 shadow-sm sticky top-24">
                 <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Investimento</div>
-                {course?.price && course.price > 0 ? (
+                {/* Em checkout automatizado o preço só aparece na pré-inscrição, após captar o contato. */}
+                {lp.course?.checkoutType !== 'automated' && course?.price && course.price > 0 ? (
                   <div className="mb-6">
                     <div className="text-4xl font-black text-gray-900">
                       <span className="text-xl text-gray-400 mr-1">{currency}</span>
@@ -1044,89 +936,6 @@ const LandingPageViewerV3: React.FC = () => {
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <h3 className="text-xl font-black text-gray-900 mb-2">Preencha seus dados</h3>
 
-                    {/* Oferta do Checkout Direto: empilhamento de valor (preço, parcelas e sinal) */}
-                    {(() => {
-                      const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
-                      const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
-                      const ativo = lp.course?.checkoutType === 'automated' && !isInternationalCourse && !isFullOrDone;
-                      if (!ativo) return null;
-
-                      return (
-                        <CheckoutOfferCard
-                          theme="light"
-                          coursePrice={Number((lp.course as any)?.price || 0)}
-                          depositPrice={Number((lp.course as any)?.deposit_price || 0)}
-                        />
-                      );
-                    })()}
-
-                    {/* Selector de Opção de Pagamento */}
-                    {(() => {
-                      const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
-                      const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
-                      const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternationalCourse && !isFullOrDone;
-                      if (!checkoutAtivo) return null;
-
-                      const depositPrice = lp.course?.deposit_price != null && Number(lp.course.deposit_price) > 0
-                        ? Number(lp.course.deposit_price)
-                        : 400.00;
-                      const coursePrice = Number(lp.course?.price || 0);
-
-                      return (
-                        <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 mb-6 text-left">
-                          <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-3">
-                            Opção de Inscrição
-                          </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {/* Card: Integral */}
-                            <div
-                              onClick={() => setPaymentType('full')}
-                              className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
-                                paymentType === 'full'
-                                  ? 'border-wtech-gold bg-yellow-50/30 shadow-sm'
-                                  : 'border-gray-200 bg-white hover:border-gray-300'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Valor Integral</span>
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                  paymentType === 'full' ? 'border-wtech-gold' : 'border-gray-300'
-                                }`}>
-                                  {paymentType === 'full' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
-                                </div>
-                              </div>
-                              <span className="text-lg font-black text-gray-900">
-                                R$ {coursePrice.toFixed(2).replace('.', ',')}
-                              </span>
-                              <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Acesso integral garantido</span>
-                            </div>
-
-                            {/* Card: Sinal */}
-                            <div
-                              onClick={() => setPaymentType('deposit')}
-                              className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
-                                paymentType === 'deposit'
-                                  ? 'border-wtech-gold bg-yellow-50/30 shadow-sm'
-                                  : 'border-gray-200 bg-white hover:border-gray-300'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Reservar Vaga</span>
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                  paymentType === 'deposit' ? 'border-wtech-gold' : 'border-gray-350'
-                                }`}>
-                                  {paymentType === 'deposit' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
-                                </div>
-                              </div>
-                              <span className="text-lg font-black text-gray-900">
-                                R$ {depositPrice.toFixed(2).replace('.', ',')}
-                              </span>
-                              <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Sinal da pré-inscrição para assegurar a vaga</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
                     {[
                       { id: 'name', label: 'Nome completo', type: 'text', placeholder: 'Seu nome completo', key: 'name' },
                       { id: 'email', label: 'E-mail', type: 'email', placeholder: 'seu@email.com', key: 'email' },
@@ -1152,7 +961,7 @@ const LandingPageViewerV3: React.FC = () => {
                       {submitting
                         ? <><div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" /> Enviando...</>
                         : isFull ? 'Turma encerrada'
-                        : <><ArrowRight size={16} /> {paymentType === 'deposit' ? 'Garantir vaga (Pré-Inscrição)' : 'Garantir vaga (Integral)'}</>
+                        : <><ArrowRight size={16} /> Quero garantir minha vaga</>
                       }
                     </motion.button>
                     <p className="text-xs text-gray-400 text-center">Seus dados estão seguros. Não fazemos spam.</p>

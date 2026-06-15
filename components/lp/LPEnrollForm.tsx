@@ -1,6 +1,5 @@
 import React from 'react';
 import { ArrowRight, Check, ShieldCheck, User } from 'lucide-react';
-import CheckoutOfferCard from '../CheckoutOfferCard';
 import { QualificationQuiz } from '../QualificationQuiz';
 import type { LandingPageWithCourse } from '../../hooks/useLandingPage';
 
@@ -56,58 +55,8 @@ export const LPEnrollForm: React.FC<Props> = ({
         );
     }
 
-    const coursePrice = Number((lp.course as any)?.price || 0);
-    const depositPrice = (lp.course as any)?.deposit_price != null && Number((lp.course as any).deposit_price) > 0
-        ? Number((lp.course as any).deposit_price)
-        : 400;
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Oferta + seletor de pagamento — APENAS com checkout automático ativo */}
-            {checkoutAtivo && (
-                <>
-                    <div className="text-left">
-                        <CheckoutOfferCard theme={theme} coursePrice={coursePrice} depositPrice={depositPrice} />
-                    </div>
-
-                    <div className={`rounded-2xl p-5 border mb-6 text-left ${dark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                        <label className={`block text-xs font-black uppercase tracking-wider mb-3 ${dark ? 'text-white/50' : 'text-gray-500'}`}>
-                            Opção de Inscrição
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {([
-                                { key: 'full' as const, label: 'Valor Integral', price: coursePrice, note: 'Acesso integral garantido' },
-                                { key: 'deposit' as const, label: 'Reservar Vaga', price: depositPrice, note: 'Sinal da pré-inscrição para assegurar a vaga' }
-                            ]).map(opt => {
-                                const active = paymentType === opt.key;
-                                return (
-                                    <div
-                                        key={opt.key}
-                                        onClick={() => setPaymentType(opt.key)}
-                                        className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
-                                            active
-                                                ? (dark ? 'border-wtech-gold bg-wtech-gold/10' : 'border-wtech-gold bg-yellow-50/30 shadow-sm')
-                                                : (dark ? 'border-white/10 bg-white/5 hover:border-white/25' : 'border-gray-200 bg-white hover:border-gray-300')
-                                        }`}
-                                    >
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className={`text-sm font-black uppercase tracking-tight ${dark ? 'text-white' : 'text-gray-950'}`}>{opt.label}</span>
-                                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${active ? 'border-wtech-gold' : (dark ? 'border-white/30' : 'border-gray-300')}`}>
-                                                {active && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
-                                            </div>
-                                        </div>
-                                        <span className={`text-lg font-black ${dark ? 'text-wtech-gold' : 'text-gray-900'}`}>
-                                            R$ {opt.price.toFixed(2).replace('.', ',')}
-                                        </span>
-                                        <span className={`text-[10px] mt-2 font-bold leading-tight ${dark ? 'text-white/40' : 'text-gray-400'}`}>{opt.note}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </>
-            )}
-
             <div>
                 <label className={labelCls}>Nome Completo</label>
                 <div className="relative">
@@ -131,11 +80,7 @@ export const LPEnrollForm: React.FC<Props> = ({
             </div>
 
             <button type="submit" className="w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black py-4 rounded-xl font-black text-lg uppercase tracking-wider hover:shadow-[0_10px_20px_rgba(212,175,55,0.35)] hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
-                {isFullOrDone
-                    ? 'Entrar na Lista de Espera'
-                    : checkoutAtivo
-                        ? (paymentType === 'deposit' ? 'Garantir Vaga (Pré-Inscrição)' : 'Garantir Vaga (Inscrição Integral)')
-                        : 'Quero Minha Vaga'} <ArrowRight size={20} strokeWidth={3} />
+                {isFullOrDone ? 'Entrar na Lista de Espera' : 'Quero Garantir Minha Vaga'} <ArrowRight size={20} strokeWidth={3} />
             </button>
 
             <div className={`flex items-center justify-center gap-4 pt-4 border-t text-xs font-bold uppercase ${dark ? 'border-white/10 text-white/40' : 'border-gray-100 text-gray-400'}`}>

@@ -1,6 +1,20 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.5.1 (2026-06-15) - Depoimentos em vídeo, cronograma por módulo e novo fluxo de pré-inscrição
+- Depoimentos das landing pages agora exibem somente vídeos do YouTube (Shorts incluídos), com 4 depoimentos padrão da W-Tech em todas as páginas de cursos presenciais
+- Cronograma do curso reformulado: estruturado por módulo (título, objetivo, tópicos e resultado), editado no Editor de Landing Page, com modelo padrão e renderização visual em todos os 8 templates; o texto é espelhado para o curso (WhatsApp/lembretes)
+- Pagamento automatizado: a LP deixa de mostrar preço no primeiro impacto — capta nome, e-mail e telefone e redireciona para a página de pré-inscrição, onde o lead escolhe entre o sinal de reserva (R$ 400) ou o valor integral antes do Mercado Pago
+- Página de pré-inscrição com topo e rodapé explicativos: vagas restantes, vaga 100% garantida, reembolso garantido e estrutura oficial W-Tech
+- Quiz de qualificação passa a redirecionar para a pré-inscrição quando o pagamento automatizado está ativo
+- Requer migração no Supabase: `ALTER TABLE "SITE_LandingPages" ADD COLUMN IF NOT EXISTS schedule_modules jsonb;`
+
+## v3.5.0 (2026-06-14) - Rastreamento de campanha no checkout e loader Stape com suporte a Safari/ITP
+- Propagação completa das UTMs, fbclid e gclid das campanhas para o checkout da Kiwify, com persistência durante a navegação
+- Envio dos cookies _fbp/_fbc (Meta) e _ga (Google Analytics) para o checkout, melhorando o match quality da CAPI
+- Botão de checkout passa a abrir na mesma janela
+- Atualização do Stape Custom Loader (GTM server-side) com stapeUserId para contornar o ITP do Safari e preservar a identificação entre sessões
+
 ## v3.4.0 (2026-06-13) - Integração de Campanhas, Cobrança Manual, Link de Saldo MP e Webhook
 - Campanhas de e-mail e automação de marketing no painel administrativo
 - Sistema de cobrança manual de saldo pendente por e-mail e WhatsApp

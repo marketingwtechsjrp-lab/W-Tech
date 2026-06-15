@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Calendar, Clock, MapPin, Users, Play, X, Star, AlertTriangle, Navigation, Plus } from 'lucide-react';
 import { useLandingPage } from '../hooks/useLandingPage';
+import { ScheduleTimeline } from '../components/ScheduleTimeline';
+import { resolveScheduleModules } from '../lib/schedule';
 import LPEnrollForm from '../components/lp/LPEnrollForm';
 import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
@@ -173,22 +175,18 @@ const LandingPageViewerV8: React.FC = () => {
             )}
 
             {/* CRONOGRAMA */}
-            {lp.course?.schedule && (
-                <section className="py-24 border-t-2 border-zinc-950">
-                    <div className="container mx-auto px-6">
-                        <SectionHead n="03" title="Programação" />
-                        <div className="max-w-4xl border-2 border-zinc-950 p-8 md:p-12 bg-white">
-                            <div className="prose prose-zinc max-w-none leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
-                        </div>
-                    </div>
-                </section>
-            )}
+            <section id="cronograma" className="py-24 border-t-2 border-zinc-950">
+                <div className="container mx-auto px-6">
+                    <SectionHead n="03" title="Programação" />
+                    <ScheduleTimeline modules={resolveScheduleModules(lp.scheduleModules)} variant="light" />
+                </div>
+            </section>
 
             {/* MÓDULOS */}
             {lp.modules && lp.modules.length > 0 && (
                 <section id="modules" className="py-24 border-t-2 border-zinc-950 bg-zinc-50">
                     <div className="container mx-auto px-6">
-                        <SectionHead n={lp.course?.schedule ? '04' : '03'} title="Conteúdo Programático" />
+                        <SectionHead n="04" title="Conteúdo Programático" />
                         <div className="divide-y-2 divide-zinc-950 border-2 border-zinc-950 bg-white">
                             {lp.modules.map((mod, i) => (
                                 <div key={i} className="grid md:grid-cols-[90px_1fr] hover:bg-wtech-gold/5 transition-colors">
@@ -246,7 +244,7 @@ const LandingPageViewerV8: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        <p className="text-zinc-700 text-sm leading-relaxed flex-1">"{t.text}"</p>
+                                        <p className="text-zinc-700 text-sm leading-relaxed flex-1">{t.text && `"${t.text}"`}</p>
                                         <div className="flex items-center gap-3 mt-6 pt-5 border-t-2 border-zinc-100">
                                             <div className="w-10 h-10 border-2 border-zinc-950 overflow-hidden bg-zinc-50 flex items-center justify-center shrink-0">
                                                 {t.image ? <img src={t.image} className="w-full h-full object-cover" alt={t.name} /> : <span className="font-black text-zinc-950">{t.name[0]}</span>}

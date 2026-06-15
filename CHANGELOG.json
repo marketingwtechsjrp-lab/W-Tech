@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.5.1",
+    "date": "2026-06-15",
+    "title": "Depoimentos em vídeo, cronograma por módulo e novo fluxo de pré-inscrição",
+    "changes": [
+      "Depoimentos das LPs agora exibem somente vídeos do YouTube (Shorts incluídos), com 4 depoimentos padrão da W-Tech em todas as páginas de cursos presenciais",
+      "Cronograma do curso reformulado: estruturado por módulo (título, objetivo, tópicos e resultado), editado no Editor de Landing Page, com modelo padrão e visual em todos os 8 templates",
+      "Pagamento automatizado: a LP deixa de mostrar preço no primeiro impacto — capta nome, e-mail e telefone e redireciona para a pré-inscrição, onde o lead escolhe sinal de reserva ou valor integral",
+      "Página de pré-inscrição com topo e rodapé explicativos: vagas restantes, vaga 100% garantida, reembolso garantido e estrutura oficial W-Tech",
+      "Quiz de qualificação passa a redirecionar para a pré-inscrição quando o pagamento automatizado está ativo"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.5.0",
     "date": "2026-06-14",
     "title": "Rastreamento de campanha no checkout e loader Stape com suporte a Safari/ITP",

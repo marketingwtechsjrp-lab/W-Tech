@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { handleLeadUpsert } from '../lib/leadDistribution';
+import { resolveCourseTestimonials } from '../lib/testimonials';
+import { resolveScheduleModules } from '../lib/schedule';
 import { LandingPage, Course } from '../types';
 
 /**
@@ -143,6 +145,8 @@ export function useLandingPage(ownTemplate: string) {
                 pixelId: lpData.pixel_id,
                 quizEnabled: lpData.quiz_enabled,
                 fakeAlertsEnabled: lpData.fake_alerts_enabled,
+                testimonials: resolveCourseTestimonials(lpData.testimonials),
+                scheduleModules: resolveScheduleModules(lpData.schedule_modules),
                 course: mappedCourse,
                 courseId: lpData.course_id
             };

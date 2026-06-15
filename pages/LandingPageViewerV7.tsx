@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Calendar, Clock, MapPin, Users, Play, X, Star, AlertTriangle, Navigation } from 'lucide-react';
 import { useLandingPage } from '../hooks/useLandingPage';
+import { ScheduleTimeline } from '../components/ScheduleTimeline';
+import { resolveScheduleModules } from '../lib/schedule';
 import LPEnrollForm from '../components/lp/LPEnrollForm';
 import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
@@ -158,19 +160,15 @@ const LandingPageViewerV7: React.FC = () => {
             )}
 
             {/* CRONOGRAMA */}
-            {lp.course?.schedule && (
-                <section className="py-24">
-                    <div className="container mx-auto px-6 max-w-3xl">
-                        <div className="text-center mb-10">
-                            <div className="text-[11px] font-bold uppercase tracking-[0.35em] text-yellow-700 mb-3">Programação</div>
-                            <h2 className="font-serif text-4xl text-zinc-950">Cronograma do curso</h2>
-                        </div>
-                        <div className="bg-white border border-zinc-200 rounded-sm p-8 md:p-12 shadow-sm">
-                            <div className="prose prose-zinc max-w-none leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
-                        </div>
+            <section id="cronograma" className="py-24">
+                <div className="container mx-auto px-6 max-w-3xl">
+                    <div className="text-center mb-10">
+                        <div className="text-[11px] font-bold uppercase tracking-[0.35em] text-yellow-700 mb-3">Programação</div>
+                        <h2 className="font-serif text-4xl text-zinc-950">Cronograma do curso</h2>
                     </div>
-                </section>
-            )}
+                    <ScheduleTimeline modules={resolveScheduleModules(lp.scheduleModules)} variant="light" />
+                </div>
+            </section>
 
             {/* MÓDULOS — cards revista */}
             {lp.modules && lp.modules.length > 0 && (
@@ -239,9 +237,11 @@ const LandingPageViewerV7: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        <blockquote className="font-serif text-xl text-zinc-800 leading-relaxed flex-1">
-                                            <span className="text-yellow-700 text-4xl leading-none align-top">“</span>{t.text}<span className="text-yellow-700">”</span>
-                                        </blockquote>
+                                        {t.text && (
+                                            <blockquote className="font-serif text-xl text-zinc-800 leading-relaxed flex-1">
+                                                <span className="text-yellow-700 text-4xl leading-none align-top">“</span>{t.text}<span className="text-yellow-700">”</span>
+                                            </blockquote>
+                                        )}
                                         <figcaption className="flex items-center gap-3 mt-6 pt-5 border-t border-zinc-200">
                                             <div className="w-10 h-10 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center shrink-0">
                                                 {t.image ? <img src={t.image} className="w-full h-full object-cover" alt={t.name} /> : <span className="font-bold text-yellow-700">{t.name[0]}</span>}

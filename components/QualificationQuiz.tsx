@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ShieldCheck, Thermometer } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
@@ -64,6 +65,7 @@ const QUESTIONS = [
 ];
 
 export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsappGlobalNumber }) => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'lead_capture' | 'quiz' | 'result'>('lead_capture');
     const [quizIndex, setQuizIndex] = useState(0);
     const [score, setScore] = useState(0);
@@ -140,6 +142,7 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
                 tags: ['quiz_qualified', temperature.toLowerCase().replace(' ', '_'), lp.slug] 
             };
 
+            let effectiveLeadId = leadId;
             if (leadId) {
                 // UPDATE existing lead
                 // Note: RLS must allow UPDATE for anon or we need a secure RPC.
@@ -157,9 +160,23 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
                     origin: window.location.href,
                     ...resultPayload
                  };
-                 await handleLeadUpsert(fallbackPayload);
+                 const fb = await handleLeadUpsert(fallbackPayload);
+                 if (fb && fb.id) effectiveLeadId = fb.id;
             }
-            
+
+            // Checkout automatizado: após qualificar, leva o lead direto para a
+            // pré-inscrição/pagamento (mesma regra dos formulários das LPs).
+            const courseIdForCheckout = lp.courseId || lp.course?.id;
+            const isInternational = lp.course?.isInternational || lp.course?.is_international;
+            const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
+            const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternational && !isFullOrDone;
+            if (checkoutAtivo && courseIdForCheckout && effectiveLeadId) {
+                const sp = new URLSearchParams(window.location.search);
+                sp.set('lid', effectiveLeadId);
+                navigate(`/checkout-curso/${courseIdForCheckout}?${sp.toString()}`);
+                return;
+            }
+
             setStep('result');
             if (onComplete) onComplete(resultPayload);
 

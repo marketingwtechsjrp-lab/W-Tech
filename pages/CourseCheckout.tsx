@@ -3,7 +3,8 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Lock, ShieldCheck, User, Mail, Phone, Calendar, MapPin,
-    AlertCircle, Loader2, CheckCircle, ChevronRight, CreditCard
+    AlertCircle, Loader2, CheckCircle, ChevronRight, CreditCard,
+    Users, Award, BadgeCheck, RotateCcw, Sparkles
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { createMercadoPagoPreference } from '../lib/mercadopago';
@@ -269,6 +270,50 @@ const CourseCheckout: React.FC = () => {
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Pagamento</span>
                     </div>
                 </div>
+
+                {/* Intro explicativa — suaviza a chegada direto no pagamento e reforça a garantia */}
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="mb-8 rounded-2xl border border-wtech-gold/30 bg-gradient-to-br from-amber-50 via-white to-white p-6 md:p-7 shadow-sm"
+                >
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="inline-flex items-center gap-1.5 bg-wtech-gold/15 text-amber-700 text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                            <Sparkles size={12} /> Pré-inscrição
+                        </span>
+                        {spotsLeft > 0 && (
+                            <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-600 text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                                ⚡ {spotsLeft} {spotsLeft === 1 ? 'vaga restante' : 'vagas restantes'}
+                            </span>
+                        )}
+                    </div>
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
+                        Garanta sua vaga agora — com <span className="text-wtech-gold">segurança total</span>
+                    </h1>
+                    <p className="text-sm text-gray-600 mt-2 max-w-2xl leading-relaxed">
+                        Faça sua <strong>pré-inscrição</strong> pagando apenas o sinal e sua vaga fica
+                        <strong> 100% reservada no seu nome</strong>. Mudou de ideia? Você tem
+                        <strong> reembolso garantido</strong>. Tudo com a estrutura e o suporte oficiais da W-Tech Brasil.
+                    </p>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+                        {[
+                            { icon: BadgeCheck, title: 'Vaga 100% garantida', desc: 'Reservada no seu nome na hora' },
+                            { icon: Users, title: 'Pré-inscrição pelo sinal', desc: 'Garanta hoje, pague o restante depois' },
+                            { icon: RotateCcw, title: 'Reembolso garantido', desc: 'Desistiu? Devolvemos seu dinheiro' },
+                            { icon: Award, title: 'Estrutura oficial W-Tech', desc: 'Certificação e suporte de verdade' }
+                        ].map((b, i) => (
+                            <div key={i} className="flex items-start gap-2.5 bg-white/70 border border-gray-100 rounded-xl p-3">
+                                <b.icon size={18} className="text-wtech-gold shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <div>
+                                    <p className="text-xs font-black text-gray-900 leading-tight">{b.title}</p>
+                                    <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{b.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
 
                 <div className="grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
                     {/* Coluna esquerda: Resumo do curso */}
@@ -571,6 +616,41 @@ const CourseCheckout: React.FC = () => {
                         </p>
                     </motion.div>
                 </div>
+
+                {/* Garantia W-Tech — reforço final antes de pagar */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4 }}
+                    className="mt-10 rounded-2xl border-2 border-green-200 bg-green-50/50 p-6 md:p-8"
+                >
+                    <div className="flex flex-col md:flex-row items-start gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-green-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-green-200">
+                            <ShieldCheck size={28} strokeWidth={2.5} />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg md:text-xl font-black text-gray-900">Compra 100% garantida pela W-Tech</h3>
+                            <p className="text-sm text-gray-600 mt-2 leading-relaxed max-w-3xl">
+                                Assim que o pagamento é confirmado, sua <strong>vaga fica reservada no seu nome</strong> imediatamente.
+                                Se por algum motivo você desistir, <strong>devolvemos o seu dinheiro</strong> — sem burocracia.
+                                Você conta com toda a estrutura, a metodologia e o suporte oficiais da <strong>W-Tech Brasil</strong>.
+                            </p>
+                            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4">
+                                {[
+                                    { icon: RotateCcw, text: 'Reembolso garantido' },
+                                    { icon: BadgeCheck, text: 'Vaga reservada no seu nome' },
+                                    { icon: Lock, text: 'Pagamento seguro via Mercado Pago' },
+                                    { icon: Award, text: 'Certificação oficial W-Tech' }
+                                ].map((b, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700">
+                                        <b.icon size={14} className="text-green-600 shrink-0" /> {b.text}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
         </div>
     );

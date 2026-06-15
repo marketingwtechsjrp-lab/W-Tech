@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import CheckoutOfferCard from '../components/CheckoutOfferCard';
 import { LandingPage, Course } from '../types';
 import { CheckCircle, ShieldCheck, ArrowRight, Star, Play, MapPin, Calendar, Clock, Check, User, Users, AlertTriangle, Navigation, X, Quote } from 'lucide-react';
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead, handleLeadUpsert } from '../lib/leadDistribution';
+import { resolveCourseTestimonials } from '../lib/testimonials';
+import { resolveScheduleModules } from '../lib/schedule';
+import { ScheduleTimeline } from '../components/ScheduleTimeline';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
@@ -137,6 +139,8 @@ const LandingPageViewerV4: React.FC = () => {
             heroSecondaryImage: (lpData as any).hero_secondary_image,
             quizEnabled: (lpData as any).quiz_enabled,
             fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
+            testimonials: resolveCourseTestimonials((lpData as any).testimonials),
+            scheduleModules: resolveScheduleModules((lpData as any).schedule_modules),
             course: mappedCourse,
             courseId: (lpData as any).course_id  // garante disponibilidade para redirect ao checkout
          };
@@ -482,21 +486,16 @@ const LandingPageViewerV4: React.FC = () => {
         </section>
 
         {/* SCHEDULE SECTION */}
-        {lp.course?.schedule && (
-            <section id="schedule" className="py-24 bg-white border-t border-gray-100">
-                <div className="container mx-auto px-6">
-                    <div className="text-center mb-16">
-                         <span className="text-yellow-600 font-bold uppercase tracking-widest text-xs">Cronograma</span>
-                         <h2 className="text-4xl font-black text-zinc-950 uppercase mt-2">Programação do Curso</h2>
-                    </div>
-                    
-                    <div className="max-w-4xl mx-auto bg-gray-50/50 p-8 md:p-12 rounded-3xl border border-gray-200/80 shadow-sm">
-                        <div className="prose prose-zinc max-w-none text-zinc-700 prose-headings:text-zinc-950 prose-a:text-wtech-gold prose-p:leading-relaxed" 
-                             dangerouslySetInnerHTML={{ __html: sanitizeHtml(lp.course.schedule.replace(/\n/g, '<br/>')) }} />
-                    </div>
+        <section id="schedule" className="py-24 bg-white border-t border-gray-100">
+            <div className="container mx-auto px-6">
+                <div className="text-center mb-16">
+                     <span className="text-yellow-600 font-bold uppercase tracking-widest text-xs">Cronograma</span>
+                     <h2 className="text-4xl font-black text-zinc-950 uppercase mt-2">Programação do Curso</h2>
                 </div>
-            </section>
-        )}
+
+                <ScheduleTimeline modules={resolveScheduleModules(lp.scheduleModules)} variant="light" />
+            </div>
+        </section>
 
         {/* MODULES SECTION */}
         {lp.modules && lp.modules.length > 0 && (
@@ -580,13 +579,13 @@ const LandingPageViewerV4: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <p className="text-zinc-600 text-sm italic leading-relaxed">"{test.text}"</p>
+                                            <p className="text-zinc-600 text-sm italic leading-relaxed">{test.text && `"${test.text}"`}</p>
                                         </div>
                                     ) : (
                                         /* Text Testimonial */
                                         <div className="space-y-4 flex-1">
                                             <Quote size={32} className="text-wtech-gold/15" />
-                                            <p className="text-zinc-700 text-sm leading-relaxed">"{test.text}"</p>
+                                            <p className="text-zinc-700 text-sm leading-relaxed">{test.text && `"${test.text}"`}</p>
                                         </div>
                                     )}
 
@@ -701,92 +700,6 @@ const LandingPageViewerV4: React.FC = () => {
                                     </div>
                             ) : (
                                     <form onSubmit={handleSubmit} className="space-y-6">
-                                        {/* Aviso do Checkout Direto: explica o fluxo de pagamento e o sinal de reserva */}
-                                        {(() => {
-                                            const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
-                                            const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
-                                            const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternationalCourse && !isFullOrDone;
-                                            if (!checkoutAtivo) return null;
-
-                                            return (
-                                                <div className="text-left">
-                                                    <CheckoutOfferCard
-                                                        theme="light"
-                                                        coursePrice={Number((lp.course as any)?.price || 0)}
-                                                        depositPrice={Number((lp.course as any)?.deposit_price || 0)}
-                                                    />
-                                                </div>
-                                            );
-                                        })()}
-
-                                        {/* Selector de Opção de Pagamento */}
-                                        {(() => {
-                                            const isInternationalCourse = lp.course?.isInternational || (lp.course as any)?.is_international;
-                                            const isFullOrDone = lp.course?.status === 'Full' || lp.course?.status === 'Completed';
-                                            const checkoutAtivo = lp.course?.checkoutType === 'automated' && !isInternationalCourse && !isFullOrDone;
-                                            if (!checkoutAtivo) return null;
-
-                                            const depositPrice = lp.course?.deposit_price != null && Number(lp.course.deposit_price) > 0
-                                                ? Number(lp.course.deposit_price)
-                                                : 400.00;
-                                            const coursePrice = Number(lp.course?.price || 0);
-
-                                            return (
-                                                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200 mb-6 text-left">
-                                                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-3">
-                                                        Opção de Inscrição
-                                                    </label>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                        {/* Card: Integral */}
-                                                        <div
-                                                            onClick={() => setPaymentType('full')}
-                                                            className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
-                                                                paymentType === 'full'
-                                                                    ? 'border-wtech-gold bg-yellow-50/30 shadow-sm'
-                                                                    : 'border-gray-200 bg-white hover:border-gray-300'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Valor Integral</span>
-                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                                                    paymentType === 'full' ? 'border-wtech-gold' : 'border-gray-350'
-                                                                }`}>
-                                                                    {paymentType === 'full' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
-                                                                </div>
-                                                            </div>
-                                                            <span className="text-lg font-black text-gray-900">
-                                                                R$ {coursePrice.toFixed(2).replace('.', ',')}
-                                                            </span>
-                                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Acesso integral garantido</span>
-                                                        </div>
-
-                                                        {/* Card: Sinal */}
-                                                        <div
-                                                            onClick={() => setPaymentType('deposit')}
-                                                            className={`cursor-pointer rounded-xl p-4 border-2 transition-all flex flex-col justify-between ${
-                                                                paymentType === 'deposit'
-                                                                    ? 'border-wtech-gold bg-yellow-50/30 shadow-sm'
-                                                                    : 'border-gray-200 bg-white hover:border-gray-300'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <span className="text-sm font-black text-gray-950 uppercase tracking-tight">Reservar Vaga</span>
-                                                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                                                    paymentType === 'deposit' ? 'border-wtech-gold' : 'border-gray-350'
-                                                                }`}>
-                                                                    {paymentType === 'deposit' && <div className="w-2 h-2 rounded-full bg-wtech-gold" />}
-                                                                </div>
-                                                            </div>
-                                                            <span className="text-lg font-black text-gray-900">
-                                                                R$ {depositPrice.toFixed(2).replace('.', ',')}
-                                                            </span>
-                                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Sinal da pré-inscrição para assegurar a vaga</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
-
                                         <div className="group-form">
                                             <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Nome Completo</label>
                                             <div className="relative">
@@ -829,11 +742,9 @@ const LandingPageViewerV4: React.FC = () => {
                                         </div>
 
                                         <button type="submit" className="w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black py-4.5 rounded-xl font-black text-lg uppercase tracking-wider hover:shadow-[0_10px_20px_rgba(212,175,55,0.3)] hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
-                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed' 
-                                                ? 'Entrar na Lista' 
-                                                : paymentType === 'deposit' 
-                                                    ? 'Garantir Vaga (Pré-Inscrição)' 
-                                                    : 'Garantir Vaga (Inscrição Integral)'} <ArrowRight size={20} strokeWidth={3} />
+                                            {lp.course?.status === 'Full' || lp.course?.status === 'Completed'
+                                                ? 'Entrar na Lista'
+                                                : 'Quero Garantir Minha Vaga'} <ArrowRight size={20} strokeWidth={3} />
                                         </button>
 
                                         <div className="flex items-center justify-center gap-6 pt-4 border-t border-gray-100 text-gray-400 text-xs font-bold uppercase">
