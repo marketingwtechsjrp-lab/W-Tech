@@ -270,11 +270,11 @@ const WTechLisboaNov2026: React.FC = () => {
             <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
                 {/* Background */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/65 z-10"></div>
+                    <div className="absolute inset-0 bg-black/55 z-10"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.05)_0%,transparent_80%)] z-10"></div>
                     <video
                         src="/videos/como_foi.mp4"
-                        className="w-full h-full object-cover scale-[1.3] brightness-[0.25] pointer-events-none"
+                        className="w-full h-full object-cover scale-[1.3] brightness-[0.35] pointer-events-none"
                         autoPlay
                         muted
                         loop

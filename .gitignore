@@ -28,7 +28,6 @@ dist-ssr
 # Large Media Files
 *.mov
 public/images/Pronello.mov
-public/videos/finalwtech.mp4
 .env
 
 # Playwright
