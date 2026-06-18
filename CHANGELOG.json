@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.6.3",
+    "date": "2026-06-18",
+    "title": "Vídeo do YouTube Shorts no checkout",
+    "changes": [
+      "Substituição do vídeo de apresentação local no checkout pelo Short do YouTube com reprodução automática e loop"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.6.2",
     "date": "2026-06-18",
     "title": "Vídeo, parcelamento 10x e reciclagem no checkout + filtro CRM, llms.txt e crédito no footer",

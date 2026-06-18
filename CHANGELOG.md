@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.6.3 (2026-06-18) - Vídeo do YouTube Shorts no checkout
+- Substituição do vídeo de apresentação local no checkout pelo Short do YouTube com reprodução automática e loop
+
 ## v3.6.2 (2026-06-18) - Vídeo, parcelamento 10x e reciclagem no checkout + filtro CRM, llms.txt e crédito no footer
 - Checkout de curso (`CourseCheckout`, exibido quando a automação está ligada): vídeo de apresentação `curso-wtech.mp4` (vertical) no topo do resumo
 - Parcelamento em até 10x no cartão: mensagem dinâmica na UI (card Valor Integral, total e badge) e `payment_methods.installments: 10` na preferência do Mercado Pago

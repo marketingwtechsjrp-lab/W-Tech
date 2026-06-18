@@ -337,15 +337,13 @@ const CourseCheckout: React.FC = () => {
                                 <h3 className="text-sm font-black text-gray-900 leading-tight">Veja como é o curso W-Tech</h3>
                             </div>
                             <div className="bg-black flex justify-center">
-                                <video
-                                    src="/videos/curso-wtech.mp4"
-                                    controls
-                                    playsInline
-                                    preload="metadata"
-                                    className="w-auto max-h-[460px] aspect-[9/16] object-contain"
-                                >
-                                    Seu navegador não suporta vídeo HTML5.
-                                </video>
+                                <iframe
+                                    src="https://www.youtube-nocookie.com/embed/MKzSU1bhnRc?autoplay=1&mute=1&playsinline=1&loop=1&playlist=MKzSU1bhnRc&rel=0"
+                                    title="Veja como é o curso W-Tech"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="w-[259px] h-[460px] border-0"
+                                />
                             </div>
                         </div>
 
