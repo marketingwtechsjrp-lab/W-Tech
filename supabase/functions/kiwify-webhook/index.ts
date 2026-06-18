@@ -60,9 +60,9 @@ function formatPhone(phone: string): string {
   return formatted;
 }
 
-function evolutionReady(): boolean {
-  if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY || !EVOLUTION_INSTANCE) {
-    console.error("Evolution API credentials missing in environment variables.");
+function evolutionReady(config: { url: string; apiKey: string; instance: string }): boolean {
+  if (!config.url || !config.apiKey || !config.instance) {
+    console.error("Evolution API credentials missing in configurations.");
     return false;
   }
   return true;
@@ -73,13 +73,14 @@ async function sendWhatsAppMedia(
   phone: string,
   mediaUrl: string,
   caption: string,
+  config: { url: string; apiKey: string; instance: string },
   mediatype: 'image' | 'video' | 'document' = 'video',
   delay = 1500,
 ): Promise<boolean> {
-  if (!evolutionReady()) return false;
+  if (!evolutionReady(config)) return false;
 
-  const baseUrl = EVOLUTION_API_URL.replace(/\/$/, '');
-  const endpoint = `${baseUrl}/message/sendMedia/${EVOLUTION_INSTANCE}`;
+  const baseUrl = config.url.replace(/\/$/, '');
+  const endpoint = `${baseUrl}/message/sendMedia/${config.instance}`;
 
   const payload = {
     number: formatPhone(phone),
@@ -93,7 +94,7 @@ async function sendWhatsAppMedia(
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': config.apiKey },
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -106,11 +107,16 @@ async function sendWhatsAppMedia(
 }
 
 // Envio de texto puro via Evolution API
-async function sendWhatsAppText(phone: string, text: string, delay = 1200): Promise<boolean> {
-  if (!evolutionReady()) return false;
+async function sendWhatsAppText(
+  phone: string,
+  text: string,
+  config: { url: string; apiKey: string; instance: string },
+  delay = 1200
+): Promise<boolean> {
+  if (!evolutionReady(config)) return false;
 
-  const baseUrl = EVOLUTION_API_URL.replace(/\/$/, '');
-  const endpoint = `${baseUrl}/message/sendText/${EVOLUTION_INSTANCE}`;
+  const baseUrl = config.url.replace(/\/$/, '');
+  const endpoint = `${baseUrl}/message/sendText/${config.instance}`;
 
   const payload = {
     number: formatPhone(phone),
@@ -121,7 +127,7 @@ async function sendWhatsAppText(phone: string, text: string, delay = 1200): Prom
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': EVOLUTION_API_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': config.apiKey },
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -134,8 +140,13 @@ async function sendWhatsAppText(phone: string, text: string, delay = 1200): Prom
 }
 
 // Backward-compat helper usado pelos fluxos antigos
-async function sendWhatsAppVideo(phone: string, videoUrl: string, caption: string): Promise<boolean> {
-  return await sendWhatsAppMedia(phone, videoUrl, caption, 'video', 1500);
+async function sendWhatsAppVideo(
+  phone: string,
+  videoUrl: string,
+  caption: string,
+  config: { url: string; apiKey: string; instance: string }
+): Promise<boolean> {
+  return await sendWhatsAppMedia(phone, videoUrl, caption, config, 'video', 1500);
 }
 
 // Extrai o código Pix (copia e cola) e a expiração do payload da Kiwify.
@@ -176,20 +187,27 @@ function formatExpiration(raw: string): string {
 }
 
 // Sequência de recuperação com Pix pronto: vídeo (variante) -> QR -> copia e cola.
-async function sendPixRecovery(phone: string, name: string, pixCode: string, expiration: string, variant: 'A' | 'B'): Promise<boolean> {
+async function sendPixRecovery(
+  phone: string,
+  name: string,
+  pixCode: string,
+  expiration: string,
+  variant: 'A' | 'B',
+  config: { url: string; apiKey: string; instance: string }
+): Promise<boolean> {
   const expiraTxt = formatExpiration(expiration);
   const videoCaption = variant === 'B' ? CAPTIONS.pix_video_B(name, expiraTxt) : CAPTIONS.pix_video_A(name, expiraTxt);
 
   // 1. Vídeo do Alex contextualizando (variante A/B)
-  const okVideo = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, videoCaption);
+  const okVideo = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, videoCaption, config);
 
   // 2. Imagem do QR Code (gerado a partir do copia e cola)
   const qrUrl = buildQrImageUrl(pixCode);
-  const okQr = await sendWhatsAppMedia(phone, qrUrl, CAPTIONS.pix_qr(), 'image', 1200);
+  const okQr = await sendWhatsAppMedia(phone, qrUrl, CAPTIONS.pix_qr(), config, 'image', 1200);
 
   // 3. Instrução + código copia e cola ISOLADO (pra cópia limpa no mobile)
-  await sendWhatsAppText(phone, CAPTIONS.pix_copy_intro(), 1000);
-  const okCode = await sendWhatsAppText(phone, pixCode, 600);
+  await sendWhatsAppText(phone, CAPTIONS.pix_copy_intro(), config, 1000);
+  const okCode = await sendWhatsAppText(phone, pixCode, config, 600);
 
   return okVideo && okQr && okCode;
 }
@@ -202,6 +220,42 @@ serve(async (req) => {
 
     const payload = await req.json();
     console.log("Received Kiwify Webhook:", JSON.stringify(payload));
+
+    // Fetch dynamic configuration from database SITE_Config table
+    let resolvedUrl = EVOLUTION_API_URL;
+    let resolvedKey = EVOLUTION_API_KEY;
+    let resolvedInstance = EVOLUTION_INSTANCE;
+
+    try {
+      const { data: configs } = await supabase
+        .from('SITE_Config')
+        .select('key, value');
+
+      if (configs) {
+        const map: Record<string, string> = {};
+        configs.forEach((cfg: any) => {
+          map[cfg.key] = cfg.value;
+        });
+
+        if (map['evolution_api_url']) {
+          resolvedUrl = map['evolution_api_url'].replace(/\/$/, '');
+        }
+        if (map['evolution_api_key']) {
+          resolvedKey = map['evolution_api_key'].trim();
+        }
+        // Try automation_whatsapp_instance first, then fallbackInstance (evolution_instance_name), then env
+        if (map['automation_whatsapp_instance']) {
+          resolvedInstance = map['automation_whatsapp_instance'].trim();
+        } else if (map['evolution_instance_name']) {
+          resolvedInstance = map['evolution_instance_name'].trim();
+        }
+      }
+      console.log(`[Kiwify Webhook] Config resolved: url=${resolvedUrl}, instance=${resolvedInstance}`);
+    } catch (dbErr: any) {
+      console.error("[Kiwify Webhook] DB Config error, using Deno env fallback:", dbErr);
+    }
+
+    const config = { url: resolvedUrl, apiKey: resolvedKey, instance: resolvedInstance };
 
     // Universal extraction for all Kiwify versions
     const orderData = payload.order || payload.cart || payload;
@@ -276,7 +330,7 @@ serve(async (req) => {
           sent_at: new Date().toISOString(),
         }, { onConflict: 'order_id' });
 
-        success = await sendPixRecovery(phone, name, pixCode, expiration, variant);
+        success = await sendPixRecovery(phone, name, pixCode, expiration, variant, config);
       } else {
         // Sem código Pix no payload (ex: boleto ou versão sem o campo) -> mantém fluxo antigo agendado (+5min)
         console.log(`waiting_payment sem pix_code no payload para ${phone}. Agendando msg de link (+5min). Verifique os logs do payload acima para mapear o campo correto.`);
@@ -325,7 +379,7 @@ serve(async (req) => {
       });
 
       // Send welcome video immediately
-      success = await sendWhatsAppVideo(phone, VIDEOS.welcome, CAPTIONS.welcome(name));
+      success = await sendWhatsAppVideo(phone, VIDEOS.welcome, CAPTIONS.welcome(name), config);
     }
 
     // 3. Logic for Manual Abandonment (Kiwify direct) — com pix manda QR+copia e cola, senão vídeo + link
@@ -362,10 +416,10 @@ serve(async (req) => {
           recovered: false,
           sent_at: new Date().toISOString(),
         }, { onConflict: 'order_id' });
-        success = await sendPixRecovery(phone, name, pixCode, expiration, variant);
+        success = await sendPixRecovery(phone, name, pixCode, expiration, variant, config);
       } else {
         console.log(`Cart abandoned para ${phone}. Enviando vídeo + link.`);
-        success = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.cart_abandoned(name, checkoutUrl));
+        success = await sendWhatsAppVideo(phone, VIDEOS.cart_abandoned, CAPTIONS.cart_abandoned(name, checkoutUrl), config);
       }
     }
 
