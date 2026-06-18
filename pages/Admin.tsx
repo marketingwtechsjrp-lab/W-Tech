@@ -40,6 +40,7 @@ import CRMView from '../components/admin/CRM/CRMView';
 import BlogManagerView from '../components/admin/Blog/BlogManagerView';
 import LandingPagesView from '../components/admin/Marketing/LandingPagesView';
 import CatalogManagerView from '../components/admin/Catalog/CatalogManagerView';
+import SpringsManagerView from '../components/admin/Springs/SpringsManagerView';
 
 import DevUserSwitcher from '../components/admin/DevUserSwitcher';
 import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
@@ -105,7 +106,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -8391,6 +8392,7 @@ const Admin = () => {
                             />
                         )}
                         {currentView === 'catalog_manager' && hasPermission('catalog_view') && <CatalogManagerView />}
+                        {currentView === 'springs_manager' && hasPermission('catalog_view') && <SpringsManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
                         {currentView === 'courses_manager' && hasPermission('courses_view') && (

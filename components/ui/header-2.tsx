@@ -8,9 +8,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSettings } from '@/context/SettingsContext';
 import { Settings as GearIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import SpringHeaderDropdown from './SpringHeaderDropdown';
 
 export function Header() {
 	const [open, setOpen] = React.useState(false);
+	const [isMolasOpen, setIsMolasOpen] = React.useState(false);
 	const scrolled = useScroll(10);
 	const { get } = useSettings();
 	const { user, setShowLoginModal } = useAuth();
@@ -23,6 +25,7 @@ export function Header() {
 
 	const links = [
 		{ label: 'Início', href: '/' },
+		{ label: 'Molas', href: '/molas' },
 		{ label: 'Cursos', href: '/cursos' },
 		{ label: 'Rede', href: '/mapa' },
 		{ label: 'Loja', href: 'https://w-techstore.com.br/', isExternal: true },
@@ -45,6 +48,7 @@ export function Header() {
 
 	return (
 		<header
+			onMouseLeave={() => setIsMolasOpen(false)}
 			className={cn(
 				'fixed top-0 z-[100] mx-auto w-full border-b border-transparent transition-all duration-300 ease-out md:left-1/2 md:-translate-x-1/2',
 				{
@@ -99,14 +103,32 @@ export function Header() {
 
 						if (isExternal) {
 							return (
-								<a key={i} href={link.href} target="_blank" rel="noopener noreferrer" className="flex items-center">
+								<a 
+									key={i} 
+									href={link.href} 
+									target="_blank" 
+									rel="noopener noreferrer" 
+									className="flex items-center"
+									onMouseEnter={() => setIsMolasOpen(false)}
+								>
 									{content}
 								</a>
 							);
 						}
 
 						return (
-							<Link key={i} to={link.href} className="flex items-center">
+							<Link 
+								key={i} 
+								to={link.href} 
+								className="flex items-center"
+								onMouseEnter={() => {
+									if (link.label === 'Molas') {
+										setIsMolasOpen(true);
+									} else {
+										setIsMolasOpen(false);
+									}
+								}}
+							>
 								{content}
 							</Link>
 						);
@@ -115,6 +137,7 @@ export function Header() {
 					{/* Member Area (Gear Icon) */}
 					<button 
 						onClick={() => user ? navigate('/admin') : setShowLoginModal(true)}
+						onMouseEnter={() => setIsMolasOpen(false)}
 						className="p-2 text-gray-400 hover:text-wtech-gold transition-colors ml-1"
 						title="Área do Membro"
 					>
@@ -125,6 +148,7 @@ export function Header() {
 						asChild
 						className="rounded-full bg-wtech-gold text-black hover:bg-yellow-400 font-bold uppercase tracking-widest text-[10px] px-6 ml-2"
 						size="sm"
+						onMouseEnter={() => setIsMolasOpen(false)}
 					>
 						<Link to="/meus-pedidos">Área do Cliente</Link>
 					</Button>
@@ -135,6 +159,9 @@ export function Header() {
 					<MenuToggleIcon open={open} className="size-6" duration={300} />
 				</Button>
 			</nav>
+
+			{/* Dropdown de Busca de Molas */}
+			<SpringHeaderDropdown isOpen={isMolasOpen} onClose={() => setIsMolasOpen(false)} />
 
 			{/* Mobile Menu Overlay */}
 			<div

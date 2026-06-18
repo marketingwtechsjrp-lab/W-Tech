@@ -60,6 +60,7 @@ const InscricaoConfirmada = lazy(() => import('./pages/InscricaoConfirmada'));
 const LPGasGarage = lazy(() => import('./pages/LPGasGarage'));
 const ObrigadoSuspensao = lazy(() => import('./pages/ObrigadoSuspensao'));
 const AffiliatesManagerView = lazy(() => import('./components/admin/Marketing/AffiliatesManagerView'));
+const MolasCalculator = lazy(() => import('./pages/MolasCalculator'));
 
 
 
@@ -103,6 +104,7 @@ const App = () => {
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/sou-mecanico" element={<MechanicRegister />} />
                     <Route path="/mapa" element={<Layout><MechanicsMap /></Layout>} />
+                    <Route path="/molas" element={<Layout><MolasCalculator /></Layout>} />
                     <Route path="/checkout/:planId" element={<Layout><Checkout /></Layout>} />
                     <Route path="/contato" element={<Layout><Contact /></Layout>} />
                     <Route path="/blog" element={<Layout><Blog /></Layout>} />

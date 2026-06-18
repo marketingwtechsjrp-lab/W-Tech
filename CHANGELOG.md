@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.6.0 (2026-06-17) - Banco de Dados de Molas W-Tech (catálogo /molas) com seletor otimizado para mobile
+- Nova página pública `/molas` — "Banco de Dados de Molas W-Tech": consulta informativa das molas calibradas (dianteira/traseira) por marca, modelo e peso do piloto
+- Seletor de molas (`SpringSelector`) com fluxo em 4 passos: marca (fabricante) → modelo → tipo de suspensão (Dianteira/Garfo ou Traseira/Shock) → faixa de peso, retornando o código recomendado e a mola de fábrica (standard)
+- Pesos indisponíveis para o tipo de suspensão selecionado ficam desabilitados e esmaecidos; troca automática de tipo quando o selecionado não existe para o modelo
+- Otimização mobile do `/molas`: grade de marcas compacta (5 colunas), espaçamentos reduzidos e **barra de resultado fixa no rodapé** sempre visível durante a seleção (altura da página caiu de ~3,5x para ~2x a viewport)
+- Dropdown de molas no header (`SpringHeaderDropdown`) e gestão do catálogo no Painel Administrativo (`components/admin/Springs`)
+- Dados de referência: tabela `SITE_SpringRecommendations` no Supabase (`create_springs_tables.sql`) e scripts de seed/verificação (`scripts/seed_springs.js`, `scripts/verify_springs_data.js`)
+- Logos das marcas adicionados em `public/images/brands/` (KTM, Kawasaki, Husaberg, Suzuki, Honda, Fantic, Husqvarna, Triumph, Yamaha, GASGAS)
+
 ## v3.5.2 (2026-06-15) - Ajustes de layout na LP Ergonomia v2 e vídeo internacional da Europa
 - Remoção da seção Bento Grid ("Você se identifica?") e das seções individuais Rafa/Alex
 - Depoimentos de alunos ("O Que Dizem Nossos Alunos") movidos para o topo, abaixo do Hero VSL
