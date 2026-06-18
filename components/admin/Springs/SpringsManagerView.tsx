@@ -54,17 +54,33 @@ export default function SpringsManagerView() {
 
   const fetchUniqueBrands = async () => {
     try {
-      // Query distinct brands from database
-      const { data, error } = await supabase
-        .from('SITE_SpringRecommendations')
-        .select('brand');
-      
-      if (error) throw error;
-      
-      if (data) {
-        const brands = Array.from(new Set(data.map(item => item.brand))).sort();
-        setAvailableBrands(brands);
+      // O Supabase/PostgREST devolve no máximo 1000 linhas por requisição.
+      // Como a tabela tem milhares de linhas, varremos todas as páginas (somente
+      // a coluna `brand`, ordenada) acumulando as marcas distintas num Set —
+      // assim o filtro reflete TODAS as marcas do banco, não só as primeiras 1000.
+      const PAGE_SIZE = 1000;
+      const brandSet = new Set<string>();
+      let fromIdx = 0;
+
+      while (true) {
+        const { data, error } = await supabase
+          .from('SITE_SpringRecommendations')
+          .select('brand')
+          .order('brand', { ascending: true })
+          .range(fromIdx, fromIdx + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+
+        data.forEach(item => {
+          if (item.brand) brandSet.add(item.brand);
+        });
+
+        if (data.length < PAGE_SIZE) break;
+        fromIdx += PAGE_SIZE;
       }
+
+      setAvailableBrands(Array.from(brandSet).sort());
     } catch (err: any) {
       console.error('Erro ao buscar marcas únicas:', err.message);
     }

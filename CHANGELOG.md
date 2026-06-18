@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.6.1 (2026-06-18) - Busca paginada de marcas no catálogo de molas
+- Correção no seletor do admin: busca paginada de marcas (SITE_SpringRecommendations) contornando o limite de 1000 registros do Supabase
+- Sincronização do histórico de atualizações no CHANGELOG.json
+
 ## v3.6.0 (2026-06-17) - Banco de Dados de Molas W-Tech (catálogo /molas) com seletor otimizado para mobile
 - Nova página pública `/molas` — "Banco de Dados de Molas W-Tech": consulta informativa das molas calibradas (dianteira/traseira) por marca, modelo e peso do piloto
 - Seletor de molas (`SpringSelector`) com fluxo em 4 passos: marca (fabricante) → modelo → tipo de suspensão (Dianteira/Garfo ou Traseira/Shock) → faixa de peso, retornando o código recomendado e a mola de fábrica (standard)
