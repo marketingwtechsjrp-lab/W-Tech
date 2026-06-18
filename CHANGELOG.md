@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.6.2 (2026-06-18) - Vídeo, parcelamento 10x e reciclagem no checkout + filtro CRM, llms.txt e crédito no footer
+- Checkout de curso (`CourseCheckout`, exibido quando a automação está ligada): vídeo de apresentação `curso-wtech.mp4` (vertical) no topo do resumo
+- Parcelamento em até 10x no cartão: mensagem dinâmica na UI (card Valor Integral, total e badge) e `payment_methods.installments: 10` na preferência do Mercado Pago
+- CTA de reciclagem no checkout: alunos que já fizeram o curso falam direto pelo WhatsApp (mensagem pré-preenchida com o nome do curso), com rastreio de evento
+- CRM: filtro de leads por origem de tráfego (utm_source), agrupamento correto de LP V1–V4 pela região e captura de UTM em todos os pontos de criação de lead (`lib/tracking.ts`, `lib/leadDistribution.ts`); migração `add_lead_utm_tracking.sql` (aplicar no Supabase)
+- Página `/molas` responsiva em laptops (min-height + listas com `clamp()`) e correção de classe Tailwind inválida no `SpringSelector`
+- `public/llms.txt` seguindo a spec llmstxt.org para indexação por LLMs
+- Crédito no rodapé do site: "Site desenvolvido por Daniel Marques · 2timeweb.com.br"
+
 ## v3.6.1 (2026-06-18) - Busca paginada de marcas no catálogo de molas
 - Correção no seletor do admin: busca paginada de marcas (SITE_SpringRecommendations) contornando o limite de 1000 registros do Supabase
 - Sincronização do histórico de atualizações no CHANGELOG.json

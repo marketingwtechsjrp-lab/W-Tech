@@ -120,8 +120,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </ul>
           </div>
         </div>
-        <div className="container mx-auto px-4 mt-12 pt-8 border-t border-gray-800 text-center text-xs">
+        <div className="container mx-auto px-4 mt-12 pt-8 border-t border-gray-800 text-center text-xs space-y-1">
           <p>&copy; {new Date().getFullYear()} {siteTitle}. Todos os direitos reservados. v{APP_VERSION}</p>
+          <p className="text-gray-500">
+            Site desenvolvido por Daniel Marques ·{' '}
+            <a
+              href="https://2timeweb.com.br"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-wtech-gold transition-colors"
+            >
+              2timeweb.com.br
+            </a>
+          </p>
         </div>
       </footer>
     </div>

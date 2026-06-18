@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Lock, ShieldCheck, User, Mail, Phone, Calendar, MapPin,
     AlertCircle, Loader2, CheckCircle, ChevronRight, CreditCard,
-    Users, Award, BadgeCheck, RotateCcw, Sparkles
+    Users, Award, BadgeCheck, RotateCcw, Sparkles, MessageCircle, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { createMercadoPagoPreference } from '../lib/mercadopago';
 import { formatDateLocal } from '../lib/utils';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { useSettings } from '../context/SettingsContext';
 
 interface CourseData {
     id: string;
@@ -52,6 +53,7 @@ const formatPhone = (value: string) => {
 };
 
 const CourseCheckout: React.FC = () => {
+    const { get } = useSettings();
     const { courseId } = useParams<{ courseId: string }>();
     const [searchParams] = useSearchParams();
     const lid = searchParams.get('lid');
@@ -201,6 +203,11 @@ const CourseCheckout: React.FC = () => {
 
     const currencySymbol = course?.currency === 'EUR' ? '€' : course?.currency === 'USD' ? '$' : 'R$';
 
+    // WhatsApp de reciclagem — aluno que já fez o curso e quer refazer com condição especial
+    const whatsappDigits = (get('whatsapp_phone', '551732312858') || '551732312858').replace(/\D/g, '');
+    const reciclagemMsg = `Olá! Já fiz o curso de suspensão da W-Tech e gostaria de fazer a reciclagem${course?.title ? ` (${course.title})` : ''}. Pode me passar as condições?`;
+    const reciclagemUrl = `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(reciclagemMsg)}`;
+
     // Estado: carregando página
     if (pageLoading) {
         return (
@@ -323,6 +330,25 @@ const CourseCheckout: React.FC = () => {
                         transition={{ duration: 0.4 }}
                         className="lg:col-span-2 space-y-4"
                     >
+                        {/* Vídeo de apresentação do curso — só aparece no checkout automático (automação ligada) */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="px-5 pt-4 pb-3">
+                                <p className="text-[10px] font-black text-wtech-gold uppercase tracking-widest mb-0.5">Conheça por dentro</p>
+                                <h3 className="text-sm font-black text-gray-900 leading-tight">Veja como é o curso W-Tech</h3>
+                            </div>
+                            <div className="bg-black flex justify-center">
+                                <video
+                                    src="/videos/curso-wtech.mp4"
+                                    controls
+                                    playsInline
+                                    preload="metadata"
+                                    className="w-auto max-h-[460px] aspect-[9/16] object-contain"
+                                >
+                                    Seu navegador não suporta vídeo HTML5.
+                                </video>
+                            </div>
+                        </div>
+
                         {/* Card do curso */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             {course!.image && (
@@ -398,7 +424,7 @@ const CourseCheckout: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2.5 text-sm text-gray-600">
                                 <CreditCard size={16} className="text-purple-500 shrink-0" />
-                                <span className="font-bold">Pix, cartão de crédito ou boleto</span>
+                                <span className="font-bold">Pix, boleto ou cartão em até <span className="text-green-600">10x</span></span>
                             </div>
                             <div className="flex items-center gap-2.5 text-sm text-gray-600">
                                 <CheckCircle size={16} className="text-wtech-gold shrink-0" />
@@ -460,7 +486,10 @@ const CourseCheckout: React.FC = () => {
                                             <span className="text-lg font-black text-gray-900">
                                                 {currencySymbol} {course!.price.toFixed(2).replace('.', ',')}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Quitação integral e acesso garantido</span>
+                                            <span className="text-[11px] text-green-600 mt-1 font-black leading-tight">
+                                                ou em até 10x de {currencySymbol} {(course!.price / 10).toFixed(2).replace('.', ',')} no cartão
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 mt-1 font-bold leading-tight">Quitação integral e acesso garantido</span>
                                         </div>
 
                                         {/* Card: Sinal */}
@@ -486,6 +515,27 @@ const CourseCheckout: React.FC = () => {
                                             <span className="text-[10px] text-gray-400 mt-2 font-bold leading-tight">Garanta sua vaga hoje. Pague o restante depois</span>
                                         </div>
                                     </div>
+
+                                    {/* Reciclagem — quem já fez o curso fala direto com a equipe */}
+                                    <a
+                                        href={reciclagemUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        id="checkout-reciclagem-whatsapp"
+                                        onClick={() => trackEvent('Checkout', 'reciclagem_whatsapp', course?.title || '')}
+                                        className="mt-4 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50/60 p-3.5 hover:bg-green-50 hover:border-green-300 transition-all group"
+                                    >
+                                        <div className="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-green-200">
+                                            <RefreshCw size={17} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-black text-gray-900 leading-tight">Já fez o curso? Faça a reciclagem</p>
+                                            <p className="text-[11px] text-gray-500 leading-tight mt-0.5">Alunos W-Tech têm condição especial — fale com a gente</p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-green-700 shrink-0 group-hover:gap-1.5 transition-all">
+                                            <MessageCircle size={14} /> WhatsApp
+                                        </span>
+                                    </a>
                                 </div>
 
                                 {/* Nome */}
@@ -579,12 +629,19 @@ const CourseCheckout: React.FC = () => {
 
                                 {/* Resumo e CTA */}
                                 <div className="pt-2">
-                                    <div className="flex justify-between items-center text-sm mb-4 bg-gray-50 rounded-xl p-4">
+                                    <div className="flex justify-between items-center text-sm mb-2 bg-gray-50 rounded-xl p-4">
                                         <span className="font-bold text-gray-500">Total a pagar agora</span>
                                         <span className="text-xl font-black text-gray-950">
                                             {currencySymbol} {selectedPrice.toFixed(2).replace('.', ',')}
                                         </span>
                                     </div>
+
+                                    {paymentType === 'full' && (
+                                        <p className="flex items-center justify-center gap-1.5 text-xs font-black text-green-600 mb-4">
+                                            <CreditCard size={13} className="shrink-0" />
+                                            Parcele em até 10x de {currencySymbol} {(course!.price / 10).toFixed(2).replace('.', ',')} no cartão
+                                        </p>
+                                    )}
 
                                     <button
                                         type="submit"

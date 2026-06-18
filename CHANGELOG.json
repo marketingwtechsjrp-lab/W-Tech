@@ -1,5 +1,20 @@
 [
   {
+    "version": "3.6.2",
+    "date": "2026-06-18",
+    "title": "Vídeo, parcelamento 10x e reciclagem no checkout + filtro CRM, llms.txt e crédito no footer",
+    "changes": [
+      "Checkout de curso (exibido quando a automação está ligada): vídeo de apresentação curso-wtech.mp4 (vertical) no topo do resumo",
+      "Parcelamento em até 10x no cartão: mensagem dinâmica na UI e payment_methods.installments: 10 na preferência do Mercado Pago",
+      "CTA de reciclagem no checkout: alunos que já fizeram o curso falam direto pelo WhatsApp com mensagem pré-preenchida e rastreio de evento",
+      "CRM: filtro de leads por origem de tráfego (utm_source), agrupamento correto de LP V1–V4 pela região e captura de UTM em todos os pontos de criação de lead; migração add_lead_utm_tracking.sql",
+      "Página /molas responsiva em laptops (min-height + listas com clamp()) e correção de classe Tailwind inválida no SpringSelector",
+      "public/llms.txt seguindo a spec llmstxt.org para indexação por LLMs",
+      "Crédito no rodapé do site: Site desenvolvido por Daniel Marques · 2timeweb.com.br"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.6.1",
     "date": "2026-06-18",
     "title": "Busca paginada de marcas no catálogo de molas",

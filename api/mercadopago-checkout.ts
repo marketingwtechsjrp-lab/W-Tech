@@ -190,6 +190,9 @@ export default async function handler(req: any, res: any) {
         failure: failureUrl,
         pending: pendingUrl
       },
+      payment_methods: {
+        installments: 10
+      },
       notification_url: `${origin}/api/mercadopago-webhook`,
       external_reference: enrollmentId,
       metadata: {
