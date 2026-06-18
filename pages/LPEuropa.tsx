@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { distributeLead } from '../lib/leadDistribution';
 import { triggerWebhook } from '../lib/webhooks';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { CheckCircle, ArrowRight, User, ShieldCheck, MapPin, Calendar, Clock, Star, Play } from 'lucide-react';
 
 const LPEuropa: React.FC = () => {
@@ -23,7 +24,8 @@ const LPEuropa: React.FC = () => {
                 status: 'New',
                 context_id: `LP EUROPA: ${form.location}`,
                 tags: ['EUROPA_WAITLIST'],
-                assigned_to: assignedTo
+                assigned_to: assignedTo,
+                ...getLeadTrackingFields()
             };
 
             await supabase.from('SITE_Leads').insert([payload]);

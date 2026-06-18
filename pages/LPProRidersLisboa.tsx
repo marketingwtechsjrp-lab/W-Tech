@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
+import { getLeadTrackingFields } from '../lib/tracking';
 import {
     CheckCircle,
     ArrowRight,
@@ -41,7 +42,8 @@ const LPProRidersLisboa: React.FC = () => {
                 context_id: `PRORIDERS EUROPA LISBOA 2026`,
                 tags: ['PRORIDERS_EUROPA_2026', 'COURSE_PAID'],
                 assigned_to: assignedTo,
-                notes: form.reason
+                notes: form.reason,
+                ...getLeadTrackingFields()
             };
 
             const { error } = await supabase.from('SITE_Leads').insert([payload]);

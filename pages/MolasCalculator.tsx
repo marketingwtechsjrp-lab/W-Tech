@@ -3,8 +3,8 @@ import SpringSelector from '../components/ui/SpringSelector';
 
 const MolasCalculator: React.FC = () => {
   return (
-    <div className="bg-gray-50 dark:bg-black min-h-screen md:h-[calc(100vh-80px)] md:min-h-0 pt-6 pb-32 md:py-4 px-3 sm:px-4 flex flex-col md:justify-center transition-colors duration-300 mt-16 md:mt-20">
-      <div className="max-w-6xl mx-auto w-full space-y-4 flex flex-col md:justify-between md:h-full">
+    <div className="bg-gray-50 dark:bg-black min-h-screen md:min-h-[calc(100vh-80px)] pt-6 pb-32 md:py-6 px-3 sm:px-4 flex flex-col md:justify-center transition-colors duration-300 mt-16 md:mt-20">
+      <div className="max-w-6xl mx-auto w-full space-y-4 flex flex-col">
 
         {/* Intro Section */}
         <div className="text-center space-y-2 shrink-0">

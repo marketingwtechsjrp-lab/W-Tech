@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { triggerWebhook } from './webhooks';
+import { getLeadTrackingFields } from './tracking';
 
 export const distributeLead = async () => {
     // 1. Check Mode
@@ -29,6 +30,9 @@ interface LeadPayload {
  */
 export const handleLeadUpsert = async (payload: LeadPayload) => {
     try {
+        // 0. Atribuição de tráfego (LEI 10): UTMs capturadas no navegador.
+        const tracking = getLeadTrackingFields();
+
         // 1. Sanitize Phone (digits only for search)
         const phoneDigits = payload.phone.replace(/\D/g, '');
         
@@ -56,9 +60,17 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
         if (existingLead) {
             console.log(`[LeadUpsert] Found existing lead ${existingLead.id}. Updating...`);
             
+            // UTMs: preserva o first-touch — só grava as chaves que ainda não existem
+            // no lead. Recadastro não sobrescreve a atribuição original.
+            const trackingToFill: Record<string, string> = {};
+            for (const [k, v] of Object.entries(tracking)) {
+                if (v && !existingLead[k]) trackingToFill[k] = v;
+            }
+
             // MERGE Logic
             const updatePayload = {
                 ...payload,
+                ...trackingToFill,
                 status: 'New', // FORCE RESET STATUS TO NEW
                 // params to PRESERVE from existing:
                 assigned_to: existingLead.assigned_to, // KEEP ORIGINAL OWNER
@@ -93,15 +105,18 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
                 payload.assigned_to = await distributeLead();
             }
 
+            // UTMs do toque atual (last-touch) no lead novo.
+            const insertPayload = { ...tracking, ...payload };
+
             const { data: newLead, error: insertError } = await supabase
                 .from('SITE_Leads')
-                .insert([payload])
+                .insert([insertPayload])
                 .select()
                 .single();
 
             if (insertError) throw insertError;
 
-            await triggerWebhook('webhook_lead', payload);
+            await triggerWebhook('webhook_lead', insertPayload);
 
             // Automação: inscreve o lead NOVO nos fluxos de boas-vindas
             // (gatilho NovoCadastro). Não-fatal e fire-and-forget — nunca

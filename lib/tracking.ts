@@ -79,6 +79,32 @@ export function captureTrackingParams(): TrackingParams {
   return merged;
 }
 
+/** Chaves de UTM persistidas no próprio lead (tabela SITE_Leads). */
+const LEAD_UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+
+export type LeadTrackingFields = Partial<Record<(typeof LEAD_UTM_KEYS)[number], string>>;
+
+/**
+ * Retorna os campos de UTM para gravar no lead, mesclando o que foi persistido na
+ * sessão (captureTrackingParams) com os params atuais do URL. Pensado para ser
+ * espalhado direto no payload do insert em SITE_Leads:
+ *
+ *   const payload = { name, email, ...getLeadTrackingFields() };
+ *
+ * Só inclui chaves preenchidas — leads sem UTM ficam com as colunas NULL e
+ * aparecem como "Não informado" no filtro do CRM. Defensivo: nunca lança.
+ */
+export function getLeadTrackingFields(): LeadTrackingFields {
+  if (typeof window === 'undefined') return {};
+  const collected: TrackingParams = { ...readStored(), ...readUrlParams() };
+  const fields: LeadTrackingFields = {};
+  for (const key of LEAD_UTM_KEYS) {
+    const value = collected[key];
+    if (value) fields[key] = value;
+  }
+  return fields;
+}
+
 /**
  * Monta o URL final do checkout com toda a atribuição anexada:
  * params persistidos + params atuais do URL + cookies de Meta (_fbp/_fbc) e GA (_ga).

@@ -219,6 +219,13 @@ export interface Lead {
   type: 'Course_Registration' | 'Contact_Form' | 'Newsletter' | 'Course_Purchase';
   status: 'New' | 'Contacted' | 'Negotiating' | 'Converted' | 'Qualified' | 'Matriculated' | 'CheckedIn' | 'Cold' | 'Rejected' | 'Lost';
   contextId?: string; // Mapped from context_id
+  // Atribuição de tráfego (LEI 10) — capturada no formulário, gravada no lead.
+  // NULL em leads antigos (pré-rastreio) → exibidos como "Não informado" no CRM.
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
   createdAt: string; // Mapped from created_at
   assignedTo?: string; // Mapped from assigned_to
   internalNotes?: string; // Mapped from internal_notes

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
 import { useSettings } from '../context/SettingsContext';
 import { sanitizeHtml } from '../lib/utils';
+import { getLeadTrackingFields } from '../lib/tracking';
 import SEO from '../components/SEO';
 import { trackEvent } from '../components/AnalyticsTracker';
 
@@ -28,6 +29,7 @@ const Contact: React.FC = () => {
                 tags: ['contact_page'],
                 origin: window.location.href,
                 assigned_to: null, // FORCE NULL
+                ...getLeadTrackingFields()
             };
 
             // 1. Insert into CRM

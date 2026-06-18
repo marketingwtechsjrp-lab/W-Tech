@@ -233,7 +233,7 @@ export default function SpringSelector() {
 
             <div
               ref={modelListRef}
-              className="flex flex-col gap-1.5 h-[200px] md:h-[300px] overflow-y-auto pr-1"
+              className="flex flex-col gap-1.5 h-[200px] md:h-[clamp(180px,40vh,300px)] overflow-y-auto pr-1"
             >
               {loading && models.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-xs text-gray-500 italic">Carregando...</div>
@@ -313,7 +313,7 @@ export default function SpringSelector() {
             </span>
             <div
               ref={weightListRef}
-              className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-2 gap-2 h-[180px] md:h-[300px] overflow-y-auto pr-1 align-content-start"
+              className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-2 gap-2 h-[180px] md:h-[clamp(180px,40vh,300px)] overflow-y-auto pr-1 content-start"
             >
               {loading && allModelWeights.length === 0 ? (
                 <div className="col-span-full flex items-center justify-center h-full text-xs text-gray-500 italic">Carregando...</div>

@@ -3,6 +3,7 @@ import { MessageCircle, X, Send } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead } from '../lib/leadDistribution';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { useLocation } from 'react-router-dom';
 import { trackEvent } from './AnalyticsTracker';
 
@@ -47,7 +48,8 @@ export const WhatsAppInterceptor = () => {
                 context_id: 'WhatsApp Home Button',
                 tags: ['home_whatsapp', 'whatsapp_click'],
                 assigned_to: assignedTo,
-                origin: window.location.href
+                origin: window.location.href,
+                ...getLeadTrackingFields()
             };
 
             await supabase.from('SITE_Leads').insert([payload]);

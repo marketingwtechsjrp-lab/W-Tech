@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { distributeLead } from '../lib/leadDistribution';
 import { triggerWebhook } from '../lib/webhooks';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -38,7 +39,8 @@ const LPLisboaFev2026: React.FC = () => {
                 status: 'New',
                 context_id: `LP LISBOA ABRIL 2026${form.bike ? ': ' + form.bike : ''}`,
                 tags: ['LISBOA_ABRIL_2026', 'LECTURE_FREE'],
-                assigned_to: assignedTo
+                assigned_to: assignedTo,
+                ...getLeadTrackingFields()
             };
 
             const { error } = await supabase.from('SITE_Leads').insert([payload]);

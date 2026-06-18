@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { createStripePaymentLink } from '../lib/stripe';
 import { 
@@ -44,7 +45,8 @@ const WTechLisboa: React.FC = () => {
                 context_id: `WTECH EUROPA LISBOA 2026 (DIRECT PAY)`,
                 tags: ['WTECH_EUROPA_2026', 'PAID_FLOW'],
                 assigned_to: assignedTo,
-                notes: form.reason
+                notes: form.reason,
+                ...getLeadTrackingFields()
             };
 
             const { data: leadData, error: leadError } = await supabase.from('SITE_Leads').insert([leadPayload]).select().single();

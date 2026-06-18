@@ -891,6 +891,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const [searchQuery, setSearchQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
     const [contextFilter, setContextFilter] = useState('All');
+    const [trafficFilter, setTrafficFilter] = useState('All'); // utm_source bruto ou 'Não informado'
     const [selectedUserFilter, setSelectedUserFilter] = useState('All'); // NEW
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [selectedLeadForTasks, setSelectedLeadForTasks] = useState<Lead | null>(null);
@@ -1937,24 +1938,47 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
 
 
+    // Normaliza o context_id (string livre gravada por cada formulário) numa origem
+    // estável por REGIÃO/CURSO. Objetivo: que o mesmo curso/região não apareça
+    // fragmentado entre LP / LP V2 / LP V3 / LP V4 / Quiz, deixando o filtro útil.
     const parseLPSourceCRM = (contextId: string | undefined): string => {
         if (!contextId) return 'Sem origem';
         const ctx = contextId.trim();
-        if (ctx.startsWith('LP:')) {
-            const inner = ctx.slice(3).trim().replace(/\s*\([^)]+\)\s*$/, '').trim();
-            return 'LP: ' + inner;
-        }
-        if (ctx.startsWith('LP ')) {
-            const colonIdx = ctx.indexOf(':');
-            return colonIdx > 0 ? ctx.slice(0, colonIdx).trim() : ctx;
-        }
-        if (ctx.startsWith('Quiz Completed:')) {
-            const inner = ctx.slice('Quiz Completed:'.length).trim().replace(/\s*\[.*?\]\s*/g, '').trim();
-            return 'Quiz: ' + inner;
-        }
         if (['Manual', 'Import', 'Evento', 'Direto', 'Site'].includes(ctx)) return ctx;
-        if (ctx.length > 40) return 'Formulário de Contato';
+
+        // LP / LP V2 / LP V3 / LP V4 → agrupa pelo SLUG (a região está no slug,
+        // ex. "curso-suspensao-sjrp"), unificando todas as versões da mesma LP.
+        const lpMatch = ctx.match(/^LP\s*V?\d*\s*:\s*(.*)$/i);
+        if (lpMatch) {
+            const inner = lpMatch[1].trim();
+            const slugMatch = inner.match(/\(([^)]+)\)\s*$/);
+            if (slugMatch) return 'LP: ' + slugMatch[1].trim();
+            return 'LP: ' + inner.replace(/\s*\([^)]*\)\s*$/, '').trim();
+        }
+
+        // Quiz Started / Completed → agrupa pelo título da LP, ignorando [TEMPERATURA].
+        const quizMatch = ctx.match(/^Quiz\s+(?:Completed|Started)\s*:\s*(.*)$/i);
+        if (quizMatch) {
+            return 'Quiz: ' + quizMatch[1].replace(/\s*\[[^\]]*\]\s*/g, '').trim();
+        }
+
+        // Eventos Europa/Lisboa: remove sufixo de fluxo ((DIRECT PAY)/(SINAL)/: bike)
+        // para unificar a mesma região num só item.
+        if (/^(WTECH EUROPA|PRORIDERS|LP LISBOA|LP EUROPA)/i.test(ctx)) {
+            return ctx.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s*:.*$/, '').trim();
+        }
+
+        // Formulários de contato (assunto + mensagem livre) caem numa categoria única.
+        if (/^Assunto:/i.test(ctx) || ctx.length > 60) return 'Formulário de Contato';
         return ctx;
+    };
+
+    // Rótulo de tráfego do lead a partir do utm_source bruto (decisão: "estrutura
+    // agora, regra depois" — ainda não classificamos pago x orgânico). Leads sem
+    // UTM (antigos/pré-rastreio) caem em "Não informado".
+    const parseTrafficCRM = (lead: { utm_source?: string }): string => {
+        const s = (lead.utm_source || '').trim();
+        return s ? s : 'Não informado';
     };
 
     // Filter Logic
@@ -1982,6 +2006,11 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 if (parseLPSourceCRM(l.contextId) !== contextFilter) return false;
             }
 
+            // 2b. Traffic Filter (utm_source bruto / "Não informado")
+            if (trafficFilter && trafficFilter !== 'All') {
+                if (parseTrafficCRM(l) !== trafficFilter) return false;
+            }
+
             // 3. User Filter
             if (selectedUserFilter && selectedUserFilter !== 'All') {
                 if (selectedUserFilter === 'None') {
@@ -2002,12 +2031,22 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
             return true;
         });
-    }, [leads, filterType, filterPeriod, selectedMonth, customRange, contextFilter, selectedUserFilter, searchQuery]);
+    }, [leads, filterType, filterPeriod, selectedMonth, customRange, contextFilter, trafficFilter, selectedUserFilter, searchQuery]);
 
     // Extract unique contexts for filter — normalize LP names so the dropdown groups by LP
     const uniqueContexts = useMemo(() => {
         const normalized = new Set(leads.map(l => parseLPSourceCRM(l.contextId)).filter(Boolean));
         return Array.from(normalized).sort();
+    }, [leads]);
+
+    // Fontes de tráfego presentes nos leads (utm_source bruto), com "Não informado"
+    // sempre por último para não poluir o topo da lista.
+    const uniqueTrafficSources = useMemo(() => {
+        const set = new Set(leads.map(l => parseTrafficCRM(l)));
+        const hasUnknown = set.delete('Não informado');
+        const list = Array.from(set).sort();
+        if (hasUnknown) list.push('Não informado');
+        return list;
     }, [leads]);
 
     const exportFilteredToXLS = () => {
@@ -2024,6 +2063,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             'CPF': l.cpf || '',
             'RG': l.rg || '',
             'Origem / LP': parseLPSourceCRM(l.contextId),
+            'Tráfego (utm_source)': parseTrafficCRM(l),
+            'utm_medium': l.utm_medium || '',
+            'utm_campaign': l.utm_campaign || '',
             'Status': l.status || '',
             'Atribuído a': usersMap[l.assignedTo || ''] || '',
             'Cidade': l.address_city || '',
@@ -2186,6 +2228,24 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     <button onClick={() => setContextFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)]">Todas as Origens</button>
                                     {uniqueContexts.map((ctx: any) => (
                                         <button key={ctx} onClick={() => setContextFilter(ctx)} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs text-[var(--admin-text-secondary)] truncate">{ctx}</button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Traffic Filter (utm_source bruto) */}
+                        <div className="relative group">
+                            <div className="flex items-center gap-2 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] px-3 py-2 rounded-lg cursor-pointer hover:border-wtech-gold/50 transition-colors">
+                                <Globe size={14} className="text-[var(--admin-text-tertiary)]" />
+                                <span className="text-xs font-bold text-[var(--admin-text-secondary)] truncate max-w-[150px]">
+                                    {trafficFilter === 'All' ? 'Todo o Tráfego' : trafficFilter}
+                                </span>
+                            </div>
+                            <div className="absolute top-full left-0 pt-2 w-64 hidden group-hover:block z-50">
+                                <div className="bg-[var(--admin-surface-1)] shadow-xl rounded-xl border border-[var(--admin-border)] p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <button onClick={() => setTrafficFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)]">Todo o Tráfego</button>
+                                    {uniqueTrafficSources.map((src) => (
+                                        <button key={src} onClick={() => setTrafficFilter(src)} className={`w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs truncate ${src === 'Não informado' ? 'text-[var(--admin-text-tertiary)] italic' : 'text-[var(--admin-text-secondary)]'}`}>{src}</button>
                                     ))}
                                 </div>
                             </div>

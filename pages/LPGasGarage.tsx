@@ -8,6 +8,7 @@ import {
     MessageCircle, HelpCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { sendWhatsAppMessage } from '../lib/whatsapp';
 import { submitToGoogleSheets } from '../lib/googleSheets';
 
@@ -100,6 +101,7 @@ const LeadForm: React.FC = () => {
                 status: 'New',
                 context_id: 'LP_Chao_de_Oficina',
                 tags: ['Gas_Garage', 'RJ', 'André_W-Tech'],
+                ...getLeadTrackingFields()
             }]);
 
             if (dbError) throw dbError;

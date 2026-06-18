@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import {
     CheckCircle,
@@ -66,7 +67,8 @@ const LPWTechLisboa: React.FC = () => {
                 context_id: `WTECH EUROPA LISBOA 2026`,
                 tags: ['WTECH_EUROPA_2026', 'COURSE_PAID'],
                 assigned_to: assignedTo,
-                notes: form.reason
+                notes: form.reason,
+                ...getLeadTrackingFields()
             };
 
             const { error } = await supabase.from('SITE_Leads').insert([payload]);

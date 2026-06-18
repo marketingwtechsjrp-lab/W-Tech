@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Calendar as CalendarIcon, ArrowRight, Star, CheckCircle, Search, Play, Instagram, Award, Menu, X, Phone, Mail, Clock, Volume2, VolumeX, Send } from 'lucide-react';
 import { Calendar as BentoCalendar } from '../components/ui/calendar';
@@ -688,7 +689,8 @@ const Home = () => {
                                             context_id: `Assunto: ${formData.get('subject')} | Msg: ${formData.get('message')}`,
                                             tags: ['home_contact', 'website'],
                                             origin: window.location.href,
-                                            assigned_to: null 
+                                            assigned_to: null,
+                                            ...getLeadTrackingFields()
                                         };
 
                                         try {

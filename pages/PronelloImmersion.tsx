@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, Users, Settings, Wrench, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { sendWhatsAppMessage } from '../lib/whatsapp';
 import { useSettings } from '../context/SettingsContext';
 
@@ -28,7 +29,8 @@ const RegistrationForm = () => {
                 status: 'New',
                 context_id: 'LP_Pronello_Immersion',
                 tags: ['Pronello_Event', 'Gratuito'],
-                assigned_to: '407d09b8-8205-4697-a726-1738cf7e20ef' // Noemi
+                assigned_to: '407d09b8-8205-4697-a726-1738cf7e20ef', // Noemi
+                ...getLeadTrackingFields()
             }]);
 
             if (dbError) throw dbError;

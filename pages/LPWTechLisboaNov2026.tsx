@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { createStripePaymentLink } from '../lib/stripe';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
@@ -224,7 +225,8 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 context_id: `WTECH EUROPA LISBOA NOVEMBRO 2026 (SINAL)`,
                 tags: ['WTECH_LISBOA_NOV_2026', 'WAITLIST_SINAL'],
                 assigned_to: assignedTo,
-                notes: form.reason
+                notes: form.reason,
+                ...getLeadTrackingFields()
             };
 
             const { data: leadData, error: leadError } = await supabase
