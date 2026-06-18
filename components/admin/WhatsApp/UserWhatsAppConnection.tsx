@@ -135,7 +135,7 @@ const UserWhatsAppConnection = () => {
                 },
                 body: JSON.stringify({
                     instanceName: userInstance.instanceName,
-                    token: '',
+                    token: globalConfig.apiKey,
                     qrcode: true,
                     integration: 'WHATSAPP-BAILEYS'
                 })

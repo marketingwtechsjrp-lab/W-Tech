@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.6.4",
+    "date": "2026-06-18",
+    "title": "Correção de autorização 401 no WhatsApp (Evolution API v2)",
+    "changes": [
+      "Instâncias criadas via painel agora utilizam a Global API Key como token padrão (token: globalConfig.apiKey), resolvendo o erro 401 (Unauthorized) no envio de mensagens de teste e automações."
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.6.3",
     "date": "2026-06-18",
     "title": "Vídeo do YouTube Shorts no checkout",

@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.6.4 (2026-06-18) - Correção de autorização 401 no WhatsApp (Evolution API v2)
+- Instâncias criadas via painel agora utilizam a Global API Key como token padrão (token: globalConfig.apiKey), resolvendo o erro 401 (Unauthorized) no envio de mensagens de teste e automações.
+
 ## v3.6.3 (2026-06-18) - Vídeo do YouTube Shorts no checkout
 - Substituição do vídeo de apresentação local no checkout pelo Short do YouTube com reprodução automática e loop
 

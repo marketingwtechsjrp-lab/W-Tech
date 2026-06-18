@@ -252,7 +252,7 @@ const AdminIntegrations = () => {
             const response = await fetch(`${globalConfig.serverUrl}/instance/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', apikey: globalConfig.apiKey },
-                body: JSON.stringify({ instanceName: instance, token: '', qrcode: true, integration: 'WHATSAPP-BAILEYS' })
+                body: JSON.stringify({ instanceName: instance, token: globalConfig.apiKey, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
             });
             const data = await response.json();
 
