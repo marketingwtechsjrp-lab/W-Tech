@@ -1,0 +1,40 @@
+# W-Tech Brasil
+
+> Escola especializada em suspensão de motocicletas — cursos presenciais, online e banco de dados técnico de molas calibradas.
+
+A W-Tech Brasil é referência nacional em treinamento de mecânicos e pilotos para regulagem, manutenção e calibração de suspensões de motocicletas. Sediada em São José do Rio Preto (SP), realiza cursos presenciais em todo o Brasil e Portugal, além de oferecer o Curso Online de Suspensão para Piloto diretamente pela plataforma Kiwify.
+
+O fundador e instrutor principal é Alex Crepaldi, com mais de 20 anos de experiência em suspensão de motos de competição e estrada.
+
+## Principais Páginas
+
+- [Início](https://w-techbrasil.com.br/): Apresentação da escola, próximos cursos, mapa de mecânicos certificados e blog.
+- [Cursos Presenciais](https://w-techbrasil.com.br/cursos): Calendário de cursos presenciais em todo o Brasil — datas, cidades e inscrições.
+- [Banco de Dados de Molas (/molas)](https://w-techbrasil.com.br/molas): Catálogo técnico de molas calibradas (dianteira e traseira) por peso do piloto e modelo de motocicleta, com constantes elásticas seguindo tabelas de referência internacional.
+- [Mapa de Mecânicos](https://w-techbrasil.com.br/mapa): Diretório geolocalizado de mecânicos certificados pela W-Tech em todo o Brasil.
+- [Blog](https://w-techbrasil.com.br/blog): Artigos técnicos sobre suspensão de motos, SAG, regulagem de garfo e amortecedor.
+- [Glossário](https://w-techbrasil.com.br/glossario): Definições dos principais termos técnicos de suspensão de motocicletas.
+- [Contato](https://w-techbrasil.com.br/contato): Formulário de contato, telefone e endereço da sede (São José do Rio Preto - SP).
+- [Sobre](https://w-techbrasil.com.br/sobre): Histórico da escola, missão e perfil do instrutor Alex Crepaldi.
+
+## Cursos
+
+- [Curso Online de Suspensão para Piloto](https://w-techbrasil.com.br/curso-suspensao-piloto): Curso online focado em pilotos de moto — ensina a regular a suspensão pelo próprio piloto sem necessidade de mecânico.
+- [Sou Mecânico](https://w-techbrasil.com.br/sou-mecanico): Área dedicada a profissionais — formação técnica para mecânicos especializados em suspensão.
+- [Cursos em Portugal (Lisboa)](https://w-techbrasil.com.br/wtech-lisboa): Informações sobre os cursos W-Tech realizados em Lisboa, Portugal.
+
+## Políticas e Suporte
+
+- [Termos de Uso](https://w-techbrasil.com.br/termos): Termos e condições gerais da plataforma.
+- [Política de Privacidade](https://w-techbrasil.com.br/privacidade): Política de tratamento de dados pessoais (LGPD).
+- [Política de Cancelamento](https://w-techbrasil.com.br/cancelamento): Regras de cancelamento e reembolso de inscrições em cursos.
+- [Suporte](https://w-techbrasil.com.br/suporte): Central de atendimento e dúvidas frequentes.
+- [Rastreio de Pedido](https://w-techbrasil.com.br/rastreio): Consulta de status de pedidos de peças e materiais.
+
+## Informações de Contato
+
+- **Sede:** R. Zumbi dos Palmares, 410 — Jd. Paulista, CEP 15060-190 — São José do Rio Preto, SP, Brasil
+- **Telefone:** (17) 3231-2858
+- **E-mail:** contato@w-techbrasil.com.br
+- **Horário de Atendimento:** Segunda a Sexta, 08h às 18h
+- **Instagram:** @wtechbrasil
