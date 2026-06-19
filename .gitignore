@@ -30,6 +30,9 @@ dist-ssr
 public/images/Pronello.mov
 .env
 
+# Seed com segredos (não versionar)
+seed_whatsapp_cloud_config.sql
+
 # Playwright
 /test-results/
 /playwright-report/

@@ -35,7 +35,16 @@ const AdminIntegrations = () => {
         brevoSmtpLogin: '',
         brevoSmtpKey: '',
         brevoSenderEmail: '',
-        brevoSenderName: 'W-Tech Brasil'
+        brevoSenderName: 'W-Tech Brasil',
+        // WhatsApp Cloud API (Meta) — atendimento oficial (separado da Evolution)
+        waCloudPhoneNumberId: '',
+        waCloudWabaId: '',
+        waCloudAppId: '',
+        waCloudAppSecret: '',
+        waCloudAccessToken: '',
+        waCloudApiVersion: 'v20.0',
+        waCloudVerifyToken: '',
+        waCloudDisplayNumber: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -105,7 +114,16 @@ const AdminIntegrations = () => {
                 brevoSmtpLogin: configMap['brevo_smtp_login'] || '',
                 brevoSmtpKey: configMap['brevo_smtp_key'] || '',
                 brevoSenderEmail: configMap['brevo_sender_email'] || '',
-                brevoSenderName: configMap['brevo_sender_name'] || 'W-Tech Brasil'
+                brevoSenderName: configMap['brevo_sender_name'] || 'W-Tech Brasil',
+                // WhatsApp Cloud API (Meta) — defaults não-sensíveis já preenchidos
+                waCloudPhoneNumberId: configMap['whatsapp_cloud_phone_number_id'] || '561199070419888',
+                waCloudWabaId: configMap['whatsapp_cloud_waba_id'] || '715698567695226',
+                waCloudAppId: configMap['whatsapp_cloud_app_id'] || '1424299738908155',
+                waCloudAppSecret: configMap['whatsapp_cloud_app_secret'] || '',
+                waCloudAccessToken: configMap['whatsapp_cloud_access_token'] || '',
+                waCloudApiVersion: configMap['whatsapp_cloud_api_version'] || 'v20.0',
+                waCloudVerifyToken: configMap['whatsapp_cloud_webhook_verify_token'] || 'wtech_meta_webhook_2026',
+                waCloudDisplayNumber: configMap['whatsapp_cloud_display_number'] || '+55 17 3231-2858'
             });
         }
     };
@@ -384,7 +402,16 @@ const AdminIntegrations = () => {
                 { key: 'brevo_smtp_login', value: globalConfig.brevoSmtpLogin },
                 { key: 'brevo_smtp_key', value: globalConfig.brevoSmtpKey },
                 { key: 'brevo_sender_email', value: globalConfig.brevoSenderEmail },
-                { key: 'brevo_sender_name', value: globalConfig.brevoSenderName }
+                { key: 'brevo_sender_name', value: globalConfig.brevoSenderName },
+                // WhatsApp Cloud API (Meta)
+                { key: 'whatsapp_cloud_phone_number_id', value: globalConfig.waCloudPhoneNumberId.trim() },
+                { key: 'whatsapp_cloud_waba_id', value: globalConfig.waCloudWabaId.trim() },
+                { key: 'whatsapp_cloud_app_id', value: globalConfig.waCloudAppId.trim() },
+                { key: 'whatsapp_cloud_app_secret', value: globalConfig.waCloudAppSecret.trim() },
+                { key: 'whatsapp_cloud_access_token', value: globalConfig.waCloudAccessToken.trim() },
+                { key: 'whatsapp_cloud_api_version', value: globalConfig.waCloudApiVersion.trim() || 'v20.0' },
+                { key: 'whatsapp_cloud_webhook_verify_token', value: globalConfig.waCloudVerifyToken.trim() },
+                { key: 'whatsapp_cloud_display_number', value: globalConfig.waCloudDisplayNumber.trim() }
             ];
 
             for (const update of updates) {
@@ -1000,6 +1027,138 @@ const AdminIntegrations = () => {
                 <div className="mt-6">
                     <button onClick={handleSaveGlobalConfig} disabled={loading} className="bg-gray-800 dark:bg-white text-white dark:text-black px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center gap-2 shadow-sm">
                         <Save size={14} /> Salvar Integração Kiwify
+                    </button>
+                </div>
+            </div>
+
+            {/* 5.6. WhatsApp Cloud API (Meta) — atendimento oficial */}
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-2 mb-1">
+                    <Smartphone className="text-green-600 dark:text-green-400" />
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">WhatsApp Cloud API (Meta) — Atendimento Oficial</h3>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-4 font-medium">
+                    Credenciais da API oficial da Meta usadas pelo inbox em <strong>Operacional → WhatsApp (Meta)</strong>.
+                    É independente da automação via Evolution API acima. O servidor lê estes valores (e o token nunca
+                    é exposto no navegador). Cole o <strong>Access Token permanente</strong> do System User.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Phone Number ID</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.waCloudPhoneNumberId}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudPhoneNumberId: e.target.value })}
+                            placeholder="561199070419888"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">WABA ID (WhatsApp Business Account)</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.waCloudWabaId}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudWabaId: e.target.value })}
+                            placeholder="715698567695226"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">App ID</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.waCloudAppId}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudAppId: e.target.value })}
+                            placeholder="1424299738908155"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">App Secret</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            value={globalConfig.waCloudAppSecret}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudAppSecret: e.target.value })}
+                            placeholder="App Secret do app wtech"
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Access Token (permanente — System User)</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            value={globalConfig.waCloudAccessToken}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudAccessToken: e.target.value })}
+                            placeholder="EAAUPZA... (token permanente; o temporário do Graph Explorer vale ~60 dias)"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">API Version</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.waCloudApiVersion}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudApiVersion: e.target.value })}
+                            placeholder="v20.0"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Número (exibição)</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all"
+                            value={globalConfig.waCloudDisplayNumber}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudDisplayNumber: e.target.value })}
+                            placeholder="+55 17 3231-2858"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Webhook — Verify Token</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.waCloudVerifyToken}
+                            onChange={e => setGlobalConfig({ ...globalConfig, waCloudVerifyToken: e.target.value })}
+                            placeholder="você define (use o mesmo no painel da Meta)"
+                        />
+                    </div>
+                </div>
+
+                {/* Dados do webhook para colar no painel da Meta */}
+                <div className="mt-5 rounded-lg border border-green-200 dark:border-green-900/40 bg-green-50/60 dark:bg-green-900/10 p-4 text-sm">
+                    <p className="font-bold text-[var(--admin-text-primary)] mb-2">No painel da Meta (WhatsApp → Configuration → Webhook):</p>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest shrink-0">Callback URL:</span>
+                            <code className="text-xs bg-white dark:bg-black/30 px-2 py-1 rounded border border-[var(--admin-border)] font-mono break-all">
+                                {`${typeof window !== 'undefined' ? window.location.origin : 'https://SEU-DOMINIO'}/api/whatsapp-cloud-webhook`}
+                            </code>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest shrink-0">Verify Token:</span>
+                            <code className="text-xs bg-white dark:bg-black/30 px-2 py-1 rounded border border-[var(--admin-border)] font-mono break-all">
+                                {globalConfig.waCloudVerifyToken || '—'}
+                            </code>
+                        </div>
+                        <p className="text-xs text-[var(--admin-text-secondary)] pt-1">Depois clique em <strong>Manage</strong> e assine o campo <strong>messages</strong>. Salve as credenciais aqui antes de verificar o webhook.</p>
+                    </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                    <button onClick={handleSaveGlobalConfig} disabled={loading} className="bg-gray-800 dark:bg-white text-white dark:text-black px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center gap-2 shadow-sm">
+                        <Save size={14} /> Salvar WhatsApp (Meta)
+                    </button>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const res = await fetch('/api/whatsapp-cloud-config');
+                                const data = await res.json();
+                                alert(data.configured
+                                    ? `✅ Conectado!\nNúmero: ${data.displayNumber || '—'}\nAPI: ${data.apiVersion}\nVerify token: ${data.hasWebhookToken ? 'ok' : 'faltando'}`
+                                    : '⚠️ Ainda não configurado no servidor. Salve as credenciais e tente de novo (no deploy da Vercel).');
+                            } catch (e: any) {
+                                alert('Erro ao checar status: ' + (e?.message || 'desconhecido'));
+                            }
+                        }}
+                        className="bg-green-600 text-white px-6 py-3 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2 shadow-sm"
+                    >
+                        <CheckCircle2 size={14} /> Testar Conexão
                     </button>
                 </div>
             </div>

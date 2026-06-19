@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.8.0 (2026-06-19) - Inbox WhatsApp via Meta Cloud API (atendimento oficial)
+- Novo módulo de atendimento estilo WhatsApp Web conectado à API oficial da Meta (número +55 17 3231-2858), **separado** e independente da automação via Evolution API
+- Recebe e envia mensagens de **texto, imagem, áudio (incl. gravação por microfone) e documentos**, com atualização ao vivo via Supabase Realtime
+- Backend serverless: `api/whatsapp-cloud-webhook.ts` (recebe mensagens + status entregue/lida e baixa mídia como base64), `api/whatsapp-cloud-send.ts` (envia, exige sessão autenticada) e `api/whatsapp-cloud-config.ts` (status da conexão sem expor segredos)
+- Banco: tabelas `SITE_WhatsAppCloudConversations` e `SITE_WhatsAppCloudMessages` (migração `create_whatsapp_cloud_tables.sql`) com RLS e publicação Realtime
+- Painel admin: inbox com lista de conversas (busca + não-lidas), thread com bolhas/ticks de status e composer com anexos — em Operacional > "WhatsApp (Meta)" (atalho g+z)
+- Credenciais (Phone Number ID, WABA, App ID/Secret, Access Token, API version, verify token, número) configuráveis pelo painel em **Configurações → Integrações → "WhatsApp (Meta)"**, salvas em `SITE_Config`; o servidor lê de lá (service role) com fallback para `.env`. Inclui exibição da Callback URL/verify token e botão "Testar Conexão"
+- Token/app secret são lidos só no servidor (nunca no bundle do cliente). Aviso da janela de 24h da Meta no composer
+
 ## v3.7.0 (2026-06-18) - Módulo de Óleo de Suspensão (níveis e viscosidade)
 - Novo módulo "Óleo & Suspensão": consulta de nível de óleo, viscosidade e modelo de suspensão (dianteira/traseira) por categoria (On Road, Off Road, Speed, Motocross) e moto
 - Banco: tabela `SITE_SuspensionOil` (migração `create_suspension_oil_tables.sql`) com RLS que só expõe ao site dados validados (`is_validated`) e coluna `source` (fonte de cada valor)

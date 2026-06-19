@@ -56,6 +56,7 @@ import { TaskCategoryList } from '../components/admin/TaskCategoryList';
 import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
 import SalesRecoveryView from '../components/admin/WhatsApp/SalesRecoveryView';
+import WhatsAppCloudInbox from '../components/admin/WhatsApp/CloudInbox/WhatsAppCloudInbox';
 import AffiliatesManagerView from '../components/admin/Marketing/AffiliatesManagerView';
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
@@ -107,7 +108,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -8373,6 +8374,7 @@ const Admin = () => {
                     >
                         {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView permissions={livePermissions} />}
                         {currentView === 'analytics' && hasPermission('analytics_view') && <AnalyticsView />}
+                        {currentView === 'whatsapp_inbox' && hasPermission('crm_view') && <WhatsAppCloudInbox />}
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
                             if (conversionData?.type === 'course') {
                                 setPendingEnrollmentLead(lead);

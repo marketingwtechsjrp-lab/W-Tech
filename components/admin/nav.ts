@@ -2,7 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
-    Droplets,
+    Droplets, MessageCircle,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -42,6 +42,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
             { icon: KanbanSquare, label: 'Leads & CRM', view: 'crm', permission: 'crm_view', goKey: 'l', keywords: 'leads funil pipeline negociacao' },
             { icon: CheckCircle, label: 'Tarefas', view: 'tasks', permission: 'tasks_view', goKey: 't', keywords: 'todo afazeres pendencias', badge: 'urgent_tasks' },
             { icon: UserCheck, label: 'Clientes', view: 'clients', permission: 'clients_view', goKey: 'c', keywords: 'contatos compradores base' },
+            { icon: MessageCircle, label: 'WhatsApp (Meta)', view: 'whatsapp_inbox', permission: 'crm_view', goKey: 'z', keywords: 'whatsapp chat atendimento inbox conversas mensagens cloud api meta' },
             { icon: Wrench, label: 'Rede Credenciada', view: 'mechanics', permission: 'accredited_view', goKey: 'r', keywords: 'oficinas mecanicos parceiros' },
         ],
     },
