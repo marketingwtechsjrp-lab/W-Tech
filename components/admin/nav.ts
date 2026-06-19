@@ -2,6 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
+    Droplets,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -51,6 +52,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
             { icon: GraduationCap, label: 'Cursos & Alunos', view: 'courses_manager', permission: 'courses_view', goKey: 'a', keywords: 'turmas matriculas alunos academia' },
             { icon: Package, label: 'Catálogo', view: 'catalog_manager', permission: 'catalog_view', goKey: 'k', keywords: 'produtos estoque' },
             { icon: Wrench, label: 'Molas & Motos', view: 'springs_manager', permission: 'catalog_view', goKey: 'o', keywords: 'molas motos suspensao recomendacao' },
+            { icon: Droplets, label: 'Óleo & Suspensão', view: 'suspension_oil_manager', permission: 'catalog_view', goKey: 'v', keywords: 'oleo nivel viscosidade suspensao garfo amortecedor wp showa kyb' },
             { icon: FileText, label: 'Notas Fiscais', view: 'invoices', permission: 'invoices_view', goKey: 'i', keywords: 'nf nfe faturas' },
             { icon: DollarSign, label: 'Financeiro', view: 'finance', permission: 'financial_view', goKey: 'f', keywords: 'caixa fluxo receita despesa' },
         ],

@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.7.0 (2026-06-18) - Módulo de Óleo de Suspensão (níveis e viscosidade)
+- Novo módulo "Óleo & Suspensão": consulta de nível de óleo, viscosidade e modelo de suspensão (dianteira/traseira) por categoria (On Road, Off Road, Speed, Motocross) e moto
+- Banco: tabela `SITE_SuspensionOil` (migração `create_suspension_oil_tables.sql`) com RLS que só expõe ao site dados validados (`is_validated`) e coluna `source` (fonte de cada valor)
+- Painel admin DM: CRUD completo com filtros (categoria/marca/posição/status), badge de validação clicável e nota de segurança — em Vendas > "Óleo & Suspensão" (atalho g+v)
+- Front-end: nova página pública `/oleo` com seletor por categoria → marca → modelo → posição, link "Óleo" no header
+- Seed de rascunho pesquisado com fonte citada (`scripts/seed_suspension_oil.js`), inserido como não validado para revisão técnica da W-Tech antes de publicar
+
 ## v3.6.4 (2026-06-18) - Correção de autorização 401 no WhatsApp (Evolution API v2)
 - Instâncias criadas via painel agora utilizam a Global API Key como token padrão (token: globalConfig.apiKey), resolvendo o erro 401 (Unauthorized) no envio de mensagens de teste e automações.
 

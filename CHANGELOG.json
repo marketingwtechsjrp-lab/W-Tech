@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.7.0",
+    "date": "2026-06-18",
+    "title": "Módulo de Óleo de Suspensão (níveis e viscosidade)",
+    "changes": [
+      "Novo módulo 'Óleo & Suspensão': consulta de nível de óleo, viscosidade e modelo de suspensão (dianteira/traseira) por categoria (On Road, Off Road, Speed, Motocross) e moto",
+      "Banco: tabela SITE_SuspensionOil (migração create_suspension_oil_tables.sql) com RLS que só expõe ao site dados validados (is_validated) e coluna source para a fonte de cada valor",
+      "Painel admin DM: CRUD completo com filtros (categoria/marca/posição/status), badge de validação clicável e nota de segurança — em Vendas > 'Óleo & Suspensão' (atalho g+v)",
+      "Front-end: nova página pública /oleo com seletor categoria → marca → modelo → posição e link 'Óleo' no header",
+      "Seed de rascunho pesquisado com fonte citada (scripts/seed_suspension_oil.js), inserido como não validado para revisão técnica antes de publicar"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.6.4",
     "date": "2026-06-18",
     "title": "Correção de autorização 401 no WhatsApp (Evolution API v2)",

@@ -26,6 +26,7 @@ export function Header() {
 	const links = [
 		{ label: 'Início', href: '/' },
 		{ label: 'Molas', href: '/molas' },
+		{ label: 'Óleo', href: '/oleo' },
 		{ label: 'Cursos', href: '/cursos' },
 		{ label: 'Rede', href: '/mapa' },
 		{ label: 'Loja', href: 'https://w-techstore.com.br/', isExternal: true },
