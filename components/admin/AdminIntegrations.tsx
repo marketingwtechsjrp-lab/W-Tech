@@ -1147,7 +1147,7 @@ const AdminIntegrations = () => {
                     <button
                         onClick={async () => {
                             try {
-                                const res = await fetch('/api/whatsapp-cloud-config');
+                                const res = await fetch('/api/whatsapp-cloud-send');
                                 const data = await res.json();
                                 alert(data.configured
                                     ? `✅ Conectado!\nNúmero: ${data.displayNumber || '—'}\nAPI: ${data.apiVersion}\nVerify token: ${data.hasWebhookToken ? 'ok' : 'faltando'}`

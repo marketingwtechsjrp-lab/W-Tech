@@ -9,14 +9,20 @@ import {
 } from './_whatsappCloud.js';
 
 /**
- * Vercel Serverless Function — Envio pela WhatsApp Cloud API (Meta).
- * URL: /api/whatsapp-cloud-send  (POST)
+ * Vercel Serverless Function — WhatsApp Cloud API (Meta): status + envio.
+ * URL: /api/whatsapp-cloud-send
+ *
+ *   GET  → status da integração (dados NÃO-sensíveis: booleans + número).
+ *   POST → envia mensagem (texto/imagem/áudio/vídeo/documento).
+ *
+ * GET e POST ficam no mesmo arquivo para respeitar o limite de 12 funções
+ * serverless do plano Hobby da Vercel. O webhook continua separado.
  *
  * O app usa autenticação própria (tabela SITE_Users, sem Supabase Auth), então
- * o endpoint exige o header x-wtech-user-id com o id de um usuário existente —
+ * o POST exige o header x-wtech-user-id com o id de um usuário existente —
  * validado no servidor — para não ficar aberto ao público.
  *
- * Body (JSON):
+ * Body do POST (JSON):
  *   { to, type, text?, mediaBase64?, mediaMime?, filename?, caption? }
  *   - type: 'text' | 'image' | 'audio' | 'video' | 'document'
  *   - mediaBase64: data URL ("data:<mime>;base64,...") ou base64 puro
@@ -77,6 +83,27 @@ async function uploadMedia(cfg: CloudConfig, buffer: Buffer, mime: string, filen
 }
 
 export default async function handler(req: any, res: any) {
+  // ── Status (GET) — dados não-sensíveis para o painel ──────────────────────
+  if (req.method === 'GET') {
+    try {
+      const cfg = await loadCloudConfig();
+      return res.status(200).json({
+        configured: !!cfg.accessToken && !!cfg.phoneNumberId,
+        hasWebhookToken: !!cfg.verifyToken,
+        displayNumber: cfg.displayNumber || null,
+        apiVersion: cfg.apiVersion,
+      });
+    } catch (e: any) {
+      return res.status(200).json({
+        configured: false,
+        hasWebhookToken: false,
+        displayNumber: null,
+        apiVersion: 'v20.0',
+        error: e?.message,
+      });
+    }
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
