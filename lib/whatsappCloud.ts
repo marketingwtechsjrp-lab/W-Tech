@@ -149,6 +149,9 @@ export function sendCloudMedia(
 
 export interface CloudStatus {
   configured: boolean;
+  /** O token realmente tem acesso ao número na Meta (testado de verdade). */
+  live?: boolean;
+  liveError?: string | null;
   hasWebhookToken: boolean;
   displayNumber: string | null;
   apiVersion: string;

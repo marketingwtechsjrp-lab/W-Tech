@@ -84,11 +84,33 @@ async function uploadMedia(cfg: CloudConfig, buffer: Buffer, mime: string, filen
 
 export default async function handler(req: any, res: any) {
   // ── Status (GET) — dados não-sensíveis para o painel ──────────────────────
+  // "configured" = credenciais preenchidas. "live" = o token REALMENTE tem
+  // acesso ao número na Meta (testa de verdade, pra não mostrar falso positivo).
   if (req.method === 'GET') {
     try {
       const cfg = await loadCloudConfig();
+      const configured = !!cfg.accessToken && !!cfg.phoneNumberId;
+      let live = false;
+      let liveError: string | null = null;
+
+      if (configured) {
+        try {
+          const r = await fetch(
+            `${GRAPH}/${cfg.apiVersion}/${cfg.phoneNumberId}?fields=display_phone_number,verified_name`,
+            { headers: { Authorization: `Bearer ${cfg.accessToken}` } }
+          );
+          const d = await r.json();
+          if (r.ok && d?.id) live = true;
+          else liveError = d?.error?.message || `Sem acesso ao número (HTTP ${r.status}).`;
+        } catch (e: any) {
+          liveError = e?.message || 'Falha ao validar o token na Meta.';
+        }
+      }
+
       return res.status(200).json({
-        configured: !!cfg.accessToken && !!cfg.phoneNumberId,
+        configured,
+        live,
+        liveError,
         hasWebhookToken: !!cfg.verifyToken,
         displayNumber: cfg.displayNumber || null,
         apiVersion: cfg.apiVersion,
@@ -96,10 +118,11 @@ export default async function handler(req: any, res: any) {
     } catch (e: any) {
       return res.status(200).json({
         configured: false,
+        live: false,
+        liveError: e?.message || null,
         hasWebhookToken: false,
         displayNumber: null,
         apiVersion: 'v20.0',
-        error: e?.message,
       });
     }
   }

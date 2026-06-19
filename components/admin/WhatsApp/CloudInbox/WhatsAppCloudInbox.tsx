@@ -101,14 +101,21 @@ const WhatsAppCloudInbox: React.FC = () => {
               WhatsApp — Meta Cloud API
             </h2>
             <div className="flex items-center gap-1.5 text-xs">
-              {status?.configured ? (
+              {status?.live ? (
                 <span className="flex items-center gap-1 text-[#25D366]">
                   <Wifi size={12} /> Conectado
                   {status.displayNumber ? ` · ${status.displayNumber}` : ''}
                 </span>
+              ) : status?.configured ? (
+                <span
+                  className="flex items-center gap-1 text-amber-500"
+                  title={status?.liveError || undefined}
+                >
+                  <WifiOff size={12} /> Token sem acesso ao número — verifique em Configurações → Integrações
+                </span>
               ) : (
                 <span className="flex items-center gap-1 text-amber-500">
-                  <WifiOff size={12} /> Não configurado (defina as variáveis de ambiente)
+                  <WifiOff size={12} /> Não configurado (preencha em Configurações → Integrações)
                 </span>
               )}
             </div>
@@ -150,7 +157,7 @@ const WhatsAppCloudInbox: React.FC = () => {
               />
               <MessageComposer
                 conversation={selectedConv}
-                disabled={!status?.configured}
+                disabled={!status?.live}
                 lastInboundAt={lastInboundAt}
                 onSent={handleSent}
               />

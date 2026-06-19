@@ -1149,9 +1149,13 @@ const AdminIntegrations = () => {
                             try {
                                 const res = await fetch('/api/whatsapp-cloud-send');
                                 const data = await res.json();
-                                alert(data.configured
-                                    ? `✅ Conectado!\nNúmero: ${data.displayNumber || '—'}\nAPI: ${data.apiVersion}\nVerify token: ${data.hasWebhookToken ? 'ok' : 'faltando'}`
-                                    : '⚠️ Ainda não configurado no servidor. Salve as credenciais e tente de novo (no deploy da Vercel).');
+                                if (data.live) {
+                                    alert(`✅ Conectado de verdade!\nNúmero: ${data.displayNumber || '—'}\nAPI: ${data.apiVersion}\nVerify token: ${data.hasWebhookToken ? 'ok' : 'faltando'}`);
+                                } else if (data.configured) {
+                                    alert(`⚠️ Credenciais salvas, mas o token NÃO tem acesso ao número na Meta.\n\nMotivo: ${data.liveError || 'permissão ausente'}\n\nAtribua o WhatsApp Business Account ao System User como ativo (Controle total) em business.facebook.com → Usuários do sistema.`);
+                                } else {
+                                    alert('⚠️ Ainda não configurado no servidor. Salve as credenciais e tente de novo (após o deploy da Vercel).');
+                                }
                             } catch (e: any) {
                                 alert('Erro ao checar status: ' + (e?.message || 'desconhecido'));
                             }
