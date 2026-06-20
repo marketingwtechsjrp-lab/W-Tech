@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendTemplate, alreadySent } from './_email.js';
-import { sendWhatsAppText } from './_whatsapp.js';
+import { sendTransactional } from './_waDispatch.js';
 
 /**
  * Lembretes automáticos de SALDO PENDENTE da inscrição.
@@ -325,7 +325,13 @@ export async function processBalanceReminders(limit = 30, dryRun = false): Promi
                     stage,
                     daysToCourse
                 });
-                const sent = await sendWhatsAppText(enr.student_phone, message);
+                const sent = await sendTransactional({
+                    to: enr.student_phone,
+                    category: 'billing',
+                    text: message,
+                    templateName: 'cobranca_saldo_curso',
+                    vars: [firstName, fmtMoney(remaining), course.title || 'Curso W-Tech', courseDateStr, course.whatsapp_group_link || ''],
+                });
                 waStatus = sent.sent ? 'enviado' : sent.skipped || sent.error || 'falhou';
                 if (sent.sent) {
                     result.whatsappSent++;

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Bot, UserCheck, Clock } from 'lucide-react';
 import { CloudConversation } from '../../../../lib/whatsappCloud';
 
 interface Props {
@@ -8,6 +8,13 @@ interface Props {
   loading: boolean;
   onSelect: (conv: CloudConversation) => void;
 }
+
+const STATUS_DOT: Record<string, { cls: string; Icon: React.ElementType; label: string }> = {
+  bot: { cls: 'text-violet-500', Icon: Bot, label: 'IA' },
+  pendente: { cls: 'text-amber-500', Icon: Clock, label: 'Aguardando' },
+  humano: { cls: 'text-sky-500', Icon: UserCheck, label: 'Atendente' },
+  encerrado: { cls: 'text-gray-400', Icon: UserCheck, label: 'Encerrada' },
+};
 
 function initials(name: string | null, waId: string): string {
   const base = (name || waId || '').trim();
@@ -94,8 +101,14 @@ const ConversationList: React.FC<Props> = ({ conversations, selectedId, loading,
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                      {name}
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      {(() => {
+                        const s = STATUS_DOT[conv.status || 'bot'];
+                        return s ? <s.Icon size={12} className={`shrink-0 ${s.cls}`} aria-label={s.label} /> : null;
+                      })()}
+                      <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                        {name}
+                      </span>
                     </span>
                     <span
                       className={`text-[11px] shrink-0 ${

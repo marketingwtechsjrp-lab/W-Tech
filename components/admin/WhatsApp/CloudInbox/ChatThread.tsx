@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ArrowLeft, Check, CheckCheck, AlertCircle, FileText, Download, UserPlus } from 'lucide-react';
+import { ArrowLeft, Check, CheckCheck, AlertCircle, FileText, Download, UserPlus, UserCheck, RotateCcw, CheckCircle2, Bot, Clock, ArrowRightLeft } from 'lucide-react';
 import { CloudConversation, CloudMessage } from '../../../../lib/whatsappCloud';
 import SendToCrmModal from './SendToCrmModal';
 
@@ -7,7 +7,22 @@ interface Props {
   conversation: CloudConversation;
   messages: CloudMessage[];
   onBack: () => void;
+  currentUserId?: string;
+  assigneeName?: string | null;
+  canAssume?: boolean;
+  users?: Record<string, string>;
+  onAssume?: () => void;
+  onRelease?: () => void;
+  onClose?: () => void;
+  onTransfer?: (userId: string) => void;
 }
+
+const STATUS_CHIP: Record<string, { label: string; cls: string; Icon: React.ElementType }> = {
+  bot: { label: 'IA atendendo', cls: 'bg-violet-500/15 text-violet-600 dark:text-violet-300', Icon: Bot },
+  pendente: { label: 'Aguardando humano', cls: 'bg-amber-500/15 text-amber-600 dark:text-amber-300', Icon: Clock },
+  humano: { label: 'Em atendimento', cls: 'bg-sky-500/15 text-sky-600 dark:text-sky-300', Icon: UserCheck },
+  encerrado: { label: 'Encerrada', cls: 'bg-gray-400/15 text-gray-500 dark:text-gray-300', Icon: CheckCircle2 },
+};
 
 function formatPhone(waId: string): string {
   const d = waId.replace(/\D/g, '');
@@ -74,15 +89,23 @@ const MediaBlock: React.FC<{ msg: CloudMessage }> = ({ msg }) => {
   }
 };
 
-const ChatThread: React.FC<Props> = ({ conversation, messages, onBack }) => {
+const ChatThread: React.FC<Props> = ({
+  conversation, messages, onBack,
+  currentUserId, assigneeName, canAssume = true, users = {}, onAssume, onRelease, onClose, onTransfer,
+}) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showCrm, setShowCrm] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const transferTargets = Object.entries(users).filter(([id]) => id !== currentUserId);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const name = conversation.profile_name || formatPhone(conversation.wa_id);
+  const status = conversation.status || 'bot';
+  const chip = STATUS_CHIP[status] || STATUS_CHIP.bot;
+  const mineNow = !!currentUserId && conversation.assigned_to === currentUserId;
 
   let lastDay = '';
 
@@ -101,17 +124,86 @@ const ChatThread: React.FC<Props> = ({ conversation, messages, onBack }) => {
           {(name[0] || '?').toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{name}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm text-gray-900 dark:text-white truncate">{name}</span>
+            <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${chip.cls}`}>
+              <chip.Icon size={11} />
+              {status === 'humano' && assigneeName ? assigneeName : chip.label}
+            </span>
+          </div>
           <div className="text-xs text-gray-400 truncate">{formatPhone(conversation.wa_id)}</div>
         </div>
-        <button
-          onClick={() => setShowCrm(true)}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#128C7E] dark:text-[#25D366] bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors"
-          title="Enviar este contato como lead para o CRM"
-        >
-          <UserPlus size={15} />
-          <span className="hidden sm:inline">Enviar p/ CRM</span>
-        </button>
+
+        <div className="shrink-0 flex items-center gap-1.5">
+          {/* Assumir: disponível quando a IA está atendendo, aguardando, ou outro atendente cuida */}
+          {canAssume && !mineNow && status !== 'encerrado' && onAssume && (
+            <button
+              onClick={onAssume}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 transition-colors"
+              title="Assumir o atendimento (desliga a IA nesta conversa)"
+            >
+              <UserCheck size={15} />
+              <span className="hidden sm:inline">Assumir</span>
+            </button>
+          )}
+          {mineNow && onRelease && (
+            <button
+              onClick={onRelease}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-700 dark:text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 transition-colors"
+              title="Devolver a conversa para a IA"
+            >
+              <RotateCcw size={15} />
+              <span className="hidden sm:inline">Devolver à IA</span>
+            </button>
+          )}
+          {canAssume && onTransfer && transferTargets.length > 0 && status !== 'encerrado' && (
+            <div className="relative">
+              <button
+                onClick={() => setShowTransfer((v) => !v)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors"
+                title="Transferir para outro atendente"
+              >
+                <ArrowRightLeft size={15} />
+                <span className="hidden lg:inline">Transferir</span>
+              </button>
+              {showTransfer && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowTransfer(false)} />
+                  <div className="absolute right-0 mt-1 z-20 w-52 max-h-64 overflow-y-auto bg-white dark:bg-[#202c33] border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1">
+                    <p className="px-3 py-1.5 text-[10px] font-bold uppercase text-gray-400">Transferir para</p>
+                    {transferTargets.map(([id, name]) => (
+                      <button
+                        key={id}
+                        onClick={() => { onTransfer(id); setShowTransfer(false); }}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 flex items-center gap-2"
+                      >
+                        <UserCheck size={14} className="text-indigo-500 shrink-0" /> {name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {status !== 'encerrado' && onClose && (
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-300 bg-gray-500/10 hover:bg-gray-500/20 transition-colors"
+              title="Encerrar conversa"
+            >
+              <CheckCircle2 size={15} />
+              <span className="hidden lg:inline">Encerrar</span>
+            </button>
+          )}
+          <button
+            onClick={() => setShowCrm(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#128C7E] dark:text-[#25D366] bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors"
+            title="Enviar este contato como lead para o CRM"
+          >
+            <UserPlus size={15} />
+            <span className="hidden lg:inline">CRM</span>
+          </button>
+        </div>
       </div>
 
       <SendToCrmModal conversation={conversation} open={showCrm} onClose={() => setShowCrm(false)} />
@@ -149,6 +241,16 @@ const ChatThread: React.FC<Props> = ({ conversation, messages, onBack }) => {
                     <div className="text-sm whitespace-pre-wrap break-words">{msg.body}</div>
                   )}
                   <div className="flex items-center justify-end gap-1 mt-0.5">
+                    {msg.sent_by === 'ai' && (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-violet-600 dark:text-violet-300 mr-0.5">
+                        <Bot size={10} /> IA
+                      </span>
+                    )}
+                    {msg.sent_by === 'ai_draft' && (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-300 mr-0.5">
+                        <Bot size={10} /> rascunho
+                      </span>
+                    )}
                     <span className="text-[10px] text-gray-500 dark:text-gray-300/70">
                       {timeLabel(msg.timestamp)}
                     </span>

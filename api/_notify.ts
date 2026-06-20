@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, sendTemplate } from './_email.js';
-import { sendWhatsAppText } from './_whatsapp.js';
+import { sendTransactional } from './_waDispatch.js';
 import { renderRawEmail } from '../lib/emailTemplates.js';
 
 /**
@@ -239,7 +239,22 @@ export async function processNotify(input: NotifyInput): Promise<NotifyResult> {
                             symbol
                         })
                         : buildCourseInfoWhatsApp(course, firstName);
-                    const sent = await sendWhatsAppText(enr.student_phone, message);
+                    const locationStr = [course.city, course.state].filter(Boolean).join(', ') || course.location || 'A definir';
+                    const sent = input.action === 'balance'
+                        ? await sendTransactional({
+                            to: enr.student_phone,
+                            category: 'billing',
+                            text: message,
+                            templateName: 'cobranca_saldo_curso',
+                            vars: [firstName, fmtMoney(remaining), course.title || 'Curso W-Tech', fmtDate(course.date), course.whatsapp_group_link || ''],
+                        })
+                        : await sendTransactional({
+                            to: enr.student_phone,
+                            category: 'schedule',
+                            text: message,
+                            templateName: 'cronograma_lembrete_curso',
+                            vars: [firstName, course.title || 'Curso W-Tech', String(course.schedule || 'Conforme cronograma'), fmtDate(course.date), String(course.start_time || ''), locationStr],
+                        });
                     waStatus = sent.sent ? 'enviado' : (sent.skipped || sent.error || 'falhou');
                     if (sent.sent) { result.whatsappSent++; waSentThisRun++; }
                     else if (sent.error) result.failed++;

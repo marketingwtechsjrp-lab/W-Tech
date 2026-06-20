@@ -6,6 +6,7 @@ import {
 import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import { createHasPermission } from '../../../lib/permissions';
 import { OrdersKanbanBoard } from './OrdersKanbanBoard';
 import { NewOrderModal } from './OrderEditor';
 import { cn } from '../../../lib/utils';
@@ -41,6 +42,7 @@ const SalesManagerView: React.FC<{
     onConsumeInitialLead?: () => void;
 }> = ({ permissions, initialLead, onConsumeInitialLead }) => {
     const { user } = useAuth();
+    const can = createHasPermission(user, permissions);
     const [sales, setSales]             = useState<Sale[]>([]);
     const [loading, setLoading]         = useState(true);
     const [searchTerm, setSearchTerm]   = useState('');
@@ -218,6 +220,7 @@ const SalesManagerView: React.FC<{
     };
 
     const handleDeleteSale = async (saleId: string) => {
+        if (!can('orders_delete')) { alert('Você não tem permissão para excluir pedidos.'); return; }
         if (!confirm('Excluir permanentemente este pedido?')) return;
         setLoading(true);
         try {
@@ -318,12 +321,14 @@ const SalesManagerView: React.FC<{
                                 <RefreshCcw size={16} className={loading ? 'animate-spin text-wtech-gold' : ''} />
                             </button>
 
+                            {can('manage_orders') && (
                             <button
                                 onClick={handleCreateSale}
                                 className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all"
                             >
                                 <Plus size={16} strokeWidth={3} /> Novo Pedido
                             </button>
+                            )}
                         </div>
                     </div>
 

@@ -1,5 +1,22 @@
 [
   {
+    "version": "3.9.0",
+    "date": "2026-06-20",
+    "title": "WhatsApp: IA de atendimento, RAG, relatórios e privacidade por atendente",
+    "changes": [
+      "Privacidade por atendente: cada usuário só vê as conversas atribuídas a ele — filtro aplicado na consulta (fetchConversations por assigned_to), não só no render. Admin e Gerente de Atendimento veem todas (permissão whatsapp_view_all)",
+      "Handoff humano: Assumir / Transferir para outro atendente / Devolver à IA / Encerrar, com estado por conversa (status bot/pendente/humano/encerrado, bot_enabled, assigned_to) e tag sent_by nas mensagens",
+      "Configuração por cargo: toggle 'Ver Todas as Conversas' e demais permissões em Equipe & Acesso > cargo > 'Atendimento WhatsApp'",
+      "IA de atendimento: resposta automática (Gemini padrão) com motor/modelo selecionável (Gemini/OpenAI/OpenRouter) só para o robô do WhatsApp; ligar/desligar a IA por conversa",
+      "RAG: pgvector + embeddings (Gemini text-embedding-004); aprende com conversas resolvidas e injeta atendimentos parecidos no prompt antes de responder",
+      "Relatórios & análises: deflexão pela IA, sentimento, prioridades, top tópicos, fila de atenção, resumos por conversa e Relatório executivo (IA)",
+      "Áudio por microfone e envio de mídia com checagem de permissão (whatsapp_send)",
+      "Permissões centralizadas em lib/permissions.ts (PERMISSION_CATALOG, createHasPermission, createPermissionResolver, ROLE_PRESETS) — eliminadas 5 cópias divergentes e toggles fantasma; resolver 'explícito vence'",
+      "Migrations: whatsapp_handoff_columns, whatsapp_permissions_grant, realign_roles_permissions, whatsapp_ai_tables, whatsapp_ai_rag"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.8.1",
     "date": "2026-06-19",
     "title": "WhatsApp (Meta): enviar contato p/ CRM + gravação de áudio",

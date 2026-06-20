@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { recoverLeadToRoulette } from './_roleta.js';
 import { sendTemplate, alreadySent } from './_email.js';
 import { enrollContactInFlows } from './_flows.js';
+import { sendTransactional } from './_waDispatch.js';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.
@@ -435,6 +436,30 @@ export default async function handler(req: any, res: any) {
         );
         if ((emailRes as any)?.sent) {
           console.log(`[MP Webhook] E-mail de confirmação enviado para ${enrollment.student_email} ✓`);
+        }
+
+        // ── 7b. Confirmação de venda via WhatsApp (motor configurável: oficial/Evolution) ──
+        if (enrollment.student_phone) {
+          const firstName = (enrollment.student_name || '').split(' ')[0] || 'Aluno';
+          const waText =
+            `✅ Olá ${firstName}! Sua inscrição no curso *${course.title || 'W-Tech'}* foi confirmada.\n\n` +
+            `📅 ${dateStr}\n📍 ${location}\n💳 Pago: ${symbol} ${fmt(amountPaid)}` +
+            (remaining > 0 ? `\n⚠️ Saldo pendente: ${symbol} ${fmt(remaining)}` : '') +
+            `\n\nQualquer dúvida, estamos à disposição!`;
+          const waRes: any = await withTimeout(
+            sendTransactional({
+              to: enrollment.student_phone,
+              category: 'course_sales',
+              text: waText,
+              templateName: 'venda_curso_confirmacao',
+              vars: [firstName, course.title || 'Curso W-Tech', dateStr, `${symbol} ${fmt(amountPaid)}`],
+            }),
+            14000,
+            'Envio WhatsApp de confirmação'
+          ).catch((e: any) => ({ sent: false, error: e?.message }));
+          if (waRes?.sent) {
+            console.log(`[MP Webhook] WhatsApp de confirmação enviado via ${waRes.engine} ✓`);
+          }
         }
 
         // ── 8. Inscreve o comprador em fluxos de follow-up (gatilho CompraRecente) ──

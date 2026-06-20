@@ -9,6 +9,7 @@ import {
   isOutsideServiceWindow,
 } from '../../../../lib/whatsappCloud';
 import { useAuth } from '../../../../context/AuthContext';
+import { createHasPermission } from '../../../../lib/permissions';
 
 interface Props {
   conversation: CloudConversation;
@@ -27,6 +28,8 @@ function pickAudioMime(): string {
 
 const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundAt, onSent }) => {
   const { user } = useAuth();
+  const canSend = createHasPermission(user)('whatsapp_send') || createHasPermission(user)('crm_view');
+  const isDisabled = disabled || !canSend;
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,7 +240,7 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
-                disabled={disabled || sending}
+                disabled={isDisabled || sending}
                 className="p-2.5 rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-40"
                 title="Anexar"
               >
@@ -277,9 +280,9 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
                   handleSendText();
                 }
               }}
-              disabled={disabled || sending}
+              disabled={isDisabled || sending}
               rows={1}
-              placeholder={disabled ? 'Integração não configurada' : 'Digite uma mensagem'}
+              placeholder={!canSend ? 'Sem permissão para enviar' : disabled ? 'Integração não configurada' : 'Digite uma mensagem'}
               className="flex-1 resize-none max-h-32 px-4 py-2.5 text-sm rounded-2xl bg-gray-100 dark:bg-[#2a3942] text-gray-900 dark:text-white placeholder:text-gray-400 border-none focus:outline-none focus:ring-2 focus:ring-[#25D366]/40 disabled:opacity-50"
             />
 
@@ -287,7 +290,7 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
             {text.trim() ? (
               <button
                 onClick={handleSendText}
-                disabled={disabled || sending}
+                disabled={isDisabled || sending}
                 className="p-2.5 rounded-full bg-[#25D366] text-white hover:bg-[#1da851] disabled:opacity-40 shrink-0"
                 title="Enviar"
               >
@@ -296,7 +299,7 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
             ) : (
               <button
                 onClick={startRecording}
-                disabled={disabled || sending}
+                disabled={isDisabled || sending}
                 className="p-2.5 rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-40 shrink-0"
                 title="Gravar áudio"
               >

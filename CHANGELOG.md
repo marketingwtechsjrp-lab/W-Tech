@@ -1,6 +1,22 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.9.0 (2026-06-20) - WhatsApp: IA de atendimento, RAG, relatórios e privacidade por atendente
+### Atendimento WhatsApp (multiatendimento + IA)
+- **Privacidade por atendente:** cada usuário só vê as conversas atribuídas a ele — o filtro é aplicado **na consulta** (`fetchConversations` por `assigned_to`), não só no render, então o navegador nem baixa as conversas dos outros. Admin e Gerente de Atendimento veem todas (permissão `whatsapp_view_all`)
+- **Handoff humano:** Assumir / Transferir para outro atendente / Devolver à IA / Encerrar, com estado por conversa (`status`: bot/pendente/humano/encerrado, `bot_enabled`, `assigned_to`) e tag de quem enviou cada mensagem (`sent_by`)
+- **Configuração por cargo:** toggle "Ver Todas as Conversas" e demais permissões do módulo em Equipe & Acesso → cargo → "Atendimento WhatsApp"
+- **IA de atendimento:** resposta automática (Gemini por padrão) com **motor/modelo selecionável** (Gemini/OpenAI/OpenRouter) só para o robô do WhatsApp; ligar/desligar a IA por conversa
+- **RAG (aprende sozinho):** pgvector + embeddings (Gemini text-embedding-004); ao encerrar/transferir, destila o par pergunta→resposta que resolveu e grava na memória; antes de responder, recupera atendimentos parecidos e injeta no prompt
+- **Relatórios & análises:** aba Métricas com deflexão pela IA, sentimento, prioridades, top tópicos, fila de conversas que precisam de atenção, resumos por conversa e "Relatório executivo (IA)"
+- Áudio por microfone e envio de mídia com checagem de permissão (`whatsapp_send`)
+
+### Permissões & Cargos (centralização)
+- **Fonte única de verdade** em `lib/permissions.ts` (`PERMISSION_CATALOG`, `createHasPermission`, `createPermissionResolver`, `ROLE_PRESETS`) — eliminadas 5 cópias divergentes de `hasPermission` no Admin e os "toggles fantasma"/"chaves órfãs". Resolver com semântica "explícito vence" (desligar um módulo agora ganha do fallback legado)
+- Migrations: `whatsapp_handoff_columns`, `whatsapp_permissions_grant`, `realign_roles_permissions`, `whatsapp_ai_tables`, `whatsapp_ai_rag`
+
+> Ativação: rodar as migrations acima no Supabase. A RAG depende de uma chave Gemini (embeddings) configurada — sem ela o robô segue funcionando, só não aprende/recupera memória.
+
 ## v3.8.1 (2026-06-19) - WhatsApp (Meta): enviar contato p/ CRM + gravação de áudio
 - Botão **"Enviar p/ CRM"** no cabeçalho da conversa: cria/atualiza um lead em `SITE_Leads` com nome + telefone, escolha de **atendente** (assigned_to) e observação. Deduplica pelo telefone (últimos 8 dígitos) para não duplicar contatos
 - Helpers `fetchAttendants()` e `createLeadFromContact()` em `lib/leads.ts`; novo componente `SendToCrmModal.tsx`

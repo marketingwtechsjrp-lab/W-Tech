@@ -8,11 +8,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
+import { createHasPermission } from '../../../lib/permissions';
 import type { Product, StockMovement, ProductBOM } from '../../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CatalogManagerView = () => {
     const { user } = useAuth();
+    const canManageCatalog = createHasPermission(user)('catalog_manage');
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -136,6 +138,7 @@ const CatalogManagerView = () => {
     }, [activeModalTab, editingProduct?.id]);
 
     const handleSaveProduct = async () => {
+        if (!canManageCatalog) { alert('Você não tem permissão para gerenciar produtos.'); return; }
         if (!editingProduct?.name || !editingProduct?.sku) {
             alert("Preencha o nome e o SKU!");
             return;
@@ -456,12 +459,12 @@ const CatalogManagerView = () => {
                     >
                         <RefreshCcw size={16} className="text-blue-500" /> Reajuste em Massa
                     </button>
-                    <button
+                    {canManageCatalog && <button
                         onClick={() => { setEditingProduct({ type: 'product', unit: 'un' }); setIsProductModalOpen(true); }}
                         className="flex-1 md:flex-none px-4 py-2.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black rounded-xl font-black flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20 text-sm"
                     >
                         <Plus size={16} /> Novo Item
-                    </button>
+                    </button>}
                 </div>
             </div>
 
@@ -627,7 +630,7 @@ const CatalogManagerView = () => {
                                         >
                                             <Layers size={16} />
                                         </button>
-                                        <button
+                                        {canManageCatalog && <button
                                             onClick={async () => {
                                                 if (confirm("Deseja realmente excluir este item?")) {
                                                     await supabase.from('SITE_Products').delete().eq('id', product.id);
@@ -637,7 +640,7 @@ const CatalogManagerView = () => {
                                             className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors" title="Excluir"
                                         >
                                             <Trash2 size={16} />
-                                        </button>
+                                        </button>}
                                     </div>
                                 </td>
                             </tr>

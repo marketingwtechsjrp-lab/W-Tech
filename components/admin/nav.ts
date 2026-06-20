@@ -16,6 +16,8 @@ export type AdminNavItem = {
     label: string;
     view: string;
     permission: string;
+    /** Permissão legada de fallback: usada só quando `permission` está AUSENTE no cargo. */
+    legacyPermission?: string;
     /** Tecla do atalho de navegação rápida: "g" e depois esta tecla. */
     goKey?: string;
     /** Palavras extras para busca fuzzy no command palette. */
@@ -42,7 +44,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
             { icon: KanbanSquare, label: 'Leads & CRM', view: 'crm', permission: 'crm_view', goKey: 'l', keywords: 'leads funil pipeline negociacao' },
             { icon: CheckCircle, label: 'Tarefas', view: 'tasks', permission: 'tasks_view', goKey: 't', keywords: 'todo afazeres pendencias', badge: 'urgent_tasks' },
             { icon: UserCheck, label: 'Clientes', view: 'clients', permission: 'clients_view', goKey: 'c', keywords: 'contatos compradores base' },
-            { icon: MessageCircle, label: 'WhatsApp (Meta)', view: 'whatsapp_inbox', permission: 'crm_view', goKey: 'z', keywords: 'whatsapp chat atendimento inbox conversas mensagens cloud api meta' },
+            { icon: MessageCircle, label: 'WhatsApp (Meta)', view: 'whatsapp_inbox', permission: 'whatsapp_inbox_view', legacyPermission: 'crm_view', goKey: 'z', keywords: 'whatsapp chat atendimento inbox conversas mensagens cloud api meta' },
             { icon: Wrench, label: 'Rede Credenciada', view: 'mechanics', permission: 'accredited_view', goKey: 'r', keywords: 'oficinas mecanicos parceiros' },
         ],
     },

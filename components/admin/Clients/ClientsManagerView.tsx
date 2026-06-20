@@ -4,6 +4,7 @@ import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import { createHasPermission } from '../../../lib/permissions';
 import ListsManager from '../Marketing/ListsManager';
 import { ClientDetailModal } from './ClientDetailModal';
 import { cn } from '../../../lib/utils';
@@ -44,6 +45,7 @@ const parseLPSource = (contextId: string | undefined): string => {
 
 const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
+    const canManageClients = createHasPermission(user, permissions)('clients_manage');
     const [activeTab, setActiveTab] = useState<'clients' | 'groups'>('clients');
     const [clients, setClients] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -348,8 +350,9 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     };
 
     const handleBulkDelete = async () => {
+        if (!canManageClients) { alert('Você não tem permissão para excluir clientes.'); return; }
         if (selectedClients.length === 0) return;
-        
+
         const count = selectedClients.length;
         if (!confirm(`Deseja excluir permanentemente ${count} contatos selecionados? Esta ação irá remover também o histórico de tarefas e participações em grupos.`)) {
             return;
@@ -690,20 +693,20 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
                             >
                                 <Users size={16} /> Grupo ({selectedClients.length})
                             </button>
-                            <button
+                            {canManageClients && <button
                                 onClick={handleBulkDelete}
                                 className="bg-red-500 text-white px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 hover:bg-red-600 transition-all active:scale-95"
                             >
                                 <Trash2 size={16} /> Excluir
-                            </button>
+                            </button>}
                         </div>
                     )}
-                    <button
+                    {canManageClients && <button
                         onClick={() => setSelectedClientForEdit({ type: 'Lead' })}
                         className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-4 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all"
                     >
                         <UserPlus size={16} /> Novo Cliente
-                    </button>
+                    </button>}
                 </div>
             </div>
 

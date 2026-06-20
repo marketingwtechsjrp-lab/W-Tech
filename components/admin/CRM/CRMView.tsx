@@ -4,6 +4,7 @@ import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, The
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
+import { createHasPermission } from '../../../lib/permissions';
 import type { Lead } from '../../../types';
 import { createPaymentLink } from '../../../lib/asaas';
 import { createStripePaymentLink } from '../../../lib/stripe';
@@ -1050,29 +1051,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     };
 
     // Permission Check Helper
-    const hasPermission = (key: string) => {
-        if (!user) return false;
-
-        // 1. Priority: Live Permissions (Prop)
-        if (permissions) {
-            // Super Admins in DB Role
-            if (permissions.admin_access) return true;
-            return !!permissions[key];
-        }
-
-        // 2. Super Admin / Admin legacy string check
-        if (typeof user.role === 'string') {
-            if (user.role === 'Super Admin' || user.role === 'ADMIN' || user.role === 'Admin') return true;
-            return false;
-        }
-
-        // 3. Fallback to Auth Context
-        if (user.role?.level >= 10) return true;
-        if (user.role?.name === 'Super Admin') return true;
-
-        const rolePermissions = user.role?.permissions || {};
-        return !!rolePermissions[key];
-    };
+    const hasPermission = createHasPermission(user, permissions);
 
     const handleLeadClick = (lead: any) => {
         setEditingLead(lead);
@@ -1715,6 +1694,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const deleteLead = async () => {
         if (!editingLead) return;
+        if (!hasPermission('crm_delete_leads')) { alert('Você não tem permissão para excluir leads.'); return; }
         if (!window.confirm('Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita.')) return;
 
         const { error } = await supabase.from('SITE_Leads').delete().eq('id', editingLead.id);
@@ -1826,7 +1806,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     };
 
     const exportLeadsToPDF = (selectedOnly: boolean) => {
-        const leadsToExport = selectedOnly 
+        if (!hasPermission('crm_export')) { alert('Você não tem permissão para exportar dados.'); return; }
+        const leadsToExport = selectedOnly
             ? leads.filter(l => selectedLeadIds.has(l.id))
             : filteredLeads;
 
@@ -1898,7 +1879,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     };
 
     const exportLeadsToCSV = (selectedOnly: boolean) => {
-        const leadsToExport = selectedOnly 
+        if (!hasPermission('crm_export')) { alert('Você não tem permissão para exportar dados.'); return; }
+        const leadsToExport = selectedOnly
             ? leads.filter(l => selectedLeadIds.has(l.id))
             : filteredLeads;
 
@@ -2050,6 +2032,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     }, [leads]);
 
     const exportFilteredToXLS = () => {
+        if (!hasPermission('crm_export')) { alert('Você não tem permissão para exportar dados.'); return; }
         if (filteredLeads.length === 0) {
             alert('Nenhum lead encontrado para exportar.');
             return;

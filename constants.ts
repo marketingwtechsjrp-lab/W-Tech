@@ -6,7 +6,7 @@ export const ASSETS = {
   HERO_BG: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=2832&auto=format&fit=crop',
 };
 
-export const APP_VERSION = '3.8.1';
+export const APP_VERSION = '3.9.0';
 
 export const MOCK_COURSES: Course[] = [
   {

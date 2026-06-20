@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
+import { createHasPermission } from '../../../lib/permissions';
 import { Task, TaskCategory } from '../../../types';
 import {
     Plus, Clock, CheckCircle2, AlertTriangle, Trash2, User,
@@ -223,11 +224,7 @@ const EMPTY_FORM = {
 const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     const { user } = useAuth();
 
-    const hasPermission = (key: string) => {
-        if (!user) return false;
-        if (permissions) return !!permissions[key];
-        return user.role === 'Super Admin' || user.role === 'ADMIN';
-    };
+    const hasPermission = createHasPermission(user, permissions);
 
     // ── State ──
     const [tasks, setTasks]           = useState<Task[]>([]);
@@ -265,7 +262,11 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
             .select('*, SITE_Leads(name, phone), SITE_TaskCategories(name, color)')
             .order('created_at', { ascending: false });
         if (data) {
-            setTasks(data.map((t: any) => ({
+            // tasks_view_team: sem essa permissão, o usuário só vê tarefas atribuídas a ele ou criadas por ele.
+            const rows = hasPermission('tasks_view_team')
+                ? data
+                : (user ? data.filter((t: any) => t.assigned_to === user.id || t.created_by === user.id) : []);
+            setTasks(rows.map((t: any) => ({
                 id: t.id, title: t.title, description: t.description,
                 status: t.status, priority: t.priority, created_at: t.created_at,
                 dueDate: t.due_date, assignedTo: t.assigned_to,
@@ -300,6 +301,13 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     };
 
     const handleDelete = async (id: string) => {
+        // tasks_delete só é exigida para excluir tarefas de OUTRAS pessoas.
+        const task = tasks.find(t => t.id === id);
+        const isOwn = task && (task.assignedTo === user?.id);
+        if (!isOwn && !hasPermission('tasks_delete')) {
+            alert('Você não tem permissão para excluir tarefas de outras pessoas.');
+            return;
+        }
         if (confirm('Excluir esta tarefa?')) {
             setTasks(prev => prev.filter(t => t.id !== id));
             await supabase.from('SITE_Tasks').delete().eq('id', id);

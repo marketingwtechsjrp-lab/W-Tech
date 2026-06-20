@@ -9,31 +9,107 @@ import {
   markConversationRead,
   subscribeToChanges,
   getCloudStatus,
+  assumeConversation,
+  releaseToAI,
+  closeConversation,
+  transferConversation,
 } from '../../../../lib/whatsappCloud';
+import { supabase } from '../../../../lib/supabaseClient';
+import { useAuth } from '../../../../context/AuthContext';
+import { createHasPermission } from '../../../../lib/permissions';
+import { analyzeAndLearn } from '../../../../lib/waAnalysis';
 import ConversationList from './ConversationList';
 import ChatThread from './ChatThread';
 import MessageComposer from './MessageComposer';
+
+type InboxFilter = 'todas' | 'minhas' | 'sem_dono' | 'ia';
+
+const FILTER_TABS: { id: InboxFilter; label: string }[] = [
+  { id: 'todas', label: 'Todas' },
+  { id: 'minhas', label: 'Minhas' },
+  { id: 'sem_dono', label: 'Sem dono' },
+  { id: 'ia', label: 'IA' },
+];
 
 /**
  * Inbox estilo WhatsApp Web conectado à WhatsApp Cloud API (Meta).
  * Módulo separado da automação via Evolution API.
  */
-const WhatsAppCloudInbox: React.FC = () => {
+interface InboxProps {
+  /** Ver todas as conversas; senão, só as atribuídas ao próprio usuário. */
+  canViewAll?: boolean;
+}
+
+const WhatsAppCloudInbox: React.FC<InboxProps> = ({ canViewAll = true }) => {
+  const { user } = useAuth();
+  const currentUserId = user?.id;
+  const can = createHasPermission(user);
+  const canAssume = can('whatsapp_assume') || can('crm_view');
   const [conversations, setConversations] = useState<CloudConversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<CloudMessage[]>([]);
   const [status, setStatus] = useState<CloudStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<InboxFilter>(canViewAll ? 'todas' : 'minhas');
+  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
 
   const selectedIdRef = useRef<string | null>(null);
   selectedIdRef.current = selectedId;
 
+  // Mapa de id→nome dos atendentes (para mostrar quem assumiu).
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('SITE_Users').select('id, name');
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((u: any) => { map[u.id] = u.name; });
+        setUsersMap(map);
+      }
+    })();
+  }, []);
+
+  const handleAssume = useCallback(async () => {
+    if (!selectedIdRef.current || !currentUserId) return;
+    const id = selectedIdRef.current;
+    await assumeConversation(id, currentUserId);
+    await loadConversationsRef.current?.();
+    void analyzeAndLearn(id); // análise de bastidor (best-effort)
+  }, [currentUserId]);
+
+  const handleRelease = useCallback(async () => {
+    if (!selectedIdRef.current) return;
+    await releaseToAI(selectedIdRef.current);
+    await loadConversationsRef.current?.();
+  }, []);
+
+  const handleClose = useCallback(async () => {
+    if (!selectedIdRef.current) return;
+    const id = selectedIdRef.current;
+    await closeConversation(id);
+    await loadConversationsRef.current?.();
+    void analyzeAndLearn(id); // resumo + aprendizado RAG ao encerrar
+  }, []);
+
+  const handleTransfer = useCallback(async (toUserId: string) => {
+    if (!selectedIdRef.current) return;
+    const id = selectedIdRef.current;
+    await transferConversation(id, toUserId, currentUserId);
+    await loadConversationsRef.current?.();
+    void analyzeAndLearn(id); // análise de bastidor ao transferir
+  }, [currentUserId]);
+
+  const loadConversationsRef = useRef<(() => Promise<CloudConversation[]>) | null>(null);
+
   const loadConversations = useCallback(async () => {
-    const convs = await fetchConversations();
+    // Privacidade aplicada na consulta: sem "ver todas", busca só as atribuídas a mim.
+    const convs = await fetchConversations(
+      canViewAll ? undefined : { onlyAssigned: true, assignedTo: currentUserId }
+    );
     setConversations(convs);
     return convs;
-  }, []);
+  }, [canViewAll, currentUserId]);
+  loadConversationsRef.current = loadConversations;
 
   const loadMessages = useCallback(async (conversationId: string) => {
     const msgs = await fetchMessages(conversationId);
@@ -85,7 +161,17 @@ const WhatsAppCloudInbox: React.FC = () => {
     await loadConversations();
   }, [loadConversations, loadMessages]);
 
+  const filteredConversations = conversations.filter((c) => {
+    // Sem permissão de "ver todas", o usuário só enxerga as conversas atribuídas a ele.
+    if (!canViewAll) return c.assigned_to === currentUserId;
+    if (filter === 'minhas') return c.assigned_to === currentUserId;
+    if (filter === 'sem_dono') return !c.assigned_to && c.status !== 'encerrado';
+    if (filter === 'ia') return (c.status || 'bot') === 'bot';
+    return true;
+  });
+
   const selectedConv = conversations.find((c) => c.id === selectedId) || null;
+  const assigneeName = selectedConv?.assigned_to ? (usersMap[selectedConv.assigned_to] || 'Atendente') : null;
   const lastInboundAt = [...messages].reverse().find((m) => m.direction === 'in')?.timestamp || null;
 
   return (
@@ -138,8 +224,30 @@ const WhatsAppCloudInbox: React.FC = () => {
             selectedId ? 'hidden md:flex' : 'flex'
           } w-full md:w-80 lg:w-96 shrink-0 flex-col border-r border-gray-200 dark:border-white/10 bg-white dark:bg-[#111b21]`}
         >
+          {/* Filtros de atendimento (só para quem pode ver todas as conversas) */}
+          {canViewAll && <div className="flex items-center gap-1 px-2.5 pt-2.5 shrink-0">
+            {FILTER_TABS.map((t) => {
+              const count = t.id === 'todas' ? conversations.length
+                : t.id === 'minhas' ? conversations.filter((c) => c.assigned_to === currentUserId).length
+                : t.id === 'sem_dono' ? conversations.filter((c) => !c.assigned_to && c.status !== 'encerrado').length
+                : conversations.filter((c) => (c.status || 'bot') === 'bot').length;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setFilter(t.id)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                    filter === t.id
+                      ? 'bg-[#25D366] text-white'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
+                  }`}
+                >
+                  {t.label} {count > 0 && <span className="opacity-70">({count})</span>}
+                </button>
+              );
+            })}
+          </div>}
           <ConversationList
-            conversations={conversations}
+            conversations={filteredConversations}
             selectedId={selectedId}
             loading={loading}
             onSelect={handleSelect}
@@ -154,6 +262,14 @@ const WhatsAppCloudInbox: React.FC = () => {
                 conversation={selectedConv}
                 messages={messages}
                 onBack={() => setSelectedId(null)}
+                currentUserId={currentUserId}
+                assigneeName={assigneeName}
+                canAssume={canAssume}
+                users={usersMap}
+                onAssume={handleAssume}
+                onRelease={handleRelease}
+                onClose={handleClose}
+                onTransfer={handleTransfer}
               />
               <MessageComposer
                 conversation={selectedConv}

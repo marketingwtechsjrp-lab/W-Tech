@@ -7,6 +7,7 @@ import {
   previewFor,
   type CloudConfig,
 } from './_whatsappCloud.js';
+import { runAIResponder } from './_aiReply.js';
 
 /**
  * Vercel Serverless Function — Webhook da WhatsApp Cloud API (Meta).
@@ -72,7 +73,9 @@ async function handleIncomingMessage(
   });
 
   // Dedup por wa_message_id (a Meta reentrega o webhook em caso de falha).
-  await supabase.from('SITE_WhatsAppCloudMessages').upsert(
+  // ignoreDuplicates + select: 'inserted' só vem preenchido quando é mensagem NOVA,
+  // então a IA nunca responde duas vezes à mesma mensagem reentregue.
+  const { data: inserted } = await supabase.from('SITE_WhatsAppCloudMessages').upsert(
     {
       conversation_id: conversationId,
       wa_id: waId,
@@ -84,10 +87,22 @@ async function handleIncomingMessage(
       media_mime: mediaMime,
       media_filename: mediaFilename,
       status: 'received',
+      sent_by: 'customer',
       timestamp: whenISO,
     },
-    { onConflict: 'wa_message_id' }
-  );
+    { onConflict: 'wa_message_id', ignoreDuplicates: true }
+  ).select('id');
+
+  const isNewMessage = Array.isArray(inserted) && inserted.length > 0;
+
+  // IA de atendimento (best-effort). Só para texto e mensagem nova (não reentrega).
+  if (isNewMessage && conversationId && storedType === 'text' && body && body.trim()) {
+    try {
+      await runAIResponder(supabase, cfg, { conversationId, waId, incomingText: body });
+    } catch (e: any) {
+      console.error('[WA Cloud Webhook] IA falhou:', e?.message);
+    }
+  }
 }
 
 async function handleStatus(supabase: SupabaseClient, status: any): Promise<void> {

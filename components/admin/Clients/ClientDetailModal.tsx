@@ -157,6 +157,10 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
     };
 
     const handleSave = async () => {
+        if (!(permissions?.admin_access || permissions?.clients_manage)) {
+            alert('Você não tem permissão para editar clientes.');
+            return;
+        }
         setLoading(true);
         try {
             const updates: any = {

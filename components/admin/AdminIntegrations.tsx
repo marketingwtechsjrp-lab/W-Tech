@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import { createHasPermission } from '../../lib/permissions';
 import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot, QrCode } from 'lucide-react';
 import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
 import { getAsaasConfig } from '../../lib/asaas';
@@ -9,6 +10,7 @@ import { createMercadoPagoPreference } from '../../lib/mercadopago';
 
 const AdminIntegrations = () => {
     const { user } = useAuth();
+    const canEngineConfig = createHasPermission(user)('whatsapp_engine_config') || createHasPermission(user)('manage_settings');
 
     // Global Config State (Admin Only)
     const [globalConfig, setGlobalConfig] = useState({
@@ -44,7 +46,12 @@ const AdminIntegrations = () => {
         waCloudAccessToken: '',
         waCloudApiVersion: 'v20.0',
         waCloudVerifyToken: '',
-        waCloudDisplayNumber: ''
+        waCloudDisplayNumber: '',
+        // Motor de envio por categoria (cloud = API oficial Meta | evolution)
+        waEngineCourseSales: 'cloud' as 'cloud' | 'evolution',
+        waEngineBilling: 'cloud' as 'cloud' | 'evolution',
+        waEngineSchedule: 'cloud' as 'cloud' | 'evolution',
+        waEngineReport: 'evolution' as 'cloud' | 'evolution'
     });
 
     const [loading, setLoading] = useState(false);
@@ -123,7 +130,12 @@ const AdminIntegrations = () => {
                 waCloudAccessToken: configMap['whatsapp_cloud_access_token'] || '',
                 waCloudApiVersion: configMap['whatsapp_cloud_api_version'] || 'v20.0',
                 waCloudVerifyToken: configMap['whatsapp_cloud_webhook_verify_token'] || 'wtech_meta_webhook_2026',
-                waCloudDisplayNumber: configMap['whatsapp_cloud_display_number'] || '+55 17 3231-2858'
+                waCloudDisplayNumber: configMap['whatsapp_cloud_display_number'] || '+55 17 3231-2858',
+                // Motor de envio por categoria
+                waEngineCourseSales: configMap['wa_engine_course_sales'] === 'evolution' ? 'evolution' : 'cloud',
+                waEngineBilling: configMap['wa_engine_billing'] === 'evolution' ? 'evolution' : 'cloud',
+                waEngineSchedule: configMap['wa_engine_schedule'] === 'evolution' ? 'evolution' : 'cloud',
+                waEngineReport: configMap['wa_engine_report'] === 'cloud' ? 'cloud' : 'evolution'
             });
         }
     };
@@ -411,7 +423,12 @@ const AdminIntegrations = () => {
                 { key: 'whatsapp_cloud_access_token', value: globalConfig.waCloudAccessToken.trim() },
                 { key: 'whatsapp_cloud_api_version', value: globalConfig.waCloudApiVersion.trim() || 'v20.0' },
                 { key: 'whatsapp_cloud_webhook_verify_token', value: globalConfig.waCloudVerifyToken.trim() },
-                { key: 'whatsapp_cloud_display_number', value: globalConfig.waCloudDisplayNumber.trim() }
+                { key: 'whatsapp_cloud_display_number', value: globalConfig.waCloudDisplayNumber.trim() },
+                // Motor de envio por categoria
+                { key: 'wa_engine_course_sales', value: globalConfig.waEngineCourseSales },
+                { key: 'wa_engine_billing', value: globalConfig.waEngineBilling },
+                { key: 'wa_engine_schedule', value: globalConfig.waEngineSchedule },
+                { key: 'wa_engine_report', value: globalConfig.waEngineReport }
             ];
 
             for (const update of updates) {
@@ -679,6 +696,47 @@ const AdminIntegrations = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Motor de Envio (por categoria): API oficial Meta vs Evolution */}
+            {canEngineConfig && <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md md:col-span-2">
+                <div className="flex items-center gap-2 mb-2">
+                    <Send className="text-emerald-600 dark:text-emerald-400" />
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Motor de Envio (WhatsApp)</h3>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-5">
+                    Escolha por qual motor cada tipo de mensagem automática dos cursos presenciais é enviado.
+                    <strong className="text-[var(--admin-text-primary)]"> API Oficial (Meta)</strong> exige templates aprovados para disparo proativo; a
+                    <strong className="text-[var(--admin-text-primary)]"> Evolution</strong> envia texto livre.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                        { key: 'waEngineCourseSales', label: 'Venda de Curso', hint: 'Confirmação de inscrição' },
+                        { key: 'waEngineBilling', label: 'Cobrança', hint: 'Lembretes de saldo' },
+                        { key: 'waEngineSchedule', label: 'Cronograma', hint: 'Lembretes de aula/curso' },
+                        { key: 'waEngineReport', label: 'Relatório', hint: 'Resumos internos' },
+                    ].map(item => (
+                        <div key={item.key} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
+                            <div className="flex items-center justify-between mb-2">
+                                <div>
+                                    <p className="text-sm font-bold text-[var(--admin-text-primary)]">{item.label}</p>
+                                    <p className="text-[11px] text-[var(--admin-text-tertiary)]">{item.hint}</p>
+                                </div>
+                            </div>
+                            <select
+                                className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
+                                value={(globalConfig as any)[item.key]}
+                                onChange={e => setGlobalConfig({ ...globalConfig, [item.key]: e.target.value })}
+                            >
+                                <option value="cloud">API Oficial (Meta)</option>
+                                <option value="evolution">Evolution API</option>
+                            </select>
+                        </div>
+                    ))}
+                </div>
+                <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-5 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
+                    <Save size={14} /> Salvar Motor de Envio
+                </button>
+            </div>}
 
             {/* 2. Asaas Payment Config */}
             <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm transition-all hover:shadow-md">

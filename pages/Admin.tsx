@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
 import type { Lead, Mechanic, Order, User as UserType, Transaction, Course, BlogPost, PostComment, LandingPage, Enrollment, Role, SystemConfig, Event } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { createHasPermission, createPermissionResolver, PERMISSION_CATALOG } from '../lib/permissions';
 import { generateSitemapXml } from '../lib/sitemapUtils';
 import { generateSEOContent } from '../lib/ai';
 import { seedDatabase } from '../lib/seedData';
@@ -56,7 +57,7 @@ import { TaskCategoryList } from '../components/admin/TaskCategoryList';
 import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
 import SalesRecoveryView from '../components/admin/WhatsApp/SalesRecoveryView';
-import WhatsAppCloudInbox from '../components/admin/WhatsApp/CloudInbox/WhatsAppCloudInbox';
+import WhatsAppModule from '../components/admin/WhatsApp/WhatsAppModule';
 import AffiliatesManagerView from '../components/admin/Marketing/AffiliatesManagerView';
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
@@ -509,25 +510,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
     };
 
-    const hasPermission = (key: string) => {
-        if (!user) return false;
-
-        // 0. Live Permissions (Prop)
-        if (permissions) {
-            if (permissions.admin_access) return true;
-            return !!permissions[key];
-        }
-
-        // Super Admin Override
-        const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-        if (roleName === 'Super Admin' || roleName === 'ADMIN' || user.permissions?.admin_access) return true;
-
-        // Granular Check
-        const rolePermissions = typeof user.role === 'object' ? user.role?.permissions : {};
-        const effectivePermissions = { ...rolePermissions, ...user.permissions };
-
-        return !!effectivePermissions[key];
-    };
+    const hasPermission = createHasPermission(user, permissions);
 
 
 
@@ -2644,7 +2627,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                         {hasPermission('courses_add_student') && (
                                             <button onClick={() => handleQuickAddStudent(course)} title="Adicionar Aluno Rápido" className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"><UserPlus size={14} /></button>
                                         )}
-                                        {isLevel10() && (
+                                        {hasPermission('courses_view_reports') && (
                                             <button onClick={() => handleOpenReport(course)} title="Relatório Gerencial" className="p-2 text-wtech-gold hover:bg-wtech-gold/10 rounded-lg transition-colors"><BarChart3 size={14} /></button>
                                         )}
                                         {hasPermission('courses_edit_lp') && (
@@ -3548,27 +3531,7 @@ const MechanicsView = ({ permissions }: { permissions?: any }) => {
 
     // --- Permissions Helper ---
     // --- Permissions Helper ---
-    const hasPermission = (key: string) => {
-        if (!user || !user.role) return false;
-
-        // 0. Live Permissions (Prop)
-        if (permissions) {
-            if (permissions.admin_access) return true;
-            return !!permissions[key];
-        }
-
-        // Handle String Role (Legacy/Simple Auth)
-        if (typeof user.role === 'string') {
-            return user.role === 'Super Admin' || user.role === 'Admin';
-        }
-
-        // Handle Object Role
-        // Super Admin Level 10 Override
-        if (user.role.level >= 10 || user.role.name === 'Super Admin') return true;
-
-        if (user.role.permissions && user.role.permissions.admin_access) return true;
-        return !!(user.role.permissions && user.role.permissions[key]);
-    };
+    const hasPermission = createHasPermission(user, permissions);
 
     useEffect(() => {
         fetchMechanics();
@@ -4124,27 +4087,7 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth(); // Assuming useAuth provides user and role info
 
     // --- Permissions Helper ---
-    const hasPermission = (key: string) => {
-        if (!user) return false;
-
-        // 0. Live Permissions (Prop)
-        if (permissions) {
-            if (permissions.admin_access) return true;
-            return !!permissions[key];
-        }
-
-        // Handle String Role
-        if (typeof user.role === 'string') {
-            return user.role === 'Super Admin' || user.role === 'Admin' || user.role === 'ADMIN';
-        }
-
-        // Handle Object Role
-        // Super Admin Level 10 Override
-        if (user.role.level >= 10 || user.role.name === 'Super Admin') return true;
-
-        if (user.role.permissions && user.role.permissions.admin_access) return true;
-        return !!(user.role.permissions && user.role.permissions[key]);
-    };
+    const hasPermission = createHasPermission(user, permissions);
 
     const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
     const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
@@ -4475,9 +4418,11 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
                         </select>
                     </div>
 
+                    {hasPermission('financial_export') && (
                     <button onClick={handleExportCSV} className="p-2.5 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)] rounded-xl transition-colors" title="Exportar CSV">
                         <Download size={16} />
                     </button>
+                    )}
                 </div>
             )}
 
@@ -5416,125 +5361,9 @@ const SettingsView = () => {
         });
     };
 
-    const permissionCategories = [
-        {
-            title: 'Cursos & Treinamentos',
-            perms: [
-                { key: 'courses_view', label: 'Visualizar Módulo' },
-                { key: 'courses_edit', label: 'Editar Cursos' },
-                { key: 'courses_delete', label: 'Excluir Cursos' },
-                { key: 'courses_add_student', label: 'Adicionar Aluno/Matrícula' },
-                { key: 'courses_print_list', label: 'Imprimir Listas' },
-                { key: 'courses_view_reports', label: 'Ver Relatórios Gerenciais' },
-                { key: 'certificates_view', label: 'Gerar Certificados & Crachás' },
-                { key: 'courses_edit_attendant', label: 'Editar Atendente da Inscrição' },
-            ]
-        },
-        {
-            title: 'CRM & Leads',
-            perms: [
-                { key: 'crm_view', label: 'Acessar CRM' },
-                { key: 'crm_manage_leads', label: 'Gerenciar Leads (Criar/Editar/Mover)' },
-                { key: 'crm_delete_leads', label: 'Excluir Leads' },
-                { key: 'crm_export', label: 'Exportar Dados' },
-                { key: 'crm_distribute', label: 'Configurar Distribuição' },
-                { key: 'crm_view_team', label: 'Ver Leads da Equipe (Gestor)' },
-                { key: 'crm_view_all', label: 'Ver Todos os Leads (Igual Admin)' },
-                { key: 'crm_move_back', label: 'Retornar Lead (Mover para trás)' }
-            ]
-        },
-        {
-            title: 'Loja Virtual',
-            perms: [
-                { key: 'orders_view', label: 'Visualizar Pedidos (Meus)' },
-                { key: 'orders_view_all', label: 'Visualizar Todos os Pedidos (Gestor)' },
-                { key: 'manage_orders', label: 'Gerenciar Pedidos (Status/Editar)' },
-                { key: 'orders_edit_paid', label: 'Editar Pedidos Pagos (Restrito)' },
-                { key: 'orders_edit', label: 'Editar Pedido (Admin)' },
-                { key: 'orders_delete', label: 'Excluir Pedido (Perigo)' }
-            ]
-        },
-        {
-            title: 'Catálogo & Estoque',
-            perms: [
-                { key: 'catalog_view', label: 'Visualizar Catálogo' },
-                { key: 'catalog_manage', label: 'Gerenciar Produtos (Criar/Editar)' }
-            ]
-        },
-        {
-            title: 'Clientes',
-            perms: [
-                { key: 'clients_view', label: 'Visualizar Carteira de Clientes' },
-                { key: 'clients_view_all', label: 'Ver Todos os Clientes (Gestor/Admin)' },
-                { key: 'clients_manage', label: 'Editar Clientes' }
-            ]
-        },
-        {
-            title: 'Landing Pages',
-            perms: [
-                { key: 'landing_pages_view', label: 'Acessar Construtor de LPs' },
-                { key: 'landing_pages_manage', label: 'Criar/Editar Páginas' }
-            ]
-        },
-        {
-            title: 'Marketing Center',
-            perms: [
-                { key: 'marketing_view', label: 'Acessar Central de Marketing' },
-                { key: 'campaigns_view', label: 'Acessar Módulo de Campanhas' },
-                { key: 'marketing_manage_campaigns', label: 'Gerenciar Campanhas' },
-                { key: 'marketing_manage_lists', label: 'Gerenciar Listas de Transmissão' },
-                { key: 'marketing_manage_templates', label: 'Gerenciar Modelos (WhatsApp)' },
-                { key: 'blog_view', label: 'Acessar Blog Manager' },
-                { key: 'blog_create', label: 'Criar / Publicar Posts' },
-                { key: 'blog_edit', label: 'Editar Posts' },
-                { key: 'blog_delete', label: 'Excluir Posts' },
-                { key: 'blog_ai', label: 'Usar Gerador IA' },
-            ]
-        },
-        {
-            title: 'Rede Credenciada',
-            perms: [
-                { key: 'accredited_view', label: 'Visualizar Módulo' },
-                { key: 'accredited_add', label: 'Adicionar Credenciado' },
-                { key: 'accredited_edit', label: 'Editar Dados' },
-                { key: 'accredited_import', label: 'Importar CSV/XLS' },
-                { key: 'accredited_revoke', label: 'Revogar/Bloquear' },
-                { key: 'accredited_delete', label: 'Excluir Permanentemente' },
-            ]
-        },
-        {
-            title: 'Financeiro (Fluxo de Caixa)',
-            perms: [
-                { key: 'financial_view', label: 'Visualizar Fluxo de Caixa (Meus Lançamentos)' },
-                { key: 'financial_view_all', label: 'Visualizar Todo o Fluxo de Caixa (Gestor)' },
-                { key: 'invoices_view', label: 'Acessar Notas Fiscais' },
-                { key: 'financial_add_transaction', label: 'Lançar Transação' },
-                { key: 'financial_export', label: 'Exportar Relatórios' },
-                { key: 'financial_edit_transaction', label: 'Editar Transações (Risco)' },
-                { key: 'financial_delete_transaction', label: 'Excluir Transações (Risco)' },
-            ]
-        },
-        {
-            title: 'Gestão de Tarefas',
-            perms: [
-                { key: 'tasks_view', label: 'Acessar Módulo de Tarefas' },
-                { key: 'tasks_view_team', label: 'Ver Tarefas da Equipe (Gestor)' },
-                { key: 'tasks_delete', label: 'Excluir Tarefas de Outros' },
-            ]
-        },
-        {
-            title: 'Administração Geral',
-            perms: [
-                { key: 'dashboard_view', label: 'Visualizar Dashboard (Visão Geral)' },
-                { key: 'dashboard_view_all', label: 'Visualizar Dados Globais (Dashboard/KPIs)' },
-                { key: 'analytics_view', label: 'Visualizar Analytics' },
-                { key: 'admin_access', label: 'Acesso Admin (Global)' },
-                { key: 'manage_users', label: 'Gerenciar Equipe' },
-                { key: 'manage_settings', label: 'Acesso Configurações' },
-                { key: 'intelligence_view', label: 'Visualizar Relatórios IA (W-Intelligence)' },
-            ]
-        }
-    ];
+    // Catálogo de permissões: fonte única em lib/permissions.ts (PERMISSION_CATALOG).
+    // Toda chave aqui é verificada por hasPermission('<chave>') em algum componente.
+    const permissionCategories = PERMISSION_CATALOG;
 
     const handleUpload = async (file: File, key: string) => {
         try {
@@ -7498,7 +7327,7 @@ const SettingsView = () => {
                                                                     checked={editingRole.permissions?.[perm.key] || false}
                                                                     onChange={() => togglePermission(perm.key)}
                                                                 />
-                                                                <span className={`text-sm ${perm.label.includes('(Risco)') || perm.label.includes('Excluir') ? 'text-red-700 font-medium dark:text-red-400' : 'text-gray-700'}`}>{perm.label}</span>
+                                                                <span className={`text-sm ${(perm as any).danger || perm.label.includes('(Risco)') || perm.label.includes('Excluir') ? 'text-red-700 font-medium dark:text-red-400' : 'text-gray-700'}`}>{perm.label}</span>
                                                             </label>
                                                         ))}
                                                     </div>
@@ -7538,31 +7367,7 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
     const { user } = useAuth();
 
     // --- Permissions Helper ---
-    const hasPermission = (key: string) => {
-        if (!user || !user.role) return false;
-
-        // 0. Live Permissions (Prop)
-        if (permissions) {
-            if (permissions.admin_access) return true;
-            return !!permissions[key];
-        }
-
-        // Handle String Role
-        // Handle String Role
-        if (typeof user.role === 'string') {
-            const r = user.role.toLowerCase();
-            return r === 'super admin' || r === 'super_admin' || r === 'admin';
-        }
-
-        // Handle Object Role
-        // Handle Object Role
-        // Super Admin Level 10 Override
-        const rName = user.role.name?.toLowerCase() || '';
-        if (user.role.level >= 10 || rName === 'super admin' || rName === 'super_admin') return true;
-
-        if (user.role.permissions && user.role.permissions.admin_access) return true;
-        return !!(user.role.permissions && user.role.permissions[key]);
-    };
+    const hasPermission = createHasPermission(user, permissions);
 
     useEffect(() => {
         fetchUsers();
@@ -8230,30 +8035,8 @@ const Admin = () => {
     }, [user]);
 
     // PERMISSION CHECK HELPER
-    const hasPermission = (key: string) => {
-        if (!user) return false;
-
-        // 0. Live Permissions (Highest Priority)
-        if (livePermissions) {
-            if (livePermissions.admin_access) return true;
-            return !!livePermissions[key];
-        }
-
-        // 1. Super Admin / Admin String Override
-        const roleName = typeof user.role === 'string' ? user.role : user.role?.name;
-        const rName = roleName?.toLowerCase() || '';
-        if (rName === 'super admin' || rName === 'super_admin' || rName === 'admin' || user.permissions?.admin_access) return true;
-
-        // 2. Level 10 Override
-        if (typeof user.role !== 'string' && user.role?.level >= 10) return true;
-
-        // 3. Granular Check
-        const rolePermissions = typeof user.role === 'object' ? user.role?.permissions : {};
-        const effectivePermissions = { ...rolePermissions, ...user.permissions };
-
-        // Handle specific "manage_orders" legacy case if necessary, or just use key
-        return !!effectivePermissions[key];
-    };
+    const hasPermission = createHasPermission(user, livePermissions);
+    const resolvePermission = createPermissionResolver(user, livePermissions);
 
     // REDIRECT RULE: If User cannot see Dashboard, send to CRM (Leads)
     useEffect(() => {
@@ -8283,6 +8066,7 @@ const Admin = () => {
                 isCollapsed={isSidebarCollapsed}
                 onToggleCollapsed={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 hasPermission={hasPermission}
+                resolvePermission={resolvePermission}
                 user={user}
                 config={config}
                 onLogout={handleLogout}
@@ -8374,7 +8158,7 @@ const Admin = () => {
                     >
                         {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView permissions={livePermissions} />}
                         {currentView === 'analytics' && hasPermission('analytics_view') && <AnalyticsView />}
-                        {currentView === 'whatsapp_inbox' && hasPermission('crm_view') && <WhatsAppCloudInbox />}
+                        {currentView === 'whatsapp_inbox' && resolvePermission('whatsapp_inbox_view', 'crm_view') && <WhatsAppModule canTrainAI={hasPermission('whatsapp_ai_train')} canViewMetrics={hasPermission('whatsapp_view_metrics')} canViewAll={hasPermission('whatsapp_view_all')} />}
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
                             if (conversionData?.type === 'course') {
                                 setPendingEnrollmentLead(lead);

@@ -17,6 +17,8 @@ interface AdminSidebarProps {
     isCollapsed: boolean;
     onToggleCollapsed: () => void;
     hasPermission: (key: string) => boolean;
+    /** Resolver com fallback legado: respeita desligamento explícito do toggle. */
+    resolvePermission?: (key: string, legacyKey?: string) => boolean;
     user: any;
     config: any;
     onLogout: () => void;
@@ -109,6 +111,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     isCollapsed,
     onToggleCollapsed,
     hasPermission,
+    resolvePermission,
     user,
     config,
     onLogout,
@@ -240,7 +243,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 {/* ── Navigation Groups ── */}
                 <nav className="flex-1 overflow-y-auto min-h-0 py-1 custom-scrollbar">
                     {NAV_GROUPS.map((group, gi) => {
-                        const visibleItems = group.items.filter(item => hasPermission(item.permission));
+                        const visibleItems = group.items.filter(item =>
+                            resolvePermission
+                                ? resolvePermission(item.permission, item.legacyPermission)
+                                : hasPermission(item.permission)
+                        );
                         if (visibleItems.length === 0) return null;
                         return (
                             <div

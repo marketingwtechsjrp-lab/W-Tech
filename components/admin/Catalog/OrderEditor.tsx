@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable';
 import { FileDown, Printer, Receipt, Zap, Loader2, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { createStripePaymentLink } from '../../../lib/stripe';
+import { createHasPermission } from '../../../lib/permissions';
 import { getExchangeRates, convertBRLTo, ExchangeRates } from '../../../lib/currency';
 import { TrendingUp } from 'lucide-react';
 
@@ -171,6 +172,11 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const isLocked = ['paid', 'producing', 'shipped', 'delivered'].includes(currentSale.status || '');
     const canBypassLock = user?.role === 'Admin' || user?.role === 'Super Admin' || permissions?.orders_edit_paid ||
                           (typeof user?.role === 'object' && (user.role.name === 'Admin' || user.role.name === 'Super Admin' || user.role.level >= 10 || user.role.permissions?.orders_edit_paid));
+
+    // Permissões granulares do módulo de pedidos
+    const can = createHasPermission(user, permissions);
+    const canManageOrders = can('manage_orders');
+    const canDeleteOrders = can('orders_delete');
 
     useEffect(() => {
         if (isOpen) {
@@ -358,6 +364,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     };
 
     const handleSaveOrder = async () => {
+        if (!canManageOrders) { alert('Você não tem permissão para criar ou editar pedidos.'); return; }
         console.log('🔵 handleSaveOrder CHAMADO');
         console.log('Cliente ID:', currentSale.clientId);
         console.log('Itens:', saleItems.length);
@@ -674,6 +681,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
 
     const handleDelete = async () => {
         if (!currentSale.id) return;
+        if (!canDeleteOrders) { alert('Você não tem permissão para excluir pedidos.'); return; }
         if (!confirm('Tem certeza que deseja excluir permanentemente este pedido? Esta ação não pode ser desfeita.')) return;
         
         setLoading(true);
@@ -721,8 +729,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                             <span className="hidden sm:inline">Exportar PDF</span>
                         </button>
                     )}
-                    {currentSale.id && (
-                        <button 
+                    {currentSale.id && canDeleteOrders && (
+                        <button
                             onClick={handleDelete}
                             disabled={loading}
                             className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all font-bold flex items-center gap-2"
@@ -731,7 +739,8 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                             <span className="hidden sm:inline">Deletar</span>
                         </button>
                     )}
-                    <button 
+                    {canManageOrders && (
+                    <button
                         onClick={handleSaveOrder}
                         disabled={loading || !currentSale.clientId || saleItems.length === 0}
                         className="px-6 py-2 bg-wtech-red hover:bg-black text-white rounded-xl font-black transition-all flex items-center gap-2 disabled:opacity-30"
@@ -739,6 +748,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                         <Check size={18} />
                         {loading ? 'Salvando...' : 'Salvar Pedido'}
                     </button>
+                    )}
                 </div>
             </div>
 

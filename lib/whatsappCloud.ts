@@ -18,6 +18,8 @@ export type CloudMessageType =
   | 'sticker'
   | 'unsupported';
 
+export type ConversationStatus = 'bot' | 'pendente' | 'humano' | 'encerrado';
+
 export interface CloudConversation {
   id: string;
   wa_id: string;
@@ -28,6 +30,12 @@ export interface CloudConversation {
   unread_count: number;
   created_at: string;
   updated_at: string;
+  // Multiatendimento / handoff
+  bot_enabled?: boolean;
+  assigned_to?: string | null;
+  status?: ConversationStatus;
+  handoff_at?: string | null;
+  handoff_by?: string | null;
 }
 
 export interface CloudMessage {
@@ -45,6 +53,8 @@ export interface CloudMessage {
   error: string | null;
   timestamp: string;
   created_at: string;
+  /** human | ai | ai_draft | system | customer */
+  sent_by?: string | null;
 }
 
 const CONV_TABLE = 'SITE_WhatsAppCloudConversations';
@@ -52,11 +62,25 @@ const MSG_TABLE = 'SITE_WhatsAppCloudMessages';
 
 // ─── Leitura ────────────────────────────────────────────────────────────────
 
-export async function fetchConversations(): Promise<CloudConversation[]> {
-  const { data, error } = await supabase
+/**
+ * Lista as conversas. Quando `onlyAssigned` é true, traz APENAS as atribuídas ao
+ * usuário (`assignedTo`) — a privacidade é aplicada na consulta, não só no render,
+ * então o navegador nem baixa as conversas dos outros atendentes.
+ */
+export async function fetchConversations(
+  opts?: { onlyAssigned?: boolean; assignedTo?: string | null }
+): Promise<CloudConversation[]> {
+  let query = supabase
     .from(CONV_TABLE)
     .select('*')
     .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  if (opts?.onlyAssigned) {
+    // Sem usuário válido → não retorna nada (sentinela impossível).
+    query = query.eq('assigned_to', opts.assignedTo || '00000000-0000-0000-0000-000000000000');
+  }
+
+  const { data, error } = await query;
   if (error) {
     console.error('[WA Cloud] fetchConversations:', error.message);
     return [];
@@ -83,6 +107,64 @@ export async function markConversationRead(conversationId: string): Promise<void
     .update({ unread_count: 0 })
     .eq('id', conversationId);
   if (error) console.error('[WA Cloud] markConversationRead:', error.message);
+}
+
+// ─── Multiatendimento / Handoff ──────────────────────────────────────────────
+
+/** Atendente assume a conversa: desliga a IA e passa o controle para o humano. */
+export async function assumeConversation(conversationId: string, userId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from(CONV_TABLE)
+    .update({
+      bot_enabled: false,
+      assigned_to: userId,
+      status: 'humano',
+      handoff_at: new Date().toISOString(),
+      handoff_by: userId,
+    })
+    .eq('id', conversationId);
+  if (error) { console.error('[WA Cloud] assumeConversation:', error.message); return false; }
+  return true;
+}
+
+/** Devolve a conversa para a IA responder novamente. */
+export async function releaseToAI(conversationId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from(CONV_TABLE)
+    .update({ bot_enabled: true, assigned_to: null, status: 'bot' })
+    .eq('id', conversationId);
+  if (error) { console.error('[WA Cloud] releaseToAI:', error.message); return false; }
+  return true;
+}
+
+/** Encerra a conversa (sem IA e sem atendente ativo). */
+export async function closeConversation(conversationId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from(CONV_TABLE)
+    .update({ bot_enabled: false, status: 'encerrado' })
+    .eq('id', conversationId);
+  if (error) { console.error('[WA Cloud] closeConversation:', error.message); return false; }
+  return true;
+}
+
+/** Transfere a conversa para outro atendente (mantém em atendimento humano). */
+export async function transferConversation(
+  conversationId: string,
+  toUserId: string,
+  byUserId?: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from(CONV_TABLE)
+    .update({
+      bot_enabled: false,
+      assigned_to: toUserId,
+      status: 'humano',
+      handoff_at: new Date().toISOString(),
+      handoff_by: byUserId ?? null,
+    })
+    .eq('id', conversationId);
+  if (error) { console.error('[WA Cloud] transferConversation:', error.message); return false; }
+  return true;
 }
 
 // ─── Realtime ────────────────────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import { useAuth } from '../../../context/AuthContext';
+import { createHasPermission } from '../../../lib/permissions';
 import {
   Plus, Eye, TrendingUp, ArrowUpRight, Layers, Zap, Star,
   CheckCircle, Sparkles, Monitor, ArrowRight, ExternalLink,
@@ -363,6 +365,8 @@ const CopyButton = ({ text }: { text: string }) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const LandingPagesView = ({ permissions }: { permissions?: any }) => {
+  const { user } = useAuth();
+  const canManageLP = createHasPermission(user, permissions)('landing_pages_manage');
   const [pages, setPages] = useState<(LandingPage & { viewCount?: number; conversionCount?: number })[]>([]);
   const [activeTab, setActiveTab] = useState<'lps' | 'gallery'>('lps');
   const [isEditing, setIsEditing] = useState(false);
@@ -412,6 +416,7 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageLP) { alert('Você não tem permissão para criar ou editar landing pages.'); return; }
     const payload = {
       title: formData.title,
       slug: formData.slug,
@@ -611,12 +616,12 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
           <h2 className="text-xl font-black text-gray-900">Landing Pages</h2>
           <p className="text-xs text-gray-500 mt-0.5">Páginas de alta conversão para campanhas e cursos.</p>
         </div>
-        <button
+        {canManageLP && <button
           onClick={() => openEdit()}
           className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2.5 rounded-lg font-black text-sm flex items-center gap-2 transition-colors shadow-sm"
         >
           <Plus size={16} /> Nova LP
-        </button>
+        </button>}
       </div>
 
       {/* Tabs */}
@@ -712,12 +717,12 @@ const LandingPagesView = ({ permissions }: { permissions?: any }) => {
           </div>
 
           <div className="flex justify-center">
-            <button
+            {canManageLP && <button
               onClick={() => { setActiveTab('lps'); openEdit(); }}
               className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl text-sm flex items-center gap-2 transition-colors"
             >
               <Plus size={15} /> Criar LP com template {gallerySelected.toUpperCase()}
-            </button>
+            </button>}
           </div>
         </div>
       )}
