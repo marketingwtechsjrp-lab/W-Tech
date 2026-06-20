@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.8.1 (2026-06-19) - WhatsApp (Meta): enviar contato p/ CRM + gravação de áudio
+- Botão **"Enviar p/ CRM"** no cabeçalho da conversa: cria/atualiza um lead em `SITE_Leads` com nome + telefone, escolha de **atendente** (assigned_to) e observação. Deduplica pelo telefone (últimos 8 dígitos) para não duplicar contatos
+- Helpers `fetchAttendants()` e `createLeadFromContact()` em `lib/leads.ts`; novo componente `SendToCrmModal.tsx`
+- **Gravação de áudio pelo microfone** no composer (gravar/enviar/cancelar com timer) — usa `MediaRecorder` do dispositivo
+- Hotfixes pós-3.8.0: status agora valida o **acesso real do token** na Meta (campo `live`, evita falso "Conectado"); status + envio unificados em `/api/whatsapp-cloud-send` (GET=status, POST=envio) para respeitar o limite de 12 funções serverless da Vercel
+
 ## v3.8.0 (2026-06-19) - Inbox WhatsApp via Meta Cloud API (atendimento oficial)
 - Novo módulo de atendimento estilo WhatsApp Web conectado à API oficial da Meta (número +55 17 3231-2858), **separado** e independente da automação via Evolution API
 - Recebe e envia mensagens de **texto, imagem, áudio (incl. gravação por microfone) e documentos**, com atualização ao vivo via Supabase Realtime

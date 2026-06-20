@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
-import { ArrowLeft, Check, CheckCheck, AlertCircle, FileText, Download } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { ArrowLeft, Check, CheckCheck, AlertCircle, FileText, Download, UserPlus } from 'lucide-react';
 import { CloudConversation, CloudMessage } from '../../../../lib/whatsappCloud';
+import SendToCrmModal from './SendToCrmModal';
 
 interface Props {
   conversation: CloudConversation;
@@ -75,6 +76,7 @@ const MediaBlock: React.FC<{ msg: CloudMessage }> = ({ msg }) => {
 
 const ChatThread: React.FC<Props> = ({ conversation, messages, onBack }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [showCrm, setShowCrm] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -98,11 +100,21 @@ const ChatThread: React.FC<Props> = ({ conversation, messages, onBack }) => {
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] flex items-center justify-center text-white text-xs font-semibold shrink-0">
           {(name[0] || '?').toUpperCase()}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{name}</div>
           <div className="text-xs text-gray-400 truncate">{formatPhone(conversation.wa_id)}</div>
         </div>
+        <button
+          onClick={() => setShowCrm(true)}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#128C7E] dark:text-[#25D366] bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors"
+          title="Enviar este contato como lead para o CRM"
+        >
+          <UserPlus size={15} />
+          <span className="hidden sm:inline">Enviar p/ CRM</span>
+        </button>
       </div>
+
+      <SendToCrmModal conversation={conversation} open={showCrm} onClose={() => setShowCrm(false)} />
 
       {/* Mensagens */}
       <div className="flex-1 overflow-y-auto px-3 md:px-8 py-4 space-y-1 bg-[#efeae2] dark:bg-[#0b141a] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wMykiLz48L3N2Zz4=')]">

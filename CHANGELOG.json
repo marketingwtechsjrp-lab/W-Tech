@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.8.1",
+    "date": "2026-06-19",
+    "title": "WhatsApp (Meta): enviar contato p/ CRM + gravação de áudio",
+    "changes": [
+      "Botão 'Enviar p/ CRM' no cabeçalho da conversa: cria/atualiza lead em SITE_Leads com nome + telefone, escolha de atendente (assigned_to) e observação. Deduplica pelo telefone (últimos 8 dígitos)",
+      "Helpers fetchAttendants() e createLeadFromContact() em lib/leads.ts; novo componente SendToCrmModal.tsx",
+      "Gravação de áudio pelo microfone no composer (gravar/enviar/cancelar com timer) usando MediaRecorder do dispositivo",
+      "Hotfix: status valida o acesso real do token na Meta (campo live, evita falso 'Conectado')",
+      "Hotfix: status + envio unificados em /api/whatsapp-cloud-send (GET=status, POST=envio) para respeitar o limite de 12 funções serverless da Vercel"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.8.0",
     "date": "2026-06-19",
     "title": "Inbox WhatsApp via Meta Cloud API (atendimento oficial)",
