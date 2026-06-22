@@ -88,6 +88,14 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
     ],
   },
   {
+    id: 'tech_tools',
+    title: 'Ferramentas Técnicas (Molas & Óleo)',
+    perms: [
+      { key: 'springs_view', label: 'Molas & Motos — Acessar Módulo', note: 'Recomendação de molas por moto/piloto' },
+      { key: 'oleo_view', label: 'Óleo & Suspensão — Acessar Módulo', note: 'Níveis e viscosidade por modelo' },
+    ],
+  },
+  {
     id: 'clients',
     title: 'Clientes',
     perms: [

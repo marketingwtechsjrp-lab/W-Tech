@@ -8190,8 +8190,8 @@ const Admin = () => {
                             />
                         )}
                         {currentView === 'catalog_manager' && hasPermission('catalog_view') && <CatalogManagerView />}
-                        {currentView === 'springs_manager' && hasPermission('catalog_view') && <SpringsManagerView />}
-                        {currentView === 'suspension_oil_manager' && hasPermission('catalog_view') && <SuspensionOilManagerView />}
+                        {currentView === 'springs_manager' && resolvePermission('springs_view', 'catalog_view') && <SpringsManagerView />}
+                        {currentView === 'suspension_oil_manager' && resolvePermission('oleo_view', 'catalog_view') && <SuspensionOilManagerView />}
                         {currentView === 'finance' && hasPermission('financial_view') && <FinanceView permissions={livePermissions} />}
                         {currentView === 'mechanics' && hasPermission('accredited_view') && <MechanicsView permissions={livePermissions} />}
                         {currentView === 'courses_manager' && hasPermission('courses_view') && (

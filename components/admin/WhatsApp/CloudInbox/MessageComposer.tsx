@@ -10,6 +10,7 @@ import {
 } from '../../../../lib/whatsappCloud';
 import { useAuth } from '../../../../context/AuthContext';
 import { createHasPermission } from '../../../../lib/permissions';
+import { prepareWhatsAppAudio } from '../../../../lib/audioEncode';
 
 interface Props {
   conversation: CloudConversation;
@@ -123,10 +124,11 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
   const handleAudioFile = async (file: File) => {
     setMenuOpen(false);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      // Converte para um formato aceito pela Meta (webm → mp3) quando necessário.
+      const audio = await prepareWhatsAppAudio(file, file.name);
       await wrap(() =>
         sendCloudMedia(
-          { to, type: 'audio', mediaBase64: dataUrl, mediaMime: file.type || 'audio/mpeg', filename: file.name },
+          { to, type: 'audio', mediaBase64: audio.dataUrl, mediaMime: audio.mime, filename: audio.filename },
           user?.id
         )
       );
@@ -152,10 +154,11 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
         streamRef.current = null;
         if (blob.size > 0) {
           try {
-            const dataUrl = await fileToDataUrl(blob);
+            // Chrome grava webm (recusado pela Meta) → converte p/ MP3; Firefox/Safari passam direto.
+            const audio = await prepareWhatsAppAudio(blob);
             await wrap(() =>
               sendCloudMedia(
-                { to, type: 'audio', mediaBase64: dataUrl, mediaMime: blob.type, filename: 'audio.ogg' },
+                { to, type: 'audio', mediaBase64: audio.dataUrl, mediaMime: audio.mime, filename: audio.filename },
                 user?.id
               )
             );

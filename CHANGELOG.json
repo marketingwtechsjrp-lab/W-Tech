@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.9.2",
+    "date": "2026-06-22",
+    "title": "WhatsApp: envio de áudio corrigido + permissões de Molas & Óleo",
+    "changes": [
+      "Áudio do WhatsApp corrigido: o Chrome grava em audio/webm, recusado pela Meta (erro 131053). Agora re-encoda para MP3 no navegador (Web Audio + lamejs) quando o formato não é aceito; Firefox (ogg/opus) e Safari (mp4/aac) passam direto. Vale para gravação e anexo",
+      "Permissões por módulo: novo grupo 'Ferramentas Técnicas (Molas & Óleo)' com toggles próprios springs_view e oleo_view (antes herdavam de catalog_view). Gating com fallback 'explícito vence'. Migration grant_springs_oleo_permissions.sql preserva o acesso de quem já tinha catálogo",
+      "Dependência nova: @breezystack/lamejs (encoder MP3, carregado sob demanda)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.9.1",
     "date": "2026-06-22",
     "title": "Fix: lembretes de curso com data e número corretos",

@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.9.2 (2026-06-22) - WhatsApp: envio de áudio corrigido + permissões de Molas & Óleo
+- **Áudio do WhatsApp corrigido:** o Chrome grava em `audio/webm`, formato recusado pela Meta (erro 131053 "Media upload error"). Agora o áudio passa por `prepareWhatsAppAudio()`: re-encoda para **MP3** no navegador (Web Audio → PCM → lamejs) quando o formato não é aceito; Firefox (ogg/opus) e Safari (mp4/aac) passam direto. Vale para gravação por microfone e anexo de arquivo
+- **Permissões por módulo (Molas & Óleo):** novo grupo "Ferramentas Técnicas (Molas & Óleo)" na tela de Permissões com toggles próprios `springs_view` e `oleo_view` (antes os módulos herdavam de `catalog_view` e não dava para liberar separadamente). Gating com fallback "explícito vence" para `catalog_view`. Migration `grant_springs_oleo_permissions.sql` preserva o acesso de quem já tinha catálogo
+- Dependência nova: `@breezystack/lamejs` (encoder MP3, carregado sob demanda)
+
 ## v3.9.1 (2026-06-22) - Fix: lembretes de curso com data e número corretos
 - **Data corrigida:** os lembretes mostravam 1 dia a menos (bug de fuso do `new Date().toLocaleDateString`). Agora a data é montada no servidor com `fmtDate` (lê ano-mês-dia direto), exibindo a data real do curso
 - **Número correto:** os lembretes (manual e automático) deixaram de sair pela **instância pessoal do atendente** (Evolution via `user?.id`) e passam a ser roteados por `/api/notify-students` → `sendTransactional` (categoria `schedule`): **template oficial da Meta `cronograma_lembrete_curso`** com fallback para a instância do **sistema** (automação). O teste também usa a instância do sistema
