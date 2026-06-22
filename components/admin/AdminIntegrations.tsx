@@ -51,7 +51,12 @@ const AdminIntegrations = () => {
         waEngineCourseSales: 'cloud' as 'cloud' | 'evolution',
         waEngineBilling: 'cloud' as 'cloud' | 'evolution',
         waEngineSchedule: 'cloud' as 'cloud' | 'evolution',
-        waEngineReport: 'evolution' as 'cloud' | 'evolution'
+        waEngineReport: 'evolution' as 'cloud' | 'evolution',
+        // Instância Evolution por categoria (vazio = instância padrão do sistema)
+        waInstanceCourseSales: '',
+        waInstanceBilling: '',
+        waInstanceSchedule: '',
+        waInstanceReport: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -135,7 +140,11 @@ const AdminIntegrations = () => {
                 waEngineCourseSales: configMap['wa_engine_course_sales'] === 'evolution' ? 'evolution' : 'cloud',
                 waEngineBilling: configMap['wa_engine_billing'] === 'evolution' ? 'evolution' : 'cloud',
                 waEngineSchedule: configMap['wa_engine_schedule'] === 'evolution' ? 'evolution' : 'cloud',
-                waEngineReport: configMap['wa_engine_report'] === 'cloud' ? 'cloud' : 'evolution'
+                waEngineReport: configMap['wa_engine_report'] === 'cloud' ? 'cloud' : 'evolution',
+                waInstanceCourseSales: configMap['wa_instance_course_sales'] || '',
+                waInstanceBilling: configMap['wa_instance_billing'] || '',
+                waInstanceSchedule: configMap['wa_instance_schedule'] || '',
+                waInstanceReport: configMap['wa_instance_report'] || ''
             });
         }
     };
@@ -428,7 +437,11 @@ const AdminIntegrations = () => {
                 { key: 'wa_engine_course_sales', value: globalConfig.waEngineCourseSales },
                 { key: 'wa_engine_billing', value: globalConfig.waEngineBilling },
                 { key: 'wa_engine_schedule', value: globalConfig.waEngineSchedule },
-                { key: 'wa_engine_report', value: globalConfig.waEngineReport }
+                { key: 'wa_engine_report', value: globalConfig.waEngineReport },
+                { key: 'wa_instance_course_sales', value: globalConfig.waInstanceCourseSales.trim() },
+                { key: 'wa_instance_billing', value: globalConfig.waInstanceBilling.trim() },
+                { key: 'wa_instance_schedule', value: globalConfig.waInstanceSchedule.trim() },
+                { key: 'wa_instance_report', value: globalConfig.waInstanceReport.trim() }
             ];
 
             for (const update of updates) {
@@ -703,17 +716,19 @@ const AdminIntegrations = () => {
                     <Send className="text-emerald-600 dark:text-emerald-400" />
                     <h3 className="font-bold text-[var(--admin-text-primary)]">Motor de Envio (WhatsApp)</h3>
                 </div>
-                <p className="text-sm text-[var(--admin-text-secondary)] mb-5">
-                    Escolha por qual motor cada tipo de mensagem automática dos cursos presenciais é enviado.
-                    <strong className="text-[var(--admin-text-primary)]"> API Oficial (Meta)</strong> exige templates aprovados para disparo proativo; a
-                    <strong className="text-[var(--admin-text-primary)]"> Evolution</strong> envia texto livre.
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-2">
+                    Escolha a saída de cada tipo de mensagem. <strong className="text-[var(--admin-text-primary)]">API Oficial (Meta)</strong> = {globalConfig.waCloudDisplayNumber || '+55 17 3231-2858'} (exige template aprovado para disparo proativo).
+                    <strong className="text-[var(--admin-text-primary)]"> Evolution</strong> = número do servidor (texto livre); deixe a instância em branco para usar a padrão (<code>{globalConfig.fallbackInstance || globalConfig.automationInstance || 'suportewtech'}</code>) ou informe outra (ex.: a do curso online) para isolar.
+                </p>
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 mb-4">
+                    ⚠️ Sem fallback: cada categoria sai SEMPRE pela saída escolhida. Se ela falhar, fica como falha (não cai para outro número).
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                        { key: 'waEngineCourseSales', label: 'Venda de Curso', hint: 'Confirmação de inscrição' },
-                        { key: 'waEngineBilling', label: 'Cobrança', hint: 'Lembretes de saldo' },
-                        { key: 'waEngineSchedule', label: 'Cronograma', hint: 'Lembretes de aula/curso' },
-                        { key: 'waEngineReport', label: 'Relatório', hint: 'Resumos internos' },
+                        { key: 'waEngineCourseSales', inst: 'waInstanceCourseSales', label: 'Venda de Curso / Boas-vindas', hint: 'Confirmação de inscrição' },
+                        { key: 'waEngineBilling', inst: 'waInstanceBilling', label: 'Cobrança', hint: 'Lembretes de saldo' },
+                        { key: 'waEngineSchedule', inst: 'waInstanceSchedule', label: 'Cronograma', hint: 'Lembretes de aula/curso' },
+                        { key: 'waEngineReport', inst: 'waInstanceReport', label: 'Relatório', hint: 'Resumos internos' },
                     ].map(item => (
                         <div key={item.key} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
                             <div className="flex items-center justify-between mb-2">
@@ -728,8 +743,16 @@ const AdminIntegrations = () => {
                                 onChange={e => setGlobalConfig({ ...globalConfig, [item.key]: e.target.value })}
                             >
                                 <option value="cloud">API Oficial (Meta)</option>
-                                <option value="evolution">Evolution API</option>
+                                <option value="evolution">Evolution (servidor)</option>
                             </select>
+                            {(globalConfig as any)[item.key] === 'evolution' && (
+                                <input
+                                    className="w-full mt-2 border border-[var(--admin-border)] rounded p-2 text-xs bg-[var(--admin-surface-1)] font-mono outline-none transition-colors"
+                                    value={(globalConfig as any)[item.inst]}
+                                    onChange={e => setGlobalConfig({ ...globalConfig, [item.inst]: e.target.value })}
+                                    placeholder={`Instância (vazio = ${globalConfig.fallbackInstance || globalConfig.automationInstance || 'suportewtech'})`}
+                                />
+                            )}
                         </div>
                     ))}
                 </div>

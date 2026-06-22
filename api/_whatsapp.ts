@@ -68,7 +68,11 @@ export function normalizePhone(raw: string): string | null {
  * Envia mensagem de texto via Evolution API. Best-effort: se o WhatsApp não
  * estiver configurado em Admin → Integrações, retorna skipped sem erro.
  */
-export async function sendWhatsAppText(to: string, text: string): Promise<SendWhatsAppResult> {
+export async function sendWhatsAppText(
+    to: string,
+    text: string,
+    instanceName?: string
+): Promise<SendWhatsAppResult> {
     const config = await loadEvolutionConfig();
     if (!config) {
         return { sent: false, skipped: 'whatsapp not configured' };
@@ -79,9 +83,12 @@ export async function sendWhatsAppText(to: string, text: string): Promise<SendWh
         return { sent: false, skipped: 'invalid phone' };
     }
 
+    // Instância específica da categoria (ex.: servidor x curso online); cai para a padrão.
+    const instance = (instanceName || '').trim() || config.instanceName;
+
     try {
         const response = await withTimeout(
-            fetch(`${config.serverUrl}/message/sendText/${config.instanceName}`, {
+            fetch(`${config.serverUrl}/message/sendText/${instance}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', apikey: config.apiKey },
                 body: JSON.stringify({ number: phone, text })

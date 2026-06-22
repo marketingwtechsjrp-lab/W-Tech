@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.9.4 (2026-06-22) - WhatsApp: roteamento de saída por categoria (sem vazamento de cobrança)
+- **Fim do fallback silencioso:** cada categoria (Venda/Boas-vindas, Cobrança, Cronograma, Relatório) sai SEMPRE pela saída escolhida. Se o envio oficial falhar (ex.: template não aprovado), fica marcado como falha — **não cai mais para outro número** (era o que fazia a cobrança "vazar" pela Evolution)
+- **Instância Evolution por categoria:** ao escolher "Evolution (servidor)", dá para informar QUAL instância usar (em branco = padrão `suportewtech`), permitindo isolar o número do "curso online" das demais saídas
+- **UI "Motor de Envio" mais clara:** mostra qual número é cada saída (API Oficial = número da Meta; Evolution = instância do servidor) e o aviso de "sem fallback"
+- Servidor: `_waDispatch.ts` (remoção do fallback + `resolveInstance` por categoria) e `_whatsapp.ts` (`sendWhatsAppText` aceita instância específica)
+
+> Após o deploy: em Configurações → Integrações → "Motor de Envio", defina Cobrança/Cronograma/Boas-vindas como **API Oficial** (precisa dos templates aprovados na Meta) OU **Evolution (servidor)** com a instância correta. O "curso online" continua isolado na instância dele.
+
 ## v3.9.3 (2026-06-22) - Fix: áudio do WhatsApp sempre em MP3 (corrige 131053 no Safari/iOS)
 - A v3.9.2 ainda deixava passar `audio/mp4` direto (Safari/iOS grava MP4 com OPUS dentro → a Meta recusa com 131053). Agora **todo áudio gravado é sempre convertido para MP3** antes do envio (só passa direto se já for MP3). Garante compatibilidade em Chrome, Safari/iOS e Firefox
 

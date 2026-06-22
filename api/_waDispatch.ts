@@ -51,6 +51,14 @@ const CATEGORY_KEY: Record<WaCategory, string> = {
   report: 'wa_engine_report',
 };
 
+/** Instância Evolution específica por categoria (vazio = instância padrão do sistema). */
+const INSTANCE_KEY: Record<WaCategory, string> = {
+  course_sales: 'wa_instance_course_sales',
+  billing: 'wa_instance_billing',
+  schedule: 'wa_instance_schedule',
+  report: 'wa_instance_report',
+};
+
 const DEFAULT_ENGINE: Record<WaCategory, WaEngine> = {
   course_sales: 'cloud',
   billing: 'cloud',
@@ -76,6 +84,25 @@ export async function resolveEngine(
     console.error('[waDispatch] Falha ao ler motor:', e?.message);
   }
   return DEFAULT_ENGINE[category];
+}
+
+/** Lê a instância Evolution configurada para a categoria (undefined = padrão). */
+export async function resolveInstance(
+  category: WaCategory,
+  supabase?: SupabaseClient
+): Promise<string | undefined> {
+  try {
+    const client = supabase || getServiceClient();
+    const { data } = await client
+      .from('SITE_Config')
+      .select('value')
+      .eq('key', INSTANCE_KEY[category])
+      .maybeSingle();
+    const v = (data?.value || '').trim();
+    return v || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Envia um template aprovado via API oficial da Meta e persiste no inbox. */
@@ -150,22 +177,23 @@ async function sendCloudTemplate(
 }
 
 /**
- * Ponto único de envio transacional. Lê o motor da categoria e roteia.
+ * Ponto único de envio transacional. Lê o motor (e a instância, no caso da
+ * Evolution) configurados para a categoria e roteia.
+ *
+ * IMPORTANTE: NÃO há fallback automático entre motores. Cada categoria sai
+ * SEMPRE pela saída escolhida — se ela falhar, devolve { sent:false } e a
+ * mensagem é registrada como falha. Isso evita que cobrança/cronograma/boas-
+ * vindas "vazem" por um número diferente do configurado.
  */
 export async function sendTransactional(input: DispatchInput): Promise<DispatchResult> {
   const supabase = getServiceClient();
   const engine = await resolveEngine(input.category, supabase);
 
   if (engine === 'cloud') {
-    const result = await sendCloudTemplate(supabase, input);
-    // Se a Cloud falhar por falta de config/template, cai para Evolution (não perde a msg).
-    if (!result.sent && (result.skipped || result.error) && input.text) {
-      const ev = await sendWhatsAppText(input.to, input.text);
-      if (ev.sent) return { sent: true, engine: 'evolution', skipped: `fallback (${result.skipped || result.error})` };
-    }
-    return result;
+    return sendCloudTemplate(supabase, input);
   }
 
-  const ev: SendWhatsAppResult = await sendWhatsAppText(input.to, input.text);
+  const instance = await resolveInstance(input.category, supabase);
+  const ev: SendWhatsAppResult = await sendWhatsAppText(input.to, input.text, instance);
   return { sent: ev.sent, engine: 'evolution', skipped: ev.skipped, error: ev.error };
 }

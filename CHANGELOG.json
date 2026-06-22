@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.9.4",
+    "date": "2026-06-22",
+    "title": "WhatsApp: roteamento de saída por categoria (sem vazamento de cobrança)",
+    "changes": [
+      "Fim do fallback silencioso: cada categoria (Venda/Boas-vindas, Cobrança, Cronograma, Relatório) sai sempre pela saída escolhida. Se o envio oficial falhar, fica como falha — não cai mais para outro número (causa do vazamento da cobrança pela Evolution)",
+      "Instância Evolution por categoria: ao escolher 'Evolution (servidor)', dá para informar qual instância usar (vazio = padrão suportewtech), isolando o número do curso online das demais saídas",
+      "UI 'Motor de Envio' mais clara: mostra qual número é cada saída e aviso de 'sem fallback'",
+      "Servidor: _waDispatch.ts (sem fallback + resolveInstance por categoria) e _whatsapp.ts (sendWhatsAppText aceita instância específica)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.9.3",
     "date": "2026-06-22",
     "title": "Fix: áudio do WhatsApp sempre em MP3 (corrige 131053 no Safari/iOS)",
