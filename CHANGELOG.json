@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.9.1",
+    "date": "2026-06-22",
+    "title": "Fix: lembretes de curso com data e número corretos",
+    "changes": [
+      "Data corrigida: os lembretes mostravam 1 dia a menos (bug de fuso do new Date().toLocaleDateString). Agora a data é montada no servidor com fmtDate, exibindo a data real do curso",
+      "Número correto: lembretes (manual e automático) deixam de sair pela instância pessoal do atendente (Evolution via user?.id) e passam a ser roteados por /api/notify-students > sendTransactional (categoria schedule): template oficial da Meta cronograma_lembrete_curso com fallback para a instância do sistema",
+      "Teste de lembrete também passa a usar a instância do sistema; fluxo de tarefas agendadas do CRM (follow-up por atendente) mantido"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.9.0",
     "date": "2026-06-20",
     "title": "WhatsApp: IA de atendimento, RAG, relatórios e privacidade por atendente",

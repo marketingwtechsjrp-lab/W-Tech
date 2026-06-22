@@ -861,9 +861,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             (formData.whatToBring ? `🎒 *O que levar:* \n${formData.whatToBring}\n\n` : '') +
             `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
 
-        const result = await sendWhatsAppMessage(phone, message, user?.id);
+        // SEM user?.id → usa a instância do SISTEMA (automação), nunca a pessoal do atendente.
+        const result = await sendWhatsAppMessage(phone, message);
         if (result.success) {
-            alert('Lembrete de teste enviado com sucesso!');
+            alert('Lembrete de teste enviado com sucesso (pelo número do sistema)!');
         } else {
             alert('Erro ao enviar teste: ' + JSON.stringify(result.error));
         }
@@ -1179,23 +1180,29 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         if (!currentCourse) return;
         if (!confirm(`Enviar lembrete manual para ${enr.studentName}?`)) return;
 
-        const mapsLink = currentCourse.latitude ? `https://www.google.com/maps?q=${currentCourse.latitude},${currentCourse.longitude}` : (currentCourse.mapUrl || '');
-
-        const message = `Olá *${enr.studentName}*! Tudo bem? 🏍️\n\n` +
-            `*Lembrete do curso: ${currentCourse.title}*\n\n` +
-            `📅 *Data:* ${new Date(currentCourse.date).toLocaleDateString('pt-BR')}\n` +
-            `⏰ *Horário:* ${currentCourse.startTime || '08:00'} - ${currentCourse.endTime || '18:00'}\n` +
-            `📍 *Endereço:* ${currentCourse.address || currentCourse.location}, ${currentCourse.city || ''} - ${currentCourse.state || ''}\n` +
-            (mapsLink ? `🔗 *Ver no Mapa:* ${mapsLink}\n\n` : '\n') +
-            (currentCourse.schedule ? `📝 *Cronograma:*\n${currentCourse.schedule}\n\n` : '') +
-            (currentCourse.whatToBring ? `🎒 *O que levar:* \n${currentCourse.whatToBring}\n\n` : '') +
-            `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
-
-        const result = await sendWhatsAppMessage(enr.studentPhone, message, user?.id);
-        if (result.success) {
-            alert('Lembrete enviado com sucesso!');
-        } else {
-            alert('Erro ao enviar lembrete: ' + JSON.stringify(result.error));
+        // Roteia pelo canal oficial (API da Meta com fallback p/ a instância do
+        // SISTEMA) — nunca pela instância pessoal do atendente. A data é montada
+        // no servidor (fmtDate correto, sem o bug de fuso do toLocaleDateString).
+        try {
+            const resp = await fetch('/api/notify-students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courseId: currentCourse.id,
+                    action: 'course-info',
+                    channel: 'whatsapp',
+                    enrollmentId: enr.id,
+                }),
+            });
+            const data = await resp.json().catch(() => ({} as any));
+            if (resp.ok && (data?.whatsappSent || 0) > 0) {
+                alert('Lembrete enviado pelo canal oficial!');
+            } else {
+                const detail = data?.details?.[0]?.whatsapp || data?.error || 'verifique o número e a configuração do WhatsApp';
+                alert('Não enviado: ' + detail);
+            }
+        } catch (e: any) {
+            alert('Erro ao enviar lembrete: ' + (e?.message || 'desconhecido'));
         }
     };
 
@@ -7921,22 +7928,26 @@ const Admin = () => {
                             for (const enr of enrollments) {
                                 if (!enr.student_phone) continue;
 
-                                const mapsLink = course.latitude ? `https://www.google.com/maps?q=${course.latitude},${course.longitude}` : (course.map_url || '');
-
-                                const message = `Olá *${enr.student_name}*! Tudo bem? 🏍️\n\n` +
-                                    `*Lembrete do curso: ${course.title}*\n\n` +
-                                    `📅 *Data:* ${new Date(course.date).toLocaleDateString('pt-BR')}\n` +
-                                    `⏰ *Horário:* ${course.start_time || '08:00'} - ${course.end_time || '18:00'}\n` +
-                                    `📍 *Endereço:* ${course.address || course.location}, ${course.city || ''} - ${course.state || ''}\n` +
-                                    (mapsLink ? `🔗 *Ver no Mapa:* ${mapsLink}\n\n` : '\n') +
-                                    (course.schedule ? `📝 *Cronograma:*\n${course.schedule}\n\n` : '') +
-                                    (course.what_to_bring ? `🎒 *O que levar:* \n${course.what_to_bring}\n\n` : '') +
-                                    `W-TECH Brasil Experience - Te esperamos lá! 🏁`;
-
-                                const result = await sendWhatsAppMessage(enr.student_phone, message);
-
-                                if (result.success) {
-                                    await supabase.from('SITE_Enrollments').update({ [sentField]: true }).eq('id', enr.id);
+                                // Canal oficial (API da Meta + fallback p/ instância do SISTEMA),
+                                // com a data montada no servidor (sem o bug de fuso). Nunca usa a
+                                // instância pessoal do atendente.
+                                try {
+                                    const resp = await fetch('/api/notify-students', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            courseId: course.id,
+                                            action: 'course-info',
+                                            channel: 'whatsapp',
+                                            enrollmentId: enr.id,
+                                        }),
+                                    });
+                                    const data = await resp.json().catch(() => ({} as any));
+                                    if (resp.ok && (data?.whatsappSent || 0) > 0) {
+                                        await supabase.from('SITE_Enrollments').update({ [sentField]: true }).eq('id', enr.id);
+                                    }
+                                } catch (e) {
+                                    console.error('[CourseReminder] falha ao enviar:', e);
                                 }
                             }
                         }

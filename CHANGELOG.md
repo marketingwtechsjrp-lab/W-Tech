@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.9.1 (2026-06-22) - Fix: lembretes de curso com data e número corretos
+- **Data corrigida:** os lembretes mostravam 1 dia a menos (bug de fuso do `new Date().toLocaleDateString`). Agora a data é montada no servidor com `fmtDate` (lê ano-mês-dia direto), exibindo a data real do curso
+- **Número correto:** os lembretes (manual e automático) deixaram de sair pela **instância pessoal do atendente** (Evolution via `user?.id`) e passam a ser roteados por `/api/notify-students` → `sendTransactional` (categoria `schedule`): **template oficial da Meta `cronograma_lembrete_curso`** com fallback para a instância do **sistema** (automação). O teste também usa a instância do sistema
+- Fluxo de tarefas agendadas do CRM (follow-up por atendente) mantido como está
+
 ## v3.9.0 (2026-06-20) - WhatsApp: IA de atendimento, RAG, relatórios e privacidade por atendente
 ### Atendimento WhatsApp (multiatendimento + IA)
 - **Privacidade por atendente:** cada usuário só vê as conversas atribuídas a ele — o filtro é aplicado **na consulta** (`fetchConversations` por `assigned_to`), não só no render, então o navegador nem baixa as conversas dos outros. Admin e Gerente de Atendimento veem todas (permissão `whatsapp_view_all`)
