@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.9.3",
+    "date": "2026-06-22",
+    "title": "Fix: áudio do WhatsApp sempre em MP3 (corrige 131053 no Safari/iOS)",
+    "changes": [
+      "A v3.9.2 ainda deixava audio/mp4 passar direto (Safari/iOS grava MP4 com OPUS dentro, recusado pela Meta com 131053). Agora todo áudio gravado é sempre convertido para MP3 antes do envio (só passa direto se já for MP3). Compatível com Chrome, Safari/iOS e Firefox"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.9.2",
     "date": "2026-06-22",
     "title": "WhatsApp: envio de áudio corrigido + permissões de Molas & Óleo",

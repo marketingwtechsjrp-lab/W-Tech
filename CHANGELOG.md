@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.9.3 (2026-06-22) - Fix: áudio do WhatsApp sempre em MP3 (corrige 131053 no Safari/iOS)
+- A v3.9.2 ainda deixava passar `audio/mp4` direto (Safari/iOS grava MP4 com OPUS dentro → a Meta recusa com 131053). Agora **todo áudio gravado é sempre convertido para MP3** antes do envio (só passa direto se já for MP3). Garante compatibilidade em Chrome, Safari/iOS e Firefox
+
 ## v3.9.2 (2026-06-22) - WhatsApp: envio de áudio corrigido + permissões de Molas & Óleo
 - **Áudio do WhatsApp corrigido:** o Chrome grava em `audio/webm`, formato recusado pela Meta (erro 131053 "Media upload error"). Agora o áudio passa por `prepareWhatsAppAudio()`: re-encoda para **MP3** no navegador (Web Audio → PCM → lamejs) quando o formato não é aceito; Firefox (ogg/opus) e Safari (mp4/aac) passam direto. Vale para gravação por microfone e anexo de arquivo
 - **Permissões por módulo (Molas & Óleo):** novo grupo "Ferramentas Técnicas (Molas & Óleo)" na tela de Permissões com toggles próprios `springs_view` e `oleo_view` (antes os módulos herdavam de `catalog_view` e não dava para liberar separadamente). Gating com fallback "explícito vence" para `catalog_view`. Migration `grant_springs_oleo_permissions.sql` preserva o acesso de quem já tinha catálogo

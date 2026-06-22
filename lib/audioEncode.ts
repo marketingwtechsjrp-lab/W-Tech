@@ -1,39 +1,16 @@
 /**
  * Preparação de áudio para a WhatsApp Cloud API (Meta).
  *
- * A Meta só aceita áudio em AAC, AMR, MP3, M4A/MP4 ou OGG (codec OPUS). O Chrome
- * grava em `audio/webm;codecs=opus`, que é RECUSADO (erro 131053 "Media upload
- * error"). Firefox grava ogg/opus e Safari grava mp4/aac — esses já são aceitos.
- *
- * Estratégia: se o formato gravado já for aceito, envia como está; senão (webm),
- * re-encoda para MP3 no navegador. O encoder (lamejs) é carregado sob demanda
- * (dynamic import) para não pesar o bundle principal.
+ * O MediaRecorder grava em formatos diferentes por navegador e a maioria é
+ * RECUSADA pela Meta (erro 131053 "Media upload error"): Chrome grava
+ * `audio/webm` e Safari grava `audio/mp4` (com OPUS dentro). Por isso NÃO dá
+ * para confiar no container — convertemos sempre para MP3 (audio/mpeg), o único
+ * formato que a Meta aceita de forma consistente em qualquer navegador. O
+ * encoder (lamejs) é carregado sob demanda para não pesar o bundle principal.
  */
-
-const SUPPORTED_BASES = [
-  'audio/aac',
-  'audio/mp4',
-  'audio/mpeg',
-  'audio/amr',
-  'audio/ogg',
-  'audio/m4a',
-  'audio/x-m4a',
-];
 
 function baseMime(mime: string): string {
   return (mime || '').split(';')[0].trim().toLowerCase();
-}
-
-export function isWhatsAppAudio(mime: string): boolean {
-  return SUPPORTED_BASES.includes(baseMime(mime));
-}
-
-function extFor(base: string): string {
-  if (base === 'audio/ogg') return 'ogg';
-  if (base === 'audio/mp4' || base === 'audio/m4a' || base === 'audio/x-m4a') return 'm4a';
-  if (base === 'audio/aac') return 'aac';
-  if (base === 'audio/amr') return 'amr';
-  return 'mp3';
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -87,16 +64,21 @@ async function recordedBlobToMp3(blob: Blob): Promise<{ dataUrl: string; mime: s
 
 /**
  * Devolve o áudio pronto para a Cloud API: { dataUrl base64, mime, filename }.
- * Mantém o formato quando já é aceito; converte para MP3 quando não é (webm).
+ *
+ * Regra: só passa direto quando JÁ é MP3 (audio/mpeg). Qualquer outro formato é
+ * re-encodado para MP3. Não dá para confiar no container do MediaRecorder porque
+ * ele varia por navegador e engana: Chrome grava `audio/webm`, Safari grava
+ * `audio/mp4` (com OPUS dentro) — ambos recusados pela Meta (erro 131053), mesmo
+ * o mp4 "parecendo" um formato aceito. Convertendo sempre para MP3, garantimos
+ * compatibilidade em qualquer navegador/dispositivo.
  */
 export async function prepareWhatsAppAudio(
   blob: Blob,
   originalName?: string
 ): Promise<{ dataUrl: string; mime: string; filename: string }> {
-  const base = baseMime(blob.type);
-  if (isWhatsAppAudio(blob.type)) {
+  if (baseMime(blob.type) === 'audio/mpeg') {
     const dataUrl = await blobToDataUrl(blob);
-    return { dataUrl, mime: base, filename: originalName || `audio.${extFor(base)}` };
+    return { dataUrl, mime: 'audio/mpeg', filename: originalName || 'audio.mp3' };
   }
   return recordedBlobToMp3(blob);
 }
