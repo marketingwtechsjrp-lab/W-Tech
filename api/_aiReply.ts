@@ -30,6 +30,13 @@ interface AIConfig {
   autopilot_intents: string[];
   provider: string | null;
   model: string | null;
+  // Humanização do envio (divide em balões + delay + "digitando...").
+  humanizeEnabled: boolean;
+  humanizeTyping: boolean;
+  humanizeMaxBubbles: number;
+  humanizeSpeed: 'slow' | 'normal' | 'fast';
+  // Dados vivos: deixa a IA consultar os cursos publicados no banco.
+  useLiveCourses: boolean;
 }
 
 interface AIKeys {
@@ -56,6 +63,11 @@ export async function loadAIConfig(supabase: SupabaseClient): Promise<AIConfig |
     autopilot_intents: data.autopilot_intents || ['support', 'general'],
     provider: data.provider || null,
     model: data.model || null,
+    humanizeEnabled: data.humanize_enabled ?? true,
+    humanizeTyping: data.humanize_typing ?? true,
+    humanizeMaxBubbles: Number(data.humanize_max_bubbles ?? 4),
+    humanizeSpeed: (data.humanize_speed || 'normal') as AIConfig['humanizeSpeed'],
+    useLiveCourses: data.use_live_courses ?? true,
   };
 }
 
@@ -177,6 +189,75 @@ async function retrieveMemory(
   }
 }
 
+// ─── Dados vivos: cursos publicados (preço/datas/local/link reais) ───────────
+
+const SITE_BASE = 'https://site.w-techbrasil.com.br';
+
+function fmtMoney(v: any, currency?: string | null): string {
+  const n = Number(v || 0);
+  const cur = (currency || 'BRL').toUpperCase();
+  const locale = cur === 'BRL' ? 'pt-BR' : cur === 'EUR' ? 'pt-PT' : 'en-US';
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: cur }).format(n);
+  } catch {
+    return `${cur} ${n.toFixed(2)}`;
+  }
+}
+
+function fmtDate(s: any): string {
+  if (!s) return '';
+  try {
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return String(s);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return String(s);
+  }
+}
+
+function fmtDateRange(a: any, b: any): string {
+  const da = fmtDate(a);
+  const db = fmtDate(b);
+  if (da && db && db !== da) return `${da} a ${db}`;
+  return da;
+}
+
+/** Monta um bloco compacto com os cursos publicados, pra IA nunca inventar dado. */
+async function loadCourseContext(supabase: SupabaseClient): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from('SITE_Courses')
+      .select(
+        'id, title, price, currency, date, date_end, location, location_type, city, state, status, custom_link, capacity, registered_count'
+      )
+      .in('status', ['Published', 'Full'])
+      .order('date', { ascending: true })
+      .limit(15);
+    if (!data || !data.length) return '';
+    return (data as any[])
+      .map((c) => {
+        const url = (c.custom_link && String(c.custom_link).trim()) || `${SITE_BASE}/checkout-curso/${c.id}`;
+        const local =
+          c.location_type === 'Online'
+            ? 'Online'
+            : [c.city, c.state].filter(Boolean).join('/') || c.location || 'Presencial';
+        const when = fmtDateRange(c.date, c.date_end);
+        const price = fmtMoney(c.price, c.currency);
+        const vagas =
+          c.status === 'Full'
+            ? 'ESGOTADO (oferecer lista de espera)'
+            : Number(c.capacity) > 0
+            ? `${Math.max(0, Number(c.capacity) - Number(c.registered_count || 0))} vaga(s)`
+            : 'vagas abertas';
+        return `• ${c.title} — ${local}${when ? `, ${when}` : ''}. Investimento: ${price}. ${vagas}. Inscrição: ${url}`;
+      })
+      .join('\n');
+  } catch (e: any) {
+    console.error('[aiReply] loadCourseContext falhou:', e?.message);
+    return '';
+  }
+}
+
 // ─── Classificação de intenção ───────────────────────────────────────────────
 
 async function classifyIntent(keys: AIKeys, text: string): Promise<Intent> {
@@ -251,12 +332,116 @@ async function setStatus(supabase: SupabaseClient, conversationId: string, statu
   await supabase.from('SITE_WhatsAppCloudConversations').update({ status }).eq('id', conversationId);
 }
 
+// ─── Humanização: "digitando...", divisão em balões e delay natural ──────────
+
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Mostra "digitando..." e marca a mensagem como lida (ticks azuis).
+ * A Cloud API só permite isso referenciando uma mensagem recebida ainda não
+ * respondida — por isso só dá pra disparar uma vez (antes do 1º balão).
+ * O indicador some sozinho quando o próximo texto é enviado ou após ~25s.
+ */
+async function sendTypingIndicator(cfg: CloudConfig, incomingMessageId?: string | null): Promise<void> {
+  if (!incomingMessageId) return;
+  try {
+    await fetch(`${GRAPH}/${cfg.apiVersion}/${cfg.phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.accessToken}` },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        status: 'read',
+        message_id: incomingMessageId,
+        typing_indicator: { type: 'text' },
+      }),
+    });
+  } catch (e: any) {
+    console.error('[aiReply] typing indicator falhou:', e?.message);
+  }
+}
+
+/**
+ * Divide a resposta em balões curtos, como uma pessoa digitando no WhatsApp.
+ * Quebra primeiro pelas linhas em branco (a IA já é instruída a separar ideias
+ * com linha em branco); blocos muito longos são repartidos por frase.
+ */
+export function splitIntoBubbles(text: string, maxBubbles: number): string[] {
+  const MAX = 220;
+  const clean = (text || '').replace(/\r/g, '').trim();
+  if (!clean) return [];
+
+  const segments = clean.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean);
+  const chunks: string[] = [];
+  for (const seg of segments) {
+    if (seg.length <= MAX) {
+      chunks.push(seg);
+      continue;
+    }
+    const sentences = seg.split(/(?<=[.!?…])\s+/).map((s) => s.trim()).filter(Boolean);
+    let cur = '';
+    for (const s of sentences) {
+      if (!cur) cur = s;
+      else if (cur.length + 1 + s.length <= MAX) cur += ' ' + s;
+      else { chunks.push(cur); cur = s; }
+    }
+    if (cur) chunks.push(cur);
+  }
+
+  const cap = Math.max(1, maxBubbles);
+  if (chunks.length <= cap) return chunks;
+  // Junta o excedente no último balão permitido pra não estourar o teto.
+  return [...chunks.slice(0, cap - 1), chunks.slice(cap - 1).join('\n')];
+}
+
+function bubbleDelayMs(chars: number, speed: AIConfig['humanizeSpeed']): number {
+  const perChar = speed === 'slow' ? 55 : speed === 'fast' ? 22 : 35;
+  return Math.min(3500, Math.max(700, Math.round(chars * perChar)));
+}
+
+/**
+ * Envia a resposta da IA de forma humanizada: vários balões, com "digitando..."
+ * antes do primeiro e um delay proporcional ao tamanho entre eles. O tempo
+ * total é limitado pra não segurar o webhook (a Meta reentrega se demorar).
+ */
+async function humanizedSend(
+  supabase: SupabaseClient,
+  cfg: CloudConfig,
+  conversationId: string,
+  waId: string,
+  reply: string,
+  config: AIConfig,
+  incomingMessageId?: string | null
+): Promise<void> {
+  const bubbles = config.humanizeEnabled
+    ? splitIntoBubbles(reply, config.humanizeMaxBubbles)
+    : [reply.trim()].filter(Boolean);
+  if (!bubbles.length) return;
+
+  const TOTAL_CAP = 8000;
+  let spent = 0;
+
+  for (let i = 0; i < bubbles.length; i++) {
+    const body = bubbles[i];
+    if (config.humanizeEnabled) {
+      if (config.humanizeTyping && i === 0) await sendTypingIndicator(cfg, incomingMessageId);
+      let d = bubbleDelayMs(body.length, config.humanizeSpeed);
+      if (spent + d > TOTAL_CAP) d = Math.max(0, TOTAL_CAP - spent);
+      spent += d;
+      if (d > 0) await sleep(d);
+    }
+    const msgId = await sendCloudText(cfg, waId, body);
+    await storeOutMessage(supabase, conversationId, waId, body, 'ai', msgId ? 'sent' : 'failed', msgId);
+  }
+  await setStatus(supabase, conversationId, 'bot');
+}
+
 // ─── Orquestrador ────────────────────────────────────────────────────────────
 
 export interface ResponderArgs {
   conversationId: string;
   waId: string;
   incomingText: string;
+  incomingMessageId?: string | null;
 }
 
 export async function runAIResponder(
@@ -287,14 +472,16 @@ export async function runAIResponder(
   const lower = incomingText.toLowerCase();
   const hitKeyword = (config.handoff_keywords || []).some((k) => k && lower.includes(k.toLowerCase()));
 
-  // Teto de mensagens da IA antes de passar para humano.
-  const { count: aiCount } = await supabase
+  // Teto de turnos antes de passar para humano. Contamos as mensagens do CLIENTE
+  // (não as da IA): com a humanização cada resposta vira vários balões 'ai', então
+  // contar 'ai' estouraria o limite cedo demais. 1 mensagem do cliente ≈ 1 turno.
+  const { count: turnCount } = await supabase
     .from('SITE_WhatsAppCloudMessages')
     .select('id', { count: 'exact', head: true })
     .eq('conversation_id', conversationId)
-    .eq('sent_by', 'ai');
+    .eq('direction', 'in');
 
-  if (hitKeyword || (aiCount || 0) >= config.max_msgs_before_handoff) {
+  if (hitKeyword || (turnCount || 0) >= config.max_msgs_before_handoff) {
     await setStatus(supabase, conversationId, 'pendente');
     // Avisa o cliente que um humano vai assumir (uma vez).
     const msgId = await sendCloudText(cloudCfg, waId, config.fallback_message);
@@ -308,6 +495,11 @@ export async function runAIResponder(
   const rules = await loadRules(supabase);
   // RAG: aprende com atendimentos anteriores (requer chave Gemini para embeddings).
   const memory = await retrieveMemory(supabase, keys.gemini || '', incomingText);
+  // Dados vivos: cursos reais do banco (só quando a dúvida é sobre curso/venda).
+  const liveCourses =
+    config.useLiveCourses && (intent === 'course' || intent === 'sales')
+      ? await loadCourseContext(supabase)
+      : '';
 
   // Últimas mensagens para dar contexto.
   const { data: history } = await supabase
@@ -325,10 +517,15 @@ export async function runAIResponder(
   const systemPrompt =
     `${config.persona}\n\n` +
     `INFORMAÇÕES DO NEGÓCIO:\n${config.business_info}\n\n` +
+    (liveCourses
+      ? `CURSOS DISPONÍVEIS AGORA (dados reais do sistema — use SEMPRE estes valores e este link de inscrição; NUNCA invente preço, data ou vaga):\n${liveCourses}\n\n`
+      : '') +
     (knowledge ? `O QUE VOCÊ PODE DIZER (base de conhecimento):\n${knowledge}\n\n` : '') +
     (memory ? `ATENDIMENTOS ANTERIORES PARECIDOS (use como referência do que funcionou):\n${memory}\n\n` : '') +
     (rules ? `REGRAS OBRIGATÓRIAS:\n${rules}\n\n` : '') +
-    `Responda em português do Brasil, de forma curta e objetiva (no máximo 2 parágrafos). ` +
+    `Responda em português do Brasil com tom natural e conversacional, como uma pessoa de verdade digitando no WhatsApp. ` +
+    `Use mensagens curtas. Quando a resposta tiver mais de uma ideia, separe em blocos curtos com UMA LINHA EM BRANCO entre eles — cada bloco vira uma mensagem. ` +
+    `Evite textão e não use markdown, asteriscos ou listas numeradas. ` +
     `Se não tiver certeza ou a regra exigir, diga que vai transferir para um atendente.`;
 
   let reply = '';
@@ -343,9 +540,8 @@ export async function runAIResponder(
   const autopilot = (config.autopilot_intents || []).includes(intent);
 
   if (autopilot) {
-    const msgId = await sendCloudText(cloudCfg, waId, reply);
-    await storeOutMessage(supabase, conversationId, waId, reply, 'ai', msgId ? 'sent' : 'failed', msgId);
-    await setStatus(supabase, conversationId, 'bot');
+    // Envio humanizado: vários balões curtos, com "digitando..." e delay natural.
+    await humanizedSend(supabase, cloudCfg, conversationId, waId, reply, config, args.incomingMessageId);
   } else {
     // Rascunho para o atendente aprovar (não envia ao cliente).
     await storeOutMessage(supabase, conversationId, waId, reply, 'ai_draft', 'draft', null);

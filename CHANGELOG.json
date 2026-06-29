@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.10.0",
+    "date": "2026-06-29",
+    "title": "WhatsApp: humanização de mensagens (balões + delay + digitando) e integração com cursos ao vivo",
+    "changes": [
+      "Humanização: divisão automática das respostas longas da IA em múltiplos balões curtos (splitIntoBubbles) separados por parágrafos para uma conversa mais fluida e natural",
+      "Indicador digitando: simulação do estado 'digitando...' e confirmação de leitura antes de enviar cada balão de mensagem, respeitando delays proporcionais configuráveis (slow, normal, fast)",
+      "Dados vivos de cursos: integração dinâmica com a tabela SITE_Courses para injetar dados atualizados de cursos presenciais/online (datas, local, preço e links de checkout) no prompt de atendimento da IA, evitando alucinações",
+      "Interface no Centro de Treino: controles dedicados na aba 'IA de Atendimento' para configurar a humanização (balões, delay, velocidade, teto) e ativar a consulta de cursos ao vivo",
+      "Handoff inteligente: ajuste no contador de limite de mensagens para contar turnos do cliente em vez de mensagens individuais do bot (prevenindo handoffs prematuros causados por múltiplos balões)",
+      "Banco de dados: nova migration whatsapp_ai_humanize.sql adicionando as colunas de controle da humanização e dados vivos na tabela SITE_WhatsAppAIConfig"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.9.4",
     "date": "2026-06-22",
     "title": "WhatsApp: roteamento de saída por categoria (sem vazamento de cobrança)",

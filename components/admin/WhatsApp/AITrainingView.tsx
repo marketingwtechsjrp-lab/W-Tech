@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Bot, Save, Plus, Trash2, Power, Sparkles, Send, Loader2, MessageSquare, ShieldAlert, BookOpen,
+  Zap, Database, GraduationCap,
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { generateContent } from '../../../lib/ai';
@@ -31,6 +32,11 @@ interface AIConfigRow {
   autopilot_intents: string[];
   provider: string | null;
   model: string | null;
+  humanize_enabled: boolean;
+  humanize_typing: boolean;
+  humanize_max_bubbles: number;
+  humanize_speed: 'slow' | 'normal' | 'fast';
+  use_live_courses: boolean;
 }
 interface KnowledgeRow { id: string; intent: Intent; title: string; content: string; enabled: boolean; }
 interface RuleRow { id: string; type: string; value: string; enabled: boolean; }
@@ -74,6 +80,11 @@ const AITrainingView: React.FC = () => {
       max_msgs_before_handoff: Number(cfg.data.max_msgs_before_handoff ?? 6),
       autopilot_intents: cfg.data.autopilot_intents || ['support', 'general'],
       provider: cfg.data.provider, model: cfg.data.model,
+      humanize_enabled: cfg.data.humanize_enabled ?? true,
+      humanize_typing: cfg.data.humanize_typing ?? true,
+      humanize_max_bubbles: Number(cfg.data.humanize_max_bubbles ?? 4),
+      humanize_speed: (cfg.data.humanize_speed || 'normal') as AIConfigRow['humanize_speed'],
+      use_live_courses: cfg.data.use_live_courses ?? true,
     });
     setKnowledge((kn.data || []) as KnowledgeRow[]);
     setRules((rl.data || []) as RuleRow[]);
@@ -94,6 +105,11 @@ const AITrainingView: React.FC = () => {
       autopilot_intents: config.autopilot_intents,
       provider: config.provider || null,
       model: config.model || null,
+      humanize_enabled: config.humanize_enabled,
+      humanize_typing: config.humanize_typing,
+      humanize_max_bubbles: config.humanize_max_bubbles,
+      humanize_speed: config.humanize_speed,
+      use_live_courses: config.use_live_courses,
       updated_at: new Date().toISOString(),
     };
     const res = config.id
@@ -296,6 +312,75 @@ const AITrainingView: React.FC = () => {
         <button onClick={saveConfig} disabled={saving}
           className="bg-wtech-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity">
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Salvar configuração
+        </button>
+      </div>
+
+      {/* Humanização & Dados ao vivo */}
+      <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-5 space-y-4">
+        <h4 className="text-sm font-bold text-[var(--admin-text-primary)] flex items-center gap-2"><Zap size={15} /> Humanização & Dados ao vivo</h4>
+
+        {/* Toggles de humanização */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button onClick={() => setConfig({ ...config, humanize_enabled: !config.humanize_enabled })}
+            className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-colors text-left ${config.humanize_enabled ? 'border-violet-500/50 bg-violet-500/10' : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)]'}`}>
+            <div className="flex items-center gap-2">
+              <MessageSquare size={16} className={config.humanize_enabled ? 'text-violet-500' : 'text-gray-400'} />
+              <div>
+                <p className="text-sm font-bold text-[var(--admin-text-primary)]">Dividir em vários balões</p>
+                <p className="text-[11px] text-[var(--admin-text-tertiary)]">Quebra respostas longas em mensagens curtas.</p>
+              </div>
+            </div>
+            <Power size={15} className={config.humanize_enabled ? 'text-violet-500' : 'text-gray-400'} />
+          </button>
+
+          <button onClick={() => setConfig({ ...config, humanize_typing: !config.humanize_typing })}
+            disabled={!config.humanize_enabled}
+            className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-colors text-left disabled:opacity-40 ${config.humanize_typing ? 'border-violet-500/50 bg-violet-500/10' : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)]'}`}>
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className={config.humanize_typing ? 'text-violet-500' : 'text-gray-400'} />
+              <div>
+                <p className="text-sm font-bold text-[var(--admin-text-primary)]">Mostrar "digitando…"</p>
+                <p className="text-[11px] text-[var(--admin-text-tertiary)]">Marca como lida e simula digitação antes de responder.</p>
+              </div>
+            </div>
+            <Power size={15} className={config.humanize_typing ? 'text-violet-500' : 'text-gray-400'} />
+          </button>
+        </div>
+
+        {/* Velocidade + teto de balões */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Velocidade de digitação</label>
+            <select className={input} value={config.humanize_speed} disabled={!config.humanize_enabled}
+              onChange={(e) => setConfig({ ...config, humanize_speed: e.target.value as AIConfigRow['humanize_speed'] })}>
+              <option value="slow">Devagar (mais humano)</option>
+              <option value="normal">Normal</option>
+              <option value="fast">Rápido</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Máximo de balões por resposta</label>
+            <input type="number" min={1} max={6} className={input} value={config.humanize_max_bubbles} disabled={!config.humanize_enabled}
+              onChange={(e) => setConfig({ ...config, humanize_max_bubbles: Math.min(6, Math.max(1, parseInt(e.target.value) || 4)) })} />
+          </div>
+        </div>
+
+        {/* Dados ao vivo: cursos */}
+        <button onClick={() => setConfig({ ...config, use_live_courses: !config.use_live_courses })}
+          className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl border transition-colors text-left ${config.use_live_courses ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-[var(--admin-border)] bg-[var(--admin-surface-2)]'}`}>
+          <div className="flex items-center gap-2">
+            <GraduationCap size={16} className={config.use_live_courses ? 'text-emerald-500' : 'text-gray-400'} />
+            <div>
+              <p className="text-sm font-bold text-[var(--admin-text-primary)]">Consultar cursos do sistema</p>
+              <p className="text-[11px] text-[var(--admin-text-tertiary)]">A IA puxa preço, datas, local e link reais dos cursos publicados — nunca inventa.</p>
+            </div>
+          </div>
+          <Database size={15} className={config.use_live_courses ? 'text-emerald-500' : 'text-gray-400'} />
+        </button>
+
+        <button onClick={saveConfig} disabled={saving}
+          className="bg-wtech-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 hover:opacity-90 transition-opacity">
+          {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Salvar
         </button>
       </div>
 

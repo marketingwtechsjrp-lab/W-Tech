@@ -98,7 +98,7 @@ async function handleIncomingMessage(
   // IA de atendimento (best-effort). Só para texto e mensagem nova (não reentrega).
   if (isNewMessage && conversationId && storedType === 'text' && body && body.trim()) {
     try {
-      await runAIResponder(supabase, cfg, { conversationId, waId, incomingText: body });
+      await runAIResponder(supabase, cfg, { conversationId, waId, incomingText: body, incomingMessageId: message.id });
     } catch (e: any) {
       console.error('[WA Cloud Webhook] IA falhou:', e?.message);
     }

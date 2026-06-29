@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.10.0 (2026-06-29) - WhatsApp: humanização (balões + delay + digitando) e cursos ao vivo
+- **Humanização de Envio:** divisão automática das respostas longas da IA em múltiplos balões curtos (quebras de linha/parágrafo) com delay proporcional configurável (slow, normal, fast) e indicação de "digitando..." (via Cloud API), simulando um comportamento mais humano.
+- **Integração de Cursos ao Vivo:** injeção automática de dados reais de cursos (datas, local, preço e links de inscrição/checkout formatados) diretamente no prompt da IA, eliminando alucinações e permitindo responder perguntas sobre valores e turmas com dados oficiais.
+- **Painel no Centro de Treino:** novas configurações na aba "IA de Atendimento" para ativar/desativar o fracionamento em balões, simulação de digitação, velocidade de digitação, limite máximo de balões e toggle para ativação de cursos ao vivo.
+- **Handoff Inteligente:** contador de limite de mensagens ajustado para computar turnos de resposta do cliente (em vez de mensagens individuais enviadas pelo bot), evitando transições prematuras para atendimento humano decorrentes do fracionamento de mensagens.
+- **Migration RAG & Humanização:** inclusão de nova migration `whatsapp_ai_humanize.sql` no Supabase para criação dos campos de controle de humanização na tabela `SITE_WhatsAppAIConfig`.
+
 ## v3.9.4 (2026-06-22) - WhatsApp: roteamento de saída por categoria (sem vazamento de cobrança)
 - **Fim do fallback silencioso:** cada categoria (Venda/Boas-vindas, Cobrança, Cronograma, Relatório) sai SEMPRE pela saída escolhida. Se o envio oficial falhar (ex.: template não aprovado), fica marcado como falha — **não cai mais para outro número** (era o que fazia a cobrança "vazar" pela Evolution)
 - **Instância Evolution por categoria:** ao escolher "Evolution (servidor)", dá para informar QUAL instância usar (em branco = padrão `suportewtech`), permitindo isolar o número do "curso online" das demais saídas
