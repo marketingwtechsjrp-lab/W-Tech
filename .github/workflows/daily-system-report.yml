@@ -1,0 +1,35 @@
+name: Relatório diário do sistema (WhatsApp)
+
+# O plano Hobby da Vercel já usa os 2 crons permitidos (checkout-recovery e
+# process-email-flows), então o relatório do dono é disparado por aqui.
+# 11:00 UTC = 08:00 America/Sao_Paulo (Brasil não tem mais horário de verão).
+#
+# Requer o secret CRON_SECRET configurado em:
+#   - GitHub  → Settings → Secrets and variables → Actions
+#   - Vercel  → Environment Variables (mesmo valor)
+# O endpoint respeita o toggle "Relatório Diário para o Dono" do painel
+# (Admin → Integrações): desativado = responde 200 com skipped, sem enviar.
+
+on:
+  schedule:
+    - cron: '0 11 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar relatório para o grupo do dono
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::Secret CRON_SECRET não configurado no GitHub."
+            exit 1
+          fi
+          response=$(curl -sS -w "\n%{http_code}" -X POST "https://site.w-techbrasil.com.br/api/notify-students" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -d '{"action":"system-report"}')
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -n1)
+          echo "HTTP $status — $body"
+          [ "$status" = "200" ] || exit 1

@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.11.0 (2026-07-01) - WhatsApp: roteamento completo de saídas por instância e relatório diário do dono
+
+- **Relatório diário do dono (grupo WhatsApp):** resumo automático do dia — leads, inscrições, vendas, saldo a receber, campanhas e atendimento — enviado às 08:00 para o grupo escolhido, pela instância Evolution da categoria Relatório (padrão: automação). Novo módulo `api/_report.ts` portado do padrão MotoFix (skill whatsapp-evolution)
+- **Painel Admin → Integrações:** novo card "Relatório Diário para o Dono" com toggle de ativação, seletor de grupo (busca os grupos direto na Evolution), prévia do texto e botão "Enviar teste agora"
+- **Roteamento completo de saídas:** além das 4 categorias (venda/cobrança/cronograma/relatório), agora Campanhas/Remarketing, CRM e Recuperação de Vendas têm instância Evolution dedicada configurável (`wa_instance_campaign`, `wa_instance_crm`, `wa_instance_recovery`) na seção "Instância por rota"
+- **Campanhas:** o processador do servidor (`api/_campaigns.ts`) e o do navegador (QueueProcessor) respeitam a instância dedicada de campanhas quando configurada
+- **Grupos:** o envio Evolution aceita JID de grupo (`…@g.us`) sem passar pela normalização de telefone
+- **Infra:** ação `system-report` embutida em `/api/notify-students` (sem função serverless nova — limite de 12 do plano Hobby) com auth por `CRON_SECRET` ou usuário do painel; disparo diário via GitHub Actions (`daily-system-report.yml`) por causa do limite de 2 crons da Vercel
+
 ## v3.10.0 (2026-06-29) - WhatsApp: humanização (balões + delay + digitando) e cursos ao vivo
 - **Humanização de Envio:** divisão automática das respostas longas da IA em múltiplos balões curtos (quebras de linha/parágrafo) com delay proporcional configurável (slow, normal, fast) e indicação de "digitando..." (via Cloud API), simulando um comportamento mais humano.
 - **Integração de Cursos ao Vivo:** injeção automática de dados reais de cursos (datas, local, preço e links de inscrição/checkout formatados) diretamente no prompt da IA, eliminando alucinações e permitindo responder perguntas sobre valores e turmas com dados oficiais.

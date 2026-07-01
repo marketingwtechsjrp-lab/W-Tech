@@ -64,6 +64,11 @@ export function normalizePhone(raw: string): string | null {
     return digits.length <= 11 ? `55${digits}` : digits;
 }
 
+/** JID da Evolution (grupo `…@g.us` ou contato `…@s.whatsapp.net`) — vai intacto. */
+function isJid(raw: string): boolean {
+    return (raw || '').includes('@');
+}
+
 /**
  * Envia mensagem de texto via Evolution API. Best-effort: se o WhatsApp não
  * estiver configurado em Admin → Integrações, retorna skipped sem erro.
@@ -78,7 +83,8 @@ export async function sendWhatsAppText(
         return { sent: false, skipped: 'whatsapp not configured' };
     }
 
-    const phone = normalizePhone(to);
+    // Grupo/JID (…@g.us) vai intacto; telefone comum é normalizado (55DDD…)
+    const phone = isJid(to) ? to.trim() : normalizePhone(to);
     if (!phone) {
         return { sent: false, skipped: 'invalid phone' };
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { MarketingCampaign, CampaignQueueItem } from '../../../types';
-import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../../lib/whatsapp';
+import { sendWhatsAppMessage, sendWhatsAppMedia, getRouteInstance } from '../../../lib/whatsapp';
 import { useAuth } from '../../../context/AuthContext';
 import { Loader2, Pause, Play, CheckCircle, AlertTriangle } from 'lucide-react';
 
@@ -129,23 +129,27 @@ const QueueProcessor: React.FC<QueueProcessorProps> = ({ campaign, onComplete })
             if (campaign.channel === 'WhatsApp') {
                 const pDelay = (campaign.part_delay || 0) * 1000;
 
+                // Instância dedicada de campanhas (Admin → Integrações); vazio = instância do operador
+                const campaignInstance = await getRouteInstance('campaign');
+                const sender = campaignInstance || user?.id;
+
                 // Part 1: Text
                 if (campaign.content) {
-                    const res1 = await sendWhatsAppMessage(item.recipient_phone, replaceVars(campaign.content), user?.id);
+                    const res1 = await sendWhatsAppMessage(item.recipient_phone, replaceVars(campaign.content), sender);
                     if (!res1.success) throw new Error(`Falha no Texto 1: ${JSON.stringify(res1.error)}`);
                     if (pDelay > 0 && (campaign.imageUrl || campaign.content2)) await sleep(pDelay);
                 }
 
                 // Part 2: Image
                 if (campaign.imageUrl) {
-                    const res2 = await sendWhatsAppMedia(item.recipient_phone, campaign.imageUrl, '', user?.id, 'image');
+                    const res2 = await sendWhatsAppMedia(item.recipient_phone, campaign.imageUrl, '', sender, 'image');
                     if (!res2.success) throw new Error(`Falha na Imagem: ${JSON.stringify(res2.error)}`);
                     if (pDelay > 0 && campaign.content2) await sleep(pDelay);
                 }
 
                 // Part 3: Text 2
                 if (campaign.content2) {
-                    const res3 = await sendWhatsAppMessage(item.recipient_phone, replaceVars(campaign.content2), user?.id);
+                    const res3 = await sendWhatsAppMessage(item.recipient_phone, replaceVars(campaign.content2), sender);
                     if (!res3.success) throw new Error(`Falha no Texto 2: ${JSON.stringify(res3.error)}`);
                 }
 

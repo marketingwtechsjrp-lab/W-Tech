@@ -54,33 +54,38 @@ const SalesRecoveryView = () => {
     useEffect(() => {
         const fetchWhatsAppInstances = async () => {
             try {
-                const { data: globalInstance } = await supabase
+                const { data: cfgRows } = await supabase
                     .from('SITE_Config')
-                    .select('value')
-                    .eq('key', 'evolution_instance_name')
-                    .single();
-                
+                    .select('key, value')
+                    .in('key', ['evolution_instance_name', 'wa_instance_recovery']);
+                const cfg: Record<string, string> = {};
+                (cfgRows || []).forEach((c: any) => (cfg[c.key] = c.value));
+                const globalInstance = (cfg['evolution_instance_name'] || '').trim();
+                // Instância padrão da rota de recuperação (Admin → Integrações)
+                const recoveryInstance = (cfg['wa_instance_recovery'] || '').trim();
+
                 const { data: userInts } = await supabase
                     .from('SITE_UserIntegrations')
                     .select('instance_name')
                     .not('instance_name', 'is', null);
 
                 const foundInstances = new Set<string>();
-                if (globalInstance?.value) {
-                    foundInstances.add(globalInstance.value.trim());
-                }
+                if (recoveryInstance) foundInstances.add(recoveryInstance);
+                if (globalInstance) foundInstances.add(globalInstance);
                 if (userInts) {
                     userInts.forEach((ui: any) => {
                         if (ui.instance_name) foundInstances.add(ui.instance_name.trim());
                     });
                 }
-                
+
                 // Add Support instance if not present
                 foundInstances.add("suporte técnico");
-                
+
                 const list = Array.from(foundInstances);
                 setInstances(list);
-                if (list.length > 0) {
+                if (recoveryInstance) {
+                    setSelectedInstance(recoveryInstance);
+                } else if (list.length > 0) {
                     setSelectedInstance(list[0]);
                 }
             } catch (err) {

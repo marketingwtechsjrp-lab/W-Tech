@@ -82,15 +82,17 @@ export async function processActiveCampaigns(): Promise<CampaignRunResult> {
     const supabase = getServiceClient();
     const result: CampaignRunResult = { campaignsProcessed: 0, emailsSent: 0, whatsappSent: 0, failed: 0, details: [] };
 
-    // Kill switch
-    const { data: cfgRow } = await supabase
+    // Kill switch + instância Evolution dedicada de campanhas (vazio = padrão)
+    const { data: cfgRows } = await supabase
         .from('SITE_Config')
-        .select('value')
-        .eq('key', 'campaigns_autosend_enabled')
-        .maybeSingle();
-    if (cfgRow?.value === 'false') {
+        .select('key, value')
+        .in('key', ['campaigns_autosend_enabled', 'wa_instance_campaign']);
+    const cfg: Record<string, string> = {};
+    (cfgRows || []).forEach((c: any) => (cfg[c.key] = c.value));
+    if (cfg['campaigns_autosend_enabled'] === 'false') {
         return { ...result, skipped: 'campaigns autosend disabled' };
     }
+    const campaignInstance = (cfg['wa_instance_campaign'] || '').trim() || undefined;
 
     const nowIso = new Date().toISOString();
 
@@ -173,7 +175,7 @@ export async function processActiveCampaigns(): Promise<CampaignRunResult> {
                         // Ritmo humano entre envios de WhatsApp
                         if (result.whatsappSent > 0) await sleep(randomBetween(WA_DELAY_MIN_MS, WA_DELAY_MAX_MS));
                         const message = interpolateVars(resolveSpintax(campaign.content || ''), item);
-                        const r = await sendWhatsAppText(item.recipient_phone, message);
+                        const r = await sendWhatsAppText(item.recipient_phone, message, campaignInstance);
                         ok = r.sent;
                         if (!ok) errMsg = r.skipped || r.error || 'falhou';
                     }

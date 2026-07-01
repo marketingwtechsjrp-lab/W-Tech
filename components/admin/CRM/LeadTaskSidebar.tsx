@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../../lib/whatsapp';
+import { sendWhatsAppMessage, sendWhatsAppMedia, getRouteInstance } from '../../../lib/whatsapp';
 import { X, Calendar, Plus, MessageCircle, Phone, Tag, CheckSquare, Clock, AlertCircle, Image as ImageIcon, Upload, Bot } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -190,7 +190,9 @@ const LeadTaskSidebar = ({ lead, isOpen, onClose, onTaskCreated }: LeadTaskSideb
             // Automation: Send WhatsApp if completed
             if (newStatus === 'DONE' && lead.phone) {
                  const message = `Olá ${lead.name.split(' ')[0]}! Informamos que a atividade "${task.title}" foi concluída com sucesso! ✅`;
-                 await sendWhatsAppMessage(lead.phone, message);
+                 // Instância dedicada do CRM (Admin → Integrações); vazio = instância padrão
+                 const crmInstance = await getRouteInstance('crm');
+                 await sendWhatsAppMessage(lead.phone, message, crmInstance || undefined);
             }
 
             // Refresh local state

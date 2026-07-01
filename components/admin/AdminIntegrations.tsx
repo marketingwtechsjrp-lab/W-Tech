@@ -56,7 +56,15 @@ const AdminIntegrations = () => {
         waInstanceCourseSales: '',
         waInstanceBilling: '',
         waInstanceSchedule: '',
-        waInstanceReport: ''
+        waInstanceReport: '',
+        // Instância Evolution por rota de saída (sempre Evolution; vazio = padrão)
+        waInstanceCampaign: '',
+        waInstanceCrm: '',
+        waInstanceRecovery: '',
+        // Relatório diário do sistema para o dono (grupo WhatsApp)
+        waReportEnabled: false,
+        waReportGroupJid: '',
+        waReportGroupName: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -89,6 +97,12 @@ const AdminIntegrations = () => {
     const [testMessage, setTestMessage] = useState('Teste de mensagem do sistema W-Tech.');
     const [testImageUrl, setTestImageUrl] = useState('');
     const [isSendingTest, setIsSendingTest] = useState(false);
+
+    // Relatório do Dono State (grupos da Evolution + prévia/teste)
+    const [reportGroups, setReportGroups] = useState<Array<{ jid: string; subject: string }>>([]);
+    const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+    const [reportPreview, setReportPreview] = useState<string | null>(null);
+    const [isReportBusy, setIsReportBusy] = useState(false);
 
     useEffect(() => {
         fetchGlobalConfig();
@@ -144,7 +158,13 @@ const AdminIntegrations = () => {
                 waInstanceCourseSales: configMap['wa_instance_course_sales'] || '',
                 waInstanceBilling: configMap['wa_instance_billing'] || '',
                 waInstanceSchedule: configMap['wa_instance_schedule'] || '',
-                waInstanceReport: configMap['wa_instance_report'] || ''
+                waInstanceReport: configMap['wa_instance_report'] || '',
+                waInstanceCampaign: configMap['wa_instance_campaign'] || '',
+                waInstanceCrm: configMap['wa_instance_crm'] || '',
+                waInstanceRecovery: configMap['wa_instance_recovery'] || '',
+                waReportEnabled: configMap['wa_report_enabled'] === 'true',
+                waReportGroupJid: configMap['wa_report_group_jid'] || '',
+                waReportGroupName: configMap['wa_report_group_name'] || ''
             });
         }
     };
@@ -397,6 +417,75 @@ const AdminIntegrations = () => {
         }
     };
 
+    /** Lista os grupos da instância do relatório — o admin ESCOLHE o grupo (padrão MotoFix). */
+    const handleLoadReportGroups = async () => {
+        const instance = (globalConfig.waInstanceReport || globalConfig.automationInstance || globalConfig.fallbackInstance).trim();
+        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!instance) return alert('Configure a instância do relatório (ou a instância de automação) antes de listar os grupos.');
+        setIsLoadingGroups(true);
+        try {
+            const response = await fetch(
+                `${globalConfig.serverUrl}/group/fetchAllGroups/${encodeURIComponent(instance)}?getParticipants=false`,
+                { headers: { apikey: globalConfig.apiKey } }
+            );
+            const data = await response.json();
+            // Payload defensivo: a Evolution devolve array direto ou { groups: [...] }
+            const raw = Array.isArray(data) ? data : (Array.isArray(data?.groups) ? data.groups : []);
+            const groups = raw
+                .map((g: any) => ({ jid: g.id || g.jid || '', subject: g.subject || g.name || g.id || 'Grupo sem nome' }))
+                .filter((g: any) => g.jid);
+            setReportGroups(groups);
+            if (groups.length === 0) {
+                alert(`Nenhum grupo encontrado na instância "${instance}". O número conectado precisa participar do grupo (crie o grupo no WhatsApp e adicione o chip da automação).`);
+            }
+        } catch (e: any) {
+            alert('Erro ao listar grupos: ' + e.message);
+        } finally {
+            setIsLoadingGroups(false);
+        }
+    };
+
+    /** Prévia do relatório do dia (gera no servidor, não envia). */
+    const handleReportPreview = async () => {
+        setIsReportBusy(true);
+        setReportPreview(null);
+        try {
+            const res = await fetch('/api/notify-students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-wtech-user-id': user?.id || '' },
+                body: JSON.stringify({ action: 'system-report', mode: 'preview' })
+            });
+            const data = await res.json();
+            if (res.ok && data.text) setReportPreview(data.text);
+            else alert('Falha ao gerar prévia: ' + (data.error || `HTTP ${res.status}`));
+        } catch (e: any) {
+            alert('Erro: ' + e.message);
+        } finally {
+            setIsReportBusy(false);
+        }
+    };
+
+    /** Envia o relatório AGORA para o grupo salvo (ignora o toggle, como o teste do MotoFix). */
+    const handleReportTest = async () => {
+        if (!globalConfig.waReportGroupJid.trim()) return alert('Escolha o grupo e clique em "Salvar Relatório" antes de testar.');
+        if (!confirm(`Enviar o relatório agora para o grupo "${globalConfig.waReportGroupName || globalConfig.waReportGroupJid}"?\n\nO envio usa o que está SALVO no banco — salve antes se mudou o grupo.`)) return;
+        setIsReportBusy(true);
+        try {
+            const res = await fetch('/api/notify-students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-wtech-user-id': user?.id || '' },
+                body: JSON.stringify({ action: 'system-report', force: true })
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) alert('Relatório enviado para o grupo! ✅');
+            else alert('Falha no envio: ' + (data.error || data.skipped || `HTTP ${res.status}`));
+        } catch (e: any) {
+            alert('Erro: ' + e.message);
+        } finally {
+            setIsReportBusy(false);
+        }
+    };
+
     const handleSaveGlobalConfig = async () => {
         setLoading(true);
         try {
@@ -441,7 +530,15 @@ const AdminIntegrations = () => {
                 { key: 'wa_instance_course_sales', value: globalConfig.waInstanceCourseSales.trim() },
                 { key: 'wa_instance_billing', value: globalConfig.waInstanceBilling.trim() },
                 { key: 'wa_instance_schedule', value: globalConfig.waInstanceSchedule.trim() },
-                { key: 'wa_instance_report', value: globalConfig.waInstanceReport.trim() }
+                { key: 'wa_instance_report', value: globalConfig.waInstanceReport.trim() },
+                // Instância por rota de saída (sempre Evolution)
+                { key: 'wa_instance_campaign', value: globalConfig.waInstanceCampaign.trim() },
+                { key: 'wa_instance_crm', value: globalConfig.waInstanceCrm.trim() },
+                { key: 'wa_instance_recovery', value: globalConfig.waInstanceRecovery.trim() },
+                // Relatório diário do sistema (grupo do dono)
+                { key: 'wa_report_enabled', value: String(globalConfig.waReportEnabled) },
+                { key: 'wa_report_group_jid', value: globalConfig.waReportGroupJid.trim() },
+                { key: 'wa_report_group_name', value: globalConfig.waReportGroupName.trim() }
             ];
 
             for (const update of updates) {
@@ -728,7 +825,7 @@ const AdminIntegrations = () => {
                         { key: 'waEngineCourseSales', inst: 'waInstanceCourseSales', label: 'Venda de Curso / Boas-vindas', hint: 'Confirmação de inscrição' },
                         { key: 'waEngineBilling', inst: 'waInstanceBilling', label: 'Cobrança', hint: 'Lembretes de saldo' },
                         { key: 'waEngineSchedule', inst: 'waInstanceSchedule', label: 'Cronograma', hint: 'Lembretes de aula/curso' },
-                        { key: 'waEngineReport', inst: 'waInstanceReport', label: 'Relatório', hint: 'Resumos internos' },
+                        { key: 'waEngineReport', inst: 'waInstanceReport', label: 'Relatório do Sistema (Dono)', hint: 'Resumo diário p/ grupo do dono — use Evolution (grupo não funciona na API oficial)' },
                     ].map(item => (
                         <div key={item.key} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
                             <div className="flex items-center justify-between mb-2">
@@ -756,9 +853,126 @@ const AdminIntegrations = () => {
                         </div>
                     ))}
                 </div>
+                {/* Instância Evolution por rota de saída (rotas que SEMPRE saem pela Evolution) */}
+                <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
+                    <p className="text-sm font-bold text-[var(--admin-text-primary)] mb-1">Instância por rota (Evolution)</p>
+                    <p className="text-xs text-[var(--admin-text-secondary)] mb-3">
+                        Rotas de texto livre que sempre saem pela Evolution. Vazio = comportamento padrão
+                        (campanhas usam a instância do operador/automação; CRM e recuperação usam a padrão).
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                            { inst: 'waInstanceCampaign', label: 'Campanhas / Remarketing', hint: 'Fila de marketing (servidor + navegador)' },
+                            { inst: 'waInstanceCrm', label: 'CRM — automações', hint: 'Avisos automáticos de tarefas do lead' },
+                            { inst: 'waInstanceRecovery', label: 'Recuperação de Vendas', hint: 'Pré-seleção do dropdown de disparo' },
+                        ].map(item => (
+                            <div key={item.inst} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
+                                <p className="text-sm font-bold text-[var(--admin-text-primary)]">{item.label}</p>
+                                <p className="text-[11px] text-[var(--admin-text-tertiary)] mb-2">{item.hint}</p>
+                                <input
+                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-xs bg-[var(--admin-surface-1)] font-mono outline-none transition-colors"
+                                    value={(globalConfig as any)[item.inst]}
+                                    onChange={e => setGlobalConfig({ ...globalConfig, [item.inst]: e.target.value })}
+                                    placeholder={`Instância (vazio = padrão)`}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-5 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
                     <Save size={14} /> Salvar Motor de Envio
                 </button>
+            </div>}
+
+            {/* Relatório Diário para o Dono (grupo WhatsApp via Evolution) */}
+            {canEngineConfig && <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md md:col-span-2">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="text-wtech-gold" />
+                        <h3 className="font-bold text-[var(--admin-text-primary)]">Relatório Diário para o Dono (Grupo WhatsApp)</h3>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setGlobalConfig({ ...globalConfig, waReportEnabled: !globalConfig.waReportEnabled })}
+                        className="flex items-center gap-1.5 text-xs font-bold uppercase"
+                        title={globalConfig.waReportEnabled ? 'Envio automático ligado' : 'Envio automático desligado'}
+                    >
+                        {globalConfig.waReportEnabled
+                            ? <><ToggleRight size={26} className="text-green-600" /> <span className="text-green-700">Ativo</span></>
+                            : <><ToggleLeft size={26} className="text-gray-400" /> <span className="text-gray-500">Desativado</span></>}
+                    </button>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-4">
+                    Resumo automático do dia (leads, inscrições, vendas, saldo a receber, campanhas e atendimento)
+                    enviado <strong className="text-[var(--admin-text-primary)]">todo dia às 08:00</strong> para o grupo escolhido,
+                    pela instância <code>{(globalConfig.waInstanceReport || globalConfig.automationInstance || globalConfig.fallbackInstance || 'automação').trim()}</code>.
+                    O chip conectado precisa ser participante do grupo.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-end mb-3">
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Grupo de destino</label>
+                        <select
+                            className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] outline-none transition-colors"
+                            value={globalConfig.waReportGroupJid}
+                            onChange={e => {
+                                const jid = e.target.value;
+                                const g = reportGroups.find(x => x.jid === jid);
+                                setGlobalConfig({ ...globalConfig, waReportGroupJid: jid, waReportGroupName: g?.subject || globalConfig.waReportGroupName });
+                            }}
+                        >
+                            <option value="">— Selecione um grupo —</option>
+                            {/* Mantém o grupo salvo visível mesmo antes de recarregar a lista */}
+                            {globalConfig.waReportGroupJid && !reportGroups.some(g => g.jid === globalConfig.waReportGroupJid) && (
+                                <option value={globalConfig.waReportGroupJid}>
+                                    {globalConfig.waReportGroupName || globalConfig.waReportGroupJid} (salvo)
+                                </option>
+                            )}
+                            {reportGroups.map(g => (
+                                <option key={g.jid} value={g.jid}>{g.subject}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleLoadReportGroups}
+                        disabled={isLoadingGroups}
+                        className="bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-xs font-bold uppercase hover:bg-gray-900 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
+                    >
+                        {isLoadingGroups ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                        {isLoadingGroups ? 'Buscando...' : 'Carregar grupos'}
+                    </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={handleSaveGlobalConfig}
+                        disabled={loading}
+                        className="bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-xs font-bold uppercase hover:bg-gray-900 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-sm"
+                    >
+                        <Save size={14} /> Salvar Relatório
+                    </button>
+                    <button
+                        onClick={handleReportPreview}
+                        disabled={isReportBusy}
+                        className="border border-[var(--admin-border)] text-[var(--admin-text-primary)] px-4 py-2 rounded text-xs font-bold uppercase hover:bg-[var(--admin-surface-2)] disabled:opacity-50 transition-colors flex items-center gap-2"
+                    >
+                        {isReportBusy ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />} Prévia do relatório
+                    </button>
+                    <button
+                        onClick={handleReportTest}
+                        disabled={isReportBusy || !globalConfig.waReportGroupJid.trim()}
+                        className="bg-wtech-gold text-black px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-500 disabled:opacity-50 transition-colors flex items-center gap-2"
+                    >
+                        <Send size={14} /> Enviar teste agora
+                    </button>
+                </div>
+
+                {reportPreview && (
+                    <pre className="mt-4 p-4 bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-lg text-xs text-[var(--admin-text-primary)] whitespace-pre-wrap font-mono max-h-80 overflow-y-auto">
+                        {reportPreview}
+                    </pre>
+                )}
             </div>}
 
             {/* 2. Asaas Payment Config */}

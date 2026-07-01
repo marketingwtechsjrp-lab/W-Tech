@@ -1,5 +1,20 @@
 [
   {
+    "version": "3.11.0",
+    "date": "2026-07-01",
+    "title": "WhatsApp: roteamento completo de saídas por instância e relatório diário do dono em grupo",
+    "changes": [
+      "Relatório diário do sistema para o dono: métricas do dia (leads, inscrições, vendas, saldo a receber, campanhas e atendimento) enviadas automaticamente às 08:00 para um grupo do WhatsApp via instância Evolution configurável (api/_report.ts)",
+      "Painel Admin → Integrações: novo card 'Relatório Diário para o Dono' com toggle, seletor de grupo (lista os grupos da instância na Evolution), prévia do texto e botão 'Enviar teste agora'",
+      "Todas as rotas de saída do WhatsApp agora configuráveis: instância dedicada para Campanhas/Remarketing (wa_instance_campaign), CRM (wa_instance_crm) e Recuperação de Vendas (wa_instance_recovery), além das 4 categorias existentes",
+      "Campanhas do servidor (api/_campaigns.ts) e do navegador (QueueProcessor) passam a respeitar a instância dedicada de campanhas quando configurada",
+      "Envio Evolution aceita JID de grupo (…@g.us) sem quebrar a normalização de telefone (api/_whatsapp.ts)",
+      "Ação 'system-report' na rota /api/notify-students (preview/send/force) com autenticação por CRON_SECRET ou usuário do painel — sem criar função serverless nova (limite Hobby)",
+      "Cron diário via GitHub Actions (.github/workflows/daily-system-report.yml) por causa do limite de 2 crons da Vercel Hobby"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.10.0",
     "date": "2026-06-29",
     "title": "WhatsApp: humanização de mensagens (balões + delay + digitando) e integração com cursos ao vivo",

@@ -52,6 +52,29 @@ export const getUserWhatsAppConfig = async (userId: string): Promise<WhatsAppCon
     }
 };
 
+/**
+ * Instância Evolution configurada para uma rota de saída (Admin → Integrações →
+ * Motor de Envio). Vazio/erro = null (o chamador cai no comportamento padrão).
+ *   - 'campaign' → campanhas de marketing (QueueProcessor / servidor)
+ *   - 'crm'      → mensagens automáticas do CRM (tarefas concluídas etc.)
+ *   - 'recovery' → recuperação de vendas (pré-seleção do dropdown)
+ */
+export type WaRoute = 'campaign' | 'crm' | 'recovery';
+
+export const getRouteInstance = async (route: WaRoute): Promise<string | null> => {
+    try {
+        const { data } = await supabase
+            .from('SITE_Config')
+            .select('value')
+            .eq('key', `wa_instance_${route}`)
+            .maybeSingle();
+        const v = (data?.value || '').trim();
+        return v || null;
+    } catch {
+        return null;
+    }
+};
+
 export const sendWhatsAppMessage = async (to: string, message: string, userId?: string) => {
     // If userId provided, use User Config or direct instanceName if it is not a UUID.
     
