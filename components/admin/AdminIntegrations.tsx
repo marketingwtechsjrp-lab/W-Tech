@@ -52,6 +52,12 @@ const AdminIntegrations = () => {
         waEngineBilling: 'cloud' as 'cloud' | 'evolution',
         waEngineSchedule: 'cloud' as 'cloud' | 'evolution',
         waEngineReport: 'evolution' as 'cloud' | 'evolution',
+        // Liga/desliga da automação de mensagens (geral + por categoria)
+        waAutomationEnabled: true,
+        waEnabledCourseSales: true,
+        waEnabledBilling: true,
+        waEnabledSchedule: true,
+        waEnabledReport: true,
         // Instância Evolution por categoria (vazio = instância padrão do sistema)
         waInstanceCourseSales: '',
         waInstanceBilling: '',
@@ -166,6 +172,12 @@ const AdminIntegrations = () => {
                 waEngineBilling: configMap['wa_engine_billing'] === 'evolution' ? 'evolution' : 'cloud',
                 waEngineSchedule: configMap['wa_engine_schedule'] === 'evolution' ? 'evolution' : 'cloud',
                 waEngineReport: configMap['wa_engine_report'] === 'cloud' ? 'cloud' : 'evolution',
+                // Ausente = ligado (comportamento atual); só 'false' desliga.
+                waAutomationEnabled: configMap['wa_automation_enabled'] !== 'false',
+                waEnabledCourseSales: configMap['wa_enabled_course_sales'] !== 'false',
+                waEnabledBilling: configMap['wa_enabled_billing'] !== 'false',
+                waEnabledSchedule: configMap['wa_enabled_schedule'] !== 'false',
+                waEnabledReport: configMap['wa_enabled_report'] !== 'false',
                 waInstanceCourseSales: configMap['wa_instance_course_sales'] || '',
                 waInstanceBilling: configMap['wa_instance_billing'] || '',
                 waInstanceSchedule: configMap['wa_instance_schedule'] || '',
@@ -723,6 +735,11 @@ const AdminIntegrations = () => {
                 { key: 'wa_engine_billing', value: globalConfig.waEngineBilling },
                 { key: 'wa_engine_schedule', value: globalConfig.waEngineSchedule },
                 { key: 'wa_engine_report', value: globalConfig.waEngineReport },
+                { key: 'wa_automation_enabled', value: String(globalConfig.waAutomationEnabled) },
+                { key: 'wa_enabled_course_sales', value: String(globalConfig.waEnabledCourseSales) },
+                { key: 'wa_enabled_billing', value: String(globalConfig.waEnabledBilling) },
+                { key: 'wa_enabled_schedule', value: String(globalConfig.waEnabledSchedule) },
+                { key: 'wa_enabled_report', value: String(globalConfig.waEnabledReport) },
                 { key: 'wa_instance_course_sales', value: globalConfig.waInstanceCourseSales.trim() },
                 { key: 'wa_instance_billing', value: globalConfig.waInstanceBilling.trim() },
                 { key: 'wa_instance_schedule', value: globalConfig.waInstanceSchedule.trim() },
@@ -1150,31 +1167,63 @@ const AdminIntegrations = () => {
 
             {/* Motor de Envio (por categoria): API oficial Meta vs Evolution */}
             {canEngineConfig && <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md md:col-span-2">
-                <div className="flex items-center gap-2 mb-2">
-                    <Send className="text-emerald-600 dark:text-emerald-400" />
-                    <h3 className="font-bold text-[var(--admin-text-primary)]">Motor de Envio (WhatsApp)</h3>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                        <Send className="text-emerald-600 dark:text-emerald-400" />
+                        <h3 className="font-bold text-[var(--admin-text-primary)]">Motor de Envio (WhatsApp)</h3>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setGlobalConfig({ ...globalConfig, waAutomationEnabled: !globalConfig.waAutomationEnabled })}
+                        className="flex items-center gap-1.5 text-xs font-bold uppercase"
+                        title={globalConfig.waAutomationEnabled ? 'Automação de mensagens ligada' : 'Automação de mensagens desligada — nenhuma mensagem automática sai'}
+                    >
+                        {globalConfig.waAutomationEnabled
+                            ? <><ToggleRight size={26} className="text-green-600" /> <span className="text-green-700">Automação ativa</span></>
+                            : <><ToggleLeft size={26} className="text-gray-400" /> <span className="text-gray-500">Automação desligada</span></>}
+                    </button>
                 </div>
                 <p className="text-sm text-[var(--admin-text-secondary)] mb-2">
                     Escolha a saída de cada tipo de mensagem. <strong className="text-[var(--admin-text-primary)]">API Oficial (Meta)</strong> = {globalConfig.waCloudDisplayNumber || '+55 17 3231-2858'} (exige template aprovado para disparo proativo).
                     <strong className="text-[var(--admin-text-primary)]"> Evolution</strong> = número do servidor; selecione a instância responsável (cadastre novas em <strong>Instâncias Adicionais</strong> acima) ou deixe "Padrão do sistema" (<code>{defaultInstanceName}</code>).
                 </p>
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 mb-4">
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 mb-2">
                     ⚠️ Sem fallback: cada categoria sai SEMPRE pela saída escolhida. Se ela falhar, fica como falha (não cai para outro número).
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {!globalConfig.waAutomationEnabled && (
+                    <p className="text-[11px] font-bold text-red-600 dark:text-red-400 mb-2">
+                        🔕 Automação de mensagens DESLIGADA: nenhuma mensagem automática (boas-vindas, cobrança, cronograma, relatório) será enviada até religar. Salve para aplicar.
+                    </p>
+                )}
+                <div className={'grid grid-cols-1 md:grid-cols-2 gap-4' + (!globalConfig.waAutomationEnabled ? ' opacity-50' : '')}>
                     {[
-                        { key: 'waEngineCourseSales', inst: 'waInstanceCourseSales', label: 'Venda de Curso / Boas-vindas', hint: 'Confirmação de inscrição' },
-                        { key: 'waEngineBilling', inst: 'waInstanceBilling', label: 'Cobrança', hint: 'Lembretes de saldo' },
-                        { key: 'waEngineSchedule', inst: 'waInstanceSchedule', label: 'Cronograma', hint: 'Lembretes de aula/curso' },
-                        { key: 'waEngineReport', inst: 'waInstanceReport', label: 'Relatório do Sistema (Dono)', hint: 'Resumo diário p/ grupo do dono — use Evolution (grupo não funciona na API oficial)' },
-                    ].map(item => (
-                        <div key={item.key} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
-                            <div className="flex items-center justify-between mb-2">
+                        { key: 'waEngineCourseSales', inst: 'waInstanceCourseSales', on: 'waEnabledCourseSales', label: 'Venda de Curso / Boas-vindas', hint: 'Confirmação de inscrição' },
+                        { key: 'waEngineBilling', inst: 'waInstanceBilling', on: 'waEnabledBilling', label: 'Cobrança', hint: 'Lembretes de saldo' },
+                        { key: 'waEngineSchedule', inst: 'waInstanceSchedule', on: 'waEnabledSchedule', label: 'Cronograma', hint: 'Lembretes de aula/curso' },
+                        { key: 'waEngineReport', inst: 'waInstanceReport', on: 'waEnabledReport', label: 'Relatório do Sistema (Dono)', hint: 'Resumo diário p/ grupo do dono — use Evolution (grupo não funciona na API oficial)' },
+                    ].map(item => {
+                        const isOn = (globalConfig as any)[item.on] as boolean;
+                        return (
+                        <div key={item.key} className={'border rounded-lg p-3 bg-[var(--admin-surface-2)] transition-opacity ' + (isOn ? 'border-[var(--admin-border)]' : 'border-red-300 dark:border-red-800 opacity-60')}>
+                            <div className="flex items-center justify-between mb-2 gap-2">
                                 <div>
                                     <p className="text-sm font-bold text-[var(--admin-text-primary)]">{item.label}</p>
                                     <p className="text-[11px] text-[var(--admin-text-tertiary)]">{item.hint}</p>
                                 </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setGlobalConfig({ ...globalConfig, [item.on]: !isOn })}
+                                    className="shrink-0"
+                                    title={isOn ? 'Categoria ativa — clique para desativar' : 'Categoria DESATIVADA — nenhuma mensagem desta categoria é enviada'}
+                                >
+                                    {isOn
+                                        ? <ToggleRight size={24} className="text-green-600" />
+                                        : <ToggleLeft size={24} className="text-gray-400" />}
+                                </button>
                             </div>
+                            {!isOn && (
+                                <p className="text-[10px] font-bold text-red-600 dark:text-red-400 mb-2">🔕 Desativada — mensagens desta categoria não são enviadas.</p>
+                            )}
                             <select
                                 className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
                                 value={(globalConfig as any)[item.key]}
@@ -1185,7 +1234,8 @@ const AdminIntegrations = () => {
                             </select>
                             {(globalConfig as any)[item.key] === 'evolution' && renderInstanceSelect(item.inst)}
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 {/* Instância Evolution por rota de saída (rotas que SEMPRE saem pela Evolution) */}
                 <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">

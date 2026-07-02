@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.18.0",
+    "date": "2026-07-02",
+    "title": "Liga/desliga da automação de mensagens (geral e por categoria)",
+    "changes": [
+      "Interruptor GERAL no Motor de Envio (Admin → Integrações): desliga toda a automação de mensagens transacionais de uma vez — boas-vindas, cobrança, cronograma e relatório",
+      "Toggle por categoria: cada card do Motor de Envio ganhou seu próprio liga/desliga — dá para pausar só a cobrança mantendo o resto ativo; card desativado fica esmaecido com aviso",
+      "Backend no ponto único de envio (api/_waDispatch.ts): sendTransactional verifica interruptor geral + categoria antes de enviar; desligado = skipped (não é erro). Cobre webhook MP, lembretes de saldo, cronograma e relatório diário",
+      "Seguro por padrão: flag ausente = ligado; só 'false' explícito desliga; falha de leitura nunca bloqueia envio",
+      "Campanhas/Remarketing e o Bot de IA do grupo não são afetados — mantêm seus próprios controles"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.17.0",
     "date": "2026-07-02",
     "title": "IA acha qualquer curso citado + Bia lê as métricas do WhatsApp oficial",

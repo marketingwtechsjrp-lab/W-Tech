@@ -66,6 +66,47 @@ const DEFAULT_ENGINE: Record<WaCategory, WaEngine> = {
   report: 'evolution',
 };
 
+/** Liga/desliga por categoria (painel Motor de Envio). Ausente = ligado. */
+const ENABLED_KEY: Record<WaCategory, string> = {
+  course_sales: 'wa_enabled_course_sales',
+  billing: 'wa_enabled_billing',
+  schedule: 'wa_enabled_schedule',
+  report: 'wa_enabled_report',
+};
+
+/** Interruptor GERAL da automação de mensagens. Ausente = ligado. */
+const MASTER_ENABLED_KEY = 'wa_automation_enabled';
+
+/**
+ * Verifica se a automação está ligada (interruptor geral E categoria).
+ * Best-effort: falha na LEITURA não bloqueia envio — só o valor explícito
+ * 'false' desliga.
+ */
+export async function isAutomationEnabled(
+  category: WaCategory,
+  supabase?: SupabaseClient
+): Promise<{ enabled: boolean; reason?: string }> {
+  try {
+    const client = supabase || getServiceClient();
+    const { data } = await client
+      .from('SITE_Config')
+      .select('key, value')
+      .in('key', [MASTER_ENABLED_KEY, ENABLED_KEY[category]]);
+    const map: Record<string, string> = {};
+    (data || []).forEach((r: any) => (map[r.key] = r.value));
+    if ((map[MASTER_ENABLED_KEY] || '').trim() === 'false') {
+      return { enabled: false, reason: 'automação de mensagens desligada (interruptor geral)' };
+    }
+    if ((map[ENABLED_KEY[category]] || '').trim() === 'false') {
+      return { enabled: false, reason: `categoria "${category}" desativada no Motor de Envio` };
+    }
+    return { enabled: true };
+  } catch (e: any) {
+    console.error('[waDispatch] Falha ao ler liga/desliga:', e?.message);
+    return { enabled: true };
+  }
+}
+
 /** Lê o motor configurado para a categoria a partir de SITE_Config. */
 export async function resolveEngine(
   category: WaCategory,
@@ -187,6 +228,16 @@ async function sendCloudTemplate(
  */
 export async function sendTransactional(input: DispatchInput): Promise<DispatchResult> {
   const supabase = getServiceClient();
+
+  // Liga/desliga da automação (interruptor geral + por categoria): quando
+  // desligado, NENHUMA mensagem automática desta categoria sai — registrado
+  // como skipped (não é erro).
+  const gate = await isAutomationEnabled(input.category, supabase);
+  if (!gate.enabled) {
+    console.log(`[waDispatch] envio pulado (${input.category}): ${gate.reason}`);
+    return { sent: false, engine: null, skipped: gate.reason };
+  }
+
   const engine = await resolveEngine(input.category, supabase);
 
   if (engine === 'cloud') {

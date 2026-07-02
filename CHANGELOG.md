@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.18.0 (2026-07-02) - Liga/desliga da automação de mensagens (geral e por categoria)
+
+- **Interruptor GERAL no Motor de Envio** (Admin → Integrações): desliga TODA a automação de mensagens transacionais de uma vez — boas-vindas, cobrança, cronograma e relatório param de sair até religar
+- **Toggle por categoria:** cada card do Motor de Envio (Venda de Curso/Boas-vindas, Cobrança, Cronograma, Relatório do Dono) ganhou seu próprio liga/desliga — dá para pausar só a cobrança, por exemplo, mantendo o resto ativo. Card desativado fica esmaecido com aviso 🔕
+- **Backend no ponto único de envio (`api/_waDispatch.ts`):** `sendTransactional` verifica interruptor geral + categoria ANTES de enviar; desligado = registrado como `skipped` (não é erro). Cobre todos os fluxos: webhook Mercado Pago (boas-vindas), lembretes de saldo, lembretes de cronograma e relatório diário
+- **Seguro por padrão:** flag ausente = ligado (comportamento atual preservado); só o valor explícito `false` desliga; falha de leitura do config nunca bloqueia envio
+- Campanhas/Remarketing e o Bot de IA do grupo NÃO são afetados — cada um mantém seu próprio controle
+
 ## v3.17.0 (2026-07-02) - IA acha qualquer curso citado + Bia lê as métricas do WhatsApp oficial
 
 - **Bug do curso de Belo Horizonte corrigido (`api/_aiSectorData.ts`):** o matching de cursos citados casava por palavras genéricas do título ("curso", "suspensão", "W-TECH") — TODA pergunta com "curso" casava com o catálogo inteiro e o corte de 5 pegava os errados; além disso o detalhe financeiro só existia no pack do Léo, então "qual valor recebido em BH" (sem palavra de inscrições) nem o coletava. Agora: **matching por pontuação** (cidade > local > palavras distintivas, genéricas ignoradas) e o **detalhe do curso citado é compartilhado** entre Rita, Léo e Sofia — validado: "valor recebido do curso de belo horizonte" → R$ 53.629,32 (bate com o painel)
