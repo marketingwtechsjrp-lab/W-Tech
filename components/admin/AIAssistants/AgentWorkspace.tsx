@@ -6,6 +6,7 @@ import {
     type LeoStats, type BiaStats, type RitaStats, type SofiaStats,
 } from '../../../lib/aiAgentsData';
 import { AI_AGENT_BY_ID, DEFAULT_AGENT_PROMPTS, type AIAgentId } from '../../../lib/aiAgentDefaults';
+import CourseInsightsPanel from './CourseInsightsPanel';
 
 export type AgentId = AIAgentId;
 
@@ -95,7 +96,10 @@ const RitaPanel: React.FC = () => {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatCard icon={TrendingUp} label="Receita do mês" value={fmtBRL(stats.incomeMonth)} tone="good" />
+                <StatCard icon={TrendingUp} label="Arrecadado dos alunos (total)" value={fmtBRL(stats.arrecadadoTotal)} tone="good" />
+                <StatCard icon={Wallet} label="Negociado com alunos (total)" value={fmtBRL(stats.negociadoTotal)} />
+                <StatCard icon={Wallet} label="Saldo a receber de alunos" value={fmtBRL(stats.saldoAReceber)} tone={stats.saldoAReceber > 0 ? 'warn' : 'good'} />
+                <StatCard icon={TrendingUp} label="Receita do mês (lançamentos)" value={fmtBRL(stats.incomeMonth)} tone="good" />
                 <StatCard icon={TrendingDown} label="Custos do mês" value={fmtBRL(stats.expenseMonth)} tone={stats.expenseMonth > 0 ? 'warn' : 'good'} />
                 <StatCard icon={Wallet} label="Saldo do mês" value={fmtBRL(saldo)} tone={saldo >= 0 ? 'good' : 'warn'} />
             </div>
@@ -124,10 +128,22 @@ const SofiaPanel: React.FC = () => {
     if (!stats) return <Loading />;
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <StatCard icon={Users} label="Leads (total)" value={stats.leadsTotal} />
-                <StatCard icon={ClipboardList} label="Matrículas (total)" value={stats.enrollmentsTotal} />
-                <StatCard icon={Wallet} label="Receita do mês" value={fmtBRL(stats.incomeMonth)} tone="good" />
+                <StatCard
+                    icon={ClipboardList}
+                    label="Alunos inscritos (confirmados + check-in)"
+                    value={
+                        <>
+                            {stats.studentsEnrolled}
+                            <span className="block text-[11px] font-medium text-[var(--admin-text-secondary)]">
+                                {stats.enrollmentsByStatus.confirmadas} confirmadas · {stats.enrollmentsByStatus.checkin} check-in · {stats.enrollmentsByStatus.pendentes} pendentes
+                            </span>
+                        </>
+                    }
+                />
+                <StatCard icon={Wallet} label="Arrecadado dos alunos (total)" value={fmtBRL(stats.arrecadadoTotal)} tone="good" />
+                <StatCard icon={Wallet} label="Receita do mês (lançamentos)" value={fmtBRL(stats.incomeMonth)} />
             </div>
             <div className="bg-[var(--admin-surface-2)] border border-[var(--admin-border)] rounded-xl p-4">
                 <div className="text-xs font-bold uppercase tracking-wider text-[var(--admin-text-secondary)] mb-3 flex items-center gap-2">
@@ -268,6 +284,8 @@ const AgentWorkspace: React.FC<{ agent: AgentId }> = ({ agent }) => {
             {agent === 'bia' && <BiaPanel />}
             {agent === 'rita' && <RitaPanel />}
             {agent === 'sofia' && <SofiaPanel />}
+            {/* Filtro por curso com dados reais (mesma fonte que a IA usa no grupo) */}
+            {agent !== 'bia' && <CourseInsightsPanel />}
             <PromptEditor agent={agent} />
         </div>
     );

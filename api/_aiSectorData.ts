@@ -204,7 +204,6 @@ async function gatherRitaPack(client: SupabaseClient): Promise<Record<string, an
             .from('SITE_Enrollments')
             .select('student_name, total_amount, amount_paid, currency, course_id, status')
             .in('status', ['Confirmed', 'CheckedIn', 'Pending'])
-            .gt('total_amount', 0)
             .limit(3000);
 
         const rows = (enrs || []).filter((e: any) => (e.currency || 'BRL').toUpperCase() === 'BRL');
@@ -235,8 +234,11 @@ async function gatherRitaPack(client: SupabaseClient): Promise<Record<string, an
             const negociado = Number(e.total_amount || 0);
             const pago = Number(e.amount_paid || 0);
             const tabela = priceById.get(e.course_id) || 0;
-            negociadoTotal += negociado;
+            // Dinheiro que entrou é real SEMPRE — mesmo sem valor negociado definido.
             arrecadadoTotal += pago;
+            // Tabela/negociado/defasagem/saldo só fazem sentido com valor negociado.
+            if (negociado <= 0) return;
+            negociadoTotal += negociado;
             tabelaTotal += tabela > 0 ? tabela : negociado;
             if (tabela > negociado) defasagemTotal += tabela - negociado;
             const remaining = negociado - pago;
@@ -439,21 +441,25 @@ async function gatherLeoPack(client: SupabaseClient, question: string): Promise<
                     if (e.status === 'Confirmed' || e.status === 'CheckedIn') confirmed += 1;
                     const negotiated = Number(e.total_amount || 0);
                     const paid = Number(e.amount_paid || 0);
-                    sumTabela += tabela > 0 ? tabela : negotiated;
-                    sumNegotiated += negotiated;
+                    // Dinheiro que entrou é real SEMPRE — mesmo sem valor negociado.
                     sumPaid += paid;
-                    if (negotiated > 0 && tabela > negotiated) discount += tabela - negotiated;
-                    const remaining = negotiated - paid;
-                    if (remaining > 0.009) devedores.push({ aluno: e.student_name, restante: remaining });
-                    else if (negotiated > 0) quitados += 1;
+                    if (negotiated > 0) {
+                        sumTabela += tabela > 0 ? tabela : negotiated;
+                        sumNegotiated += negotiated;
+                        if (tabela > negotiated) discount += tabela - negotiated;
+                        const remaining = negotiated - paid;
+                        if (remaining > 0.009) devedores.push({ aluno: e.student_name, restante: remaining });
+                        else quitados += 1;
+                    }
                 });
+                const saldoAReceber = devedores.reduce((acc, d) => acc + d.restante, 0);
                 detail.matriculas = {
                     total: count,
                     confirmadas_ou_checkin: confirmed,
                     valor_de_tabela_total: `R$ ${fmtMoney(sumTabela)}`,
                     valor_negociado_total: `R$ ${fmtMoney(sumNegotiated)}`,
                     arrecadado_total: `R$ ${fmtMoney(sumPaid)}`,
-                    saldo_a_receber: `R$ ${fmtMoney(Math.max(0, sumNegotiated - sumPaid))}`,
+                    saldo_a_receber: `R$ ${fmtMoney(saldoAReceber)}`,
                     defasagem_desconto_total: `R$ ${fmtMoney(discount)}`,
                     quitados: quitados,
                     ainda_devendo: devedores.length,
@@ -591,15 +597,47 @@ function buildPaymentTimeline(
     }));
 }
 
-async function findStudentsByTerms(client: SupabaseClient, terms: string[]): Promise<any[]> {
+async function findStudentsByTerms(client: SupabaseClient, terms: string[], question = ''): Promise<any[]> {
     if (terms.length === 0) return [];
     const { data: enrs } = await client
         .from('SITE_Enrollments')
         .select('id, student_name, status, total_amount, amount_paid, currency, created_at, course_id, payment_method')
         .order('created_at', { ascending: false })
         .limit(3000);
-    const matched = (enrs || []).filter((e: any) => matchesAnyTerm(e.student_name, terms)).slice(0, 8);
+    let matched = (enrs || []).filter((e: any) => matchesAnyTerm(e.student_name, terms));
     if (matched.length === 0) return [];
+
+    // Pergunta cita um curso? Prioriza as matrículas do aluno NAQUELE curso
+    // (cidade/local/título batendo com a pergunta) — "quanto o João pagou no
+    // curso de Fortaleza" traz a inscrição de Fortaleza primeiro.
+    const q = normalize(question);
+    if (q) {
+        const allCourseIds = Array.from(new Set(matched.map((m: any) => m.course_id).filter(Boolean)));
+        if (allCourseIds.length > 0) {
+            const { data: cs } = await client
+                .from('SITE_Courses')
+                .select('id, title, city, state, location')
+                .in('id', allCourseIds);
+            const citedIds = new Set(
+                (cs || [])
+                    .filter((c: any) => {
+                        const titleWords = normalize(c.title || '').split(/\s+/).filter((w: string) => w.length >= 4);
+                        return (
+                            (c.city && q.includes(normalize(c.city))) ||
+                            (c.location && q.includes(normalize(c.location))) ||
+                            titleWords.some((w: string) => q.includes(w))
+                        );
+                    })
+                    .map((c: any) => c.id)
+            );
+            if (citedIds.size > 0) {
+                matched = matched.sort((a: any, b: any) =>
+                    Number(citedIds.has(b.course_id)) - Number(citedIds.has(a.course_id))
+                );
+            }
+        }
+    }
+    matched = matched.slice(0, 8);
 
     const courseIds = Array.from(new Set(matched.map((m: any) => m.course_id).filter(Boolean)));
     const titleById = new Map<string, string>();
@@ -718,7 +756,7 @@ export async function buildSectorDataPack(client: SupabaseClient, question: stri
 
     // Entidades citadas: alunos (rita/leo) e leads (bia) — só quando há termos.
     if (terms.length > 0 && (sectors.includes('rita') || sectors.includes('leo'))) {
-        jobs.push(findStudentsByTerms(client, terms).then((s) => { if (s.length) pack.alunos_citados_na_pergunta = s; }).catch((e) => console.error('[aiSector] alunos:', e?.message)));
+        jobs.push(findStudentsByTerms(client, terms, question).then((s) => { if (s.length) pack.alunos_citados_na_pergunta = s; }).catch((e) => console.error('[aiSector] alunos:', e?.message)));
     }
     if (terms.length > 0 && sectors.includes('bia')) {
         jobs.push(findLeadsByTerms(client, terms).then((l) => { if (l.length) pack.leads_citados_na_pergunta = l; }).catch((e) => console.error('[aiSector] leads:', e?.message)));

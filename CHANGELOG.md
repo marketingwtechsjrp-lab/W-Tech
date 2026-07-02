@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.16.0 (2026-07-02) - Painel dos Assistentes com dados reais + filtro por curso e busca de aluno
+
+- **Números REAIS no painel (Sofia/Rita):** o dinheiro agora vem da fonte da verdade — as matrículas (`SITE_Enrollments.amount_paid`). Novos cards: **Arrecadado dos alunos (total)**, **Negociado (total)**, **Saldo a receber** e **Alunos inscritos** com breakdown real (confirmadas · check-in · pendentes). Antes o painel mostrava "Receita do mês R$ 0,00" porque somava apenas `SITE_Transactions` do mês corrente — ignorando os R$ 264 mil já arrecadados nas matrículas (`lib/aiAgentsData.ts`, `AgentWorkspace.tsx`)
+- **Consulta por curso (novo `CourseInsightsPanel.tsx`):** dropdown com todos os cursos → inscritos por status, tabela vs negociado vs **arrecadado**, **defasagem (desconto)**, saldo a receber, quitados vs devendo — respeitando a moeda do curso (BRL/EUR)
+- **Busca de aluno dentro do curso:** campo de busca por nome (ignora acento), filtro "só quem falta pagar" e botão **Histórico** por aluno reutilizando o modal de linha do tempo de pagamentos (entrada → parcelas → quitação) da v3.14.0
+- **Fidelidade corrigida (painel E IA do grupo):** pagamento registrado sem valor negociado (`total_amount` vazio) agora CONTA no arrecadado — antes era ignorado nas somas (ex.: matrícula com R$ 500 pagos aparecia como R$ 0,00). Tabela/defasagem/saldo seguem exigindo valor negociado para não inventar desconto (`lib/aiAgentsData.ts`, `api/_aiSectorData.ts`)
+- **IA prioriza o curso citado:** perguntar "quanto o João pagou no curso de São Paulo" traz primeiro a inscrição do João NAQUELE curso (matching por cidade/local/título em `findStudentsByTerms`)
+
 ## v3.15.0 (2026-07-01) - IA do grupo responde a própria instância + inteligência financeira reforçada
 
 - **Bot de grupo responde `fromMe`:** removido o filtro que descartava toda mensagem vinda da instância conectada (`api/_aiGroupBot.ts`). Como o dono/instância conectada é quem mais pergunta no grupo, nenhuma pergunta real vinha sendo respondida (o único log existente era um teste de sandbox). O anti-loop continua garantido: respostas das personas (prefixo `emoji *Nome:*`) e o relatório diário (`🤖`) seguem ignorados, mais o dedupe por `message_id`

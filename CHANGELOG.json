@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.16.0",
+    "date": "2026-07-02",
+    "title": "Painel dos Assistentes com dados reais + filtro por curso e busca de aluno",
+    "changes": [
+      "Números REAIS no painel (Sofia/Rita): o dinheiro agora vem das matrículas (SITE_Enrollments.amount_paid) — novos cards Arrecadado dos alunos (total), Negociado (total), Saldo a receber e Alunos inscritos com breakdown (confirmadas · check-in · pendentes). Antes mostrava 'Receita do mês R$ 0,00' porque somava só SITE_Transactions do mês corrente, ignorando o total já arrecadado nas matrículas",
+      "Nova Consulta por curso (CourseInsightsPanel.tsx) nos workspaces de Sofia, Rita e Léo: dropdown de cursos → inscritos por status, tabela vs negociado vs arrecadado, defasagem (desconto), saldo a receber, quitados vs devendo — respeitando a moeda do curso (BRL/EUR)",
+      "Busca de aluno dentro do curso: por nome (ignora acento), filtro 'só quem falta pagar' e botão Histórico por aluno reutilizando o modal de linha do tempo de pagamentos (entrada → parcelas → quitação)",
+      "Fidelidade corrigida no painel E na IA do grupo: pagamento sem valor negociado (total_amount vazio) agora CONTA no arrecadado — antes era ignorado (matrícula com R$ 500 pagos aparecia como R$ 0,00). Tabela/defasagem/saldo seguem exigindo valor negociado",
+      "IA prioriza o curso citado na pergunta: 'quanto o João pagou no curso de São Paulo' traz primeiro a inscrição daquele curso (findStudentsByTerms com matching de cidade/local/título)"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.15.0",
     "date": "2026-07-01",
     "title": "IA do grupo responde a própria instância + inteligência financeira reforçada",
