@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.14.0",
+    "date": "2026-07-01",
+    "title": "Histórico de Pagamentos por aluno no curso (entrada, parcelas e quitação)",
+    "changes": [
+      "Novo botão 'Histórico' nas ações de cada aluno inscrito do curso: modal com resumo financeiro (total negociado, pago, restante/QUITADO), destaque de entrada e pagamento final, e linha do tempo completa com data e forma de pagamento de cada parcela (components/admin/Courses/PaymentHistoryModal.tsx)",
+      "Migração add_enrollment_payment_history.sql: cria a coluna enrollment_id em SITE_Transactions (com índice) para vincular cada transação à inscrição",
+      "Correção de bug silencioso: as quitações manuais ('Quitar Saldo') e conciliações Stripe do painel tentavam gravar enrollment_id (coluna inexistente) e o lançamento financeiro NUNCA era registrado — agora há fallback sem a coluna, alerta visível em caso de falha real, e o vínculo é gravado após a migração",
+      "Webhook Mercado Pago passa a gravar enrollment_id nas transações (entrada e quitação de saldo), com fallback seguro enquanto a migração não roda",
+      "Pagamentos antigos sem transação vinculada aparecem no histórico como 'registrado na inscrição' com o valor exato da diferença — fidelidade total, nada é estimado"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.13.0",
     "date": "2026-07-01",
     "title": "Assistentes de IA: busca setorial fidedigna no banco e bloqueio total de internet",

@@ -351,23 +351,35 @@ export default async function handler(req: any, res: any) {
       }
 
       // ── 6. Registra em SITE_Transactions ─────────────────────────────────
-      // OBS: a tabela NÃO tem coluna enrollment_id — usar course_id/lead_id.
-      const transRes = await withTimeout(
-        supabase.from('SITE_Transactions').insert([{
-          description: `Pagamento Mercado Pago: ${String(paymentId).slice(-12)}`,
-          amount: amountPaid,
-          type: 'Income',
-          category: 'Sales',
-          status: 'Completed',
-          payment_method: 'Mercado Pago',
-          course_id: enrollment.course_id,
-          lead_id: payment.metadata?.lead_id || null,
-          currency,
-          date: new Date().toISOString()
-        }]),
+      // Grava com enrollment_id (histórico de pagamentos do aluno). Se a
+      // migração add_enrollment_payment_history.sql ainda não rodou, a coluna
+      // não existe (42703) → tenta de novo sem ela para não perder o registro.
+      const txPayload: Record<string, any> = {
+        description: `Pagamento Mercado Pago: ${String(paymentId).slice(-12)}`,
+        amount: amountPaid,
+        type: 'Income',
+        category: 'Sales',
+        status: 'Completed',
+        payment_method: 'Mercado Pago',
+        course_id: enrollment.course_id,
+        lead_id: payment.metadata?.lead_id || null,
+        currency,
+        date: new Date().toISOString(),
+        enrollment_id: enrollmentId
+      };
+      let transRes = await withTimeout(
+        supabase.from('SITE_Transactions').insert([txPayload]),
         5000,
         'INSERT transaction'
       );
+      if (transRes?.error && String(transRes.error.message || '').includes('enrollment_id')) {
+        const { enrollment_id: _omit, ...withoutEnrollment } = txPayload;
+        transRes = await withTimeout(
+          supabase.from('SITE_Transactions').insert([withoutEnrollment]),
+          5000,
+          'INSERT transaction (fallback)'
+        );
+      }
       if (transRes?.error) {
         console.error('[MP Webhook] Transaction insert error (non-fatal):', transRes.error);
       }

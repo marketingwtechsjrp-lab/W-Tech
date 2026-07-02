@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.14.0 (2026-07-01) - Histórico de Pagamentos por aluno no curso (entrada, parcelas e quitação)
+
+- **Botão "Histórico" na lista de inscritos:** cada aluno do curso ganhou um modal com resumo financeiro (total negociado, pago, restante ou selo QUITADO), destaque de **entrada** e **pagamento final**, e linha do tempo completa — data e forma de pagamento de cada parcela (`components/admin/Courses/PaymentHistoryModal.tsx`)
+- **Migração `add_enrollment_payment_history.sql`:** cria a coluna `enrollment_id` em `SITE_Transactions` (com índice) para vincular cada transação à inscrição do aluno
+- **Bug silencioso corrigido:** as quitações manuais ("Quitar Saldo") e conciliações Stripe tentavam gravar `enrollment_id` (coluna que nunca existiu) e o lançamento **não entrava no financeiro** — agora há fallback sem a coluna, alerta visível se falhar de verdade, e o vínculo passa a ser gravado após a migração
+- **Webhook Mercado Pago** grava `enrollment_id` nas transações (entrada e quitação de saldo), com fallback seguro enquanto a migração não roda
+- **Fidelidade:** pagamentos antigos sem transação vinculada aparecem como "registrado na inscrição" com o valor exato da diferença — nada é estimado ou inventado
+
 ## v3.13.0 (2026-07-01) - Assistentes de IA: busca setorial fidedigna no banco e bloqueio total de internet
 
 - **Busca setorial (`api/_aiSectorData.ts`):** cada agente agora consulta as tabelas do SEU setor no Supabase, sob medida para a pergunta — **Rita/Financeiro** (transações do mês, vendas de hoje, faturamento por curso, saldo a receber com maiores devedores), **Bia/Atendimento+CRM** (WhatsApp recebidas x enviadas hoje, tarefas abertas/atrasadas/mais urgentes, funil de leads e novos do dia), **Léo/Inscrições** (catálogo, próximos cursos, inscrições por status, alunos pendentes e detalhe financeiro dos cursos citados), **Sofia/RH+Gerência** (equipe cadastrada com cargo/status e atividade por funcionário no mês)

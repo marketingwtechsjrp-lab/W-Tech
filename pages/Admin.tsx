@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logUserActivity } from '../lib/auditLogger';
 import { PaymentMethodsManager } from '../components/admin/Financial/PaymentMethodsManager';
+import { PaymentHistoryModal } from '../components/admin/Courses/PaymentHistoryModal';
 import SalesManagerView from '../components/admin/Catalog/SalesManagerView';
 import ClientsManagerView from '../components/admin/Clients/ClientsManagerView';
 import { syncStudentToLeads } from '../lib/leads';
@@ -200,6 +201,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
     const [isGeneratingLink, setIsGeneratingLink] = useState(false);
     const [stripeReconcileModal, setStripeReconcileModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null, stripeId: string, amount: number }>({ isOpen: false, enrollment: null, stripeId: '', amount: 0 });
     const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
+
+    // Histórico de Pagamentos da inscrição (entrada → quitação, com data e forma)
+    const [historyModal, setHistoryModal] = useState<{ isOpen: boolean, enrollment: Enrollment | null }>({ isOpen: false, enrollment: null });
 
     // Disparo manual de mensagens para alunos (cobrança / info do curso).
     // scope 'single' = uma inscrição; 'all' = todos os elegíveis do curso.
@@ -1350,6 +1354,25 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
     };
 
+    /**
+     * Insere a transação vinculada à inscrição (histórico de pagamentos).
+     * Se a migração add_enrollment_payment_history.sql ainda não rodou, a
+     * coluna enrollment_id não existe → tenta de novo sem ela para o registro
+     * financeiro não se perder (antes este insert falhava em silêncio).
+     */
+    const insertEnrollmentTransaction = async (payload: Record<string, any>) => {
+        let { error } = await supabase.from('SITE_Transactions').insert([payload]);
+        if (error && String(error.message || '').includes('enrollment_id')) {
+            const { enrollment_id: _omit, ...withoutEnrollment } = payload;
+            ({ error } = await supabase.from('SITE_Transactions').insert([withoutEnrollment]));
+        }
+        if (error) {
+            console.error('[Transações] Falha ao registrar pagamento:', error);
+            alert('Atenção: o pagamento foi somado ao aluno, mas NÃO entrou no financeiro (' + error.message + ').');
+        }
+        return { error };
+    };
+
     const confirmStripeReconcile = async () => {
         const { enrollment, stripeId, amount } = stripeReconcileModal;
         if (!enrollment || !stripeId || !amount) return;
@@ -1367,7 +1390,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
 
         // 2. Insert Transaction
-        const { error: err2 } = await supabase.from('SITE_Transactions').insert([{
+        await insertEnrollmentTransaction({
             description: `Conciliação Stripe: ${stripeId}`,
             category: 'Sales',
             type: 'Income',
@@ -1376,11 +1399,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             payment_method: 'Stripe',
             enrollment_id: enrollment.id,
             currency: currentCourse?.currency || 'BRL'
-        }]);
-
-        if (err2) {
-            console.error(err2);
-        }
+        });
 
         // Update Local State
         setEnrollments(prev => prev.map(e => e.id === enrollment.id ? { ...e, amountPaid: newTotal, status: 'Confirmed' } : e));
@@ -1406,7 +1425,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
         // 2. Insert NEW Transaction (Split Payment)
         // This ensures the financial record shows the settlement as a distinct entry
-        const { error: err2 } = await supabase.from('SITE_Transactions').insert([{
+        await insertEnrollmentTransaction({
             description: `Quitação: ${currentCourse?.title || 'Curso'} - ${enrollment.studentName}`,
             category: 'Sales',
             type: 'Income',
@@ -1415,11 +1434,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             payment_method: settleMethod,
             enrollment_id: enrollment.id,
             currency: currentCourse?.currency || 'BRL'
-        }]);
-
-        if (err2) {
-            console.error(err2);
-        }
+        });
 
         // Update Local State
         setEnrollments(prev => prev.map(e => e.id === enrollment.id ? { ...e, amountPaid: newTotal, status: 'Confirmed' } : e));
@@ -2147,6 +2162,10 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                         <CheckCircle size={16} />
                                                     </button>
 
+                                                    <button onClick={() => setHistoryModal({ isOpen: true, enrollment: enr })} title="Histórico de Pagamentos (entrada, parcelas e quitação)" className="p-1.5 text-wtech-gold hover:bg-yellow-50 rounded border border-wtech-gold/30 bg-yellow-50/40">
+                                                        <History size={16} />
+                                                    </button>
+
                                                     <button onClick={() => setStripeReconcileModal({ isOpen: true, enrollment: enr, stripeId: '', amount: balance })} title="Conciliar Pagamento Stripe" className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded border border-indigo-100">
                                                         <CreditCard size={16} />
                                                     </button>
@@ -2197,6 +2216,17 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                         </tbody>
                     </table>
                 </div>
+
+                {/* Histórico de Pagamentos da inscrição */}
+                {historyModal.isOpen && historyModal.enrollment && (
+                    <PaymentHistoryModal
+                        enrollment={historyModal.enrollment}
+                        courseTitle={currentCourse.title}
+                        coursePrice={currentCourse.price}
+                        currency={currentCourse.currency}
+                        onClose={() => setHistoryModal({ isOpen: false, enrollment: null })}
+                    />
+                )}
 
                 {/* Notify Modal — cobrança / info do curso (WhatsApp / E-mail) */}
                 {notifyModal.isOpen && (() => {
