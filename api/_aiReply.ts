@@ -530,7 +530,9 @@ export async function runAIResponder(
 
   let reply = '';
   try {
-    reply = await callLLM(keys, systemPrompt, `Histórico:\n${historyText}\n\nNova mensagem do cliente: ${incomingText}`, config.model);
+    // Sem acesso à web: remove variantes ':online' (OpenRouter) do modelo.
+    const model = (config.model || '').trim().replace(/:online$/i, '') || null;
+    reply = await callLLM(keys, systemPrompt, `Histórico:\n${historyText}\n\nNova mensagem do cliente: ${incomingText}`, model);
   } catch (e: any) {
     console.error('[aiReply] LLM falhou:', e?.message);
     return;

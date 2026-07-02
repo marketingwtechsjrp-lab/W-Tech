@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.13.0 (2026-07-01) - Assistentes de IA: busca setorial fidedigna no banco e bloqueio total de internet
+
+- **Busca setorial (`api/_aiSectorData.ts`):** cada agente agora consulta as tabelas do SEU setor no Supabase, sob medida para a pergunta — **Rita/Financeiro** (transações do mês, vendas de hoje, faturamento por curso, saldo a receber com maiores devedores), **Bia/Atendimento+CRM** (WhatsApp recebidas x enviadas hoje, tarefas abertas/atrasadas/mais urgentes, funil de leads e novos do dia), **Léo/Inscrições** (catálogo, próximos cursos, inscrições por status, alunos pendentes e detalhe financeiro dos cursos citados), **Sofia/RH+Gerência** (equipe cadastrada com cargo/status e atividade por funcionário no mês)
+- **Roteador de setores:** palavras-chave da pergunta definem quais tabelas são consultadas; pergunta genérica coleta todos os setores
+- **Entidades citadas:** perguntar por um aluno, lead ou funcionário traz o registro exato do banco (inscrição/valores do aluno, status/atendente/telefone do lead, atividade individual do funcionário) — matching ignora acentos ("joao" encontra "João")
+- **Internet PROIBIDA para as IAs:** guardrails reforçados (fonte única = banco W-Tech; recusa pedidos de pesquisa externa mesmo sob insistência do grupo) + bloqueio técnico de modelos com navegação (sufixo `:online` do OpenRouter removido no bot de grupo, no relatório dos agentes e na IA de atendimento)
+- **Roteamento de persona mais preciso:** o prompt recebe os setores detectados na pergunta como orientação principal
+- Refactor: `gatherStaffActivity` extraído de `_agentsReport.ts` e reutilizado no pack da Sofia; domínio da Sofia agora inclui RH explicitamente
+
 ## v3.12.0 (2026-07-01) - Multi-instância Evolution (gerenciador + dropdowns) e módulo Assistentes de IA
 
 - **Instâncias Adicionais (Evolution):** novo gerenciador em Admin → Integrações para cadastrar vários números do WhatsApp (ex.: um chip para marketing, outro para o dono). Cada instância tem criação/conexão via QR Code, status ao vivo (Conectado/Aguardando QR), botão de teste de envio e remoção (com opção de apagar ou manter no servidor). O registro fica em `SITE_Config` na chave `evolution_managed_instances`

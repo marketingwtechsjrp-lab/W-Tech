@@ -10,7 +10,7 @@ import {
     type ReportSendResult,
 } from './_report.js';
 import { loadAIKeys, loadAIConfig, callLLM } from './_aiReply.js';
-import { AI_AGENTS, DEFAULT_AGENT_PROMPTS, AGENT_GUARDRAILS, type AIAgentId } from '../lib/aiAgentDefaults.js';
+import { AI_AGENTS, DEFAULT_AGENT_PROMPTS, AGENT_GUARDRAILS, offlineModel, type AIAgentId } from '../lib/aiAgentDefaults.js';
 
 /**
  * Relatório diário "com personas" — Léo, Bia, Rita e Sofia.
@@ -61,12 +61,56 @@ export interface AgentsReportData {
 }
 
 /** Início do mês corrente em America/Sao_Paulo, como ISO UTC. */
-function startOfMonthBRT(): string {
+export function startOfMonthBRT(): string {
     const TZ_OFFSET_MS = 3 * 60 * 60 * 1000;
     const nowBRT = new Date(Date.now() - TZ_OFFSET_MS);
     const y = nowBRT.getUTCFullYear();
     const m = nowBRT.getUTCMonth();
     return new Date(Date.UTC(y, m, 1) + TZ_OFFSET_MS).toISOString();
+}
+
+/**
+ * Ranking de atividade por funcionário desde `sinceISO` (auditoria + leads
+ * atribuídos + matrículas feitas + lançamentos). Reutilizado pelo pack
+ * setorial da Sofia (_aiSectorData.ts). Lança em erro — o chamador decide.
+ */
+export async function gatherStaffActivity(client: SupabaseClient, sinceISO: string): Promise<StaffActivity[]> {
+    const [{ data: auditLogs }, { data: leads }, { data: enrollments }, { data: txs }] = await Promise.all([
+        client.from('SITE_AuditLogs').select('user_name, created_at').gte('created_at', sinceISO).limit(5000),
+        client.from('SITE_Leads').select('assigned_to').gte('created_at', sinceISO).not('assigned_to', 'is', null).limit(5000),
+        client.from('SITE_Enrollments').select('enrolled_by_name').gte('created_at', sinceISO).not('enrolled_by_name', 'is', null).limit(5000),
+        client.from('SITE_Transactions').select('attendant_id').gte('date', sinceISO).not('attendant_id', 'is', null).limit(5000),
+    ]);
+
+    const { data: users } = await client.from('SITE_Users').select('id, name');
+    const nameById = new Map((users || []).map((u: any) => [u.id, u.name]));
+
+    const stats = new Map<string, StaffActivity>();
+    const bump = (name: string | null | undefined, field: keyof Omit<StaffActivity, 'userName' | 'lastSeen'>, when?: string) => {
+        const key = (name || '').trim();
+        if (!key) return;
+        const current = stats.get(key) || {
+            userName: key,
+            auditActions: 0,
+            leadsAssigned: 0,
+            enrollmentsHandled: 0,
+            transactionsHandled: 0,
+            lastSeen: null,
+        };
+        current[field] += 1;
+        if (when && (!current.lastSeen || when > current.lastSeen)) current.lastSeen = when;
+        stats.set(key, current);
+    };
+
+    (auditLogs || []).forEach((l: any) => bump(l.user_name, 'auditActions', l.created_at));
+    (leads || []).forEach((l: any) => bump(nameById.get(l.assigned_to) || l.assigned_to, 'leadsAssigned'));
+    (enrollments || []).forEach((e: any) => bump(e.enrolled_by_name, 'enrollmentsHandled'));
+    (txs || []).forEach((t: any) => bump(nameById.get(t.attendant_id) || t.attendant_id, 'transactionsHandled'));
+
+    return Array.from(stats.values()).sort(
+        (a, b) => (b.auditActions + b.leadsAssigned + b.enrollmentsHandled + b.transactionsHandled) -
+                  (a.auditActions + a.leadsAssigned + a.enrollmentsHandled + a.transactionsHandled)
+    );
 }
 
 /** Coleta as métricas por agente. Cada bloco falha isolado (métrica vira null/vazio). */
@@ -171,42 +215,7 @@ export async function gatherAgentsReport(): Promise<AgentsReportData> {
 
     // ── Sofia: ranking de atividade por funcionário ─────────────────────────
     try {
-        const [{ data: auditLogs }, { data: leads }, { data: enrollments }, { data: txs }] = await Promise.all([
-            client.from('SITE_AuditLogs').select('user_name, created_at').gte('created_at', monthStart).limit(5000),
-            client.from('SITE_Leads').select('assigned_to').gte('created_at', monthStart).not('assigned_to', 'is', null).limit(5000),
-            client.from('SITE_Enrollments').select('enrolled_by_name').gte('created_at', monthStart).not('enrolled_by_name', 'is', null).limit(5000),
-            client.from('SITE_Transactions').select('attendant_id').gte('date', monthStart).not('attendant_id', 'is', null).limit(5000),
-        ]);
-
-        const { data: users } = await client.from('SITE_Users').select('id, name');
-        const nameById = new Map((users || []).map((u: any) => [u.id, u.name]));
-
-        const stats = new Map<string, StaffActivity>();
-        const bump = (name: string | null | undefined, field: keyof Omit<StaffActivity, 'userName' | 'lastSeen'>, when?: string) => {
-            const key = (name || '').trim();
-            if (!key) return;
-            const current = stats.get(key) || {
-                userName: key,
-                auditActions: 0,
-                leadsAssigned: 0,
-                enrollmentsHandled: 0,
-                transactionsHandled: 0,
-                lastSeen: null,
-            };
-            current[field] += 1;
-            if (when && (!current.lastSeen || when > current.lastSeen)) current.lastSeen = when;
-            stats.set(key, current);
-        };
-
-        (auditLogs || []).forEach((l: any) => bump(l.user_name, 'auditActions', l.created_at));
-        (leads || []).forEach((l: any) => bump(nameById.get(l.assigned_to) || l.assigned_to, 'leadsAssigned'));
-        (enrollments || []).forEach((e: any) => bump(e.enrolled_by_name, 'enrollmentsHandled'));
-        (txs || []).forEach((t: any) => bump(nameById.get(t.attendant_id) || t.attendant_id, 'transactionsHandled'));
-
-        data.sofia.staffActivity = Array.from(stats.values()).sort(
-            (a, b) => (b.auditActions + b.leadsAssigned + b.enrollmentsHandled + b.transactionsHandled) -
-                      (a.auditActions + a.leadsAssigned + a.enrollmentsHandled + a.transactionsHandled)
-        );
+        data.sofia.staffActivity = await gatherStaffActivity(client, monthStart);
     } catch (e: any) {
         console.error('[agentsReport] sofia.staffActivity:', e?.message);
     }
@@ -308,8 +317,9 @@ FORMATO DO RELATÓRIO (obrigatório):
 - Formato WhatsApp puro (sem markdown de cabeçalho #, sem tabelas).`;
 
         const user = `Dados do dia (JSON):\n${JSON.stringify(data)}`;
+        // Sem acesso à web: remove variantes ':online' (OpenRouter) do modelo.
         const raw = await Promise.race([
-            callLLM(keys, system, user, aiCfg?.model || null),
+            callLLM(keys, system, user, offlineModel(aiCfg?.model)),
             new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout LLM relatório')), 25000)),
         ]);
         const text = (raw || '').trim();

@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.13.0",
+    "date": "2026-07-01",
+    "title": "Assistentes de IA: busca setorial fidedigna no banco e bloqueio total de internet",
+    "changes": [
+      "Novo módulo api/_aiSectorData.ts: cada agente busca dados do SEU setor no Supabase — Rita/Financeiro (transações do mês, vendas de hoje, faturamento por curso, saldo a receber e maiores devedores), Bia/Atendimento+CRM (WhatsApp recebidas x enviadas, tarefas abertas/atrasadas/urgentes, funil e leads novos), Léo/Inscrições (catálogo, próximos cursos, inscrições por status, pendentes e detalhe de cursos citados), Sofia/RH+Gerência (equipe cadastrada, atividade por funcionário no mês)",
+      "Roteador de setores por palavra-chave: a pergunta define quais tabelas são consultadas (pergunta genérica coleta todos os setores)",
+      "Busca de entidades citadas na pergunta: aluno (inscrição, curso, valores pagos/restantes), lead (status, atendente, telefone, tags) e funcionário (atividade individual) — matching normalizado sem acento ('joao' encontra 'João')",
+      "Internet proibida para as IAs: guardrails reforçados (fonte única = banco W-Tech, recusa pedidos externos mesmo sob insistência), e bloqueio técnico de modelos com web — sufixo ':online' do OpenRouter removido no bot de grupo, no relatório dos agentes e na IA de atendimento",
+      "Prompt do bot recebe os setores detectados como orientação de roteamento da persona",
+      "Refactor: gatherStaffActivity extraído e reutilizado (relatório dos agentes + pack da Sofia); domínio da Sofia agora inclui RH explicitamente"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.12.0",
     "date": "2026-07-01",
     "title": "Multi-instância Evolution (gerenciador + dropdowns) e módulo Assistentes de IA",

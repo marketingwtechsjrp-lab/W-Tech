@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getServiceClient, fmtMoney } from './_report.js';
-import { gatherAgentsReport } from './_agentsReport.js';
+import { getServiceClient } from './_report.js';
+import { buildSectorDataPack, type SectorDataPack } from './_aiSectorData.js';
 import { loadAIKeys, loadAIConfig, callLLM } from './_aiReply.js';
 import { sendWhatsAppText } from './_whatsapp.js';
 import {
@@ -13,6 +13,7 @@ import {
     CFG_GROUP_BOT_GROUP_JID,
     CFG_GROUP_BOT_INSTANCE,
     CFG_GROUP_WEBHOOK_TOKEN,
+    offlineModel,
     type AIAgentId,
 } from '../lib/aiAgentDefaults.js';
 
@@ -81,130 +82,14 @@ async function loadGroupBotConfig(supabase: SupabaseClient): Promise<GroupBotCon
 
 // ─── Data pack: contexto de dados vivos dirigido pela pergunta ───────────────
 
-const normalize = (s: string) =>
-    (s || '')
-        .toLowerCase()
-        .normalize('NFD')
-        // remove diacríticos (combining marks U+0300–U+036F)
-        .replace(/[\u0300-\u036f]/g, '');
-
-/** Monta o JSON compacto de contexto que o LLM usa para responder. */
-export async function buildDataPack(supabase: SupabaseClient, question: string): Promise<string> {
-    const pack: Record<string, any> = {};
-
-    // Métricas gerais por setor (mesma coleta do relatório diário).
-    try {
-        pack.metricas_do_dia_e_mes = await gatherAgentsReport();
-    } catch (e: any) {
-        console.error('[aiGroupBot] gatherAgentsReport:', e?.message);
-    }
-
-    // Catálogo de cursos (compacto) + detalhe dos cursos citados na pergunta.
-    try {
-        let courses: any[] | null = null;
-        const full = await supabase
-            .from('SITE_Courses')
-            .select('id, title, location, city, state, date, price, status, registered_count')
-            .limit(200);
-        if (!full.error) courses = full.data;
-        else {
-            const minimal = await supabase
-                .from('SITE_Courses')
-                .select('id, title, location, date, price, status')
-                .limit(200);
-            courses = minimal.data;
-        }
-
-        const q = normalize(question);
-        const matched: any[] = [];
-        pack.catalogo_de_cursos = (courses || []).map((c: any) => {
-            const cityStr = [c.city, c.state].filter(Boolean).join('/');
-            const titleWords = normalize(c.title).split(/\s+/).filter((w: string) => w.length >= 4);
-            const isMatch =
-                (c.city && q.includes(normalize(c.city))) ||
-                (c.location && q.includes(normalize(c.location))) ||
-                titleWords.some((w: string) => q.includes(w));
-            if (isMatch) matched.push(c);
-            return {
-                id: c.id,
-                titulo: c.title,
-                cidade: cityStr || c.location || null,
-                data: c.date,
-                preco_tabela: c.price,
-                status: c.status,
-                inscritos: c.registered_count ?? null,
-            };
-        });
-
-        // Detalhe financeiro/matrículas dos cursos citados (máx 5).
-        const details: any[] = [];
-        for (const course of matched.slice(0, 5)) {
-            const detail: Record<string, any> = {
-                curso: course.title,
-                preco_tabela: course.price,
-            };
-            try {
-                const { data: enrs } = await supabase
-                    .from('SITE_Enrollments')
-                    .select('status, total_amount, amount_paid, currency')
-                    .eq('course_id', course.id)
-                    .limit(1000);
-                let count = 0;
-                let confirmed = 0;
-                let sumNegotiated = 0;
-                let sumPaid = 0;
-                let discount = 0;
-                (enrs || []).forEach((e: any) => {
-                    if ((e.currency || 'BRL').toUpperCase() !== 'BRL') return;
-                    count += 1;
-                    if (e.status === 'Confirmed' || e.status === 'CheckedIn') confirmed += 1;
-                    const negotiated = Number(e.total_amount || 0);
-                    const paid = Number(e.amount_paid || 0);
-                    sumNegotiated += negotiated;
-                    sumPaid += paid;
-                    if (negotiated > 0 && Number(course.price || 0) > negotiated) {
-                        discount += Number(course.price) - negotiated;
-                    }
-                });
-                detail.matriculas = {
-                    total: count,
-                    confirmadas_ou_checkin: confirmed,
-                    valor_negociado_total: `R$ ${fmtMoney(sumNegotiated)}`,
-                    valor_pago_total: `R$ ${fmtMoney(sumPaid)}`,
-                    saldo_restante: `R$ ${fmtMoney(Math.max(0, sumNegotiated - sumPaid))}`,
-                    desconto_total_vs_preco_tabela: `R$ ${fmtMoney(discount)}`,
-                };
-            } catch (e: any) {
-                console.error('[aiGroupBot] detalhe matrículas:', e?.message);
-            }
-            try {
-                const { data: txs } = await supabase
-                    .from('SITE_Transactions')
-                    .select('amount, type, currency')
-                    .eq('course_id', course.id)
-                    .limit(1000);
-                let income = 0;
-                let expense = 0;
-                (txs || []).forEach((t: any) => {
-                    if ((t.currency || 'BRL').toUpperCase() !== 'BRL') return;
-                    if (t.type === 'Income') income += Number(t.amount || 0);
-                    else if (t.type === 'Expense') expense += Number(t.amount || 0);
-                });
-                detail.transacoes_registradas = {
-                    receitas: `R$ ${fmtMoney(income)}`,
-                    despesas: `R$ ${fmtMoney(expense)}`,
-                };
-            } catch (e: any) {
-                console.error('[aiGroupBot] detalhe transações:', e?.message);
-            }
-            details.push(detail);
-        }
-        if (details.length > 0) pack.detalhe_dos_cursos_citados = details;
-    } catch (e: any) {
-        console.error('[aiGroupBot] catálogo de cursos:', e?.message);
-    }
-
-    return JSON.stringify(pack);
+/**
+ * Monta o contexto que o LLM usa para responder — delegado ao módulo setorial
+ * (_aiSectorData.ts): detecta o(s) setor(es) da pergunta, coleta as tabelas
+ * daquele setor e os registros exatos das entidades citadas (aluno, lead,
+ * funcionário, curso). Fonte ÚNICA: banco Supabase — sem internet.
+ */
+export async function buildDataPack(supabase: SupabaseClient, question: string): Promise<SectorDataPack> {
+    return buildSectorDataPack(supabase, question);
 }
 
 // ─── Pergunta → persona certa → resposta ─────────────────────────────────────
@@ -221,7 +106,7 @@ ${sections}
 ${AGENT_GUARDRAILS}
 
 COMO RESPONDER (formato obrigatório):
-- Escolha UM integrante conforme o domínio da pergunta (financeiro → rita; atendimento/CRM/WhatsApp/tarefas → bia; inscrições/matrículas/alunos/turmas/credenciamento → leo; visão geral/funcionários/misto/gerencial → sofia).
+- Escolha UM integrante conforme o domínio da pergunta (financeiro → rita; atendimento/CRM/WhatsApp/tarefas/leads → bia; inscrições/matrículas/alunos/turmas/credenciamento → leo; visão geral/RH/equipe/funcionários/misto/gerencial → sofia). Use o(s) SETOR(ES) DETECTADO(S) informados junto com a pergunta como orientação principal.
 - Primeira linha: "AGENTE: <id>" (leo, bia, rita ou sofia).
 - Da segunda linha em diante: a resposta daquele integrante, na persona dele.
 - Se a mensagem NÃO for uma pergunta ou solicitação sobre o negócio (ex.: conversa casual entre humanos, cumprimentos, piadas internas), responda apenas: SILENCIO`;
@@ -258,12 +143,16 @@ export async function answerGroupQuestion(
 
         const dataPack = await buildDataPack(supabase, question);
         const system = buildSystemPrompt(cfg.prompts);
-        const user = `CONTEXTO DE DADOS (JSON, fonte única da verdade):\n${dataPack}\n\nMensagem de ${senderName || 'membro do grupo'} no grupo:\n"${question}"`;
+        const user =
+            `CONTEXTO DE DADOS (JSON extraído AGORA do banco de dados do sistema W-Tech — fonte ÚNICA e obrigatória; fora dele, nada existe):\n${dataPack.json}\n\n` +
+            `SETOR(ES) DETECTADO(S) NA PERGUNTA: ${dataPack.sectors.join(', ')}\n\n` +
+            `Mensagem de ${senderName || 'membro do grupo'} no grupo:\n"${question}"`;
 
-        // Provider/model: respeita o override configurado no treinamento da IA.
+        // Provider/model: respeita o override configurado no treinamento da IA,
+        // mas SEM acesso à web (remove variantes ':online' do OpenRouter).
         const aiCfg = await loadAIConfig(supabase).catch(() => null);
         const keys = await loadAIKeys(supabase, aiCfg?.provider || null);
-        const raw = await withTimeout(callLLM(keys, system, user, aiCfg?.model || null), 20000, 'LLM grupo');
+        const raw = await withTimeout(callLLM(keys, system, user, offlineModel(aiCfg?.model)), 20000, 'LLM grupo');
 
         const { agent, answer } = parseLLMReply(raw);
 
