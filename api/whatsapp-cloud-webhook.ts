@@ -8,6 +8,7 @@ import {
   type CloudConfig,
 } from './_whatsappCloud.js';
 import { runAIResponder } from './_aiReply.js';
+import { handleEvolutionWebhook } from './_aiGroupBot.js';
 
 /**
  * Vercel Serverless Function — Webhook da WhatsApp Cloud API (Meta).
@@ -24,7 +25,11 @@ import { runAIResponder } from './_aiReply.js';
  *   WHATSAPP_CLOUD_WEBHOOK_VERIFY_TOKEN,
  *   VITE_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *
- * 100% independente da automação via Evolution API.
+ * MULTIPLEX: esta mesma rota também recebe o webhook da EVOLUTION API para o
+ * bot do grupo (Assistentes de IA), em ?source=evolution&token=… — o plano
+ * Hobby da Vercel limita a 12 rotas e todas estão em uso. O payload da Meta
+ * sempre tem entry[].changes[]; o da Evolution tem { event, instance, data },
+ * então a detecção é inequívoca e o fluxo Meta segue 100% intacto.
  */
 
 async function handleIncomingMessage(
@@ -140,6 +145,11 @@ export default async function handler(req: any, res: any) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // ── Webhook da Evolution API (bot do grupo — Assistentes de IA) ────────────
+  if (req.query?.source === 'evolution' || (req.body?.event && req.body?.instance)) {
+    return handleEvolutionWebhook(req, res);
   }
 
   // ── Eventos (POST) — responde 200 sempre que possível ─────────────────────

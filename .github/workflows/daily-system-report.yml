@@ -9,6 +9,10 @@ name: Relatório diário do sistema (WhatsApp)
 #   - Vercel  → Environment Variables (mesmo valor)
 # O endpoint respeita o toggle "Relatório Diário para o Dono" do painel
 # (Admin → Integrações): desativado = responde 200 com skipped, sem enviar.
+#
+# action: 'ai-agents-report' → relatório consolidado dos Assistentes de IA
+# (Léo/Bia/Rita/Sofia, módulo Admin → Assistentes de IA). Reaproveita o mesmo
+# grupo e o mesmo toggle wa_report_* do relatório anterior (system-report).
 
 on:
   schedule:
@@ -28,7 +32,7 @@ jobs:
           response=$(curl -sS -w "\n%{http_code}" -X POST "https://site.w-techbrasil.com.br/api/notify-students" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -d '{"action":"system-report"}')
+            -d '{"action":"ai-agents-report"}')
           body=$(echo "$response" | sed '$d')
           status=$(echo "$response" | tail -n1)
           echo "HTTP $status — $body"

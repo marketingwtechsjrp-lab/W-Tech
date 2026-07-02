@@ -71,7 +71,7 @@ export async function loadAIConfig(supabase: SupabaseClient): Promise<AIConfig |
   };
 }
 
-async function loadAIKeys(supabase: SupabaseClient, override?: string | null): Promise<AIKeys> {
+export async function loadAIKeys(supabase: SupabaseClient, override?: string | null): Promise<AIKeys> {
   const { data } = await supabase
     .from('SITE_SystemSettings')
     .select('key, value')
@@ -90,7 +90,7 @@ async function loadAIKeys(supabase: SupabaseClient, override?: string | null): P
 
 // ─── Chamada ao LLM (REST, sem SDK — leve no serverless) ─────────────────────
 
-async function callLLM(keys: AIKeys, system: string, user: string, modelOverride?: string | null): Promise<string> {
+export async function callLLM(keys: AIKeys, system: string, user: string, modelOverride?: string | null): Promise<string> {
   if (keys.provider === 'openai') {
     if (!keys.openai) throw new Error('OpenAI key ausente');
     const r = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -36,6 +36,12 @@ export interface PermissionModule {
 // -----------------------------------------------------------------------------
 // CATÁLOGO — cada módulo e suas opções internas reais.
 // Toda chave aqui é (ou passa a ser, após o wiring) verificada no código.
+//
+// EXCEÇÃO INTENCIONAL: 'ai_assistants_super_admin' (nav.ts, view 'ai_assistants')
+// NÃO entra neste catálogo de propósito. É o mecanismo de "só super admin":
+// super admin sempre bypassa hasPermission (ver getEffectivePermissions abaixo),
+// e qualquer outro cargo nunca vê a chave como toggle em "Equipe & Acesso" — logo
+// nunca consegue habilitá-la manualmente.
 // -----------------------------------------------------------------------------
 export const PERMISSION_CATALOG: PermissionModule[] = [
   {

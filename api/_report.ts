@@ -42,7 +42,7 @@ export interface ReportSendResult {
     groupJid?: string;
 }
 
-function getServiceClient(): SupabaseClient {
+export function getServiceClient(): SupabaseClient {
     const url = process.env.VITE_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !serviceKey) throw new Error('Supabase env vars ausentes');
@@ -50,7 +50,7 @@ function getServiceClient(): SupabaseClient {
 }
 
 /** Início do dia atual em America/Sao_Paulo, como ISO UTC (para filtros created_at). */
-function startOfTodayBRT(): { iso: string; label: string } {
+export function startOfTodayBRT(): { iso: string; label: string } {
     const nowBRT = new Date(Date.now() - TZ_OFFSET_MS);
     const y = nowBRT.getUTCFullYear();
     const m = nowBRT.getUTCMonth();
@@ -60,10 +60,10 @@ function startOfTodayBRT(): { iso: string; label: string } {
     return { iso: startUTC.toISOString(), label };
 }
 
-const fmtMoney = (n: number) =>
+export const fmtMoney = (n: number) =>
     Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const symbolOf = (cur: string) => {
+export const symbolOf = (cur: string) => {
     const c = (cur || 'BRL').toUpperCase();
     return c === 'EUR' ? '€' : c === 'USD' ? '$' : 'R$';
 };

@@ -45,3 +45,6 @@ seed_whatsapp_cloud_config.sql
 # Scripts de debug locais e temporários (não versionar)
 scratch/
 supabase/.temp/
+
+# Graphify — output do gerador de grafo de conhecimento (não versionar)
+graphify-out/

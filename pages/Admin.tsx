@@ -62,6 +62,7 @@ import AffiliatesManagerView from '../components/admin/Marketing/AffiliatesManag
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import AdminSidebar from '../components/admin/AdminSidebar';
+import AIAssistantsHub from '../components/admin/AIAssistants/AIAssistantsHub';
 import { AdminKeyboardProvider, useRegisterPage } from '../components/admin/keyboard/AdminKeyboardProvider';
 import CommandPalette from '../components/admin/keyboard/CommandPalette';
 import ShortcutsHelp from '../components/admin/keyboard/ShortcutsHelp';
@@ -109,7 +110,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -8220,6 +8221,7 @@ const Admin = () => {
                         {currentView === 'invoices' && hasPermission('invoices_view') && <InvoicesManagerView />}
                         {currentView === 'sales_recovery' && (hasPermission('orders_view') || hasPermission('marketing_view')) && <SalesRecoveryView />}
                         {currentView === 'affiliates_manager' && hasPermission('marketing_view') && <AffiliatesManagerView />}
+                        {currentView === 'ai_assistants' && hasPermission('ai_assistants_super_admin') && <AIAssistantsHub />}
                     </motion.div>
                 </AnimatePresence>
             </div>

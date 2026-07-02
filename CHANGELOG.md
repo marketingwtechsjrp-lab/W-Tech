@@ -1,6 +1,18 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.12.0 (2026-07-01) - Multi-instância Evolution (gerenciador + dropdowns) e módulo Assistentes de IA
+
+- **Instâncias Adicionais (Evolution):** novo gerenciador em Admin → Integrações para cadastrar vários números do WhatsApp (ex.: um chip para marketing, outro para o dono). Cada instância tem criação/conexão via QR Code, status ao vivo (Conectado/Aguardando QR), botão de teste de envio e remoção (com opção de apagar ou manter no servidor). O registro fica em `SITE_Config` na chave `evolution_managed_instances`
+- **Motor de Envio por dropdown:** os campos de texto livre de instância viraram seletores que listam a instância de automação, a padrão e todas as cadastradas — evita erro de digitação e deixa claro qual número responde por cada saída. Vale para as 4 categorias (venda/cobrança/cronograma/relatório) e para as rotas Campanhas, CRM e Recuperação
+- **Nova rota "Grupo de IA (Dono)":** seleção de instância dedicada para o bot de IA do grupo (`ai_group_bot_instance`), lida com prioridade pelo `api/_aiGroupBot.ts`
+- **Módulo Assistentes de IA (super admin):** novo item de menu "Assistentes de IA" (visível só para super admin) com as personas Léo (atendimento/CRM), Bia (WhatsApp/tarefas/funil), Rita (financeiro) e Sofia (consolidado + ranking de atividade por funcionário)
+- **Bot de perguntas no grupo do WhatsApp:** `GroupBotPanel` + `api/_aiGroupBot.ts` — a Evolution encaminha as mensagens do grupo por webhook e a persona certa responde no próprio grupo, com anti-loop, dedupe por `message_id` e log em `SITE_AIGroupLog` (migração `create_ai_group_log.sql`)
+- **Relatório diário com personas:** `api/_agentsReport.ts` reaproveita o relatório do sistema e gera recortes por setor para cada persona
+- **Segurança:** a permissão `ai_assistants_super_admin` fica intencionalmente fora do catálogo de permissões — só super admin (que sempre faz bypass) enxerga o módulo, e nenhum outro cargo consegue habilitá-lo manualmente
+- **Tooling:** `graphify-out/` adicionado ao `.gitignore` (output do gerador de grafo de conhecimento, não versionado)
+
+
 ## v3.11.0 (2026-07-01) - WhatsApp: roteamento completo de saídas por instância e relatório diário do dono
 
 - **Relatório diário do dono (grupo WhatsApp):** resumo automático do dia — leads, inscrições, vendas, saldo a receber, campanhas e atendimento — enviado às 08:00 para o grupo escolhido, pela instância Evolution da categoria Relatório (padrão: automação). Novo módulo `api/_report.ts` portado do padrão MotoFix (skill whatsapp-evolution)

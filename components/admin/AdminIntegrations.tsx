@@ -61,6 +61,8 @@ const AdminIntegrations = () => {
         waInstanceCampaign: '',
         waInstanceCrm: '',
         waInstanceRecovery: '',
+        // Instância do bot de IA do grupo do dono (vazio = segue relatório/automação)
+        waInstanceAiGroup: '',
         // Relatório diário do sistema para o dono (grupo WhatsApp)
         waReportEnabled: false,
         waReportGroupJid: '',
@@ -103,6 +105,15 @@ const AdminIntegrations = () => {
     const [isLoadingGroups, setIsLoadingGroups] = useState(false);
     const [reportPreview, setReportPreview] = useState<string | null>(null);
     const [isReportBusy, setIsReportBusy] = useState(false);
+
+    // Instâncias Adicionais (registro de instâncias Evolution gerenciadas pelo sistema)
+    const [managedInstances, setManagedInstances] = useState<Array<{ name: string; label: string }>>([]);
+    const [instanceStatuses, setInstanceStatuses] = useState<Record<string, string>>({});
+    const [newInstName, setNewInstName] = useState('');
+    const [newInstLabel, setNewInstLabel] = useState('');
+    const [activeQr, setActiveQr] = useState<{ instance: string; base64: string } | null>(null);
+    const [busyInstance, setBusyInstance] = useState<string | null>(null);
+    const [managedTestPhone, setManagedTestPhone] = useState('');
 
     useEffect(() => {
         fetchGlobalConfig();
@@ -162,10 +173,25 @@ const AdminIntegrations = () => {
                 waInstanceCampaign: configMap['wa_instance_campaign'] || '',
                 waInstanceCrm: configMap['wa_instance_crm'] || '',
                 waInstanceRecovery: configMap['wa_instance_recovery'] || '',
+                waInstanceAiGroup: configMap['ai_group_bot_instance'] || '',
                 waReportEnabled: configMap['wa_report_enabled'] === 'true',
                 waReportGroupJid: configMap['wa_report_group_jid'] || '',
                 waReportGroupName: configMap['wa_report_group_name'] || ''
             });
+
+            // Registro de instâncias adicionais (JSON defensivo)
+            try {
+                const parsed = JSON.parse(configMap['evolution_managed_instances'] || '[]');
+                if (Array.isArray(parsed)) {
+                    setManagedInstances(
+                        parsed
+                            .filter((i: any) => i && typeof i.name === 'string' && i.name.trim())
+                            .map((i: any) => ({ name: String(i.name).trim(), label: String(i.label || i.name).trim() }))
+                    );
+                }
+            } catch {
+                setManagedInstances([]);
+            }
         }
     };
 
@@ -417,6 +443,176 @@ const AdminIntegrations = () => {
         }
     };
 
+    // --- Instâncias Adicionais (multi-instância Evolution) ---
+
+    /** Persiste o registro de instâncias adicionais no SITE_Config (JSON). */
+    const persistManagedInstances = async (list: Array<{ name: string; label: string }>) => {
+        const { error } = await supabase.from('SITE_Config').upsert(
+            { key: 'evolution_managed_instances', value: JSON.stringify(list) },
+            { onConflict: 'key' }
+        );
+        if (error) alert('Erro ao salvar lista de instâncias: ' + error.message);
+    };
+
+    /** Consulta o estado de uma instância adicional na Evolution. */
+    const checkManagedState = async (name: string) => {
+        if (!globalConfig.serverUrl || !globalConfig.apiKey || !name) return;
+        try {
+            const response = await fetch(`${globalConfig.serverUrl}/instance/connectionState/${encodeURIComponent(name)}`, {
+                method: 'GET',
+                headers: { apikey: globalConfig.apiKey }
+            });
+            const data = await response.json();
+            const state = data?.instance?.state || data?.state || data?.connectionStatus?.state || 'disconnected';
+            setInstanceStatuses(prev => ({ ...prev, [name]: state }));
+            if (state === 'open') setActiveQr(prev => (prev?.instance === name ? null : prev));
+        } catch {
+            setInstanceStatuses(prev => ({ ...prev, [name]: 'erro' }));
+        }
+    };
+
+    /** Busca o QR Code de conexão de uma instância adicional (ou detecta que já conectou). */
+    const handleConnectManagedInstance = async (name: string) => {
+        if (!globalConfig.serverUrl || !globalConfig.apiKey || !name) return;
+        setBusyInstance(name);
+        try {
+            const response = await fetch(`${globalConfig.serverUrl}/instance/connect/${encodeURIComponent(name)}`, {
+                method: 'GET',
+                headers: { apikey: globalConfig.apiKey }
+            });
+            const data = await response.json();
+            if (data.base64) {
+                setActiveQr({ instance: name, base64: data.base64 });
+                setInstanceStatuses(prev => ({ ...prev, [name]: 'connecting' }));
+            } else if (data.instance?.state === 'open') {
+                setInstanceStatuses(prev => ({ ...prev, [name]: 'open' }));
+                setActiveQr(prev => (prev?.instance === name ? null : prev));
+                alert(`A instância "${name}" já está conectada!`);
+            } else {
+                alert('Não foi possível obter o QR Code. Tente "Conectar (QR)" novamente.');
+            }
+        } catch (e: any) {
+            alert('Erro: ' + e.message);
+        } finally {
+            setBusyInstance(null);
+        }
+    };
+
+    /** Cria a instância adicional na Evolution e abre o QR Code. */
+    const handleCreateManagedInstance = async (name: string) => {
+        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        setBusyInstance(name);
+        setActiveQr(null);
+        try {
+            const response = await fetch(`${globalConfig.serverUrl}/instance/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', apikey: globalConfig.apiKey },
+                body: JSON.stringify({ instanceName: name, token: globalConfig.apiKey, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
+            });
+            const data = await response.json();
+
+            const created = !!(data.instance || data.hash);
+            const alreadyExists = JSON.stringify(data).includes('already');
+            if (!created && !alreadyExists) {
+                return alert('Erro ao criar instância: ' + JSON.stringify(data).slice(0, 300));
+            }
+
+            if (data.qrcode?.base64) {
+                setActiveQr({ instance: name, base64: data.qrcode.base64 });
+                setInstanceStatuses(prev => ({ ...prev, [name]: 'connecting' }));
+            } else {
+                await handleConnectManagedInstance(name);
+            }
+        } catch (e: any) {
+            alert('Erro de requisição: ' + e.message);
+        } finally {
+            setBusyInstance(null);
+        }
+    };
+
+    /** Cadastra uma nova instância no registro e já cria/conecta na Evolution. */
+    const handleAddManagedInstance = async () => {
+        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        const name = newInstName.trim().toLowerCase().replace(/\s+/g, '-');
+        if (!name) return alert('Digite o nome da instância (ex: wtech-marketing).');
+        const reserved = [globalConfig.automationInstance.trim(), globalConfig.fallbackInstance.trim()].filter(Boolean);
+        if (reserved.includes(name) || managedInstances.some(i => i.name === name)) {
+            return alert(`Já existe uma instância "${name}" no sistema.`);
+        }
+        const label = newInstLabel.trim() || name;
+        const next = [...managedInstances, { name, label }];
+        setManagedInstances(next);
+        await persistManagedInstances(next);
+        setNewInstName('');
+        setNewInstLabel('');
+        await handleCreateManagedInstance(name);
+    };
+
+    /** Remove a instância do registro (e opcionalmente apaga do servidor Evolution). */
+    const handleRemoveManagedInstance = async (name: string) => {
+        const inUse = [
+            globalConfig.waInstanceCourseSales, globalConfig.waInstanceBilling, globalConfig.waInstanceSchedule,
+            globalConfig.waInstanceReport, globalConfig.waInstanceCampaign, globalConfig.waInstanceCrm,
+            globalConfig.waInstanceRecovery, globalConfig.waInstanceAiGroup
+        ].some(v => (v || '').trim() === name);
+        if (!confirm(`Remover a instância "${name}" da lista do sistema?${inUse ? '\n\n⚠️ Ela está selecionada em alguma saída do Motor de Envio — os envios dessa saída vão falhar até você escolher outra instância.' : ''}`)) return;
+        const deleteOnServer = confirm(`Também APAGAR a instância "${name}" do servidor Evolution?\n\nOK = apaga do servidor (desconecta o chip)\nCancelar = mantém no servidor, só remove da lista`);
+        setBusyInstance(name);
+        try {
+            if (deleteOnServer) {
+                await fetch(`${globalConfig.serverUrl}/instance/delete/${encodeURIComponent(name)}`, {
+                    method: 'DELETE',
+                    headers: { apikey: globalConfig.apiKey }
+                });
+            }
+            const next = managedInstances.filter(i => i.name !== name);
+            setManagedInstances(next);
+            await persistManagedInstances(next);
+            setActiveQr(prev => (prev?.instance === name ? null : prev));
+            setInstanceStatuses(prev => {
+                const { [name]: _removed, ...rest } = prev;
+                return rest;
+            });
+        } catch (e: any) {
+            alert('Erro ao remover: ' + e.message);
+        } finally {
+            setBusyInstance(null);
+        }
+    };
+
+    /** Envia mensagem de teste por uma instância adicional específica. */
+    const handleTestManagedInstance = async (name: string) => {
+        if (!managedTestPhone.trim()) return alert('Informe um telefone (DDD + número) no campo de teste das instâncias.');
+        setBusyInstance(name);
+        try {
+            const { success, error } = await sendWhatsAppMessage(
+                managedTestPhone,
+                `🤖 Teste da instância "${name}" do sistema W-Tech.\n\nSe você recebeu esta mensagem, as saídas configuradas para esta instância sairão por este número.`,
+                name
+            );
+            if (success) alert(`Mensagem de teste enviada pela instância "${name}"!`);
+            else alert('Erro ao enviar: ' + JSON.stringify(error));
+        } catch (e: any) {
+            alert('Erro: ' + e.message);
+        } finally {
+            setBusyInstance(null);
+        }
+    };
+
+    // Enquanto o QR de uma instância adicional estiver na tela, checa a cada 5s
+    useEffect(() => {
+        if (!activeQr) return;
+        const timer = setInterval(() => checkManagedState(activeQr.instance), 5000);
+        return () => clearInterval(timer);
+    }, [activeQr, globalConfig.serverUrl, globalConfig.apiKey]);
+
+    // Ao carregar o registro (ou a config do servidor), atualiza o status de cada instância
+    useEffect(() => {
+        if (!globalConfig.serverUrl || !globalConfig.apiKey || managedInstances.length === 0) return;
+        managedInstances.forEach(i => { checkManagedState(i.name); });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [managedInstances.length, globalConfig.serverUrl, globalConfig.apiKey]);
+
     /** Lista os grupos da instância do relatório — o admin ESCOLHE o grupo (padrão MotoFix). */
     const handleLoadReportGroups = async () => {
         const instance = (globalConfig.waInstanceReport || globalConfig.automationInstance || globalConfig.fallbackInstance).trim();
@@ -535,6 +731,7 @@ const AdminIntegrations = () => {
                 { key: 'wa_instance_campaign', value: globalConfig.waInstanceCampaign.trim() },
                 { key: 'wa_instance_crm', value: globalConfig.waInstanceCrm.trim() },
                 { key: 'wa_instance_recovery', value: globalConfig.waInstanceRecovery.trim() },
+                { key: 'ai_group_bot_instance', value: globalConfig.waInstanceAiGroup.trim() },
                 // Relatório diário do sistema (grupo do dono)
                 { key: 'wa_report_enabled', value: String(globalConfig.waReportEnabled) },
                 { key: 'wa_report_group_jid', value: globalConfig.waReportGroupJid.trim() },
@@ -607,6 +804,41 @@ const AdminIntegrations = () => {
 
         const qs = new URLSearchParams(options).toString();
         window.location.href = `${rootUrl}?${qs}`;
+    };
+
+    // Opções de instância para os dropdowns do Motor de Envio (automação + registro)
+    const defaultInstanceName = (globalConfig.automationInstance || globalConfig.fallbackInstance || 'suportewtech').trim();
+    const instanceOptions = (() => {
+        const opts: Array<{ value: string; label: string }> = [];
+        const seen = new Set<string>();
+        const auto = globalConfig.automationInstance.trim();
+        const fb = globalConfig.fallbackInstance.trim();
+        if (auto) { opts.push({ value: auto, label: `${auto} (automação do sistema)` }); seen.add(auto); }
+        if (fb && !seen.has(fb)) { opts.push({ value: fb, label: `${fb} (padrão)` }); seen.add(fb); }
+        managedInstances.forEach(i => {
+            if (!seen.has(i.name)) { opts.push({ value: i.name, label: `${i.label} — ${i.name}` }); seen.add(i.name); }
+        });
+        return opts;
+    })();
+
+    /** Dropdown de instância Evolution (vazio = padrão do sistema). Mantém valor salvo fora da lista visível. */
+    const renderInstanceSelect = (field: string) => {
+        const current = String((globalConfig as any)[field] || '').trim();
+        return (
+            <select
+                className="w-full mt-2 border border-[var(--admin-border)] rounded p-2 text-xs bg-[var(--admin-surface-1)] font-mono outline-none transition-colors"
+                value={current}
+                onChange={e => setGlobalConfig({ ...globalConfig, [field]: e.target.value })}
+            >
+                <option value="">— Padrão do sistema ({defaultInstanceName}) —</option>
+                {current && !instanceOptions.some(o => o.value === current) && (
+                    <option value={current}>{current} (manual)</option>
+                )}
+                {instanceOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+            </select>
+        );
     };
 
     const isAdmin = (user?.role === 'ADMIN' || user?.role === 'Super Admin') ||
@@ -734,6 +966,115 @@ const AdminIntegrations = () => {
                     </div>
                 </div>
 
+                {/* Instâncias Adicionais (multi-instância Evolution) */}
+                <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Smartphone size={16} className="text-wtech-gold" />
+                        <label className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Instâncias Adicionais (Evolution)</label>
+                    </div>
+                    <p className="text-xs text-[var(--admin-text-secondary)] mb-3">
+                        Cadastre outros números do WhatsApp (ex.: <strong>marketing</strong> para campanhas, <strong>dono</strong> para relatórios e grupo de IA).
+                        Depois, escolha no <strong>Motor de Envio</strong> qual instância é responsável por cada tipo de mensagem.
+                    </p>
+
+                    {managedInstances.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                            {managedInstances.map(inst => {
+                                const status = instanceStatuses[inst.name] || 'desconhecido';
+                                const isBusy = busyInstance === inst.name;
+                                return (
+                                    <div key={inst.name} className="flex flex-col md:flex-row md:items-center gap-2 border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-[var(--admin-text-primary)] truncate">{inst.label}</p>
+                                            <p className="text-[11px] font-mono text-[var(--admin-text-tertiary)] truncate">{inst.name}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                                                status === 'open' ? 'bg-green-100 text-green-700' :
+                                                status === 'connecting' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-600'
+                                            }`}>
+                                                {status === 'open' ? 'Conectado' : status === 'connecting' ? 'Aguardando QR' : status}
+                                            </span>
+                                            <button
+                                                onClick={() => checkManagedState(inst.name)}
+                                                className="p-1.5 hover:bg-[var(--admin-surface-1)] rounded-full"
+                                                title="Atualizar status"
+                                            >
+                                                <RefreshCw size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => (status === 'open' ? checkManagedState(inst.name) : handleCreateManagedInstance(inst.name))}
+                                                disabled={isBusy || status === 'open'}
+                                                className="bg-green-600 text-white px-3 py-1.5 rounded flex items-center gap-1.5 text-[11px] font-bold uppercase hover:bg-green-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                                            >
+                                                <QrCode size={13} /> {status === 'open' ? 'Conectado' : isBusy ? 'Aguarde...' : 'Conectar (QR)'}
+                                            </button>
+                                            <button
+                                                onClick={() => handleTestManagedInstance(inst.name)}
+                                                disabled={isBusy || status !== 'open'}
+                                                className="bg-wtech-gold text-black px-3 py-1.5 rounded text-[11px] font-bold uppercase hover:bg-yellow-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                                                title="Enviar mensagem de teste por esta instância"
+                                            >
+                                                Testar
+                                            </button>
+                                            <button
+                                                onClick={() => handleRemoveManagedInstance(inst.name)}
+                                                disabled={isBusy}
+                                                className="bg-red-600 text-white px-2.5 py-1.5 rounded flex items-center justify-center text-[11px] font-bold uppercase hover:bg-red-700 disabled:opacity-50 transition-colors"
+                                                title="Remover instância"
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    <div className="flex flex-col md:flex-row gap-2">
+                        <input
+                            className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            value={newInstName}
+                            onChange={e => setNewInstName(e.target.value)}
+                            placeholder="Nome da instância (ex: wtech-marketing)"
+                        />
+                        <input
+                            className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                            value={newInstLabel}
+                            onChange={e => setNewInstLabel(e.target.value)}
+                            placeholder="Apelido (ex: Marketing / Dono)"
+                        />
+                        <button
+                            onClick={handleAddManagedInstance}
+                            disabled={busyInstance !== null}
+                            className="bg-green-600 text-white px-4 py-2 rounded flex items-center justify-center gap-2 text-xs font-bold uppercase hover:bg-green-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        >
+                            <QrCode size={15} /> {busyInstance ? 'Aguarde...' : 'Adicionar + QR'}
+                        </button>
+                    </div>
+
+                    {activeQr && (
+                        <div className="mt-4 p-4 bg-[var(--admin-surface-2)] rounded-lg flex flex-col items-center border border-[var(--admin-border)]">
+                            <h4 className="font-bold text-sm text-[var(--admin-text-primary)] mb-2">Escaneie o QR Code com o número da instância "{activeQr.instance}"</h4>
+                            <img src={activeQr.base64} alt={`QR Code WhatsApp ${activeQr.instance}`} className="w-56 h-56 border-4 border-white shadow-lg rounded-lg bg-white" />
+                            <p className="text-xs text-[var(--admin-text-secondary)] mt-2">WhatsApp → Aparelhos Conectados → Conectar Aparelho. O status atualiza sozinho ao conectar.</p>
+                        </div>
+                    )}
+
+                    {managedInstances.length > 0 && (
+                        <div className="flex gap-2 mt-3">
+                            <input
+                                className="flex-1 border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] dark:focus:border-wtech-gold/50 transition-colors outline-none"
+                                value={managedTestPhone}
+                                onChange={e => setManagedTestPhone(e.target.value)}
+                                placeholder="Telefone p/ teste das instâncias (DDD + número)"
+                            />
+                        </div>
+                    )}
+                </div>
+
                 {/* Cobrança Automática de Saldo Pendente */}
                 <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
                     <div className="flex items-center justify-between mb-1">
@@ -815,7 +1156,7 @@ const AdminIntegrations = () => {
                 </div>
                 <p className="text-sm text-[var(--admin-text-secondary)] mb-2">
                     Escolha a saída de cada tipo de mensagem. <strong className="text-[var(--admin-text-primary)]">API Oficial (Meta)</strong> = {globalConfig.waCloudDisplayNumber || '+55 17 3231-2858'} (exige template aprovado para disparo proativo).
-                    <strong className="text-[var(--admin-text-primary)]"> Evolution</strong> = número do servidor (texto livre); deixe a instância em branco para usar a padrão (<code>{globalConfig.fallbackInstance || globalConfig.automationInstance || 'suportewtech'}</code>) ou informe outra (ex.: a do curso online) para isolar.
+                    <strong className="text-[var(--admin-text-primary)]"> Evolution</strong> = número do servidor; selecione a instância responsável (cadastre novas em <strong>Instâncias Adicionais</strong> acima) ou deixe "Padrão do sistema" (<code>{defaultInstanceName}</code>).
                 </p>
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 mb-4">
                     ⚠️ Sem fallback: cada categoria sai SEMPRE pela saída escolhida. Se ela falhar, fica como falha (não cai para outro número).
@@ -842,14 +1183,7 @@ const AdminIntegrations = () => {
                                 <option value="cloud">API Oficial (Meta)</option>
                                 <option value="evolution">Evolution (servidor)</option>
                             </select>
-                            {(globalConfig as any)[item.key] === 'evolution' && (
-                                <input
-                                    className="w-full mt-2 border border-[var(--admin-border)] rounded p-2 text-xs bg-[var(--admin-surface-1)] font-mono outline-none transition-colors"
-                                    value={(globalConfig as any)[item.inst]}
-                                    onChange={e => setGlobalConfig({ ...globalConfig, [item.inst]: e.target.value })}
-                                    placeholder={`Instância (vazio = ${globalConfig.fallbackInstance || globalConfig.automationInstance || 'suportewtech'})`}
-                                />
-                            )}
+                            {(globalConfig as any)[item.key] === 'evolution' && renderInstanceSelect(item.inst)}
                         </div>
                     ))}
                 </div>
@@ -857,24 +1191,20 @@ const AdminIntegrations = () => {
                 <div className="mt-5 pt-5 border-t border-[var(--admin-border)]">
                     <p className="text-sm font-bold text-[var(--admin-text-primary)] mb-1">Instância por rota (Evolution)</p>
                     <p className="text-xs text-[var(--admin-text-secondary)] mb-3">
-                        Rotas de texto livre que sempre saem pela Evolution. Vazio = comportamento padrão
-                        (campanhas usam a instância do operador/automação; CRM e recuperação usam a padrão).
+                        Rotas de texto livre que sempre saem pela Evolution. Padrão do sistema = comportamento atual
+                        (campanhas usam a instância do operador/automação; CRM, recuperação e grupo de IA usam a padrão/relatório).
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                         {[
                             { inst: 'waInstanceCampaign', label: 'Campanhas / Remarketing', hint: 'Fila de marketing (servidor + navegador)' },
                             { inst: 'waInstanceCrm', label: 'CRM — automações', hint: 'Avisos automáticos de tarefas do lead' },
                             { inst: 'waInstanceRecovery', label: 'Recuperação de Vendas', hint: 'Pré-seleção do dropdown de disparo' },
+                            { inst: 'waInstanceAiGroup', label: 'Grupo de IA (Dono)', hint: 'Bot de IA que responde no grupo do WhatsApp' },
                         ].map(item => (
                             <div key={item.inst} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
                                 <p className="text-sm font-bold text-[var(--admin-text-primary)]">{item.label}</p>
-                                <p className="text-[11px] text-[var(--admin-text-tertiary)] mb-2">{item.hint}</p>
-                                <input
-                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-xs bg-[var(--admin-surface-1)] font-mono outline-none transition-colors"
-                                    value={(globalConfig as any)[item.inst]}
-                                    onChange={e => setGlobalConfig({ ...globalConfig, [item.inst]: e.target.value })}
-                                    placeholder={`Instância (vazio = padrão)`}
-                                />
+                                <p className="text-[11px] text-[var(--admin-text-tertiary)]">{item.hint}</p>
+                                {renderInstanceSelect(item.inst)}
                             </div>
                         ))}
                     </div>

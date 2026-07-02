@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { processNotify, type NotifyAction, type NotifyChannel } from './_notify.js';
 import { previewSystemReport, sendSystemReport } from './_report.js';
+import { previewAgentsReport, sendAgentsReport } from './_agentsReport.js';
+import { answerGroupQuestion } from './_aiGroupBot.js';
 
 /**
  * Vercel Serverless Function — Disparo manual de mensagens para alunos
@@ -20,6 +22,15 @@ import { previewSystemReport, sendSystemReport } from './_report.js';
  *   Auth: Authorization: Bearer <CRON_SECRET> (cron do GitHub Actions)
  *         OU header x-wtech-user-id de um usuário existente (painel admin).
  *   mode 'preview' devolve { text } sem enviar; force ignora o toggle.
+ *
+ * POST { action: 'ai-agents-report', mode?: 'preview' | 'send', force?: boolean }
+ *   → relatório consolidado dos Assistentes de IA (Léo/Bia/Rita/Sofia), mesmo
+ *     grupo e mesmo toggle wa_report_*. Usado pelo cron diário (GitHub Actions)
+ *     e pelo botão "Testar Envio Agora" do módulo Assistentes de IA (admin).
+ *
+ * POST { action: 'ai-group-ask', question: string, send?: boolean }
+ *   → sandbox do bot do grupo: roteia a pergunta para a persona certa e devolve
+ *     { agent, answer } SEM enviar no WhatsApp (send: true envia no grupo).
  *
  * Acionado pelo painel admin (lista de inscritos): cobrança individual,
  * cobrança de todos os devedores e envio de informações do curso em massa.
@@ -73,6 +84,42 @@ export default async function handler(req: any, res: any) {
             return res.status(result.sent || result.skipped ? 200 : 500).json({ ok: result.sent, ...result });
         } catch (e: any) {
             console.error('[notify-students] system-report erro:', e?.message);
+            return res.status(500).json({ ok: false, error: e?.message });
+        }
+    }
+
+    // ── Relatório consolidado dos Assistentes de IA (Léo/Bia/Rita/Sofia) ─────
+    if (action === 'ai-agents-report') {
+        if (!(await isAuthorized(req))) {
+            return res.status(401).json({ ok: false, error: 'Não autorizado' });
+        }
+        try {
+            if (req.body?.mode === 'preview') {
+                const { text } = await previewAgentsReport();
+                return res.status(200).json({ ok: true, text });
+            }
+            const result = await sendAgentsReport({ force: req.body?.force === true });
+            return res.status(result.sent || result.skipped ? 200 : 500).json({ ok: result.sent, ...result });
+        } catch (e: any) {
+            console.error('[notify-students] ai-agents-report erro:', e?.message);
+            return res.status(500).json({ ok: false, error: e?.message });
+        }
+    }
+
+    // ── Sandbox do bot do grupo (Assistentes de IA) ──────────────────────────
+    if (action === 'ai-group-ask') {
+        if (!(await isAuthorized(req))) {
+            return res.status(401).json({ ok: false, error: 'Não autorizado' });
+        }
+        const question = String(req.body?.question || '').trim();
+        if (!question) return res.status(400).json({ ok: false, error: 'question é obrigatório' });
+        try {
+            const result = await answerGroupQuestion(question, 'Sandbox (painel admin)', {
+                dryRun: req.body?.send !== true,
+            });
+            return res.status(result.error ? 500 : 200).json({ ok: !result.error, ...result });
+        } catch (e: any) {
+            console.error('[notify-students] ai-group-ask erro:', e?.message);
             return res.status(500).json({ ok: false, error: e?.message });
         }
     }

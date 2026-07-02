@@ -2,7 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
-    Droplets, MessageCircle,
+    Droplets, MessageCircle, Bot,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -74,6 +74,15 @@ export const NAV_GROUPS: AdminNavGroup[] = [
             { icon: Users, label: 'Equipe & Acesso', view: 'team', permission: 'manage_users', goKey: 'e', keywords: 'usuarios cargos permissoes equipe' },
             { icon: Settings, label: 'Configurações', view: 'settings', permission: 'manage_settings', goKey: 's', keywords: 'ajustes preferencias config' },
             { icon: ClipboardList, label: 'Logs do Sistema', view: 'system_logs', permission: 'manage_settings', goKey: 'g', keywords: 'logs auditoria acessos operacoes' },
+        ],
+    },
+    {
+        label: 'IA',
+        items: [
+            // permission propositalmente FORA de PERMISSION_CATALOG (lib/permissions.ts):
+            // nunca aparece como toggle em "Equipe & Acesso", então só super admin
+            // (que sempre bypassa hasPermission) enxerga este módulo.
+            { icon: Bot, label: 'Assistentes de IA', view: 'ai_assistants', permission: 'ai_assistants_super_admin', goKey: 'u', keywords: 'ia agentes leo bia rita sofia inteligencia assistentes' },
         ],
     },
 ];
