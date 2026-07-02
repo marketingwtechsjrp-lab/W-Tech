@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.15.0",
+    "date": "2026-07-01",
+    "title": "IA do grupo responde a própria instância + inteligência financeira reforçada",
+    "changes": [
+      "Bot de grupo (api/_aiGroupBot.ts) passa a responder mensagens fromMe: removido o filtro que descartava toda mensagem vinda da instância conectada — como o dono/instância é quem mais pergunta no grupo, nenhuma pergunta real vinha sendo respondida (o único log era um teste de sandbox). Anti-loop mantido pelos prefixos das personas (emoji *Nome:*), pelo relatório diário (🤖) e pelo dedupe por message_id",
+      "Financeiro por curso (Léo): o detalhe de cursos citados agora traz valor_de_tabela_total, valor_negociado_total, arrecadado_total, saldo_a_receber, defasagem_desconto_total, contagem de quitados vs ainda_devendo e a lista de quem falta pagar naquele curso",
+      "Consolidado financeiro global (Rita): novo bloco consolidado_financeiro_alunos (tabela, negociado, arrecadado, defasagem/desconto e saldo a receber) considerando inscrições confirmadas, com check-in e pendentes; e quem_falta_pagar com os 20 maiores devedores e o curso de cada um",
+      "'Defasagem' = desconto concedido (preço de tabela − valor negociado): o termo roteia para a Rita, deixou de ser tratado como nome de aluno na busca de entidades, e o prompt da Rita ganhou o glossário (arrecadado / defasagem / saldo a receber)",
+      "Histórico de pagamentos no grupo: ao citar um aluno, a IA traz a linha do tempo entrada → parcelas → quitação (via SITE_Transactions.enrollment_id, mesma lógica do painel), com pagamentos antigos sem transação vinculada exibidos como 'registrado na inscrição' — nada estimado"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.14.0",
     "date": "2026-07-01",
     "title": "Histórico de Pagamentos por aluno no curso (entrada, parcelas e quitação)",

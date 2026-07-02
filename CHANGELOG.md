@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.15.0 (2026-07-01) - IA do grupo responde a própria instância + inteligência financeira reforçada
+
+- **Bot de grupo responde `fromMe`:** removido o filtro que descartava toda mensagem vinda da instância conectada (`api/_aiGroupBot.ts`). Como o dono/instância conectada é quem mais pergunta no grupo, nenhuma pergunta real vinha sendo respondida (o único log existente era um teste de sandbox). O anti-loop continua garantido: respostas das personas (prefixo `emoji *Nome:*`) e o relatório diário (`🤖`) seguem ignorados, mais o dedupe por `message_id`
+- **Financeiro por curso (Léo, `api/_aiSectorData.ts`):** o detalhe de cursos citados agora traz `valor_de_tabela_total`, `valor_negociado_total`, `arrecadado_total`, `saldo_a_receber`, `defasagem_desconto_total`, contagem de `quitados` vs `ainda_devendo` e a lista de **quem falta pagar** naquele curso
+- **Consolidado financeiro global (Rita):** novo bloco `consolidado_financeiro_alunos` (tabela, negociado, arrecadado, defasagem/desconto e saldo a receber) considerando inscrições confirmadas, com check-in **e pendentes**; e `quem_falta_pagar` com os 20 maiores devedores e o curso de cada um
+- **"Defasagem" = desconto concedido:** o termo do dia a dia (preço de tabela − valor negociado) agora roteia para a Rita, deixou de ser tratado como nome de aluno na busca, e o prompt da Rita ganhou o glossário (arrecadado / defasagem / saldo a receber) para não confundir os três
+- **Histórico de pagamentos no grupo:** ao citar um aluno, a IA traz a linha do tempo entrada → parcelas → quitação (via `SITE_Transactions.enrollment_id`, mesma lógica do painel), com pagamentos antigos sem transação exibidos como "registrado na inscrição" — fidelidade total, nada estimado
+
 ## v3.14.0 (2026-07-01) - Histórico de Pagamentos por aluno no curso (entrada, parcelas e quitação)
 
 - **Botão "Histórico" na lista de inscritos:** cada aluno do curso ganhou um modal com resumo financeiro (total negociado, pago, restante ou selo QUITADO), destaque de **entrada** e **pagamento final**, e linha do tempo completa — data e forma de pagamento de cada parcela (`components/admin/Courses/PaymentHistoryModal.tsx`)

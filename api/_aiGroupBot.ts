@@ -236,14 +236,18 @@ export async function handleEvolutionWebhook(req: any, res: any): Promise<any> {
         for (const item of items) {
             const key = item?.key || {};
             const remoteJid = String(key.remoteJid || '');
-            const fromMe = !!key.fromMe;
             const messageId = String(key.id || '');
             const senderName = String(item?.pushName || '').trim();
             const text = extractText(item?.message).trim();
 
             if (remoteJid !== cfg.groupJid) continue;          // só o grupo configurado
-            if (fromMe) continue;                              // anti-loop: nunca responde a si mesmo
             if (!text) continue;                               // só texto
+            // Anti-loop (SEM filtrar fromMe): a instância conectada também é
+            // dono do sistema e frequentemente é QUEM pergunta no grupo — então
+            // fromMe precisa ser respondido. O que NUNCA pode ser respondido são
+            // as mensagens automáticas que a própria instância dispara no grupo:
+            // as respostas das personas (emoji *Nome:*) e o relatório diário (🤖).
+            // Esses prefixos + o dedupe por message_id abaixo garantem o anti-loop.
             if (AGENT_REPLY_PREFIXES.some((p) => text.startsWith(p)) || text.startsWith('🤖')) continue;
 
             // Dedupe de reentrega: insere o message_id; conflito = já processado.

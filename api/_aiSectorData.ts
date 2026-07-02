@@ -56,6 +56,11 @@ const STOPWORDS = new Set([
     'pendente', 'pendentes', 'aberto', 'abertos', 'aberta', 'abertas', 'atrasada', 'atrasadas',
     'atrasado', 'atrasados', 'novo', 'novos', 'nova', 'novas', 'confirmado', 'confirmados',
     'confirmada', 'confirmadas', 'desconto', 'descontos', 'preco', 'precos', 'restante',
+    // termos financeiros de consulta (conceitos, não nomes de pessoas)
+    'defasagem', 'arrecadado', 'arrecadada', 'arrecadacao', 'arrecadar', 'arrecadaram',
+    'quitacao', 'quitado', 'quitados', 'quitada', 'quitadas', 'quitar', 'parcela', 'parcelas',
+    'parcelado', 'entrada', 'entradas', 'inadimplente', 'inadimplentes', 'inadimplencia',
+    'tabela', 'negociado', 'negociada', 'localidade',
 ]);
 
 /** Extrai da pergunta os termos candidatos a nome de entidade (máx 6). */
@@ -80,7 +85,8 @@ const SECTOR_KEYWORDS: Record<AIAgentId, string[]> = {
         'financeiro', 'receita', 'despesa', 'custo', 'fatur', 'saldo', 'desconto', 'valor',
         'preco', 'pagou', 'pagamento', 'pagar', 'pago', 'pix', 'cartao', 'boleto', 'transacao',
         'caixa', 'lucro', 'divida', 'devedor', 'devendo', 'cobranca', 'dinheiro', 'reais',
-        'restante', 'receber', 'entrada', 'gasto',
+        'restante', 'receber', 'entrada', 'gasto', 'arrecad', 'defasagem', 'quitac', 'quitad',
+        'parcela', 'inadimpl', 'negociado', 'tabela',
     ],
     bia: [
         'atendimento', 'whatsapp', 'mensagem', 'respond', 'tarefa', 'funil', 'follow', 'crm',
@@ -185,34 +191,80 @@ async function gatherRitaPack(client: SupabaseClient): Promise<Record<string, an
         console.error('[aiSector] rita.transacoes:', e?.message);
     }
 
-    // Saldo a receber + maiores devedores (fonte: inscrições confirmadas com pagamento parcial).
+    // Consolidado financeiro dos alunos + quem falta pagar.
+    // Considera inscrições Confirmed/CheckedIn/Pending com valor negociado > 0.
+    // Fonte dos valores:
+    //   - valor de tabela  = SITE_Courses.price (preço cheio do curso)
+    //   - valor negociado  = SITE_Enrollments.total_amount (fechado com o aluno)
+    //   - arrecadado       = SITE_Enrollments.amount_paid (já entrou)
+    //   - defasagem/desconto = tabela − negociado (o que se deixou de cobrar)
+    //   - saldo a receber  = negociado − arrecadado (o que ainda falta entrar)
     try {
         const { data: enrs } = await client
             .from('SITE_Enrollments')
-            .select('student_name, total_amount, amount_paid, currency')
-            .eq('status', 'Confirmed')
+            .select('student_name, total_amount, amount_paid, currency, course_id, status')
+            .in('status', ['Confirmed', 'CheckedIn', 'Pending'])
             .gt('total_amount', 0)
-            .limit(2000);
-        let total = 0;
-        const debtors: Array<{ aluno: string; restante: number }> = [];
-        (enrs || []).forEach((e: any) => {
-            if ((e.currency || 'BRL').toUpperCase() !== 'BRL') return;
-            const remaining = Number(e.total_amount || 0) - Number(e.amount_paid || 0);
+            .limit(3000);
+
+        const rows = (enrs || []).filter((e: any) => (e.currency || 'BRL').toUpperCase() === 'BRL');
+
+        // Preço de tabela + título por curso citado nas inscrições.
+        const courseIds = Array.from(new Set(rows.map((e: any) => e.course_id).filter(Boolean)));
+        const priceById = new Map<string, number>();
+        const titleById = new Map<string, string>();
+        if (courseIds.length > 0) {
+            const { data: courses } = await client
+                .from('SITE_Courses')
+                .select('id, title, price')
+                .in('id', courseIds);
+            (courses || []).forEach((c: any) => {
+                priceById.set(c.id, Number(c.price || 0));
+                titleById.set(c.id, c.title);
+            });
+        }
+
+        let tabelaTotal = 0;
+        let negociadoTotal = 0;
+        let arrecadadoTotal = 0;
+        let defasagemTotal = 0; // = desconto concedido (tabela − negociado)
+        let saldoTotal = 0;
+        const debtors: Array<{ aluno: string; curso: string | null; restante: number }> = [];
+
+        rows.forEach((e: any) => {
+            const negociado = Number(e.total_amount || 0);
+            const pago = Number(e.amount_paid || 0);
+            const tabela = priceById.get(e.course_id) || 0;
+            negociadoTotal += negociado;
+            arrecadadoTotal += pago;
+            tabelaTotal += tabela > 0 ? tabela : negociado;
+            if (tabela > negociado) defasagemTotal += tabela - negociado;
+            const remaining = negociado - pago;
             if (remaining > 0.009) {
-                total += remaining;
-                debtors.push({ aluno: e.student_name, restante: remaining });
+                saldoTotal += remaining;
+                debtors.push({ aluno: e.student_name, curso: titleById.get(e.course_id) || null, restante: remaining });
             }
         });
-        pack.saldo_a_receber = {
-            total: `R$ ${fmtMoney(total)}`,
-            inscricoes_com_saldo: debtors.length,
-            maiores_devedores: debtors
+
+        pack.consolidado_financeiro_alunos = {
+            base: 'Inscrições confirmadas, com check-in e pendentes (moeda BRL).',
+            valor_de_tabela_total: `R$ ${fmtMoney(tabelaTotal)}`,
+            valor_negociado_total: `R$ ${fmtMoney(negociadoTotal)}`,
+            arrecadado_total: `R$ ${fmtMoney(arrecadadoTotal)}`,
+            defasagem_desconto_total: `R$ ${fmtMoney(defasagemTotal)}`,
+            saldo_a_receber_total: `R$ ${fmtMoney(saldoTotal)}`,
+            inscricoes_consideradas: rows.length,
+        };
+        pack.quem_falta_pagar = {
+            total_de_alunos_com_saldo: debtors.length,
+            saldo_a_receber_total: `R$ ${fmtMoney(saldoTotal)}`,
+            devedores: debtors
                 .sort((a, b) => b.restante - a.restante)
-                .slice(0, 10)
-                .map((d) => ({ aluno: d.aluno, restante: `R$ ${fmtMoney(d.restante)}` })),
+                .slice(0, 20)
+                .map((d) => ({ aluno: d.aluno, curso: d.curso, restante: `R$ ${fmtMoney(d.restante)}` })),
         };
     } catch (e: any) {
-        console.error('[aiSector] rita.saldo:', e?.message);
+        console.error('[aiSector] rita.consolidado:', e?.message);
     }
 
     return pack;
@@ -369,32 +421,46 @@ async function gatherLeoPack(client: SupabaseClient, question: string): Promise<
             try {
                 const { data: enrs } = await client
                     .from('SITE_Enrollments')
-                    .select('status, total_amount, amount_paid, currency')
+                    .select('student_name, status, total_amount, amount_paid, currency')
                     .eq('course_id', course.id)
                     .limit(1000);
+                const tabela = Number(course.price || 0);
                 let count = 0;
                 let confirmed = 0;
+                let sumTabela = 0;
                 let sumNegotiated = 0;
                 let sumPaid = 0;
-                let discount = 0;
+                let discount = 0; // defasagem = desconto concedido (tabela − negociado)
+                let quitados = 0;
+                const devedores: Array<{ aluno: string; restante: number }> = [];
                 (enrs || []).forEach((e: any) => {
                     if ((e.currency || 'BRL').toUpperCase() !== 'BRL') return;
                     count += 1;
                     if (e.status === 'Confirmed' || e.status === 'CheckedIn') confirmed += 1;
                     const negotiated = Number(e.total_amount || 0);
+                    const paid = Number(e.amount_paid || 0);
+                    sumTabela += tabela > 0 ? tabela : negotiated;
                     sumNegotiated += negotiated;
-                    sumPaid += Number(e.amount_paid || 0);
-                    if (negotiated > 0 && Number(course.price || 0) > negotiated) {
-                        discount += Number(course.price) - negotiated;
-                    }
+                    sumPaid += paid;
+                    if (negotiated > 0 && tabela > negotiated) discount += tabela - negotiated;
+                    const remaining = negotiated - paid;
+                    if (remaining > 0.009) devedores.push({ aluno: e.student_name, restante: remaining });
+                    else if (negotiated > 0) quitados += 1;
                 });
                 detail.matriculas = {
                     total: count,
                     confirmadas_ou_checkin: confirmed,
+                    valor_de_tabela_total: `R$ ${fmtMoney(sumTabela)}`,
                     valor_negociado_total: `R$ ${fmtMoney(sumNegotiated)}`,
-                    valor_pago_total: `R$ ${fmtMoney(sumPaid)}`,
-                    saldo_restante: `R$ ${fmtMoney(Math.max(0, sumNegotiated - sumPaid))}`,
-                    desconto_total_vs_preco_tabela: `R$ ${fmtMoney(discount)}`,
+                    arrecadado_total: `R$ ${fmtMoney(sumPaid)}`,
+                    saldo_a_receber: `R$ ${fmtMoney(Math.max(0, sumNegotiated - sumPaid))}`,
+                    defasagem_desconto_total: `R$ ${fmtMoney(discount)}`,
+                    quitados: quitados,
+                    ainda_devendo: devedores.length,
+                    quem_falta_pagar: devedores
+                        .sort((a, b) => b.restante - a.restante)
+                        .slice(0, 15)
+                        .map((d) => ({ aluno: d.aluno, restante: `R$ ${fmtMoney(d.restante)}` })),
                 };
             } catch (e: any) {
                 console.error('[aiSector] leo.detalhe matrículas:', e?.message);
@@ -483,11 +549,53 @@ async function gatherSofiaPack(client: SupabaseClient, terms: string[]): Promise
 
 // ─── Entidades citadas: aluno e lead (compartilhado entre setores) ───────────
 
+/**
+ * Monta a linha do tempo de pagamentos de uma inscrição a partir das transações
+ * vinculadas (SITE_Transactions.enrollment_id) — mesma lógica do painel
+ * (PaymentHistoryModal): entrada → parciais → quitação. Pagamentos antigos sem
+ * transação detalhada aparecem como "registrado na inscrição" com a diferença
+ * exata. Nada é inventado.
+ */
+function buildPaymentTimeline(
+    txs: Array<{ amount: number; date: string | null; method: string | null }>,
+    total: number,
+    paid: number,
+    sym: string,
+    enrollmentPaymentMethod: string | null,
+    createdAt: string | null
+): Array<Record<string, any>> {
+    const items: Array<{ label: string; date: string | null; amount: number; method: string | null; isSettlement: boolean }> = [];
+    const trackedSum = txs.reduce((acc, t) => acc + t.amount, 0);
+    const untracked = paid - trackedSum;
+    if (untracked > 0.009) {
+        items.push({ label: '', date: createdAt, amount: untracked, method: enrollmentPaymentMethod || 'registrado na inscrição', isSettlement: false });
+    }
+    txs.forEach((t) => items.push({ label: '', date: t.date, amount: t.amount, method: t.method, isSettlement: false }));
+
+    let cumulative = 0;
+    items.forEach((p, idx) => {
+        cumulative += p.amount;
+        const settles = total > 0 && cumulative >= total - 0.009;
+        p.isSettlement = settles;
+        if (settles && idx === 0) p.label = 'Pagamento integral';
+        else if (settles) p.label = 'Quitação (pagamento final)';
+        else if (idx === 0) p.label = 'Entrada';
+        else p.label = 'Pagamento parcial';
+    });
+
+    return items.map((p) => ({
+        etapa: p.label,
+        valor: `${sym} ${fmtMoney(p.amount)}`,
+        data: p.date ? String(p.date).slice(0, 10) : null,
+        forma: p.method,
+    }));
+}
+
 async function findStudentsByTerms(client: SupabaseClient, terms: string[]): Promise<any[]> {
     if (terms.length === 0) return [];
     const { data: enrs } = await client
         .from('SITE_Enrollments')
-        .select('student_name, status, total_amount, amount_paid, currency, created_at, course_id')
+        .select('id, student_name, status, total_amount, amount_paid, currency, created_at, course_id, payment_method')
         .order('created_at', { ascending: false })
         .limit(3000);
     const matched = (enrs || []).filter((e: any) => matchesAnyTerm(e.student_name, terms)).slice(0, 8);
@@ -498,6 +606,28 @@ async function findStudentsByTerms(client: SupabaseClient, terms: string[]): Pro
     if (courseIds.length > 0) {
         const { data: courses } = await client.from('SITE_Courses').select('id, title, date').in('id', courseIds);
         (courses || []).forEach((c: any) => titleById.set(c.id, `${c.title} (${c.date || 'sem data'})`));
+    }
+
+    // Histórico de pagamentos (entrada/parcelas/quitação) por inscrição.
+    // Best-effort: se a coluna enrollment_id ainda não existir, segue sem timeline.
+    const enrollmentIds = matched.map((m: any) => m.id).filter(Boolean);
+    const txByEnrollment = new Map<string, Array<{ amount: number; date: string | null; method: string | null }>>();
+    if (enrollmentIds.length > 0) {
+        const { data: txs, error } = await client
+            .from('SITE_Transactions')
+            .select('enrollment_id, amount, type, date, payment_method')
+            .in('enrollment_id', enrollmentIds)
+            .eq('type', 'Income')
+            .order('date', { ascending: true });
+        if (error) {
+            console.error('[aiSector] histórico pagamentos indisponível:', error.message);
+        } else {
+            (txs || []).forEach((t: any) => {
+                const list = txByEnrollment.get(t.enrollment_id) || [];
+                list.push({ amount: Number(t.amount || 0), date: t.date || null, method: t.payment_method || null });
+                txByEnrollment.set(t.enrollment_id, list);
+            });
+        }
     }
 
     return matched.map((e: any) => {
@@ -512,6 +642,9 @@ async function findStudentsByTerms(client: SupabaseClient, terms: string[]): Pro
             valor_pago: `${sym} ${fmtMoney(paid)}`,
             saldo_restante: `${sym} ${fmtMoney(Math.max(0, total - paid))}`,
             inscrito_em: String(e.created_at || '').slice(0, 10),
+            historico_pagamentos: buildPaymentTimeline(
+                txByEnrollment.get(e.id) || [], total, paid, sym, e.payment_method || null, e.created_at || null
+            ),
         };
     });
 }
