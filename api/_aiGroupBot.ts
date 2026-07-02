@@ -152,18 +152,13 @@ export async function answerGroupQuestion(
         // mas SEM acesso à web (remove variantes ':online' do OpenRouter).
         const aiCfg = await loadAIConfig(supabase).catch(() => null);
         const keys = await loadAIKeys(supabase, aiCfg?.provider || null);
-        const raw = await withTimeout(callLLM(keys, system, user, offlineModel(aiCfg?.model)), 20000, 'LLM grupo');
+        const raw = await withTimeout(callLLM(keys, system, user, offlineModel(aiCfg?.model)), 45000, 'LLM grupo');
 
         const { agent, answer } = parseLLMReply(raw);
 
-        let sent = false;
-        if (!opts.dryRun && answer && agent !== 'silencio' && groupJid) {
-            const meta = AI_AGENT_BY_ID[agent];
-            const result = await sendWhatsAppText(groupJid, `${meta.emoji} *${meta.name}:* ${answer}`, cfg.instance || opts.instance);
-            sent = result.sent;
-        }
-
-        // Log/histórico (best-effort — tabela pode ainda não existir).
+        // Log/histórico ANTES do envio (best-effort): se o envio falhar ou a
+        // função for abortada no meio, a decisão fica registrada e visível no
+        // painel — e a reentrega da Evolution não reprocessa (anti-duplicata).
         try {
             if (opts.messageId) {
                 await supabase
@@ -184,9 +179,32 @@ export async function answerGroupQuestion(
             console.error('[aiGroupBot] log:', e?.message);
         }
 
+        let sent = false;
+        if (!opts.dryRun && answer && agent !== 'silencio' && groupJid) {
+            try {
+                const meta = AI_AGENT_BY_ID[agent];
+                const result = await sendWhatsAppText(groupJid, `${meta.emoji} *${meta.name}:* ${answer}`, cfg.instance || opts.instance);
+                sent = result.sent;
+                if (!sent) console.error('[aiGroupBot] envio falhou:', result.error || result.skipped);
+            } catch (e: any) {
+                console.error('[aiGroupBot] envio:', e?.message);
+            }
+        }
+
         return { agent, answer, sent };
     } catch (e: any) {
         console.error('[aiGroupBot] answerGroupQuestion:', e?.message);
+        // Registra o erro no histórico (só se ainda não há resposta) para o
+        // painel mostrar POR QUE a pergunta ficou sem resposta no grupo.
+        if (opts.messageId) {
+            try {
+                await supabase
+                    .from('SITE_AIGroupLog')
+                    .update({ agent: 'silencio', answer: `[erro] ${e?.message || 'falha desconhecida'}` })
+                    .eq('message_id', opts.messageId)
+                    .is('answer', null);
+            } catch { /* best-effort */ }
+        }
         return { agent: 'silencio', answer: null, sent: false, error: e?.message };
     }
 }
@@ -250,7 +268,7 @@ export async function handleEvolutionWebhook(req: any, res: any): Promise<any> {
             // Esses prefixos + o dedupe por message_id abaixo garantem o anti-loop.
             if (AGENT_REPLY_PREFIXES.some((p) => text.startsWith(p)) || text.startsWith('🤖')) continue;
 
-            // Dedupe de reentrega: insere o message_id; conflito = já processado.
+            // Dedupe de reentrega: insere o message_id; conflito = já visto.
             if (messageId) {
                 const { error } = await supabase.from('SITE_AIGroupLog').insert({
                     message_id: messageId,
@@ -259,9 +277,20 @@ export async function handleEvolutionWebhook(req: any, res: any): Promise<any> {
                     question: text,
                 });
                 if (error) {
-                    if (error.code === '23505') continue; // duplicado — já respondido
-                    // Tabela ausente ou outro erro: segue sem dedupe (fromMe já protege de loop).
-                    console.error('[aiGroupBot] dedupe indisponível:', error.message);
+                    if (error.code === '23505') {
+                        // Já vimos essa mensagem. Se a tentativa anterior morreu no
+                        // meio (função abortada/timeout → agent e answer nulos),
+                        // a reentrega ganha uma segunda chance; senão, ignora.
+                        const { data: prev } = await supabase
+                            .from('SITE_AIGroupLog')
+                            .select('agent, answer')
+                            .eq('message_id', messageId)
+                            .maybeSingle();
+                        if (prev && (prev.agent || prev.answer)) continue; // já respondido
+                    } else {
+                        // Tabela ausente ou outro erro: segue sem dedupe (prefixos de persona protegem do loop).
+                        console.error('[aiGroupBot] dedupe indisponível:', error.message);
+                    }
                 }
             }
 

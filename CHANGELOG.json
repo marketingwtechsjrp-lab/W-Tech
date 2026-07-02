@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.16.1",
+    "date": "2026-07-02",
+    "title": "Correção: perguntas do grupo ficavam sem resposta (timeout silencioso)",
+    "changes": [
+      "Diagnóstico: o fromMe da v3.15.0 funcionou — as perguntas chegavam e eram logadas, mas a resposta morria no meio (timeout do LLM em 20s ou função serverless abortada no limite de 10s do plano Hobby), sem registrar erro, e o dedupe marcava a mensagem como processada para sempre",
+      "vercel.json: maxDuration 60s para whatsapp-cloud-webhook e notify-students — a função não é mais abortada no meio da resposta",
+      "Timeout do LLM no bot do grupo: 20s → 45s (api/_aiGroupBot.ts)",
+      "Resposta registrada no histórico ANTES do envio ao WhatsApp; envio com try/catch próprio — nada se perde se o envio falhar",
+      "Erros agora visíveis: falha grava '[erro] …' no histórico do bot (painel → Últimas respostas do grupo)",
+      "Dedupe com segunda chance: reentrega da Evolution reprocessa mensagens cuja tentativa anterior morreu sem resposta"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.16.0",
     "date": "2026-07-02",
     "title": "Painel dos Assistentes com dados reais + filtro por curso e busca de aluno",

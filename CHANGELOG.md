@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.16.1 (2026-07-02) - Correção: perguntas do grupo ficavam sem resposta (timeout silencioso)
+
+- **Diagnóstico:** o `fromMe` da v3.15.0 funcionou — as perguntas do Daniel no grupo chegavam e eram logadas, mas a resposta morria no meio do caminho (timeout do LLM em 20s ou a função serverless abortada no limite de 10s do plano Hobby), o erro não era registrado em lugar nenhum e o dedupe marcava a mensagem como "já processada" para sempre
+- **`vercel.json`:** `maxDuration: 60` para `whatsapp-cloud-webhook` e `notify-students` — a função não é mais abortada no meio da resposta
+- **Timeout do LLM:** 20s → 45s no bot do grupo (`api/_aiGroupBot.ts`)
+- **Resposta registrada ANTES do envio:** se o envio ao WhatsApp falhar, a decisão fica no histórico do painel (nada se perde) e o envio ganhou try/catch próprio
+- **Erros agora visíveis:** falha na resposta grava `[erro] …` no histórico do bot (painel → Últimas respostas do grupo) em vez de sumir em silêncio
+- **Dedupe com segunda chance:** reentrega da Evolution reprocessa mensagens cuja tentativa anterior morreu sem resposta (antes: puladas para sempre)
+
 ## v3.16.0 (2026-07-02) - Painel dos Assistentes com dados reais + filtro por curso e busca de aluno
 
 - **Números REAIS no painel (Sofia/Rita):** o dinheiro agora vem da fonte da verdade — as matrículas (`SITE_Enrollments.amount_paid`). Novos cards: **Arrecadado dos alunos (total)**, **Negociado (total)**, **Saldo a receber** e **Alunos inscritos** com breakdown real (confirmadas · check-in · pendentes). Antes o painel mostrava "Receita do mês R$ 0,00" porque somava apenas `SITE_Transactions` do mês corrente — ignorando os R$ 264 mil já arrecadados nas matrículas (`lib/aiAgentsData.ts`, `AgentWorkspace.tsx`)
