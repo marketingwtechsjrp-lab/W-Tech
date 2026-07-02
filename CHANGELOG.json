@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.17.0",
+    "date": "2026-07-02",
+    "title": "IA acha qualquer curso citado + Bia lê as métricas do WhatsApp oficial",
+    "changes": [
+      "Bug do curso de Belo Horizonte corrigido: matching de cursos citados agora é por pontuação (cidade > local > palavras distintivas do título; genéricas como 'curso'/'suspensão'/'W-TECH' ignoradas) — antes toda pergunta com 'curso' casava com o catálogo inteiro e o corte de 5 pegava cursos errados",
+      "Detalhe financeiro do curso citado virou bloco COMPARTILHADO entre Rita, Léo e Sofia — 'qual valor recebido em BH' (pergunta financeira, sem palavra de inscrições) agora coleta o detalhe; validado: R$ 53.629,32, igual ao painel",
+      "Bia lê as métricas do WhatsApp oficial (mesma fonte da tela Métricas): conversas por status, resolução pela IA vs humanas, sentimento, prioridade, principais tópicos e dúvidas, conversas que precisam de atenção com ação sugerida, e resumos por conversa",
+      "Tempos de atendimento (7 dias): tempo médio de primeira resposta, maior demora e % respondidas em até 5min, calculados das mensagens reais",
+      "Demora agora: contatos aguardando resposta neste momento (com há quanto tempo) e leads novos esperando o primeiro atendimento há mais tempo",
+      "Roteamento: tempo/demora/dúvidas/sentimento/tópicos/métricas/análise → Bia; recebido/recebeu → Rita; termos de consulta deixam de ser tratados como nomes de aluno"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.16.1",
     "date": "2026-07-02",
     "title": "Correção: perguntas do grupo ficavam sem resposta (timeout silencioso)",

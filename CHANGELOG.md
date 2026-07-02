@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.17.0 (2026-07-02) - IA acha qualquer curso citado + Bia lê as métricas do WhatsApp oficial
+
+- **Bug do curso de Belo Horizonte corrigido (`api/_aiSectorData.ts`):** o matching de cursos citados casava por palavras genéricas do título ("curso", "suspensão", "W-TECH") — TODA pergunta com "curso" casava com o catálogo inteiro e o corte de 5 pegava os errados; além disso o detalhe financeiro só existia no pack do Léo, então "qual valor recebido em BH" (sem palavra de inscrições) nem o coletava. Agora: **matching por pontuação** (cidade > local > palavras distintivas, genéricas ignoradas) e o **detalhe do curso citado é compartilhado** entre Rita, Léo e Sofia — validado: "valor recebido do curso de belo horizonte" → R$ 53.629,32 (bate com o painel)
+- **Bia agora lê as MÉTRICAS do WhatsApp oficial** (mesma fonte da tela Métricas): conversas por status, resolução pela IA vs humanas, sentimento dos clientes, prioridade, **principais tópicos e dúvidas**, conversas que **precisam de atenção** (com ação sugerida) e resumos por conversa (`SITE_WhatsAppCloudConversations.ai_*`)
+- **Tempos de atendimento (7 dias):** tempo médio de primeira resposta, maior demora, % respondidas em até 5min — calculado das mensagens reais (`in` → próxima `out` por conversa)
+- **Demora agora:** quem está aguardando resposta neste momento (última mensagem é do cliente) com há quanto tempo, e os leads novos esperando o primeiro atendimento há mais tempo (CRM)
+- **Roteamento:** "tempo/demora/dúvidas/sentimento/tópicos/métricas/análise" → Bia; "recebido/recebeu" → Rita; termos de consulta não são mais confundidos com nomes de aluno
+
 ## v3.16.1 (2026-07-02) - Correção: perguntas do grupo ficavam sem resposta (timeout silencioso)
 
 - **Diagnóstico:** o `fromMe` da v3.15.0 funcionou — as perguntas do Daniel no grupo chegavam e eram logadas, mas a resposta morria no meio do caminho (timeout do LLM em 20s ou a função serverless abortada no limite de 10s do plano Hobby), o erro não era registrado em lugar nenhum e o dedupe marcava a mensagem como "já processada" para sempre

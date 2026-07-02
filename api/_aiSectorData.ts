@@ -60,7 +60,12 @@ const STOPWORDS = new Set([
     'defasagem', 'arrecadado', 'arrecadada', 'arrecadacao', 'arrecadar', 'arrecadaram',
     'quitacao', 'quitado', 'quitados', 'quitada', 'quitadas', 'quitar', 'parcela', 'parcelas',
     'parcelado', 'entrada', 'entradas', 'inadimplente', 'inadimplentes', 'inadimplencia',
-    'tabela', 'negociado', 'negociada', 'localidade',
+    'tabela', 'negociado', 'negociada', 'localidade', 'recebido', 'recebida', 'recebidos',
+    // termos de atendimento/métricas (conceitos, não nomes de pessoas)
+    'tempo', 'tempos', 'demora', 'demorou', 'demorando', 'duvida', 'duvidas', 'sentimento',
+    'sentimentos', 'topico', 'topicos', 'metrica', 'metricas', 'resposta', 'respostas',
+    'analise', 'analises', 'oficial', 'conversa', 'conversas', 'resolucao', 'aguardando',
+    'prioridade', 'prioridades', 'atencao',
 ]);
 
 /** Extrai da pergunta os termos candidatos a nome de entidade (máx 6). */
@@ -78,6 +83,40 @@ const matchesAnyTerm = (value: string | null | undefined, terms: string[]): bool
     return terms.some((t) => v.includes(t));
 };
 
+// ─── Matching de curso citado na pergunta ────────────────────────────────────
+
+/**
+ * Palavras que aparecem em quase TODOS os títulos de curso ("Curso de
+ * Suspensão W-TECH em ...") — não servem para identificar UM curso. Sem esse
+ * filtro, qualquer pergunta com "curso" casava com o catálogo inteiro e o
+ * corte de 5 pegava cursos errados (bug real: Belo Horizonte ficava de fora).
+ */
+const GENERIC_COURSE_WORDS = new Set([
+    'curso', 'cursos', 'suspensao', 'suspensoes', 'w-tech', 'wtech', 'tech', 'experience',
+    'brasil', 'edicao', 'performance', 'alta', 'avancado', 'conference', 'sede',
+]);
+
+/**
+ * Pontua o quanto um curso foi citado na pergunta: cidade/local valem mais que
+ * palavras distintivas do título. 0 = não citado.
+ */
+export function courseMatchScore(
+    course: { title?: string | null; city?: string | null; location?: string | null },
+    qNorm: string
+): number {
+    if (!qNorm) return 0;
+    let score = 0;
+    const city = normalize(course.city || '');
+    if (city.length >= 3 && qNorm.includes(city)) score += 10;
+    const location = normalize(course.location || '');
+    if (location.length >= 3 && qNorm.includes(location)) score += 6;
+    normalize(course.title || '')
+        .split(/[^a-z0-9-]+/)
+        .filter((w) => w.length >= 4 && !STOPWORDS.has(w) && !GENERIC_COURSE_WORDS.has(w))
+        .forEach((w) => { if (qNorm.includes(w)) score += 3; });
+    return score;
+}
+
 // ─── Roteador de setores por palavra-chave ───────────────────────────────────
 
 const SECTOR_KEYWORDS: Record<AIAgentId, string[]> = {
@@ -85,12 +124,14 @@ const SECTOR_KEYWORDS: Record<AIAgentId, string[]> = {
         'financeiro', 'receita', 'despesa', 'custo', 'fatur', 'saldo', 'desconto', 'valor',
         'preco', 'pagou', 'pagamento', 'pagar', 'pago', 'pix', 'cartao', 'boleto', 'transacao',
         'caixa', 'lucro', 'divida', 'devedor', 'devendo', 'cobranca', 'dinheiro', 'reais',
-        'restante', 'receber', 'entrada', 'gasto', 'arrecad', 'defasagem', 'quitac', 'quitad',
+        'restante', 'receb', 'entrada', 'gasto', 'arrecad', 'defasagem', 'quitac', 'quitad',
         'parcela', 'inadimpl', 'negociado', 'tabela',
     ],
     bia: [
         'atendimento', 'whatsapp', 'mensagem', 'respond', 'tarefa', 'funil', 'follow', 'crm',
-        'lead', 'conversa', 'contato', 'atendeu', 'atendido', 'negocia',
+        'lead', 'conversa', 'contato', 'atendeu', 'atendido', 'negocia', 'tempo', 'demora',
+        'demorou', 'duvida', 'sentimento', 'topico', 'metrica', 'resposta', 'sla', 'oficial',
+        'aguardando', 'resolucao', 'atencao', 'cliente',
     ],
     leo: [
         'inscri', 'matricul', 'aluno', 'turma', 'vaga', 'credenciamento', 'presenca', 'checkin',
@@ -340,14 +381,161 @@ async function gatherBiaPack(client: SupabaseClient): Promise<Record<string, any
         console.error('[aiSector] bia.funil:', e?.message);
     }
 
+    // WhatsApp OFICIAL (Meta) — as mesmas métricas da tela "Métricas" do
+    // painel: status, resolução pela IA, sentimento, prioridade, principais
+    // tópicos/dúvidas, conversas que precisam de atenção e resumos por
+    // conversa (análise por IA gravada em SITE_WhatsAppCloudConversations).
+    try {
+        const [{ data: convs }, { data: sentRows }] = await Promise.all([
+            client
+                .from('SITE_WhatsAppCloudConversations')
+                .select('profile_name, wa_id, status, last_direction, last_message_at, ai_summary, ai_sentiment, ai_topics, ai_priority, ai_suggested_action')
+                .order('last_message_at', { ascending: false })
+                .limit(500),
+            client.from('SITE_WhatsAppCloudMessages').select('sent_by').limit(10000),
+        ]);
+
+        const byStatus: Record<string, number> = {};
+        const bySentiment: Record<string, number> = {};
+        const byPriority: Record<string, number> = {};
+        const topicMap: Record<string, number> = {};
+        const attention: any[] = [];
+        const waiting: Array<{ contato: string; minutos: number }> = [];
+        const nowMs = Date.now();
+
+        (convs || []).forEach((c: any) => {
+            const st = c.status || 'bot';
+            byStatus[st === 'bot' ? 'ia' : st] = (byStatus[st === 'bot' ? 'ia' : st] || 0) + 1;
+            if (c.ai_sentiment) bySentiment[c.ai_sentiment] = (bySentiment[c.ai_sentiment] || 0) + 1;
+            if (c.ai_priority) byPriority[c.ai_priority] = (byPriority[c.ai_priority] || 0) + 1;
+            (c.ai_topics || []).forEach((t: string) => {
+                const k = String(t || '').trim();
+                if (k) topicMap[k] = (topicMap[k] || 0) + 1;
+            });
+            if ((c.ai_priority === 'alta' || c.status === 'pendente') && attention.length < 6) {
+                attention.push({
+                    contato: c.profile_name || c.wa_id,
+                    prioridade: c.ai_priority || null,
+                    status: c.status || null,
+                    resumo: c.ai_summary || null,
+                    acao_sugerida: c.ai_suggested_action || null,
+                });
+            }
+            // Demora: última mensagem foi DO CLIENTE e ainda não respondemos.
+            if (c.last_direction === 'in' && c.last_message_at) {
+                const min = Math.round((nowMs - new Date(c.last_message_at).getTime()) / 60000);
+                if (isFinite(min) && min >= 0) waiting.push({ contato: c.profile_name || c.wa_id, minutos: min });
+            }
+        });
+
+        let aiSent = 0;
+        let humanSent = 0;
+        (sentRows || []).forEach((r: any) => {
+            if (r.sent_by === 'ai') aiSent += 1;
+            else if (r.sent_by === 'human') humanSent += 1;
+        });
+        const totalReplies = aiSent + humanSent;
+
+        const fmtDur = (min: number) => (min >= 60 ? `${Math.floor(min / 60)}h ${min % 60}min` : `${min}min`);
+
+        pack.whatsapp_oficial_metricas = {
+            conversas_total: (convs || []).length,
+            conversas_por_status: byStatus,
+            respostas_enviadas: {
+                pela_ia: aiSent,
+                humanas: humanSent,
+                resolucao_pela_ia_pct: totalReplies > 0 ? Math.round((aiSent / totalReplies) * 100) : 0,
+            },
+            sentimento_dos_clientes: bySentiment,
+            prioridade_das_conversas: byPriority,
+            principais_topicos_e_duvidas: Object.entries(topicMap)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12)
+                .map(([topico, conversas]) => ({ topico, conversas })),
+            precisam_de_atencao: attention,
+        };
+        pack.atendimentos_aguardando_resposta_agora = {
+            total: waiting.length,
+            mais_antigos: waiting
+                .sort((a, b) => b.minutos - a.minutos)
+                .slice(0, 5)
+                .map((w) => ({ contato: w.contato, aguardando_ha: fmtDur(w.minutos) })),
+        };
+        const resumos = (convs || [])
+            .filter((c: any) => c.ai_summary)
+            .slice(0, 8)
+            .map((c: any) => ({ contato: c.profile_name || c.wa_id, resumo: c.ai_summary }));
+        if (resumos.length > 0) pack.resumos_de_conversas_recentes = resumos;
+    } catch (e: any) {
+        console.error('[aiSector] bia.metricas oficial:', e?.message);
+    }
+
+    // Tempo de atendimento (últimos 7 dias): quanto demoramos para dar a
+    // PRIMEIRA resposta depois de cada mensagem do cliente (WhatsApp oficial).
+    try {
+        const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+        const { data: msgs } = await client
+            .from('SITE_WhatsAppCloudMessages')
+            .select('conversation_id, direction, timestamp')
+            .gte('timestamp', since)
+            .order('timestamp', { ascending: true })
+            .limit(8000);
+        const pendingByConv = new Map<string, number>();
+        const gapsMin: number[] = [];
+        (msgs || []).forEach((m: any) => {
+            const t = new Date(m.timestamp).getTime();
+            if (!m.conversation_id || !isFinite(t)) return;
+            if (m.direction === 'in') {
+                if (!pendingByConv.has(m.conversation_id)) pendingByConv.set(m.conversation_id, t);
+            } else if (m.direction === 'out') {
+                const start = pendingByConv.get(m.conversation_id);
+                if (start !== undefined) {
+                    gapsMin.push((t - start) / 60000);
+                    pendingByConv.delete(m.conversation_id);
+                }
+            }
+        });
+        if (gapsMin.length > 0) {
+            const avg = gapsMin.reduce((a, b) => a + b, 0) / gapsMin.length;
+            const max = Math.max(...gapsMin);
+            const under5 = gapsMin.filter((g) => g <= 5).length;
+            const fmtDur = (min: number) => (min >= 60 ? `${Math.floor(min / 60)}h ${Math.round(min % 60)}min` : `${Math.round(min)}min`);
+            pack.tempo_de_resposta_whatsapp_7dias = {
+                respostas_medidas: gapsMin.length,
+                tempo_medio_de_resposta: fmtDur(avg),
+                maior_demora: fmtDur(max),
+                respondidas_em_ate_5min_pct: Math.round((under5 / gapsMin.length) * 100),
+            };
+        }
+    } catch (e: any) {
+        console.error('[aiSector] bia.tempos:', e?.message);
+    }
+
+    // CRM: leads novos aguardando o PRIMEIRO atendimento há mais tempo.
+    try {
+        const { data: newLeads } = await client
+            .from('SITE_Leads')
+            .select('name, created_at')
+            .eq('status', 'New')
+            .order('created_at', { ascending: true })
+            .limit(5);
+        const nowMs = Date.now();
+        const rows = (newLeads || []).map((l: any) => {
+            const h = Math.round((nowMs - new Date(l.created_at).getTime()) / 3600000);
+            return { lead: l.name, aguardando_ha: h >= 48 ? `${Math.floor(h / 24)} dias` : `${h}h` };
+        });
+        if (rows.length > 0) pack.leads_aguardando_primeiro_atendimento_mais_antigos = rows;
+    } catch (e: any) {
+        console.error('[aiSector] bia.leads aguardando:', e?.message);
+    }
+
     return pack;
 }
 
 // ─── Setor LÉO — Inscrições, turmas e cursos ─────────────────────────────────
 
-async function gatherLeoPack(client: SupabaseClient, question: string): Promise<Record<string, any>> {
+async function gatherLeoPack(client: SupabaseClient): Promise<Record<string, any>> {
     const pack: Record<string, any> = {};
-    const q = normalize(question);
 
     // Catálogo compacto + próximos cursos.
     let courses: any[] = [];
@@ -407,19 +595,55 @@ async function gatherLeoPack(client: SupabaseClient, question: string): Promise<
         console.error('[aiSector] leo.inscricoes:', e?.message);
     }
 
-    // Detalhe financeiro/matrículas dos cursos citados na pergunta (máx 5).
-    try {
-        const matched = courses.filter((c: any) => {
-            const titleWords = normalize(c.title).split(/\s+/).filter((w: string) => w.length >= 4);
-            return (
-                (c.city && q.includes(normalize(c.city))) ||
-                (c.location && q.includes(normalize(c.location))) ||
-                titleWords.some((w: string) => q.includes(w))
-            );
-        });
-        const details: any[] = [];
-        for (const course of matched.slice(0, 5)) {
-            const detail: Record<string, any> = { curso: course.title, preco_tabela: course.price, data: course.date };
+    return pack;
+}
+
+// ─── Cursos citados na pergunta: detalhe financeiro (COMPARTILHADO) ──────────
+
+/**
+ * Detalhe financeiro/matrículas dos cursos CITADOS na pergunta (máx 4).
+ * Compartilhado entre Rita, Léo e Sofia: "quanto arrecadou em Belo Horizonte?"
+ * é pergunta financeira e precisa do detalhe mesmo sem palavra do setor de
+ * inscrições (antes o detalhe só existia no pack do Léo — bug real).
+ * Matching por PONTUAÇÃO (cidade > local > palavras distintivas do título) —
+ * palavras genéricas como "curso"/"suspensão" não casam mais com o catálogo
+ * inteiro (bug real: BH ficava fora do corte e a IA respondia "não consta").
+ */
+async function gatherCitedCourseDetails(client: SupabaseClient, question: string): Promise<any[]> {
+    const q = normalize(question);
+    if (!q) return [];
+
+    let courses: any[] = [];
+    const full = await client
+        .from('SITE_Courses')
+        .select('id, title, location, city, state, date, price, status')
+        .limit(300);
+    if (!full.error) courses = full.data || [];
+    else {
+        const minimal = await client
+            .from('SITE_Courses')
+            .select('id, title, location, date, price, status')
+            .limit(300);
+        courses = minimal.data || [];
+    }
+
+    const matched = courses
+        .map((c: any) => ({ c, score: courseMatchScore(c, q) }))
+        .filter((x) => x.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+        .map((x) => x.c);
+
+    const details: any[] = [];
+    {
+        for (const course of matched) {
+            const detail: Record<string, any> = {
+                curso: course.title,
+                cidade: [course.city, course.state].filter(Boolean).join('/') || course.location || null,
+                preco_tabela: course.price,
+                data: course.date,
+                status: course.status,
+            };
             try {
                 const { data: enrs } = await client
                     .from('SITE_Enrollments')
@@ -493,12 +717,8 @@ async function gatherLeoPack(client: SupabaseClient, question: string): Promise<
             }
             details.push(detail);
         }
-        if (details.length > 0) pack.detalhe_dos_cursos_citados = details;
-    } catch (e: any) {
-        console.error('[aiSector] leo.cursos citados:', e?.message);
     }
-
-    return pack;
+    return details;
 }
 
 // ─── Setor SOFIA — RH, equipe e visão gerencial ──────────────────────────────
@@ -619,16 +839,7 @@ async function findStudentsByTerms(client: SupabaseClient, terms: string[], ques
                 .select('id, title, city, state, location')
                 .in('id', allCourseIds);
             const citedIds = new Set(
-                (cs || [])
-                    .filter((c: any) => {
-                        const titleWords = normalize(c.title || '').split(/\s+/).filter((w: string) => w.length >= 4);
-                        return (
-                            (c.city && q.includes(normalize(c.city))) ||
-                            (c.location && q.includes(normalize(c.location))) ||
-                            titleWords.some((w: string) => q.includes(w))
-                        );
-                    })
-                    .map((c: any) => c.id)
+                (cs || []).filter((c: any) => courseMatchScore(c, q) > 0).map((c: any) => c.id)
             );
             if (citedIds.size > 0) {
                 matched = matched.sort((a: any, b: any) =>
@@ -748,10 +959,19 @@ export async function buildSectorDataPack(client: SupabaseClient, question: stri
         jobs.push(gatherBiaPack(client).then((p) => { pack.atendimento_crm_bia = p; }).catch((e) => console.error('[aiSector] bia:', e?.message)));
     }
     if (sectors.includes('leo')) {
-        jobs.push(gatherLeoPack(client, question).then((p) => { pack.inscricoes_leo = p; }).catch((e) => console.error('[aiSector] leo:', e?.message)));
+        jobs.push(gatherLeoPack(client).then((p) => { pack.inscricoes_leo = p; }).catch((e) => console.error('[aiSector] leo:', e?.message)));
     }
     if (sectors.includes('sofia')) {
         jobs.push(gatherSofiaPack(client, terms).then((p) => { pack.rh_gerencia_sofia = p; }).catch((e) => console.error('[aiSector] sofia:', e?.message)));
+    }
+
+    // Cursos citados na pergunta → detalhe financeiro completo (Rita/Léo/Sofia).
+    if (sectors.includes('rita') || sectors.includes('leo') || sectors.includes('sofia')) {
+        jobs.push(
+            gatherCitedCourseDetails(client, question)
+                .then((d) => { if (d.length) pack.detalhe_dos_cursos_citados = d; })
+                .catch((e) => console.error('[aiSector] cursos citados:', e?.message))
+        );
     }
 
     // Entidades citadas: alunos (rita/leo) e leads (bia) — só quando há termos.
