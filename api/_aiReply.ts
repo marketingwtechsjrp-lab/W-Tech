@@ -17,7 +17,7 @@ import {
  * Handoff por palavra-chave, regra de escalonamento ou teto de mensagens.
  */
 
-export type Intent = 'course' | 'sales' | 'support' | 'general';
+export type Intent = 'course' | 'sales' | 'parts' | 'support' | 'general';
 
 interface AIConfig {
   enabled: boolean;
@@ -264,10 +264,13 @@ async function classifyIntent(keys: AIKeys, text: string): Promise<Intent> {
   try {
     const out = await callLLM(
       keys,
-      'Classifique a mensagem do cliente em UMA palavra entre: course, sales, support, general. Responda só a palavra.',
+      'Classifique a mensagem do cliente em UMA palavra entre: course, sales, parts, support, general. ' +
+        'parts = cliente quer comprar ou orçar peça, ferramenta, mola, óleo ou outro produto físico (NÃO curso). ' +
+        'course = dúvida ou interesse em curso/treinamento. Responda só a palavra.',
       text
     );
     const v = out.toLowerCase().replace(/[^a-z]/g, '');
+    if (v.includes('parts')) return 'parts';
     if (v.includes('course')) return 'course';
     if (v.includes('sales')) return 'sales';
     if (v.includes('support')) return 'support';
@@ -330,6 +333,121 @@ async function sendCloudText(cfg: CloudConfig, to: string, text: string): Promis
 
 async function setStatus(supabase: SupabaseClient, conversationId: string, status: string): Promise<void> {
   await supabase.from('SITE_WhatsAppCloudConversations').update({ status }).eq('id', conversationId);
+}
+
+// ─── Handoff → CRM: cria/atualiza o lead e define o dono ─────────────────────
+
+const stripAccents = (s: string): string => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+interface AttendantRow {
+  id: string;
+  name: string;
+  status?: string | null;
+  role?: any;
+}
+
+/** Papéis fora da roleta aleatória (citação nominal continua valendo p/ todos). */
+const ROLETA_EXCLUDED_ROLES = ['super admin', 'financeiro'];
+
+async function loadActiveUsers(supabase: SupabaseClient): Promise<AttendantRow[]> {
+  const { data } = await supabase.from('SITE_Users').select('id, name, status, role');
+  return ((data || []) as AttendantRow[]).filter(
+    (u) => u.name && String(u.status || 'Active').toLowerCase() === 'active'
+  );
+}
+
+/** Atendente citado pelo cliente na mensagem (primeiro nome, sem acento, palavra inteira). */
+function findMentionedAttendant(users: AttendantRow[], text: string): AttendantRow | null {
+  const normalized = stripAccents((text || '').toLowerCase());
+  for (const u of users) {
+    const first = stripAccents(String(u.name).trim().split(/\s+/)[0].toLowerCase());
+    if (first.length >= 3 && new RegExp(`(^|[^a-z])${first}([^a-z]|$)`).test(normalized)) return u;
+  }
+  return null;
+}
+
+/**
+ * Transferência da Bia → CRM: garante que o contato exista em SITE_Leads e
+ * define o dono do atendimento.
+ *   - `preferred` (atendente citado pelo cliente) SEMPRE vira o dono.
+ *   - Sem citação: roleta aleatória entre a equipe (exceto Super Admin/Financeiro),
+ *     respeitando o dono atual quando o lead já tem um.
+ * Nunca lança — falha aqui não pode derrubar a resposta ao cliente.
+ */
+async function routeHandoffToCRM(
+  supabase: SupabaseClient,
+  waId: string,
+  incomingText: string,
+  reason: string,
+  users: AttendantRow[],
+  preferred: AttendantRow | null
+): Promise<{ chosenFirstName: string | null; byName: boolean }> {
+  try {
+    let chosen = preferred;
+    let via = preferred ? 'citação do cliente' : 'roleta aleatória';
+    if (!chosen) {
+      const pool = users.filter((u) => {
+        const role = stripAccents(String(typeof u.role === 'string' ? u.role : u.role?.name || '').toLowerCase());
+        return !ROLETA_EXCLUDED_ROLES.includes(role);
+      });
+      const list = pool.length ? pool : users;
+      chosen = list.length ? list[Math.floor(Math.random() * list.length)] : null;
+    }
+
+    const digits = (waId || '').replace(/\D/g, '');
+    const last8 = digits.slice(-8);
+    const { data: convRow } = await supabase
+      .from('SITE_WhatsAppCloudConversations')
+      .select('profile_name')
+      .eq('wa_id', waId)
+      .maybeSingle();
+    const displayName = convRow?.profile_name || `WhatsApp +${digits}`;
+
+    const stamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const note =
+      `[Bia → atendente] ${reason}. Última mensagem: "${(incomingText || '').slice(0, 180)}". ` +
+      `Dono por ${via}${chosen ? `: ${chosen.name}` : ' (nenhum atendente ativo)'} — ${stamp}`;
+
+    const { data: matches } = await supabase
+      .from('SITE_Leads')
+      .select('id, status, assigned_to, internal_notes')
+      .ilike('phone', `%${last8}%`)
+      .limit(1);
+    const existing = matches?.[0];
+
+    if (existing) {
+      const patch: Record<string, any> = {
+        internal_notes: [existing.internal_notes, note].filter(Boolean).join('\n'),
+        updated_at: new Date().toISOString(),
+      };
+      // Citação nominal força o dono; roleta só assume lead sem dono.
+      if (chosen && (preferred || !existing.assigned_to)) patch.assigned_to = chosen.id;
+      // Lead frio/perdido volta pro board como novo.
+      if (['Cold', 'Rejected', 'Lost'].includes(existing.status)) patch.status = 'New';
+      await supabase.from('SITE_Leads').update(patch).eq('id', existing.id);
+    } else {
+      await supabase.from('SITE_Leads').insert([
+        {
+          name: displayName,
+          phone: digits,
+          type: 'Contact_Form',
+          status: 'New',
+          context_id: 'WhatsApp',
+          assigned_to: chosen?.id || null,
+          internal_notes: note,
+          tags: ['bia-handoff'],
+        },
+      ]);
+    }
+
+    return {
+      chosenFirstName: chosen ? String(chosen.name).trim().split(/\s+/)[0] : null,
+      byName: !!preferred,
+    };
+  } catch (e: any) {
+    console.error('[aiReply] routeHandoffToCRM falhou:', e?.message);
+    return { chosenFirstName: null, byName: false };
+  }
 }
 
 // ─── Humanização: "digitando...", divisão em balões e delay natural ──────────
@@ -487,20 +605,49 @@ export async function runAIResponder(
     .eq('direction', 'in')
     .gte('timestamp', sessionStartISO);
 
-  if (hitKeyword || (turnCount || 0) >= config.max_msgs_before_handoff) {
+  const keys = await loadAIKeys(supabase, config.provider);
+  const intent = await classifyIntent(keys, incomingText);
+
+  // Transferência por citação de nome: "quero falar com o Emerson" → Emerson.
+  // Exige palavra de atendimento junto do nome pra não transferir quando o
+  // cliente só se apresenta ("sou o Alex").
+  const activeUsers = await loadActiveUsers(supabase);
+  const mentioned = findMentionedAttendant(activeUsers, incomingText);
+  const asksToTalk = /(^|[^a-z])(falar|atendente|atendimento|transferir|chama(r)?|passa(r)?|humano)([^a-z]|$)/.test(
+    stripAccents(lower)
+  );
+  const handoffByName = !!mentioned && asksToTalk;
+
+  // Compra de peça/ferramenta/produto físico: por enquanto SEMPRE vai para um
+  // atendente humano (regra de negócio), com o lead roteado no CRM.
+  const wantsParts = intent === 'parts';
+
+  if (hitKeyword || handoffByName || wantsParts || (turnCount || 0) >= config.max_msgs_before_handoff) {
+    const reason = handoffByName
+      ? `Cliente pediu para falar com ${mentioned!.name}`
+      : hitKeyword
+      ? 'Cliente pediu atendimento humano (palavra-chave)'
+      : wantsParts
+      ? 'Cliente quer comprar/orçar peça ou ferramenta'
+      : 'Limite de mensagens da sessão atingido';
+
+    // Garante o lead no CRM com o dono certo (citação > roleta aleatória).
+    const routed = await routeHandoffToCRM(supabase, waId, incomingText, reason, activeUsers, handoffByName ? mentioned : null);
+
     // Avisa o cliente que um humano vai assumir (UMA vez por handoff — se a
     // conversa já está pendente, não repete o fallback a cada nova mensagem).
     const alreadyPending = conv.status === 'pendente';
     await setStatus(supabase, conversationId, 'pendente');
-    if (!alreadyPending) {
-      const msgId = await sendCloudText(cloudCfg, waId, config.fallback_message);
-      if (msgId) await storeOutMessage(supabase, conversationId, waId, config.fallback_message, 'ai', 'sent', msgId);
+    // Citação nominal é pedido explícito: confirma mesmo se já estava pendente.
+    if (!alreadyPending || routed.byName) {
+      const farewell = routed.byName && routed.chosenFirstName
+        ? `Perfeito! Já estou te passando para ${routed.chosenFirstName}, só um instante. 😉`
+        : config.fallback_message;
+      const msgId = await sendCloudText(cloudCfg, waId, farewell);
+      if (msgId) await storeOutMessage(supabase, conversationId, waId, farewell, 'ai', 'sent', msgId);
     }
     return;
   }
-
-  const keys = await loadAIKeys(supabase, config.provider);
-  const intent = await classifyIntent(keys, incomingText);
   const knowledge = await loadKnowledge(supabase, intent);
   const rules = await loadRules(supabase);
   // RAG: aprende com atendimentos anteriores (requer chave Gemini para embeddings).

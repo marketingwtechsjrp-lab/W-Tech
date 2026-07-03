@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.20.0",
+    "date": "2026-07-03",
+    "title": "Bia transfere para o CRM: roleta de atendentes, citação por nome e peças para humano",
+    "changes": [
+      "Toda transferência da Bia agora cria/atualiza o lead no CRM (SITE_Leads) com dedupe por telefone — o contato aparece no board com nota do motivo, última mensagem e tag bia-handoff",
+      "Dono do lead por ROLETA ALEATÓRIA entre a equipe ativa (Super Admin e Financeiro fora do sorteio); se o lead já tem dono, a roleta respeita o dono atual",
+      "Se o cliente citar o nome do atendente ('quero falar com o Emerson'), transfere direto para ele — citação força o dono do lead e a Bia confirma com o nome ('Já estou te passando para Emerson')",
+      "Nova intenção 'parts': compra/orçamento de peça, ferramenta, mola ou óleo vai SEMPRE para atendente humano (por enquanto), com lead roteado no CRM",
+      "Lead frio/perdido que volta a chamar é reativado como Novo no board",
+      "Sandbox do painel de treinamento simula a regra de peças (mostra que transferiria + lead no CRM)"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.19.1",
     "date": "2026-07-02",
     "title": "Correção da IA do WhatsApp — fim do 'vou te transferir' em loop + treinamento da Bia",

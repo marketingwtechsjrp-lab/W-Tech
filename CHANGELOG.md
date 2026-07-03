@@ -1,6 +1,16 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.20.0 (2026-07-03) - Bia transfere para o CRM: roleta de atendentes, citação por nome e peças para humano
+
+- **Transferência vira lead no CRM:** todo handoff da Bia cria/atualiza o lead em SITE_Leads (dedupe por telefone), com nota do motivo, última mensagem do cliente e tag `bia-handoff`
+- **Roleta aleatória:** sem citação de nome, o dono do lead é sorteado entre a equipe ativa (Super Admin e Financeiro fora do sorteio); lead que já tem dono mantém o dono
+- **Citação por nome:** "quero falar com o Emerson" transfere direto para o Emerson — força o dono do lead e a Bia confirma com o nome
+- **Peças → humano:** nova intenção `parts` (compra/orçamento de peça, ferramenta, mola, óleo) SEMPRE transfere para atendente, com lead roteado no CRM
+- **Reativação:** lead frio/perdido que chama de novo volta ao board como Novo
+- **Sandbox alinhado:** o teste do painel simula a regra de peças
+
+
 ## v3.19.1 (2026-07-02) - Correção da IA do WhatsApp: fim do "vou te transferir" em loop + treinamento da Bia
 
 - **BUG CORRIGIDO — handoff permanente:** o teto de mensagens antes de transferir contava a conversa INTEIRA desde sempre. Qualquer contato com 6+ mensagens no histórico caía direto no "Um momento, vou te transferir para um atendente" — até num simples "oi". Agora o teto vale **por sessão (últimas 24h)**

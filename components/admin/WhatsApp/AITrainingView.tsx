@@ -8,7 +8,7 @@ import { generateContent } from '../../../lib/ai';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
 
-type Intent = 'course' | 'sales' | 'support' | 'general';
+type Intent = 'course' | 'sales' | 'parts' | 'support' | 'general';
 const INTENTS: { id: Intent; label: string }[] = [
   { id: 'course', label: 'Curso' },
   { id: 'sales', label: 'Venda' },
@@ -176,8 +176,17 @@ const AITrainingView: React.FC = () => {
     setSandboxLog((p) => [...p, { role: 'user', text: userMsg }]);
     setSandboxLoading(true);
     try {
-      const intentRaw = await generateContent(userMsg, 'Classifique em UMA palavra: course, sales, support, general. Só a palavra.');
-      const intent = (['course', 'sales', 'support', 'general'].find((i) => intentRaw.toLowerCase().includes(i)) || 'general') as Intent;
+      const intentRaw = await generateContent(userMsg, 'Classifique em UMA palavra: course, sales, parts, support, general. parts = compra/orçamento de peça, ferramenta, mola, óleo ou produto físico (NÃO curso). Só a palavra.');
+      const intent = (['parts', 'course', 'sales', 'support', 'general'].find((i) => intentRaw.toLowerCase().includes(i)) || 'general') as Intent;
+      // Regra de negócio: compra de peça vai para atendente humano (lead no CRM).
+      if (intent === 'parts') {
+        setSandboxLog((p) => [...p, {
+          role: 'ai', text: config.fallback_message || 'Um momento, vou te transferir para um atendente.',
+          meta: 'intenção: parts · transferiria para atendente + lead roteado no CRM (roleta ou nome citado)',
+        }]);
+        setSandboxLoading(false);
+        return;
+      }
       const kn = knowledge.filter((k) => k.enabled && (k.intent === intent || k.intent === 'general'))
         .map((k) => `• ${k.title}: ${k.content}`).join('\n');
       const rl = rules.filter((r) => r.enabled).map((r) => `[${r.type}] ${r.value}`).join('\n');
