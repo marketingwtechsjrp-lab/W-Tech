@@ -1,6 +1,16 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.21.0 (2026-07-03) - Campanhas de Captura: quiz gamificado, leads isolados e envio em lote ao CRM
+
+- **Novo módulo "Captura" no Marketing Hub**: campanhas de captação com 6 modelos (LP de Captura, Simples, Venda de Produto, Lançamento de Curso, Lançamento de Produto e Ferramenta quiz/enquete)
+- **Página pública /captura/:slug**: quiz gamificado "corrida das motinhas" — cada cidade avança na pista conforme a porcentagem de votos da enquete, com bandeirada e selo de líder
+- **1ª campanha ativa**: "Próxima Cidade — Curso de Setembro" (Vitória, Curitiba, Cuiabá e Campo Grande)
+- **Leads isolados por campanha**: capturas ficam em lista interna (SITE_CaptureLeads) com voto, consentimento LGPD e UTMs (LEI 10); 1 voto por telefone
+- **Envio manual em lote ao CRM**: seleção de leads na campanha e envio via dedupe (telefone/e-mail), com tags de campanha e voto, origem e contexto preenchidos
+- **Fix CRM**: leads com context_id nulo eram ocultados pelo filtro do funil (NULL não casa em .neq no Postgres) — 115 leads voltaram a aparecer na Central de Leads
+
+
 ## v3.20.1 (2026-07-03) - Cronograma no WhatsApp só com turmas futuras: fim do disparo de cursos já passados
 
 - **BUG CORRIGIDO — cursos passados nos disparos:** a Bia listava para os leads no WhatsApp turmas cuja data já tinha passado (ex.: curso de março em São José do Rio Preto ainda marcado como `Published`), com data e horário vencidos. Agora `loadCourseContext` (`api/_aiReply.ts`) só monta a lista com turmas de **hoje pra frente** — mantém quem ainda não terminou (`date_end >= hoje`) ou, sem `date_end`, cuja data de início é hoje/futura

@@ -61,6 +61,7 @@ const LPGasGarage = lazy(() => import('./pages/LPGasGarage'));
 const ObrigadoSuspensao = lazy(() => import('./pages/ObrigadoSuspensao'));
 const AffiliatesManagerView = lazy(() => import('./components/admin/Marketing/AffiliatesManagerView'));
 const MolasCalculator = lazy(() => import('./pages/MolasCalculator'));
+const CaptureCampaignPage = lazy(() => import('./pages/CaptureCampaign'));
 const OleoCalculator = lazy(() => import('./pages/OleoCalculator'));
 
 
@@ -130,6 +131,7 @@ const App = () => {
                     <Route path="/obrigado-suspensao" element={<ObrigadoSuspensao />} />
                     <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/quiz-suspensao" element={<QuizSuspensao />} />
+                    <Route path="/captura/:slug" element={<CaptureCampaignPage />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
                     <Route path="/lp2/:slug" element={<LandingPageViewerV2 />} />
                     <Route path="/lp3/:slug" element={<LandingPageViewerV3 />} />

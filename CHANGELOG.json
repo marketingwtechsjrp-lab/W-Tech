@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.21.0",
+    "date": "2026-07-03",
+    "title": "Campanhas de Captura: quiz gamificado, leads isolados e envio em lote ao CRM",
+    "changes": [
+      "Novo módulo 'Captura' no Marketing Hub com 6 modelos de campanha (LP de Captura, Simples, Venda de Produto, Lançamento de Curso, Lançamento de Produto e Ferramenta quiz/enquete)",
+      "Página pública /captura/:slug com quiz gamificado 'corrida das motinhas' — posição por porcentagem de votos, bandeirada e selo de líder",
+      "1ª campanha ativa: 'Próxima Cidade — Curso de Setembro' (Vitória, Curitiba, Cuiabá e Campo Grande)",
+      "Leads isolados por campanha em SITE_CaptureLeads com voto, consentimento LGPD, UTMs (LEI 10) e 1 voto por telefone",
+      "Envio manual em lote ao CRM com dedupe por telefone/e-mail, tags de campanha/voto, origem e contexto",
+      "Fix CRM: leads com context_id nulo eram ocultados pelo filtro do funil — 115 leads recuperados na Central de Leads"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.20.1",
     "date": "2026-07-03",
     "title": "Cronograma no WhatsApp só com turmas futuras: fim do disparo de cursos já passados",

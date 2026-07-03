@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    BarChart2, BookOpen, Layout, Fingerprint, Award, Rocket
+import {
+    BarChart2, BookOpen, Layout, Fingerprint, Award, Rocket, Target
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -10,6 +10,7 @@ import AnalyticsView from '../Analytics/AnalyticsView';
 import CertificateManagerView from '../Certificates/CertificateManagerView';
 import LandingPagesView from './LandingPagesView';
 import BioPageManager from './BioPageManager';
+import CaptureCampaignsView from './CaptureCampaignsView';
 
 const MarketingView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
@@ -28,6 +29,7 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
     const tabs = [
         { id: 'Blog', icon: BookOpen, label: 'Blog', permission: 'blog_view' },
         { id: 'LP', icon: Layout, label: 'Landing Pages', permission: 'landing_pages_view' },
+        { id: 'Captura', icon: Target, label: 'Captura', permission: 'marketing_view' },
         { id: 'Bio', icon: Fingerprint, label: 'Bio Link', permission: 'marketing_view' },
         { id: 'Analytics', icon: BarChart2, label: 'Analytics', permission: 'analytics_view' },
         { id: 'Certificates', icon: Award, label: 'Certificados', permission: 'certificates_view' },
@@ -74,9 +76,10 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Content Area */}
-            <div className={`bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'LP', 'Bio'].includes(activeTab) ? '' : 'p-6'}`}>
+            <div className={`bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'LP', 'Bio', 'Captura'].includes(activeTab) ? '' : 'p-6'}`}>
                 {activeTab === 'Blog' && <BlogManagerView permissions={permissions} />}
                 {activeTab === 'LP' && <LandingPagesView permissions={permissions} />}
+                {activeTab === 'Captura' && <CaptureCampaignsView />}
                 {activeTab === 'Bio' && <BioPageManager />}
                 {activeTab === 'Analytics' && <AnalyticsView permissions={permissions} />}
                 {activeTab === 'Certificates' && <CertificateManagerView />}

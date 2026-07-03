@@ -1094,7 +1094,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const fetchData = async () => {
         setLeads([]); // Clear before fetch to show loading state if desired
-        let query = supabase.from('SITE_Leads').select('*').neq('context_id', 'Import').order('created_at', { ascending: false });
+        // NULL não casa em .neq() no Postgres — sem o is.null, leads sem context_id
+        // (ex: enviados das Campanhas de Captura antes do fix) sumiam do funil.
+        let query = supabase.from('SITE_Leads').select('*').or('context_id.is.null,context_id.neq.Import').order('created_at', { ascending: false });
 
         // Privacy Logic
         const hasFullAccess =
