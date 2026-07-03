@@ -1,6 +1,29 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.19.1 (2026-07-02) - Correção da IA do WhatsApp: fim do "vou te transferir" em loop + treinamento da Bia
+
+- **BUG CORRIGIDO — handoff permanente:** o teto de mensagens antes de transferir contava a conversa INTEIRA desde sempre. Qualquer contato com 6+ mensagens no histórico caía direto no "Um momento, vou te transferir para um atendente" — até num simples "oi". Agora o teto vale **por sessão (últimas 24h)**
+- **BUG CORRIGIDO — fallback em loop:** conversa já marcada como 'pendente' recebia o aviso de transferência de novo a cada mensagem. Agora sai **uma vez por handoff**
+- **Prompt de conversa reescrito** (`api/_aiReply.ts`): saudações nunca viram transferência (Bia se apresenta e pergunta como ajudar), uma pergunta por vez, condução para a inscrição com preço/data/link reais, transferência só quando o cliente pede, é reclamação/cancelamento ou falta informação
+- **Sandbox do painel alinhado:** o teste em Admin → IA usa as mesmas instruções do backend
+- **Treinamento turbinado no banco:** persona vendedora completa da Bia, informações do negócio (sede 1.200 m² em Rio Preto, +5.000 alunos, suporte vitalício, turmas na Europa) e base de conhecimento com **10 itens factuais** (pagamento em 10x, certificado com validação online, reciclagem de ex-alunos, mapa de credenciados, calculadoras de molas/óleo) — antes estava **vazia**
+- **Teto de handoff:** 6 → 12 mensagens por sessão (ajustável no painel)
+- Obs: a IA continua **desligada** (como estava) — ligar em Admin → WhatsApp → IA quando quiser ativar
+
+
+## v3.19.0 (2026-07-02) - Rebrand do CRM: Central de Leads, entradas de hoje e tagueamento curso/região
+
+- **Header rebrandado "Central de Leads"** com identidade W-Tech (Rajdhani + dourado), indicador ao vivo (realtime) e contador total da base
+- **Faixa "Entradas de Hoje"** no topo do CRM: todos os leads do dia em cards compactos (hora, nome, curso, região, etapa) atualizados em tempo real — botão **Focar em hoje** filtra o board inteiro para o dia
+- **Tagueamento automático de CURSO e REGIÃO** (`lib/leadOrigin.ts`): interpreta context_id de LPs, Quiz, eventos Europa/Lisboa, WhatsApp e formulários; mesma classificação usada em cards do kanban, view de lista, filtros e exportação
+- **Filtros novos:** dropdown de Curso e de Região na barra de controles + período **Hoje** (dia de calendário, diferente de "últimas 24h") junto de 7d/30d/Tudo
+- **Chips de filtros ativos** removíveis com contador "X de Y leads" e ação Limpar tudo
+- **Cards do kanban** com tag de curso (dourado), tag de região (azul) e selo ⚡HOJE nos leads que entraram no dia
+- **Cards de etapa** ganharam percentual e barra de proporção; **funil detalhado** virou colapsável (toggle na barra de controles) liberando espaço vertical para o board
+- **Export XLS** com colunas Curso e Região; view em lista mostra a origem taggeada em vez do context_id cru
+
+
 ## v3.18.0 (2026-07-02) - Liga/desliga da automação de mensagens (geral e por categoria)
 
 - **Interruptor GERAL no Motor de Envio** (Admin → Integrações): desliga TODA a automação de mensagens transacionais de uma vez — boas-vindas, cobrança, cronograma e relatório param de sair até religar

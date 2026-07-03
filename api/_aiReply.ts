@@ -475,17 +475,27 @@ export async function runAIResponder(
   // Teto de turnos antes de passar para humano. Contamos as mensagens do CLIENTE
   // (não as da IA): com a humanização cada resposta vira vários balões 'ai', então
   // contar 'ai' estouraria o limite cedo demais. 1 mensagem do cliente ≈ 1 turno.
+  //
+  // IMPORTANTE: o teto vale por SESSÃO (últimas 24h), não pela conversa inteira.
+  // Sem essa janela, qualquer contato antigo (>N mensagens na vida) caía no
+  // fallback "vou te transferir" para sempre — inclusive num simples "oi".
+  const sessionStartISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count: turnCount } = await supabase
     .from('SITE_WhatsAppCloudMessages')
     .select('id', { count: 'exact', head: true })
     .eq('conversation_id', conversationId)
-    .eq('direction', 'in');
+    .eq('direction', 'in')
+    .gte('timestamp', sessionStartISO);
 
   if (hitKeyword || (turnCount || 0) >= config.max_msgs_before_handoff) {
+    // Avisa o cliente que um humano vai assumir (UMA vez por handoff — se a
+    // conversa já está pendente, não repete o fallback a cada nova mensagem).
+    const alreadyPending = conv.status === 'pendente';
     await setStatus(supabase, conversationId, 'pendente');
-    // Avisa o cliente que um humano vai assumir (uma vez).
-    const msgId = await sendCloudText(cloudCfg, waId, config.fallback_message);
-    if (msgId) await storeOutMessage(supabase, conversationId, waId, config.fallback_message, 'ai', 'sent', msgId);
+    if (!alreadyPending) {
+      const msgId = await sendCloudText(cloudCfg, waId, config.fallback_message);
+      if (msgId) await storeOutMessage(supabase, conversationId, waId, config.fallback_message, 'ai', 'sent', msgId);
+    }
     return;
   }
 
@@ -523,10 +533,15 @@ export async function runAIResponder(
     (knowledge ? `O QUE VOCÊ PODE DIZER (base de conhecimento):\n${knowledge}\n\n` : '') +
     (memory ? `ATENDIMENTOS ANTERIORES PARECIDOS (use como referência do que funcionou):\n${memory}\n\n` : '') +
     (rules ? `REGRAS OBRIGATÓRIAS:\n${rules}\n\n` : '') +
-    `Responda em português do Brasil com tom natural e conversacional, como uma pessoa de verdade digitando no WhatsApp. ` +
-    `Use mensagens curtas. Quando a resposta tiver mais de uma ideia, separe em blocos curtos com UMA LINHA EM BRANCO entre eles — cada bloco vira uma mensagem. ` +
-    `Evite textão e não use markdown, asteriscos ou listas numeradas. ` +
-    `Se não tiver certeza ou a regra exigir, diga que vai transferir para um atendente.`;
+    `COMO CONVERSAR:\n` +
+    `- Responda em português do Brasil com tom natural e conversacional, como uma pessoa de verdade digitando no WhatsApp.\n` +
+    `- Se o cliente só cumprimentou ("oi", "bom dia", "boa noite"), responda o cumprimento com simpatia, se apresente em uma frase e pergunte como pode ajudar. NUNCA transfira nem fique em silêncio diante de um cumprimento.\n` +
+    `- Faça UMA pergunta por vez. Não despeje todas as informações de uma vez: descubra primeiro o que o cliente precisa (qual curso, qual cidade, se já é mecânico).\n` +
+    `- Quando falar de curso, conduza para a inscrição: informe valor, data e cidade reais e envie o link de inscrição. Mencione que dá para parcelar no cartão.\n` +
+    `- Use mensagens curtas. Quando a resposta tiver mais de uma ideia, separe em blocos curtos com UMA LINHA EM BRANCO entre eles — cada bloco vira uma mensagem.\n` +
+    `- Evite textão e não use markdown, asteriscos ou listas numeradas.\n` +
+    `- Só fale em transferir para um atendente se: (a) o cliente pedir explicitamente, (b) for reclamação/cancelamento/reembolso, ou (c) você realmente não tiver a informação nem nos cursos nem na base de conhecimento. Nesses casos, avise com educação e pare de responder.\n` +
+    `- Nunca invente preço, data, vaga ou condição de pagamento que não esteja nos dados acima.`;
 
   let reply = '';
   try {

@@ -181,11 +181,19 @@ const AITrainingView: React.FC = () => {
       const kn = knowledge.filter((k) => k.enabled && (k.intent === intent || k.intent === 'general'))
         .map((k) => `• ${k.title}: ${k.content}`).join('\n');
       const rl = rules.filter((r) => r.enabled).map((r) => `[${r.type}] ${r.value}`).join('\n');
+      // Mesmas instruções de conversa do backend (api/_aiReply.ts) para o
+      // sandbox refletir o comportamento real do WhatsApp.
       const system =
         `${config.persona}\n\nINFORMAÇÕES DO NEGÓCIO:\n${config.business_info}\n\n` +
         (kn ? `O QUE VOCÊ PODE DIZER:\n${kn}\n\n` : '') +
         (rl ? `REGRAS OBRIGATÓRIAS:\n${rl}\n\n` : '') +
-        `Responda em português do Brasil, curto e objetivo (máx 2 parágrafos).`;
+        `COMO CONVERSAR:\n` +
+        `- Responda em português do Brasil com tom natural e conversacional, como uma pessoa de verdade digitando no WhatsApp.\n` +
+        `- Se o cliente só cumprimentou ("oi", "bom dia", "boa noite"), responda o cumprimento com simpatia, se apresente em uma frase e pergunte como pode ajudar. NUNCA transfira nem fique em silêncio diante de um cumprimento.\n` +
+        `- Faça UMA pergunta por vez. Descubra primeiro o que o cliente precisa (qual curso, qual cidade, se já é mecânico).\n` +
+        `- Use mensagens curtas, sem markdown, asteriscos ou listas numeradas.\n` +
+        `- Só fale em transferir para um atendente se o cliente pedir, for reclamação/cancelamento/reembolso, ou você realmente não tiver a informação.\n` +
+        `- Nunca invente preço, data, vaga ou condição de pagamento.`;
       const reply = await generateContent(userMsg, system);
       const autopilot = config.autopilot_intents.includes(intent);
       setSandboxLog((p) => [...p, {

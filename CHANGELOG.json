@@ -1,5 +1,35 @@
 [
   {
+    "version": "3.19.1",
+    "date": "2026-07-02",
+    "title": "Correção da IA do WhatsApp — fim do 'vou te transferir' em loop + treinamento da Bia",
+    "changes": [
+      "BUG CORRIGIDO: o teto de mensagens antes do handoff contava a conversa INTEIRA desde sempre — qualquer contato com 6+ mensagens na vida (inclusive o próprio Daniel) caía direto no 'vou te transferir para um atendente', até num simples 'oi'. Agora o teto vale por sessão (últimas 24h)",
+      "BUG CORRIGIDO: conversa já 'pendente' recebia o fallback de novo a cada mensagem (spam de 'vou te transferir'). Agora o aviso sai uma vez por handoff",
+      "Prompt de conversa reescrito (api/_aiReply.ts): saudação nunca vira transferência, uma pergunta por vez, condução para inscrição com dados reais, transferência só quando pedida/reclamação/sem informação",
+      "Sandbox de teste do painel (AITrainingView) alinhado com o prompt real do backend",
+      "Treinamento da Bia turbinado no banco: persona vendedora completa, informações do negócio (sede 1.200m², +5.000 alunos, suporte vitalício, Europa) e base de conhecimento com 10 itens factuais (pagamento 10x, certificado, reciclagem, mapa de credenciados, calculadoras) — estava vazia",
+      "Teto de handoff ajustado de 6 para 12 mensagens por sessão (editável no painel de treinamento)"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
+    "version": "3.19.0",
+    "date": "2026-07-02",
+    "title": "Rebrand do CRM — Central de Leads com entradas de hoje e tagueamento por curso/região",
+    "changes": [
+      "Novo header 'Central de Leads' com identidade W-Tech (Rajdhani + dourado), indicador ao vivo e total da base",
+      "Faixa 'Entradas de Hoje' no topo: leads do dia em tempo real com hora, curso, região e etapa — botão 'Focar em hoje' filtra o board para o dia",
+      "Tagueamento automático de CURSO e REGIÃO por lead (lib/leadOrigin.ts): interpreta LPs, Quiz, eventos Europa/Lisboa e formulários — mesma classificação em cards, lista, filtros e export",
+      "Filtros novos de Curso e Região + período 'Hoje' (dia de calendário) ao lado de 7d/30d/Tudo",
+      "Chips de filtros ativos removíveis com contador 'X de Y leads' e botão Limpar tudo",
+      "Cards do kanban com tags de curso (dourado) e região (azul) + selo ⚡HOJE para leads do dia",
+      "Cards de etapa com % e barra de proporção; funil detalhado virou colapsável (botão na barra de controles)",
+      "Export XLS ganhou colunas Curso e Região; view em lista mostra origem taggeada em vez do context_id cru"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.18.0",
     "date": "2026-07-02",
     "title": "Liga/desliga da automação de mensagens (geral e por categoria)",
