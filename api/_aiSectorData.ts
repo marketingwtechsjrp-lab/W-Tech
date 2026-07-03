@@ -553,6 +553,7 @@ async function gatherLeoPack(client: SupabaseClient): Promise<Record<string, any
             courses = minimal.data || [];
         }
 
+        const hoje = todayYMD();
         pack.catalogo_de_cursos = courses.map((c: any) => ({
             titulo: c.title,
             cidade: [c.city, c.state].filter(Boolean).join('/') || c.location || null,
@@ -560,6 +561,9 @@ async function gatherLeoPack(client: SupabaseClient): Promise<Record<string, any
             preco_tabela: c.price,
             status: c.status,
             inscritos: c.registered_count ?? null,
+            // Turma cuja data já passou — NÃO listar como cronograma/agenda futura;
+            // serve só para consultas históricas (faturamento, inscritos etc.).
+            ja_ocorreu: String(c.date || '') < hoje,
         }));
         pack.proximos_cursos = courses
             .filter((c: any) => String(c.date || '') >= todayYMD())

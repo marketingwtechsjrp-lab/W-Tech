@@ -225,12 +225,18 @@ function fmtDateRange(a: any, b: any): string {
 /** Monta um bloco compacto com os cursos publicados, pra IA nunca inventar dado. */
 async function loadCourseContext(supabase: SupabaseClient): Promise<string> {
   try {
+    // Hoje em BRT (UTC-3) no formato YYYY-MM-DD — mesma convenção da coluna `date`.
+    const todayYMD = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from('SITE_Courses')
       .select(
         'id, title, price, currency, date, date_end, location, location_type, city, state, status, custom_link, capacity, registered_count'
       )
       .in('status', ['Published', 'Full'])
+      // Só cursos de HOJE pra frente: mantém quem ainda não terminou (date_end >=
+      // hoje) OU cuja data de início é hoje/futura. Evita disparar cronograma de
+      // turma cuja data já passou (ex.: curso de março ainda marcado Published).
+      .or(`date_end.gte.${todayYMD},and(date_end.is.null,date.gte.${todayYMD})`)
       .order('date', { ascending: true })
       .limit(15);
     if (!data || !data.length) return '';

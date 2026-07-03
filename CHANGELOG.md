@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.20.1 (2026-07-03) - Cronograma no WhatsApp só com turmas futuras: fim do disparo de cursos já passados
+
+- **BUG CORRIGIDO — cursos passados nos disparos:** a Bia listava para os leads no WhatsApp turmas cuja data já tinha passado (ex.: curso de março em São José do Rio Preto ainda marcado como `Published`), com data e horário vencidos. Agora `loadCourseContext` (`api/_aiReply.ts`) só monta a lista com turmas de **hoje pra frente** — mantém quem ainda não terminou (`date_end >= hoje`) ou, sem `date_end`, cuja data de início é hoje/futura
+- **Grupo de gestão:** o catálogo que alimenta as respostas dos Assistentes de IA (`api/_aiSectorData.ts`) agora marca cada curso com `ja_ocorreu` — cursos passados não são apresentados como cronograma/agenda futura, mas continuam disponíveis para consulta histórica (faturamento, inscritos)
+- **Regra dos Assistentes de IA:** nova regra obrigatória (`lib/aiAgentDefaults.ts`) — cronograma/agenda/próximos cursos lista **apenas** turmas de hoje em diante (usando `proximos_cursos`), nunca um curso já ocorrido
+
+
 ## v3.20.0 (2026-07-03) - Bia transfere para o CRM: roleta de atendentes, citação por nome e peças para humano
 
 - **Transferência vira lead no CRM:** todo handoff da Bia cria/atualiza o lead em SITE_Leads (dedupe por telefone), com nota do motivo, última mensagem do cliente e tag `bia-handoff`
