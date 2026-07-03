@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRegisterPage } from '../keyboard/AdminKeyboardProvider';
-import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare, Mail, User, History } from 'lucide-react';
+import { Users, Settings, Plus, MoreVertical, X, Save, Clock, AlertTriangle, Thermometer, TrendingUp, Search, Filter, List, KanbanSquare, Globe, GraduationCap, Phone, MessageCircle, CheckCircle, ShoppingBag, Banknote, Calendar, ArrowRight, Copy, Trash2, Share2, RefreshCw, CheckSquare, Mail, User, History, MapPin, Zap, ChevronDown, SlidersHorizontal, XCircle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
@@ -17,6 +17,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { FileDown, FileText, FileSpreadsheet, Download } from 'lucide-react';
 import { logUserActivity } from '../../../lib/auditLogger';
+import { parseLeadOrigin, isToday } from '../../../lib/leadOrigin';
 
 // Helper for Drag & Drop
 const DragContext = React.createContext<{
@@ -322,49 +323,9 @@ const LeadCard: React.FC<{
 
     const attendantName = lead.assignedTo && usersMap[lead.assignedTo] ? usersMap[lead.assignedTo].split(' ')[0] : 'S/ Atendente';
 
-    // Helper to parse source and city
-    const getLeadInfo = () => {
-        const ctx = lead.contextId || '';
-        let source = 'Site';
-        let city = lead.address_city || '';
-
-        if (ctx.startsWith('Quiz Completed')) {
-            source = 'Quiz';
-            if (!city) {
-                // Extract from "Quiz Completed: CURSO SUSPENSÃO SJRP [QUENTE]" -> SJRP
-                const match = ctx.match(/:\s*(.+?)\s*\[/);
-                const titlePart = match ? match[1] : ctx.split(':').pop() || '';
-                // Try to find known city patterns if address_city is missing
-                const upperCtx = ctx.toUpperCase();
-                if (upperCtx.includes('RIO PRETO') || upperCtx.includes('SJRP')) city = 'Rio Preto';
-                else if (upperCtx.includes('LISBOA')) city = 'Lisboa';
-                else city = titlePart.split(' ').pop() || '';
-            }
-        } else if (ctx.startsWith('LP:')) {
-            source = 'LP';
-            if (!city) {
-                // Extract from "LP: Curso de Suspensão W-TECH (curso-suspensao-sjrp)" -> SJRP
-                const match = ctx.match(/\((.+?)\)/);
-                const slugPart = match ? match[1] : '';
-                if (slugPart) {
-                    city = slugPart.split('-').pop()?.toUpperCase() || '';
-                }
-            }
-        } else if (ctx.includes('EUROPA') || ctx.includes('LISBOA')) {
-            source = 'Evento';
-            city = city || 'Lisboa';
-        } else if (ctx === 'Manual') {
-            source = 'Manual';
-        }
-
-        // Fix common incomplete city markers
-        if (city.toUpperCase() === 'TECH') city = 'Rio Preto';
-        if (city.toUpperCase() === 'PAULO') city = 'São Paulo';
-
-        return { source, city };
-    };
-
-    const { source, city } = getLeadInfo();
+    // Tagueamento centralizado: fonte, curso e região (lib/leadOrigin)
+    const { source, course, region: city } = parseLeadOrigin(lead.contextId, lead.address_city);
+    const isNewToday = isToday(lead.createdAt);
 
     const initials = lead.name
         ? lead.name.trim().split(/\s+/).slice(0, 2).map((n: string) => n[0]?.toUpperCase() ?? '').join('')
@@ -400,14 +361,26 @@ const LeadCard: React.FC<{
 
                     {/* Nome + badges */}
                     <div className="flex-1 min-w-0 pt-0.5">
-                        <h4 className="font-black text-[var(--admin-text-primary)] text-sm leading-tight line-clamp-1">{lead.name}</h4>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <h4 className="font-black text-[var(--admin-text-primary)] text-sm leading-tight line-clamp-1">{lead.name}</h4>
+                            {isNewToday && (
+                                <span className="flex-shrink-0 flex items-center gap-0.5 text-[8px] font-black bg-wtech-gold text-black px-1 py-px rounded uppercase tracking-wider shadow-sm shadow-wtech-gold/30">
+                                    <Zap size={7} strokeWidth={3} /> Hoje
+                                </span>
+                            )}
+                        </div>
                         <div className="flex flex-wrap items-center gap-1 mt-0.5">
                             <span className="text-[9px] font-bold bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded-md text-[var(--admin-text-tertiary)] uppercase tracking-wide">
                                 {source}
                             </span>
+                            {course && (
+                                <span className="text-[9px] font-bold bg-wtech-gold/10 px-1.5 py-0.5 rounded-md text-wtech-gold uppercase tracking-wide border border-wtech-gold/20 flex items-center gap-0.5">
+                                    <GraduationCap size={8} className="flex-shrink-0" /> {course}
+                                </span>
+                            )}
                             {city && (
-                                <span className="text-[9px] font-bold bg-wtech-gold/10 px-1.5 py-0.5 rounded-md text-wtech-gold uppercase tracking-wide border border-wtech-gold/20">
-                                    {city}
+                                <span className="text-[9px] font-bold bg-blue-500/10 px-1.5 py-0.5 rounded-md text-blue-500 dark:text-blue-400 uppercase tracking-wide border border-blue-500/20 flex items-center gap-0.5">
+                                    <MapPin size={8} className="flex-shrink-0" /> {city}
                                 </span>
                             )}
                             {quizTemp && (
@@ -893,6 +866,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     const searchRef = useRef<HTMLInputElement>(null);
     const [contextFilter, setContextFilter] = useState('All');
     const [trafficFilter, setTrafficFilter] = useState('All'); // utm_source bruto ou 'Não informado'
+    const [courseFilter, setCourseFilter] = useState('All');   // curso identificado na origem
+    const [regionFilter, setRegionFilter] = useState('All');   // região/cidade da turma
     const [selectedUserFilter, setSelectedUserFilter] = useState('All'); // NEW
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [selectedLeadForTasks, setSelectedLeadForTasks] = useState<Lead | null>(null);
@@ -901,6 +876,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     // View Mode: Kanban or List or Logs
     const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'logs'>('kanban');
+    const [showFunnel, setShowFunnel] = useState(false); // Funil detalhado colapsável
     const [leadHistory, setLeadHistory] = useState<any[]>([]);
     const [loadingHistoryList, setLoadingHistoryList] = useState(false);
 
@@ -1923,37 +1899,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
     // Normaliza o context_id (string livre gravada por cada formulário) numa origem
     // estável por REGIÃO/CURSO. Objetivo: que o mesmo curso/região não apareça
     // fragmentado entre LP / LP V2 / LP V3 / LP V4 / Quiz, deixando o filtro útil.
-    const parseLPSourceCRM = (contextId: string | undefined): string => {
-        if (!contextId) return 'Sem origem';
-        const ctx = contextId.trim();
-        if (['Manual', 'Import', 'Evento', 'Direto', 'Site'].includes(ctx)) return ctx;
-
-        // LP / LP V2 / LP V3 / LP V4 → agrupa pelo SLUG (a região está no slug,
-        // ex. "curso-suspensao-sjrp"), unificando todas as versões da mesma LP.
-        const lpMatch = ctx.match(/^LP\s*V?\d*\s*:\s*(.*)$/i);
-        if (lpMatch) {
-            const inner = lpMatch[1].trim();
-            const slugMatch = inner.match(/\(([^)]+)\)\s*$/);
-            if (slugMatch) return 'LP: ' + slugMatch[1].trim();
-            return 'LP: ' + inner.replace(/\s*\([^)]*\)\s*$/, '').trim();
-        }
-
-        // Quiz Started / Completed → agrupa pelo título da LP, ignorando [TEMPERATURA].
-        const quizMatch = ctx.match(/^Quiz\s+(?:Completed|Started)\s*:\s*(.*)$/i);
-        if (quizMatch) {
-            return 'Quiz: ' + quizMatch[1].replace(/\s*\[[^\]]*\]\s*/g, '').trim();
-        }
-
-        // Eventos Europa/Lisboa: remove sufixo de fluxo ((DIRECT PAY)/(SINAL)/: bike)
-        // para unificar a mesma região num só item.
-        if (/^(WTECH EUROPA|PRORIDERS|LP LISBOA|LP EUROPA)/i.test(ctx)) {
-            return ctx.replace(/\s*\([^)]*\)\s*$/, '').replace(/\s*:.*$/, '').trim();
-        }
-
-        // Formulários de contato (assunto + mensagem livre) caem numa categoria única.
-        if (/^Assunto:/i.test(ctx) || ctx.length > 60) return 'Formulário de Contato';
-        return ctx;
-    };
+    // Agrupamento de origem delegado ao tagueamento central (lib/leadOrigin).
+    const parseLPSourceCRM = (contextId: string | undefined): string =>
+        parseLeadOrigin(contextId).group;
 
     // Rótulo de tráfego do lead a partir do utm_source bruto (decisão: "estrutura
     // agora, regra depois" — ainda não classificamos pago x orgânico). Leads sem
@@ -1970,7 +1918,9 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
             // 1. Time Filters (Restrictive)
             if (filterType === 'Period') {
-                if (filterPeriod !== 9999) { // 9999 is "Tudo"
+                if (filterPeriod === 0) { // 0 = "Hoje" (dia de calendário, não últimas 24h)
+                    if (!isToday(l.createdAt)) return false;
+                } else if (filterPeriod !== 9999) { // 9999 is "Tudo"
                     const now = new Date();
                     const diffTime = Math.abs(now.getTime() - d.getTime());
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -1993,6 +1943,13 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                 if (parseTrafficCRM(l) !== trafficFilter) return false;
             }
 
+            // 2c. Course / Region Tagging Filters (lib/leadOrigin)
+            if ((courseFilter && courseFilter !== 'All') || (regionFilter && regionFilter !== 'All')) {
+                const origin = parseLeadOrigin(l.contextId, l.address_city);
+                if (courseFilter !== 'All' && (origin.course || 'Sem curso') !== courseFilter) return false;
+                if (regionFilter !== 'All' && (origin.region || 'Sem região') !== regionFilter) return false;
+            }
+
             // 3. User Filter
             if (selectedUserFilter && selectedUserFilter !== 'All') {
                 if (selectedUserFilter === 'None') {
@@ -2013,7 +1970,7 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
             return true;
         });
-    }, [leads, filterType, filterPeriod, selectedMonth, customRange, contextFilter, trafficFilter, selectedUserFilter, searchQuery]);
+    }, [leads, filterType, filterPeriod, selectedMonth, customRange, contextFilter, trafficFilter, courseFilter, regionFilter, selectedUserFilter, searchQuery]);
 
     // Extract unique contexts for filter — normalize LP names so the dropdown groups by LP
     const uniqueContexts = useMemo(() => {
@@ -2031,6 +1988,46 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
         return list;
     }, [leads]);
 
+    // Cursos e regiões presentes nos leads (tagueamento lib/leadOrigin).
+    const uniqueCourses = useMemo(() => {
+        const set = new Set(leads.map(l => parseLeadOrigin(l.contextId, l.address_city).course || 'Sem curso'));
+        const hasUnknown = set.delete('Sem curso');
+        const list = Array.from(set).sort();
+        if (hasUnknown) list.push('Sem curso');
+        return list;
+    }, [leads]);
+
+    const uniqueRegions = useMemo(() => {
+        const set = new Set(leads.map(l => parseLeadOrigin(l.contextId, l.address_city).region || 'Sem região'));
+        const hasUnknown = set.delete('Sem região');
+        const list = Array.from(set).sort();
+        if (hasUnknown) list.push('Sem região');
+        return list;
+    }, [leads]);
+
+    // Leads que entraram HOJE (dia de calendário) — alimenta a faixa do topo.
+    const todayLeads = useMemo(
+        () => leads
+            .filter(l => isToday(l.createdAt))
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        [leads]
+    );
+
+    const activeAdvancedFilters = useMemo(() => {
+        const chips: { key: string; label: string; clear: () => void }[] = [];
+        if (contextFilter !== 'All') chips.push({ key: 'ctx', label: contextFilter, clear: () => setContextFilter('All') });
+        if (courseFilter !== 'All') chips.push({ key: 'course', label: `Curso: ${courseFilter}`, clear: () => setCourseFilter('All') });
+        if (regionFilter !== 'All') chips.push({ key: 'region', label: `Região: ${regionFilter}`, clear: () => setRegionFilter('All') });
+        if (trafficFilter !== 'All') chips.push({ key: 'traffic', label: `Tráfego: ${trafficFilter}`, clear: () => setTrafficFilter('All') });
+        if (selectedUserFilter !== 'All') chips.push({
+            key: 'user',
+            label: selectedUserFilter === 'None' ? 'Fila (Sem Dono)' : `Atendente: ${usersMap[selectedUserFilter] || 'Usuário'}`,
+            clear: () => setSelectedUserFilter('All'),
+        });
+        if (searchQuery.trim()) chips.push({ key: 'search', label: `Busca: "${searchQuery.trim()}"`, clear: () => setSearchQuery('') });
+        return chips;
+    }, [contextFilter, courseFilter, regionFilter, trafficFilter, selectedUserFilter, searchQuery, usersMap]);
+
     const exportFilteredToXLS = () => {
         if (!hasPermission('crm_export')) { alert('Você não tem permissão para exportar dados.'); return; }
         if (filteredLeads.length === 0) {
@@ -2046,6 +2043,8 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             'CPF': l.cpf || '',
             'RG': l.rg || '',
             'Origem / LP': parseLPSourceCRM(l.contextId),
+            'Curso': parseLeadOrigin(l.contextId, l.address_city).course || '',
+            'Região': parseLeadOrigin(l.contextId, l.address_city).region || '',
             'Tráfego (utm_source)': parseTrafficCRM(l),
             'utm_medium': l.utm_medium || '',
             'utm_campaign': l.utm_campaign || '',
@@ -2179,8 +2178,140 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                     )}
                 </AnimatePresence>
 
-                {/* Funnel Overview */}
-                <FunnelChart leads={filteredLeads} />
+                {/* ── Header — Central de Leads ── */}
+                <div className="flex flex-wrap items-end justify-between gap-4 mb-4">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="h-px w-8 bg-wtech-gold"></div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-wtech-gold">W-Tech CRM</span>
+                        </div>
+                        <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-[var(--admin-text-primary)] leading-none">
+                            Central de Leads
+                        </h1>
+                        <p className="text-xs text-[var(--admin-text-secondary)] mt-1.5">
+                            Funil comercial em tempo real — do primeiro clique à matrícula.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] px-3 py-2 rounded-xl">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-secondary)]">Ao vivo</span>
+                        </div>
+                        <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] px-4 py-2 rounded-xl text-center">
+                            <p className="text-lg font-black text-[var(--admin-text-primary)] leading-none">{leads.length}</p>
+                            <p className="text-[9px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-wider mt-0.5">Leads na base</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Entradas de Hoje ── */}
+                <div className="mb-4 rounded-2xl overflow-hidden border border-wtech-gold/25 bg-gradient-to-r from-wtech-black via-[#141414] to-wtech-black relative shadow-lg shadow-black/20">
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-wtech-gold/60 to-transparent"></div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-3 pb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-wtech-gold/15 border border-wtech-gold/30 flex items-center justify-center">
+                                <Zap size={16} className="text-wtech-gold" />
+                            </div>
+                            <div>
+                                <h3 className="font-display text-sm font-bold uppercase tracking-widest text-white leading-none">
+                                    Entradas de Hoje
+                                </h3>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                    {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                                </p>
+                            </div>
+                            <span className="ml-1 px-2.5 py-1 rounded-lg bg-wtech-gold text-black text-sm font-black leading-none shadow-md shadow-wtech-gold/20">
+                                {todayLeads.length}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => {
+                                const isTodayActive = filterType === 'Period' && filterPeriod === 0;
+                                setFilterType('Period');
+                                setFilterPeriod(isTodayActive ? 30 : 0);
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border
+                                ${filterType === 'Period' && filterPeriod === 0
+                                    ? 'bg-wtech-gold text-black border-wtech-gold shadow-md shadow-wtech-gold/30'
+                                    : 'bg-white/5 text-gray-300 border-white/10 hover:border-wtech-gold/50 hover:text-wtech-gold'
+                                }`}
+                        >
+                            <Sparkles size={11} />
+                            {filterType === 'Period' && filterPeriod === 0 ? 'Focado em hoje' : 'Focar em hoje'}
+                        </button>
+                    </div>
+
+                    <div className="px-4 pb-3.5">
+                        {todayLeads.length === 0 ? (
+                            <p className="text-[11px] text-gray-500 italic py-2">
+                                Nenhum lead entrou hoje ainda — o primeiro aparece aqui em tempo real.
+                            </p>
+                        ) : (
+                            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
+                                {todayLeads.map(lead => {
+                                    const origin = parseLeadOrigin(lead.contextId, lead.address_city);
+                                    const stageDot =
+                                        lead.status === 'New' ? 'bg-blue-400' :
+                                        lead.status === 'Contacted' ? 'bg-indigo-400' :
+                                        (lead.status === 'Qualified' || lead.status === 'Negotiating') ? 'bg-purple-400' :
+                                        (lead.status === 'Converted' || lead.status === 'Matriculated') ? 'bg-emerald-400' :
+                                        'bg-gray-500';
+                                    return (
+                                        <button
+                                            key={lead.id}
+                                            onClick={() => handleLeadClick(lead)}
+                                            className="flex-shrink-0 min-w-[190px] max-w-[230px] text-left bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-wtech-gold/40 rounded-xl px-3 py-2 transition-all group/today"
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[10px] font-mono font-bold text-wtech-gold">
+                                                    {new Date(lead.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${stageDot}`} title={lead.status}></span>
+                                            </div>
+                                            <p className="text-xs font-bold text-white truncate mt-0.5 group-hover/today:text-wtech-gold transition-colors">
+                                                {lead.name || 'Sem nome'}
+                                            </p>
+                                            <div className="flex items-center gap-1 mt-1 min-w-0">
+                                                {origin.course && (
+                                                    <span className="text-[8px] font-bold uppercase tracking-wide text-wtech-gold/90 bg-wtech-gold/10 px-1 py-px rounded truncate">
+                                                        {origin.course}
+                                                    </span>
+                                                )}
+                                                {origin.region && (
+                                                    <span className="text-[8px] font-bold uppercase tracking-wide text-blue-300 bg-blue-500/15 px-1 py-px rounded truncate flex items-center gap-0.5">
+                                                        <MapPin size={7} className="flex-shrink-0" />{origin.region}
+                                                    </span>
+                                                )}
+                                                {!origin.course && !origin.region && (
+                                                    <span className="text-[8px] font-bold uppercase tracking-wide text-gray-400 bg-white/5 px-1 py-px rounded truncate">
+                                                        {origin.source}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Funil detalhado (colapsável) */}
+                <AnimatePresence>
+                    {showFunnel && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <FunnelChart leads={filteredLeads} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Controls Bar */}
                 <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4 bg-[var(--admin-surface-1)] p-4 rounded-xl shadow-sm border border-[var(--admin-border)]">
@@ -2211,6 +2342,44 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                     <button onClick={() => setContextFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)]">Todas as Origens</button>
                                     {uniqueContexts.map((ctx: any) => (
                                         <button key={ctx} onClick={() => setContextFilter(ctx)} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs text-[var(--admin-text-secondary)] truncate">{ctx}</button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Course Filter (tagueamento lib/leadOrigin) */}
+                        <div className="relative group">
+                            <div className={`flex items-center gap-2 border px-3 py-2 rounded-lg cursor-pointer transition-colors ${courseFilter !== 'All' ? 'bg-wtech-gold/10 border-wtech-gold/50' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] hover:border-wtech-gold/50'}`}>
+                                <GraduationCap size={14} className={courseFilter !== 'All' ? 'text-wtech-gold' : 'text-[var(--admin-text-tertiary)]'} />
+                                <span className="text-xs font-bold text-[var(--admin-text-secondary)] truncate max-w-[140px]">
+                                    {courseFilter === 'All' ? 'Todos os Cursos' : courseFilter}
+                                </span>
+                                <ChevronDown size={12} className="text-[var(--admin-text-tertiary)]" />
+                            </div>
+                            <div className="absolute top-full left-0 pt-2 w-64 hidden group-hover:block z-50">
+                                <div className="bg-[var(--admin-surface-1)] shadow-xl rounded-xl border border-[var(--admin-border)] p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <button onClick={() => setCourseFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)]">Todos os Cursos</button>
+                                    {uniqueCourses.map((c) => (
+                                        <button key={c} onClick={() => setCourseFilter(c)} className={`w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs truncate ${c === 'Sem curso' ? 'text-[var(--admin-text-tertiary)] italic' : 'text-[var(--admin-text-secondary)]'}`}>{c}</button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Region Filter (tagueamento lib/leadOrigin) */}
+                        <div className="relative group">
+                            <div className={`flex items-center gap-2 border px-3 py-2 rounded-lg cursor-pointer transition-colors ${regionFilter !== 'All' ? 'bg-blue-500/10 border-blue-500/50' : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] hover:border-wtech-gold/50'}`}>
+                                <MapPin size={14} className={regionFilter !== 'All' ? 'text-blue-500' : 'text-[var(--admin-text-tertiary)]'} />
+                                <span className="text-xs font-bold text-[var(--admin-text-secondary)] truncate max-w-[140px]">
+                                    {regionFilter === 'All' ? 'Todas as Regiões' : regionFilter}
+                                </span>
+                                <ChevronDown size={12} className="text-[var(--admin-text-tertiary)]" />
+                            </div>
+                            <div className="absolute top-full left-0 pt-2 w-64 hidden group-hover:block z-50">
+                                <div className="bg-[var(--admin-surface-1)] shadow-xl rounded-xl border border-[var(--admin-border)] p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                    <button onClick={() => setRegionFilter('All')} className="w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs font-bold text-[var(--admin-text-primary)]">Todas as Regiões</button>
+                                    {uniqueRegions.map((r) => (
+                                        <button key={r} onClick={() => setRegionFilter(r)} className={`w-full text-left px-3 py-2 hover:bg-[var(--admin-surface-2)] rounded-lg text-xs truncate ${r === 'Sem região' ? 'text-[var(--admin-text-tertiary)] italic' : 'text-[var(--admin-text-secondary)]'}`}>{r}</button>
                                     ))}
                                 </div>
                             </div>
@@ -2294,13 +2463,15 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                         {/* Date Filter Compact */}
                         <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
-                            {[7, 30, 9999].map(days => (
+                            {[0, 7, 30, 9999].map(days => (
                                 <button
                                     key={days}
                                     onClick={() => { setFilterPeriod(days); setFilterType('Period'); }}
-                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${filterType === 'Period' && filterPeriod === days ? 'bg-[var(--admin-surface-1)] shadow text-[var(--admin-text-primary)]' : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
+                                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${filterType === 'Period' && filterPeriod === days
+                                        ? (days === 0 ? 'bg-wtech-gold text-black shadow' : 'bg-[var(--admin-surface-1)] shadow text-[var(--admin-text-primary)]')
+                                        : 'text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
                                 >
-                                    {days === 9999 ? 'Tudo' : `${days}d`}
+                                    {days === 0 ? 'Hoje' : days === 9999 ? 'Tudo' : `${days}d`}
                                 </button>
                             ))}
                         </div>
@@ -2322,6 +2493,17 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                 </div>
                             </div>
                         )}
+
+                        {/* Funnel Toggle */}
+                        <button
+                            onClick={() => setShowFunnel(v => !v)}
+                            className={`p-2 rounded-lg border transition-all ${showFunnel
+                                ? 'bg-wtech-gold/10 border-wtech-gold/50 text-wtech-gold'
+                                : 'bg-[var(--admin-surface-2)] border-[var(--admin-border)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-primary)]'}`}
+                            title={showFunnel ? 'Ocultar funil detalhado' : 'Mostrar funil detalhado'}
+                        >
+                            <TrendingUp size={16} />
+                        </button>
 
                         {/* View Mode Toggle */}
                         <div className="flex bg-[var(--admin-surface-2)] p-1 rounded-lg border border-[var(--admin-border)]">
@@ -2350,13 +2532,49 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black p-2.5 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20"
+                            className="flex items-center gap-1.5 bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-3 py-2.5 rounded-lg hover:scale-105 active:scale-95 transition-all shadow-md shadow-yellow-500/20 text-xs font-black uppercase"
                         >
-                            <Plus size={18} />
+                            <Plus size={16} />
+                            <span className="hidden lg:inline">Novo Lead</span>
                         </button>
                     </div>
                 </div>
 
+                {/* Active Filter Chips */}
+                {(activeAdvancedFilters.length > 0 || (filterType === 'Period' && filterPeriod === 0)) && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4 -mt-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--admin-text-tertiary)]">
+                            <span className="text-wtech-gold">{filteredLeads.length}</span> de {leads.length} leads
+                        </span>
+                        {filterType === 'Period' && filterPeriod === 0 && (
+                            <span className="flex items-center gap-1 bg-wtech-gold/10 border border-wtech-gold/30 text-wtech-gold px-2 py-1 rounded-lg text-[10px] font-bold uppercase">
+                                <Zap size={10} /> Somente hoje
+                                <button onClick={() => setFilterPeriod(30)} className="hover:text-black hover:bg-wtech-gold rounded-full transition-colors" title="Remover filtro de hoje">
+                                    <XCircle size={12} />
+                                </button>
+                            </span>
+                        )}
+                        {activeAdvancedFilters.map(chip => (
+                            <span key={chip.key} className="flex items-center gap-1 bg-[var(--admin-surface-1)] border border-[var(--admin-border)] text-[var(--admin-text-secondary)] px-2 py-1 rounded-lg text-[10px] font-bold">
+                                {chip.label}
+                                <button onClick={chip.clear} className="text-[var(--admin-text-tertiary)] hover:text-red-500 transition-colors" title="Remover filtro">
+                                    <XCircle size={12} />
+                                </button>
+                            </span>
+                        ))}
+                        {activeAdvancedFilters.length > 1 && (
+                            <button
+                                onClick={() => {
+                                    setContextFilter('All'); setCourseFilter('All'); setRegionFilter('All');
+                                    setTrafficFilter('All'); setSelectedUserFilter('All'); setSearchQuery('');
+                                }}
+                                className="text-[10px] font-black uppercase text-red-400 hover:text-red-600 transition-colors ml-1"
+                            >
+                                Limpar tudo
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Stats Bar */}
                 {viewMode === 'kanban' && (() => {
@@ -2367,16 +2585,31 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                         { label: 'Convertidos',  status: 'Converted',  count: filteredLeads.filter(l => l.status === 'Converted' || l.status === 'Matriculated').length, ring: 'ring-emerald-500', text: 'text-emerald-500' },
                         { label: 'Frios',        status: 'Cold',       count: filteredLeads.filter(l => l.status === 'Cold' || l.status === 'Rejected').length, ring: 'ring-gray-500', text: 'text-gray-500' },
                     ];
+                    const totalStages = Math.max(filteredLeads.length, 1);
                     return (
-                        <div className="grid grid-cols-5 gap-3 mb-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
                             {stageStats.map(s => (
                                 <button
                                     key={s.status}
                                     onClick={() => setActiveFilter(activeFilter === s.status ? null : s.status)}
-                                    className={`rounded-xl p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-center transition-all hover:shadow-sm ${activeFilter === s.status ? `ring-2 ring-offset-1 ${s.ring}` : ''}`}
+                                    className={`relative overflow-hidden rounded-xl p-3 border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-left transition-all hover:shadow-md hover:-translate-y-px ${activeFilter === s.status ? `ring-2 ring-offset-1 ${s.ring}` : ''}`}
                                 >
-                                    <p className={`text-2xl font-black ${s.text}`}>{s.count}</p>
-                                    <p className="text-[10px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-wider mt-0.5">{s.label}</p>
+                                    <div className="flex items-end justify-between gap-2">
+                                        <div>
+                                            <p className={`text-2xl font-black leading-none ${s.text}`}>{s.count}</p>
+                                            <p className="text-[10px] font-bold text-[var(--admin-text-tertiary)] uppercase tracking-wider mt-1.5">{s.label}</p>
+                                        </div>
+                                        <span className={`text-[10px] font-black opacity-60 ${s.text}`}>
+                                            {Math.round((s.count / totalStages) * 100)}%
+                                        </span>
+                                    </div>
+                                    {/* Barra de proporção da etapa */}
+                                    <div className="mt-2 h-1 w-full rounded-full bg-[var(--admin-surface-3)] overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-500 ${s.text.replace('text-', 'bg-')}`}
+                                            style={{ width: `${Math.min(100, (s.count / totalStages) * 100)}%` }}
+                                        ></div>
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -2510,10 +2743,26 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-1.5">
-                                                        {lead.contextId?.startsWith('LP') ? <Globe size={12} className="text-blue-400" /> : <GraduationCap size={12} className="text-orange-400" />}
-                                                        <span className="text-xs font-medium text-[var(--admin-text-secondary)] truncate max-w-[150px]" title={lead.contextId}>{lead.contextId || 'N/A'}</span>
-                                                    </div>
+                                                    {(() => {
+                                                        const origin = parseLeadOrigin(lead.contextId, lead.address_city);
+                                                        return (
+                                                            <div className="flex flex-wrap items-center gap-1" title={lead.contextId}>
+                                                                <span className="text-[9px] font-bold bg-[var(--admin-surface-3)] px-1.5 py-0.5 rounded-md text-[var(--admin-text-tertiary)] uppercase tracking-wide">
+                                                                    {origin.source}
+                                                                </span>
+                                                                {origin.course && (
+                                                                    <span className="text-[9px] font-bold bg-wtech-gold/10 px-1.5 py-0.5 rounded-md text-wtech-gold uppercase tracking-wide border border-wtech-gold/20">
+                                                                        {origin.course}
+                                                                    </span>
+                                                                )}
+                                                                {origin.region && (
+                                                                    <span className="text-[9px] font-bold bg-blue-500/10 px-1.5 py-0.5 rounded-md text-blue-500 dark:text-blue-400 uppercase tracking-wide border border-blue-500/20">
+                                                                        {origin.region}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {/* Robust User Display */}
