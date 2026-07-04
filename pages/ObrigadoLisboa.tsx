@@ -33,7 +33,7 @@ const ObrigadoLisboa: React.FC = () => {
     const enrollmentId = searchParams.get('eid');
     const sessionId = searchParams.get('session_id');
     const paymentType = searchParams.get('type') || 'full';
-    const amount = paymentType === 'deposit' ? 150 : 380;
+    const amount = paymentType === 'deposit' ? 150 : 480;
 
     useEffect(() => {
         const confirmPayment = async () => {
@@ -53,7 +53,7 @@ const ObrigadoLisboa: React.FC = () => {
                     works_with_suspensions: false,
                     took_suspension_course: false,
                     experience_years: '',
-                    SITE_Courses: { title: 'W-Tech Lisboa Nov 2026' }
+                    SITE_Courses: { title: 'W-Tech Lisboa Out 2026' }
                 };
                 setEnrollment(mockEnr);
                 setQForm(prev => ({
@@ -278,7 +278,7 @@ const ObrigadoLisboa: React.FC = () => {
                             className="text-gray-400 text-lg mb-8"
                         >
                             Parabéns, <strong>{enrollment?.student_name}</strong>! <br/>
-                            Sua vaga para o <strong>W-Tech Europa em Lisboa</strong> foi assegurada e seu {paymentType === 'deposit' ? 'sinal de €150' : 'pagamento de €380'} foi processado com sucesso.
+                            Sua vaga para o <strong>W-Tech Europa em Lisboa</strong> foi assegurada e seu {paymentType === 'deposit' ? 'sinal de €150' : 'pagamento de €480'} foi processado com sucesso.
                         </motion.p>
 
                         <div className="bg-black/50 border border-white/5 p-6 rounded-xl mb-8 text-left">
@@ -294,7 +294,9 @@ const ObrigadoLisboa: React.FC = () => {
                                 </li>
                                 <li className="flex gap-3 text-sm font-medium">
                                     <span className="text-wtech-red font-bold">03.</span>
-                                    <span>Sinal de entrada pago (€150). Restante (€230) a ser acertado conforme orientação da equipe.</span>
+                                    <span>{paymentType === 'deposit'
+                                        ? 'Sinal de entrada pago (€150). Restante (€330) a ser acertado até 10 dias antes do curso, conforme orientação da equipe.'
+                                        : 'Pagamento integral concluído (€480). Não há saldo pendente — sua vaga está 100% quitada.'}</span>
                                 </li>
                             </ul>
                         </div>
@@ -365,7 +367,7 @@ const ObrigadoLisboa: React.FC = () => {
                                                 value={qForm.zipCode}
                                                 onChange={e => setQForm({ ...qForm, zipCode: e.target.value })}
                                                 className="w-full bg-black border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-wtech-red focus:ring-1 focus:ring-wtech-red font-bold text-sm"
-                                                placeholder="Ex: 2710-089"
+                                                placeholder="Ex: 2710-297"
                                             />
                                         </div>
 

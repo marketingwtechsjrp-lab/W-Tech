@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
-import { createStripePaymentLink } from '../lib/stripe';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import {
     CheckCircle,
@@ -14,7 +14,8 @@ import {
     Settings,
     Zap,
     AlertOctagon,
-    Instagram,
+    Globe,
+    Phone,
     ShieldCheck,
     Cpu,
     Target,
@@ -203,27 +204,26 @@ const PremiumVideoPlayer: React.FC<{ src: string; aspect?: 'video' | 'portrait';
 
 const LPWTechLisboaNov2026: React.FC = () => {
     const { shouldAnimate } = useMotionConfig();
+    const navigate = useNavigate();
     const [form, setForm] = useState({ name: '', email: '', phone: '', reason: '' });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
-
-    const COURSE_ID = 'b88e8979-520a-4c37-8cb8-1128e7e5dffc'; // Curso Lisboa II Novembro 2026
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
             const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
-            
-            // 1. Criar o Lead no CRM (SITE_Leads)
+
+            // 1. Cria o Lead no CRM (SITE_Leads) — fica "pretendido" mesmo que não conclua o pagamento
             const leadPayload = {
                 name: form.name,
                 email: form.email,
                 phone: form.phone,
-                type: 'Course_Waitlist',
+                type: 'Course_Registration',
                 status: 'New',
-                context_id: `WTECH EUROPA LISBOA NOVEMBRO 2026 (SINAL)`,
-                tags: ['WTECH_LISBOA_NOV_2026', 'WAITLIST_SINAL'],
+                context_id: `WTECH EUROPA LISBOA OUTUBRO 2026 (INSCRIÇÃO)`,
+                tags: ['WTECH_LISBOA_OUT_2026', 'INSCRICAO_LP'],
                 assigned_to: assignedTo,
                 notes: form.reason,
                 ...getLeadTrackingFields()
@@ -234,51 +234,21 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 .insert([leadPayload])
                 .select()
                 .single();
-                
+
             if (leadError) throw leadError;
 
-            // 2. Criar a inscrição (SITE_Enrollments) como pendente
-            const enrollmentPayload = {
-                course_id: COURSE_ID,
-                student_name: form.name,
-                student_email: form.email,
-                student_phone: form.phone,
-                status: 'Pending',
-                amount_paid: 0,
-                total_amount: 380, // Preço total
-                payment_method: 'Stripe'
-            };
+            // 2. Dispara Webhook de lead (automações de CRM)
+            await triggerWebhook('webhook_lead', { lead_id: leadData.id, name: form.name, email: form.email, phone: form.phone });
 
-            const { data: enrollmentData, error: enrollmentError } = await supabase
-                .from('SITE_Enrollments')
-                .insert([enrollmentPayload])
-                .select()
-                .single();
-
-            if (enrollmentError) throw enrollmentError;
-
-            // 3. Disparar Webhook
-            await triggerWebhook('webhook_lead', { ...enrollmentData, lead_id: leadData.id });
-
-            // 4. Criar link de pagamento do Stripe para o Sinal (€150)
-            const stripeResult = await createStripePaymentLink({
-                title: `Sinal: W-Tech Lisboa II (Nov 2026) - ${form.name}`,
-                price: 150, // €150 de sinal
-                currency: 'eur',
-                email: form.email,
-                enrollmentId: enrollmentData.id,
-                successUrl: window.location.origin + `/obrigado-lisboa?eid=${enrollmentData.id}&session_id={CHECKOUT_SESSION_ID}&type=deposit`
-            });
-
-            if (stripeResult.success && stripeResult.url) {
-                window.location.href = stripeResult.url;
-            } else {
-                throw new Error(stripeResult.error || 'Erro ao gerar link de pagamento.');
-            }
-
+            // 3. Segue para o checkout (escolha de valor + pagamento Stripe), preservando as UTMs da URL
+            setSubmitted(true);
+            const params = new URLSearchParams(window.location.search);
+            params.set('lid', leadData.id);
+            navigate(`/checkout-lisboa?${params.toString()}`);
         } catch (err: any) {
             console.error('Error submitting pre-registration:', err);
-            alert('Erro ao processar sua pré-inscrição: ' + err.message);
+            alert('Erro ao processar sua inscrição: ' + err.message);
+            setSubmitted(false);
         }
         setLoading(false);
     };
@@ -292,7 +262,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
 
             {/* TOP BAR / URGENCY */}
             <div className="bg-gradient-to-r from-wtech-red to-red-800 text-white text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-center py-2.5 px-4 sticky top-0 z-50 shadow-2xl">
-                🔥 VAGAS LIMITADAS: GARANTA SUA RESERVA DE VAGA PARA A 2ª EDIÇÃO (LISBOA – 14 E 15 DE NOVEMBRO)
+                🔥 VAGAS LIMITADAS: GARANTA SUA RESERVA DE VAGA PARA A 2ª EDIÇÃO (LISBOA – 23, 24 E 25 DE OUTUBRO)
             </div>
 
             {/* NAVIGATION / LOGOS */}
@@ -326,7 +296,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-xl px-5 py-2 rounded-full mb-8 shadow-xl"
                     >
                         <Zap size={14} className="text-wtech-gold animate-pulse" />
-                        <span className="text-[10px] md:text-sm font-black uppercase tracking-[0.3em] text-white">Lisboa | 14–15 de Novembro 2026</span>
+                        <span className="text-[10px] md:text-sm font-black uppercase tracking-[0.3em] text-white">Lisboa | 23, 24 e 25 de Outubro 2026</span>
                     </motion.div>
 
                     <motion.h1
@@ -346,7 +316,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         className="max-w-3xl mx-auto text-lg md:text-2xl text-gray-400 font-medium mb-12 leading-relaxed"
                     >
                         A segunda edição da imersão que eleva o ajuste de suspensão ao <span className="text-white font-black">Padrão Internacional</span>. <br className="hidden md:block" />
-                        Garanta sua vaga pagando um sinal de reserva de <span className="text-white font-black">€150</span> (investimento total de €380).
+                        Garanta sua vaga pagando um sinal de reserva de <span className="text-white font-black">€150</span> (investimento total de €480).
                     </motion.p>
 
                     <motion.div
@@ -375,13 +345,13 @@ const LPWTechLisboaNov2026: React.FC = () => {
                     <div className="grid md:grid-cols-3 gap-8 text-center items-center">
                         <div className="flex flex-col items-center gap-2">
                             <Calendar className="text-wtech-red mb-2" size={32} />
-                            <span className="text-2xl font-black uppercase tracking-tighter">2 Dias de Imersão</span>
+                            <span className="text-2xl font-black uppercase tracking-tighter">3 Dias de Imersão</span>
                             <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Teoria e Prática Intensiva</span>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <MapPin className="text-wtech-red mb-2" size={32} />
-                            <span className="text-2xl font-black uppercase tracking-tighter">Liqui Moly HQ</span>
-                            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Sintra Business Park</span>
+                            <span className="text-2xl font-black uppercase tracking-tighter">Art on Wheels Garage</span>
+                            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Sintra · Portugal</span>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <Award className="text-wtech-gold mb-2" size={32} />
@@ -410,7 +380,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                     Este não é apenas um curso. É uma transferência de tecnologia para quem quer dominar o que acontece <strong>dentro da suspensão</strong>, eliminando o achismo de uma vez por todas.
                                 </motion.p>
                                 <motion.div variants={fadeUp} className="border-l-4 border-wtech-red pl-8 py-2 italic text-gray-300 bg-white/5 rounded-r-xl">
-                                    "Treinar dentro do Experience Center da Liqui Moly é posicionamento. É entregar o que há de mais moderno no mundo das suspensões."
+                                    "Treinar dentro de uma oficina profissional de verdade é posicionamento. É entregar o que há de mais moderno no mundo das suspensões."
                                 </motion.div>
                             </div>
                         </motion.div>
@@ -506,18 +476,18 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 </div>
             </section>
 
-            {/* LOCATION / LIQUI MOLY */}
+            {/* LOCATION / ART ON WHEELS GARAGE */}
             <section className="py-24 relative bg-zinc-950 overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
                         <div className="max-w-xl">
-                            <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-16 mb-8 bg-white p-2 rounded shadow-xl" />
+                            <span className="inline-block text-wtech-gold font-black uppercase tracking-[0.3em] text-xs mb-6">Art on Wheels Garage</span>
                             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">Onde a Inovação<br /> Acontece</h2>
                         </div>
                         <div className="pb-2">
                             <p className="text-gray-500 text-sm font-bold uppercase tracking-widest bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-full text-blue-400">
-                                Sintra Business Park | Edifício 01
+                                Centro Empresarial II · Sintra
                             </p>
                         </div>
                     </div>
@@ -528,27 +498,35 @@ const LPWTechLisboaNov2026: React.FC = () => {
                             <div className="relative z-10">
                                 <h3 className="text-2xl font-black uppercase text-white mb-6">Localização Premium</h3>
                                 <p className="text-gray-400 mb-8 leading-relaxed">
-                                    O Experience Center da Liqui Moly Iberia oferece a infraestrutura perfeita para uma formação de alto nível, com tecnologia de ponta e ambiente profissional.
+                                    A Art on Wheels Garage oferece a infraestrutura perfeita para uma formação de alto nível: ambiente profissional, equipamento real de oficina e o clima certo para a prática.
                                 </p>
                                 <div className="space-y-4 mb-10">
                                     <div className="flex items-center gap-4 text-gray-300">
                                         <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><MapPin size={20} /></div>
-                                        <span className="text-sm font-bold">2710-089 Sintra – Portugal</span>
+                                        <span className="text-sm font-bold">Centro Empresarial II, Rua da Tapada Nova, Armazém · 2710-297 Sintra – Portugal</span>
                                     </div>
                                     <a
-                                        id="lisboa-nov2026-instagram-liquimoly-link"
-                                        href="https://www.instagram.com/liquimolyiberia"
+                                        id="lisboa-out2026-garage-phone"
+                                        href="tel:+351917340016"
+                                        className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors"
+                                    >
+                                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><Phone size={20} /></div>
+                                        <span className="text-sm font-bold">+351 917 340 016</span>
+                                    </a>
+                                    <a
+                                        id="lisboa-out2026-garage-site"
+                                        href="https://artonwheelsgarage.pt"
                                         target="_blank"
                                         rel="noreferrer"
                                         className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors"
                                     >
-                                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><Instagram size={20} /></div>
-                                        <span className="text-sm font-bold">@liquimolyiberia</span>
+                                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><Globe size={20} /></div>
+                                        <span className="text-sm font-bold">artonwheelsgarage.pt</span>
                                     </a>
                                 </div>
                                 <a
                                     id="lisboa-nov2026-map-link"
-                                    href="https://maps.app.goo.gl/zYHt7GsrH78yfeKS9"
+                                    href="https://www.google.com/maps/search/?api=1&query=Art%20on%20Wheels%20Garage%2C%20Rua%20da%20Tapada%20Nova%2C%202710-297%20Sintra"
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-3 bg-blue-600 hover:bg-white hover:text-blue-600 text-white px-8 py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl"
@@ -561,7 +539,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <div className="aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-zinc-900 group">
                             <iframe
                                 className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
-                                src="https://www.youtube.com/embed/JqDGXUdsSrQ?rel=0"
+                                src="https://www.youtube.com/embed/sSyVRdxprg0?rel=0"
                                 allowFullScreen
                             ></iframe>
                         </div>
@@ -627,6 +605,10 @@ const LPWTechLisboaNov2026: React.FC = () => {
 
                     <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
                         <div className="space-y-8">
+                            <div className="mb-2">
+                                <span className="text-wtech-gold text-[11px] font-black uppercase tracking-[0.3em]">Dia 01 · Sexta-feira</span>
+                                <h3 className="text-2xl font-black uppercase text-white tracking-tighter italic">Fundamentos</h3>
+                            </div>
                             {[
                                 {
                                     num: "01",
@@ -659,6 +641,10 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         </div>
 
                         <div className="space-y-8">
+                            <div className="mb-2">
+                                <span className="text-wtech-gold text-[11px] font-black uppercase tracking-[0.3em]">Dia 02 · Sábado</span>
+                                <h3 className="text-2xl font-black uppercase text-white tracking-tighter italic">Engenharia & Ajustes</h3>
+                            </div>
                             {[
                                 {
                                     num: "04",
@@ -691,6 +677,46 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* DIA 03 — PRÁTICA INTENSIVA */}
+                    <div className="mt-16 max-w-6xl mx-auto">
+                        <div className="mb-8 text-center">
+                            <span className="text-wtech-gold text-[11px] font-black uppercase tracking-[0.3em]">Dia 03 · Domingo</span>
+                            <h3 className="text-2xl md:text-3xl font-black uppercase text-white tracking-tighter italic">Prática Intensiva & Certificação</h3>
+                            <p className="text-gray-500 text-sm mt-2 max-w-2xl mx-auto">O dia extra da 2ª edição: mão na massa na bancada, revisão completa guiada e casos reais até a certificação.</p>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {[
+                                {
+                                    num: "07",
+                                    title: "Bancada & Desmontagem",
+                                    subtitle: "Mão na Massa",
+                                    desc: "Prática guiada de abertura, inspeção e leitura de componentes internos passo a passo, com acompanhamento direto do instrutor."
+                                },
+                                {
+                                    num: "08",
+                                    title: "Revisão Completa (Rebuild)",
+                                    subtitle: "Do Zero ao Setup",
+                                    desc: "Montagem, sangria, carga de óleo e regulagem final aplicando toda a teoria dos dias anteriores em uma suspensão real."
+                                },
+                                {
+                                    num: "09",
+                                    title: "Casos Reais & Certificação",
+                                    subtitle: "Fechamento W-Tech",
+                                    desc: "Diagnóstico de casos reais de piloto, tira-dúvidas técnico avançado e entrega da certificação internacional W-Tech."
+                                }
+                            ].map((module, i) => (
+                                <div key={i} className="group relative bg-zinc-900/50 border border-white/5 rounded-3xl p-8 hover:border-wtech-red/30 transition-colors">
+                                    <div className="text-4xl font-black text-white/5 group-hover:text-wtech-red/40 transition-colors uppercase leading-none mb-4">M{module.num}</div>
+                                    <h4 className="text-xl font-black text-white uppercase mb-1 group-hover:text-wtech-red transition-colors italic tracking-tighter">{module.title}</h4>
+                                    <p className="text-wtech-gold text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <div className="w-4 h-px bg-wtech-gold"></div> {module.subtitle}
+                                    </p>
+                                    <p className="text-gray-500 text-sm leading-relaxed">{module.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Routine Bar */}
                     <div className="mt-20 bg-zinc-900/80 backdrop-blur-xl border border-white/5 p-8 md:p-12 rounded-[2rem] max-w-5xl mx-auto shadow-[0_30px_60px_rgba(0,0,0,0.5)] relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-8">
@@ -699,9 +725,9 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
                             <div className="w-full md:w-1/3 text-center md:text-left">
                                 <h4 className="text-3xl font-black text-white uppercase mb-4 tracking-tighter">Rotina de <span className="text-wtech-red italic">Imersão</span></h4>
-                                <p className="text-gray-500 text-sm leading-relaxed mb-6 font-medium italic">Sábado e Domingo, 14–15 de Novembro.</p>
+                                <p className="text-gray-500 text-sm leading-relaxed mb-6 font-medium italic">Sexta, Sábado e Domingo · 23, 24 e 25 de Outubro.</p>
                                 <div className="inline-flex items-center gap-2 bg-white/5 px-6 py-3 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                    <Settings className="animate-spin-slow text-wtech-gold" size={14} /> Almoço livre (Sugerido no Sintra Park)
+                                    <Settings className="animate-spin-slow text-wtech-gold" size={14} /> Almoço livre (Sugerido na região de Sintra)
                                 </div>
                             </div>
 
@@ -734,9 +760,9 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
                         <div>
-                            <h2 className="text-5xl md:text-7xl font-black uppercase mb-8 tracking-tighter leading-[0.9]">2ª Edição<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red to-wtech-gold text-6xl md:text-8xl font-black">Novembro</span></h2>
+                            <h2 className="text-5xl md:text-7xl font-black uppercase mb-8 tracking-tighter leading-[0.9]">2ª Edição<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red to-wtech-gold text-6xl md:text-8xl font-black">Outubro</span></h2>
                             <p className="text-gray-400 text-lg mb-10 leading-relaxed max-w-md">
-                                As vagas para a segunda edição oficial do curso W-Tech em Sintra são extremamente limitadas. Reserve sua vaga agora pagando um sinal de entrada de <strong>€150</strong> (valor total do curso de €380).
+                                As vagas para a segunda edição oficial do curso W-Tech em Sintra são extremamente limitadas. Preencha seus dados e escolha na próxima etapa: pague o valor integral de <strong>€480</strong> ou reserve com um sinal de <strong>€150</strong>.
                             </p>
                             <div className="space-y-4 mb-10">
                                 <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-xl">
@@ -756,8 +782,8 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                     <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
                                         <CheckCircle size={40} />
                                     </div>
-                                    <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">Sinal Confirmado!</h3>
-                                    <p className="text-gray-400 mb-8">Redirecionando para a confirmação...</p>
+                                    <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter">Inscrição Recebida!</h3>
+                                    <p className="text-gray-400 mb-8">Redirecionando para o pagamento...</p>
                                 </motion.div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -777,7 +803,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                         disabled={loading}
                                         className="w-full bg-wtech-red hover:bg-white hover:text-wtech-red text-white py-6 rounded-xl font-black text-lg uppercase tracking-widest transition-all shadow-[0_20px_40px_rgba(230,0,0,0.3)] disabled:opacity-50"
                                     >
-                                        {loading ? 'A Redirecionar...' : 'Pagar Sinal de Entrada (€150)'}
+                                        {loading ? 'A Processar...' : 'Continuar para o Pagamento'}
                                     </button>
                                 </form>
                             )}
@@ -793,7 +819,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-10" />
                         <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-12 bg-white p-1 rounded" />
                     </div>
-                    <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.5em] mb-4">W-Tech Europa | Lisboa 2ª Edição (Nov 2026)</p>
+                    <p className="text-gray-600 text-[10px] font-black uppercase tracking-[0.5em] mb-4">W-Tech Europa | Lisboa 2ª Edição (Out 2026)</p>
                     <p className="text-gray-800 text-[10px] uppercase font-bold tracking-widest">
                         O futuro das suspensões começa aqui.<br />Todos os direitos reservados ®
                     </p>

@@ -37,6 +37,7 @@ const LPWTechLisboaNov2026 = lazy(() => import('./pages/LPWTechLisboaNov2026'));
 const WTechLisboaNov2026 = lazy(() => import('./pages/WTechLisboaNov2026'));
 const LPProRidersLisboa = lazy(() => import('./pages/LPProRidersLisboa'));
 const ObrigadoLisboa = lazy(() => import('./pages/ObrigadoLisboa'));
+const CheckoutLisboa = lazy(() => import('./pages/CheckoutLisboa'));
 const Termos = lazy(() => import('./pages/Termos'));
 const Privacidade = lazy(() => import('./pages/Privacidade'));
 const Cancelamento = lazy(() => import('./pages/Cancelamento'));
@@ -122,6 +123,7 @@ const App = () => {
                     <Route path="/wtech-lisboa-nov" element={<WTechLisboaNov2026 />} />
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
+                    <Route path="/checkout-lisboa" element={<CheckoutLisboa />} />
                     <Route path="/curso-suspensao-piloto" element={<LPErgonomia />} />
                     <Route path="/curso-suspensao-piloto-v2" element={<LPErgonomia2 />} />
                     <Route path="/curso-suspensao-piloto-v3" element={<LPErgonomia3 />} />
