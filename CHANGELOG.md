@@ -1,6 +1,21 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.22.1 (2026-07-04) - WhatsApp do curso online isolado da instância mestre + ajustes no checkout Lisboa
+- Pix do curso online (Kiwify) agora sai por instância WhatsApp dedicada (w-tech-curso-online), nunca mais pela instância mestre das configurações
+- Nova rota wa_instance_curso_online no painel Admin > Integrações > Motor de Envio, cobrindo Pix gerado, carrinho abandonado e boas-vindas
+- Follow-up de escassez (+15min) da fila SITE_Automacao_Fila corrigido no banco: lia URL/apikey/instância fixas no código, agora lê de SITE_Config na mesma ordem de prioridade do webhook
+- CheckoutLisboa: dedup de lead por e-mail e telefone, enrollment só é criado após pagamento confirmado (não mais no início do checkout)
+- ObrigadoLisboa: fluxo de confirmação migrado para usar lead id (lid) com fallback ao enrollment id (eid) legado
+
+## v3.22.0 (2026-07-03) - Curso Lisboa Out/2026: 3 dias, checkout Stripe com escolha de valor e novo local Art on Wheels Garage
+
+- **Datas do curso de Lisboa** alteradas de 14-15 Nov para **23, 24 e 25 de Outubro** (3 dias), com novo **Dia 03** de Prática Intensiva & Certificação (módulos M07-M09)
+- **Novo checkout `/checkout-lisboa`** espelhando o do Brasil (Stripe/EUR): vídeo, seção de credibilidade e **escolha de valor** (€480 integral ou €150 de sinal/reserva de vaga)
+- **Fluxo unificado:** a LP e a inscrição direta criam o lead no CRM (fica como pretendido mesmo sem pagar) e seguem ao checkout **preservando as UTMs** (LEI 10)
+- **Novo local do curso:** de Liqui Moly HQ para **Art on Wheels Garage** (Centro Empresarial II, Rua da Tapada Nova, 2710-297 Sintra) — endereço, mapa, contatos e vídeo atualizados em todas as páginas do funil
+
+
 ## v3.21.0 (2026-07-03) - Campanhas de Captura: quiz gamificado, leads isolados e envio em lote ao CRM
 
 - **Novo módulo "Captura" no Marketing Hub**: campanhas de captação com 6 modelos (LP de Captura, Simples, Venda de Produto, Lançamento de Curso, Lançamento de Produto e Ferramenta quiz/enquete)

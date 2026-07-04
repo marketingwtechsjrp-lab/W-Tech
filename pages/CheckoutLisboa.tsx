@@ -126,66 +126,86 @@ const CheckoutLisboa: React.FC = () => {
         setSubmitting(true);
 
         try {
-            // 1. Garante o lead no CRM. Se veio da LP (lid), atualiza; senão, cria (fica "pretendido" mesmo sem pagar).
+            const nome = form.name.trim();
+            const emailLc = form.email.trim().toLowerCase();
+            const fone = form.phone.trim();
+            const doc = form.document.trim() || null;
+            const leadTags = ['WTECH_LISBOA_OUT_2026', 'CHECKOUT_LISBOA', paymentType === 'deposit' ? 'SINAL' : 'INTEGRAL'];
+
+            // 1. Garante o lead no CRM. IMPORTANTE: aqui NÃO criamos inscrição.
+            //    Sem pagamento concluído, a pessoa fica apenas como "Novo Lead" para o
+            //    atendente trabalhar. A inscrição (SITE_Enrollments) só é criada em
+            //    /obrigado-lisboa, quando o pagamento é confirmado.
             let leadId = lid;
             if (leadId) {
                 await supabase
                     .from('SITE_Leads')
-                    .update({ tags: ['WTECH_LISBOA_OUT_2026', 'CHECKOUT_LISBOA', paymentType === 'deposit' ? 'SINAL' : 'INTEGRAL'] })
+                    .update({ name: nome, email: emailLc, phone: fone, cpf: doc, tags: leadTags })
                     .eq('id', leadId);
             } else {
-                const { data: newLead } = await supabase
-                    .from('SITE_Leads')
-                    .insert([{
-                        name: form.name.trim(),
-                        email: form.email.trim().toLowerCase(),
-                        phone: form.phone.trim(),
-                        type: 'Course_Registration',
-                        status: 'New',
-                        context_id: 'WTECH EUROPA LISBOA OUTUBRO 2026 (CHECKOUT)',
-                        tags: ['WTECH_LISBOA_OUT_2026', 'CHECKOUT_LISBOA', paymentType === 'deposit' ? 'SINAL' : 'INTEGRAL'],
-                        assigned_to: ASSIGNED_TO,
-                        ...getLeadTrackingFields()
-                    }])
-                    .select()
-                    .single();
-                leadId = newLead?.id || null;
+                // Dedupe: reaproveita lead existente (mesmo e-mail ou telefone) antes de criar outro.
+                let existingLead: { id: string } | null = null;
+                if (emailLc) {
+                    const { data } = await supabase.from('SITE_Leads').select('id').eq('email', emailLc).limit(1);
+                    existingLead = data?.[0] || null;
+                }
+                if (!existingLead && fone) {
+                    const last8 = fone.replace(/\D/g, '').slice(-8);
+                    if (last8) {
+                        const { data } = await supabase.from('SITE_Leads').select('id').ilike('phone', `%${last8}%`).limit(1);
+                        existingLead = data?.[0] || null;
+                    }
+                }
+
+                if (existingLead) {
+                    await supabase
+                        .from('SITE_Leads')
+                        .update({ name: nome, email: emailLc, phone: fone, cpf: doc, tags: leadTags })
+                        .eq('id', existingLead.id);
+                    leadId = existingLead.id;
+                } else {
+                    const { data: newLead } = await supabase
+                        .from('SITE_Leads')
+                        .insert([{
+                            name: nome,
+                            email: emailLc,
+                            phone: fone,
+                            cpf: doc,
+                            type: 'Course_Registration',
+                            status: 'New',
+                            context_id: 'WTECH EUROPA LISBOA OUTUBRO 2026 (CHECKOUT)',
+                            tags: leadTags,
+                            assigned_to: ASSIGNED_TO,
+                            ...getLeadTrackingFields()
+                        }])
+                        .select()
+                        .single();
+                    leadId = newLead?.id || null;
+                }
             }
 
-            // 2. Cria a inscrição como Pendente (total sempre €480; saldo restante cai no sistema de cobrança de saldo)
-            const { data: enrollmentData, error: enrollmentError } = await supabase
-                .from('SITE_Enrollments')
-                .insert([{
-                    course_id: COURSE_ID,
-                    student_name: form.name.trim(),
-                    student_email: form.email.trim().toLowerCase(),
-                    student_phone: form.phone.trim(),
-                    student_cpf: form.document.trim() || null,
-                    status: 'Pending',
-                    amount_paid: 0,
-                    total_amount: fullPrice,
-                    currency: 'EUR',
-                    payment_method: 'Stripe',
-                    enrolled_by_name: 'Automático'
-                }])
-                .select()
-                .single();
+            if (!leadId) throw new Error('Não foi possível registrar seus dados. Tente novamente.');
 
-            if (enrollmentError) throw enrollmentError;
+            // 2. Dispara o webhook de lead (automações de CRM) — ainda sem inscrição/pagamento.
+            await triggerWebhook('webhook_lead', {
+                lead_id: leadId,
+                student_name: nome,
+                student_email: emailLc,
+                student_phone: fone,
+                payment_type: paymentType,
+                stage: 'checkout_started'
+            });
 
-            // 3. Dispara o webhook de lead (automações de CRM)
-            await triggerWebhook('webhook_lead', { ...enrollmentData, lead_id: leadId });
-
-            // 4. Gera o link do Stripe no valor escolhido e redireciona
+            // 3. Gera o link do Stripe. A inscrição será criada/confirmada apenas no
+            //    retorno (/obrigado-lisboa), a partir do lead, após o pagamento.
             const stripeResult = await createStripePaymentLink({
                 title: paymentType === 'deposit'
-                    ? `Sinal de Reserva: W-Tech Lisboa (Out 2026) - ${form.name.trim()}`
-                    : `Inscrição Integral: W-Tech Lisboa (Out 2026) - ${form.name.trim()}`,
+                    ? `Sinal de Reserva: W-Tech Lisboa (Out 2026) - ${nome}`
+                    : `Inscrição Integral: W-Tech Lisboa (Out 2026) - ${nome}`,
                 price: selectedPrice,
                 currency: 'eur',
-                email: form.email.trim().toLowerCase(),
-                enrollmentId: enrollmentData.id,
-                successUrl: window.location.origin + `/obrigado-lisboa?eid=${enrollmentData.id}&session_id={CHECKOUT_SESSION_ID}&type=${paymentType}`
+                email: emailLc,
+                successUrl: window.location.origin + `/obrigado-lisboa?lid=${leadId}&session_id={CHECKOUT_SESSION_ID}&type=${paymentType}`
             });
 
             if (!stripeResult.success || !stripeResult.url) {

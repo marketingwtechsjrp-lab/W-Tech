@@ -1,7 +1,7 @@
 # 📘 Guia Completo do Sistema W-Tech Platform
 
-**Última Atualização:** 03/07/2026
-**Versão:** 3.21.0 (Baseada no `package.json`)
+**Última Atualização:** 04/07/2026
+**Versão:** 3.22.0 (Baseada no `package.json`)
 
 Este documento serve como a "Fonte de Verdade" para o funcionamento, arquitetura e manutenção de toda a plataforma W-Tech.
 
@@ -113,14 +113,13 @@ Este comando executa o script `scripts/deploy-update.js`, que:
 
 ## 📝 6. Histórico de Manutenção (Últimas 5 Modificações)
 
-- **18/06/2026**: Versão v3.6.1 - Correção no seletor do admin: busca paginada de marcas (`SITE_SpringRecommendations`) contornando o limite de 1000 registros do Supabase.
-- **17/06/2026**: Versão v3.6.0 - Banco de Dados de Molas W-Tech (`/molas`) com seletor otimizado para mobile.
-- **15/06/2026**: Versão v3.5.2 - Ajustes de layout na LP Ergonomia v2: remoção do Bento Grid e seções Rafa/Alex, depoimentos no topo, inserção de vídeo da Europa tocando inline e 4 novos Shorts.
-- **11/06/2026**: Versão v3.0.12 - Fluxo de Inscrição e Pagamento Mercado Pago (Brasil). Opção de Sinal/Reserva de Vaga configurável, questionário complementar com ViaCEP e saldo devedor na confirmação de inscrição. Aba 'WhatsApp API' renomeada para 'Integrações'.
-- **29/04/2026**: Versão v3.0.4 - Implementação de redirecionamentos manuais para Landing Pages. Adicionado campo `customLink` no Admin para permitir que cursos/eventos apontem para URLs personalizadas, ignorando a LP automática.
-- **10/04/2026**: Unificação das tabelas de alunos e clientes para evitar duplicidade de dados.
-- **08/04/2026**: Implementação de suporte a múltiplas moedas no checkout e links de pagamento Stripe.
-- **01/04/2026**: Lançamento do Dashboard Financeiro em tempo real com KPIs de conversão.
+- **03/07/2026**: Versão v3.22.0 - Curso Lisboa Out/2026: datas para 23-25/10 (3 dias), novo checkout `/checkout-lisboa` (Stripe/EUR) com escolha de valor (€480 integral ou €150 de sinal), fluxo unificado que cria o lead no CRM antes do pagamento (preservando UTMs) e novo local Art on Wheels Garage (Sintra).
+- **03/07/2026**: Versão v3.21.0 - Campanhas de Captura: novo módulo no Marketing Hub com quiz gamificado ("corrida das motinhas"), leads isolados por campanha (`SITE_CaptureLeads`) e envio manual em lote ao CRM. Fix: leads com `context_id` nulo voltaram a aparecer na Central de Leads.
+- **03/07/2026**: Versão v3.20.1 - Cronograma no WhatsApp só com turmas futuras: a Bia deixou de listar aos leads cursos cuja data já passou.
+- **03/07/2026**: Versão v3.20.0 - Bia transfere para o CRM: roleta de atendentes, citação por nome e encaminhamento para humano.
+- **03/07/2026**: Versão v3.19.1 - Correção da IA do WhatsApp: fim do "vou te transferir" em loop e novo treinamento da Bia.
+
+> Histórico completo e detalhado de todas as versões em [`CHANGELOG.md`](./CHANGELOG.md) e [`CHANGELOG.json`](./CHANGELOG.json).
 
 ---
 

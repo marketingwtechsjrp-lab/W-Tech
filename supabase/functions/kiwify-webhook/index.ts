@@ -243,8 +243,12 @@ serve(async (req) => {
         if (map['evolution_api_key']) {
           resolvedKey = map['evolution_api_key'].trim();
         }
-        // Try automation_whatsapp_instance first, then fallbackInstance (evolution_instance_name), then env
-        if (map['automation_whatsapp_instance']) {
+        // Instância DEDICADA do curso online (Pix gerado / carrinho abandonado /
+        // boas-vindas via Kiwify). Só cai na automação/padrão se não configurada,
+        // para NUNCA sair pelo número mestre por engano.
+        if (map['wa_instance_curso_online']) {
+          resolvedInstance = map['wa_instance_curso_online'].trim();
+        } else if (map['automation_whatsapp_instance']) {
           resolvedInstance = map['automation_whatsapp_instance'].trim();
         } else if (map['evolution_instance_name']) {
           resolvedInstance = map['evolution_instance_name'].trim();

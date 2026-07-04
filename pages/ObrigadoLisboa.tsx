@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabaseClient';
 import { syncStudentToLeads } from '../lib/leads';
 import { CheckCircle, ArrowRight, Instagram, Globe, MessageCircle } from 'lucide-react';
 
+// Curso Lisboa II — Outubro 2026 (mesmo COURSE_ID usado no CheckoutLisboa).
+const COURSE_ID = 'b88e8979-520a-4c37-8cb8-1128e7e5dffc';
+
 const ObrigadoLisboa: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -31,6 +34,7 @@ const ObrigadoLisboa: React.FC = () => {
     const [qSubmitted, setQSubmitted] = useState(false);
 
     const enrollmentId = searchParams.get('eid');
+    const leadId = searchParams.get('lid');
     const sessionId = searchParams.get('session_id');
     const paymentType = searchParams.get('type') || 'full';
     const amount = paymentType === 'deposit' ? 150 : 480;
@@ -68,20 +72,71 @@ const ObrigadoLisboa: React.FC = () => {
                 return;
             }
 
-            if (!enrollmentId) {
+            if (!enrollmentId && !leadId) {
                 setStatus('error');
                 return;
             }
 
             try {
-                // 1. Fetch Enrollment to check if it belongs to the Lisboa course and get student details
-                const { data: enr, error: fetchError } = await supabase
-                    .from('SITE_Enrollments')
-                    .select('*, SITE_Courses(title)')
-                    .eq('id', enrollmentId)
-                    .single();
+                // 1. Resolve a inscrição.
+                //    Fluxo NOVO (lid): a inscrição ainda não existe — ela só é criada
+                //    aqui, após o pagamento confirmado, a partir dos dados do lead.
+                //    Fluxo antigo/compat (eid): a inscrição já foi criada no checkout.
+                let enr: any = null;
 
-                if (fetchError || !enr) throw new Error('Inscrição não encontrada.');
+                if (enrollmentId) {
+                    const { data, error: fetchError } = await supabase
+                        .from('SITE_Enrollments')
+                        .select('*, SITE_Courses(title)')
+                        .eq('id', enrollmentId)
+                        .single();
+                    if (fetchError || !data) throw new Error('Inscrição não encontrada.');
+                    enr = data;
+                } else {
+                    // Cria a inscrição a partir do lead, no momento do pagamento confirmado.
+                    const { data: lead, error: leadErr } = await supabase
+                        .from('SITE_Leads')
+                        .select('*')
+                        .eq('id', leadId)
+                        .single();
+                    if (leadErr || !lead) throw new Error('Cadastro não encontrado.');
+
+                    const leadEmail = (lead.email || '').trim().toLowerCase();
+
+                    // Dedupe: reaproveita inscrição existente do mesmo aluno neste curso
+                    // (evita linhas duplicadas em retentativas de pagamento).
+                    const { data: existing } = await supabase
+                        .from('SITE_Enrollments')
+                        .select('*, SITE_Courses(title)')
+                        .eq('course_id', COURSE_ID)
+                        .eq('student_email', leadEmail)
+                        .order('created_at', { ascending: false })
+                        .limit(1);
+
+                    if (existing && existing[0]) {
+                        enr = existing[0];
+                    } else {
+                        const { data: created, error: createErr } = await supabase
+                            .from('SITE_Enrollments')
+                            .insert([{
+                                course_id: COURSE_ID,
+                                student_name: lead.name,
+                                student_email: leadEmail,
+                                student_phone: lead.phone,
+                                student_cpf: lead.cpf || null,
+                                status: 'Pending',
+                                amount_paid: 0,
+                                total_amount: 480,
+                                currency: 'EUR',
+                                payment_method: 'Stripe',
+                                enrolled_by_name: 'Automático'
+                            }])
+                            .select('*, SITE_Courses(title)')
+                            .single();
+                        if (createErr || !created) throw new Error('Falha ao registrar a inscrição.');
+                        enr = created;
+                    }
+                }
 
                 setEnrollment(enr);
                 setQForm(prev => ({
@@ -115,7 +170,7 @@ const ObrigadoLisboa: React.FC = () => {
                         payment_method: 'Stripe',
                         enrolled_by_name: 'Automático'
                     })
-                    .eq('id', enrollmentId);
+                    .eq('id', enr.id);
 
                 if (updateError) throw updateError;
 
@@ -144,7 +199,7 @@ const ObrigadoLisboa: React.FC = () => {
                 const { data: existingTx } = await supabase
                     .from('SITE_Transactions')
                     .select('id')
-                    .eq('enrollment_id', enrollmentId)
+                    .eq('enrollment_id', enr.id)
                     .maybeSingle();
 
                 if (!existingTx) {
@@ -155,7 +210,7 @@ const ObrigadoLisboa: React.FC = () => {
                         amount: amount,
                         currency: 'EUR',
                         payment_method: 'Stripe',
-                        enrollment_id: enrollmentId,
+                        enrollment_id: enr.id,
                         date: new Date().toISOString()
                     }]);
                 }
@@ -168,7 +223,7 @@ const ObrigadoLisboa: React.FC = () => {
         };
 
         confirmPayment();
-    }, [enrollmentId, amount, paymentType]);
+    }, [enrollmentId, leadId, amount, paymentType]);
 
     const handleQSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -197,11 +252,12 @@ const ObrigadoLisboa: React.FC = () => {
                 experience_years: qForm.experienceYears
             };
 
-            // 1. Update SITE_Enrollments
+            // 1. Update SITE_Enrollments (usa o id da inscrição resolvida — no fluxo
+            //    novo a inscrição foi criada a partir do lead, então não há eid na URL).
             const { error: updateError } = await supabase
                 .from('SITE_Enrollments')
                 .update(payload)
-                .eq('id', enrollmentId);
+                .eq('id', enrollment?.id);
 
             if (updateError) throw updateError;
 

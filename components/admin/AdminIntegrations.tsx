@@ -67,6 +67,7 @@ const AdminIntegrations = () => {
         waInstanceCampaign: '',
         waInstanceCrm: '',
         waInstanceRecovery: '',
+        waInstanceCursoOnline: '',
         // Instância do bot de IA do grupo do dono (vazio = segue relatório/automação)
         waInstanceAiGroup: '',
         // Relatório diário do sistema para o dono (grupo WhatsApp)
@@ -185,6 +186,7 @@ const AdminIntegrations = () => {
                 waInstanceCampaign: configMap['wa_instance_campaign'] || '',
                 waInstanceCrm: configMap['wa_instance_crm'] || '',
                 waInstanceRecovery: configMap['wa_instance_recovery'] || '',
+                waInstanceCursoOnline: configMap['wa_instance_curso_online'] || '',
                 waInstanceAiGroup: configMap['ai_group_bot_instance'] || '',
                 waReportEnabled: configMap['wa_report_enabled'] === 'true',
                 waReportGroupJid: configMap['wa_report_group_jid'] || '',
@@ -565,7 +567,7 @@ const AdminIntegrations = () => {
         const inUse = [
             globalConfig.waInstanceCourseSales, globalConfig.waInstanceBilling, globalConfig.waInstanceSchedule,
             globalConfig.waInstanceReport, globalConfig.waInstanceCampaign, globalConfig.waInstanceCrm,
-            globalConfig.waInstanceRecovery, globalConfig.waInstanceAiGroup
+            globalConfig.waInstanceRecovery, globalConfig.waInstanceAiGroup, globalConfig.waInstanceCursoOnline
         ].some(v => (v || '').trim() === name);
         if (!confirm(`Remover a instância "${name}" da lista do sistema?${inUse ? '\n\n⚠️ Ela está selecionada em alguma saída do Motor de Envio — os envios dessa saída vão falhar até você escolher outra instância.' : ''}`)) return;
         const deleteOnServer = confirm(`Também APAGAR a instância "${name}" do servidor Evolution?\n\nOK = apaga do servidor (desconecta o chip)\nCancelar = mantém no servidor, só remove da lista`);
@@ -748,6 +750,7 @@ const AdminIntegrations = () => {
                 { key: 'wa_instance_campaign', value: globalConfig.waInstanceCampaign.trim() },
                 { key: 'wa_instance_crm', value: globalConfig.waInstanceCrm.trim() },
                 { key: 'wa_instance_recovery', value: globalConfig.waInstanceRecovery.trim() },
+                { key: 'wa_instance_curso_online', value: globalConfig.waInstanceCursoOnline.trim() },
                 { key: 'ai_group_bot_instance', value: globalConfig.waInstanceAiGroup.trim() },
                 // Relatório diário do sistema (grupo do dono)
                 { key: 'wa_report_enabled', value: String(globalConfig.waReportEnabled) },
@@ -1250,6 +1253,7 @@ const AdminIntegrations = () => {
                             { inst: 'waInstanceCrm', label: 'CRM — automações', hint: 'Avisos automáticos de tarefas do lead' },
                             { inst: 'waInstanceRecovery', label: 'Recuperação de Vendas', hint: 'Pré-seleção do dropdown de disparo' },
                             { inst: 'waInstanceAiGroup', label: 'Grupo de IA (Dono)', hint: 'Bot de IA que responde no grupo do WhatsApp' },
+                            { inst: 'waInstanceCursoOnline', label: 'Curso Online — Pix (Kiwify)', hint: 'Pix gerado, carrinho abandonado e boas-vindas do curso online' },
                         ].map(item => (
                             <div key={item.inst} className="border border-[var(--admin-border)] rounded-lg p-3 bg-[var(--admin-surface-2)]">
                                 <p className="text-sm font-bold text-[var(--admin-text-primary)]">{item.label}</p>
