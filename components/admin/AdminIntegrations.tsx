@@ -21,7 +21,9 @@ const AdminIntegrations = () => {
         saldoRemindersEnabled: true,
         saldoRemindersScope: 'auto' as 'auto' | 'all',
         asaasKey: '',
-        stripeKey: '',
+        stripeKeyLive: '',
+        stripeKeyTest: '',
+        stripeMode: 'live' as 'live' | 'test',
         mercadoPagoKey: '',
         checkoutDiretoEnabled: false,
         googleClientId: '',
@@ -142,7 +144,10 @@ const AdminIntegrations = () => {
                 saldoRemindersEnabled: configMap['saldo_reminders_enabled'] !== 'false',
                 saldoRemindersScope: configMap['saldo_reminders_scope'] === 'all' ? 'all' : 'auto',
                 asaasKey: configMap['asaas_api_key'] || '',
-                stripeKey: configMap['stripe_api_key'] || '',
+                // Chave legada migra para "produção" quando os novos campos ainda não existem.
+                stripeKeyLive: configMap['stripe_api_key_live'] || configMap['stripe_api_key'] || '',
+                stripeKeyTest: configMap['stripe_api_key_test'] || '',
+                stripeMode: configMap['stripe_mode'] === 'test' ? 'test' : 'live',
                 mercadoPagoKey: configMap['mercadopago_access_token'] || '',
                 checkoutDiretoEnabled: configMap['checkout_direto_habilitado'] === 'true',
                 googleClientId: configMap['google_oauth_client_id'] || '',
@@ -706,7 +711,11 @@ const AdminIntegrations = () => {
                 { key: 'saldo_reminders_enabled', value: String(globalConfig.saldoRemindersEnabled) },
                 { key: 'saldo_reminders_scope', value: globalConfig.saldoRemindersScope },
                 { key: 'asaas_api_key', value: globalConfig.asaasKey },
-                { key: 'stripe_api_key', value: globalConfig.stripeKey },
+                { key: 'stripe_api_key_live', value: globalConfig.stripeKeyLive.trim() },
+                { key: 'stripe_api_key_test', value: globalConfig.stripeKeyTest.trim() },
+                { key: 'stripe_mode', value: globalConfig.stripeMode },
+                // Mantém a chave legada sincronizada com o modo ativo (compat).
+                { key: 'stripe_api_key', value: (globalConfig.stripeMode === 'test' ? globalConfig.stripeKeyTest : globalConfig.stripeKeyLive).trim() },
                 { key: 'mercadopago_access_token', value: globalConfig.mercadoPagoKey },
                 { key: 'checkout_direto_habilitado', value: String(globalConfig.checkoutDiretoEnabled) },
                 { key: 'google_oauth_client_id', value: globalConfig.googleClientId },
@@ -1385,23 +1394,67 @@ const AdminIntegrations = () => {
 
             {/* 3. Stripe Payment Config */}
             <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200  shadow-sm transition-all hover:shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                    <CreditCard className="text-purple-600 dark:text-purple-400" />
-                    <h3 className="font-bold text-[var(--admin-text-primary)]">Integração Stripe (Internacional)</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <CreditCard className="text-purple-600 dark:text-purple-400" />
+                        <h3 className="font-bold text-[var(--admin-text-primary)]">Integração Stripe (Internacional)</h3>
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${globalConfig.stripeMode === 'test' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'}`}>
+                        {globalConfig.stripeMode === 'test' ? 'Modo Teste' : 'Modo Produção'}
+                    </span>
                 </div>
-                <p className="text-sm text-[var(--admin-text-secondary)] mb-6">
-                    Secret Key do Stripe para vendas internacionais (USD, EUR, etc).
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-4">
+                    Cadastre as duas chaves e escolha qual fica ativa nos checkouts. Não precisa trocar a chave a cada teste.
                 </p>
-                <div>
-                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Stripe Secret Key (sk_live_...)</label>
+
+                {/* Seletor de modo */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-[var(--admin-surface-2)] rounded-lg mb-5">
+                    <button
+                        type="button"
+                        onClick={() => setGlobalConfig({ ...globalConfig, stripeMode: 'live' })}
+                        className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-bold transition-colors ${globalConfig.stripeMode === 'live' ? 'bg-emerald-600 text-white shadow-sm' : 'text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-1)]'}`}
+                    >
+                        <Globe size={14} /> Produção
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setGlobalConfig({ ...globalConfig, stripeMode: 'test' })}
+                        className={`flex items-center justify-center gap-2 py-2 rounded-md text-sm font-bold transition-colors ${globalConfig.stripeMode === 'test' ? 'bg-amber-500 text-white shadow-sm' : 'text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-1)]'}`}
+                    >
+                        <FlaskConical size={14} /> Teste
+                    </button>
+                </div>
+
+                {/* Chave de Produção */}
+                <div className={`mb-3 rounded-lg p-3 border transition-colors ${globalConfig.stripeMode === 'live' ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10' : 'border-[var(--admin-border)]'}`}>
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">
+                        Chave de Produção (sk_live_...)
+                        {globalConfig.stripeMode === 'live' && <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400" />}
+                    </label>
                     <input
                         className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-purple-500/50 transition-colors outline-none"
                         type="password"
-                        value={globalConfig.stripeKey}
-                        onChange={e => setGlobalConfig({ ...globalConfig, stripeKey: e.target.value })}
+                        value={globalConfig.stripeKeyLive}
+                        onChange={e => setGlobalConfig({ ...globalConfig, stripeKeyLive: e.target.value })}
                         placeholder="sk_live_..."
                     />
                 </div>
+
+                {/* Chave de Teste */}
+                <div className={`rounded-lg p-3 border transition-colors ${globalConfig.stripeMode === 'test' ? 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10' : 'border-[var(--admin-border)]'}`}>
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">
+                        Chave de Teste (sk_test_...)
+                        {globalConfig.stripeMode === 'test' && <CheckCircle2 size={12} className="text-amber-600 dark:text-amber-400" />}
+                    </label>
+                    <input
+                        className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-purple-500/50 transition-colors outline-none"
+                        type="password"
+                        value={globalConfig.stripeKeyTest}
+                        onChange={e => setGlobalConfig({ ...globalConfig, stripeKeyTest: e.target.value })}
+                        placeholder="sk_test_..."
+                    />
+                </div>
+
                 <button onClick={handleSaveGlobalConfig} disabled={loading} className="mt-4 bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-sm font-bold hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-sm">
                     <Save size={14} /> Salvar Stripe
                 </button>
