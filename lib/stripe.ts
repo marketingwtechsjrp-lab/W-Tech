@@ -32,9 +32,13 @@ export const getStripeConfig = async (): Promise<string | null> => {
     return modeKey || map['stripe_api_key'] || null;
 };
 
-// Stripe API Base URL
-const STRIPE_URL = 'https://api.stripe.com/v1';
-
+/**
+ * Cria a sessão de checkout do Stripe.
+ *
+ * SEGURANÇA: a criação agora acontece 100% no servidor (/api/create-stripe-checkout).
+ * A chave secreta do Stripe NUNCA é lida nem trafega pelo navegador. A assinatura e o
+ * retorno ({ success, url, sessionId }) foram preservados — nenhum caller precisou mudar.
+ */
 export const createStripePaymentLink = async ({
     title,
     price, // Amount in normal currency unit (e.g. 100.00)
@@ -51,63 +55,32 @@ export const createStripePaymentLink = async ({
     enrollmentId?: string,
     orderId?: string,
     successUrl?: string
-}) => {
-    const apiKey = await getStripeConfig();
-    if (!apiKey) throw new Error('Stripe API Key não configurada.');
-
-    // Convert price to cents (Stripe expects integer cents)
-    const unitAmount = Math.round(price * 100);
-
+}): Promise<{ success: boolean; url?: string; sessionId?: string; error?: string }> => {
     try {
-        const params = new URLSearchParams();
-        params.append('payment_method_types[]', 'card');
-        params.append('line_items[0][price_data][currency]', currency.toLowerCase());
-        params.append('line_items[0][price_data][product_data][name]', title);
-        params.append('line_items[0][price_data][unit_amount]', unitAmount.toString());
-        params.append('line_items[0][quantity]', '1');
-        params.append('mode', 'payment');
-
-        // Determine success URL based on context (order vs enrollment)
-        let finalSuccessUrl: string;
-        if (successUrl) {
-            finalSuccessUrl = successUrl;
-        } else if (orderId) {
-            finalSuccessUrl = window.location.origin + `/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}&oid=${orderId}`;
-        } else {
-            finalSuccessUrl = window.location.origin + `/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}${enrollmentId ? `&eid=${enrollmentId}` : ''}`;
-        }
-
-        params.append('success_url', finalSuccessUrl);
-        params.append('cancel_url', window.location.origin + '/admin/dashboard?payment=cancel');
-        if (email) params.append('customer_email', email);
-
-        // Attach relevant metadata for webhook processing
-        if (enrollmentId) params.append('metadata[enrollmentId]', enrollmentId);
-        if (orderId) params.append('metadata[orderId]', orderId);
-
-        const res = await fetch(`${STRIPE_URL}/checkout/sessions`, {
+        const res = await fetch('/api/create-stripe-checkout', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title,
+                price,
+                currency,
+                email,
+                enrollmentId,
+                orderId,
+                successUrl,
+                origin: typeof window !== 'undefined' ? window.location.origin : undefined
+            })
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({ success: false, error: 'Resposta inválida do servidor.' }));
 
-        if (data.error) {
-            throw new Error(data.error.message);
+        if (!res.ok || !data?.success) {
+            return { success: false, error: data?.error || 'Falha ao gerar o pagamento.' };
         }
 
-        return {
-            success: true,
-            url: data.url,       // The hosted checkout page URL
-            sessionId: data.id   // Stripe session ID for reference
-        };
-
+        return { success: true, url: data.url, sessionId: data.sessionId };
     } catch (error: any) {
-        console.error('Stripe Error:', error);
-        return { success: false, error: error.message };
+        console.error('Stripe checkout error:', error?.message);
+        return { success: false, error: 'Falha de conexão ao gerar o pagamento.' };
     }
 };
