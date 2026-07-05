@@ -316,7 +316,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         className="max-w-3xl mx-auto text-lg md:text-2xl text-gray-400 font-medium mb-12 leading-relaxed"
                     >
                         A segunda edição da imersão que eleva o ajuste de suspensão ao <span className="text-white font-black">Padrão Internacional</span>. <br className="hidden md:block" />
-                        Garanta sua vaga pagando um sinal de reserva de <span className="text-white font-black">€150</span> (investimento total de €480).
+                        Faça sua inscrição e garanta sua vaga — as <span className="text-white font-black">vagas são limitadas</span>.
                     </motion.p>
 
                     <motion.div
@@ -328,7 +328,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                             onClick={scrollToForm}
                             className="bg-wtech-red hover:bg-white hover:text-black text-white px-12 py-6 rounded-sm font-black text-xl uppercase tracking-widest transition-all hover:scale-105 flex items-center gap-4 mx-auto group shadow-[0_0_50px_rgba(230,0,0,0.4)]"
                         >
-                            Reservar Minha Vaga (€150) <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={3} />
+                            Reservar Minha Vaga <ArrowRight className="group-hover:translate-x-2 transition-transform" strokeWidth={3} />
                         </button>
                     </motion.div>
                 </div>
@@ -633,7 +633,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                     <div className="absolute left-0 top-0 text-4xl font-black text-white/5 group-hover:text-wtech-red/40 transition-colors uppercase leading-none">M{module.num}</div>
                                     <h3 className="text-xl font-black text-white uppercase mb-1 group-hover:text-wtech-red transition-colors italic tracking-tighter">{module.title}</h3>
                                     <p className="text-wtech-gold text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <div className="w-4 h-px bg-wtech-gold"></div> {module.subtitle}
+                                        <span className="w-4 h-px bg-wtech-gold"></span> {module.subtitle}
                                     </p>
                                     <p className="text-gray-500 text-sm leading-relaxed">{module.desc}</p>
                                 </div>
@@ -669,7 +669,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                     <div className="absolute left-0 top-0 text-4xl font-black text-white/5 group-hover:text-wtech-red/40 transition-colors uppercase leading-none">M{module.num}</div>
                                     <h3 className="text-xl font-black text-white uppercase mb-1 group-hover:text-wtech-red transition-colors italic tracking-tighter">{module.title}</h3>
                                     <p className="text-wtech-gold text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <div className="w-4 h-px bg-wtech-gold"></div> {module.subtitle}
+                                        <span className="w-4 h-px bg-wtech-gold"></span> {module.subtitle}
                                     </p>
                                     <p className="text-gray-500 text-sm leading-relaxed">{module.desc}</p>
                                 </div>
@@ -709,7 +709,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                                     <div className="text-4xl font-black text-white/5 group-hover:text-wtech-red/40 transition-colors uppercase leading-none mb-4">M{module.num}</div>
                                     <h4 className="text-xl font-black text-white uppercase mb-1 group-hover:text-wtech-red transition-colors italic tracking-tighter">{module.title}</h4>
                                     <p className="text-wtech-gold text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <div className="w-4 h-px bg-wtech-gold"></div> {module.subtitle}
+                                        <span className="w-4 h-px bg-wtech-gold"></span> {module.subtitle}
                                     </p>
                                     <p className="text-gray-500 text-sm leading-relaxed">{module.desc}</p>
                                 </div>
@@ -762,7 +762,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <div>
                             <h2 className="text-5xl md:text-7xl font-black uppercase mb-8 tracking-tighter leading-[0.9]">2ª Edição<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-red to-wtech-gold text-6xl md:text-8xl font-black">Outubro</span></h2>
                             <p className="text-gray-400 text-lg mb-10 leading-relaxed max-w-md">
-                                As vagas para a segunda edição oficial do curso W-Tech em Sintra são extremamente limitadas. Preencha seus dados e escolha na próxima etapa: pague o valor integral de <strong>€480</strong> ou reserve com um sinal de <strong>€150</strong>.
+                                As vagas para a segunda edição oficial do curso W-Tech em Sintra são extremamente limitadas. Preencha seus dados para fazer sua inscrição — na próxima etapa você vê as condições e finaliza a reserva da sua vaga.
                             </p>
                             <div className="space-y-4 mb-10">
                                 <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-xl">
