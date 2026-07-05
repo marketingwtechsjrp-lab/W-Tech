@@ -86,14 +86,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // 1. Fetch User First (Without Join) to check credentials
-      const { data: userData, error: userError } = await supabase
-        .from('SITE_Users')
-        .select('*')
-        .eq('email', email)
-        .eq('password', password)
-        .limit(1)
-        .maybeSingle();
+      // 1. Valida credenciais no servidor (RPC site_user_login — migration 010).
+      //    A senha é verificada contra hash bcrypt no Postgres; nunca mais
+      //    trafega como filtro .eq('password', ...) em texto puro.
+      const { data: rpcUsers, error: userError } = await supabase
+        .rpc('site_user_login', { p_email: email, p_password: password });
 
       if (userError) {
           console.error("Login User Error:", userError);
@@ -101,6 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { success: false, error: 'Erro de conexão: ' + userError.message };
       }
 
+      const userData = Array.isArray(rpcUsers) ? rpcUsers[0] : rpcUsers;
       if (!userData) {
         setLoading(false);
         return { success: false, error: 'Credenciais inválidas.' };

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { recoverLeadToRoulette } from './_roleta.js';
+import { isCronAuthorized, denyCron } from './_cron.js';
 
 /**
  * Vercel Serverless Function — Recuperação de Checkout Abandonado/Falho
@@ -49,6 +50,10 @@ export default async function handler(req: any, res: any) {
 
     // ── GET: varredura de abandonos (cron) ────────────────────────────────────
     if (req.method === 'GET') {
+      // A varredura em massa é só do cron; o POST pontual (checkout do aluno)
+      // segue aberto porque depende de um enrollmentId válido.
+      if (!isCronAuthorized(req)) return denyCron(res);
+
       const now = Date.now();
       const minCreated = new Date(now - SWEEP_MAX_AGE_MS).toISOString();
       const maxCreated = new Date(now - SWEEP_MIN_AGE_MS).toISOString();

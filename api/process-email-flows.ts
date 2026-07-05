@@ -1,6 +1,7 @@
 import { processDueFlowEnrollments } from './_flows.js';
 import { processBalanceReminders } from './_balance.js';
 import { processActiveCampaigns } from './_campaigns.js';
+import { isCronAuthorized, denyCron } from './_cron.js';
 
 /**
  * Vercel Serverless Function — Processador diário de automações de e-mail.
@@ -17,6 +18,9 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
+
+    // Só cron da Vercel ou chamada com CRON_SECRET — bloqueia disparo público.
+    if (!isCronAuthorized(req)) return denyCron(res);
 
     try {
         const result = await processDueFlowEnrollments(50);

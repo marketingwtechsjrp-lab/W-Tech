@@ -6,7 +6,16 @@ interface WhatsAppConfig {
     instanceName: string;
 }
 
-// Global Config (Server URL & Global Key) - Admin Only
+/**
+ * Config global do Evolution (URL + chave) lida de SITE_Config.
+ *
+ * ATENÇÃO (segurança): esta função ainda lê `evolution_api_key` no navegador.
+ * O ENVIO de mensagens já foi movido para o servidor (/api/whatsapp-send); o que
+ * resta aqui é o uso pelas telas de ADMIN de gestão de instância/QR
+ * (AdminIntegrations, UserWhatsAppConnection, GroupBotPanel). Enquanto esses
+ * fluxos não forem movidos ao servidor, NÃO aplicar o lock de RLS sobre
+ * `evolution_api_key` (senão a conexão/QR do admin quebra). Ver plano, Fase 3.
+ */
 export const getGlobalWhatsAppConfig = async (): Promise<Omit<WhatsAppConfig, 'instanceName'> | null> => {
      try {
         const { data } = await supabase.from('SITE_Config').select('*');
@@ -25,39 +34,13 @@ export const getGlobalWhatsAppConfig = async (): Promise<Omit<WhatsAppConfig, 'i
     }
 };
 
-// User Specific Config (Combines Global URL/Key with User's Instance)
-export const getUserWhatsAppConfig = async (userId: string): Promise<WhatsAppConfig | null> => {
-    try {
-        // 1. Get Global Settings
-        const globalConfig = await getGlobalWhatsAppConfig();
-        if (!globalConfig) return null;
-
-        // 2. Get User Instance
-        const { data: userInt } = await supabase
-            .from('SITE_UserIntegrations')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-
-        if (!userInt || !userInt.instance_name) return null;
-
-        return {
-            serverUrl: globalConfig.serverUrl,
-            apiKey: globalConfig.apiKey,
-            instanceName: userInt.instance_name.trim()
-        };
-    } catch (error) {
-        // console.error('Error fetching User WhatsApp config:', error);
-        return null;
-    }
-};
-
 /**
  * Instância Evolution configurada para uma rota de saída (Admin → Integrações →
  * Motor de Envio). Vazio/erro = null (o chamador cai no comportamento padrão).
  *   - 'campaign' → campanhas de marketing (QueueProcessor / servidor)
  *   - 'crm'      → mensagens automáticas do CRM (tarefas concluídas etc.)
  *   - 'recovery' → recuperação de vendas (pré-seleção do dropdown)
+ * (Lê apenas o NOME da instância — não é segredo.)
  */
 export type WaRoute = 'campaign' | 'crm' | 'recovery';
 
@@ -75,131 +58,53 @@ export const getRouteInstance = async (route: WaRoute): Promise<string | null> =
     }
 };
 
+/**
+ * Envia texto no WhatsApp — agora 100% no servidor (/api/whatsapp-send).
+ * SEGURANÇA: a `evolution_api_key` não é mais lida no navegador para enviar.
+ * Assinatura preservada — o 3º argumento (UUID de usuário ou nome de instância)
+ * é resolvido no servidor, igual ao comportamento anterior.
+ */
 export const sendWhatsAppMessage = async (to: string, message: string, userId?: string) => {
-    // If userId provided, use User Config or direct instanceName if it is not a UUID.
-    
-    let config: WhatsAppConfig | null = null;
-
-    if (userId) {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-        if (isUuid) {
-            config = await getUserWhatsAppConfig(userId);
-        } else {
-            const globalC = await getGlobalWhatsAppConfig();
-            if (globalC) {
-                config = { ...globalC, instanceName: userId };
-            }
-        }
-    } 
-    
-    // Fallback logic could go here if we want a "System Instance", but let's stick to user instances as requested.
-    if (!config) {
-        // Try fallback to old "Admin Default" if no user specific logic found (Legacy support)
-        const globalC = await getGlobalWhatsAppConfig();
-        const { data: fallbackInstance } = await supabase.from('SITE_Config').select('*').eq('key', 'evolution_instance_name').single();
-        if (globalC && fallbackInstance) {
-            config = { ...globalC, instanceName: fallbackInstance.value.trim() };
-        }
-    }
-
-    if (!config) {
-        console.warn('WhatsApp not configured for user.');
-        return { success: false, error: 'WhatsApp não configurado.' };
-    }
-
-    // Format phone
-    let phone = to.replace(/\D/g, '');
-    if (phone.length <= 11) phone = '55' + phone;
-
-    const payload = {
-        number: phone,
-        text: message
-    };
-
     try {
-        const response = await fetch(`${config.serverUrl}/message/sendText/${config.instanceName}`, {
+        const res = await fetch('/api/whatsapp-send', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'apikey': config.apiKey 
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to, message, instance: userId }),
         });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-            return { success: true, data };
-        } else {
-            console.error('Evolution API Error:', data);
-            return { success: false, error: data };
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.success) {
+            return { success: false, error: data?.error || `HTTP ${res.status}` };
         }
+        return { success: true, data };
     } catch (error: any) {
-        console.error('Network Error Sending WhatsApp:', error);
-        return { success: false, error: error.message };
+        console.error('Network Error Sending WhatsApp:', error?.message);
+        return { success: false, error: error?.message };
     }
 };
 
-export const sendWhatsAppMedia = async (to: string, mediaUrl: string, caption: string = '', userId?: string, mediaType: 'image' | 'video' | 'document' = 'image') => {
-    let config: WhatsAppConfig | null = null;
-
-    if (userId) {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
-        if (isUuid) {
-            config = await getUserWhatsAppConfig(userId);
-        } else {
-            const globalC = await getGlobalWhatsAppConfig();
-            if (globalC) {
-                config = { ...globalC, instanceName: userId };
-            }
-        }
-    } 
-    
-    if (!config) {
-        const globalC = await getGlobalWhatsAppConfig();
-        const { data: fallbackInstance } = await supabase.from('SITE_Config').select('*').eq('key', 'evolution_instance_name').single();
-        if (globalC && fallbackInstance) {
-            config = { ...globalC, instanceName: fallbackInstance.value.trim() };
-        }
-    }
-
-    if (!config) {
-        return { success: false, error: 'WhatsApp não configurado.' };
-    }
-
-    let phone = to.replace(/\D/g, '');
-    if (phone.length <= 11) phone = '55' + phone;
-
-    const payload: any = {
-        number: phone,
-        mediatype: mediaType,
-        media: mediaUrl,
-        fileName: mediaUrl.split('/').pop() || 'file',
-        caption: caption,
-        delay: 0
-    };
-
-    // Evolution API v1 media message endpoint
-    const endpoint = `${config.serverUrl}/message/sendMedia/${config.instanceName}`;
-
+/**
+ * Envia mídia (imagem/vídeo/documento) no WhatsApp — agora no servidor.
+ * Assinatura preservada.
+ */
+export const sendWhatsAppMedia = async (
+    to: string,
+    mediaUrl: string,
+    caption: string = '',
+    userId?: string,
+    mediaType: 'image' | 'video' | 'document' = 'image'
+) => {
     try {
-        const response = await fetch(endpoint, {
+        const res = await fetch('/api/whatsapp-send', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'apikey': config.apiKey 
-            },
-            body: JSON.stringify(payload)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to, mediaUrl, caption, mediaType, instance: userId }),
         });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-            return { success: true, data };
-        } else {
-            return { success: false, error: data };
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.success) {
+            return { success: false, error: data?.error || `HTTP ${res.status}` };
         }
+        return { success: true, data };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        return { success: false, error: error?.message };
     }
 };

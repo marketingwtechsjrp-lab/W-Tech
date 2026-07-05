@@ -1,4 +1,5 @@
 import { processBalanceReminders } from './_balance.js';
+import { isCronAuthorized, denyCron } from './_cron.js';
 
 /**
  * Vercel Serverless Function — Lembretes de saldo pendente (e-mail + WhatsApp).
@@ -13,6 +14,9 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
+
+    // Só cron da Vercel ou chamada com CRON_SECRET — bloqueia disparo público.
+    if (!isCronAuthorized(req)) return denyCron(res);
 
     const dryRun = req.query?.dryRun === '1' || req.body?.dryRun === true;
 

@@ -1,12 +1,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+/**
+ * CORS restrito ao domínio próprio (antes era '*', o que deixava qualquer site
+ * chamar esta função pelo navegador). Reflete a Origin apenas se for o domínio
+ * w-techbrasil ou localhost de desenvolvimento; caso contrário nega o CORS.
+ */
+function resolveCors(req: Request) {
+  const origin = req.headers.get('origin') || '';
+  const allowed =
+    /^https:\/\/([a-z0-9-]+\.)*w-techbrasil\.com\.br$/i.test(origin) ||
+    /^http:\/\/localhost(:\d+)?$/i.test(origin);
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://site.w-techbrasil.com.br',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = resolveCors(req);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -54,7 +68,8 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errText = await tokenResponse.text();
-      throw new Error(`Failed to get Kiwify access token: ${errText}`);
+      console.error('[get-kiwify-affiliates] OAuth token error:', errText);
+      throw new Error('KIWIFY_TOKEN_FAILED');
     }
 
     const tokenData = await tokenResponse.json();
@@ -71,7 +86,8 @@ serve(async (req) => {
 
     if (!affiliatesResponse.ok) {
       const errText = await affiliatesResponse.text();
-      throw new Error(`Failed to fetch affiliates from Kiwify: ${errText}`);
+      console.error('[get-kiwify-affiliates] Affiliates fetch error:', errText);
+      throw new Error('KIWIFY_AFFILIATES_FAILED');
     }
 
     const affiliatesData = await affiliatesResponse.json();
@@ -86,7 +102,8 @@ serve(async (req) => {
 
   } catch (err: any) {
     console.error("Error in get-kiwify-affiliates edge function:", err);
-    return new Response(JSON.stringify({ success: false, error: err.message }), {
+    // Não devolve o detalhe do erro (podia carregar resposta bruta da Kiwify).
+    return new Response(JSON.stringify({ success: false, error: 'Falha ao consultar afiliados.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
     });

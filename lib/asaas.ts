@@ -1,105 +1,53 @@
-import { supabase } from './supabaseClient';
+/**
+ * Cliente fino do Asaas — NÃO usa mais a chave secreta no navegador.
+ *
+ * SEGURANÇA: a criação de cliente + cobrança acontece 100% no servidor
+ * (api/asaas-payment-link.ts). A `asaas_api_key` nunca sai do backend, e o valor
+ * é validado no servidor. Antes, esta lib lia a chave de SITE_Config e chamava
+ * a API do Asaas direto do navegador (chave exposta no DevTools).
+ */
 
-export const getAsaasConfig = async () => {
-    const { data } = await supabase.from('SITE_Config').select('value').eq('key', 'asaas_api_key').single();
-    return data?.value || null;
-};
-
-// Base URL - Change to 'https://www.asaas.com/api/v3' for production
-// Using sandbox for safety by default? Or production? 
-// User implied "selling", so likely Production. I should create a way to switch or assume Prod.
-// Usually users want Prod. I'll use Prod but comment Sandbox.
-const ASAAS_URL = 'https://www.asaas.com/api/v3';
-// const ASAAS_URL = 'https://sandbox.asaas.com/api/v3';
-
-export const createAsaasCustomer = async (lead: any) => {
-    const apiKey = await getAsaasConfig();
-    if (!apiKey) throw new Error('Asaas API Key não configurada.');
-
-    // 1. Search if exists
-    const searchRes = await fetch(`${ASAAS_URL}/customers?email=${lead.email}`, {
-        method: 'GET',
-        headers: {
-            'access_token': apiKey
-        }
-    });
-
-    const searchData = await searchRes.json();
-    if (searchData.data && searchData.data.length > 0) {
-        return searchData.data[0].id;
-    }
-
-    // 2. Create if not exists
-    const createRes = await fetch(`${ASAAS_URL}/customers`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'access_token': apiKey
-        },
-        body: JSON.stringify({
-            name: lead.name,
-            email: lead.email,
-            mobilePhone: lead.phone,
-            cpfCnpj: lead.cpf || lead.cnpj || undefined // Optional if not in Lead yet
-        })
-    });
-
-    const createData = await createRes.json();
-    if (createData.errors) throw new Error(createData.errors[0].description);
-    return createData.id;
-};
+/** Id do usuário logado (auth interina da FASE 1: header x-wtech-user-id). */
+function currentUserId(): string {
+  try {
+    const raw = localStorage.getItem('wtech_user');
+    if (!raw) return '';
+    const u = JSON.parse(raw);
+    return String(u?.id || '');
+  } catch {
+    return '';
+  }
+}
 
 export const createPaymentLink = async ({
-    lead,
-    value,
-    description,
-    dueDate
+  lead,
+  value,
+  description,
+  dueDate,
+  enrollmentId,
 }: {
-    lead: any,
-    value: number,
-    description: string,
-    dueDate?: string
+  lead: any;
+  value: number;
+  description: string;
+  dueDate?: string;
+  enrollmentId?: string;
 }) => {
-    const apiKey = await getAsaasConfig();
-    if (!apiKey) throw new Error('Asaas API Key não configurada.');
-
-    try {
-        const customerId = await createAsaasCustomer(lead);
-
-        // Calculate due date (default +3 days)
-        const due = new Date();
-        due.setDate(due.getDate() + 3);
-        const dueDateStr = dueDate || due.toISOString().split('T')[0];
-
-        const payload = {
-            customer: customerId,
-            billingType: 'UNDEFINED', // Allows user to choose (Pix, card, boleto)
-            value: value,
-            dueDate: dueDateStr,
-            description: description,
-            postalService: false
-        };
-
-        const res = await fetch(`${ASAAS_URL}/payments`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'access_token': apiKey
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        if (data.errors) throw new Error(data.errors[0].description);
-
-        return {
-            success: true,
-            invoiceUrl: data.invoiceUrl,
-            id: data.id
-        };
-
-    } catch (error: any) {
-        console.error("Asaas Error:", error);
-        return { success: false, error: error.message };
+  try {
+    const res = await fetch('/api/asaas-payment-link', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-wtech-user-id': currentUserId(),
+      },
+      body: JSON.stringify({ lead, value, description, dueDate, enrollmentId }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.success) {
+      return { success: false, error: data?.error || `HTTP ${res.status}` };
     }
+    return { success: true, invoiceUrl: data.invoiceUrl, id: data.id };
+  } catch (error: any) {
+    console.error('Asaas Error:', error?.message);
+    return { success: false, error: error?.message || 'Falha ao gerar a cobrança.' };
+  }
 };

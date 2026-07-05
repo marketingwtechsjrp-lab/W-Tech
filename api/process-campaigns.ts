@@ -1,4 +1,5 @@
 import { processActiveCampaigns } from './_campaigns.js';
+import { isCronAuthorized, denyCron } from './_cron.js';
 
 /**
  * Vercel Serverless Function — Disparo de campanhas de marketing.
@@ -12,6 +13,10 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
+
+    // Só cron da Vercel ou chamada com CRON_SECRET — bloqueia disparo público.
+    if (!isCronAuthorized(req)) return denyCron(res);
+
     try {
         const result = await processActiveCampaigns();
         console.log(`[Campanhas] processadas=${result.campaignsProcessed} emails=${result.emailsSent} whatsapp=${result.whatsappSent} falhas=${result.failed}`);

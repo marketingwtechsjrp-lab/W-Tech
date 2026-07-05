@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { createHasPermission } from '../../lib/permissions';
 import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot, QrCode } from 'lucide-react';
 import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
-import { getAsaasConfig } from '../../lib/asaas';
 import { getStripeConfig } from '../../lib/stripe';
 import { createMercadoPagoPreference } from '../../lib/mercadopago';
 

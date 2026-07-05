@@ -116,3 +116,93 @@ export async function sendWhatsAppText(
         return { sent: false, error: e?.message };
     }
 }
+
+/**
+ * Envia mídia (imagem/vídeo/documento) via Evolution API. Espelha o antigo
+ * lib/whatsapp.ts (browser), mas com a chave lida server-side. Best-effort.
+ */
+export async function sendWhatsAppMedia(
+    to: string,
+    mediaUrl: string,
+    caption: string = '',
+    instanceName?: string,
+    mediaType: 'image' | 'video' | 'document' = 'image'
+): Promise<SendWhatsAppResult> {
+    const config = await loadEvolutionConfig();
+    if (!config) {
+        return { sent: false, skipped: 'whatsapp not configured' };
+    }
+
+    const phone = isJid(to) ? to.trim() : normalizePhone(to);
+    if (!phone) {
+        return { sent: false, skipped: 'invalid phone' };
+    }
+
+    const instance = (instanceName || '').trim() || config.instanceName;
+
+    const payload = {
+        number: phone,
+        mediatype: mediaType,
+        media: mediaUrl,
+        fileName: mediaUrl.split('/').pop() || 'file',
+        caption,
+        delay: 0,
+    };
+
+    try {
+        const response = await withTimeout(
+            fetch(`${config.serverUrl}/message/sendMedia/${instance}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', apikey: config.apiKey },
+                body: JSON.stringify(payload)
+            }),
+            15000,
+            'Evolution sendMedia'
+        );
+
+        if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            console.error(`[WhatsApp] Evolution API (media) ${response.status}:`, body.slice(0, 200));
+            return { sent: false, error: `Evolution API ${response.status}` };
+        }
+
+        console.log(`[WhatsApp] Mídia enviada para ${phone} ✓`);
+        return { sent: true };
+    } catch (e: any) {
+        console.error('[WhatsApp] Falha no envio de mídia:', e?.message);
+        return { sent: false, error: e?.message };
+    }
+}
+
+/**
+ * Resolve o nome da instância a partir do 3º argumento usado pelo cliente:
+ *   - UUID  → instância do usuário (SITE_UserIntegrations.instance_name)
+ *   - texto → nome de instância direto
+ *   - vazio → instância padrão do sistema (evolution_instance_name), preservando
+ *             o comportamento anterior do lib/whatsapp.ts (browser).
+ */
+export async function resolveInstanceFromArg(instanceArg?: string): Promise<string | undefined> {
+    const v = (instanceArg || '').trim();
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    try {
+        const supabase = getServiceClient();
+        if (v && UUID_RE.test(v)) {
+            const { data } = await supabase
+                .from('SITE_UserIntegrations')
+                .select('instance_name')
+                .eq('user_id', v)
+                .maybeSingle();
+            return (data?.instance_name || '').trim() || undefined;
+        }
+        if (v) return v;
+        // Sem instância explícita → default histórico do cliente.
+        const { data } = await supabase
+            .from('SITE_Config')
+            .select('value')
+            .eq('key', 'evolution_instance_name')
+            .maybeSingle();
+        return (data?.value || '').trim() || undefined;
+    } catch {
+        return v || undefined;
+    }
+}

@@ -131,9 +131,19 @@ export default async function handler(req: any, res: any) {
   });
 
   if (!assinaturaOk) {
+    // Enforcement gradual (zero downtime): por padrão, mantém o comportamento
+    // resiliente (loga e segue, revalidando direto na API do MP). Depois de
+    // confirmar nos logs que os webhooks REAIS estão passando na assinatura,
+    // defina MP_WEBHOOK_ENFORCE_SIGNATURE=1 no Vercel para rejeitar (401) os
+    // não assinados — sem risco de derrubar pagamentos por secret mal configurado.
+    const enforce = /^(1|true|yes)$/i.test(String(process.env.MP_WEBHOOK_ENFORCE_SIGNATURE || '').trim());
     console.warn(
-      `[MP Webhook] Assinatura inválida para o paymentId ${paymentId}. Prosseguindo com a validação direta na API do Mercado Pago para resiliência.`
+      `[MP Webhook] Assinatura inválida para paymentId ${paymentId} (enforce=${enforce}).`
     );
+    if (enforce) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+    // Sem enforcement: prossegue com a validação direta na API do MP (resiliência).
   }
 
   try {
