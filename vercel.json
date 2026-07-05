@@ -38,6 +38,22 @@
   ],
   "rewrites": [
     {
+      "source": "/api/process-email-flows",
+      "destination": "/api/jobs?task=process-email-flows"
+    },
+    {
+      "source": "/api/balance-reminders",
+      "destination": "/api/jobs?task=balance-reminders"
+    },
+    {
+      "source": "/api/process-campaigns",
+      "destination": "/api/jobs?task=process-campaigns"
+    },
+    {
+      "source": "/api/send-test-email",
+      "destination": "/api/jobs?task=send-test-email"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },
@@ -52,7 +68,7 @@
       "schedule": "0 12 * * *"
     },
     {
-      "path": "/api/process-email-flows",
+      "path": "/api/jobs?task=process-email-flows",
       "schedule": "0 13 * * *"
     }
   ]
