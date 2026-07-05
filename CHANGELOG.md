@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.23.0 (2026-07-05) - Stripe: chaves de produção e teste com seletor de modo
+- Painel admin passa a guardar as chaves Stripe de produção (sk_live) e de teste (sk_test) separadamente
+- Novo seletor Produção/Teste define qual chave fica ativa nos checkouts, sem precisar trocar a chave a cada teste
+- Chave legada migra automaticamente para Produção e é mantida sincronizada com o modo ativo (compatibilidade)
+
 ## v3.22.1 (2026-07-04) - WhatsApp do curso online isolado da instância mestre + ajustes no checkout Lisboa
 - Pix do curso online (Kiwify) agora sai por instância WhatsApp dedicada (w-tech-curso-online), nunca mais pela instância mestre das configurações
 - Nova rota wa_instance_curso_online no painel Admin > Integrações > Motor de Envio, cobrindo Pix gerado, carrinho abandonado e boas-vindas

@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.23.0",
+    "date": "2026-07-05",
+    "title": "Stripe: chaves de produção e teste com seletor de modo",
+    "changes": [
+      "Painel admin passa a guardar as chaves Stripe de produção (sk_live) e de teste (sk_test) separadamente",
+      "Novo seletor Produção/Teste define qual chave fica ativa nos checkouts, sem precisar trocar a chave a cada teste",
+      "Chave legada migra automaticamente para Produção e é mantida sincronizada com o modo ativo (compatibilidade)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.22.1",
     "date": "2026-07-04",
     "title": "WhatsApp do curso online isolado da instância mestre + ajustes no checkout Lisboa",
