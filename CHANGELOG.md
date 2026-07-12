@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.24.0 (2026-07-12) - Atendentes WhatsApp — sincronização de conversas e análise por IA
+- Nova aba Configurações → Atendentes WhatsApp: conecta o WhatsApp de até 5 atendentes por QR Code (Evolution API)
+- Sincronização automática de todas as mensagens enviadas e recebidas de cada atendente
+- Monitor de conversas em tempo real (somente leitura), com atualização ao vivo via Supabase Realtime
+- Relatórios de qualidade de atendimento gerados por IA sob demanda — a IA analisa, nunca responde no WhatsApp
+- Nova Edge Function wa-atendentes-webhook protegida por token (sem consumir funções serverless da Vercel)
+- Novas tabelas SITE_WaAtendentes, SITE_WaAtendenteMensagens e SITE_WaAtendenteAnalises com RLS e Realtime
+
 ## v3.23.0 (2026-07-05) - Stripe: chaves de produção e teste com seletor de modo
 - Painel admin passa a guardar as chaves Stripe de produção (sk_live) e de teste (sk_test) separadamente
 - Novo seletor Produção/Teste define qual chave fica ativa nos checkouts, sem precisar trocar a chave a cada teste

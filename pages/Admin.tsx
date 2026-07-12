@@ -9,7 +9,7 @@ import {
     BarChart3, Briefcase, TrendingDown, ShoppingBag, Send, Wand2, List, Grid, Building, BrainCircuit, Wallet,
     Image as ImageIcon, Loader2, Eye, MessageSquare, PenTool, Lock, Code, MessageCircle,
     Monitor, Printer, Copy, UserPlus, CalendarClock, Wrench, GraduationCap, Sparkles, ArrowUpRight, LogOut, AlertTriangle, AlertCircle, Megaphone, Sun, Moon, Rocket, CreditCard, Zap,
-    LayoutGrid, CheckCircle2, ClipboardList
+    LayoutGrid, CheckCircle2, ClipboardList, Headset
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
@@ -57,6 +57,7 @@ import AdminIntegrations from '../components/admin/AdminIntegrations';
 import { TaskCategoryList } from '../components/admin/TaskCategoryList';
 import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
+import AtendentesWhatsApp from '../components/admin/WhatsApp/Atendentes/AtendentesWhatsApp';
 import SalesRecoveryView from '../components/admin/WhatsApp/SalesRecoveryView';
 import WhatsAppModule from '../components/admin/WhatsApp/WhatsAppModule';
 import AffiliatesManagerView from '../components/admin/Marketing/AffiliatesManagerView';
@@ -5495,6 +5496,7 @@ const SettingsView = () => {
             items: [
                 { id: 'E-mail', icon: Mail, label: 'E-mail (SMTP)' },
                 { id: 'WhatsApp API', icon: MessageCircle, label: 'Integrações' },
+                { id: 'Atendentes WhatsApp', icon: Headset, label: 'Atendentes WhatsApp' },
                 { id: 'Modelos Msg', icon: MessageSquare, label: 'Modelos de Msg' },
             ]
         },
@@ -5561,7 +5563,7 @@ const SettingsView = () => {
                             <p className="text-[10px] text-[var(--admin-text-tertiary)] font-medium">{settingsNav.find(g => g.items.some(i => i.id === activeTab))?.group}</p>
                         </div>
                     </div>
-                    {activeTab !== 'Permissões & Cargos' && activeTab !== 'Histórico de Versões' && activeTab !== 'Backup & Reset' && (
+                    {activeTab !== 'Permissões & Cargos' && activeTab !== 'Histórico de Versões' && activeTab !== 'Backup & Reset' && activeTab !== 'Atendentes WhatsApp' && (
                         <button
                             onClick={handleSaveConfig}
                             className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-5 py-2 rounded-lg font-black text-xs uppercase shadow-md shadow-yellow-500/20 hover:scale-105 transition-transform flex items-center gap-2"
@@ -6676,6 +6678,13 @@ const SettingsView = () => {
                 {activeTab === 'WhatsApp API' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
                         <AdminIntegrations />
+                    </div>
+                )}
+
+                {/* Tab: Atendentes WhatsApp — conexões espelhadas + análise por IA */}
+                {activeTab === 'Atendentes WhatsApp' && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4">
+                        <AtendentesWhatsApp />
                     </div>
                 )}
 
