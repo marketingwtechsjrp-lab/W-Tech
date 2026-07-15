@@ -24,6 +24,9 @@ export const getGlobalWhatsAppConfig = async (): Promise<Omit<WhatsAppConfig, 'i
         const map: Record<string, string> = {};
         data.forEach((c: any) => map[c.key] = c.value);
 
+        // Chave/URL ausentes (ex.: leitura bloqueada por RLS) → null, sem TypeError.
+        if (!map['evolution_api_url'] || !map['evolution_api_key']) return null;
+
         return {
             serverUrl: map['evolution_api_url'].replace(/\/$/, ''),
             apiKey: map['evolution_api_key'].trim(),

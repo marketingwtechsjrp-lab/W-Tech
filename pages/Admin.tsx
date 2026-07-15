@@ -5325,7 +5325,17 @@ const SettingsView = () => {
         setConfig((prev: any) => ({ ...prev, [key]: value }));
     };
 
+    // A aba Integrações (AdminIntegrations) tem estado e salvamento próprios;
+    // o componente registra sua função de salvar aqui para o botão do cabeçalho.
+    const integrationsSaveRef = useRef<(() => void) | null>(null);
+
     const handleSaveConfig = async () => {
+        // Na aba Integrações, o botão do cabeçalho salva a config da própria aba
+        // (antes salvava só SITE_SystemSettings e o usuário perdia URL/chaves da Evolution).
+        if (activeTab === 'WhatsApp API') {
+            integrationsSaveRef.current?.();
+            return;
+        }
         // Save webhooks to config
         const finalConfig = {
             ...config,
@@ -6677,7 +6687,7 @@ const SettingsView = () => {
                 {/* Tab: WhatsApp API (New) */}
                 {activeTab === 'WhatsApp API' && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4">
-                        <AdminIntegrations />
+                        <AdminIntegrations registerSave={(fn) => { integrationsSaveRef.current = fn; }} />
                     </div>
                 )}
 

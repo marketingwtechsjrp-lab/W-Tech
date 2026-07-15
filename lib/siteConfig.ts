@@ -18,7 +18,8 @@ export const SECRET_CONFIG_KEYS = new Set([
     'whatsapp_cloud_webhook_verify_token',
     'brevo_smtp_key',
     'brevo_smtp_login',
-    'evolution_api_key',
+    // 'evolution_api_key' fica FORA do lock até a Fase 3 (fluxos de QR do admin
+    // leem a chave no navegador) — ver migrations/2026-07-15_unlock_evolution_api_key_read.sql
     'kiwify_client_secret',
     'kiwify_client_id',
     'ai_group_webhook_token',

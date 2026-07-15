@@ -8,7 +8,12 @@ import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from 
 import { getStripeConfig } from '../../lib/stripe';
 import { createMercadoPagoPreference } from '../../lib/mercadopago';
 
-const AdminIntegrations = () => {
+interface AdminIntegrationsProps {
+    /** Permite ao cabeçalho do Admin (botão Salvar) disparar o salvamento desta aba. */
+    registerSave?: (fn: () => void) => void;
+}
+
+const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     const { user } = useAuth();
     const canEngineConfig = createHasPermission(user)('whatsapp_engine_config') || createHasPermission(user)('manage_settings');
 
@@ -127,6 +132,12 @@ const AdminIntegrations = () => {
     useEffect(() => {
         fetchGlobalConfig();
     }, [user]);
+
+    // Registra (a cada render, para capturar o estado atual) o salvamento
+    // desta aba no botão "Salvar" do cabeçalho do Admin.
+    useEffect(() => {
+        registerSave?.(() => { void handleSaveGlobalConfig(); });
+    });
 
     // --- Global Config Logic ---
 
