@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.24.2",
+    "date": "2026-07-15",
+    "title": "Microfone e câmera liberados no site (áudio do inbox e login facial)",
+    "changes": [
+      "Corrige 'Não foi possível acessar o microfone' no inbox do WhatsApp em produção — o header Permissions-Policy bloqueava microfone e câmera no site inteiro",
+      "Permissions-Policy agora libera camera e microphone apenas para o próprio site (self)",
+      "iframes de terceiros continuam bloqueados",
+      "Login facial (câmera) volta a funcionar em produção",
+      "Mensagem de erro do gravador de áudio agora diferencia permissão bloqueada de microfone ausente"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.24.1",
     "date": "2026-07-15",
     "title": "Correção do salvamento das Configurações do sistema",

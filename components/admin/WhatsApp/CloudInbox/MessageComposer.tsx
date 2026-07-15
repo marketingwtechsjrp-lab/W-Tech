@@ -172,8 +172,15 @@ const MessageComposer: React.FC<Props> = ({ conversation, disabled, lastInboundA
       setRecording(true);
       setSeconds(0);
       timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
-    } catch {
-      setError('Não foi possível acessar o microfone.');
+    } catch (err: any) {
+      // NotAllowedError = permissão negada (navegador ou Permissions-Policy);
+      // NotFoundError = nenhum microfone disponível no dispositivo.
+      const blocked = err?.name === 'NotAllowedError' || err?.name === 'SecurityError';
+      setError(
+        blocked
+          ? 'Microfone bloqueado: clique no cadeado da barra de endereço, permita o Microfone e tente de novo.'
+          : 'Não foi possível acessar o microfone (verifique se há um microfone conectado).'
+      );
     }
   };
 

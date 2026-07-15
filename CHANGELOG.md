@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.24.2 (2026-07-15) - Microfone e câmera liberados no site (áudio do inbox e login facial)
+- Corrige 'Não foi possível acessar o microfone' no inbox do WhatsApp em produção — o header Permissions-Policy bloqueava microfone e câmera no site inteiro
+- Permissions-Policy agora libera camera e microphone apenas para o próprio site (self)
+- iframes de terceiros continuam bloqueados
+- Login facial (câmera) volta a funcionar em produção
+- Mensagem de erro do gravador de áudio agora diferencia permissão bloqueada de microfone ausente
+
 ## v3.24.1 (2026-07-15) - Correção do salvamento das Configurações do sistema
 - Corrige o erro 'new row violates row-level security policy' ao salvar as Configurações (Integrações)
 - Nova função RPC upsert_site_config (SECURITY DEFINER) para gravar a SITE_Config — leitura anônima dos segredos continua bloqueada
