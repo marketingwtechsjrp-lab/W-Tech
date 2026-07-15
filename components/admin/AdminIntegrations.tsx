@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { upsertSiteConfig } from '../../lib/siteConfig';
 import { useAuth } from '../../context/AuthContext';
 import { createHasPermission } from '../../lib/permissions';
 import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot, QrCode } from 'lucide-react';
@@ -366,10 +367,7 @@ const AdminIntegrations = () => {
             }
 
             // Persiste o nome para o robô do servidor usar imediatamente
-            await supabase.from('SITE_Config').upsert(
-                { key: 'automation_whatsapp_instance', value: instance },
-                { onConflict: 'key' }
-            );
+            await upsertSiteConfig({ key: 'automation_whatsapp_instance', value: instance });
 
             // QR pode vir direto do create; senão, busca no connect
             if (data.qrcode?.base64) {
@@ -465,11 +463,11 @@ const AdminIntegrations = () => {
 
     /** Persiste o registro de instâncias adicionais no SITE_Config (JSON). */
     const persistManagedInstances = async (list: Array<{ name: string; label: string }>) => {
-        const { error } = await supabase.from('SITE_Config').upsert(
-            { key: 'evolution_managed_instances', value: JSON.stringify(list) },
-            { onConflict: 'key' }
-        );
-        if (error) alert('Erro ao salvar lista de instâncias: ' + error.message);
+        try {
+            await upsertSiteConfig({ key: 'evolution_managed_instances', value: JSON.stringify(list) });
+        } catch (e: any) {
+            alert('Erro ao salvar lista de instâncias: ' + e.message);
+        }
     };
 
     /** Consulta o estado de uma instância adicional na Evolution. */
@@ -766,10 +764,10 @@ const AdminIntegrations = () => {
                 { key: 'wa_report_group_name', value: globalConfig.waReportGroupName.trim() }
             ];
 
-            for (const update of updates) {
-                const { error } = await supabase.from('SITE_Config').upsert(update, { onConflict: 'key' });
-                if (error) throw error;
-            }
+            // Grava tudo de uma vez via RPC (SECURITY DEFINER) — o upsert direto na
+            // tabela é barrado pela policy de leitura nas chaves secretas. Segredos
+            // com campo vazio são descartados pelo helper (não sobrescreve nada).
+            await upsertSiteConfig(updates);
             alert('Configurações do Servidor salvas!');
         } catch (error: any) {
             alert('Erro ao salvar: ' + error.message);
@@ -781,10 +779,11 @@ const AdminIntegrations = () => {
     const handleToggleCheckoutDireto = async () => {
         const newValue = !globalConfig.checkoutDiretoEnabled;
         setGlobalConfig(prev => ({ ...prev, checkoutDiretoEnabled: newValue }));
-        await supabase.from('SITE_Config').upsert(
-            { key: 'checkout_direto_habilitado', value: String(newValue) },
-            { onConflict: 'key' }
-        );
+        try {
+            await upsertSiteConfig({ key: 'checkout_direto_habilitado', value: String(newValue) });
+        } catch (e: any) {
+            alert('Erro ao salvar: ' + e.message);
+        }
     };
 
     const handleSendTestEmail = async () => {

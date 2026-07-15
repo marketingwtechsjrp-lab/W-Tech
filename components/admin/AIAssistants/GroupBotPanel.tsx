@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bot, Loader2, RefreshCw, Send, Webhook, MessageSquareText, History } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
+import { upsertSiteConfig } from '../../../lib/siteConfig';
 import { useAuth } from '../../../context/AuthContext';
 import {
     AI_AGENT_BY_ID,
@@ -88,10 +89,9 @@ const GroupBotPanel: React.FC = () => {
     const saveCfg = async (updates: Record<string, string>) => {
         setSaving(true);
         try {
-            for (const [key, value] of Object.entries(updates)) {
-                const { error } = await supabase.from('SITE_Config').upsert({ key, value }, { onConflict: 'key' });
-                if (error) throw error;
-            }
+            // RPC SECURITY DEFINER: upsert direto na tabela é barrado pela policy
+            // de leitura quando a chave é secreta (ex.: ai_group_webhook_token).
+            await upsertSiteConfig(Object.entries(updates).map(([key, value]) => ({ key, value })));
             setCfg((prev) => ({ ...prev, ...updates }));
         } catch (e: any) {
             alert('Erro ao salvar configuração: ' + e.message);

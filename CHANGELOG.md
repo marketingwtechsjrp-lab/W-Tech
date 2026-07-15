@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.24.1 (2026-07-15) - Correção do salvamento das Configurações do sistema
+- Corrige o erro 'new row violates row-level security policy' ao salvar as Configurações (Integrações)
+- Nova função RPC upsert_site_config (SECURITY DEFINER) para gravar a SITE_Config — leitura anônima dos segredos continua bloqueada
+- Gravação da config em lote (uma chamada só) no admin e no painel do bot de grupos
+- Blindagem anti-apagamento: segredo com campo vazio não sobrescreve o valor salvo no banco
+- Migração documentada em migrations/2026-07-15_fix_site_config_write_policy.sql
+
 ## v3.24.0 (2026-07-12) - Atendentes WhatsApp — sincronização de conversas e análise por IA
 - Nova aba Configurações → Atendentes WhatsApp: conecta o WhatsApp de até 5 atendentes por QR Code (Evolution API)
 - Sincronização automática de todas as mensagens enviadas e recebidas de cada atendente
