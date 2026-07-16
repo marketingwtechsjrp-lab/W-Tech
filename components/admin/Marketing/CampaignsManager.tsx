@@ -27,15 +27,10 @@ const CampaignsManager = ({ permissions }: { permissions?: any }) => {
         if (user?.id) {
             fetchCampaigns();
         }
-        
-        const subscription = supabase
-            .channel('campaigns_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'SITE_MarketingCampaigns' }, () => {
-                fetchCampaigns();
-            })
-            .subscribe();
 
-        return () => { subscription.unsubscribe(); }
+        // Canal realtime removido: no Supabase self-hosted o Realtime não está
+        // habilitado e o WebSocket só geraria erros de conexão. A lista já é
+        // recarregada ao mudar filtro/usuário e após as ações locais.
     }, [filterDays, user?.id, permissions]); // Refetch when filter, user or perms change
 
     const fetchCampaigns = async () => {

@@ -6,7 +6,7 @@ import { generateContent } from './ai';
  * Atendentes WhatsApp — espelho de conversas + análise por IA.
  *
  * Cada atendente tem uma instância própria na Evolution API (w-tech-atendente-N).
- * O webhook (Supabase Edge Function `wa-atendentes-webhook`) grava TODAS as
+ * O webhook (rota Express `/api/wa-atendentes-webhook`) grava TODAS as
  * mensagens enviadas/recebidas em SITE_WaAtendenteMensagens. Este módulo:
  *   1. gerencia o ciclo de vida das instâncias (criar / QR / status / desconectar);
  *   2. registra o webhook de sincronização (idempotente — re-registra ao conectar);
@@ -18,8 +18,6 @@ import { generateContent } from './ai';
  * de segurança em lib/whatsapp.ts.)
  */
 
-// Mesma base hardcoded de lib/supabaseClient.ts
-const SUPABASE_FUNCTIONS_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/functions/v1';
 const WEBHOOK_TOKEN_KEY = 'wa_atendentes_webhook_token';
 
 export const ATENDENTE_SLOTS = [1, 2, 3, 4, 5] as const;
@@ -115,7 +113,9 @@ export async function registerAtendenteWebhook(instanceName: string): Promise<{ 
         return { ok: false, error: e?.message || 'Falha ao gerar token do webhook.' };
     }
 
-    const url = `${SUPABASE_FUNCTIONS_URL}/wa-atendentes-webhook?token=${token}`;
+    // O webhook agora é servido pelo próprio site (Express em /api). URL absoluta é
+    // obrigatória: quem chama é a Evolution API (serviço externo), não o navegador.
+    const url = `${window.location.origin}/api/wa-atendentes-webhook?token=${token}`;
 
     try {
         const res = await fetch(`${evo.serverUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
