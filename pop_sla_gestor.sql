@@ -37,6 +37,7 @@ declare
     cfg   record;
     v_url text; v_key text;
     r     record;
+    req   public."SITE_CampaignRequests";
     sec_due text; sec_over text; sec_stale text;
     msg   text; due timestamptz; late int; priv text;
 begin
@@ -52,34 +53,34 @@ begin
 
         sec_due := ''; sec_over := ''; sec_stale := '';
 
-        for r in
+        for req in
             select * from "SITE_CampaignRequests"
              where coalesce(target_sector,'Marketing') = cfg.sector
                and status in ('Recebido','Triagem','Planejamento','Producao','Aprovacao','Aprovado','Publicado')
         loop
-            due := pop_effective_due(r);
+            due := pop_effective_due(req);
             if due = 'infinity'::timestamptz then
                 due := null;
             end if;
 
             if due is not null and due < now() then
                 late := greatest(1, ceil(extract(epoch from now() - due) / 86400))::int;
-                sec_over := sec_over || '• *' || r.title || '* — ' || late || 'd de atraso ('
-                    || pop_status_label(r.status) || ') · ' || coalesce(r.requester_name,'—') || e'\n';
+                sec_over := sec_over || '• *' || req.title || '* — ' || late || 'd de atraso ('
+                    || pop_status_label(req.status) || ') · ' || coalesce(req.requester_name,'—') || e'\n';
 
                 -- 1º dia de atraso: aviso único ao solicitante
-                if not exists (select 1 from "SITE_PopAlertState" where kind='overdue_first' and ref=r.id::text) then
-                    insert into "SITE_PopAlertState"(kind, ref) values ('overdue_first', r.id::text) on conflict do nothing;
-                    priv := regexp_replace(coalesce(r.requester_contact,''), '\D', '', 'g');
-                    if length(priv) < 10 and r.created_by is not null then
-                        select regexp_replace(coalesce(u.phone,''), '\D','','g') into priv from "SITE_Users" u where u.id::text = r.created_by limit 1;
+                if not exists (select 1 from "SITE_PopAlertState" where kind='overdue_first' and ref=req.id::text) then
+                    insert into "SITE_PopAlertState"(kind, ref) values ('overdue_first', req.id::text) on conflict do nothing;
+                    priv := regexp_replace(coalesce(req.requester_contact,''), '\D', '', 'g');
+                    if length(priv) < 10 and req.created_by is not null then
+                        select regexp_replace(coalesce(u.phone,''), '\D','','g') into priv from "SITE_Users" u where u.id::text = req.created_by limit 1;
                         priv := coalesce(priv,'');
                     end if;
                     if length(priv) between 10 and 11 then priv := '55' || priv; end if;
                     if length(priv) >= 12 then
                         perform pop_wa_send(v_url, v_key, cfg.instance_name, priv,
                             '🔔 *POP ' || pop_sector_label(cfg.sector) || '*' || e'\n\n'
-                            || 'Seu pedido *' || r.title || '* passou do prazo e está sendo tratado com prioridade pelo setor.');
+                            || 'Seu pedido *' || req.title || '* passou do prazo e está sendo tratado com prioridade pelo setor.');
                     end if;
                 end if;
 
@@ -87,28 +88,28 @@ begin
                 if late >= 3 and coalesce(trim(cfg.private_number),'') <> '' then
                     if not exists (
                         select 1 from "SITE_PopAlertState"
-                         where kind='escalation' and ref=r.id::text and sent_on > current_date - 2
+                         where kind='escalation' and ref=req.id::text and sent_on > current_date - 2
                     ) then
-                        insert into "SITE_PopAlertState"(kind, ref, sent_on) values ('escalation', r.id::text, current_date)
+                        insert into "SITE_PopAlertState"(kind, ref, sent_on) values ('escalation', req.id::text, current_date)
                             on conflict (kind, ref) do update set sent_on = current_date;
                         perform pop_wa_send(v_url, v_key, cfg.instance_name, cfg.private_number,
                             '📢 *Escalação — POP ' || pop_sector_label(cfg.sector) || '*' || e'\n\n'
-                            || '📋 *' || r.title || '*' || e'\n'
-                            || '🔥 Estourado há ' || late || ' dias · parado em ' || pop_status_label(r.status) || e'\n'
-                            || '👤 Solicitante: ' || coalesce(r.requester_name,'—') || e'\n\n'
+                            || '📋 *' || req.title || '*' || e'\n'
+                            || '🔥 Estourado há ' || late || ' dias · parado em ' || pop_status_label(req.status) || e'\n'
+                            || '👤 Solicitante: ' || coalesce(req.requester_name,'—') || e'\n\n'
                             || 'Precisa de decisão do gestor.');
                     end if;
                 end if;
 
             elsif due is not null and due < now() + interval '2 days' then
-                sec_due := sec_due || '• *' || r.title || '* — vence '
+                sec_due := sec_due || '• *' || req.title || '* — vence '
                     || to_char(due at time zone 'America/Sao_Paulo', 'DD/MM') || ' ('
-                    || pop_status_label(r.status) || ')' || e'\n';
+                    || pop_status_label(req.status) || ')' || e'\n';
 
-            elsif coalesce(r.updated_at, r.created_at) < now() - interval '5 days' then
-                sec_stale := sec_stale || '• *' || r.title || '* — sem movimento há '
-                    || ceil(extract(epoch from now() - coalesce(r.updated_at, r.created_at)) / 86400)::int
-                    || 'd (' || pop_status_label(r.status) || ')' || e'\n';
+            elsif coalesce(req.updated_at, req.created_at) < now() - interval '5 days' then
+                sec_stale := sec_stale || '• *' || req.title || '* — sem movimento há '
+                    || ceil(extract(epoch from now() - coalesce(req.updated_at, req.created_at)) / 86400)::int
+                    || 'd (' || pop_status_label(req.status) || ')' || e'\n';
             end if;
         end loop;
 
