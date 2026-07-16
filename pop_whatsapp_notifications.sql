@@ -28,6 +28,12 @@ create table if not exists public."SITE_PopNotifyConfig" (
 -- Instância padrão dos avisos do POP: celular do Marketing (centralizador de instâncias)
 alter table public."SITE_PopNotifyConfig" alter column instance_name set default 'w-tech-marketing';
 
+-- Grupo de aprovação (toggle próprio): avisa quando o pedido entra em Aprovação
+-- e quando sai com decisão (Aprovado/Reprovado)
+alter table public."SITE_PopNotifyConfig" add column if not exists approval_group_jid  text;
+alter table public."SITE_PopNotifyConfig" add column if not exists approval_group_name text;
+alter table public."SITE_PopNotifyConfig" add column if not exists approval_enabled    boolean not null default false;
+
 alter table public."SITE_PopNotifyConfig" enable row level security;
 drop policy if exists "pop_notify_config_all" on public."SITE_PopNotifyConfig";
 create policy "pop_notify_config_all" on public."SITE_PopNotifyConfig"
@@ -97,6 +103,7 @@ declare
     v_url text;
     v_key text;
     msg   text;
+    amsg  text;
     priv  text;
 begin
     -- v1: o board pop_marketing pertence ao setor Marketing.
@@ -154,6 +161,28 @@ begin
         end if;
         if length(priv) >= 12 then
             perform public.pop_wa_send(v_url, v_key, cfg.instance_name, priv, msg);
+        end if;
+    end if;
+
+    -- grupo de aprovação (toggle approval_enabled): entrada em Aprovação e decisão final
+    if cfg.approval_enabled
+       and coalesce(trim(cfg.approval_group_jid), '') <> ''
+       and tg_op = 'UPDATE' and new.status is distinct from old.status then
+        if new.status = 'Aprovacao' then
+            amsg := '⏳ *Aprovação pendente — POP Marketing*' || e'\n\n'
+                 || '📋 *' || coalesce(new.title, '(sem título)') || '*' || e'\n'
+                 || '👤 Solicitante: ' || coalesce(new.requester_name, '—')
+                 || ' (' || coalesce(new.requester_sector, '—') || ')' || e'\n'
+                 || '⚡ Prioridade: ' || coalesce(new.priority, '—') || e'\n'
+                 || '📅 Prazo desejado: ' || coalesce(to_char(new.desired_date, 'DD/MM/YYYY'), '—') || e'\n\n'
+                 || 'Avalie no painel: aprovar ou reprovar.';
+            perform public.pop_wa_send(v_url, v_key, cfg.instance_name, cfg.approval_group_jid, amsg);
+        elsif new.status in ('Aprovado', 'Reprovado') then
+            amsg := pop_status_emoji(new.status) || ' *Pedido ' || lower(pop_status_label(new.status))
+                 || ' — POP Marketing*' || e'\n\n'
+                 || '📋 *' || coalesce(new.title, '(sem título)') || '*' || e'\n'
+                 || '👤 Solicitante: ' || coalesce(new.requester_name, '—');
+            perform public.pop_wa_send(v_url, v_key, cfg.instance_name, cfg.approval_group_jid, amsg);
         end if;
     end if;
 

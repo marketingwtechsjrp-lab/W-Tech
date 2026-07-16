@@ -139,6 +139,9 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         instance_name: string;
         notify_requester: boolean;
         enabled: boolean;
+        approval_group_jid: string | null;
+        approval_group_name: string | null;
+        approval_enabled: boolean;
     }
     const [popConfigs, setPopConfigs] = useState<PopNotifyConfig[]>([]);
     const [popGroups, setPopGroups] = useState<Array<{ jid: string; subject: string }>>([]);
@@ -195,9 +198,12 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                     group_jid: c.group_jid?.trim() || null,
                     group_name: c.group_name?.trim() || null,
                     private_number: c.private_number?.trim() || null,
-                    instance_name: (c.instance_name || 'w-tech-atendente-1').trim(),
+                    instance_name: (c.instance_name || 'w-tech-marketing').trim(),
                     notify_requester: c.notify_requester,
                     enabled: c.enabled,
+                    approval_group_jid: c.approval_group_jid?.trim() || null,
+                    approval_group_name: c.approval_group_name?.trim() || null,
+                    approval_enabled: c.approval_enabled,
                     updated_at: new Date().toISOString()
                 }).eq('id', c.id);
                 if (error) throw error;
@@ -1502,69 +1508,104 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
                 <div className="space-y-3">
                     {popConfigs.map(cfg => (
-                        <div key={cfg.id} className="grid grid-cols-1 md:grid-cols-[130px_1fr_220px_auto_auto_auto] gap-3 items-end p-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-2)]">
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Setor</label>
-                                <div className="font-bold text-sm text-[var(--admin-text-primary)] py-2">{cfg.sector}</div>
+                        <div key={cfg.id} className="p-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-2)] space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-[130px_1fr_220px] gap-3 items-end">
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Setor</label>
+                                    <div className="font-bold text-sm text-[var(--admin-text-primary)] py-2">{cfg.sector}</div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Grupo dos pedidos (novo pedido + Kanban)</label>
+                                    <select
+                                        className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
+                                        value={cfg.group_jid || ''}
+                                        onChange={e => {
+                                            const jid = e.target.value;
+                                            const g = popGroups.find(x => x.jid === jid);
+                                            updatePopConfig(cfg.id, { group_jid: jid || null, group_name: g?.subject || (jid ? cfg.group_name : null) });
+                                        }}
+                                    >
+                                        <option value="">— Sem grupo —</option>
+                                        {/* Mantém o grupo salvo visível mesmo antes de recarregar a lista */}
+                                        {cfg.group_jid && !popGroups.some(g => g.jid === cfg.group_jid) && (
+                                            <option value={cfg.group_jid}>{cfg.group_name || cfg.group_jid} (salvo)</option>
+                                        )}
+                                        {popGroups.map(g => (
+                                            <option key={g.jid} value={g.jid}>{g.subject}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Número avulso (opcional)</label>
+                                    <input
+                                        className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
+                                        value={cfg.private_number || ''}
+                                        onChange={e => updatePopConfig(cfg.id, { private_number: e.target.value })}
+                                        placeholder="5517999999999"
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Grupo de destino</label>
-                                <select
-                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
-                                    value={cfg.group_jid || ''}
-                                    onChange={e => {
-                                        const jid = e.target.value;
-                                        const g = popGroups.find(x => x.jid === jid);
-                                        updatePopConfig(cfg.id, { group_jid: jid || null, group_name: g?.subject || (jid ? cfg.group_name : null) });
-                                    }}
+                            <div className="grid grid-cols-1 md:grid-cols-[130px_1fr_auto_auto_auto_auto] gap-3 items-end">
+                                <div className="hidden md:block" />
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Grupo de aprovação (entra em Aprovação / decisão)</label>
+                                    <select
+                                        className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
+                                        value={cfg.approval_group_jid || ''}
+                                        onChange={e => {
+                                            const jid = e.target.value;
+                                            const g = popGroups.find(x => x.jid === jid);
+                                            updatePopConfig(cfg.id, { approval_group_jid: jid || null, approval_group_name: g?.subject || (jid ? cfg.approval_group_name : null) });
+                                        }}
+                                    >
+                                        <option value="">— Sem grupo —</option>
+                                        {cfg.approval_group_jid && !popGroups.some(g => g.jid === cfg.approval_group_jid) && (
+                                            <option value={cfg.approval_group_jid}>{cfg.approval_group_name || cfg.approval_group_jid} (salvo)</option>
+                                        )}
+                                        {popGroups.map(g => (
+                                            <option key={g.jid} value={g.jid}>{g.subject}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => updatePopConfig(cfg.id, { approval_enabled: !cfg.approval_enabled })}
+                                    className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
+                                    title="Ligar/desligar os avisos do grupo de aprovação"
                                 >
-                                    <option value="">— Sem grupo —</option>
-                                    {/* Mantém o grupo salvo visível mesmo antes de recarregar a lista */}
-                                    {cfg.group_jid && !popGroups.some(g => g.jid === cfg.group_jid) && (
-                                        <option value={cfg.group_jid}>{cfg.group_name || cfg.group_jid} (salvo)</option>
-                                    )}
-                                    {popGroups.map(g => (
-                                        <option key={g.jid} value={g.jid}>{g.subject}</option>
-                                    ))}
-                                </select>
+                                    {cfg.approval_enabled
+                                        ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Aprovação</span></>
+                                        : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Aprovação</span></>}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updatePopConfig(cfg.id, { notify_requester: !cfg.notify_requester })}
+                                    className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
+                                    title="Enviar as atualizações também no privado do solicitante"
+                                >
+                                    {cfg.notify_requester
+                                        ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Solicitante</span></>
+                                        : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Solicitante</span></>}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updatePopConfig(cfg.id, { enabled: !cfg.enabled })}
+                                    className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
+                                    title={cfg.enabled ? 'Notificações ligadas' : 'Notificações desligadas'}
+                                >
+                                    {cfg.enabled
+                                        ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Ativo</span></>
+                                        : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Desativado</span></>}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeletePopSector(cfg.id, cfg.sector)}
+                                    className="text-red-500 hover:text-red-700 transition-colors pb-2"
+                                    title="Remover setor"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Número avulso (opcional)</label>
-                                <input
-                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
-                                    value={cfg.private_number || ''}
-                                    onChange={e => updatePopConfig(cfg.id, { private_number: e.target.value })}
-                                    placeholder="5517999999999"
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => updatePopConfig(cfg.id, { notify_requester: !cfg.notify_requester })}
-                                className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
-                                title="Enviar as atualizações também no privado do solicitante"
-                            >
-                                {cfg.notify_requester
-                                    ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Solicitante</span></>
-                                    : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Solicitante</span></>}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => updatePopConfig(cfg.id, { enabled: !cfg.enabled })}
-                                className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
-                                title={cfg.enabled ? 'Notificações ligadas' : 'Notificações desligadas'}
-                            >
-                                {cfg.enabled
-                                    ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Ativo</span></>
-                                    : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Desativado</span></>}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleDeletePopSector(cfg.id, cfg.sector)}
-                                className="text-red-500 hover:text-red-700 transition-colors pb-2"
-                                title="Remover setor"
-                            >
-                                <Trash2 size={16} />
-                            </button>
                         </div>
                     ))}
                     {popConfigs.length === 0 && (
