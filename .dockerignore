@@ -1,0 +1,47 @@
+# Dependências e saídas de build (refeitas dentro da imagem)
+node_modules
+dist
+dist-server
+
+# Git e segredos — .env NUNCA entra na imagem (envs vão via runtime)
+.git
+.github
+.env
+.env.*
+
+# Ferramentas locais / artefatos de dev que não participam do build
+.claude
+.clauderules
+.agent
+.agents
+.vite
+.playwright-mcp
+playwright-report
+test-results
+scratch
+teste
+tasks
+graphify-out
+marketing-wtech-export
+marketing-wtech-export.zip
+export_certificados_cracha
+Skill-whats
+supabase
+
+# Mídias pesadas soltas na raiz (não são referenciadas pelo build do Vite)
+Abrertura.mp4
+como foi.mp4
+depoimentos 1.mp4
+depoimentos 2.mp4
+pronello hero bg.JPG
+lp-v5-gold-brutal.jpeg
+lp-v6-carbon-racing.jpeg
+lp-v7-editorial-light.jpeg
+lp-v8-swiss-tech.jpeg
+non_buyers_remarketing.xlsx
+sales_eb1bjo_1780927311872.xlsx
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml

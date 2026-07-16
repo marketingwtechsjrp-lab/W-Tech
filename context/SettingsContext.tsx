@@ -23,27 +23,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     useEffect(() => {
         fetchSettings();
 
-        // Realtime só no /admin (live preview das configurações). Em páginas públicas/LP
-        // o WebSocket persistente é desnecessário e só pesa no carregamento — settings
-        // são lidos uma vez no fetch inicial e atualizados num reload.
-        const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
-        if (!isAdmin) return;
-
-        const channel = supabase
-            .channel('settings_changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'SITE_SystemSettings' },
-                () => {
-                    console.log('Settings updated via Realtime');
-                    fetchSettings();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        // Canal realtime removido: no Supabase self-hosted o Realtime não está
+        // habilitado e o WebSocket só geraria erros de conexão. Settings são
+        // lidos no carregamento e atualizados num reload da página.
     }, []);
 
     const fetchSettings = async () => {

@@ -2,7 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
-    Droplets, MessageCircle, Bot,
+    ClipboardCheck, Droplets, MessageCircle, Bot,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -65,6 +65,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
         items: [
             { icon: Megaphone, label: 'Campanhas', view: 'email_marketing', permission: 'marketing_view', goKey: 'm', keywords: 'email disparos newsletter' },
             { icon: Rocket, label: 'Marketing Hub', view: 'marketing_hub', permission: 'marketing_view', goKey: 'h', keywords: 'landing pages blog bio campanhas' },
+            { icon: ClipboardCheck, label: 'POP Marketing', view: 'pop_marketing', permission: 'marketing_view', goKey: 'b', keywords: 'pop pedidos campanha aprovacao aprovacoes whatsapp painel ao vivo sla briefing' },
             { icon: Sparkles, label: 'W-Intelligence', view: 'intelligence', permission: 'intelligence_view', goKey: 'w', keywords: 'ia inteligencia insights' },
         ],
     },

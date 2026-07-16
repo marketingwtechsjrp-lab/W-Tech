@@ -1,27 +1,47 @@
-# Stage 1: Build
-FROM node:20-slim AS build
+# syntax=docker/dockerfile:1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1 — build: SPA (Vite) + bundle do servidor Express (esbuild)
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
-# Copy package files and install
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+# Dependências primeiro (camada cacheável). O .npmrc traz legacy-peer-deps.
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci
 
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-
-# Copy code and build
+# Código-fonte
 COPY . .
-RUN npm run build
 
-# Stage 2: Serve
-FROM nginx:alpine
+# Envs VITE_* entram no bundle da SPA em TEMPO DE BUILD (não em runtime):
+#   docker build --build-arg VITE_SUPABASE_URL=... --build-arg VITE_SUPABASE_ANON_KEY=...
+# Sem os args, valem os fallbacks hardcoded de lib/supabaseClient.ts (instância cloud).
+# Nota: o buildkit alerta "SecretsUsedInArgOrEnv" para a ANON key — falso positivo:
+# a anon key é PÚBLICA por design (vai dentro do bundle JS do navegador de qualquer
+# forma). Segredos de verdade (service role, Stripe etc.) só entram em RUNTIME.
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
-# Copy built files
-COPY --from=build /app/dist /usr/share/nginx/html
+# SPA (dist/) + servidor bundlado (dist-server/index.mjs, autocontido)
+RUN npm run build && npm run build:server
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2 — runtime mínimo: só Node + dist/ + dist-server/
+# O bundle do esbuild é autocontido → NÃO precisa de node_modules.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:22-alpine
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/dist-server ./dist-server
+
+# Envs de RUNTIME (Supabase service role, Stripe, Evolution, Brevo etc.)
+# entram via -e/--env-file no docker run ou pelo compose — nunca na imagem.
+
+EXPOSE 3000
+CMD ["node", "dist-server/index.mjs"]

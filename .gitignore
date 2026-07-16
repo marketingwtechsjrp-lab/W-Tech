@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-server
 dist-ssr
 *.local
 
@@ -48,3 +49,7 @@ supabase/.temp/
 
 # Graphify — output do gerador de grafo de conhecimento (não versionar)
 graphify-out/
+
+# backups de env pre-migracao VPS (contem chaves antigas)
+.env*.pre-vps
+*.pre-vps

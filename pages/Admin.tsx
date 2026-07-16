@@ -35,6 +35,7 @@ import { CourseChecklistConfig } from '../components/admin/Courses/CourseCheckli
 import { CourseChecklistView } from '../components/admin/Courses/CourseChecklistView';
 import { useSettings } from '../context/SettingsContext';
 import MarketingView from '../components/admin/Marketing/MarketingView';
+import PopMarketingView from '../components/admin/Marketing/POP/PopMarketingView';
 import CampaignsView from '../components/admin/Marketing/CampaignsView';
 import DashboardView from '../components/admin/Dashboard/DashboardView';
 
@@ -112,7 +113,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -8184,6 +8185,7 @@ const Admin = () => {
                                 {hasPermission('tasks_view') && <MobileMenuItem icon={CheckCircle} label="Tarefas" onClick={() => { setCurrentView('tasks'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('marketing_view') && <MobileMenuItem icon={Megaphone} label="Campanhas" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {(hasPermission('marketing_view') || hasPermission('blog_view')) && <MobileMenuItem icon={Rocket} label="Marketing" onClick={() => { setCurrentView('marketing_hub'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('marketing_view') && <MobileMenuItem icon={ClipboardList} label="POP Marketing" onClick={() => { setCurrentView('pop_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
 
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
@@ -8258,6 +8260,7 @@ const Admin = () => {
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('campaigns_view')) && <CampaignsView permissions={livePermissions} />}
                         {currentView === 'marketing_hub' && <MarketingView permissions={livePermissions} />}
+                        {currentView === 'pop_marketing' && hasPermission('marketing_view') && <PopMarketingView permissions={livePermissions} />}
                         {currentView === 'intelligence' && hasPermission('intelligence_view') && <IntelligenceView permissions={livePermissions} />}
                         {currentView === 'tasks' && hasPermission('tasks_view') && <TaskManagerView permissions={livePermissions} />}
                         {currentView === 'settings' && hasPermission('manage_settings') && <SettingsView />}

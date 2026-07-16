@@ -169,7 +169,10 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
             const fetchKiwifyAffiliates = async () => {
                 setLoadingAffiliates(true);
                 try {
-                    const { data } = await supabase.functions.invoke('get-kiwify-affiliates');
+                    // Antes: supabase.functions.invoke('get-kiwify-affiliates') (Edge Function).
+                    // Agora a função foi portada para o Express local — mesma origem da SPA.
+                    const res = await fetch('/api/get-kiwify-affiliates');
+                    const data = await res.json().catch(() => null);
                     if (data && data.success && data.affiliates && data.affiliates.length > 0) {
                         const mapped = data.affiliates.map((aff: any) => ({
                             name: aff.name || aff.full_name || '',
