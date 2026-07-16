@@ -129,6 +129,104 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     const [busyInstance, setBusyInstance] = useState<string | null>(null);
     const [managedTestPhone, setManagedTestPhone] = useState('');
 
+    // POP — Notificações WhatsApp por setor (SITE_PopNotifyConfig; triggers pg_net no banco)
+    interface PopNotifyConfig {
+        id: string;
+        sector: string;
+        group_jid: string | null;
+        group_name: string | null;
+        private_number: string | null;
+        instance_name: string;
+        notify_requester: boolean;
+        enabled: boolean;
+    }
+    const [popConfigs, setPopConfigs] = useState<PopNotifyConfig[]>([]);
+    const [popGroups, setPopGroups] = useState<Array<{ jid: string; subject: string }>>([]);
+    const [isLoadingPopGroups, setIsLoadingPopGroups] = useState(false);
+    const [isSavingPop, setIsSavingPop] = useState(false);
+    const [newPopSector, setNewPopSector] = useState('');
+
+    useEffect(() => {
+        const fetchPopConfigs = async () => {
+            const { data } = await supabase.from('SITE_PopNotifyConfig').select('*').order('sector');
+            if (data) setPopConfigs(data as PopNotifyConfig[]);
+        };
+        fetchPopConfigs();
+    }, []);
+
+    /** Lista os grupos das instâncias usadas pelos setores do POP — o admin ESCOLHE o grupo. */
+    const handleLoadPopGroups = async () => {
+        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        const instances = [...new Set(popConfigs.map(c => (c.instance_name || '').trim()).filter(Boolean))];
+        if (instances.length === 0) return alert('Nenhum setor configurado no POP.');
+        setIsLoadingPopGroups(true);
+        try {
+            const all: Array<{ jid: string; subject: string }> = [];
+            for (const inst of instances) {
+                const response = await fetch(
+                    `${globalConfig.serverUrl}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=false`,
+                    { headers: { apikey: globalConfig.apiKey } }
+                );
+                const data = await response.json();
+                const raw = Array.isArray(data) ? data : (Array.isArray(data?.groups) ? data.groups : []);
+                raw.forEach((g: { id?: string; jid?: string; subject?: string; name?: string }) => {
+                    const jid = g.id || g.jid || '';
+                    if (jid && !all.some(x => x.jid === jid)) all.push({ jid, subject: g.subject || g.name || jid });
+                });
+            }
+            all.sort((a, b) => a.subject.localeCompare(b.subject));
+            setPopGroups(all);
+            if (all.length === 0) alert('Nenhum grupo encontrado — o chip da instância precisa participar dos grupos.');
+        } catch (e: unknown) {
+            alert('Erro ao listar grupos: ' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+            setIsLoadingPopGroups(false);
+        }
+    };
+
+    const updatePopConfig = (id: string, patch: Partial<PopNotifyConfig>) =>
+        setPopConfigs(prev => prev.map(c => (c.id === id ? { ...c, ...patch } : c)));
+
+    const handleSavePopConfigs = async () => {
+        setIsSavingPop(true);
+        try {
+            for (const c of popConfigs) {
+                const { error } = await supabase.from('SITE_PopNotifyConfig').update({
+                    group_jid: c.group_jid?.trim() || null,
+                    group_name: c.group_name?.trim() || null,
+                    private_number: c.private_number?.trim() || null,
+                    instance_name: (c.instance_name || 'w-tech-atendente-1').trim(),
+                    notify_requester: c.notify_requester,
+                    enabled: c.enabled,
+                    updated_at: new Date().toISOString()
+                }).eq('id', c.id);
+                if (error) throw error;
+            }
+            alert('Notificações do POP salvas! ✅');
+        } catch (e: unknown) {
+            alert('Erro ao salvar: ' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+            setIsSavingPop(false);
+        }
+    };
+
+    const handleAddPopSector = async () => {
+        const sector = newPopSector.trim();
+        if (!sector) return;
+        const { data, error } = await supabase.from('SITE_PopNotifyConfig')
+            .insert({ sector }).select('*').single();
+        if (error) return alert('Erro ao adicionar setor: ' + error.message);
+        setPopConfigs(prev => [...prev, data as PopNotifyConfig]);
+        setNewPopSector('');
+    };
+
+    const handleDeletePopSector = async (id: string, sector: string) => {
+        if (!confirm(`Remover as notificações do setor "${sector}"?`)) return;
+        const { error } = await supabase.from('SITE_PopNotifyConfig').delete().eq('id', id);
+        if (error) return alert('Erro ao remover: ' + error.message);
+        setPopConfigs(prev => prev.filter(c => c.id !== id));
+    };
+
     useEffect(() => {
         fetchGlobalConfig();
     }, [user]);
@@ -1375,6 +1473,130 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                         {reportPreview}
                     </pre>
                 )}
+            </div>}
+
+            {/* POP — Notificações WhatsApp por Setor (pedido novo + movimentação do Kanban) */}
+            {canEngineConfig && <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md md:col-span-2">
+                <div className="flex items-center gap-2 mb-2">
+                    <Smartphone className="text-wtech-gold" />
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">POP — Notificações WhatsApp por Setor</h3>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-4">
+                    Cada pedido aberto no POP e cada movimentação do Kanban dispara mensagem
+                    <strong className="text-[var(--admin-text-primary)]"> em tempo real</strong> no grupo do setor
+                    (e no privado do solicitante, quando o contato estiver preenchido no pedido).
+                    O disparo sai direto do banco de dados via Evolution API — funciona mesmo com o painel fechado.
+                    O chip da instância precisa participar do grupo escolhido.
+                </p>
+
+                <div className="mb-3">
+                    <button
+                        onClick={handleLoadPopGroups}
+                        disabled={isLoadingPopGroups}
+                        className="bg-gray-800 dark:bg-white text-white dark:text-black px-4 py-2 rounded text-xs font-bold uppercase hover:bg-gray-900 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
+                    >
+                        {isLoadingPopGroups ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                        {isLoadingPopGroups ? 'Buscando...' : 'Carregar grupos do WhatsApp'}
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                    {popConfigs.map(cfg => (
+                        <div key={cfg.id} className="grid grid-cols-1 md:grid-cols-[130px_1fr_220px_auto_auto_auto] gap-3 items-end p-3 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface-2)]">
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Setor</label>
+                                <div className="font-bold text-sm text-[var(--admin-text-primary)] py-2">{cfg.sector}</div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Grupo de destino</label>
+                                <select
+                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
+                                    value={cfg.group_jid || ''}
+                                    onChange={e => {
+                                        const jid = e.target.value;
+                                        const g = popGroups.find(x => x.jid === jid);
+                                        updatePopConfig(cfg.id, { group_jid: jid || null, group_name: g?.subject || (jid ? cfg.group_name : null) });
+                                    }}
+                                >
+                                    <option value="">— Sem grupo —</option>
+                                    {/* Mantém o grupo salvo visível mesmo antes de recarregar a lista */}
+                                    {cfg.group_jid && !popGroups.some(g => g.jid === cfg.group_jid) && (
+                                        <option value={cfg.group_jid}>{cfg.group_name || cfg.group_jid} (salvo)</option>
+                                    )}
+                                    {popGroups.map(g => (
+                                        <option key={g.jid} value={g.jid}>{g.subject}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Número avulso (opcional)</label>
+                                <input
+                                    className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-1)] outline-none transition-colors"
+                                    value={cfg.private_number || ''}
+                                    onChange={e => updatePopConfig(cfg.id, { private_number: e.target.value })}
+                                    placeholder="5517999999999"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => updatePopConfig(cfg.id, { notify_requester: !cfg.notify_requester })}
+                                className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
+                                title="Enviar as atualizações também no privado do solicitante"
+                            >
+                                {cfg.notify_requester
+                                    ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Solicitante</span></>
+                                    : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Solicitante</span></>}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => updatePopConfig(cfg.id, { enabled: !cfg.enabled })}
+                                className="flex items-center gap-1.5 text-xs font-bold uppercase pb-2"
+                                title={cfg.enabled ? 'Notificações ligadas' : 'Notificações desligadas'}
+                            >
+                                {cfg.enabled
+                                    ? <><ToggleRight size={24} className="text-green-600" /> <span className="text-green-700">Ativo</span></>
+                                    : <><ToggleLeft size={24} className="text-gray-400" /> <span className="text-gray-500">Desativado</span></>}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDeletePopSector(cfg.id, cfg.sector)}
+                                className="text-red-500 hover:text-red-700 transition-colors pb-2"
+                                title="Remover setor"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    ))}
+                    {popConfigs.length === 0 && (
+                        <p className="text-sm text-[var(--admin-text-secondary)]">Nenhum setor configurado ainda — adicione abaixo.</p>
+                    )}
+                </div>
+
+                <div className="flex flex-wrap items-end gap-2 mt-4">
+                    <div>
+                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Novo setor</label>
+                        <input
+                            className="border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] outline-none transition-colors"
+                            value={newPopSector}
+                            onChange={e => setNewPopSector(e.target.value)}
+                            placeholder="Ex.: Comercial"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAddPopSector}
+                        disabled={!newPopSector.trim()}
+                        className="border border-[var(--admin-border)] text-[var(--admin-text-primary)] px-4 py-2 rounded text-xs font-bold uppercase hover:bg-[var(--admin-surface-2)] disabled:opacity-50 transition-colors"
+                    >
+                        + Adicionar setor
+                    </button>
+                    <button
+                        onClick={handleSavePopConfigs}
+                        disabled={isSavingPop}
+                        className="bg-wtech-gold text-black px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-500 disabled:opacity-50 transition-colors flex items-center gap-2"
+                    >
+                        {isSavingPop ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Salvar Notificações POP
+                    </button>
+                </div>
             </div>}
 
             {/* 2. Asaas Payment Config */}
