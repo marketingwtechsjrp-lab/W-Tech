@@ -41,6 +41,8 @@ export interface CampaignRequest {
     cost_center: string | null;
     approver_name: string | null;
     priority: RequestPriority;
+    /** Setor de DESTINO (board responsável pela entrega). Ausente em dados antigos = Marketing. */
+    target_sector?: string;
     status: RequestStatus;
     sla_due_at: string | null;
     completed_at: string | null;
@@ -253,6 +255,18 @@ export const STATUS_CHIP: Record<RequestStatus, string> = {
 };
 
 export const SECTORS = ['Marketing', 'Vendas', 'Diretoria', 'Suporte', 'Produção', 'Outro'] as const;
+
+/** Setores de DESTINO do pedido (boards que executam). Valores do banco sem acento. */
+export const TARGET_SECTORS = ['Marketing', 'Financeiro', 'Manutencao', 'Producao de Pecas', 'Estoque', 'Vendas'] as const;
+
+export const TARGET_SECTOR_LABELS: Record<string, string> = {
+    Marketing: 'Marketing',
+    Financeiro: 'Financeiro',
+    Manutencao: 'Manutenção',
+    'Producao de Pecas': 'Produção de Peças',
+    Estoque: 'Estoque',
+    Vendas: 'Vendas',
+};
 
 export const DELIVERY_TYPES = ['Post', 'E-mail', 'Peça impressa', 'Landing Page', 'Vídeo', 'Kit de evento', 'Outro'] as const;
 

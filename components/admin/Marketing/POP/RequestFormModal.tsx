@@ -3,7 +3,7 @@ import { X, Save, CalendarClock, Loader2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import { useAuth } from '../../../../context/AuthContext';
 import {
-    SECTORS, DELIVERY_TYPES, PRIORITIES, PRIORITY_LABELS,
+    SECTORS, TARGET_SECTORS, TARGET_SECTOR_LABELS, DELIVERY_TYPES, PRIORITIES, PRIORITY_LABELS,
     calcSlaDueAt, isLaunchLike, toDateInputValue, dateInputToIso,
     type RequestPriority,
 } from '../../../../lib/popMarketing';
@@ -32,6 +32,7 @@ const RequestFormModal = ({ notify, onClose, onCreated }: RequestFormModalProps)
     // ── Campos do POP 8.1 ──
     const [requesterName, setRequesterName] = useState(user?.name || '');
     const [requesterSector, setRequesterSector] = useState<string>('Marketing');
+    const [targetSector, setTargetSector] = useState<string>('Marketing');
     const [requesterContact, setRequesterContact] = useState('');
     const [title, setTitle] = useState('');
     const [objective, setObjective] = useState('');
@@ -79,6 +80,7 @@ const RequestFormModal = ({ notify, onClose, onCreated }: RequestFormModalProps)
                 requester_name: requesterName.trim(),
                 requester_sector: requesterSector,
                 requester_contact: requesterContact.trim() || null,
+                target_sector: targetSector,
                 target_audience: targetAudience.trim() || null,
                 delivery_type: deliveryType,
                 context_refs: contextRefs.trim() || null,
@@ -166,6 +168,12 @@ const RequestFormModal = ({ notify, onClose, onCreated }: RequestFormModalProps)
                     <fieldset>
                         <legend className="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-purple-400 mb-3">O pedido</legend>
                         <div className="space-y-4">
+                            <div>
+                                <label className={labelCls}>Direcionado ao setor (quem executa) *</label>
+                                <select className={inputCls} value={targetSector} onChange={e => setTargetSector(e.target.value)}>
+                                    {TARGET_SECTORS.map(s => <option key={s} value={s}>{TARGET_SECTOR_LABELS[s]}</option>)}
+                                </select>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className={labelCls}>Título *</label>

@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 import {
-    REQUEST_FLOW, STATUS_LABELS, STATUS_DOT, OPEN_STATUSES, SECTORS,
+    REQUEST_FLOW, STATUS_LABELS, STATUS_DOT, OPEN_STATUSES, TARGET_SECTORS, TARGET_SECTOR_LABELS,
     PRIORITY_LABELS, getSlaBadge, SLA_CHIP,
     type CampaignRequest, type RequestPriority,
 } from '../../../../lib/popMarketing';
@@ -79,7 +79,7 @@ const LivePanelView = ({ notify }: LivePanelViewProps) => {
 
     // Filtro por setor aplicado ao board e às métricas de pedidos
     const visibleRequests = useMemo(
-        () => (sectorFilter === 'all' ? requests : requests.filter(r => r.requester_sector === sectorFilter)),
+        () => (sectorFilter === 'all' ? requests : requests.filter(r => (r.target_sector || 'Marketing') === sectorFilter)),
         [requests, sectorFilter],
     );
 
@@ -162,7 +162,7 @@ const LivePanelView = ({ notify }: LivePanelViewProps) => {
                         onChange={e => setSectorFilter(e.target.value)}
                     >
                         <option value="all">Todos os setores</option>
-                        {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                        {TARGET_SECTORS.map(s => <option key={s} value={s}>{TARGET_SECTOR_LABELS[s]}</option>)}
                     </select>
                     <button
                         onClick={() => fetchAll(false)}
@@ -235,7 +235,7 @@ const LivePanelView = ({ notify }: LivePanelViewProps) => {
                                                 <p className="text-sm font-bold text-[var(--admin-text-primary)] leading-snug line-clamp-2">{req.title}</p>
                                                 <div className="flex flex-wrap items-center gap-1.5 mt-2">
                                                     <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[var(--admin-surface-2)] text-[var(--admin-text-tertiary)]">
-                                                        {req.requester_sector}
+                                                        {TARGET_SECTOR_LABELS[req.target_sector || 'Marketing'] || req.target_sector} · {req.requester_sector}
                                                     </span>
                                                     <span className="flex items-center gap-1 text-[9px] font-bold text-[var(--admin-text-tertiary)]" title={`Prioridade ${PRIORITY_LABELS[req.priority]}`}>
                                                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PRIORITY_DOT[req.priority] }} />

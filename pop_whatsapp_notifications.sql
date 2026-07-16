@@ -34,6 +34,10 @@ alter table public."SITE_PopNotifyConfig" add column if not exists approval_grou
 alter table public."SITE_PopNotifyConfig" add column if not exists approval_group_name text;
 alter table public."SITE_PopNotifyConfig" add column if not exists approval_enabled    boolean not null default false;
 
+-- 1b. Multi-setor: o pedido ganha o setor de DESTINO (board responsável pela entrega).
+--     Pedidos antigos continuam válidos: padrão 'Marketing'.
+alter table public."SITE_CampaignRequests" add column if not exists target_sector text not null default 'Marketing';
+
 alter table public."SITE_PopNotifyConfig" enable row level security;
 drop policy if exists "pop_notify_config_all" on public."SITE_PopNotifyConfig";
 create policy "pop_notify_config_all" on public."SITE_PopNotifyConfig"
@@ -91,6 +95,15 @@ language sql immutable as $$
     end
 $$;
 
+create or replace function public.pop_sector_label(s text) returns text
+language sql immutable as $$
+    select case s
+        when 'Manutencao'        then 'Manutenção'
+        when 'Producao de Pecas' then 'Produção de Peças'
+        else coalesce(s, 'Marketing')
+    end
+$$;
+
 -- 4. Trigger: novo pedido + movimentação do Kanban
 create or replace function public.pop_notify_whatsapp()
 returns trigger
@@ -99,22 +112,24 @@ security definer
 set search_path = public
 as $$
 declare
-    cfg   public."SITE_PopNotifyConfig";
-    v_url text;
-    v_key text;
-    msg   text;
-    amsg  text;
-    priv  text;
+    cfg     public."SITE_PopNotifyConfig";
+    v_url   text;
+    v_key   text;
+    v_board text;
+    msg     text;
+    amsg    text;
+    priv    text;
 begin
-    -- v1: o board pop_marketing pertence ao setor Marketing.
-    -- Quando houver boards de outros setores, buscar pelo setor do board.
+    -- Multi-setor: roteia pelo setor de DESTINO do pedido (board responsável).
+    -- Setor sem config ou desligado → silêncio (o pedido segue normal).
     select * into cfg
       from public."SITE_PopNotifyConfig"
-     where sector = 'Marketing' and enabled
+     where sector = coalesce(new.target_sector, 'Marketing') and enabled
      limit 1;
     if not found then
         return new;
     end if;
+    v_board := public.pop_sector_label(coalesce(new.target_sector, 'Marketing'));
 
     select value into v_url from public."SITE_Config" where key = 'evolution_api_url';
     select value into v_key from public."SITE_Config" where key = 'evolution_api_key';
@@ -123,7 +138,7 @@ begin
     end if;
 
     if tg_op = 'INSERT' then
-        msg := '🆕 *POP Marketing — Novo pedido*' || e'\n\n'
+        msg := '🆕 *POP ' || v_board || ' — Novo pedido*' || e'\n\n'
             || '📋 *' || coalesce(new.title, '(sem título)') || '*' || e'\n'
             || '👤 Solicitante: ' || coalesce(new.requester_name, '—')
             || ' (' || coalesce(new.requester_sector, '—') || ')' || e'\n'
@@ -132,7 +147,7 @@ begin
             || '📅 Prazo desejado: ' || coalesce(to_char(new.desired_date, 'DD/MM/YYYY'), '—') || e'\n'
             || '🔖 Status: ' || pop_status_emoji(new.status) || ' ' || pop_status_label(new.status);
     elsif tg_op = 'UPDATE' and new.status is distinct from old.status then
-        msg := '🔄 *POP Marketing — Pedido atualizado*' || e'\n\n'
+        msg := '🔄 *POP ' || v_board || ' — Pedido atualizado*' || e'\n\n'
             || '📋 *' || coalesce(new.title, '(sem título)') || '*' || e'\n'
             || pop_status_emoji(old.status) || ' ' || pop_status_label(old.status)
             || '  ➜  '
@@ -169,7 +184,7 @@ begin
        and coalesce(trim(cfg.approval_group_jid), '') <> ''
        and tg_op = 'UPDATE' and new.status is distinct from old.status then
         if new.status = 'Aprovacao' then
-            amsg := '⏳ *Aprovação pendente — POP Marketing*' || e'\n\n'
+            amsg := '⏳ *Aprovação pendente — POP ' || v_board || '*' || e'\n\n'
                  || '📋 *' || coalesce(new.title, '(sem título)') || '*' || e'\n'
                  || '👤 Solicitante: ' || coalesce(new.requester_name, '—')
                  || ' (' || coalesce(new.requester_sector, '—') || ')' || e'\n'
@@ -179,7 +194,7 @@ begin
             perform public.pop_wa_send(v_url, v_key, cfg.instance_name, cfg.approval_group_jid, amsg);
         elsif new.status in ('Aprovado', 'Reprovado') then
             amsg := pop_status_emoji(new.status) || ' *Pedido ' || lower(pop_status_label(new.status))
-                 || ' — POP Marketing*' || e'\n\n'
+                 || ' — POP ' || v_board || '*' || e'\n\n'
                  || '📋 *' || coalesce(new.title, '(sem título)') || '*' || e'\n'
                  || '👤 Solicitante: ' || coalesce(new.requester_name, '—');
             perform public.pop_wa_send(v_url, v_key, cfg.instance_name, cfg.approval_group_jid, amsg);
@@ -202,5 +217,5 @@ create trigger trg_pop_notify_upd
 
 -- 5. Setor inicial (desativado até escolher o grupo no seletor da UI)
 insert into public."SITE_PopNotifyConfig" (sector)
-values ('Marketing')
+values ('Marketing'), ('Financeiro'), ('Manutencao'), ('Producao de Pecas'), ('Estoque'), ('Vendas')
 on conflict (sector) do nothing;
