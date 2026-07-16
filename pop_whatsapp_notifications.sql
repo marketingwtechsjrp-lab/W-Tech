@@ -12,21 +12,24 @@
 -- exposta ao admin (RLS permissiva, padrão do projeto) para o seletor de grupos da UI.
 -- ═══════════════════════════════════════════════════════════════
 
--- 1. Tabela de configuração por setor (sem segredos)
-drop table if exists public."SITE_PopNotifyConfig" cascade; -- v1 desta feature (sem dados reais)
-create table public."SITE_PopNotifyConfig" (
+-- 1. Tabela de configuração por setor (sem segredos) — re-executável sem perder dados
+create table if not exists public."SITE_PopNotifyConfig" (
     id               uuid primary key default gen_random_uuid(),
     sector           text not null unique,            -- 'Marketing', 'Comercial', ...
     group_jid        text,                            -- grupo WhatsApp destino (...@g.us)
     group_name       text,                            -- nome do grupo (exibição na UI)
     private_number   text,                            -- número avulso opcional (ex.: gestor)
-    instance_name    text not null default 'w-tech-atendente-1',
+    instance_name    text not null default 'w-tech-marketing',
     notify_requester boolean not null default true,   -- avisa o solicitante no privado
     enabled          boolean not null default false,
     updated_at       timestamptz default now()
 );
 
+-- Instância padrão dos avisos do POP: celular do Marketing (centralizador de instâncias)
+alter table public."SITE_PopNotifyConfig" alter column instance_name set default 'w-tech-marketing';
+
 alter table public."SITE_PopNotifyConfig" enable row level security;
+drop policy if exists "pop_notify_config_all" on public."SITE_PopNotifyConfig";
 create policy "pop_notify_config_all" on public."SITE_PopNotifyConfig"
     for all using (true) with check (true); -- RLS permissiva (padrão do projeto)
 grant select, insert, update, delete on public."SITE_PopNotifyConfig" to anon, authenticated, service_role;
@@ -136,9 +139,16 @@ begin
     perform public.pop_wa_send(v_url, v_key, cfg.instance_name, cfg.group_jid, msg);
     perform public.pop_wa_send(v_url, v_key, cfg.instance_name, cfg.private_number, msg);
 
-    -- privado do solicitante (se contato preenchido no pedido)
+    -- privado do solicitante: contato do pedido ou, se vazio, telefone do cadastro (SITE_Users)
     if cfg.notify_requester then
         priv := regexp_replace(coalesce(new.requester_contact, ''), '\D', '', 'g');
+        if length(priv) < 10 and new.created_by is not null then
+            select regexp_replace(coalesce(u.phone, ''), '\D', '', 'g') into priv
+              from public."SITE_Users" u
+             where u.id::text = new.created_by
+             limit 1;
+            priv := coalesce(priv, '');
+        end if;
         if length(priv) between 10 and 11 then
             priv := '55' || priv; -- DDD sem código do país → assume Brasil
         end if;
