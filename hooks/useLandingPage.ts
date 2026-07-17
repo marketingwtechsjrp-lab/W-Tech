@@ -90,7 +90,8 @@ export function useLandingPage(ownTemplate: string) {
                             instructor_name: courseData.instructor || 'Equipe W-Tech',
                             instructor_bio: 'Especialista certificado W-Tech.',
                             status: 'Published',
-                            template: ownTemplate,
+                            // LP virtual (curso sem LP salva) nasce no template padrão V9
+                            template: 'v9',
                             course: courseData
                         };
                     }

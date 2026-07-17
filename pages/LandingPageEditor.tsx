@@ -16,7 +16,8 @@ const lpPathOf = (t?: string) => (!t || t === 'v1' ? 'lp' : `lp${t.replace('v', 
 /** Nome de exibição de cada template (usado em badges/avisos). */
 const TEMPLATE_DISPLAY: Record<string, string> = {
     v1: 'Classic Dark', v2: 'Premium Cinematic', v3: 'White Clean', v4: 'Classic Light',
-    v5: 'Gold Brutal', v6: 'Carbon Racing', v7: 'Editorial Light', v8: 'Swiss Tech'
+    v5: 'Gold Brutal', v6: 'Carbon Racing', v7: 'Editorial Light', v8: 'Swiss Tech',
+    v9: 'Premium Immersive'
 };
 
 export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, onClose }) => {
@@ -101,7 +102,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         instructorImage: 'https://w-techbrasil.com.br/wp-content/uploads/2021/05/alex-crepaldi.jpg',
         whatsappNumber: '5511999999999',
         videoUrl: 'https://www.youtube.com/watch?v=RePclscnxDM',
-        template: 'v1',
+        template: 'v9',
         testimonials: DEFAULT_COURSE_TESTIMONIALS,
         scheduleModules: DEFAULT_SCHEDULE_MODULES
     });
@@ -441,8 +442,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                           features: ['Textura fibra de carbono', 'Faixa racing dourada', 'Stats de autoridade', 'Módulos em pit-lane (timeline)', 'Hero cinematográfico', 'CTA flutuante mobile'] },
                                         { id: 'v7', name: 'Editorial Light', tagline: 'Revista premium', isNew: true,
                                           features: ['Fundo creme + serifa', 'Benefícios numerados editoriais', 'Depoimentos em pull quote', 'Módulos estilo revista', 'Muito respiro visual', 'CTA flutuante mobile'] },
-                                        { id: 'v8', name: 'Swiss Tech', tagline: 'Grid técnico claro', isNew: true,
-                                          features: ['Grid suíço com bordas', 'Seções numeradas 01–08', 'Labels monoespaçados', 'Tabela de módulos', 'Precisão técnica', 'CTA flutuante mobile'] }
+                                        { id: 'v8', name: 'Swiss Tech', tagline: 'Grid técnico claro', isNew: false,
+                                          features: ['Grid suíço com bordas', 'Seções numeradas 01–08', 'Labels monoespaçados', 'Tabela de módulos', 'Precisão técnica', 'CTA flutuante mobile'] },
+                                        { id: 'v9', name: 'Premium Immersive', tagline: 'Padrão Lisboa — recomendado', isNew: true,
+                                          features: ['Hero cinematográfico com vídeo de fundo', 'Bento grid de benefícios com glow', 'Módulos numerados M01+', 'Instrutor em card gigante', 'Form glassmorphism + FAQ', 'Depoimentos em vídeo premium', 'CTA flutuante mobile'] }
                                     ] as const).map(t => (
                                         <button key={t.id} type="button" onClick={() => setLp({ ...lp, template: t.id })}
                                             className={`relative rounded-xl border-2 overflow-hidden text-left transition-all duration-200 w-full ${
@@ -691,7 +694,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                             ))}
                                                         </div>
                                                     </div>
-                                                ) : (
+                                                ) : t.id === 'v8' ? (
                                                     /* V8 mockup — swiss tech (branco/grid) */
                                                     <div className="w-full h-full bg-white select-none">
                                                         <div className="h-4 border-b-2 border-gray-900 flex items-center px-2 gap-1">
@@ -725,6 +728,51 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                                         <div className="p-1.5 flex justify-between items-center">
                                                             <div className="h-1.5 w-16 bg-gray-900" />
                                                             <div className="text-[7px] font-mono text-gray-400">/01</div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    /* V9 mockup — premium immersive (dark vermelho+dourado) */
+                                                    <div className="w-full h-full bg-[#050505] select-none">
+                                                        <div className="h-2 bg-gradient-to-r from-red-700 to-red-900 flex items-center justify-center">
+                                                            <div className="h-0.5 w-16 bg-white/60 rounded-full" />
+                                                        </div>
+                                                        <div className="relative h-[68px] bg-gradient-to-br from-zinc-800/60 to-zinc-950">
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent" />
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                                                                <div className="h-1.5 w-16 border border-yellow-600/50 bg-yellow-600/10 rounded-full" />
+                                                                <div className="h-3.5 w-24 bg-white/90 rounded-sm" />
+                                                                <div className="h-1.5 w-20 bg-white/30 rounded-full" />
+                                                                <div className="h-3 w-16 bg-red-600 rounded-sm shadow-[0_0_8px_rgba(230,0,0,0.7)] mt-0.5" />
+                                                            </div>
+                                                        </div>
+                                                        {/* bento grid */}
+                                                        <div className="p-1.5 grid grid-cols-3 gap-1">
+                                                            <div className="col-span-2 bg-zinc-900 border border-white/10 rounded-md p-1 space-y-0.5">
+                                                                <div className="w-2 h-2 bg-red-600/60 rounded-sm" />
+                                                                <div className="h-1 w-full bg-white/30 rounded-full" />
+                                                            </div>
+                                                            <div className="bg-zinc-900 border border-white/10 rounded-md p-1 space-y-0.5">
+                                                                <div className="w-2 h-2 bg-yellow-600/60 rounded-sm" />
+                                                                <div className="h-1 w-full bg-white/20 rounded-full" />
+                                                            </div>
+                                                            <div className="bg-zinc-900 border border-white/10 rounded-md p-1 space-y-0.5">
+                                                                <div className="w-2 h-2 bg-yellow-600/60 rounded-sm" />
+                                                                <div className="h-1 w-full bg-white/20 rounded-full" />
+                                                            </div>
+                                                            <div className="col-span-2 bg-gradient-to-br from-red-900/40 to-zinc-900 border border-red-800/40 rounded-md p-1 space-y-0.5">
+                                                                <div className="w-2 h-2 bg-red-600/60 rounded-sm" />
+                                                                <div className="h-1 w-full bg-white/30 rounded-full" />
+                                                            </div>
+                                                        </div>
+                                                        {/* módulos numerados */}
+                                                        <div className="px-1.5 space-y-1">
+                                                            {[1, 2].map(i => (
+                                                                <div key={i} className="flex gap-1.5 items-center border-t border-white/5 pt-1">
+                                                                    <div className="text-[8px] font-black text-red-800/70 italic">M0{i}</div>
+                                                                    <div className="h-1 flex-1 bg-white/25 rounded-full" />
+                                                                    <div className="h-1 w-4 bg-yellow-700/50 rounded-full" />
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 )}
@@ -767,8 +815,18 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                 </div>
 
                                 {/* Info box */}
-                                <div className={`rounded-xl p-4 border text-sm ${lp.template === 'v2' ? 'bg-yellow-50 border-yellow-200' : lp.template === 'v3' ? 'bg-blue-50 border-blue-200' : lp.template === 'v4' ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
-                                    {lp.template === 'v2' ? (
+                                <div className={`rounded-xl p-4 border text-sm ${lp.template === 'v9' ? 'bg-red-50 border-red-200' : lp.template === 'v2' ? 'bg-yellow-50 border-yellow-200' : lp.template === 'v3' ? 'bg-blue-50 border-blue-200' : lp.template === 'v4' ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
+                                    {lp.template === 'v9' ? (
+                                        <div className="flex gap-3">
+                                            <Sparkles size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                                <p className="font-black text-red-800 mb-0.5">Template Premium Immersive selecionado (padrão recomendado)</p>
+                                                <p className="text-red-700 text-xs leading-relaxed">
+                                                    O padrão das LPs de Lisboa: hero cinematográfico (usa o <strong>Vídeo</strong> como fundo, ou a imagem de capa), bento grid de benefícios, módulos numerados, instrutor em destaque e formulário glassmorphism. O <strong>preço só aparece com o Checkout Automático ativo</strong> no curso. Clique em <strong>Salvar Página</strong> para confirmar.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : lp.template === 'v2' ? (
                                         <div className="flex gap-3">
                                             <Sparkles size={16} className="text-yellow-600 flex-shrink-0 mt-0.5" />
                                             <div>
