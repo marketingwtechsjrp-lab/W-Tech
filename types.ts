@@ -206,7 +206,7 @@ export interface LandingPage {
   heroSecondaryImage?: string;
   quizEnabled?: boolean; // Mapped from quiz_enabled
   fakeAlertsEnabled?: boolean; // Mapped from fake_alerts_enabled
-  template?: 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7' | 'v8'; // Layout — v1 Classic Dark, v2 Premium Cinematic, v3 White Clean, v4 Classic Light, v5 Gold Brutal, v6 Carbon Racing, v7 Editorial Light, v8 Swiss Tech
+  template?: 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7' | 'v8' | 'v9'; // Layout — v1 Classic Dark, v2 Premium Cinematic, v3 White Clean, v4 Classic Light, v5 Gold Brutal, v6 Carbon Racing, v7 Editorial Light, v8 Swiss Tech, v9 Premium Immersive
   status?: 'Draft' | 'Published'; // Publication status
 }
 

@@ -27,6 +27,7 @@ const LandingPageViewerV5 = lazy(() => import('./pages/LandingPageViewerV5'));
 const LandingPageViewerV6 = lazy(() => import('./pages/LandingPageViewerV6'));
 const LandingPageViewerV7 = lazy(() => import('./pages/LandingPageViewerV7'));
 const LandingPageViewerV8 = lazy(() => import('./pages/LandingPageViewerV8'));
+const LandingPageViewerV9 = lazy(() => import('./pages/LandingPageViewerV9'));
 const HomeP2 = lazy(() => import('./pages/HomeP2'));
 const Home3 = lazy(() => import('./pages/Home3'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
@@ -142,6 +143,7 @@ const App = () => {
                     <Route path="/lp6/:slug" element={<LandingPageViewerV6 />} />
                     <Route path="/lp7/:slug" element={<LandingPageViewerV7 />} />
                     <Route path="/lp8/:slug" element={<LandingPageViewerV8 />} />
+                    <Route path="/lp9/:slug" element={<LandingPageViewerV9 />} />
 
                     {/* Legal Pages */}
                     <Route path="/termos" element={<Termos />} />
