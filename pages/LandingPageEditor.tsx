@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabaseClient';
 import { Course, LandingPage } from '../types';
 import { DEFAULT_COURSE_TESTIMONIALS, getYouTubeId } from '../lib/testimonials';
 import { DEFAULT_SCHEDULE_MODULES, scheduleModulesToText, ScheduleModule } from '../lib/schedule';
-import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star, CalendarClock, Target, Trophy } from 'lucide-react';
+import { LP_SECTIONS, DEFAULT_SECTION_ORDER, resolveSectionOrder, LPSectionConfig } from '../lib/lpSections';
+import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star, CalendarClock, Target, Trophy, GripVertical, Eye, EyeOff, RotateCcw } from 'lucide-react';
 
 interface LandingPageEditorProps {
     course: Course;
@@ -71,7 +72,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
             setLaunching(false);
         }
     };
-    const [activeTab, setActiveTab] = useState<'template' | 'hero' | 'content' | 'modules' | 'schedule' | 'instructor' | 'testimonials'>('template');
+    const [activeTab, setActiveTab] = useState<'template' | 'sections' | 'hero' | 'content' | 'modules' | 'schedule' | 'instructor' | 'testimonials'>('template');
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
     
     // Initial State Template
     const [lp, setLp] = useState<Partial<LandingPage>>({
@@ -104,7 +106,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         videoUrl: 'https://www.youtube.com/watch?v=RePclscnxDM',
         template: 'v9',
         testimonials: DEFAULT_COURSE_TESTIMONIALS,
-        scheduleModules: DEFAULT_SCHEDULE_MODULES
+        scheduleModules: DEFAULT_SCHEDULE_MODULES,
+        sectionOrder: DEFAULT_SECTION_ORDER.map(s => ({ ...s }))
     });
 
     useEffect(() => {
@@ -139,7 +142,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     : DEFAULT_COURSE_TESTIMONIALS,
                 scheduleModules: (data.schedule_modules && data.schedule_modules.length > 0)
                     ? data.schedule_modules
-                    : DEFAULT_SCHEDULE_MODULES
+                    : DEFAULT_SCHEDULE_MODULES,
+                sectionOrder: resolveSectionOrder(data.section_order)
             });
         }
         setLoading(false);
@@ -168,7 +172,8 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     fake_alerts_enabled: lp.fakeAlertsEnabled,
                     template: lp.template || 'v1',
                     testimonials: lp.testimonials || [],
-                    schedule_modules: lp.scheduleModules || []
+                    schedule_modules: lp.scheduleModules || [],
+                    section_order: lp.sectionOrder || null
                 }, { onConflict: 'course_id' })
                 .select()
                 .single();
@@ -336,6 +341,29 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         setLp({ ...lp, scheduleModules: list });
     };
 
+    // Seções (ordem/visibilidade — template V9) Handlers
+    const sectionList: LPSectionConfig[] = lp.sectionOrder && lp.sectionOrder.length > 0
+        ? lp.sectionOrder
+        : DEFAULT_SECTION_ORDER.map(s => ({ ...s }));
+
+    const moveSection = (from: number, to: number) => {
+        if (to < 0 || to >= sectionList.length || from === to) return;
+        const list = sectionList.map(s => ({ ...s }));
+        const [item] = list.splice(from, 1);
+        list.splice(to, 0, item);
+        setLp({ ...lp, sectionOrder: list });
+    };
+
+    const toggleSection = (index: number) => {
+        const list = sectionList.map(s => ({ ...s }));
+        list[index].enabled = !list[index].enabled;
+        setLp({ ...lp, sectionOrder: list });
+    };
+
+    const resetSections = () => {
+        setLp({ ...lp, sectionOrder: DEFAULT_SECTION_ORDER.map(s => ({ ...s })) });
+    };
+
     const loadDefaultSchedule = () => {
         if (lp.scheduleModules && lp.scheduleModules.length > 0
             && !window.confirm('Substituir o cronograma atual pelo modelo padrão da W-Tech?')) return;
@@ -392,6 +420,14 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                             <span className="flex-1">Template</span>
                             <span className="text-[9px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                                 <Sparkles size={7} />{(lp.template || 'v1').toUpperCase()}
+                            </span>
+                        </button>
+                        <button onClick={() => setActiveTab('sections')}
+                            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${activeTab === 'sections' ? 'bg-black text-white shadow-lg' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <GripVertical size={18} />
+                            <span className="flex-1">Seções</span>
+                            <span className="text-[9px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                <Sparkles size={7} />V9
                             </span>
                         </button>
                         <div className="h-px bg-gray-200 my-1" />
@@ -884,6 +920,79 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                             Visualizar {(lp.template || 'v1').toUpperCase()}
                                         </a>
                                     )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── TAB SEÇÕES (drag & drop — template V9) ── */}
+                        {activeTab === 'sections' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-xl font-bold border-b pb-2 mb-1">Ordem das Seções</h3>
+                                        <p className="text-sm text-gray-500">
+                                            Arraste para reordenar e use o olho para mostrar/ocultar cada seção.
+                                            Vale para o template <strong>V9 Premium Immersive</strong>. Hero, barra de confiança e formulário são fixos.
+                                        </p>
+                                    </div>
+                                    <button type="button" onClick={resetSections}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-gray-600 border border-gray-200 hover:bg-gray-100 transition-colors shrink-0">
+                                        <RotateCcw size={13} /> Restaurar padrão
+                                    </button>
+                                </div>
+
+                                {(lp.template || 'v9') !== 'v9' && (
+                                    <div className="rounded-xl p-4 border bg-yellow-50 border-yellow-200 text-xs text-yellow-800">
+                                        ⚠️ O template atual é <strong>{TEMPLATE_DISPLAY[lp.template || 'v1']}</strong>. A ordem abaixo só é aplicada quando o template <strong>V9</strong> estiver selecionado.
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    {sectionList.map((sec, index) => {
+                                        const meta = LP_SECTIONS.find(s => s.id === sec.id);
+                                        if (!meta) return null;
+                                        return (
+                                            <div
+                                                key={sec.id}
+                                                draggable
+                                                onDragStart={() => setDragIndex(index)}
+                                                onDragOver={(e) => e.preventDefault()}
+                                                onDrop={() => { if (dragIndex !== null) moveSection(dragIndex, index); setDragIndex(null); }}
+                                                onDragEnd={() => setDragIndex(null)}
+                                                className={`flex items-center gap-3 p-4 rounded-xl border bg-white transition-all cursor-grab active:cursor-grabbing select-none ${
+                                                    dragIndex === index ? 'opacity-40 border-dashed border-yellow-400' : 'border-gray-200 hover:border-yellow-400/70 hover:shadow-sm'
+                                                } ${!sec.enabled ? 'bg-gray-50' : ''}`}
+                                            >
+                                                <GripVertical size={18} className="text-gray-300 shrink-0" />
+                                                <span className="w-7 h-7 rounded-lg bg-gray-900 text-white text-xs font-black flex items-center justify-center shrink-0">
+                                                    {index + 1}
+                                                </span>
+                                                <div className={`flex-1 min-w-0 ${!sec.enabled ? 'opacity-40' : ''}`}>
+                                                    <div className="font-bold text-sm text-gray-900">{meta.label}</div>
+                                                    <div className="text-[11px] text-gray-400 truncate">{meta.hint}</div>
+                                                </div>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <button type="button" onClick={() => moveSection(index, index - 1)} disabled={index === 0}
+                                                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 disabled:opacity-25 transition-colors" title="Mover para cima">
+                                                        <ArrowUp size={14} />
+                                                    </button>
+                                                    <button type="button" onClick={() => moveSection(index, index + 1)} disabled={index === sectionList.length - 1}
+                                                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 disabled:opacity-25 transition-colors" title="Mover para baixo">
+                                                        <ArrowDown size={14} />
+                                                    </button>
+                                                    <button type="button" onClick={() => toggleSection(index)}
+                                                        className={`p-1.5 rounded transition-colors ${sec.enabled ? 'text-green-600 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                                        title={sec.enabled ? 'Ocultar seção' : 'Mostrar seção'}>
+                                                        {sec.enabled ? <Eye size={15} /> : <EyeOff size={15} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="rounded-xl p-4 border bg-gray-50 border-gray-200 text-xs text-gray-500">
+                                    💡 A ordem é salva junto com a página (<strong>Salvar Página</strong>). Seções sem conteúdo (ex.: depoimentos vazios) não aparecem mesmo habilitadas.
                                 </div>
                             </div>
                         )}
