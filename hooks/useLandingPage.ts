@@ -148,6 +148,7 @@ export function useLandingPage(ownTemplate: string) {
                 fakeAlertsEnabled: lpData.fake_alerts_enabled,
                 testimonials: resolveCourseTestimonials(lpData.testimonials),
                 scheduleModules: resolveScheduleModules(lpData.schedule_modules),
+                sectionOrder: lpData.section_order,
                 course: mappedCourse,
                 courseId: lpData.course_id
             };
