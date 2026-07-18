@@ -22,6 +22,10 @@ import {
     fetchContentPosts, saveContentPost, deleteContentPost,
 } from '../../../lib/contentPlanner';
 import { generateWeekSuggestions, generateDetailedPost } from '../../../lib/contentPlannerAI';
+import {
+    InstagramPostMetric, fetchInstagramMetrics, topByEngagement,
+    summarizeByFormat, engagementRate,
+} from '../../../lib/instagramMetrics';
 
 // ─── Metadados visuais ───────────────────────────────────────────────────────
 
@@ -270,6 +274,84 @@ const PostEditor = ({ post, onClose, onSaved }: EditorProps) => {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// ─── Radar do Instagram (métricas reais → calibram a IA) ─────────────────────
+
+const TYPE_LABEL: Record<string, string> = {
+    REELS: '🎦 Reels',
+    IMAGE: '📃 Foto',
+    CAROUSEL_ALBUM: '📚 Carrossel',
+    VIDEO: '🎦 Vídeo',
+};
+
+const InstagramRadar = () => {
+    const [metrics, setMetrics] = useState<InstagramPostMetric[]>([]);
+    const [open, setOpen] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        fetchInstagramMetrics(90)
+            .then(setMetrics)
+            .catch(() => setMetrics([]))
+            .finally(() => setLoaded(true));
+    }, []);
+
+    if (!loaded || metrics.length === 0) return null;
+
+    const formats = summarizeByFormat(metrics);
+    const top = topByEngagement(metrics, 5);
+    const best = formats[0];
+    const worst = formats[formats.length - 1];
+
+    return (
+        <div className="mb-4 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-1)]">
+            <button onClick={() => setOpen(!open)}
+                className="flex w-full flex-wrap items-center justify-between gap-2 p-4 text-left">
+                <span className="flex items-center gap-2 text-sm font-black text-[var(--admin-text-primary)]">
+                    <TrendingUp size={16} className="text-wtech-gold" />
+                    Radar do Instagram — últimos 90 dias ({metrics.length} posts)
+                </span>
+                <span className="text-xs font-bold text-[var(--admin-text-secondary)]">
+                    {best && worst && best.media_type !== worst.media_type
+                        ? `${TYPE_LABEL[best.media_type] || best.media_type} engaja ${worst.avg_engagement > 0 ? Math.round(best.avg_engagement / worst.avg_engagement) : '?' }x mais que ${TYPE_LABEL[worst.media_type] || worst.media_type} · `
+                        : ''}
+                    {open ? 'ocultar ▲' : 'ver detalhes ▼'}
+                </span>
+            </button>
+            {open && (
+                <div className="border-t border-[var(--admin-border)] p-4">
+                    {/* Médias por formato */}
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {formats.map(f => (
+                            <span key={f.media_type}
+                                className="rounded-full border border-[var(--admin-border)] px-3 py-1 text-xs font-bold text-[var(--admin-text-primary)]">
+                                {TYPE_LABEL[f.media_type] || f.media_type}: {f.avg_engagement} eng. médio · {f.avg_reach} alcance · ER {f.avg_er.toFixed(1)}% ({f.posts} posts)
+                            </span>
+                        ))}
+                    </div>
+                    {/* Top posts */}
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-secondary)]">Top 5 por engajamento — candidatos a reciclagem</p>
+                    <div className="space-y-1.5">
+                        {top.map(m => (
+                            <a key={m.media_id} href={m.permalink || '#'} target="_blank" rel="noreferrer"
+                                className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg border border-[var(--admin-border)] px-3 py-2 text-xs hover:border-wtech-gold">
+                                <span className="font-bold text-[var(--admin-text-primary)]">
+                                    {TYPE_LABEL[m.media_type]?.split(' ')[0]} {(m.caption || 'sem legenda').slice(0, 60)}{(m.caption || '').length > 60 ? '…' : ''}
+                                </span>
+                                <span className="text-[var(--admin-text-secondary)]">
+                                    {m.posted_at.slice(0, 10).split('-').reverse().join('/')} · eng <b className="text-emerald-500">{m.engagement}</b> · alcance {m.reach} · ER {engagementRate(m).toFixed(1)}% · 💾{m.saved ?? 0} · ↗️{m.shares ?? 0}
+                                </span>
+                            </a>
+                        ))}
+                    </div>
+                    <p className="mt-3 text-[11px] text-[var(--admin-text-secondary)]">
+                        Estes dados são injetados automaticamente na geração por IA (semana e post detalhado) para priorizar temáticas comprovadas.
+                    </p>
+                </div>
+            )}
         </div>
     );
 };
@@ -808,6 +890,9 @@ const ContentPlannerView = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Radar de desempenho real do Instagram */}
+            <InstagramRadar />
 
             {/* Legenda de status */}
             <div className="mb-4 flex flex-wrap gap-2">
