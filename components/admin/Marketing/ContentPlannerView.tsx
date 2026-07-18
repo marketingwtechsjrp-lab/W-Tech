@@ -26,6 +26,7 @@ import {
     InstagramPostMetric, fetchInstagramMetrics, topByEngagement,
     summarizeByFormat, engagementRate,
 } from '../../../lib/instagramMetrics';
+import { RadarItem, fetchRadarItems, markRadarUsed } from '../../../lib/contentRadar';
 
 // ─── Metadados visuais ───────────────────────────────────────────────────────
 
@@ -274,6 +275,106 @@ const PostEditor = ({ post, onClose, onSaved }: EditorProps) => {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// ─── Radar de Pauta (varredura semanal → corridas, mercado e ideias) ─────────
+
+const RADAR_GROUPS: { kind: RadarItem['kind']; label: string; emoji: string }[] = [
+    { kind: 'corrida', label: 'Corridas da semana', emoji: '🏁' },
+    { kind: 'concorrente', label: 'Movimento do mercado', emoji: '👀' },
+    { kind: 'ideia', label: 'Ideias prontas', emoji: '💡' },
+];
+
+const RadarDePauta = ({ onCreateFromItem }: { onCreateFromItem: (item: RadarItem) => void }) => {
+    const [items, setItems] = useState<RadarItem[]>([]);
+    const [open, setOpen] = useState(true);
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        fetchRadarItems(2)
+            .then(all => {
+                // Exibe apenas o radar mais recente
+                const latest = all[0]?.radar_week;
+                setItems(latest ? all.filter(i => i.radar_week === latest) : []);
+            })
+            .catch(() => setItems([]))
+            .finally(() => setLoaded(true));
+    }, []);
+
+    if (!loaded || items.length === 0) return null;
+
+    const weekBR = items[0].radar_week.split('-').reverse().join('/');
+    const pending = items.filter(i => !i.used).length;
+
+    return (
+        <div className="mb-4 rounded-xl border border-wtech-gold/40 bg-[var(--admin-surface-1)]">
+            <button onClick={() => setOpen(!open)}
+                className="flex w-full flex-wrap items-center justify-between gap-2 p-4 text-left">
+                <span className="flex items-center gap-2 text-sm font-black text-[var(--admin-text-primary)]">
+                    📡 Radar de Pauta — semana de {weekBR}
+                </span>
+                <span className="text-xs font-bold text-[var(--admin-text-secondary)]">
+                    {pending > 0 ? `${pending} pauta${pending > 1 ? 's' : ''} sem aproveitar · ` : 'tudo aproveitado ✓ · '}
+                    {open ? 'ocultar ▲' : 'ver ▼'}
+                </span>
+            </button>
+            {open && (
+                <div className="space-y-4 border-t border-[var(--admin-border)] p-4">
+                    {RADAR_GROUPS.map(group => {
+                        const groupItems = items.filter(i => i.kind === group.kind);
+                        if (groupItems.length === 0) return null;
+                        return (
+                            <div key={group.kind}>
+                                <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-secondary)]">
+                                    {group.emoji} {group.label}
+                                </p>
+                                <div className="space-y-1.5">
+                                    {groupItems.map(item => (
+                                        <div key={item.id}
+                                            className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2 ${
+                                                item.used ? 'border-[var(--admin-border)] opacity-50' : 'border-[var(--admin-border)]'
+                                            }`}>
+                                            <div className="min-w-0 text-xs">
+                                                <p className="font-bold text-[var(--admin-text-primary)]">
+                                                    {item.title}
+                                                    {item.event_date && (
+                                                        <span className="ml-2 rounded bg-wtech-gold px-1.5 py-0.5 text-[10px] font-black text-black">
+                                                            {item.event_date.split('-').reverse().join('/')}
+                                                        </span>
+                                                    )}
+                                                    {item.has_pilots && (
+                                                        <span className="ml-2 rounded-full border border-red-500/50 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-500">
+                                                            pilotos participam — preparar post de resultado
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                {item.summary && (
+                                                    <p className="mt-0.5 leading-relaxed text-[var(--admin-text-secondary)]">{item.summary}</p>
+                                                )}
+                                                {item.source && (
+                                                    <a href={item.source} target="_blank" rel="noreferrer"
+                                                        className="mt-0.5 inline-block font-bold text-wtech-gold hover:underline">fonte ↗</a>
+                                                )}
+                                            </div>
+                                            <button onClick={() => onCreateFromItem(item)} disabled={item.used}
+                                                title={item.used ? 'Já virou card' : 'Criar card no calendário'}
+                                                className="flex shrink-0 items-center gap-1 rounded-lg border border-[var(--admin-border)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--admin-text-primary)] hover:border-wtech-gold hover:text-wtech-gold disabled:opacity-40">
+                                                {item.used ? <Check size={12} /> : <Plus size={12} />}
+                                                {item.used ? 'no calendário' : 'criar card'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    <p className="text-[11px] text-[var(--admin-text-secondary)]">
+                        Atualizado automaticamente toda segunda de manhã: corridas do fim de semana, movimento de concorrentes/marcas e ideias calibradas pelas métricas.
+                    </p>
+                </div>
+            )}
         </div>
     );
 };
@@ -804,6 +905,9 @@ const ContentPlannerView = () => {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
     const [editing, setEditing] = useState<ContentPostInput | null>(null);
+    // Item do Radar de Pauta que originou o card em edição — marcado como
+    // aproveitado quando o card é salvo
+    const [editingRadarId, setEditingRadarId] = useState<string | null>(null);
     const [viewing, setViewing] = useState<ContentPost | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState('');
@@ -850,6 +954,22 @@ const ContentPlannerView = () => {
         }
     };
 
+    /** Item do Radar de Pauta → editor de card pré-preenchido. */
+    const handleCreateFromRadar = (item: RadarItem) => {
+        const base = emptyPost(item.event_date || toISO(new Date()));
+        setEditing({
+            ...base,
+            title: item.title.toUpperCase().slice(0, 80),
+            content: item.summary || item.title,
+            category: item.kind === 'corrida' ? 'REAL TIME' : 'PAUTA FRIA',
+            editorial: item.kind === 'corrida' ? 'Giro de corrida' : '',
+            format: (['video', 'stories', 'carrossel', 'estatico'].includes(item.suggested_format || '')
+                ? item.suggested_format : 'video') as ContentPostInput['format'],
+            reference: item.source || '',
+        });
+        setEditingRadarId(item.id);
+    };
+
     const todayISO = toISO(new Date());
     const monthLabel = anchor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     const shiftMonth = (delta: number) =>
@@ -890,6 +1010,9 @@ const ContentPlannerView = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Radar de Pauta (varredura semanal) */}
+            <RadarDePauta onCreateFromItem={handleCreateFromRadar} />
 
             {/* Radar de desempenho real do Instagram */}
             <InstagramRadar />
@@ -1001,8 +1124,16 @@ const ContentPlannerView = () => {
             {editing && (
                 <PostEditor
                     post={editing}
-                    onClose={() => setEditing(null)}
-                    onSaved={() => { setEditing(null); load(); }}
+                    onClose={() => { setEditing(null); setEditingRadarId(null); }}
+                    onSaved={() => {
+                        // Card veio do Radar de Pauta → marca a pauta como aproveitada
+                        if (editingRadarId) {
+                            markRadarUsed(editingRadarId).catch(() => { /* não-fatal */ });
+                            setEditingRadarId(null);
+                        }
+                        setEditing(null);
+                        load();
+                    }}
                 />
             )}
 
