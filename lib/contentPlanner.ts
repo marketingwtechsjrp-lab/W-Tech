@@ -29,6 +29,65 @@ export type ContentPostCategory =
 
 export type ContentNetwork = 'INSTA' | 'FACE' | 'TIKTOK' | 'YB' | 'WHATS';
 
+// ─── Detalhamento de post gerado por IA (coluna ai_detail, JSONB) ────────────
+
+/** Cena de um roteiro de Reels: tempo, ação/enquadramento, fala e texto na tela. */
+export interface AIDetailScene {
+    tempo: string;
+    acao: string;
+    fala: string;
+    texto_tela?: string;
+}
+
+/** Slide de um carrossel: título, texto e direção de arte. */
+export interface AIDetailSlide {
+    n: number;
+    titulo: string;
+    texto: string;
+    arte?: string;
+}
+
+/** Tela de uma sequência de stories. */
+export interface AIDetailTela {
+    n: number;
+    conteudo: string;
+    sticker?: string;
+}
+
+/** Nota 0–10 com justificativa (engajamento ou conversão). */
+export interface AIDetailScore {
+    nota: number;
+    justificativa: string;
+    /** Gatilhos de engajamento (salvamento, comentário, compartilhamento…). */
+    gatilhos?: string[];
+    /** Ângulo de funil da conversão (curso presencial, ferramenta, autoridade…). */
+    funil?: string;
+}
+
+/** Post detalhado gerado pela IA — o conteúdo pronto para produzir. */
+export interface PostAIDetail {
+    tipo: 'reels' | 'carrossel' | 'estatico' | 'stories';
+    /** Frase de abertura que segura os 3 primeiros segundos. */
+    gancho?: string;
+    engajamento?: AIDetailScore;
+    conversao?: AIDetailScore;
+    publico?: string;
+    melhor_horario?: string;
+    /** Roteiro cena a cena (tipo reels). */
+    cenas?: AIDetailScene[];
+    /** Slides (tipo carrossel). */
+    slides?: AIDetailSlide[];
+    /** Direção de foto (tipo estatico). */
+    foto?: { direcao?: string; texto_imagem?: string };
+    /** Sequência de telas (tipo stories). */
+    telas?: AIDetailTela[];
+    cta?: string;
+    legenda?: string;
+    hashtags?: string;
+    trilha?: string;
+    checklist?: string[];
+}
+
 export interface ContentPost {
     id: string;
     title: string;
@@ -46,6 +105,8 @@ export interface ContentPost {
     reference: string | null;
     obs: string | null;
     paid_traffic: boolean;
+    /** Post detalhado gerado por IA (roteiro/slides/foto + notas) — null até gerar. */
+    ai_detail: PostAIDetail | null;
     created_at: string;
     updated_at: string;
 }
