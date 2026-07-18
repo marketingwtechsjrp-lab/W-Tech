@@ -27,6 +27,10 @@ import {
     summarizeByFormat, engagementRate,
 } from '../../../lib/instagramMetrics';
 import { RadarItem, fetchRadarItems, markRadarUsed } from '../../../lib/contentRadar';
+import {
+    InboxItem, InboxKind, INBOX_KIND_META,
+    fetchPendingInbox, addInboxItem, markInboxProcessed,
+} from '../../../lib/contentInbox';
 
 // ─── Metadados visuais ───────────────────────────────────────────────────────
 
@@ -275,6 +279,127 @@ const PostEditor = ({ post, onClose, onSaved }: EditorProps) => {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// ─── Caixinha de Pautas (equipe registra; a IA transforma em card) ───────────
+
+interface CaixinhaProps {
+    onCreateFromInbox: (item: InboxItem) => void;
+}
+
+const CaixinhaDePautas = ({ onCreateFromInbox }: CaixinhaProps) => {
+    const [items, setItems] = useState<InboxItem[]>([]);
+    const [open, setOpen] = useState(false);
+    const [kind, setKind] = useState<InboxKind>('duvida');
+    const [text, setText] = useState('');
+    const [author, setAuthor] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const load = useCallback(() => {
+        fetchPendingInbox().then(setItems).catch(() => setItems([]));
+    }, []);
+
+    useEffect(() => { load(); }, [load]);
+
+    const handleAdd = async () => {
+        if (!text.trim()) return;
+        setSaving(true);
+        try {
+            await addInboxItem({ kind, text, author });
+            setText('');
+            load();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleArchive = async (id: string) => {
+        await markInboxProcessed(id).catch(() => { /* não-fatal */ });
+        load();
+    };
+
+    return (
+        <div className="mb-4 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-1)]">
+            <button onClick={() => setOpen(!open)}
+                className="flex w-full flex-wrap items-center justify-between gap-2 p-4 text-left">
+                <span className="flex items-center gap-2 text-sm font-black text-[var(--admin-text-primary)]">
+                    📥 Caixinha de Pautas — dúvidas, ideias e conhecimento da equipe
+                </span>
+                <span className="text-xs font-bold text-[var(--admin-text-secondary)]">
+                    {items.length > 0 ? `${items.length} pendente${items.length > 1 ? 's' : ''} · ` : ''}
+                    {open ? 'ocultar ▲' : 'abrir ▼'}
+                </span>
+            </button>
+            {open && (
+                <div className="space-y-4 border-t border-[var(--admin-border)] p-4">
+                    {/* Registro rápido — pensado pra qualquer um da equipe usar do celular */}
+                    <div className="rounded-xl border border-dashed border-[var(--admin-border)] p-3">
+                        <div className="mb-2 flex flex-wrap gap-2">
+                            {(Object.keys(INBOX_KIND_META) as InboxKind[]).map(k => (
+                                <button key={k} type="button" onClick={() => setKind(k)}
+                                    className={`rounded-full border px-3 py-1 text-xs font-bold transition-colors ${
+                                        kind === k
+                                            ? 'border-wtech-gold bg-wtech-gold/15 text-[var(--admin-text-primary)]'
+                                            : 'border-[var(--admin-border)] text-gray-500 hover:border-gray-400'
+                                    }`}>
+                                    {INBOX_KIND_META[k].emoji} {INBOX_KIND_META[k].label}
+                                </button>
+                            ))}
+                        </div>
+                        <textarea value={text} onChange={e => setText(e.target.value)} rows={2}
+                            placeholder={kind === 'duvida'
+                                ? 'Ex.: "Cliente perguntou se dá pra reaproveitar o óleo da suspensão…"'
+                                : kind === 'conhecimento'
+                                    ? 'Ex.: "Fixador 60mm + Chave Y atendem a mesma Showa 47 da CRF450"'
+                                    : 'Ex.: "Tem tal peça chegando, precisamos de vídeo dela"'}
+                            className={inputCls} />
+                        <div className="mt-2 flex items-center gap-2">
+                            <input value={author} onChange={e => setAuthor(e.target.value)}
+                                placeholder="Quem registrou? (opcional)"
+                                className={`${inputCls} max-w-[220px]`} />
+                            <button onClick={handleAdd} disabled={saving || !text.trim()}
+                                className="flex items-center gap-1.5 rounded-lg bg-black px-4 py-2 text-xs font-bold text-white shadow hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-black">
+                                {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Registrar pauta
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Pendentes */}
+                    {items.length > 0 && (
+                        <div className="space-y-1.5">
+                            {items.map(item => (
+                                <div key={item.id}
+                                    className="flex items-start justify-between gap-3 rounded-lg border border-[var(--admin-border)] px-3 py-2">
+                                    <div className="min-w-0 text-xs">
+                                        <p className="text-[var(--admin-text-primary)]">
+                                            <span className="font-bold">{INBOX_KIND_META[item.kind]?.emoji} {INBOX_KIND_META[item.kind]?.label}</span>
+                                            {item.author && <span className="text-[var(--admin-text-secondary)]"> · {item.author}</span>}
+                                        </p>
+                                        <p className="mt-0.5 leading-relaxed text-[var(--admin-text-secondary)]">{item.text}</p>
+                                    </div>
+                                    <div className="flex shrink-0 gap-1.5">
+                                        <button onClick={() => onCreateFromInbox(item)}
+                                            title="Criar card no calendário"
+                                            className="flex items-center gap-1 rounded-lg border border-[var(--admin-border)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--admin-text-primary)] hover:border-wtech-gold hover:text-wtech-gold">
+                                            <Plus size={12} /> criar card
+                                        </button>
+                                        <button onClick={() => handleArchive(item.id)}
+                                            title="Arquivar sem criar card"
+                                            className="rounded-lg border border-[var(--admin-border)] px-2 py-1.5 text-[11px] font-bold text-gray-500 hover:bg-gray-500/10">
+                                            <Check size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <p className="text-[11px] text-[var(--admin-text-secondary)]">
+                        Qualquer um da equipe pode registrar aqui — dúvidas viram "Dúvida dos Seguidores", conhecimento técnico do Serginho vira compilado, e a IA usa tudo na geração da semana.
+                    </p>
+                </div>
+            )}
         </div>
     );
 };
@@ -655,10 +780,12 @@ const PostDetailView = ({ post, onClose, onEdit, onChanged }: PostDetailViewProp
                                 </div>
                             )}
 
-                            {/* Roteiro do Reels */}
-                            {detail.tipo === 'reels' && detail.cenas && detail.cenas.length > 0 && (
+                            {/* Roteiro do Reels ou capítulos do YouTube */}
+                            {(detail.tipo === 'reels' || detail.tipo === 'youtube') && detail.cenas && detail.cenas.length > 0 && (
                                 <div>
-                                    <SectionTitle icon={Clapperboard}>Roteiro do Reels — cena a cena</SectionTitle>
+                                    <SectionTitle icon={Clapperboard}>
+                                        {detail.tipo === 'youtube' ? 'Roteiro do vídeo (YouTube) — capítulos' : 'Roteiro do Reels — cena a cena'}
+                                    </SectionTitle>
                                     <div className="space-y-2">
                                         {detail.cenas.map((cena, i) => (
                                             <div key={i} className="rounded-xl border border-[var(--admin-border)] p-4">
@@ -736,6 +863,14 @@ const PostDetailView = ({ post, onClose, onEdit, onChanged }: PostDetailViewProp
                                     </div>
                                     <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[var(--admin-text-primary)]">{detail.legenda}</p>
                                     {detail.hashtags && <p className="mt-2 text-xs font-bold text-wtech-gold">{detail.hashtags}</p>}
+                                </div>
+                            )}
+
+                            {/* Variação por rede (TikTok fala com outro público) */}
+                            {detail.variacoes?.tiktok && (
+                                <div className="rounded-xl border border-[var(--admin-border)] p-4">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--admin-text-secondary)]">Versão TikTok — como adaptar</span>
+                                    <p className="mt-1 text-sm leading-relaxed text-[var(--admin-text-primary)]">{detail.variacoes.tiktok}</p>
                                 </div>
                             )}
 
@@ -908,6 +1043,8 @@ const ContentPlannerView = () => {
     // Item do Radar de Pauta que originou o card em edição — marcado como
     // aproveitado quando o card é salvo
     const [editingRadarId, setEditingRadarId] = useState<string | null>(null);
+    // Idem para pautas vindas da Caixinha
+    const [editingInboxId, setEditingInboxId] = useState<string | null>(null);
     const [viewing, setViewing] = useState<ContentPost | null>(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState('');
@@ -970,6 +1107,21 @@ const ContentPlannerView = () => {
         setEditingRadarId(item.id);
     };
 
+    /** Pauta da Caixinha → editor de card pré-preenchido. */
+    const handleCreateFromInbox = (item: InboxItem) => {
+        const base = emptyPost(toISO(new Date()));
+        setEditing({
+            ...base,
+            title: item.kind === 'duvida' ? 'DÚVIDA DOS SEGUIDORES' : item.text.toUpperCase().slice(0, 60),
+            content: item.text,
+            category: item.kind === 'conhecimento' ? 'ENDOMARKETING' : 'PAUTA FRIA',
+            editorial: item.kind === 'duvida' ? 'Dúvidas dos seguidores'
+                : item.kind === 'conhecimento' ? 'Peça do dia — Problemas com…' : '',
+            obs: item.author ? `Pauta registrada por ${item.author}` : '',
+        });
+        setEditingInboxId(item.id);
+    };
+
     const todayISO = toISO(new Date());
     const monthLabel = anchor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     const shiftMonth = (delta: number) =>
@@ -1013,6 +1165,9 @@ const ContentPlannerView = () => {
 
             {/* Radar de Pauta (varredura semanal) */}
             <RadarDePauta onCreateFromItem={handleCreateFromRadar} />
+
+            {/* Caixinha de Pautas (equipe) */}
+            <CaixinhaDePautas onCreateFromInbox={handleCreateFromInbox} />
 
             {/* Radar de desempenho real do Instagram */}
             <InstagramRadar />
@@ -1124,12 +1279,16 @@ const ContentPlannerView = () => {
             {editing && (
                 <PostEditor
                     post={editing}
-                    onClose={() => { setEditing(null); setEditingRadarId(null); }}
+                    onClose={() => { setEditing(null); setEditingRadarId(null); setEditingInboxId(null); }}
                     onSaved={() => {
-                        // Card veio do Radar de Pauta → marca a pauta como aproveitada
+                        // Card veio do Radar ou da Caixinha → marca a pauta como aproveitada
                         if (editingRadarId) {
                             markRadarUsed(editingRadarId).catch(() => { /* não-fatal */ });
                             setEditingRadarId(null);
+                        }
+                        if (editingInboxId) {
+                            markInboxProcessed(editingInboxId).catch(() => { /* não-fatal */ });
+                            setEditingInboxId(null);
                         }
                         setEditing(null);
                         load();
