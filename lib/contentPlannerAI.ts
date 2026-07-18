@@ -15,6 +15,20 @@ import {
     ContentPost, ContentPostInput, ContentPostCategory, ContentPostFormat,
     PostAIDetail, fetchContentPosts, EDITORIAL_QUADROS,
 } from './contentPlanner';
+import { fetchInstagramMetrics, buildPerformanceContext } from './instagramMetrics';
+
+/**
+ * Contexto de desempenho real do Instagram para calibrar a IA.
+ * Falha silenciosa (string vazia) se a tabela de métricas não existir —
+ * a geração continua funcionando sem os dados.
+ */
+const getPerformanceContext = async (): Promise<string> => {
+    try {
+        return buildPerformanceContext(await fetchInstagramMetrics(90));
+    } catch {
+        return '';
+    }
+};
 
 // ─── Helpers de data ─────────────────────────────────────────────────────────
 
@@ -91,6 +105,7 @@ const buildUserPrompt = (
     recentPosts: ContentPost[],
     emptyDays: { date: string; weekday: string; type: string }[],
     needsQuizPair: boolean,
+    performanceContext: string,
 ) => {
     const historico = recentPosts.map(p =>
         `${p.post_date} (${WEEKDAY_NAMES[new Date(p.post_date + 'T12:00:00').getDay()]}): ${p.title}` +
@@ -99,7 +114,7 @@ const buildUserPrompt = (
 
     const alvos = emptyDays.map(d => `- ${d.date} (${d.weekday}): ${d.type}`).join('\n');
 
-    return `CALENDÁRIO RECENTE E FUTURO (para você respeitar a rotação de quadros, continuar numeração de episódios, evitar repetir tema e balancear parceiras):
+    return `${performanceContext ? performanceContext + '\n\n' : ''}CALENDÁRIO RECENTE E FUTURO (para você respeitar a rotação de quadros, continuar numeração de episódios, evitar repetir tema e balancear parceiras):
 ${historico || '(vazio)'}
 
 DIAS VAGOS QUE VOCÊ DEVE PREENCHER (1 card por dia, exatamente nestas datas):
@@ -195,10 +210,10 @@ REGRAS DO JSON:
 - Os demais blocos do formato não usado devem ser omitidos.
 - Falas e textos em português do Brasil, naturais, sem jargão de marketing.`;
 
-const buildDetailPrompt = (post: ContentPost): string => {
+const buildDetailPrompt = (post: ContentPost, performanceContext: string): string => {
     const dataBR = post.post_date.split('-').reverse().join('/');
     const weekday = WEEKDAY_NAMES[new Date(post.post_date + 'T12:00:00').getDay()];
-    return `PAUTA DO POST (transforme em post detalhado):
+    return `${performanceContext ? performanceContext + '\n\n' : ''}PAUTA DO POST (transforme em post detalhado):
 - Nome do card: ${post.title}
 - Data: ${dataBR} (${weekday})
 - Formato: ${post.format}
@@ -239,7 +254,8 @@ const FORMAT_TO_TIPO: Record<ContentPostFormat, PostAIDetail['tipo']> = {
  * pela camada de UI após a geração.
  */
 export const generateDetailedPost = async (post: ContentPost): Promise<PostAIDetail> => {
-    const raw = await generateContent(buildDetailPrompt(post), DETAIL_SYSTEM_PROMPT);
+    const performanceContext = await getPerformanceContext();
+    const raw = await generateContent(buildDetailPrompt(post, performanceContext), DETAIL_SYSTEM_PROMPT);
     const detail = parseDetailResponse(raw);
     // O tipo precisa casar com o formato do card — corrige se a IA escorregar
     detail.tipo = FORMAT_TO_TIPO[post.format] || 'reels';
@@ -287,7 +303,8 @@ export const generateWeekSuggestions = async (
     const sexta = candidates.find(d => d.getDay() === 5);
     const needsQuizPair = !!(quinta && sexta && emptySet.has(toISO(quinta)) && emptySet.has(toISO(sexta)));
 
-    const raw = await generateContent(buildUserPrompt(posts, emptyDays, needsQuizPair), SYSTEM_PROMPT);
+    const performanceContext = await getPerformanceContext();
+    const raw = await generateContent(buildUserPrompt(posts, emptyDays, needsQuizPair, performanceContext), SYSTEM_PROMPT);
     const suggestions = parseAIResponse(raw)
         .map(r => sanitize(r, emptySet))
         .filter((s): s is ContentPostInput => s !== null);
