@@ -13,7 +13,7 @@
 import { generateContent } from './ai';
 import {
     ContentPost, ContentPostInput, ContentPostCategory, ContentPostFormat,
-    fetchContentPosts, EDITORIAL_QUADROS,
+    PostAIDetail, fetchContentPosts, EDITORIAL_QUADROS,
 } from './contentPlanner';
 
 // ─── Helpers de data ─────────────────────────────────────────────────────────
@@ -80,6 +80,7 @@ DIRETRIZES INEGOCIÁVEIS:
 - Parceiras para dias de produto: LiquiMoly, SKF, KYB — priorize a que apareceu menos nas últimas semanas.
 - Referências de universo: motocross/trilha/off-road, pilotos patrocinados (Moto Gerais Racing), marcas (KYB, Showa, Husqvarna, Honda, Suzuki, BMW).
 - Datas comemorativas do mundo da moto têm prioridade sobre o padrão do dia.
+- Priorize temáticas com maior potencial de engajamento (conteúdo que gera salvamento, comentário e compartilhamento: erros, mitos, comparações, "antes/depois", problemas comuns) e de conversão (que alimenta o funil do curso presencial ou destaca ferramenta do catálogo resolvendo dor real).
 - Tudo em português do Brasil, tom direto e prático de oficina.
 
 FORMATO DA RESPOSTA: responda APENAS com um array JSON válido (sem markdown, sem comentários), onde cada item tem exatamente estes campos:
@@ -146,7 +147,103 @@ const sanitize = (raw: RawSuggestion, allowedDays: Set<string>): ContentPostInpu
         reference: '',
         obs: raw.obs || '',
         paid_traffic: false,
+        ai_detail: null,
     };
+};
+
+// ─── Detalhamento de post (tela dedicada) ────────────────────────────────────
+
+const DETAIL_SYSTEM_PROMPT = `Você é o diretor de conteúdo da W-Tech Brasil (referência nacional em suspensões de moto: ferramentas especializadas, cursos presenciais e manutenção). Sua função: transformar uma PAUTA de post em um POST DETALHADO, pronto para a social media produzir no mesmo dia, com celular, na bancada da oficina.
+
+CONTEXTO DE PRODUÇÃO (respeite sempre):
+- Equipe enxuta: 1 social media (Noemi) gravando com celular na oficina; peças e ferramentas reais disponíveis na bancada (validar com o Serginho); Alex é a autoridade técnica que pode aparecer explicando.
+- Público: mecânicos de moto, donos de oficina, pilotos de trilha/motocross e entusiastas — linguagem de oficina, direta, sem enrolação.
+- REGRA DE OURO: dicas em nível de curiosidade geram autoridade e alimentam o funil do curso presencial, mas NUNCA entregue o passo a passo técnico completo que é conteúdo do curso.
+- O perfil não é catálogo: mesmo post de produto precisa partir de uma dor real e mostrar a experiência da W-Tech.
+
+FRAMEWORK DE ENGAJAMENTO (use para construir e para pontuar):
+- Gancho dos 3 segundos: abrir com dor, erro, pergunta polêmica ou resultado ("isso aqui destrói sua suspensão…", "9 em cada 10 mecânicos erram isso…").
+- Gatilhos: SALVAMENTO (checklist, referência técnica), COMENTÁRIO (pergunta, opinião dividida, "qual você usa?"), COMPARTILHAMENTO ("marca aquele amigo que…"), RETENÇÃO (loop, promessa cumprida só no final).
+- CTA único e claro por post.
+
+FRAMEWORK DE CONVERSÃO (use para construir e para pontuar):
+- Funis possíveis: CURSO PRESENCIAL (autoridade + "isso se aprende a fundo no curso"), FERRAMENTA DO CATÁLOGO (problema → ferramenta que resolve), AUTORIDADE/MARCA (prova social, bastidores, pilotos patrocinados).
+- A nota de conversão reflete o quanto a temática aproxima o seguidor de comprar curso ou ferramenta — não force venda em post de pura audiência; diga qual é o papel do post no funil.
+
+FORMATO DA RESPOSTA: responda APENAS com UM objeto JSON válido (sem markdown, sem comentários), com esta estrutura:
+{
+  "tipo": "reels" | "carrossel" | "estatico" | "stories",
+  "gancho": "frase de abertura que segura os 3 primeiros segundos",
+  "engajamento": {"nota": 0-10, "justificativa": "por que essa temática engaja esse público", "gatilhos": ["salvamento", "comentário", ...]},
+  "conversao": {"nota": 0-10, "justificativa": "papel do post no funil", "funil": "curso presencial | ferramenta do catálogo | autoridade"},
+  "publico": "para quem esse post fala em 1 frase",
+  "melhor_horario": "faixa de horário sugerida e por quê (curto)",
+  "cenas": [{"tempo": "0-3s", "acao": "o que aparece na tela / enquadramento", "fala": "fala literal, natural, tom de oficina", "texto_tela": "texto sobreposto (curto)"}],
+  "slides": [{"n": 1, "titulo": "título do slide", "texto": "texto do slide (curto, escaneável)", "arte": "direção de arte: foto/fundo/destaque"}],
+  "foto": {"direcao": "enquadramento, cenário na bancada, peça em destaque, luz", "texto_imagem": "texto sobreposto na imagem"},
+  "telas": [{"n": 1, "conteudo": "o que aparece nesse story", "sticker": "enquete/quiz/caixa de pergunta e opções"}],
+  "cta": "chamada final única",
+  "legenda": "legenda completa e pronta (com quebras de linha), terminando com o CTA",
+  "hashtags": "#suspensão #wtech #motocross #manutençãodemoto + 2-3 específicas do tema",
+  "trilha": "sugestão de estilo de áudio/trilha",
+  "checklist": ["itens práticos de produção: peça a separar, quem aparece, onde gravar, o que validar com Serginho/Alex"]
+}
+
+REGRAS DO JSON:
+- "tipo" deve respeitar o formato pedido na pauta (video → reels).
+- Preencha SOMENTE o bloco do formato: reels → "cenas" (5 a 8 cenas, total 30-45s, com falas LITERAIS); carrossel → "slides" (6 a 9, capa com gancho + último slide de CTA); estatico → "foto"; stories → "telas" (2 a 4).
+- Os demais blocos do formato não usado devem ser omitidos.
+- Falas e textos em português do Brasil, naturais, sem jargão de marketing.`;
+
+const buildDetailPrompt = (post: ContentPost): string => {
+    const dataBR = post.post_date.split('-').reverse().join('/');
+    const weekday = WEEKDAY_NAMES[new Date(post.post_date + 'T12:00:00').getDay()];
+    return `PAUTA DO POST (transforme em post detalhado):
+- Nome do card: ${post.title}
+- Data: ${dataBR} (${weekday})
+- Formato: ${post.format}
+- Categoria: ${post.category}
+${post.editorial ? `- Editorial/Quadro: ${post.editorial}` : ''}
+${post.content ? `- Ideia: ${post.content}` : ''}
+${post.objective ? `- Objetivo: ${post.objective}` : ''}
+${post.caption ? `- Rascunho de legenda existente: ${post.caption}` : ''}
+${post.obs ? `- Observações: ${post.obs}` : ''}
+
+Gere o objeto JSON do post detalhado.`;
+};
+
+/** Extrai o objeto JSON da resposta da IA (tolera cercas de markdown). */
+const parseDetailResponse = (raw: string): PostAIDetail => {
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start === -1 || end === -1 || end <= start) {
+        throw new Error('A IA não retornou um JSON válido. Tente gerar novamente.');
+    }
+    return JSON.parse(cleaned.slice(start, end + 1)) as PostAIDetail;
+};
+
+/** Formato do card → tipo esperado no detalhamento. */
+const FORMAT_TO_TIPO: Record<ContentPostFormat, PostAIDetail['tipo']> = {
+    video: 'reels',
+    stories: 'stories',
+    carrossel: 'carrossel',
+    estatico: 'estatico',
+};
+
+/**
+ * Gera o POST DETALHADO de um card: roteiro de Reels cena a cena, carrossel
+ * slide a slide, direção de foto ou sequência de stories — com notas de
+ * engajamento/conversão justificadas pela temática, CTA, legenda final,
+ * trilha e checklist de produção. O resultado é persistido em ai_detail
+ * pela camada de UI após a geração.
+ */
+export const generateDetailedPost = async (post: ContentPost): Promise<PostAIDetail> => {
+    const raw = await generateContent(buildDetailPrompt(post), DETAIL_SYSTEM_PROMPT);
+    const detail = parseDetailResponse(raw);
+    // O tipo precisa casar com o formato do card — corrige se a IA escorregar
+    detail.tipo = FORMAT_TO_TIPO[post.format] || 'reels';
+    return detail;
 };
 
 // ─── Geração ─────────────────────────────────────────────────────────────────
