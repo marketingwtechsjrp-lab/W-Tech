@@ -16,6 +16,7 @@ import {
     PostAIDetail, fetchContentPosts, EDITORIAL_QUADROS,
 } from './contentPlanner';
 import { fetchInstagramMetrics, buildPerformanceContext } from './instagramMetrics';
+import { fetchPendingInbox, buildCatalogContext, INBOX_KIND_META } from './contentInbox';
 
 /**
  * Contexto de desempenho real do Instagram para calibrar a IA.
@@ -25,6 +26,30 @@ import { fetchInstagramMetrics, buildPerformanceContext } from './instagramMetri
 const getPerformanceContext = async (): Promise<string> => {
     try {
         return buildPerformanceContext(await fetchInstagramMetrics(90));
+    } catch {
+        return '';
+    }
+};
+
+/** Catálogo real em estoque — falha silenciosa se indisponível. */
+const getCatalogContext = async (): Promise<string> => {
+    try {
+        return await buildCatalogContext();
+    } catch {
+        return '';
+    }
+};
+
+/** Caixinha de Pautas pendentes — falha silenciosa se indisponível. */
+const getInboxContext = async (): Promise<string> => {
+    try {
+        const items = await fetchPendingInbox();
+        if (items.length === 0) return '';
+        const lines = items.map(i =>
+            `- [${INBOX_KIND_META[i.kind]?.label || i.kind}${i.author ? ` — ${i.author}` : ''}] ${i.text}${i.product_ref ? ` (produto: ${i.product_ref})` : ''}`
+        ).join('\n');
+        return `CAIXINHA DE PAUTAS DA EQUIPE (pendentes — priorize transformá-las em cards: dúvidas viram o quadro "Dúvidas dos Seguidores"; conhecimento técnico vira compilado/Peça do dia; ideias são desenvolvidas):
+${lines}`;
     } catch {
         return '';
     }
@@ -187,7 +212,7 @@ FRAMEWORK DE CONVERSÃO (use para construir e para pontuar):
 
 FORMATO DA RESPOSTA: responda APENAS com UM objeto JSON válido (sem markdown, sem comentários), com esta estrutura:
 {
-  "tipo": "reels" | "carrossel" | "estatico" | "stories",
+  "tipo": "reels" | "carrossel" | "estatico" | "stories" | "youtube",
   "gancho": "frase de abertura que segura os 3 primeiros segundos",
   "engajamento": {"nota": 0-10, "justificativa": "por que essa temática engaja esse público", "gatilhos": ["salvamento", "comentário", ...]},
   "conversao": {"nota": 0-10, "justificativa": "papel do post no funil", "funil": "curso presencial | ferramenta do catálogo | autoridade"},
@@ -201,13 +226,15 @@ FORMATO DA RESPOSTA: responda APENAS com UM objeto JSON válido (sem markdown, s
   "legenda": "legenda completa e pronta (com quebras de linha), terminando com o CTA",
   "hashtags": "#suspensão #wtech #motocross #manutençãodemoto + 2-3 específicas do tema",
   "trilha": "sugestão de estilo de áudio/trilha",
-  "checklist": ["itens práticos de produção: peça a separar, quem aparece, onde gravar, o que validar com Serginho/Alex"]
+  "checklist": ["itens práticos de produção: peça a separar, quem aparece, onde gravar, o que validar com Serginho/Alex"],
+  "variacoes": {"tiktok": "como adaptar este post para o TikTok: gancho, tom e legenda (o público de lá é diferente do Instagram)"}
 }
 
 REGRAS DO JSON:
-- "tipo" deve respeitar o formato pedido na pauta (video → reels).
-- Preencha SOMENTE o bloco do formato: reels → "cenas" (5 a 8 cenas, total 30-45s, com falas LITERAIS); carrossel → "slides" (6 a 9, capa com gancho + último slide de CTA); estatico → "foto"; stories → "telas" (2 a 4).
-- Os demais blocos do formato não usado devem ser omitidos.
+- "tipo" deve respeitar o formato pedido na pauta (video → reels; youtube → youtube).
+- Preencha SOMENTE o bloco do formato: reels → "cenas" (5 a 8 cenas, total 30-45s, com falas LITERAIS); youtube → "cenas" como CAPÍTULOS de um vídeo longo de 8-15 min (6 a 10 blocos, cada um com tempo estimado tipo "0-1min", objetivo do bloco na "acao" e fala-guia; abertura com gancho + promessa do que o espectador vai levar); carrossel → "slides" (6 a 9, capa com gancho + último slide de CTA); estatico → "foto"; stories → "telas" (2 a 4).
+- Os demais blocos do formato não usado devem ser omitidos. "variacoes.tiktok" é sempre presente (exceto para tipo youtube, onde deve ser omitida).
+- Se a pauta é de produto (ENDOMARKETING) e houver CATÁLOGO REAL no contexto, cite APENAS itens exatos do catálogo — nunca invente peça.
 - Falas e textos em português do Brasil, naturais, sem jargão de marketing.`;
 
 const buildDetailPrompt = (post: ContentPost, performanceContext: string): string => {
@@ -244,6 +271,7 @@ const FORMAT_TO_TIPO: Record<ContentPostFormat, PostAIDetail['tipo']> = {
     stories: 'stories',
     carrossel: 'carrossel',
     estatico: 'estatico',
+    youtube: 'youtube',
 };
 
 /**
@@ -254,7 +282,12 @@ const FORMAT_TO_TIPO: Record<ContentPostFormat, PostAIDetail['tipo']> = {
  * pela camada de UI após a geração.
  */
 export const generateDetailedPost = async (post: ContentPost): Promise<PostAIDetail> => {
-    const performanceContext = await getPerformanceContext();
+    const [performance, catalog] = await Promise.all([
+        getPerformanceContext(),
+        // Catálogo real só entra em pauta de produto — evita ruído nos demais
+        post.category === 'ENDOMARKETING' ? getCatalogContext() : Promise.resolve(''),
+    ]);
+    const performanceContext = [performance, catalog].filter(Boolean).join('\n\n');
     const raw = await generateContent(buildDetailPrompt(post, performanceContext), DETAIL_SYSTEM_PROMPT);
     const detail = parseDetailResponse(raw);
     // O tipo precisa casar com o formato do card — corrige se a IA escorregar
@@ -303,7 +336,10 @@ export const generateWeekSuggestions = async (
     const sexta = candidates.find(d => d.getDay() === 5);
     const needsQuizPair = !!(quinta && sexta && emptySet.has(toISO(quinta)) && emptySet.has(toISO(sexta)));
 
-    const performanceContext = await getPerformanceContext();
+    const [performance, catalog, inbox] = await Promise.all([
+        getPerformanceContext(), getCatalogContext(), getInboxContext(),
+    ]);
+    const performanceContext = [performance, catalog, inbox].filter(Boolean).join('\n\n');
     const raw = await generateContent(buildUserPrompt(posts, emptyDays, needsQuizPair, performanceContext), SYSTEM_PROMPT);
     const suggestions = parseAIResponse(raw)
         .map(r => sanitize(r, emptySet))

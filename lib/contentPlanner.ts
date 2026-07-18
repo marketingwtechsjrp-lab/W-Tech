@@ -19,7 +19,7 @@ export type ContentPostStatus =
     | 'nao_realizado'
     | 'excluido';
 
-export type ContentPostFormat = 'video' | 'stories' | 'carrossel' | 'estatico';
+export type ContentPostFormat = 'video' | 'stories' | 'carrossel' | 'estatico' | 'youtube';
 
 export type ContentPostCategory =
     | 'ENDOMARKETING'
@@ -66,7 +66,7 @@ export interface AIDetailScore {
 
 /** Post detalhado gerado pela IA — o conteúdo pronto para produzir. */
 export interface PostAIDetail {
-    tipo: 'reels' | 'carrossel' | 'estatico' | 'stories';
+    tipo: 'reels' | 'carrossel' | 'estatico' | 'stories' | 'youtube';
     /** Frase de abertura que segura os 3 primeiros segundos. */
     gancho?: string;
     engajamento?: AIDetailScore;
@@ -86,6 +86,8 @@ export interface PostAIDetail {
     hashtags?: string;
     trilha?: string;
     checklist?: string[];
+    /** Adaptação por rede: como mudar tom/gancho/legenda em cada plataforma. */
+    variacoes?: { tiktok?: string; facebook?: string };
 }
 
 export interface ContentPost {
@@ -131,6 +133,7 @@ export const FORMAT_OPTIONS: { value: ContentPostFormat; label: string; emoji: s
     { value: 'stories', label: 'Stories', emoji: '⏳' },
     { value: 'carrossel', label: 'Carrossel', emoji: '📚' },
     { value: 'estatico', label: 'Post estático', emoji: '📃' },
+    { value: 'youtube', label: 'YouTube (longo)', emoji: '📺' },
 ];
 
 export const CATEGORY_OPTIONS: { value: ContentPostCategory; label: string }[] = [
