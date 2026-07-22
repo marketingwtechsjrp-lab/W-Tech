@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.25.1 (2026-07-22) - Inbox do WhatsApp atualiza sozinho e Integrações voltam a salvar
+- Inbox do WhatsApp (Meta) passa a atualizar sozinho a cada 10s, sem depender do Realtime — o Postgres da VPS roda só o PostgREST e o websocket nunca conectava
+- A conversa aberta só é recarregada quando muda de verdade, evitando rebaixar as mídias em base64 a cada ciclo e rolar a tela do atendente no meio da leitura
+- Salvar em Configurações e Integrações não falha mais por inteiro quando o servidor recusa uma chave protegida — o restante das configurações persiste
+- As chaves recusadas pelo servidor passam a ser informadas na tela, em vez de o salvamento falhar em silêncio
+
 ## v3.24.2 (2026-07-15) - Microfone e câmera liberados no site (áudio do inbox e login facial)
 - Corrige 'Não foi possível acessar o microfone' no inbox do WhatsApp em produção — o header Permissions-Policy bloqueava microfone e câmera no site inteiro
 - Permissions-Policy agora libera camera e microphone apenas para o próprio site (self)

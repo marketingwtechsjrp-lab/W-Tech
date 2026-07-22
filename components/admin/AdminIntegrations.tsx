@@ -882,8 +882,12 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
             // Grava tudo de uma vez via RPC (SECURITY DEFINER) — o upsert direto na
             // tabela é barrado pela policy de leitura nas chaves secretas. Segredos
             // com campo vazio são descartados pelo helper (não sobrescreve nada).
-            await upsertSiteConfig(updates);
-            alert('Configurações do Servidor salvas!');
+            const refused = await upsertSiteConfig(updates);
+            alert(
+                refused.length
+                    ? `Configurações salvas.\n\nNÃO gravadas — o servidor só aceita estas chaves definidas nele mesmo (variáveis de ambiente):\n${refused.join(', ')}`
+                    : 'Configurações do Servidor salvas!'
+            );
         } catch (error: any) {
             alert('Erro ao salvar: ' + error.message);
         } finally {

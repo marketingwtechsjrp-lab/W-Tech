@@ -101,6 +101,29 @@ export async function fetchMessages(conversationId: string): Promise<CloudMessag
   return (data || []) as CloudMessage[];
 }
 
+/** Assinatura compacta de uma thread: muda quando chega mensagem ou muda status. */
+export function messagesSignature(msgs: Pick<CloudMessage, 'id' | 'status'>[]): string {
+  return msgs.map((m) => `${m.id}:${m.status ?? ''}`).join('|');
+}
+
+/**
+ * Mesma assinatura, buscada sem o `media_data` (data URLs base64 pesadas).
+ * O polling do inbox usa isto para só recarregar a thread inteira quando algo
+ * mudou de verdade. `null` = falha na consulta, o chamador não faz nada.
+ */
+export async function fetchMessagesSignature(conversationId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from(MSG_TABLE)
+    .select('id, status')
+    .eq('conversation_id', conversationId)
+    .order('timestamp', { ascending: true });
+  if (error) {
+    console.error('[WA Cloud] fetchMessagesSignature:', error.message);
+    return null;
+  }
+  return messagesSignature((data || []) as Pick<CloudMessage, 'id' | 'status'>[]);
+}
+
 export async function markConversationRead(conversationId: string): Promise<void> {
   const { error } = await supabase
     .from(CONV_TABLE)

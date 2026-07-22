@@ -91,8 +91,14 @@ const GroupBotPanel: React.FC = () => {
         try {
             // RPC SECURITY DEFINER: upsert direto na tabela é barrado pela policy
             // de leitura quando a chave é secreta (ex.: ai_group_webhook_token).
-            await upsertSiteConfig(Object.entries(updates).map(([key, value]) => ({ key, value })));
-            setCfg((prev) => ({ ...prev, ...updates }));
+            const refused = await upsertSiteConfig(Object.entries(updates).map(([key, value]) => ({ key, value })));
+            // Só reflete na tela o que realmente foi gravado — senão o painel
+            // mostraria como salvo um valor que o servidor recusou.
+            const saved = Object.entries(updates).filter(([key]) => !refused.includes(key));
+            setCfg((prev) => ({ ...prev, ...Object.fromEntries(saved) }));
+            if (refused.length) {
+                alert(`Estas chaves só podem ser definidas no servidor e não foram gravadas:\n${refused.join(', ')}`);
+            }
         } catch (e: any) {
             alert('Erro ao salvar configuração: ' + e.message);
         } finally {

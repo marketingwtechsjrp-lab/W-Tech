@@ -31,6 +31,12 @@ export interface ConfigEntry {
 }
 
 /**
+ * Recusa do servidor a chaves que só podem ser definidas lá ("Chave protegida
+ * não pode ser gravada por aqui: a, b, c."). O grupo captura a lista de chaves.
+ */
+const PROTECTED_KEYS_ERROR = /chave protegida[^:]*:\s*([^.]+)/i;
+
+/**
  * Grava chaves na SITE_Config via RPC `upsert_site_config` (SECURITY DEFINER).
  *
  * Por que não upsert direto na tabela: o INSERT ... ON CONFLICT DO UPDATE do
@@ -39,12 +45,32 @@ export interface ConfigEntry {
  * então o upsert delas falha com 42501 (migração 2026-07-15). A função roda
  * como owner e ignora o RLS apenas na escrita; a leitura continua bloqueada.
  *
- * Lança erro em falha (o chamador decide como exibir).
+ * Devolve as chaves que o servidor recusou (ver abaixo); lança em qualquer outra
+ * falha (o chamador decide como exibir).
  */
-export async function upsertSiteConfig(entries: ConfigEntry[] | ConfigEntry): Promise<void> {
+export async function upsertSiteConfig(entries: ConfigEntry[] | ConfigEntry): Promise<string[]> {
     const list = (Array.isArray(entries) ? entries : [entries])
         .filter(e => e.key && !(SECRET_CONFIG_KEYS.has(e.key) && !String(e.value ?? '').trim()));
-    if (list.length === 0) return;
+    if (list.length === 0) return [];
+
     const { error } = await supabase.rpc('upsert_site_config', { entries: list });
-    if (error) throw error;
+    if (!error) return [];
+
+    // O servidor tem a própria lista de chaves que não aceita do navegador, e
+    // aborta o LOTE INTEIRO quando uma delas aparece — uma chave recusada
+    // impedia de salvar todo o resto da aba. Aqui lemos as recusadas da própria
+    // mensagem do servidor, em vez de manter uma cópia da lista dele (foi essa
+    // duplicação que saiu de sincronia), e regravamos o que sobrou.
+    const refusedMatch = PROTECTED_KEYS_ERROR.exec(error.message || '');
+    if (!refusedMatch) throw error;
+
+    const refused = new Set(
+        refusedMatch[1].split(',').map(k => k.trim()).filter(Boolean)
+    );
+    const allowed = list.filter(e => !refused.has(e.key));
+    if (allowed.length > 0) {
+        const { error: retryError } = await supabase.rpc('upsert_site_config', { entries: allowed });
+        if (retryError) throw retryError;
+    }
+    return [...refused];
 }

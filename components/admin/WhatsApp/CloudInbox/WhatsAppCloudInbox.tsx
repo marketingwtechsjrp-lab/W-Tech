@@ -6,6 +6,8 @@ import {
   CloudStatus,
   fetchConversations,
   fetchMessages,
+  fetchMessagesSignature,
+  messagesSignature,
   markConversationRead,
   subscribeToChanges,
   getCloudStatus,
@@ -32,6 +34,13 @@ const FILTER_TABS: { id: InboxFilter; label: string }[] = [
 ];
 
 /**
+ * De quanto em quanto tempo o inbox procura novidades. O Postgres da VPS não
+ * roda o serviço de Realtime do Supabase (só o PostgREST), então o websocket de
+ * `subscribeToChanges` nunca conecta e o polling é o que mantém o inbox vivo.
+ */
+const POLL_INTERVAL_MS = 10_000;
+
+/**
  * Inbox estilo WhatsApp Web conectado à WhatsApp Cloud API (Meta).
  * Módulo separado da automação via Evolution API.
  */
@@ -56,6 +65,9 @@ const WhatsAppCloudInbox: React.FC<InboxProps> = ({ canViewAll = true }) => {
 
   const selectedIdRef = useRef<string | null>(null);
   selectedIdRef.current = selectedId;
+
+  /** Assinatura da thread aberta, para o polling saber se algo mudou. */
+  const messagesSigRef = useRef<string>('');
 
   // Mapa de id→nome dos atendentes (para mostrar quem assumiu).
   useEffect(() => {
@@ -114,6 +126,7 @@ const WhatsAppCloudInbox: React.FC<InboxProps> = ({ canViewAll = true }) => {
   const loadMessages = useCallback(async (conversationId: string) => {
     const msgs = await fetchMessages(conversationId);
     setMessages(msgs);
+    messagesSigRef.current = messagesSignature(msgs);
   }, []);
 
   // Carga inicial + status da conexão.
@@ -126,13 +139,51 @@ const WhatsAppCloudInbox: React.FC<InboxProps> = ({ canViewAll = true }) => {
     })();
   }, [loadConversations]);
 
-  // Realtime: ao mudar conversas/mensagens, recarrega o necessário.
+  // Realtime: ao mudar conversas/mensagens, recarrega o necessário. Só funciona
+  // onde o serviço de Realtime existe; fica aqui para voltar sozinho a valer
+  // caso ele suba na VPS. Enquanto não sobe, quem atualiza é o polling abaixo.
   useEffect(() => {
     const unsub = subscribeToChanges(() => {
       loadConversations();
       if (selectedIdRef.current) loadMessages(selectedIdRef.current);
     });
     return unsub;
+  }, [loadConversations, loadMessages]);
+
+  // Polling: mantém a lista e a conversa aberta atualizadas sem depender do
+  // websocket. A thread só é recarregada quando a assinatura muda — recarregar
+  // à toa rolaria o ChatThread para o fim enquanto o atendente lê o histórico,
+  // e rebaixaria o base64 de toda mídia da conversa a cada ciclo.
+  useEffect(() => {
+    let cancelled = false;
+    let running = false;
+
+    const tick = async () => {
+      if (running || cancelled || document.hidden) return;
+      running = true;
+      try {
+        await loadConversations();
+        const id = selectedIdRef.current;
+        if (!id || cancelled) return;
+        const sig = await fetchMessagesSignature(id);
+        // Descarta se a conversa mudou durante a consulta ou se ela falhou.
+        if (cancelled || sig === null || id !== selectedIdRef.current) return;
+        if (sig !== messagesSigRef.current) await loadMessages(id);
+      } catch (e: any) {
+        console.error('[Inbox] polling falhou:', e?.message || e);
+      } finally {
+        running = false;
+      }
+    };
+
+    const timer = setInterval(tick, POLL_INTERVAL_MS);
+    // Volta a sincronizar assim que a aba reaparece, sem esperar o próximo ciclo.
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
   }, [loadConversations, loadMessages]);
 
   const handleSelect = useCallback(
