@@ -85,6 +85,7 @@ declare global {
 import { ThemeProvider } from 'next-themes';
 
 import { LanguageProvider } from './context/LanguageContext';
+import { AnalyticsTracker } from './components/AnalyticsTracker';
 
 const App = () => {
   return (
