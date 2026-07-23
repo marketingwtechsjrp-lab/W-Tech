@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import {
-    CheckCircle, ArrowRight, ChevronDown, ChevronRight,
-    Play, Monitor, Clock, ShieldCheck, Settings, Zap, Award,
-    Users, Target, Bike, Wrench, Mountain, Star, Quote,
-    Crosshair, Activity, Gauge, Move, CircleDot, Disc,
-    BookOpen, CalendarDays, AlertTriangle, TrendingUp, Flame,
+    CheckCircle, ArrowRight, ChevronDown, ShieldCheck, Settings, Zap,
+    Users, Bike, Wrench, Mountain, Star, Activity, Move, CircleDot, Disc,
+    Flame, Globe,
 } from 'lucide-react';
+import { lpTranslations, detectUserLanguage, LPLanguage } from '../lib/lpErgonomiaTranslations';
 
 /* ─── Google Fonts Injection ─── */
 if (typeof document !== 'undefined') {
@@ -131,8 +130,26 @@ const FAQItem: React.FC<{ q: string; a: string; isDark?: boolean }> = ({ q, a, i
 /* ─── Main Component ─── */
 const LPErgonomia4: React.FC = () => {
     const prefersReduced = useReducedMotion();
-    const [timeLeft, setTimeLeft] = useState(7 * 60);
 
+    // ── Language State & Auto Detection ──
+    const [currentLang, setCurrentLang] = useState<LPLanguage>('pt-PT');
+    useEffect(() => {
+        const detected = detectUserLanguage();
+        setCurrentLang(detected);
+    }, []);
+
+    const handleLanguageChange = (lang: LPLanguage) => {
+        setCurrentLang(lang);
+        try {
+            localStorage.setItem('wtech_lp4_lang', lang);
+        } catch (e) {
+            // Ignore storage errors
+        }
+    };
+
+    const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];
+
+    // ── Checkout & Tracking ──
     const KIWIFY_BASE = "https://pay.kiwify.com.br/19v4nIa";
     const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
 
@@ -140,87 +157,31 @@ const LPErgonomia4: React.FC = () => {
         captureTrackingParams();
         setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
     }, []);
+
+    // ── Social Proof Buyer Toast ──
     const [showBuyer, setShowBuyer] = useState(false);
     const [currentBuyer, setCurrentBuyer] = useState<{ name: string; role: string; city: string } | null>(null);
 
     useEffect(() => {
-        if (timeLeft <= 0) return;
-        const t = setInterval(() => setTimeLeft(p => p - 1), 1000);
-        return () => clearInterval(t);
-    }, [timeLeft]);
-
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-
-    const buyers = [
-        { name: 'Roberto S.', role: 'Piloto Amador', city: 'São Paulo, SP' },
-        { name: 'Daniel M.', role: 'Mecânico', city: 'Belo Horizonte, MG' },
-        { name: 'Thiago F.', role: 'Piloto de Trilha', city: 'Curitiba, PR' },
-        { name: 'Lucas A.', role: 'Dono de Oficina', city: 'Goiânia, GO' },
-    ];
-
-    useEffect(() => {
+        const buyersList = t.buyers;
         const i = setInterval(() => {
-            setCurrentBuyer(buyers[Math.floor(Math.random() * buyers.length)]);
+            const randomBuyer = buyersList[Math.floor(Math.random() * buyersList.length)];
+            setCurrentBuyer(randomBuyer);
             setShowBuyer(true);
             setTimeout(() => setShowBuyer(false), 5000);
-        }, 25000);
+        }, 22000);
         return () => clearInterval(i);
-    }, []);
+    }, [t]);
 
     const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
-    /* ── Content Data ── */
-    const profiles = [
-        {
-            icon: <Bike size={24} />, tag: 'Para Todo Piloto', title: 'Piloto',
-            pain: 'Seus braços cansam rápido, sente falta de performance, tração e equilíbrio. Isso te cansa rápido — não é normal. Este curso é o guia definitivo para o acerto da sua moto.',
-        },
-        {
-            icon: <Mountain size={24} />, tag: 'Trilha - Off Road', title: 'Trilha / Off-Road',
-            pain: 'Sua moto perde tração em subidas ou pula nos buracos? Não é falta de preparo físico — a suspensão está ajustada incorretamente para o seu nível.',
-        },
-        {
-            icon: <Wrench size={24} />, tag: 'Serviço Nobre', title: 'Mecânico / Preparador',
-            pain: 'Eleve seu nível com informações técnicas para realizar o acerto completo nas motos de seus clientes, cobrando mais pelo serviço diferenciado.',
-        },
-        {
-            icon: <Settings size={24} />, tag: 'Diferencial', title: 'Dono de Oficina',
-            pain: 'Seus clientes pedem ajustes que a equipe não sabe resolver. Pare de perder serviço para oficinas especializadas em Off-Road.',
-        },
-    ];
-
-    const concepts = [
-        { icon: <CircleDot size={22} />, title: 'O SAG', desc: 'Ajuste da folga da suspensão. Com o primeiro terço preservado, você garante equilíbrio e segurança — o ponto de partida obrigatório.' },
-        { icon: <Activity size={22} />, title: 'Molas', desc: 'O item mais importante. Sustenta o peso equilibrando perfeitamente a absorção e o retorno na trilha.' },
-        { icon: <Move size={22} />, title: 'Ergonomia', desc: 'A moto moldada ao seu corpo. Altura do guidão, manetes e pedaleiras — sua integração perfeita à máquina.' },
-        { icon: <Disc size={22} />, title: 'Pneus e Tração', desc: 'Onde a suspensão começa. A calibragem e a escolha do pneu são essenciais para ditar todo o comportamento da frente e da traseira.' },
-    ];
-
-    const modules = [
-        { num: '01', title: 'Boas-Vindas ao Curso', desc: 'Apresentação e visão geral do método', aulas: 4 },
-        { num: '02', title: 'Ergonomia', desc: 'Guidão, manetes, pedal e câmbio', aulas: 5 },
-        { num: '03', title: 'Equilíbrio', desc: 'Verificação antes de todo o ajuste', aulas: 1 },
-        { num: '04', title: 'Molas', desc: 'Rigidez, taxa e escolha correta', aulas: 1 },
-        { num: '05', title: 'O SAG', desc: 'Medição e ajuste do zero', aulas: 2 },
-        { num: '06', title: 'Óleo e Viscosidades', desc: 'A hidráulica que controla a dinâmica', aulas: 1 },
-        { num: '07', title: 'Os Cliques', desc: 'Compressão e retorno: o que fazem', aulas: 2 },
-        { num: '08', title: 'Eixo Dianteiro', desc: 'Bengalas e a montagem livre de torção', aulas: 2 },
-        { num: '09', title: 'Pneus e Tração', desc: 'Pressão correta e PSI ideal', aulas: 2 },
-        { num: '10', title: 'Relação e Corrente', desc: 'Ajustes que multiplicam a sua força', aulas: 2 },
-        { num: '11', title: 'Kits e Ferramentas', desc: 'O setup da sua bancada profissional', aulas: 1 },
-    ];
-
-    const faqData = [
-        { q: 'Preciso ter experiência avançada para iniciar o curso?', a: 'Não. O curso foi estruturado desenhando desde a teoria básica até os cliques avançados. Você vai aprender tudo do mais absoluto zero.' },
-        { q: 'Como terei acesso após o pagamento?', a: 'Seu acesso é imediato logo após a aprovação no cartão ou Pix. O link chegará diretamente no seu e-mail.' },
-        { q: 'O curso oferece algum tipo de certificado?', a: 'Sim. Você terá um certificado oficial de conclusão da W-Tech documentando sua capacidade de regular suspensões Off-Road.' },
-        { q: 'Isso serve para motos Nacionais e Importadas?', a: 'Sim. As teorias de SAG, molas, hidráulica e retorno aplicam-se a 100% das motos off-road, independentemente se são antigas ou lançamentos.' },
-    ];
+    // Icons map for profiles and concepts
+    const profileIcons = [<Bike size={24} key={0} />, <Mountain size={24} key={1} />, <Wrench size={24} key={2} />, <Settings size={24} key={3} />];
+    const conceptIcons = [<CircleDot size={22} key={0} />, <Activity size={22} key={1} />, <Move size={22} key={2} />, <Disc size={22} key={3} />];
 
     /* ── Shared CTA Component ── */
     const CTAButton: React.FC<{ label?: string; className?: string }> = ({
-        label = 'Garantir Minha Vaga Agora', className = ''
+        label = t.hero.ctaPrimary, className = ''
     }) => (
         <motion.button
             onClick={() => scrollTo('cta-final')}
@@ -239,16 +200,40 @@ const LPErgonomia4: React.FC = () => {
             <div className="lp4 min-h-screen text-gray-900 bg-white overflow-x-hidden selection:bg-amber-400 selection:text-black">
 
                 {/* ══════════════════════════════════════════ */}
-                {/* STICKY BANNER                              */}
+                {/* STICKY TOP BANNER & LANGUAGE SWITCHER      */}
                 {/* ══════════════════════════════════════════ */}
-                <div className="sticky top-0 z-[100] bg-zinc-950 py-2.5 px-4 text-center border-b border-white/10">
-                    <div className="container mx-auto flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-[10px] md:text-sm font-bold uppercase tracking-widest text-amber-500">
-                        <span className="flex items-center gap-2">
+                <div className="sticky top-0 z-[100] bg-zinc-950/95 backdrop-blur-md py-2 px-4 border-b border-white/10">
+                    <div className="container mx-auto flex flex-wrap items-center justify-between gap-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-amber-500">
+                        <div className="flex items-center gap-2">
                             <Flame size={14} className="text-orange-500 animate-pulse" />
-                            Preço de Lançamento Ativo
-                        </span>
-                        <span className="hidden md:inline text-white/30">•</span>
-                        <span className="text-gray-300">Válido por tempo limitado</span>
+                            <span>{t.topBanner.badge}</span>
+                            <span className="hidden md:inline text-white/30">•</span>
+                            <span className="text-gray-300 hidden sm:inline">{t.topBanner.text}</span>
+                        </div>
+
+                        {/* Interactive Language Selector */}
+                        <div className="flex items-center gap-1.5 bg-black/60 p-1 rounded-full border border-white/15">
+                            <Globe size={13} className="text-amber-400 ml-1.5 shrink-0" />
+                            {(['pt-PT', 'es', 'en', 'pt-BR'] as LPLanguage[]).map((langKey) => {
+                                const item = lpTranslations[langKey];
+                                const active = currentLang === langKey;
+                                return (
+                                    <button
+                                        key={langKey}
+                                        onClick={() => handleLanguageChange(langKey)}
+                                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                                            active
+                                                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black shadow-sm font-extrabold'
+                                                : 'text-gray-400 hover:text-white hover:bg-white/10'
+                                        }`}
+                                        title={item.langName}
+                                    >
+                                        <span>{item.flag}</span>
+                                        <span>{langKey === 'pt-PT' ? 'PT' : langKey === 'pt-BR' ? 'BR' : langKey.toUpperCase()}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
@@ -264,7 +249,7 @@ const LPErgonomia4: React.FC = () => {
                         
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-6">
                             <span className="inline-block border border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
-                                Novo Curso W-Tech Suspensões
+                                {t.hero.badge}
                             </span>
                         </motion.div>
 
@@ -272,24 +257,24 @@ const LPErgonomia4: React.FC = () => {
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}
                             className="text-4xl md:text-6xl lg:text-[4.5rem] font-black uppercase leading-[1.05] tracking-tight mb-6"
                         >
-                            O Único Curso Que Você<br />
-                            Precisa Para <span className="lp4-text-gradient">Acertar Sua Moto</span>
+                            {t.hero.titlePart1}<br />
+                            <span className="lp4-text-gradient">{t.hero.titleHighlight}</span>
                         </motion.h1>
 
                         <motion.p 
                             initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
                             className="text-gray-300 text-lg md:text-xl leading-relaxed mb-6 max-w-2xl font-light"
                         >
-                            Chega de braços pesados e falta de performance. Aprenda do zero a regular SAG, clicks, geometria e hidráulica de qualquer moto Off-Road.
+                            {t.hero.subtitle}
                         </motion.p>
 
                         <motion.div 
                             initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
                             className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
                         >
-                            <CTAButton label="Garantir Minha Vaga Agora" className="w-full sm:w-auto" />
-                            <button onClick={() => scrollTo('quem-somos')} className="w-full sm:w-auto border border-white/20 text-white font-semibold text-sm tracking-widest uppercase px-8 py-4 sm:py-5 rounded-full hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
-                                Ver Detalhes <ChevronDown size={18} />
+                            <CTAButton label={t.hero.ctaPrimary} className="w-full sm:w-auto" />
+                            <button onClick={() => scrollTo('quem-somos')} className="w-full sm:w-auto border border-white/20 text-white font-semibold text-sm tracking-widest uppercase px-8 py-4 sm:py-5 rounded-full hover:bg-white/5 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                                {t.hero.ctaSecondary} <ChevronDown size={18} />
                             </button>
                         </motion.div>
 
@@ -300,15 +285,15 @@ const LPErgonomia4: React.FC = () => {
                         >
                             <div className="flex items-center gap-2">
                                 <Users size={18} className="text-amber-500" />
-                                <span>+3.000 Alunos Treinados</span>
+                                <span>{t.hero.badges.students}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Star size={18} className="text-amber-500" />
-                                <span>4.9/5 Nota Geral</span>
+                                <span>{t.hero.badges.rating}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <ShieldCheck size={18} className="text-amber-500" />
-                                <span>100% Online e Prático</span>
+                                <span>{t.hero.badges.online}</span>
                             </div>
                         </motion.div>
                     </div>
@@ -320,9 +305,9 @@ const LPErgonomia4: React.FC = () => {
                 <section id="quem-somos" className="py-20 lp4-light relative z-20 -mt-8 rounded-t-[3rem] shadow-[0_-15px_40px_rgba(0,0,0,0.1)] border-t border-gray-100">
                     <div className="container mx-auto px-6 max-w-5xl">
                         <div className="text-center mb-10">
-                            <SectionLabel isDark={false}>Confira Clicando Abaixo</SectionLabel>
+                            <SectionLabel isDark={false}>{t.vsl.label}</SectionLabel>
                             <h2 className="text-3xl md:text-5xl font-black uppercase text-gray-900 tracking-tight">
-                                Entenda Como o <span className="text-orange-600">Curso Funciona</span>
+                                {t.vsl.titlePart1}<span className="text-orange-600">{t.vsl.titleHighlight}</span>
                             </h2>
                         </div>
                         
@@ -347,24 +332,25 @@ const LPErgonomia4: React.FC = () => {
                 <section className="py-24 lp4-gray border-y border-gray-200">
                     <div className="container mx-auto px-6">
                         <div className="text-center mb-16 max-w-2xl mx-auto">
-                            <SectionLabel isDark={false}>Seu Perfil</SectionLabel>
+                            <SectionLabel isDark={false}>{t.profiles.label}</SectionLabel>
                             <h2 className="text-3xl md:text-5xl font-black uppercase text-gray-900 tracking-tight mb-4">
-                                Não importa se você <span className="text-orange-600">é iniciante</span>
+                                {t.profiles.titlePart1}<span className="text-orange-600">{t.profiles.titleHighlight}</span>
                             </h2>
                             <p className="text-gray-600 text-lg">
-                                Desenhamos metodologias precisas para você aprender o básico até os ajustes avançados da forma certa.
+                                {t.profiles.desc}
                             </p>
                         </div>
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-                            {profiles.map((p, i) => (
+                            {t.profiles.items.map((p, i) => (
                                 <motion.div 
                                     key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                                     className="lp4-card-light p-8 rounded-3xl relative overflow-hidden group"
                                 >
                                     <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-6 group-hover:bg-orange-600 group-hover:text-white transition-colors duration-300">
-                                        {p.icon}
+                                        {profileIcons[i % profileIcons.length]}
                                     </div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-600 mb-1 block">{p.tag}</span>
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">{p.title}</h3>
                                     <p className="text-gray-600 text-sm leading-relaxed">{p.pain}</p>
                                 </motion.div>
@@ -383,27 +369,27 @@ const LPErgonomia4: React.FC = () => {
                             <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
                                 <div className="inline-flex items-center gap-2 mb-4">
                                     <div className="w-8 h-px bg-amber-500/50" />
-                                    <span className="font-bold uppercase tracking-[0.25em] text-xs text-amber-400">O Segredo</span>
+                                    <span className="font-bold uppercase tracking-[0.25em] text-xs text-amber-400">{t.concepts.label}</span>
                                 </div>
                                 <h2 className="text-3xl md:text-5xl font-black uppercase text-white tracking-tight mb-6 leading-tight">
-                                    O que faz o <span className="lp4-text-gradient">Acerto Perfeito?</span>
+                                    {t.concepts.titlePart1}<span className="lp4-text-gradient">{t.concepts.titleHighlight}</span>
                                 </h2>
                                 <p className="text-gray-400 text-lg mb-6 leading-relaxed">
-                                    Não adianta gastar com motor se a suspensão não copia o terreno, tirando a sua tração e aumentando a sua fadiga no guidão.
+                                    {t.concepts.desc}
                                 </p>
                                 <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-2xl">
                                     <p className="text-amber-200 text-sm font-medium">
                                         <Zap size={16} className="inline mr-2 text-amber-400 -mt-0.5" />
-                                        Quando molas, SAG, cliques e pneus trabalham em conjunto, a moto não espalha. Você ganha confiança e usa todo o potencial da moto sem apanhar.
+                                        {t.concepts.boxText}
                                     </p>
                                 </div>
                             </motion.div>
 
                             <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="space-y-4">
-                                {concepts.map((c, i) => (
+                                {t.concepts.items.map((c, i) => (
                                     <div key={i} className="lp4-card-dark p-5 rounded-2xl flex items-start gap-5">
                                         <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-gray-300">
-                                            {c.icon}
+                                            {conceptIcons[i % conceptIcons.length]}
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-bold text-white mb-1">{c.title}</h3>
@@ -422,14 +408,14 @@ const LPErgonomia4: React.FC = () => {
                 <section id="modulos" className="py-24 lp4-light">
                     <div className="container mx-auto px-6">
                         <div className="text-center mb-16">
-                            <SectionLabel isDark={false}>Conteúdo do Curso</SectionLabel>
+                            <SectionLabel isDark={false}>{t.modules.label}</SectionLabel>
                             <h2 className="text-3xl md:text-5xl font-black uppercase text-gray-900 tracking-tight">
-                                11 Módulos <span className="text-orange-600">+ Bônus</span>
+                                {t.modules.titlePart1}<span className="text-orange-600">{t.modules.titleHighlight}</span>
                             </h2>
                         </div>
 
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
-                            {modules.map((m, i) => (
+                            {t.modules.items.map((m, i) => (
                                 <motion.div 
                                     key={i} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
                                     className="lp4-card-light p-6 rounded-3xl"
@@ -462,7 +448,7 @@ const LPErgonomia4: React.FC = () => {
                         </div>
 
                         <div className="flex justify-center">
-                            <CTAButton label="Ver Todos os Módulos Agora" />
+                            <CTAButton label={t.modules.cta} />
                         </div>
                     </div>
                 </section>
@@ -479,24 +465,19 @@ const LPErgonomia4: React.FC = () => {
                             initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
                             className="lp4-card-light lg:w-[48%] xl:w-[42%] p-10 md:p-14 rounded-3xl"
                         >
-                            <span className="text-orange-600 font-bold uppercase tracking-widest text-[10px] mb-2 block">Instrutor Principal</span>
+                            <span className="text-orange-600 font-bold uppercase tracking-widest text-[10px] mb-2 block">{t.instructor.tag}</span>
                             <h2 className="text-4xl lg:text-5xl font-black uppercase text-gray-900 tracking-tight leading-none mb-6">
-                                Alex <span className="text-orange-600">Crepaldi</span>
+                                {t.instructor.name} <span className="text-orange-600">{t.instructor.lastName}</span>
                             </h2>
                             <p className="text-gray-600 mb-6 leading-relaxed">
-                                Fundador da W-Tech Suspensões, é a maior referência nacional em diagnósticos de suspensão Off-Road. 
-                                Durante anos forjou metodologia técnica e agora disponibiliza para você tudo de forma enxuta e prática.
+                                {t.instructor.bio}
                             </p>
                             <ul className="space-y-3 mt-8">
-                                <li className="flex items-center gap-3 text-sm font-semibold text-gray-800">
-                                    <CheckCircle size={18} className="text-orange-600" /> Consultor Dinâmico de Competições
-                                </li>
-                                <li className="flex items-center gap-3 text-sm font-semibold text-gray-800">
-                                    <CheckCircle size={18} className="text-orange-600" /> Mais de 3.000 profissionais treinados
-                                </li>
-                                <li className="flex items-center gap-3 text-sm font-semibold text-gray-800">
-                                    <CheckCircle size={18} className="text-orange-600" /> Eleva sua técnica de manutenção para alta performance
-                                </li>
+                                {t.instructor.bullets.map((bullet, i) => (
+                                    <li key={i} className="flex items-center gap-3 text-sm font-semibold text-gray-800">
+                                        <CheckCircle size={18} className="text-orange-600 shrink-0" /> {bullet}
+                                    </li>
+                                ))}
                             </ul>
                         </motion.div>
                     </div>
@@ -512,12 +493,12 @@ const LPErgonomia4: React.FC = () => {
                             
                             {/* FAQ Section */}
                             <div>
-                                <SectionLabel isDark={true}>Dúvidas Frequentes</SectionLabel>
+                                <SectionLabel isDark={true}>{t.faq.label}</SectionLabel>
                                 <h2 className="text-3xl md:text-5xl font-black uppercase text-white tracking-tight mb-8">
-                                    Você tem<br />alguma <span className="lp4-text-gradient">dúvida?</span>
+                                    {t.faq.titlePart1}<br /><span className="lp4-text-gradient">{t.faq.titleHighlight}</span>
                                 </h2>
                                 <div className="space-y-4">
-                                    {faqData.map((faq, i) => (
+                                    {t.faq.items.map((faq, i) => (
                                         <FAQItem key={i} q={faq.q} a={faq.a} isDark={true} />
                                     ))}
                                 </div>
@@ -533,25 +514,25 @@ const LPErgonomia4: React.FC = () => {
 
                                 <div className="text-center">
                                     <div className="inline-block bg-amber-500/10 text-amber-500 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full mb-6">
-                                        Oferta Especial de Lançamento
+                                        {t.offer.badge}
                                     </div>
-                                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">O Curso Completo + Bônus</h3>
-                                    <p className="text-gray-400 text-sm mb-8">Mais de R$ 997 em Planilhas e Material Complementar Grátis.</p>
+                                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{t.offer.title}</h3>
+                                    <p className="text-gray-400 text-sm mb-8">{t.offer.sub}</p>
 
-                                    <div className="text-gray-500 font-medium text-sm line-through mb-2">De R$ 997,00 por</div>
+                                    <div className="text-gray-500 font-medium text-sm line-through mb-2">{t.offer.strike}</div>
                                     <div className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight">
-                                        12x <span className="lp4-text-gradient">R$ 34,70</span>
+                                        <span className="lp4-text-gradient">{t.offer.priceMain}</span>
                                     </div>
-                                    <p className="text-amber-500 text-sm font-semibold mb-10">ou apenas R$ 347,00 à vista</p>
+                                    <p className="text-amber-500 text-sm font-semibold mb-10">{t.offer.priceAlt}</p>
 
                                     <a 
                                         href={checkoutUrl}
                                         id="kiwify-checkout-btn-lp-ergonomia4"
                                         className="lp4-btn-primary w-full py-5 rounded-2xl font-black text-[15px] uppercase tracking-widest flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
                                     >
-                                        Quero Minha Vaga Agora <ArrowRight size={20} />
+                                        {t.offer.cta} <ArrowRight size={20} />
                                     </a>
-                                    <p className="text-gray-500 text-xs mt-4">Acesso liberado automaticamente em seu e-mail.</p>
+                                    <p className="text-gray-500 text-xs mt-4">{t.offer.footnote}</p>
                                 </div>
                             </motion.div>
                         </div>
@@ -569,7 +550,7 @@ const LPErgonomia4: React.FC = () => {
                             className="h-8 mx-auto mb-6 invert opacity-50 contrast-200" 
                         />
                         <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-2">
-                            W-Tech Brasil | Curso Online Suspensão
+                            W-Tech Suspensões Europa | Curso Online
                         </p>
                         <p className="text-gray-400 text-[10px] tracking-widest">
                             Todos os direitos reservados © {new Date().getFullYear()}

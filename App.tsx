@@ -125,7 +125,7 @@ const App = () => {
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
                     <Route path="/checkout-lisboa" element={<CheckoutLisboa />} />
-                    <Route path="/curso-suspensao-piloto" element={<LPErgonomia />} />
+                    <Route path="/curso-suspensao-piloto" element={<LPErgonomia4 />} />
                     <Route path="/curso-suspensao-piloto-v2" element={<LPErgonomia2 />} />
                     <Route path="/curso-suspensao-piloto-v3" element={<LPErgonomia3 />} />
                     <Route path="/curso-suspensao-piloto-v4" element={<LPErgonomia4 />} />
