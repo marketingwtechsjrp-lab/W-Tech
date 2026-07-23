@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Menu, X, ShoppingCart, User as UserIcon, LogIn, Instagram, Facebook, Youtube, MessageCircle, Mail, Phone, MapPin, Home, GraduationCap, FileText, Calendar, ArrowRight } from 'lucide-react';
+import { Menu, X, ShoppingCart, User as UserIcon, LogIn, Instagram, Facebook, Youtube, MessageCircle, Mail, Phone, MapPin } from 'lucide-react';
 import { ASSETS, APP_VERSION } from '../constants';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import CartDrawer from './CartDrawer';
 import LoginModal from './LoginModal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
 import { Header } from './ui/header-2';
+import { useLanguage } from '../context/LanguageContext';
 
 interface LayoutProps {
   children?: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
   const { toggleCart, items } = useCart();
   const { user, setShowLoginModal, logout } = useAuth();
   const { get } = useSettings();
+  const { t } = useLanguage();
 
   const siteTitle = get('site_title', 'W-TECH');
   const logoUrl = get('logo_url', ASSETS.LOGO_URL);
@@ -27,25 +27,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const contactPhone = get('phone_main', '17 3231-2858');
   const contactAddr = get('address', 'São José do Rio Preto, SP');
 
-  // Fetch Socials
   const instagram = get('instagram', '');
   const facebook = get('facebook', '');
   const youtube = get('youtube', ''); 
   const whatsapp = get('whatsapp_phone', '');
-
-
-
-  const MobileMenuItem = ({ icon: Icon, label, to, onClick }: { icon: any, label: string, to: string, onClick: () => void }) => (
-    <Link to={to} onClick={onClick} className="flex flex-col items-center gap-3 group">
-        <motion.div 
-            whileTap={{ scale: 0.9 }}
-            className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-lg group-hover:bg-white/20 transition-colors"
-        >
-            <Icon size={28} />
-        </motion.div>
-        <span className="text-xs font-medium text-white/90 text-center">{label}</span>
-    </Link>
-  );
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800">
@@ -53,8 +38,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <LoginModal />
       
       <Header />
-
-
 
       {/* Main Content */}
       <main className="flex-grow bg-slate-50">
@@ -67,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div>
             <img src={logoUrl} alt={siteTitle} className="h-10 mb-6 opacity-90" />
             <p className="text-sm leading-relaxed mb-6">
-              Referência nacional em tecnologia de suspensão, oferecendo produtos de alta performance e educação técnica especializada.
+              {t.footer.desc}
             </p>
             {/* Social Icons */}
             <div className="flex gap-4">
@@ -94,25 +77,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
           <div>
-            <h3 className="text-white font-bold uppercase mb-4">Acesso Rápido</h3>
+            <h3 className="text-white font-bold uppercase mb-4">{t.footer.quickLinks}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/cursos" className="hover:text-wtech-gold">Cursos e Eventos</Link></li>
-              <li><Link to="/mapa" className="hover:text-wtech-gold">Encontrar Mecânico</Link></li>
-              <li><Link to="/glossario" className="hover:text-wtech-gold">Glossário Técnico</Link></li>
-              <li><button onClick={() => setShowLoginModal(true)} className="hover:text-wtech-gold text-left">Painel Administrativo</button></li>
+              <li><Link to="/cursos" className="hover:text-wtech-gold">{t.nav.courses}</Link></li>
+              <li><Link to="/mapa" className="hover:text-wtech-gold">{t.nav.mechanics}</Link></li>
+              <li><Link to="/molas" className="hover:text-wtech-gold">{t.nav.springs}</Link></li>
+              <li><Link to="/oleo" className="hover:text-wtech-gold">{t.nav.oil}</Link></li>
+              <li><button onClick={() => setShowLoginModal(true)} className="hover:text-wtech-gold text-left">{t.nav.admin}</button></li>
             </ul>
           </div>
           <div>
-            <h3 className="text-white font-bold uppercase mb-4">Legal</h3>
+            <h3 className="text-white font-bold uppercase mb-4">{t.footer.legal}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/termos" className="hover:text-wtech-gold">Termos de Uso</Link></li>
-              <li><Link to="/privacidade" className="hover:text-wtech-gold">Privacidade</Link></li>
-              <li><Link to="/cancelamento" className="hover:text-wtech-gold">Política de Cancelamento</Link></li>
-              <li><Link to="/suporte" className="hover:text-wtech-gold">Suporte</Link></li>
+              <li><Link to="/termos" className="hover:text-wtech-gold">{t.footer.terms}</Link></li>
+              <li><Link to="/privacidade" className="hover:text-wtech-gold">{t.footer.privacy}</Link></li>
+              <li><Link to="/cancelamento" className="hover:text-wtech-gold">{t.footer.cancellation}</Link></li>
+              <li><Link to="/suporte" className="hover:text-wtech-gold">{t.footer.support}</Link></li>
             </ul>
           </div>
           <div>
-            <h3 className="text-white font-bold uppercase mb-4">Contato</h3>
+            <h3 className="text-white font-bold uppercase mb-4">{t.footer.contact}</h3>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2"><Mail size={16} className="text-wtech-gold"/> {contactEmail}</li>
               <li className="flex items-center gap-2"><Phone size={16} className="text-wtech-gold"/> {contactPhone}</li>
@@ -121,18 +105,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
         <div className="container mx-auto px-4 mt-12 pt-8 border-t border-gray-800 text-center text-xs space-y-1">
-          <p>&copy; {new Date().getFullYear()} {siteTitle}. Todos os direitos reservados. v{APP_VERSION}</p>
-          <p className="text-gray-500">
-            Site desenvolvido por Daniel Marques ·{' '}
-            <a
-              href="https://2timeweb.com.br"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-wtech-gold transition-colors"
-            >
-              2timeweb.com.br
-            </a>
-          </p>
+          <p>&copy; {new Date().getFullYear()} {siteTitle}. {t.footer.rights} v{APP_VERSION}</p>
         </div>
       </footer>
     </div>

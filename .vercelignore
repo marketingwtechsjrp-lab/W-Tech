@@ -1,0 +1,24 @@
+*.mov
+*.mp4
+*.MOV
+*.MP4
+*.zip
+*.ZIP
+*.xlsx
+*.XLSX
+node_modules
+dist
+.next
+.git
+.github
+.agents
+.agent
+.claude
+.vite
+como foi.mov
+como foi.mp4
+Abrertura.mp4
+depoimentos 1.mp4
+depoimentos 2.mp4
+pronello hero bg.JPG
+public/images/Pronello.mov

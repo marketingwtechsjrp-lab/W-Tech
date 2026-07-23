@@ -8,11 +8,13 @@ import { Course } from '../types';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguage } from '../context/LanguageContext';
 import { generateAgendaPDF } from '../lib/pdfGenerator';
 import { Download } from 'lucide-react';
 
 const Courses: React.FC = () => {
     const { get } = useSettings();
+    const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
     // ... rest of state stays same but I need to make sure I don't break it
     // Wait, replace_file_content needs exact match.
@@ -211,8 +213,8 @@ const Courses: React.FC = () => {
                 <div className="absolute inset-0 opacity-40 bg-[url('https://media.jornaldooeste.com.br/2022/03/79b31d1f-bissinhozavatti_hondaracing_rallyminasbrasil2022_creditoricardoleizer_mundopress_4028-scaled-1.jpg')] bg-cover bg-center"></div>
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/20"></div>
                 <div className="container mx-auto px-4 relative z-10 text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4">Agenda Oficial</h1>
-                    <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">Confira os próximos treinamentos, workshops e eventos técnicos da Rede W-Tech.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4">{t.courses.title}</h1>
+                    <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">{t.courses.subtitle}</p>
 
                     <button
                         onClick={handleDownloadPDF}
@@ -246,7 +248,7 @@ const Courses: React.FC = () => {
                                     onClick={() => setFilterType(type as any)}
                                     className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${filterType === type ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    {type === 'All' ? 'Todos' : type}
+                                    {type === 'All' ? t.courses.filterAll : type === 'Presencial' ? t.courses.filterPresencial : t.courses.filterOnline}
                                 </button>
                             ))}
                         </div>

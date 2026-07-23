@@ -22,10 +22,13 @@ const imageKeys = Object.keys(imagesGlob).sort();
 const imageUrls = imageKeys.map(key => imagesGlob[key]);
 
 
+import { useLanguage } from '../context/LanguageContext';
+
 export function HeroScrollAnimation() {
   const { get } = useSettings();
-  const heroHeadline = get('hero_headline', 'A Elite da Tecnologia Automotiva');
-  const heroSubheadline = get('hero_subheadline', 'Evolua sua oficina e sua carreira com treinamentos especializados em suspensões off-road e on-road.');
+  const { t } = useLanguage();
+  const heroHeadline = get('hero_headline', t.home.heroTitle1 + ' ' + t.home.heroHighlight);
+  const heroSubheadline = get('hero_subheadline', t.home.heroSubtitle);
 
   // Ref for the main container (the trigger)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -219,7 +222,7 @@ export function HeroScrollAnimation() {
       <div className="hero-text-content absolute inset-0 z-20 flex flex-col justify-center items-center text-center container mx-auto px-4 pointer-events-none">
          <div className="pointer-events-auto max-w-4xl">
              <span className="inline-block py-1 px-3 rounded-full bg-wtech-gold/10 border border-wtech-gold/20 text-wtech-gold text-[10px] font-black uppercase tracking-[0.2em] mb-6 backdrop-blur-md">
-                Tecnologia de Ponta
+                {t.home.heroBadge}
              </span>
              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter mb-6 drop-shadow-2xl leading-[0.9]">
                 {heroHeadline}
@@ -229,18 +232,20 @@ export function HeroScrollAnimation() {
              </p>
              
              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Link to="/meus-pedidos" className="group">
+                <Link to="/cursos" className="group">
                     <Button size="lg" className="h-14 px-8 bg-wtech-gold hover:bg-white text-black font-black uppercase tracking-widest rounded-none -skew-x-12 transition-all duration-300 hover:scale-105">
                         <span className="skew-x-12 flex items-center gap-2">
-                           Área do Cliente <ChevronRight size={18} />
+                           {t.home.ctaCourses} <ChevronRight size={18} />
                         </span>
                     </Button>
                 </Link>
-                <a href="https://w-techstore.com.br/" target="_blank" rel="noopener noreferrer">
+                <Link to="/mapa">
                     <Button size="lg" variant="outline" className="h-14 px-8 border-white/30 text-white hover:bg-white hover:text-black font-bold uppercase tracking-widest rounded-none -skew-x-12 backdrop-blur-sm transition-all duration-300">
-                         <span className="skew-x-12">Loja Oficial</span>
+                        <span className="skew-x-12">
+                           {t.home.ctaMechanics}
+                        </span>
                     </Button>
-                </a>
+                </Link>
              </div>
          </div>
       </div>

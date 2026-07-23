@@ -1,7 +1,10 @@
 import React from 'react';
 import OilSelector from '../components/ui/OilSelector';
+import { useLanguage } from '../context/LanguageContext';
 
 const OleoCalculator: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-gray-50 dark:bg-black min-h-screen md:min-h-[calc(100vh-80px)] pt-6 pb-32 md:py-6 px-3 sm:px-4 flex flex-col md:justify-center transition-colors duration-300 mt-16 md:mt-20">
       <div className="max-w-6xl mx-auto w-full space-y-4 flex flex-col">
@@ -12,10 +15,10 @@ const OleoCalculator: React.FC = () => {
             Catálogo & Especificações
           </span>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-black dark:text-white uppercase tracking-tight leading-tight">
-            Níveis de Óleo de Suspensão W-Tech
+            {t.calculators.oleoTitle}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-xs max-w-xl mx-auto leading-relaxed">
-            Consulte o nível de óleo, a viscosidade indicada e o modelo de suspensão (dianteira e traseira) para a sua moto. Esta área é meramente informativa.
+            {t.calculators.oleoSubtitle}
           </p>
         </div>
 
@@ -39,9 +42,9 @@ const OleoCalculator: React.FC = () => {
             </p>
           </div>
           <div className="bg-white dark:bg-[#161616] p-4 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm">
-            <h4 className="font-black text-[10px] text-black dark:text-white uppercase tracking-wider mb-1">Dados Verificados</h4>
+            <h4 className="font-black text-[10px] text-black dark:text-white uppercase tracking-wider mb-1">Manutenção Periódica</h4>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-              Os valores exibidos são revisados pela equipe técnica W-Tech com base nos manuais de cada suspensão. Em caso de dúvida, consulte um mecânico credenciado.
+              Substitua o óleo de suspensão a cada 30-50 horas de uso extremo em off-road para preservar válvulas e vedantes.
             </p>
           </div>
         </div>

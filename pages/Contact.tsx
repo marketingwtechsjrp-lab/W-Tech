@@ -7,12 +7,14 @@ import { sanitizeHtml } from '../lib/utils';
 import { getLeadTrackingFields } from '../lib/tracking';
 import SEO from '../components/SEO';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { useLanguage } from '../context/LanguageContext';
 
 const Contact: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
     const { get } = useSettings();
+    const { t } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,8 +81,8 @@ const Contact: React.FC = () => {
             />
             {/* Header */}
             <div className="bg-wtech-black text-white py-16 text-center">
-                <h1 className="text-4xl font-bold mb-4">Entre em Contato</h1>
-                <p className="text-gray-400">Estamos prontos para atender você e sua oficina.</p>
+                <h1 className="text-4xl font-bold mb-4">{t.contact.title}</h1>
+                <p className="text-gray-400">{t.contact.subtitle}</p>
             </div>
 
             <div className="container mx-auto px-4 py-16 grid md:grid-cols-2 gap-16">

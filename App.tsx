@@ -84,11 +84,12 @@ declare global {
 
 import { ThemeProvider } from 'next-themes';
 
-import { AnalyticsTracker } from './components/AnalyticsTracker';
+import { LanguageProvider } from './context/LanguageContext';
 
 const App = () => {
   return (
-    <SettingsProvider>
+    <LanguageProvider>
+      <SettingsProvider>
       {/* @ts-ignore - ThemeProvider types mismatch */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <Router>
@@ -180,6 +181,7 @@ const App = () => {
         </Router>
       </ThemeProvider>
     </SettingsProvider>
+    </LanguageProvider>
   );
 };
 

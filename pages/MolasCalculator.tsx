@@ -1,7 +1,10 @@
 import React from 'react';
 import SpringSelector from '../components/ui/SpringSelector';
+import { useLanguage } from '../context/LanguageContext';
 
 const MolasCalculator: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-gray-50 dark:bg-black min-h-screen md:min-h-[calc(100vh-80px)] pt-6 pb-32 md:py-6 px-3 sm:px-4 flex flex-col md:justify-center transition-colors duration-300 mt-16 md:mt-20">
       <div className="max-w-6xl mx-auto w-full space-y-4 flex flex-col">
@@ -12,10 +15,10 @@ const MolasCalculator: React.FC = () => {
             Catálogo & Especificações
           </span>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-black dark:text-white uppercase tracking-tight leading-tight">
-            Banco de Dados de Molas W-Tech
+            {t.calculators.molasTitle}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-xs max-w-xl mx-auto leading-relaxed">
-            Consulte as molas calibradas (dianteira e traseira) para o seu peso e modelo de motocicleta. Esta área é meramente informativa.
+            {t.calculators.molasSubtitle}
           </p>
         </div>
 
@@ -39,9 +42,9 @@ const MolasCalculator: React.FC = () => {
             </p>
           </div>
           <div className="bg-white dark:bg-[#161616] p-4 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm">
-            <h4 className="font-black text-[10px] text-black dark:text-white uppercase tracking-wider mb-1">Consulta Técnica</h4>
+            <h4 className="font-black text-[10px] text-black dark:text-white uppercase tracking-wider mb-1">Carga Adicional</h4>
             <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-              As constantes elásticas e especificações contidas nesta base seguem rigorosamente as tabelas de referência internacional.
+              Caso transporte garupa ou bagagens frequentes na mota, recomendamos subir +1 nível na taxa de mola (k).
             </p>
           </div>
         </div>

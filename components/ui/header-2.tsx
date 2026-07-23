@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
 import { useScroll } from '@/components/ui/use-scroll';
@@ -8,6 +8,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSettings } from '@/context/SettingsContext';
 import { Settings as GearIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import SpringHeaderDropdown from './SpringHeaderDropdown';
 
 export function Header() {
@@ -16,6 +18,7 @@ export function Header() {
 	const scrolled = useScroll(10);
 	const { get } = useSettings();
 	const { user, setShowLoginModal } = useAuth();
+	const { t } = useLanguage();
 	const location = useLocation();
 	const navigate = useNavigate();
 
@@ -24,14 +27,14 @@ export function Header() {
 	const siteTitle = get('site_title', 'W-TECH');
 
 	const links = [
-		{ label: 'Início', href: '/' },
-		{ label: 'Molas', href: '/molas' },
-		{ label: 'Óleo', href: '/oleo' },
-		{ label: 'Cursos', href: '/cursos' },
-		{ label: 'Rede', href: '/mapa' },
-		{ label: 'Loja', href: 'https://w-techstore.com.br/', isExternal: true },
-		{ label: 'Blog', href: '/blog' },
-		{ label: 'Contato', href: '/contato' },
+		{ label: t.nav.home, href: '/', key: 'home' },
+		{ label: t.nav.springs, href: '/molas', key: 'molas' },
+		{ label: t.nav.oil, href: '/oleo', key: 'oil' },
+		{ label: t.nav.courses, href: '/cursos', key: 'courses' },
+		{ label: t.nav.mechanics, href: '/mapa', key: 'mechanics' },
+		{ label: t.nav.store, href: 'https://w-techstore.com.br/', isExternal: true, key: 'store' },
+		{ label: t.nav.blog, href: '/blog', key: 'blog' },
+		{ label: t.nav.contact, href: '/contato', key: 'contact' },
 	];
 
 	React.useEffect(() => {
@@ -53,7 +56,7 @@ export function Header() {
 			className={cn(
 				'fixed top-0 z-[100] mx-auto w-full border-b border-transparent transition-all duration-300 ease-out md:left-1/2 md:-translate-x-1/2',
 				{
-					'bg-black/95 supports-[backdrop-filter]:bg-black/50 border-white/10 backdrop-blur-lg md:top-4 md:max-w-5xl md:rounded-full md:border md:shadow-2xl':
+					'bg-black/95 supports-[backdrop-filter]:bg-black/50 border-white/10 backdrop-blur-lg md:top-4 md:max-w-6xl md:rounded-full md:border md:shadow-2xl':
 						headerActive && !open,
 					'bg-black/90': open,
 					'bg-transparent top-0 max-w-full': !headerActive && !open,
@@ -91,11 +94,11 @@ export function Header() {
 
 				{/* Desktop Menu */}
 				<div className="hidden items-center gap-1 md:flex">
-					{links.map((link, i) => {
+					{links.map((link) => {
 						const isExternal = link.isExternal;
 						const content = (
 							<span className={cn(
-								"text-[10px] font-bold uppercase tracking-widest transition-colors hover:text-wtech-gold px-3 py-2 rounded-md",
+								"text-[10px] font-bold uppercase tracking-widest transition-colors hover:text-wtech-gold px-2.5 py-2 rounded-md",
 								headerActive ? "text-gray-300" : "text-white"
 							)}>
 								{link.label}
@@ -105,7 +108,7 @@ export function Header() {
 						if (isExternal) {
 							return (
 								<a 
-									key={i} 
+									key={link.key} 
 									href={link.href} 
 									target="_blank" 
 									rel="noopener noreferrer" 
@@ -119,11 +122,11 @@ export function Header() {
 
 						return (
 							<Link 
-								key={i} 
+								key={link.key} 
 								to={link.href} 
 								className="flex items-center"
 								onMouseEnter={() => {
-									if (link.label === 'Molas') {
+									if (link.key === 'molas') {
 										setIsMolasOpen(true);
 									} else {
 										setIsMolasOpen(false);
@@ -135,23 +138,26 @@ export function Header() {
 						);
 					})}
 					
+					{/* Language Switcher */}
+					<LanguageSwitcher className="ml-2 mr-1" />
+
 					{/* Member Area (Gear Icon) */}
 					<button 
 						onClick={() => user ? navigate('/admin') : setShowLoginModal(true)}
 						onMouseEnter={() => setIsMolasOpen(false)}
-						className="p-2 text-gray-400 hover:text-wtech-gold transition-colors ml-1"
-						title="Área do Membro"
+						className="p-1.5 text-gray-400 hover:text-wtech-gold transition-colors"
+						title={t.header.myAccount}
 					>
 						<GearIcon size={16} />
 					</button>
 
 					<Button 
 						asChild
-						className="rounded-full bg-wtech-gold text-black hover:bg-yellow-400 font-bold uppercase tracking-widest text-[10px] px-6 ml-2"
+						className="rounded-full bg-wtech-gold text-black hover:bg-yellow-400 font-bold uppercase tracking-widest text-[9px] px-4 ml-1"
 						size="sm"
 						onMouseEnter={() => setIsMolasOpen(false)}
 					>
-						<Link to="/meus-pedidos">Área do Cliente</Link>
+						<Link to="/meus-pedidos">{t.header.myAccount}</Link>
 					</Button>
 				</div>
 
@@ -173,27 +179,29 @@ export function Header() {
 			>
 				<div
 					className={cn(
-						'flex h-full w-full flex-col justify-center items-center gap-y-8 p-8 transition-transform duration-300',
+						'flex h-full w-full flex-col justify-center items-center gap-y-6 p-8 transition-transform duration-300',
 						open ? 'scale-100 translate-y-0' : 'scale-95 -translate-y-4',
 					)}
 				>
-					<div className="flex flex-col items-center gap-y-6">
+					<LanguageSwitcher className="mb-4" />
+
+					<div className="flex flex-col items-center gap-y-4">
 						{links.map((link) => (
 							link.isExternal ? (
 								<a
-									key={link.label}
+									key={link.key}
 									href={link.href}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="text-2xl font-black uppercase tracking-tighter text-white hover:text-wtech-gold transition-colors"
+									className="text-xl font-black uppercase tracking-tighter text-white hover:text-wtech-gold transition-colors"
 								>
 									{link.label}
 								</a>
 							) : (
 								<Link
-									key={link.label}
+									key={link.key}
 									onClick={() => setOpen(false)}
-									className="text-2xl font-black uppercase tracking-tighter text-white hover:text-wtech-gold transition-colors"
+									className="text-xl font-black uppercase tracking-tighter text-white hover:text-wtech-gold transition-colors"
 									to={link.href}
 								>
 									{link.label}
@@ -201,22 +209,14 @@ export function Header() {
 							)
 						))}
 					</div>
-					<div className="flex flex-col gap-4 w-full max-w-xs mt-8">
+
+					<div className="flex flex-col items-center gap-y-3 mt-4 w-full max-w-xs">
 						<Button 
-							variant="outline" 
-							className="w-full rounded-xl border-white/20 text-white hover:bg-white hover:text-black font-bold uppercase tracking-widest"
-							onClick={() => {
-								setOpen(false);
-								setShowLoginModal(true);
-							}}
+							onClick={() => { setOpen(false); user ? navigate('/admin') : setShowLoginModal(true); }}
+							variant="outline"
+							className="w-full border-white/20 text-white font-bold uppercase tracking-widest text-xs py-3"
 						>
-							{user ? 'Acessar Painel' : 'Área do Membro'}
-						</Button>
-						<Button 
-							asChild
-							className="w-full rounded-xl bg-wtech-gold text-black hover:bg-yellow-400 font-bold uppercase tracking-widest"
-						>
-							<Link to="/cursos" onClick={() => setOpen(false)}>Quero Evoluir</Link>
+							{user ? t.header.admin : t.header.login}
 						</Button>
 					</div>
 				</div>
