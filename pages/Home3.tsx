@@ -13,6 +13,7 @@ import { Mechanic } from '../types';
 
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguage } from '../context/LanguageContext';
 
 import { sanitizeHtml } from '../lib/utils';
 // import { HeroSection } from '../components/ui/hero-section-5'; // Replaced by Animation
@@ -30,6 +31,7 @@ const Home3 = () => {
     const navigate = useNavigate();
 
     const { get } = useSettings();
+    const { t } = useLanguage();
     const [isMuted, setIsMuted] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const videoIframeRef = useRef<HTMLIFrameElement>(null);
@@ -228,16 +230,16 @@ const Home3 = () => {
             <HeroScrollAnimation />
 
 
-            {/* ABOUT & HQ SECTION ... (Keep as is) */}
+            {/* ABOUT & HQ SECTION */}
             <section className="py-24 bg-white relative">
                 <div className="container mx-auto px-6">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div className="relative">
                             <div className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-gray-100 rotate-2 hover:rotate-0 transition-all duration-500">
                                 <img
-                                    src="https://w-techbrasil.com.br/wp-content/uploads/2025/01/w-tech-sobre-nos-1-768x495.jpg"
+                                    src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=1000"
                                     className="w-full h-full object-cover"
-                                    alt="Sede da W-Tech Brasil em São José do Rio Preto - Estrutura Técnica de 1.200m²"
+                                    alt="Sede W-Tech Brasil - Estrutura Técnica de 1.200m²"
                                     width="768"
                                     height="495"
                                     loading="lazy"
@@ -245,29 +247,29 @@ const Home3 = () => {
                             </div>
                             <div className="absolute -bottom-10 -left-10 bg-wtech-black text-white p-8 rounded-2xl shadow-xl max-w-sm hidden md:block">
                                 <p className="text-4xl font-black text-wtech-gold mb-1">1.200m²</p>
-                                <p className="text-sm font-bold uppercase tracking-widest text-gray-400">De Estrutura Técnica</p>
+                                <p className="text-sm font-bold uppercase tracking-widest text-gray-400">{t.home.aboutBullet3}</p>
                             </div>
                         </div>
 
                         <div>
-                            <span className="text-wtech-gold font-bold tracking-widest uppercase text-sm mb-4 block">Sobre a W-Tech</span>
+                            <span className="text-wtech-gold font-bold tracking-widest uppercase text-sm mb-4 block">{t.home.aboutBadge}</span>
                             <h2 className="text-4xl lg:text-7xl font-display font-black mb-8 leading-tight text-gray-900 uppercase">
-                                A MAIOR ESTRUTURA <br /> <span className="text-wtech-red">INDEPENDENTE</span> DO BRASIL.
+                                {t.home.aboutTitlePart1} <br /> <span className="text-wtech-red">{t.home.aboutTitleHighlight}</span> {t.home.aboutTitlePart2}.
                             </h2>
                             <div className="space-y-6 text-gray-600 text-lg">
                                 <p className="font-medium">
-                                    Localizada estrategicamente em São José do Rio Preto, a sede da W-Tech Brasil é o epicentro da alta performance em duas rodas na América Latina.
+                                    {t.home.aboutDesc1}
                                 </p>
                                 <p>
-                                    Nossa metodologia exclusiva une a teoria da engenharia com a prática extrema do <span className="font-bold text-black italic">Motocross, Enduro e Rally</span>. Não apenas ensinamos suspensão; entregamos a autoridade técnica que transforma oficinas comuns em centros de referência em preparação.
+                                    {t.home.aboutDesc2}
                                 </p>
 
                                 <ul className="grid sm:grid-cols-2 gap-4 pt-6">
                                     {[
-                                        "Laboratório de Eletrônica",
-                                        "Dinamômetro de Suspensão",
-                                        "Ferramentaria Especializada",
-                                        "Centro de Usinagem CNC"
+                                        t.home.aboutBullet1,
+                                        t.home.aboutBullet2,
+                                        t.home.aboutBullet3,
+                                        t.home.aboutBullet4
                                     ].map((item, i) => (
                                         <li key={i} className="flex items-center gap-3">
                                             <div className="w-2 h-2 rounded-full bg-wtech-gold"></div>
@@ -278,7 +280,7 @@ const Home3 = () => {
 
                                 <div className="pt-8">
                                     <button className="px-8 py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-colors uppercase tracking-wide">
-                                        Conheça Nossa Sede
+                                        {t.home.aboutCta}
                                     </button>
                                 </div>
                             </div>
@@ -297,15 +299,15 @@ const Home3 = () => {
                         <div className="absolute inset-0 bg-gradient-to-br from-black/80 to-transparent pointer-events-none"></div>
 
                         <div className="relative z-10">
-                            <h2 className="text-5xl lg:text-7xl font-display font-black mb-8 leading-tight uppercase">POR QUE SOMOS <br /><span className="text-wtech-red">A AUTORIDADE?</span></h2>
+                            <h2 className="text-5xl lg:text-7xl font-display font-black mb-8 leading-tight uppercase">{t.home.whyTitlePart1} <br /><span className="text-wtech-red">{t.home.whyTitleHighlight}</span></h2>
                             <div className="space-y-6 text-white/80 text-xl font-medium">
-                                <p>A W-Tech não é apenas uma escola. É um ecossistema. Conectamos o fabricante da peça, o engenheiro, o mecânico e o piloto.</p>
+                                <p>{t.home.whySubtitle}</p>
                                 <ul className="space-y-6 pt-6">
                                     {[
-                                        "Material didático proprietário e exclusivo",
-                                        "Suporte técnico vitalício para alunos",
-                                        "Acesso às ferramentas mais modernas do mercado",
-                                        "Certificação com validação via QR Code"
+                                        t.home.whyBullet1,
+                                        t.home.whyBullet2,
+                                        t.home.whyBullet3,
+                                        t.home.whyBullet4
                                     ].map((item, i) => (
                                         <li key={i} className="flex items-center gap-4 border-b border-white/10 pb-4">
                                             <div className="bg-wtech-red text-white p-1 rounded-full"><CheckCircle size={16} /></div>
@@ -327,15 +329,15 @@ const Home3 = () => {
                             <div className="flex items-center gap-4 mb-4">
                                 <MapPin size={32} className="text-wtech-red" />
                                 <div>
-                                    <h4 className="font-bold text-white text-xl">Encontre Agora</h4>
-                                    <p className="text-gray-400 text-sm">Busque oficinas certificadas próximas</p>
+                                    <h4 className="font-bold text-white text-xl">{t.home.mapTitle}</h4>
+                                    <p className="text-gray-400 text-sm">{t.home.mapSubtitle}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => navigate('/mapa')}
                                 className="block w-full bg-white text-black text-center py-3 rounded-sm font-bold text-sm hover:bg-gray-200 uppercase tracking-widest"
                             >
-                                Abrir Mapa Completo
+                                {t.home.mapCta}
                             </button>
                         </div>
                     </div>
@@ -361,9 +363,9 @@ const Home3 = () => {
                 <div className="container mx-auto px-6 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-16 px-4">
                         <div>
-                            <h2 className="text-4xl lg:text-5xl font-display font-black text-white mb-4 tracking-tight uppercase tracking-tighter">AGENDA <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">OFICIAL</span></h2>
+                            <h2 className="text-4xl lg:text-5xl font-display font-black text-white mb-4 tracking-tight uppercase tracking-tighter">{t.home.agendaTitlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-600">{t.home.agendaTitleHighlight}</span></h2>
                             <p className="text-gray-400 font-medium text-lg max-w-xl">
-                                Planeje sua especialização. Confira o calendário completo de treinamentos presenciais e online da W-Tech Brasil.
+                                {t.home.agendaSubtitle}
                             </p>
                         </div>
                         <div className="hidden md:block">
@@ -371,7 +373,7 @@ const Home3 = () => {
                                 onClick={downloadCourseList}
                                 className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/10 text-white font-bold rounded-lg hover:bg-wtech-gold hover:text-black transition-all shadow-sm flex items-center gap-2 uppercase text-sm"
                             >
-                                <CalendarIcon size={18} /> Baixar Lista {new Date().getFullYear()}
+                                <CalendarIcon size={18} /> {t.home.agendaDownload} {new Date().getFullYear()}
                             </button>
                         </div>
                     </div>
@@ -472,24 +474,24 @@ const Home3 = () => {
             <ContainerScroll className="bg-[#0a0a0a] text-center text-white">
                 <ContainerStagger viewport={{ once: false }} className="pt-20 pb-4">
                     <ContainerAnimated animation="top" className="mb-2">
-                        <span className="text-wtech-gold font-bold tracking-[0.3em] uppercase text-xs">W-TECH BRASIL</span>
+                        <span className="text-wtech-gold font-bold tracking-[0.3em] uppercase text-xs">{t.home.videoBadge}</span>
                     </ContainerAnimated>
 
                     <ContainerAnimated animation="blur">
                         <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white uppercase tracking-tighter leading-none">
-                            EXPERIÊNCIA
+                            {t.home.videoTitle1}
                         </h2>
                     </ContainerAnimated>
 
                     <ContainerAnimated animation="blur" transition={{ delay: 0.1 }}>
                         <h2 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white uppercase tracking-tighter leading-none -mt-2 md:-mt-6">
-                            IMERSIVA
+                            {t.home.videoTitle2}
                         </h2>
                     </ContainerAnimated>
 
                     <ContainerAnimated animation="bottom" className="mt-8">
                         <p className="text-white/40 font-medium text-center uppercase tracking-[0.3em] text-[10px] animate-pulse">
-                            ↓ SCROLLE PARA EXPANDIR
+                            {t.home.videoScrollPrompt}
                         </p>
                     </ContainerAnimated>
                 </ContainerStagger>
@@ -524,11 +526,11 @@ const Home3 = () => {
                             >
                                 {isMuted ? (
                                     <>
-                                        <VolumeX size={18} /> Ligar Som
+                                        <VolumeX size={18} /> {t.home.videoUnmute}
                                     </>
                                 ) : (
                                     <>
-                                        <Volume2 size={18} /> Silenciar
+                                        <Volume2 size={18} /> {t.home.videoMute}
                                     </>
                                 )}
                             </button>
@@ -540,13 +542,12 @@ const Home3 = () => {
                 <div className="max-w-4xl mx-auto text-left px-8 py-10">
                     <ContainerStagger viewport={{ once: false }}>
                         <ContainerAnimated animation="left">
-                            <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tighter">O Próximo Nível da Suspensão</h2>
+                            <h2 className="text-4xl md:text-5xl font-black mb-6 text-white uppercase tracking-tighter">{t.home.videoNextLevelTitle}</h2>
                         </ContainerAnimated>
 
                         <ContainerAnimated animation="left" transition={{ delay: 0.2 }}>
                             <p className="text-xl text-gray-400 mb-10 font-medium leading-relaxed">
-                                Mais do que um treinamento, uma imersão completa no mundo da alta performance.
-                                Na W-Tech, combinamos tecnologia de ponta com a experiência prática dos melhores especialistas do mercado para entregar um conhecimento que não existe em livros.
+                                {t.home.videoNextLevelDesc}
                             </p>
                         </ContainerAnimated>
 
@@ -554,15 +555,15 @@ const Home3 = () => {
                             <div className="grid md:grid-cols-3 gap-8 pt-10 border-t border-white/10">
                                 <div>
                                     <p className="text-wtech-gold font-black text-4xl mb-1">100%</p>
-                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">Metodologia Prática</p>
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">{t.home.statCourses}</p>
                                 </div>
                                 <div>
-                                    <p className="text-wtech-gold font-black text-4xl mb-1">+5.000</p>
-                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">Alunos Certificados</p>
+                                    <p className="text-wtech-gold font-black text-4xl mb-1">{t.home.statStudents.split(' ')[0]}</p>
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">{t.home.statStudents.split(' ').slice(1).join(' ')}</p>
                                 </div>
                                 <div>
                                     <p className="text-wtech-gold font-black text-4xl mb-1">VITALÍCIO</p>
-                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">Suporte Técnico</p>
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-500">{t.common.support}</p>
                                 </div>
                             </div>
                         </ContainerAnimated>
@@ -576,8 +577,8 @@ const Home3 = () => {
             <section id="blog" className="py-20 bg-white">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-display font-black text-gray-900 uppercase tracking-tighter">CONTEÚDO <span className="text-wtech-gold">TÉCNICO</span></h2>
-                        <p className="text-gray-500 mt-2 font-medium">Artigos, novidades e tecnologia do setor.</p>
+                        <h2 className="text-4xl font-display font-black text-gray-900 uppercase tracking-tighter">{t.home.blogTitlePart1} <span className="text-wtech-gold">{t.home.blogTitleHighlight}</span></h2>
+                        <p className="text-gray-500 mt-2 font-medium">{t.home.blogSubtitle}</p>
                     </div>
 
                     <div className="flex overflow-x-auto pb-8 gap-8 snap-x snap-mandatory">
@@ -585,7 +586,13 @@ const Home3 = () => {
                             posts.map(post => (
                                 <div key={post.id} className="min-w-[350px] md:min-w-[400px] snap-center group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100">
                                     <div className="overflow-hidden rounded-t-2xl h-60">
-                                        <img src={post.image} alt={post.title} width="400" height="240" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                        <img 
+                                            src={(!post.image || post.image.includes('wp-content/uploads')) ? 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=800' : post.image} 
+                                            alt={post.title} 
+                                            width="400" 
+                                            height="240" 
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                                        />
                                     </div>
                                     <div className="p-6">
                                         <div className="flex gap-4 items-center mb-3">
@@ -595,7 +602,7 @@ const Home3 = () => {
                                         </div>
                                         <h3 className="text-xl font-bold mb-3 group-hover:text-wtech-gold transition-colors line-clamp-2">{post.title}</h3>
                                         <div className="text-gray-500 text-sm mb-4 line-clamp-2" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.excerpt || post.content.substring(0, 50) + '...') }} />
-                                        <Link to={`/blog/${post.slug || post.id}`} className="text-sm font-bold border-b-2 border-transparent group-hover:border-wtech-gold inline-block pb-1 transition-all">Ler Artigo</Link>
+                                        <Link to={`/blog/${post.slug || post.id}`} className="text-sm font-bold border-b-2 border-transparent group-hover:border-wtech-gold inline-block pb-1 transition-all">{t.home.blogReadArticle}</Link>
                                     </div>
                                 </div>
                             ))

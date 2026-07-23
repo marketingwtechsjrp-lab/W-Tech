@@ -25,10 +25,11 @@ const imageUrls = imageKeys.map(key => imagesGlob[key]);
 import { useLanguage } from '../context/LanguageContext';
 
 export function HeroScrollAnimation() {
-  const { get } = useSettings();
-  const { t } = useLanguage();
-  const heroHeadline = get('hero_headline', t.home.heroTitle1 + ' ' + t.home.heroHighlight);
-  const heroSubheadline = get('hero_subheadline', t.home.heroSubtitle);
+  const { t, currentLang } = useLanguage();
+  const dbHeadline = get('hero_headline', '');
+  const dbSubheadline = get('hero_subheadline', '');
+  const heroHeadline = (currentLang === 'pt-BR' && dbHeadline) ? dbHeadline : `${t.home.heroTitle1} ${t.home.heroHighlight}`;
+  const heroSubheadline = (currentLang === 'pt-BR' && dbSubheadline) ? dbSubheadline : t.home.heroSubtitle;
 
   // Ref for the main container (the trigger)
   const containerRef = useRef<HTMLDivElement>(null);

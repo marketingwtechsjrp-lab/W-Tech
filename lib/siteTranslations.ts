@@ -48,6 +48,43 @@ export interface TranslationDictionary {
         mechanicsSectionTitle: string;
         mechanicsSectionSubtitle: string;
         findMechanicBtn: string;
+        aboutBadge: string;
+        aboutTitlePart1: string;
+        aboutTitleHighlight: string;
+        aboutTitlePart2: string;
+        aboutDesc1: string;
+        aboutDesc2: string;
+        aboutBullet1: string;
+        aboutBullet2: string;
+        aboutBullet3: string;
+        aboutBullet4: string;
+        aboutCta: string;
+        whyTitlePart1: string;
+        whyTitleHighlight: string;
+        whySubtitle: string;
+        whyBullet1: string;
+        whyBullet2: string;
+        whyBullet3: string;
+        whyBullet4: string;
+        mapTitle: string;
+        mapSubtitle: string;
+        mapCta: string;
+        agendaTitlePart1: string;
+        agendaTitleHighlight: string;
+        agendaSubtitle: string;
+        agendaDownload: string;
+        videoBadge: string;
+        videoTitle1: string;
+        videoTitle2: string;
+        videoScrollPrompt: string;
+        videoMute: string;
+        videoUnmute: string;
+        videoNextLevelTitle: string;
+        videoNextLevelDesc: string;
+        blogTitlePart1: string;
+        blogTitleHighlight: string;
+        blogSubtitle: string;
+        blogReadArticle: string;
     };
     courses: {
         title: string;
@@ -143,6 +180,43 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             mechanicsSectionTitle: 'Rede de Oficinas Especializadas',
             mechanicsSectionSubtitle: 'Encontre os melhores mecânicos e preparadores certificados pela W-Tech na sua região.',
             findMechanicBtn: 'Localizar Oficina',
+            aboutBadge: 'Sobre a W-Tech',
+            aboutTitlePart1: 'A Maior Estrutura',
+            aboutTitleHighlight: 'Independente',
+            aboutTitlePart2: 'da América Latina & Europa',
+            aboutDesc1: 'Com sede técnica de 1.200m², a W-Tech é o epicentro da alta performance em suspensões na América Latina e na Europa.',
+            aboutDesc2: 'Nossa metodologia exclusiva une engenharia de precisão com a prática extrema do Motocross, Enduro e Rally, transformando oficinas em centros de excelência.',
+            aboutBullet1: 'Laboratório de Eletrónica',
+            aboutBullet2: 'Dinamómetro de Suspensão',
+            aboutBullet3: 'Ferramentas Especializadas',
+            aboutBullet4: 'Centro de Usinagem CNC',
+            aboutCta: 'Conheça a Nossa Sede',
+            whyTitlePart1: 'PORQUE SOMOS',
+            whyTitleHighlight: 'A AUTORIDADE?',
+            whySubtitle: 'A W-Tech não é apenas uma escola. É um ecossistema completo que une fabricante, engenheiro, mecânico e piloto.',
+            whyBullet1: 'Material didático proprietário e exclusivo',
+            whyBullet2: 'Suporte técnico vitalício para alunos',
+            whyBullet3: 'Acesso às ferramentas mais modernas do mercado',
+            whyBullet4: 'Certificação com validação via QR Code',
+            mapTitle: 'Encontre Agora',
+            mapSubtitle: 'Procure oficinas certificadas mais próximas',
+            mapCta: 'Abrir Mapa Completo',
+            agendaTitlePart1: 'AGENDA',
+            agendaTitleHighlight: 'OFICIAL',
+            agendaSubtitle: 'Planeie a sua especialização. Confira o calendário completo de formações presenciais e online da W-Tech.',
+            agendaDownload: 'Baixar Lista',
+            videoBadge: 'W-TECH BRASIL & EUROPA',
+            videoTitle1: 'EXPERIÊNCIA',
+            videoTitle2: 'IMERSIVA',
+            videoScrollPrompt: '↓ SCROLLE PARA EXPANDIR',
+            videoMute: 'Silenciar',
+            videoUnmute: 'Ligar Som',
+            videoNextLevelTitle: 'O Próximo Nível da Suspensão',
+            videoNextLevelDesc: 'Mais do que uma formação, uma imersão completa no mundo da alta performance com os melhores especialistas.',
+            blogTitlePart1: 'CONTEÚDO',
+            blogTitleHighlight: 'TÉCNICO',
+            blogSubtitle: 'Artigos, novidades e tecnologia do setor de suspensões.',
+            blogReadArticle: 'Ler Artigo',
         },
         courses: {
             title: 'Cursos e Formação Técnica',
@@ -236,6 +310,43 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             mechanicsSectionTitle: 'Red de Talleres Especializados',
             mechanicsSectionSubtitle: 'Encuentra los mejores mecánicos y preparadores certificados por W-Tech en tu zona.',
             findMechanicBtn: 'Localizar Taller',
+            aboutBadge: 'Sobre W-Tech',
+            aboutTitlePart1: 'La Mayor Estructura',
+            aboutTitleHighlight: 'Independiente',
+            aboutTitlePart2: 'de América Latina y Europa',
+            aboutDesc1: 'Con una sede técnica de 1.200m², W-Tech es el epicentro de la alta performance en suspensiones.',
+            aboutDesc2: 'Nuestra metodología exclusiva une ingeniería de precisión con la práctica extrema del Motocross, Enduro y Rally.',
+            aboutBullet1: 'Laboratorio Electrónico',
+            aboutBullet2: 'Dinamómetro de Suspensión',
+            aboutBullet3: 'Herramientas Especializadas',
+            aboutBullet4: 'Centro Mecanizado CNC',
+            aboutCta: 'Conoce Nuestra Sede',
+            whyTitlePart1: '¿POR QUÉ SOMOS',
+            whyTitleHighlight: 'LA AUTORIDAD?',
+            whySubtitle: 'W-Tech es un ecosistema completo que conecta al fabricante, ingeniero, mecánico y piloto.',
+            whyBullet1: 'Material didáctico exclusivo y propio',
+            whyBullet2: 'Soporte técnico vitalicio para alumnos',
+            whyBullet3: 'Acceso a las herramientas más modernas',
+            whyBullet4: 'Certificación oficial con validación QR',
+            mapTitle: 'Encuentra Ahora',
+            mapSubtitle: 'Busca talleres certificados cerca de ti',
+            mapCta: 'Abrir Mapa Completo',
+            agendaTitlePart1: 'CALENDARIO',
+            agendaTitleHighlight: 'OFICIAL',
+            agendaSubtitle: 'Planifica tu especialización. Consulta el calendario completo de cursos presenciales y online.',
+            agendaDownload: 'Descargar Calendario',
+            videoBadge: 'W-TECH AMÉRICA LATINA & EUROPA',
+            videoTitle1: 'EXPERIENCIA',
+            videoTitle2: 'INMERSIVA',
+            videoScrollPrompt: '↓ DESPLÁZATE PARA EXPANDIR',
+            videoMute: 'Silenciar',
+            videoUnmute: 'Activar Sonido',
+            videoNextLevelTitle: 'El Siguiente Nivel de la Suspensión',
+            videoNextLevelDesc: 'Más que una formación, una inmersión completa en el mundo del alto rendimiento con los mejores especialistas.',
+            blogTitlePart1: 'CONTENIDO',
+            blogTitleHighlight: 'TÉCNICO',
+            blogSubtitle: 'Artículos, novedades y tecnología del sector.',
+            blogReadArticle: 'Leer Artículo',
         },
         courses: {
             title: 'Cursos y Formación Técnica',
@@ -329,6 +440,43 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             mechanicsSectionTitle: 'Certified Workshop Network',
             mechanicsSectionSubtitle: 'Find W-Tech certified mechanics and tuners near you.',
             findMechanicBtn: 'Locate Workshop',
+            aboutBadge: 'About W-Tech',
+            aboutTitlePart1: 'The Largest Independent',
+            aboutTitleHighlight: 'Facility',
+            aboutTitlePart2: 'in Latin America & Europe',
+            aboutDesc1: 'With a 1,200m² technical headquarters, W-Tech is the epicenter of high-performance motorcycle suspension.',
+            aboutDesc2: 'Our exclusive methodology combines precision engineering with extreme Motocross, Enduro, and Rally practice.',
+            aboutBullet1: 'Electronics Lab',
+            aboutBullet2: 'Suspension Dynamometer',
+            aboutBullet3: 'Specialized Tooling',
+            aboutBullet4: 'CNC Machining Center',
+            aboutCta: 'Explore Our HQ',
+            whyTitlePart1: 'WHY ARE WE THE',
+            whyTitleHighlight: 'AUTHORITY?',
+            whySubtitle: 'W-Tech is not just a school. It is an ecosystem connecting manufacturer, engineer, mechanic, and rider.',
+            whyBullet1: 'Exclusive proprietary courseware',
+            whyBullet2: 'Lifetime technical support for students',
+            whyBullet3: 'Access to modern specialized tools',
+            whyBullet4: 'Official QR Code validated certification',
+            mapTitle: 'Find Now',
+            mapSubtitle: 'Search certified workshops near your location',
+            mapCta: 'Open Full Map',
+            agendaTitlePart1: 'OFFICIAL',
+            agendaTitleHighlight: 'SCHEDULE',
+            agendaSubtitle: 'Plan your specialization. View our complete calendar of in-person and online trainings.',
+            agendaDownload: 'Download Schedule',
+            videoBadge: 'W-TECH WORLDWIDE',
+            videoTitle1: 'IMMERSIVE',
+            videoTitle2: 'EXPERIENCE',
+            videoScrollPrompt: '↓ SCROLL TO EXPAND',
+            videoMute: 'Mute',
+            videoUnmute: 'Unmute',
+            videoNextLevelTitle: 'The Next Level of Suspension',
+            videoNextLevelDesc: 'More than a course, a complete immersion into high-performance suspension with industry-leading experts.',
+            blogTitlePart1: 'TECHNICAL',
+            blogTitleHighlight: 'CONTENT',
+            blogSubtitle: 'Articles, news, and suspension technology insights.',
+            blogReadArticle: 'Read Article',
         },
         courses: {
             title: 'Courses & Technical Training',
@@ -422,6 +570,43 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             mechanicsSectionTitle: 'Rede de Oficinas Especializadas',
             mechanicsSectionSubtitle: 'Encontre os melhores mecânicos e preparadores certificados pela W-Tech na sua região.',
             findMechanicBtn: 'Localizar Oficina',
+            aboutBadge: 'Sobre a W-Tech',
+            aboutTitlePart1: 'A Maior Estrutura',
+            aboutTitleHighlight: 'Independente',
+            aboutTitlePart2: 'do Brasil',
+            aboutDesc1: 'Localizada estrategicamente em São José do Rio Preto, a sede da W-Tech Brasil é o epicentro da alta performance em duas rodas na América Latina.',
+            aboutDesc2: 'Nossa metodologia exclusiva une a teoria da engenharia com a prática extrema do Motocross, Enduro e Rally. Não apenas ensinamos suspensão; entregamos a autoridade técnica que transforma oficinas comuns em centros de referência em preparação.',
+            aboutBullet1: 'Laboratório de Eletrônica',
+            aboutBullet2: 'Dinamômetro de Suspensão',
+            aboutBullet3: 'Ferramentaria Especializada',
+            aboutBullet4: 'Centro de Usinagem CNC',
+            aboutCta: 'Conheça Nossa Sede',
+            whyTitlePart1: 'POR QUE SOMOS',
+            whyTitleHighlight: 'A AUTORIDADE?',
+            whySubtitle: 'A W-Tech não é apenas uma escola. É um ecossistema. Conectamos o fabricante da peça, o engenheiro, o mecânico e o piloto.',
+            whyBullet1: 'Material didático proprietário e exclusivo',
+            whyBullet2: 'Suporte técnico vitalício para alunos',
+            whyBullet3: 'Acesso às ferramentas mais modernas do mercado',
+            whyBullet4: 'Certificação com validação via QR Code',
+            mapTitle: 'Encontre Agora',
+            mapSubtitle: 'Busque oficinas certificadas próximas',
+            mapCta: 'Abrir Mapa Completo',
+            agendaTitlePart1: 'AGENDA',
+            agendaTitleHighlight: 'OFICIAL',
+            agendaSubtitle: 'Planeje sua especialização. Confira o calendário completo de treinamentos presenciais e online da W-Tech Brasil.',
+            agendaDownload: 'Baixar Lista',
+            videoBadge: 'W-TECH BRASIL',
+            videoTitle1: 'EXPERIÊNCIA',
+            videoTitle2: 'IMERSIVA',
+            videoScrollPrompt: '↓ SCROLLE PARA EXPANDIR',
+            videoMute: 'Silenciar',
+            videoUnmute: 'Ligar Som',
+            videoNextLevelTitle: 'O Próximo Nível da Suspensão',
+            videoNextLevelDesc: 'Mais do que um treinamento, uma imersão completa no mundo da alta performance. Na W-Tech, combinamos tecnologia de ponta com a experiência prática dos melhores especialistas do mercado para entregar um conhecimento que não existe em livros.',
+            blogTitlePart1: 'CONTEÚDO',
+            blogTitleHighlight: 'TÉCNICO',
+            blogSubtitle: 'Artigos, novidades e tecnologia do setor.',
+            blogReadArticle: 'Ler Artigo',
         },
         courses: {
             title: 'Cursos e Formação Técnica',
