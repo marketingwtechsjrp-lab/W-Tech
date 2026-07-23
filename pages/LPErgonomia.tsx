@@ -256,7 +256,8 @@ const LPErgonomia: React.FC = () => {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            const randomBuyer = buyers[Math.floor(Math.random() * buyers.length)];
+            const buyersList = t.buyers || buyers;
+            const randomBuyer = buyersList[Math.floor(Math.random() * buyersList.length)];
             setCurrentBuyer(randomBuyer);
             setShowBuyer(true);
 
@@ -1145,7 +1146,7 @@ const LPErgonomia: React.FC = () => {
                     {/* Testimonials */}
                     <div className="w-full max-w-6xl mx-auto relative cursor-grab active:cursor-grabbing">
                         <Marquee speed={40} className="py-4">
-                            {testimonials.map((t, i) => (
+                            {testimonials.map((item, i) => (
                                 <div
                                     key={i}
                                     className="bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-8 relative w-[300px] md:w-[400px] shrink-0 hover:bg-zinc-800/50 transition-colors"
@@ -1156,14 +1157,14 @@ const LPErgonomia: React.FC = () => {
                                             <Star key={j} size={14} className="text-wtech-gold fill-wtech-gold" />
                                         ))}
                                     </div>
-                                    <p className="text-gray-300 text-sm leading-relaxed mb-6 italic whitespace-normal">"{t.text}"</p>
+                                    <p className="text-gray-300 text-sm leading-relaxed mb-6 italic whitespace-normal">"{item.text}"</p>
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-wtech-gold/10 flex items-center justify-center text-wtech-gold font-black text-sm shrink-0">
-                                            {t.name[0]}
+                                            {item.name[0]}
                                         </div>
                                         <div className="whitespace-normal">
-                                            <p className="font-bold text-white text-sm">{t.name}</p>
-                                            <p className="text-gray-400 text-xs">{t.role}</p>
+                                            <p className="font-bold text-white text-sm">{item.name}</p>
+                                            <p className="text-gray-400 text-xs">{item.role}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1229,7 +1230,7 @@ const LPErgonomia: React.FC = () => {
                             <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">{t.offer.priceMain}</span>
                         </div>
                         <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-10">
-                            ou {t.offer.priceAlt} à vista no Pix/Cartão
+                            {t.offer.priceAlt} no Pix/Cartão
                         </div>
 
                         {/* Real Timer */}
