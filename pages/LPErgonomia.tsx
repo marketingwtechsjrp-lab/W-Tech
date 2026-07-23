@@ -335,26 +335,12 @@ const LPErgonomia: React.FC = () => {
         },
     ];
 
-    const ergoBlocks = [
-        { icon: <CircleDot size={24} />, title: 'O SAG', desc: 'A geometria sagrada da moto. O ponto de partida obrigatório antes de encostar na chave de fenda.' },
-        { icon: <Activity size={24} />, title: 'Molas', desc: 'O equilíbrio exato entre absorção e retorno (os famosos "cliques") para cada tipo de peso e nível.' },
-        { icon: <Move size={24} />, title: 'Ergonomia (Cockpit)', desc: 'Como você se integra à suspensão ajustada: altura e ângulo de guidão e pedaleira.' },
-        { icon: <Disc size={24} />, title: 'Pneus e Tração', desc: 'A escolha correta e a calibragem - a ponte final entre o chão e a sua válvula de suspensão.' },
-    ];
+    const ergoBlocks = t.concepts.items.map((item, idx) => {
+        const icons = [<CircleDot key={0} size={24} />, <Activity key={1} size={24} />, <Move key={2} size={24} />, <Disc key={3} size={24} />];
+        return { icon: icons[idx % icons.length], title: item.title, desc: item.desc };
+    });
 
-    const modules = [
-        { num: '01', title: 'Boas-Vindas ao Curso', desc: 'Visão geral, método e como aproveitar ao máximo cada módulo', aulas: 4 },
-        { num: '02', title: 'Ergonomia — O "Cockpit" do Piloto', desc: 'Guidão, manetes, pedal de freio e câmbio: o seu encaixe correto na moto', aulas: 5 },
-        { num: '03', title: 'Equilíbrio', desc: 'Verifique se sua moto está realmente equilibrada antes de qualquer acerto', aulas: 1 },
-        { num: '04', title: 'Molas e suas Particularidades', desc: 'Rigidez, taxa de mola e como escolher a certa para o seu peso', aulas: 1 },
-        { num: '05', title: 'O SAG — A Geometria Sagrada', desc: 'Medição e ajuste prático do SAG estático e dinâmico, do zero', aulas: 2 },
-        { num: '06', title: 'Óleo e Viscosidades', desc: 'Como o fluido controla a dinâmica da suspensão e quando substituir', aulas: 1 },
-        { num: '07', title: 'Desmistificando os "Cliques"', desc: 'Compressão, retorno: o que cada clique faz e como ajustar na prática', aulas: 2 },
-        { num: '08', title: 'Suspensão do Eixo Dianteiro', desc: 'As bengalas, o ritual de instalação da roda e por que a frente dura te machuca', aulas: 2 },
-        { num: '09', title: 'Pneus e Tração', desc: 'Pressão correta, regulagem de PSI e como o pneu determina a tração', aulas: 2 },
-        { num: '10', title: 'Relação e Corrente', desc: 'Ajustes de relação que impactam diretamente a entrega de potência', aulas: 2 },
-        { num: '11', title: 'Kits e Ferramentas', desc: 'O setup ideal da sua bancada para regular suspensão como um profissional', aulas: 1 },
-    ];
+    const modules = t.modules.items;
 
     const paschoalinLessons = [
         'Apresentação: Quem é Rafa Paschoalin',
@@ -490,16 +476,15 @@ const LPErgonomia: React.FC = () => {
                         <motion.div initial="hidden" animate="visible" variants={stagger} className="order-1 lg:col-start-1 lg:row-start-1">
                             <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6 max-w-fit">
                                 <Zap size={14} className="text-wtech-gold animate-pulse" />
-                                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">Curso Online — W-Tech</span>
+                                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">{t.hero.badge}</span>
                             </motion.div>
 
                             <motion.h1 variants={v} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-6 drop-shadow-2xl">
-                                Regule a <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 drop-shadow-none">Suspensão<br className="hidden lg:block" /></span><br className="lg:hidden" />
-                                <span className="text-3xl md:text-4xl lg:text-5xl">da Sua Moto. Do Zero.</span>
+                                {t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 drop-shadow-none">{t.hero.titleHighlight}</span>
                             </motion.h1>
 
                             <motion.p variants={v} className="text-base md:text-xl text-gray-200 leading-relaxed mb-6 max-w-lg font-bold">
-                                O único curso que transforma piloto, trilheiro, mecânico e dono de oficina em especialista de suspensão Off-Road — <strong className="text-wtech-gold">com prática real, na moto real.</strong>
+                                {t.hero.subtitle}
                             </motion.p>
 
                             <motion.p variants={v} className="text-sm text-gray-400 mb-6 max-w-lg border-l-2 border-wtech-gold pl-4 hidden md:block">
@@ -568,7 +553,7 @@ const LPErgonomia: React.FC = () => {
                             >
                                 <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                                 <span className="relative z-10 flex items-center gap-3">
-                                    Quero Regular Minha Suspensão Agora <ArrowRight strokeWidth={3} size={20} />
+                                    {t.hero.ctaPrimary} <ArrowRight strokeWidth={3} size={20} />
                                 </span>
                             </motion.button>
                         </motion.div>
@@ -582,7 +567,7 @@ const LPErgonomia: React.FC = () => {
                                     whileTap={shouldAnimate ? ctaTap : undefined}
                                     className="border border-white/20 text-white px-8 py-4 rounded-xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 w-full hover:border-wtech-gold/50 hover:text-wtech-gold"
                                 >
-                                    Ver o Conteúdo <ChevronDown size={16} />
+                                    {t.hero.ctaSecondary} <ChevronDown size={16} />
                                 </motion.button>
                             </motion.div>
                         </motion.div>
@@ -615,12 +600,12 @@ const LPErgonomia: React.FC = () => {
 
                 <div className="container mx-auto px-6 relative z-10">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Você se identifica?</motion.span>
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{t.profiles.label}</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter drop-shadow-lg">
-                            Este Curso é <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-500">Para Você</span>
+                            {t.profiles.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold to-yellow-500">{t.profiles.titleHighlight}</span>
                         </motion.h2>
                         <motion.p variants={v} className="text-gray-400 max-w-2xl mx-auto text-base">
-                            Não importa se você é piloto, trilheiro, mecânico ou dono de oficina.<br className="hidden md:block" /> Se você já sentiu que a sua moto pode dar mais — este curso é a resposta.
+                            {t.profiles.desc}
                         </motion.p>
                     </motion.div>
 
@@ -637,11 +622,9 @@ const LPErgonomia: React.FC = () => {
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-wtech-gold to-amber-600 flex items-center justify-center text-black mb-5 shadow-[0_0_20px_rgba(212,175,55,0.3)] relative z-10 group-hover:scale-110 transition-transform duration-200">
                                 <Bike size={28} />
                             </div>
-                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-wtech-gold/80 border border-wtech-gold/30 px-2 py-1 rounded mb-3 relative z-10">Para Todo Piloto</div>
-                            <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">Piloto</h3>
-                            <p className="text-gray-300 text-sm md:text-base leading-relaxed relative z-10">
-                                Sente a moto "quicar" demais e os braços cansarem rápido. Sabe que algo está errado na suspensão, <strong className="text-white">mas não sabe por onde começar — nem quantos cliques dar.</strong> Este curso é o seu guia definitivo do zero ao acerto.
-                            </p>
+                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-wtech-gold/80 border border-wtech-gold/30 px-2 py-1 rounded mb-3 relative z-10">{t.profiles.items[0].tag}</div>
+                            <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">{t.profiles.items[0].title}</h3>
+                            <p className="text-gray-300 text-sm md:text-base leading-relaxed relative z-10">{t.profiles.items[0].pain}</p>
                         </motion.div>
 
                         {/* Box 2 - Enduro (Medium) */}
@@ -655,11 +638,9 @@ const LPErgonomia: React.FC = () => {
                             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-wtech-gold mb-4 group-hover:scale-110 transition-transform relative z-10">
                                 <Mountain size={24} />
                             </div>
-                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Trilha & Enduro</div>
-                            <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">Trilha / Enduro</h3>
-                            <p className="text-gray-300 text-sm leading-relaxed relative z-10">
-                                Perde tração em subidas, sofre com fim de curso em saltos e buracos. Termina a trilha <strong className="text-white">exausto antes do tempo</strong> — não é falta de preparo físico. É a suspensão errada.
-                            </p>
+                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">{t.profiles.items[1].tag}</div>
+                            <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">{t.profiles.items[1].title}</h3>
+                            <p className="text-gray-300 text-sm leading-relaxed relative z-10">{t.profiles.items[1].pain}</p>
                         </motion.div>
 
                         {/* Box 3 - Mecânico (Medium) */}
@@ -673,11 +654,9 @@ const LPErgonomia: React.FC = () => {
                             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-wtech-red mb-4 group-hover:scale-110 transition-transform relative z-10">
                                 <Wrench size={24} />
                             </div>
-                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Serviço Nobre</div>
-                            <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">Mecânico / Preparador</h3>
-                            <p className="text-gray-300 text-sm leading-relaxed relative z-10">
-                                Quer agregar o serviço mais lucrativo da oficina: o acerto de suspensão. Saia das revisões básicas e <strong className="text-white">entre no mundo das bengalas, amortecedores e preparações</strong> — e ainda ensine seus clientes.
-                            </p>
+                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">{t.profiles.items[2].tag}</div>
+                            <h3 className="text-xl font-black uppercase text-white mb-3 tracking-tight relative z-10">{t.profiles.items[2].title}</h3>
+                            <p className="text-gray-300 text-sm leading-relaxed relative z-10">{t.profiles.items[2].pain}</p>
                         </motion.div>
 
                         {/* Box 4 - Dono de Oficina (Large) */}
@@ -870,7 +849,7 @@ const LPErgonomia: React.FC = () => {
                         whileTap={shouldAnimate ? ctaTap : undefined}
                         className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                     >
-                        Quero Acesso a Todo Este Conteúdo <ArrowRight strokeWidth={3} size={18} />
+                        {t.modules.cta} <ArrowRight strokeWidth={3} size={18} />
                     </motion.button>
                 </motion.div>
             </section>
@@ -1212,14 +1191,14 @@ const LPErgonomia: React.FC = () => {
                         </div>
 
                         <span className="text-wtech-gold font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs block mb-4">
-                            Lançamento — Valor Especial por Tempo Limitado
+                            {t.offer.badge}
                         </span>
 
                         <h2 className="text-2xl md:text-4xl font-black text-white mb-3 tracking-tight">
-                            Garanta Sua Vaga <span className="text-wtech-gold">Agora</span>
+                            {t.offer.title}
                         </h2>
                         <p className="text-gray-400 text-sm mb-8 max-w-lg mx-auto">
-                            11 módulos técnicos + Módulo Bônus com Paschoalin + Planilhas de Regulagem. Tudo por um investimento de lançamento.
+                            {t.offer.sub}
                         </p>
 
                         <div className="text-gray-400 font-bold uppercase text-xs md:text-sm tracking-[0.15em] mb-2 line-through decoration-red-500/70 decoration-2">
@@ -1398,14 +1377,14 @@ const LPErgonomia: React.FC = () => {
             <section className="py-24 bg-zinc-950 border-t border-white/5">
                 <div className="container mx-auto px-6">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Dúvidas Frequentes</motion.span>
+                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{t.faq.label}</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">
-                            Perguntas <span className="text-wtech-gold">Frequentes</span>
+                            {t.faq.titlePart1} <span className="text-wtech-gold">{t.faq.titleHighlight}</span>
                         </motion.h2>
                     </motion.div>
 
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="max-w-3xl mx-auto space-y-3">
-                        {faqData.map((faq, i) => (
+                        {t.faq.items.map((faq, i) => (
                             <motion.div key={i} variants={v} custom={i}>
                                 <FAQItem q={faq.q} a={faq.a} />
                             </motion.div>
