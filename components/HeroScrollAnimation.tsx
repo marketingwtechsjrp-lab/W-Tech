@@ -25,6 +25,7 @@ const imageUrls = imageKeys.map(key => imagesGlob[key]);
 import { useLanguage } from '../context/LanguageContext';
 
 export function HeroScrollAnimation() {
+  const { get } = useSettings();
   const { t, currentLang } = useLanguage();
   const dbHeadline = get('hero_headline', '');
   const dbSubheadline = get('hero_subheadline', '');
