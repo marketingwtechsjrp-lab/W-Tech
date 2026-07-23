@@ -4,7 +4,7 @@ import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { lpTranslations, detectUserLanguage, LPLanguage } from '../lib/lpErgonomiaTranslations';
-import { Globe } from 'lucide-react';
+import { Globe, Flame } from 'lucide-react';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
 import {
