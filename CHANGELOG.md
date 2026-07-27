@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.26.0 (2026-07-27) - Refatoracao VSL Obrigatoria Curso Piloto
+- Refatorada VSL com player central e alerta de audio
+- Adicionado pitch reveal delay timer
+- Adicionado Sticky CTA Bar e Exit Intent retention modal
+
 ## v3.25.1 (2026-07-22) - Inbox do WhatsApp atualiza sozinho e Integrações voltam a salvar
 - Inbox do WhatsApp (Meta) passa a atualizar sozinho a cada 10s, sem depender do Realtime — o Postgres da VPS roda só o PostgREST e o websocket nunca conectava
 - A conversa aberta só é recarregada quando muda de verdade, evitando rebaixar as mídias em base64 a cada ciclo e rolar a tela do atendente no meio da leitura
