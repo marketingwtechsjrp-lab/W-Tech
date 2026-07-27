@@ -224,12 +224,8 @@ const LPErgonomia: React.FC = () => {
     const [isPitchRevealed, setIsPitchRevealed] = useState<boolean>(() => {
         if (typeof window === 'undefined') return false;
         const sp = new URLSearchParams(window.location.search);
-        if (sp.get('reveal') === 'true' || sp.get('reveal') === '1') return true;
-        try {
-            return localStorage.getItem('wtech_vsl_pitch_revealed') === 'true';
-        } catch {
-            return false;
-        }
+        if (sp.get('reveal') === 'true' || sp.get('reveal') === '1' || sp.get('preview') === 'true') return true;
+        return false; // Sempre obriga a passar pela VSL por padrão
     });
 
     const [showExitIntent, setShowExitIntent] = useState(false);
@@ -727,25 +723,19 @@ const LPErgonomia: React.FC = () => {
                                 </motion.div>
                             )}
                         </div>
-
                     </div>
                 </div>
             </section>
-                </div>
 
-                {/* Scroll indicator */}
+            {/* ═══════════════════════════════════════════ */}
+            {/* CONTEÚDO REVELADO APÓS A VSL (SEÇÕES 2 A 10) */}
+            {/* ═══════════════════════════════════════════ */}
+            {isPitchRevealed && (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: shouldAnimate ? 1 : 0, duration: 0.5 }}
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
                 >
-                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-600">Scrolle</span>
-                    <div className="w-5 h-8 border-2 border-gray-600 rounded-full flex items-start justify-center p-1 overflow-hidden">
-                        <div className="w-1 h-2 bg-wtech-gold rounded-full animate-scrolldown" />
-                    </div>
-                </motion.div>
-            </section >
 
             {/* ═══════════════════════════════════════════ */}
             {/* 2 · PARA QUEM É (BENTO GRID)              */}
@@ -1573,6 +1563,8 @@ const LPErgonomia: React.FC = () => {
                     </p>
                 </div>
             </footer>
+            </motion.div>
+            )}
 
             {/* ═══════════════════════════════════════════ */}
             {/* BUYERS POPUP FLOAT COMPONENT                 */}
