@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.26.0",
+    "date": "2026-07-27",
+    "title": "Refatoracao VSL Obrigatoria Curso Piloto",
+    "changes": [
+      "Refatorada VSL com player central e alerta de audio",
+      "Adicionado pitch reveal delay timer",
+      "Adicionado Sticky CTA Bar e Exit Intent retention modal"
+    ],
+    "author": "PC"
+  },
+  {
     "version": "3.25.1",
     "date": "2026-07-22",
     "title": "Inbox do WhatsApp atualiza sozinho e Integrações voltam a salvar",
