@@ -4,6 +4,7 @@ import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { lpTranslations, detectUserLanguage, LPLanguage } from '../lib/lpErgonomiaTranslations';
+import { trackEvent } from '../components/AnalyticsTracker';
 import { Globe, Flame } from 'lucide-react';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
@@ -15,6 +16,9 @@ import {
     ChevronUp,
     ChevronRight,
     Play,
+    Pause,
+    Volume2,
+    VolumeX,
     Monitor,
     Clock,
     ShieldCheck,
@@ -36,6 +40,9 @@ import {
     Disc,
     BookOpen,
     Lock,
+    Unlock,
+    Sparkles,
+    X,
     Infinity,
     Clock4,
     CalendarDays,
@@ -207,26 +214,115 @@ const LPErgonomia: React.FC = () => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    /* ─── SALES HOOKS HOOKS ─── */
+    /* ─── VSL SALES FUNNEL HOOKS ─── */
+    const PITCH_DELAY_SECONDS = 150; // 2 minutos e 30 segundos
     const [videoPlaying, setVideoPlaying] = useState(false);
-    const [videoActivated, setVideoActivated] = useState(false); // o MP4 só é anexado após o clique
+    const [videoActivated, setVideoActivated] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
+    const [videoProgress, setVideoProgress] = useState(0);
+    const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+    const [isPitchRevealed, setIsPitchRevealed] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.get('reveal') === 'true' || sp.get('reveal') === '1') return true;
+        try {
+            return localStorage.getItem('wtech_vsl_pitch_revealed') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const [showExitIntent, setShowExitIntent] = useState(false);
+    const [exitIntentDismissed, setExitIntentDismissed] = useState(false);
+
     const videoRef = useRef<HTMLVideoElement>(null);
+    const milestonesRef = useRef<Set<number>>(new Set());
 
     // CTA final: só monta o shader pesado quando a seção se aproxima da viewport
     const ctaRef = useRef<HTMLElement>(null);
     const ctaInView = useInView(ctaRef, { once: true, margin: '300px' });
 
+    const forceRevealPitch = () => {
+        setIsPitchRevealed(true);
+        try {
+            localStorage.setItem('wtech_vsl_pitch_revealed', 'true');
+        } catch {}
+        trackEvent('VSL', 'pitch_force_reveal', 'Curso Piloto');
+    };
+
     const handlePlayVideo = () => {
         setVideoActivated(true);
-        // aguarda o <source> ser injetado no DOM antes de carregar/dar play
         requestAnimationFrame(() => {
             if (videoRef.current) {
                 videoRef.current.load();
-                videoRef.current.play().catch(() => { });
+                videoRef.current.muted = isMuted;
+                videoRef.current.play().catch(() => {});
                 setVideoPlaying(true);
+                trackEvent('VSL', 'vsl_play', 'Curso Piloto');
             }
         });
     };
+
+    const handleUnmuteAudio = () => {
+        setIsMuted(false);
+        if (!videoActivated) {
+            setVideoActivated(true);
+        }
+        requestAnimationFrame(() => {
+            if (videoRef.current) {
+                videoRef.current.muted = false;
+                videoRef.current.play().catch(() => {});
+                setVideoPlaying(true);
+                trackEvent('VSL', 'vsl_unmute', 'Curso Piloto');
+            }
+        });
+    };
+
+    const handleTimeUpdate = () => {
+        if (!videoRef.current) return;
+        const current = videoRef.current.currentTime;
+        const duration = videoRef.current.duration || 1;
+        setVideoCurrentTime(current);
+        const progressPercent = Math.floor((current / duration) * 100);
+        setVideoProgress(progressPercent);
+
+        if (!isPitchRevealed && (current >= PITCH_DELAY_SECONDS || current >= duration * 0.5)) {
+            setIsPitchRevealed(true);
+            try {
+                localStorage.setItem('wtech_vsl_pitch_revealed', 'true');
+            } catch {}
+            trackEvent('VSL', 'pitch_reveal', 'Curso Piloto');
+        }
+
+        if (progressPercent >= 25 && !milestonesRef.current.has(25)) {
+            milestonesRef.current.add(25);
+            trackEvent('VSL', 'vsl_25', 'Curso Piloto');
+        }
+        if (progressPercent >= 50 && !milestonesRef.current.has(50)) {
+            milestonesRef.current.add(50);
+            trackEvent('VSL', 'vsl_50', 'Curso Piloto');
+        }
+        if (progressPercent >= 75 && !milestonesRef.current.has(75)) {
+            milestonesRef.current.add(75);
+            trackEvent('VSL', 'vsl_75', 'Curso Piloto');
+        }
+        if (progressPercent >= 100 && !milestonesRef.current.has(100)) {
+            milestonesRef.current.add(100);
+            trackEvent('VSL', 'vsl_100', 'Curso Piloto');
+        }
+    };
+
+    // Exit Intent Handler
+    useEffect(() => {
+        const handleMouseLeave = (e: MouseEvent) => {
+            if (e.clientY <= 0 && !showExitIntent && !exitIntentDismissed) {
+                setShowExitIntent(true);
+                trackEvent('VSL', 'exit_intent_trigger', 'Curso Piloto');
+            }
+        };
+        document.addEventListener('mouseleave', handleMouseLeave);
+        return () => document.removeEventListener('mouseleave', handleMouseLeave);
+    }, [showExitIntent, exitIntentDismissed]);
 
     const [timeLeft, setTimeLeft] = useState(7 * 60); // 7 minutes in seconds
     const [showBuyer, setShowBuyer] = useState(false);
@@ -439,11 +535,10 @@ const LPErgonomia: React.FC = () => {
             </div>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* 1 · HERO COMPLETO COM VSL                  */}
+            {/* 1 · HERO COMPLETO COM VSL VENDAS          */}
             {/* ═══════════════════════════════════════════ */}
-            <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-12 md:pt-0">
-                {/* BG — imagem LCP real (detectável pelo browser) com prioridade alta. */}
-                {/* Sem lazy-load: é o maior elemento above-the-fold. */}
+            <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-12 md:pt-6 pb-16">
+                {/* BG */}
                 <div className="absolute inset-0 z-0">
                     <motion.div
                         initial={{ scale: 1.05 }}
@@ -460,118 +555,182 @@ const LPErgonomia: React.FC = () => {
                                 decoding="async"
                                 width={1920}
                                 height={1280}
-                                className="absolute inset-0 w-full h-full object-cover object-top lg:object-center"
+                                className="absolute inset-0 w-full h-full object-cover object-top lg:object-center opacity-40 blur-sm scale-105"
                             />
                         </picture>
                     </motion.div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/80 to-black/60 z-10" />
-                    {/* Overlay reforçado */}
-                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/90 to-black/80 z-10" />
                 </div>
 
-                <div className="container mx-auto px-6 relative z-20 pt-10 pb-20">
-                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center max-w-7xl mx-auto">
+                <div className="container mx-auto px-4 sm:px-6 relative z-20 pt-6 pb-12">
+                    <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
 
-                        {/* Text (Left Column) */}
-                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-1 lg:col-start-1 lg:row-start-1">
-                            <motion.div variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6 max-w-fit">
-                                <Zap size={14} className="text-wtech-gold animate-pulse" />
-                                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">{t.hero.badge}</span>
-                            </motion.div>
-
-                            <motion.h1 variants={v} className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.9] mb-6 drop-shadow-2xl">
-                                {t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 drop-shadow-none">{t.hero.titleHighlight}</span>
-                            </motion.h1>
-
-                            <motion.p variants={v} className="text-base md:text-xl text-gray-200 leading-relaxed mb-6 max-w-lg font-bold">
-                                {t.hero.subtitle}
-                            </motion.p>
-
-                            <motion.p variants={v} className="text-sm text-gray-400 mb-6 max-w-lg border-l-2 border-wtech-gold pl-4 hidden md:block">
-                                Seus braços cansam rápido, sente falta de performance ou tração, desempenho e equilíbrio. E isso te cansa rápido — isso não é normal. Quer melhorar e não sabe por onde começar? Este curso é o guia definitivo do zero para o acerto da sua moto.
-                            </motion.p>
-
-                            {/* Âncora de preço logo no topo (não só no rodapé) */}
-                            <motion.div variants={v} className="flex flex-wrap items-center gap-3">
-                                <div className="inline-flex items-center gap-2 bg-black/40 border border-wtech-gold/30 rounded-xl px-4 py-2.5 backdrop-blur-md">
-                                    <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">A partir de</span>
-                                    <span className="text-wtech-gold font-black text-lg leading-none tracking-tight">{t.offer.priceMain}</span>
-                                </div>
-                                <div className="inline-flex items-center gap-2 text-gray-200 text-xs font-semibold">
-                                    <ShieldCheck size={15} className="text-wtech-gold" /> Garantia de 7 dias
-                                </div>
-                            </motion.div>
+                        {/* Top Badge */}
+                        <motion.div initial="hidden" animate="visible" variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/40 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6">
+                            <Zap size={14} className="text-wtech-gold animate-pulse" />
+                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">AULA EXCLUSIVA PARA PILOTOS & MECÂNICOS</span>
                         </motion.div>
 
-                        <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col gap-6 order-2 lg:col-start-2 lg:row-start-1 lg:row-span-2">
-                            <motion.div
-                                variants={v}
-                                className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group cursor-pointer"
-                                onClick={handlePlayVideo}
-                            >
-                                <video
-                                    ref={videoRef}
-                                    poster="/images/vsl-thumbnail.webp"
-                                    controls={videoPlaying}
-                                    playsInline
-                                    preload="none"
-                                    className="w-full h-full object-cover"
-                                    onPlay={() => setVideoPlaying(true)}
-                                    onPause={() => setVideoPlaying(false)}
-                                >
-                                    {/* Fonte anexada só após o clique → evita request falho no carregamento da página */}
-                                    {videoActivated && (
-                                        <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
-                                    )}
-                                    Seu navegador não suporta vídeos.
-                                </video>
+                        {/* VSL Main Headline */}
+                        <motion.h1 initial="hidden" animate="visible" variants={v} className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] mb-4 text-white drop-shadow-2xl max-w-3xl">
+                            {t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{t.hero.titleHighlight}</span>
+                        </motion.h1>
 
-                                {!videoPlaying && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors z-20">
-                                        <div className="relative">
-                                            {/* Pulse Rings */}
-                                            <div className="absolute inset-0 bg-wtech-gold/40 rounded-full animate-ping scale-150 opacity-20" />
-                                            <div className="absolute inset-0 bg-wtech-gold/30 rounded-full animate-pulse scale-125 opacity-40" />
-                                            
-                                            {/* Play Button */}
-                                            <div className="relative w-20 h-20 bg-wtech-gold rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(212,175,55,0.6)] group-hover:scale-110 transition-transform">
-                                                <Play fill="black" size={32} className="text-black ml-1" />
-                                            </div>
+                        <motion.p initial="hidden" animate="visible" variants={v} className="text-sm sm:text-lg text-gray-300 mb-8 max-w-2xl font-medium">
+                            {t.hero.subtitle} — Assista ao vídeo curto abaixo para entender como eliminar o cansaço nos braços e dominar qualquer terreno.
+                        </motion.p>
+
+                        {/* VSL VIDEO PLAYER CONTAINER (DOMINANT CENTRAL FOCUS) */}
+                        <motion.div
+                            initial="hidden"
+                            animate="visible"
+                            variants={scaleIn}
+                            className="relative w-full aspect-video rounded-2xl overflow-hidden border-2 border-wtech-gold/30 shadow-[0_0_80px_rgba(212,175,55,0.25)] bg-black group my-2"
+                        >
+                            {/* Status Header Bar */}
+                            <div className="absolute top-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                                    </span>
+                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-200">AULA DE ACERTO AO VIVO</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {isMuted ? (
+                                        <button onClick={handleUnmuteAudio} className="flex items-center gap-1 text-[10px] text-amber-400 font-bold hover:underline cursor-pointer">
+                                            <VolumeX size={14} /> Ativar Som
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => setIsMuted(true)} className="flex items-center gap-1 text-[10px] text-gray-400 font-bold hover:underline cursor-pointer">
+                                            <Volume2 size={14} className="text-wtech-gold" /> Áudio Ligado
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Unmute Alert Overlay (If muted or paused) */}
+                            {isMuted && videoPlaying && (
+                                <div
+                                    onClick={handleUnmuteAudio}
+                                    className="absolute top-12 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-red-600 to-amber-600 text-white font-black text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-2 animate-bounce cursor-pointer hover:scale-105 transition-transform border border-white/30"
+                                >
+                                    <VolumeX size={18} />
+                                    <span>SEU ÁUDIO ESTÁ DESLIGADO — CLIQUE PARA OUVIR</span>
+                                </div>
+                            )}
+
+                            {/* Video Element */}
+                            <video
+                                ref={videoRef}
+                                poster="/images/vsl-thumbnail.webp"
+                                controls={videoPlaying}
+                                playsInline
+                                preload="metadata"
+                                onTimeUpdate={handleTimeUpdate}
+                                onEnded={() => {
+                                    setVideoPlaying(false);
+                                    setIsPitchRevealed(true);
+                                }}
+                                className="w-full h-full object-cover pt-8 sm:pt-0"
+                                onPlay={() => setVideoPlaying(true)}
+                                onPause={() => setVideoPlaying(false)}
+                            >
+                                {videoActivated && (
+                                    <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
+                                )}
+                                Seu navegador não suporta vídeos.
+                            </video>
+
+                            {/* Initial Play Overlay */}
+                            {!videoPlaying && (
+                                <div
+                                    onClick={handlePlayVideo}
+                                    className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 group-hover:bg-black/40 transition-colors z-20 cursor-pointer pt-6"
+                                >
+                                    <div className="relative mb-3">
+                                        <div className="absolute inset-0 bg-wtech-gold/40 rounded-full animate-ping scale-150 opacity-30" />
+                                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-tr from-wtech-gold to-yellow-400 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(212,175,55,0.8)] group-hover:scale-110 transition-transform">
+                                            <Play fill="black" size={36} className="text-black ml-1" />
                                         </div>
                                     </div>
-                                )}
-                                
-                                <div className="absolute inset-0 pointer-events-none border-2 border-wtech-gold/20 rounded-2xl z-10" />
-                            </motion.div>
+                                    <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-white drop-shadow-md bg-black/60 px-4 py-1.5 rounded-full border border-wtech-gold/40">
+                                        CLIQUE PARA INICIAR A VSL
+                                    </span>
+                                </div>
+                            )}
 
-                            <motion.button
-                                onClick={() => scrollTo('cta-final')}
-                                variants={v}
-                                whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(212,175,55,0.4)' } : undefined}
-                                whileTap={shouldAnimate ? ctaTap : undefined}
-                                className="bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-8 py-5 rounded-xl font-black text-sm md:text-base uppercase tracking-[0.15em] transition-all shadow-[0_0_40px_rgba(212,175,55,0.2)] flex items-center justify-center gap-3 w-full hover:brightness-110 relative overflow-hidden group"
-                            >
-                                <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                                <span className="relative z-10 flex items-center gap-3">
-                                    {t.hero.ctaPrimary} <ArrowRight strokeWidth={3} size={20} />
-                                </span>
-                            </motion.button>
+                            {/* Progress bar at the bottom */}
+                            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-800 z-30">
+                                <div
+                                    className="h-full bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-500 transition-all duration-300"
+                                    style={{ width: `${videoProgress}%` }}
+                                />
+                            </div>
                         </motion.div>
 
-                        {/* Secondary Button (Below Text on Desktop, Bottom on Mobile) */}
-                        <motion.div initial="hidden" animate="visible" variants={stagger} className="order-3 lg:col-start-1 lg:row-start-2 lg:-mt-4">
-                            <motion.div variants={v}>
-                                <motion.button
-                                    onClick={() => scrollTo('modulos')}
-                                    whileHover={shouldAnimate ? { scale: 1.02 } : undefined}
-                                    whileTap={shouldAnimate ? ctaTap : undefined}
-                                    className="border border-white/20 text-white px-8 py-4 rounded-xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 w-full hover:border-wtech-gold/50 hover:text-wtech-gold"
+                        {/* PITCH REVEAL / OFFER SECTION BELOW VSL */}
+                        <div className="w-full mt-6">
+                            {isPitchRevealed ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="flex flex-col items-center gap-4 bg-gradient-to-b from-zinc-900/90 to-black p-6 sm:p-8 rounded-2xl border-2 border-wtech-gold/50 shadow-[0_0_50px_rgba(212,175,55,0.3)] backdrop-blur-xl"
                                 >
-                                    {t.hero.ctaSecondary} <ChevronDown size={16} />
-                                </motion.button>
-                            </motion.div>
-                        </motion.div>
+                                    <div className="inline-flex items-center gap-2 text-wtech-gold font-extrabold text-xs uppercase tracking-widest bg-wtech-gold/10 px-4 py-1 rounded-full border border-wtech-gold/30">
+                                        <Unlock size={14} /> OFERTA ESPECIAL REVELADA
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
+                                        <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Investimento com desconto:</span>
+                                        <div className="text-3xl sm:text-4xl font-black text-wtech-gold tracking-tight">
+                                            {t.offer.priceMain}
+                                        </div>
+                                        <span className="text-xs text-gray-400 font-semibold">(Acesso por 12 meses + Bônus)</span>
+                                    </div>
+
+                                    <a
+                                        href={checkoutUrl}
+                                        onClick={() => trackEvent('VSL', 'checkout_click_hero', 'Curso Piloto')}
+                                        className="bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 text-black px-8 py-5 rounded-xl font-black text-base sm:text-xl uppercase tracking-[0.15em] transition-all shadow-[0_0_50px_rgba(212,175,55,0.5)] flex items-center justify-center gap-3 w-full max-w-lg hover:brightness-110 hover:scale-[1.02] active:scale-95 relative overflow-hidden group cursor-pointer"
+                                    >
+                                        <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                                        <span className="relative z-10 flex items-center gap-3">
+                                            {t.hero.ctaPrimary} <ArrowRight strokeWidth={3} size={22} />
+                                        </span>
+                                    </a>
+
+                                    <div className="flex flex-wrap items-center justify-center gap-4 text-gray-300 text-xs font-bold pt-2">
+                                        <span className="inline-flex items-center gap-1.5"><ShieldCheck size={16} className="text-wtech-gold" /> Garantia Incondicional de 7 Dias</span>
+                                        <span className="inline-flex items-center gap-1.5"><CheckCircle size={16} className="text-wtech-gold" /> Acesso Imediato</span>
+                                        <span className="inline-flex items-center gap-1.5"><Award size={16} className="text-wtech-gold" /> Certificado Incluso</span>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center gap-3 p-5 rounded-xl bg-zinc-900/60 border border-white/10 text-center backdrop-blur-md"
+                                >
+                                    <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm font-semibold">
+                                        <Lock size={16} className="text-wtech-gold" />
+                                        <span>A oferta exclusiva e a liberação de vagas serão apresentadas no vídeo acima.</span>
+                                    </div>
+
+                                    <button
+                                        onClick={forceRevealPitch}
+                                        className="text-[11px] text-gray-400 hover:text-wtech-gold underline transition-colors cursor-pointer"
+                                    >
+                                        Já assistiu? Clique aqui para ver a oferta imediatamente
+                                    </button>
+                                </motion.div>
+                            )}
+                        </div>
+
                     </div>
+                </div>
+            </section>
                 </div>
 
                 {/* Scroll indicator */}
@@ -1435,6 +1594,98 @@ const LPErgonomia: React.FC = () => {
                     <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">de {currentBuyer?.city}</p>
                 </div>
             </motion.div>
+
+            {/* ═══════════════════════════════════════════ */}
+            {/* STICKY BOTTOM CTA BAR (AFTER PITCH REVEAL)  */}
+            {/* ═══════════════════════════════════════════ */}
+            {isPitchRevealed && (
+                <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="fixed bottom-0 left-0 right-0 z-[90] bg-zinc-950/95 backdrop-blur-xl border-t border-wtech-gold/40 px-4 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
+                >
+                    <div className="container mx-auto max-w-5xl flex items-center justify-between gap-4">
+                        <div className="hidden sm:flex flex-col">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Curso Online de Suspensão</span>
+                            <span className="text-sm font-black text-white">Do Zero ao Acerto com Alex Crepaldi</span>
+                        </div>
+
+                        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                            <div className="flex flex-col text-left sm:text-right">
+                                <span className="text-[10px] text-gray-400 font-bold uppercase">De R$ 997 por apenas</span>
+                                <span className="text-lg sm:text-xl font-black text-wtech-gold leading-none">{t.offer.priceMain}</span>
+                            </div>
+
+                            <a
+                                href={checkoutUrl}
+                                onClick={() => trackEvent('VSL', 'sticky_cta_click', 'Curso Piloto')}
+                                className="bg-gradient-to-r from-wtech-gold to-amber-600 text-black px-5 py-3 rounded-lg font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+                            >
+                                <span>GARANTIR VAGA</span>
+                                <ArrowRight size={16} strokeWidth={3} />
+                            </a>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* ═══════════════════════════════════════════ */}
+            {/* EXIT INTENT RETENTION MODAL                */}
+            {/* ═══════════════════════════════════════════ */}
+            {showExitIntent && (
+                <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-zinc-900 border-2 border-wtech-gold/60 rounded-2xl p-6 sm:p-8 max-w-lg w-full relative shadow-[0_0_80px_rgba(212,175,55,0.4)] text-center"
+                    >
+                        <button
+                            onClick={() => {
+                                setShowExitIntent(false);
+                                setExitIntentDismissed(true);
+                            }}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-full bg-white/5 cursor-pointer"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="w-14 h-14 bg-wtech-gold/20 border border-wtech-gold rounded-full flex items-center justify-center text-wtech-gold mx-auto mb-4 animate-pulse">
+                            <Sparkles size={28} />
+                        </div>
+
+                        <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mb-2">
+                            ESPERA! NÃO SAIA SEM VER ISSO
+                        </h3>
+
+                        <p className="text-gray-300 text-sm mb-6 leading-relaxed">
+                            Você quer mesmo continuar andando com a moto dura, braços cansados e sem tração nas trilhas e pistas?
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowExitIntent(false);
+                                    setExitIntentDismissed(true);
+                                    forceRevealPitch();
+                                    scrollTo('cta-final');
+                                }}
+                                className="w-full bg-gradient-to-r from-wtech-gold to-amber-600 text-black py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:brightness-110 cursor-pointer"
+                            >
+                                QUERO VER A OFERTA AGORA
+                            </button>
+
+                            <a
+                                href="/quiz-suspensao"
+                                onClick={() => trackEvent('VSL', 'exit_intent_quiz_click', 'Curso Piloto')}
+                                className="w-full bg-zinc-800 hover:bg-zinc-700 text-gray-200 border border-white/10 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                            >
+                                Fazer Quiz de Diagnóstico da Minha Moto
+                            </a>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
 
         </div >
     );
