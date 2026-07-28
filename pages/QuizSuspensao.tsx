@@ -1,1178 +1,898 @@
-import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
-    ArrowRight,
     ArrowLeft,
-    CheckCircle,
-    CheckCircle2,
-    ShieldCheck,
-    Zap,
+    ArrowRight,
     Bike,
-    Mountain,
-    Wrench,
-    Settings,
-    Play,
-    Target,
+    Check,
+    ChevronRight,
+    CircleGauge,
     Crosshair,
     Gauge,
-    Activity,
-    DollarSign,
-    TrendingUp,
-    AlertTriangle,
-    Star,
-    Quote,
-    ChevronRight,
-    Trophy,
-    Flame,
+    Grip,
+    Mountain,
+    Route,
+    ShieldCheck,
+    Sparkles,
+    Target,
+    TimerReset,
+    Waves,
+    Zap,
 } from 'lucide-react';
-import { handleLeadUpsert } from '../lib/leadDistribution';
-import { sendWhatsAppMessage } from '../lib/whatsapp';
-import { trackEvent } from '../components/AnalyticsTracker';
-import { Marquee } from '../components/ui/marquee';
+import type { LucideIcon } from 'lucide-react';
 import SEO from '../components/SEO';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { trackEvent } from '../components/AnalyticsTracker';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
+import { useLanguage } from '../context/LanguageContext';
+import type { SiteLanguage } from '../lib/siteTranslations';
+import { captureTrackingParams } from '../lib/tracking';
 
-// Shader pesado: só monta na tela de resultado (sob demanda)
-const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
+type QuizTheme = 'dark' | 'light';
+type Profile = 'equilibrio' | 'tracao' | 'dianteira' | 'ergonomia';
+type Answers = Record<string, string>;
 
-/* ─────────────────────────────────────────────────────────────
- *  CONSTANTES DE NEGÓCIO
- * ──────────────────────────────────────────────────────────── */
-const CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
-const VSL_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
-const VSL_POSTER = '/images/vsl-thumbnail.webp';
-// Instância Evolution dedicada ao suporte do curso (não-UUID → usada direto pela lib)
-const SUPPORT_INSTANCE = 'wtech-suporte-curso';
-// Dono do lead no CRM (mesmo usado na fila de espera) — evita crash de FK
-const CRM_OWNER_ID = '407d09b8-8205-4697-a726-1738cf7e20ef';
-
-/* Captura parâmetros de atribuição (UTM/ads) da URL — pra rastrear a origem
-   da venda no Kiwify e no CRM. Lê tanto query string quanto hash (SPA). */
-const getAttributionParams = (): Record<string, string> => {
-    if (typeof window === 'undefined') return {};
-    const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
-    const sp = new URLSearchParams(window.location.search || hashQuery);
-    const out: Record<string, string> = {};
-    sp.forEach((val, k) => {
-        if (val) out[k] = val;
-    });
-    return out;
-};
-
-/* Monta a URL do checkout preservando a atribuição + marcando a origem do quiz. */
-const buildCheckoutUrl = (attribution: Record<string, string>, track: Track): string => {
-    const p = new URLSearchParams(attribution);
-    if (!p.has('utm_source')) p.set('utm_source', 'quiz');
-    if (!p.has('utm_medium')) p.set('utm_medium', 'site');
-    p.set('utm_content', `quiz_${track}`);
-    return `${CHECKOUT_URL}?${p.toString()}`;
-};
-
-type Track = 'piloto' | 'mecanico';
-
-interface QuizOption {
+interface OptionCopy {
     id: string;
     label: string;
-    desc?: string;
-    icon: React.ReactNode;
-    /* Define a trilha do funil — só usado na pergunta de segmentação */
-    track?: Track;
+    description: string;
+    icon: LucideIcon;
 }
 
-interface QuizStep {
+interface StepCopy {
     id: string;
-    /* Etiqueta curta exibida no topo */
     eyebrow: string;
-    question: string;
-    hint?: string;
-    options: QuizOption[];
+    title: string;
+    hint: string;
+    options: OptionCopy[];
 }
 
-/* ─────────────────────────────────────────────────────────────
- *  CONTEÚDO DO QUIZ (ramificado por trilha)
- * ──────────────────────────────────────────────────────────── */
+interface ResultCopy {
+    label: string;
+    title: string;
+    description: string;
+    insights: string[];
+}
 
-// Passo 1 — Segmentação (comum). Define a trilha.
-const STEP_SEGMENT: QuizStep = {
-    id: 'segmento',
-    eyebrow: 'Vamos começar',
-    question: 'Como você se identifica hoje?',
-    hint: 'Isso personaliza todo o seu diagnóstico.',
-    options: [
-        { id: 'piloto_amador', label: 'Piloto Amador', desc: 'Ando por hobby/fim de semana e quero evoluir', icon: <Bike size={26} />, track: 'piloto' },
-        { id: 'trilha_enduro', label: 'Trilheiro / Enduro', desc: 'Encaro terreno pesado, subidas e saltos', icon: <Mountain size={26} />, track: 'piloto' },
-        { id: 'mecanico', label: 'Mecânico / Preparador', desc: 'Trabalho com motos e quero agregar suspensão', icon: <Wrench size={26} />, track: 'mecanico' },
-        { id: 'dono_oficina', label: 'Dono de Oficina', desc: 'Tenho equipe e quero um diferencial competitivo', icon: <Settings size={26} />, track: 'mecanico' },
-    ],
-};
-
-// Passos ramificados por trilha
-const STEPS_BY_TRACK: Record<Track, QuizStep[]> = {
-    piloto: [
-        {
-            id: 'dor',
-            eyebrow: 'Sua realidade',
-            question: 'O que MAIS te incomoda na moto hoje?',
-            hint: 'Escolha o que pesa mais.',
-            options: [
-                { id: 'bracos', label: 'Meus braços cansam rápido', desc: 'Fadiga e dor antes da hora', icon: <Activity size={24} /> },
-                { id: 'quica', label: 'A moto "quica" e espalha', desc: 'Sem aderência, insegura', icon: <Zap size={24} /> },
-                { id: 'tracao', label: 'Perco tração nas subidas', desc: 'A traseira escapa, a frente sobe', icon: <Mountain size={24} /> },
-                { id: 'comecar', label: 'Não sei nem por onde começar', desc: 'Quantos cliques? Que SAG?', icon: <Target size={24} /> },
-            ],
-        },
-        {
-            id: 'terreno',
-            eyebrow: 'Seu terreno',
-            question: 'Onde você mais pilota?',
-            options: [
-                { id: 'trilha', label: 'Trilha / Enduro', icon: <Mountain size={24} /> },
-                { id: 'motocross', label: 'Motocross / Pista', icon: <Flame size={24} /> },
-                { id: 'hard', label: 'Hard Enduro', icon: <Trophy size={24} /> },
-                { id: 'variado', label: 'Um pouco de tudo', icon: <Bike size={24} /> },
-            ],
-        },
-        {
-            id: 'nivel',
-            eyebrow: 'Seu nível técnico',
-            question: 'Quanto você entende de SAG, cliques e hidráulica?',
-            hint: 'Seja honesto — o curso te atende em qualquer nível.',
-            options: [
-                { id: 'zero', label: 'Praticamente nada', desc: 'Nunca regulei sozinho', icon: <AlertTriangle size={24} /> },
-                { id: 'basico', label: 'O básico', desc: 'Já ouvi falar, mexo no escuro', icon: <Gauge size={24} /> },
-                { id: 'intermediario', label: 'Intermediário', desc: 'Mexo, mas sem método', icon: <Settings size={24} /> },
-                { id: 'avancado', label: 'Já mexo bastante', desc: 'Quero refinar e ter precisão', icon: <Crosshair size={24} /> },
-            ],
-        },
-        {
-            id: 'custo',
-            eyebrow: 'O que isso já te custou',
-            question: 'Qual dessas situações você já viveu?',
-            options: [
-                { id: 'exausto', label: 'Terminei a trilha exausto', desc: 'Antes mesmo do percurso acabar', icon: <Activity size={24} /> },
-                { id: 'susto', label: 'Quase caí por insegurança', desc: 'A moto não respondeu', icon: <AlertTriangle size={24} /> },
-                { id: 'peca', label: 'Gastei com peça errada', desc: 'Sem resolver o problema real', icon: <DollarSign size={24} /> },
-                { id: 'nunca', label: 'Nunca acertei de verdade', desc: 'Vivo no "tentativa e erro"', icon: <Target size={24} /> },
-            ],
-        },
-        {
-            id: 'objetivo',
-            eyebrow: 'Onde você quer chegar',
-            question: 'Qual o seu maior objetivo?',
-            options: [
-                { id: 'autonomia', label: 'Regular sozinho qualquer terreno', desc: 'Independência total', icon: <Crosshair size={24} /> },
-                { id: 'conforto', label: 'Acabar com a dor e a fadiga', desc: 'Pilotar com prazer de novo', icon: <ShieldCheck size={24} /> },
-                { id: 'confianca', label: 'Mais controle e confiança', desc: 'Atacar sem medo', icon: <Zap size={24} /> },
-                { id: 'performance', label: 'Performance de verdade', desc: 'Extrair o máximo da moto', icon: <Trophy size={24} /> },
-            ],
-        },
-    ],
-    mecanico: [
-        {
-            id: 'dor',
-            eyebrow: 'Sua realidade',
-            question: 'O que MAIS limita seu faturamento hoje?',
-            hint: 'Escolha o que mais te trava.',
-            options: [
-                { id: 'so_revisao', label: 'Só faço revisão básica', desc: 'Serviço de baixo valor agregado', icon: <Wrench size={24} /> },
-                { id: 'perde_cliente', label: 'Perco serviço de suspensão', desc: 'Cliente vai pra concorrência', icon: <TrendingUp size={24} /> },
-                { id: 'cobrar', label: 'Não sei precificar acerto', desc: 'Cobro pouco ou nem ofereço', icon: <DollarSign size={24} /> },
-                { id: 'tecnica', label: 'Falta domínio técnico', desc: 'Insegurança no SAG e nos cliques', icon: <Target size={24} /> },
-            ],
-        },
-        {
-            id: 'terreno',
-            eyebrow: 'Seu foco',
-            question: 'Que tipo de serviço você quer DOMINAR?',
-            options: [
-                { id: 'regulagem', label: 'Regulagem (SAG e cliques)', icon: <Gauge size={24} /> },
-                { id: 'revalvulacao', label: 'Revalvulação', icon: <Settings size={24} /> },
-                { id: 'preparacao', label: 'Preparação completa', icon: <Wrench size={24} /> },
-                { id: 'competicao', label: 'Atender pilotos de competição', icon: <Trophy size={24} /> },
-            ],
-        },
-        {
-            id: 'nivel',
-            eyebrow: 'Seu nível técnico',
-            question: 'Hoje, quanto você domina de suspensão Off-Road?',
-            hint: 'Seja honesto — o curso te leva do zero ao profissional.',
-            options: [
-                { id: 'zero', label: 'Praticamente nada', desc: 'Nunca fiz acerto de suspensão', icon: <AlertTriangle size={24} /> },
-                { id: 'basico', label: 'O básico', desc: 'Faço troca de óleo/retentor', icon: <Gauge size={24} /> },
-                { id: 'intermediario', label: 'Intermediário', desc: 'Faço regulagem, mas sem método', icon: <Settings size={24} /> },
-                { id: 'avancado', label: 'Já mexo bastante', desc: 'Quero virar referência', icon: <Crosshair size={24} /> },
-            ],
-        },
-        {
-            id: 'custo',
-            eyebrow: 'O que isso já te custou',
-            question: 'Qual dessas situações você já viveu?',
-            options: [
-                { id: 'mandou', label: 'Mandei cliente pra concorrente', desc: 'Por não fazer o serviço', icon: <TrendingUp size={24} /> },
-                { id: 'deixou', label: 'Deixei dinheiro na mesa', desc: 'Serviço premium que não ofereci', icon: <DollarSign size={24} /> },
-                { id: 'retrabalho', label: 'Tive retrabalho / reclamação', desc: 'Acerto que não ficou bom', icon: <AlertTriangle size={24} /> },
-                { id: 'estagnado', label: 'Faturamento estagnado', desc: 'Só serviço de baixo valor', icon: <Activity size={24} /> },
-            ],
-        },
-        {
-            id: 'objetivo',
-            eyebrow: 'Onde você quer chegar',
-            question: 'Qual o seu maior objetivo?',
-            options: [
-                { id: 'referencia', label: 'Ser referência na região', desc: 'A oficina que todo piloto indica', icon: <Trophy size={24} /> },
-                { id: 'faturar', label: 'Faturar mais por serviço', desc: 'Cobrar acerto premium', icon: <DollarSign size={24} /> },
-                { id: 'fila', label: 'Ter fila de clientes', desc: 'Demanda constante e fiel', icon: <TrendingUp size={24} /> },
-                { id: 'entrega', label: 'Entregar acerto personalizado', desc: 'Resultado que o cliente sente', icon: <Crosshair size={24} /> },
-            ],
-        },
-    ],
-};
-
-/* ─────────────────────────────────────────────────────────────
- *  PROVA SOCIAL (reaproveitada da LP, segmentada)
- * ──────────────────────────────────────────────────────────── */
-const TESTIMONIALS: Record<Track, { name: string; role: string; text: string }[]> = {
-    piloto: [
-        { name: 'Ricardo F.', role: 'Piloto Amador — SP', text: 'Depois do curso, finalmente ajustei os cliques e o SAG pro meu peso. Chega de tomar solavanco e ceder nas trilhas. Moto grudada no chão!' },
-        { name: 'Tiago L.', role: 'Piloto de Enduro — PR', text: 'As ladeiras com cavas não são mais problema. A dianteira me dá confiança nas curvas e a tração é constante.' },
-        { name: 'Juliana M.', role: 'Pilota Hard Enduro — RJ', text: 'Eu achava minhas molas macias demais, mas a hidráulica estava zerada. Entender esse casamento virou a chave da minha tocada.' },
-    ],
-    mecanico: [
-        { name: 'Marcos S.', role: 'Mecânico — MG', text: 'Comecei a oferecer regulagem e setup de suspensão na oficina. Ganhei novos clientes que antes buscavam fora. O retorno foi imenso.' },
-        { name: 'Anderson P.', role: 'Dono de Oficina — GO', text: 'Hoje cobro acerto de suspensão como serviço premium. Virou a parte mais lucrativa da minha oficina.' },
-        { name: 'Fábio J.', role: 'Mecânico Preparador — SP', text: 'Saí da revisão básica e entrei no mundo das bengalas e revalvulação. Outro patamar de faturamento.' },
-    ],
-};
-
-/* ─────────────────────────────────────────────────────────────
- *  RESULTADO PERSONALIZADO
- * ──────────────────────────────────────────────────────────── */
-const RESULT_COPY: Record<Track, {
+interface QuizCopy {
+    seoTitle: string;
+    seoDescription: string;
     badge: string;
-    title: React.ReactNode;
-    diagnosis: string;
-    solves: { icon: React.ReactNode; text: string }[];
-}> = {
-    piloto: {
-        badge: 'Diagnóstico do Piloto',
-        title: <>Você está deixando <span className="text-wtech-gold">performance e segurança</span> na mesa</>,
-        diagnosis: 'O que você sente na moto não é falta de preparo físico — é suspensão fora do ponto. SAG, molas, cliques e hidráulica desajustados pro SEU peso e terreno cobram o preço em fadiga, insegurança e tração perdida. A boa notícia: tudo isso é regulável, e você pode aprender a fazer sozinho.',
-        solves: [
-            { icon: <Crosshair size={20} />, text: 'Regular SAG, molas e cliques pro seu peso e terreno — do zero' },
-            { icon: <ShieldCheck size={20} />, text: 'Acabar com a fadiga e a dor: a moto trabalha, não você' },
-            { icon: <Zap size={20} />, text: 'Mais controle, tração e confiança em qualquer chão' },
-            { icon: <Trophy size={20} />, text: 'Replicar o acerto em qualquer moto, em qualquer lugar' },
+    heroTitle: string;
+    heroHighlight: string;
+    heroDescription: string;
+    start: string;
+    free: string;
+    duration: string;
+    immediate: string;
+    dark: string;
+    light: string;
+    step: string;
+    of: string;
+    back: string;
+    transitionEyebrow: string;
+    transitionLabels: string[];
+    transitionHint: string;
+    resultEyebrow: string;
+    resultTitle: string;
+    resultDescription: string;
+    resultAction: string;
+    resultFootnote: string;
+    restart: string;
+    interaction: string;
+    profiles: Record<Profile, ResultCopy>;
+    steps: StepCopy[];
+}
+
+const createSteps = (language: SiteLanguage): StepCopy[] => {
+    const dictionaries: Record<SiteLanguage, StepCopy[]> = {
+        'pt-BR': [
+            {
+                id: 'modalidade',
+                eyebrow: 'Seu Off-Road',
+                title: 'Onde você mais pilota?',
+                hint: 'Todas as rotas deste diagnóstico são exclusivas para uso fora de estrada.',
+                options: [
+                    { id: 'motocross', label: 'Motocross', description: 'Pista, saltos e costelas de frenagem', icon: Bike },
+                    { id: 'enduro', label: 'Enduro', description: 'Provas longas e terreno técnico', icon: Route },
+                    { id: 'trilha', label: 'Trilha', description: 'Pedras, raízes, erosões e subidas', icon: Mountain },
+                    { id: 'hard_enduro', label: 'Hard Enduro', description: 'Obstáculos extremos e baixa velocidade', icon: Target },
+                ],
+            },
+            {
+                id: 'sintoma',
+                eyebrow: 'Leitura da moto',
+                title: 'Qual sintoma mais rouba sua confiança?',
+                hint: 'Escolha o comportamento que aparece primeiro quando você aumenta o ritmo.',
+                options: [
+                    { id: 'fadiga', label: 'Braços cansam e travam', description: 'A moto transfere impacto demais para o corpo', icon: Grip },
+                    { id: 'frente', label: 'A frente não comunica', description: 'Fecha, escapa ou parece vaga nas curvas', icon: Crosshair },
+                    { id: 'traseira', label: 'A traseira quica e espalha', description: 'Perde contato e tração na aceleração', icon: Waves },
+                    { id: 'impacto', label: 'Bate seco ou chega ao fim', description: 'Falta conforto e controle nos impactos', icon: Zap },
+                ],
+            },
+            {
+                id: 'metodo',
+                eyebrow: 'Seu método atual',
+                title: 'Como você regula a suspensão hoje?',
+                hint: 'Não existe resposta errada. Isso define por onde sua evolução deve começar.',
+                options: [
+                    { id: 'nunca', label: 'Nunca mexi', description: 'Uso a regulagem como a moto chegou', icon: ShieldCheck },
+                    { id: 'copio', label: 'Copio o acerto de alguém', description: 'Replico cliques sem considerar peso e tocada', icon: TimerReset },
+                    { id: 'tentativa', label: 'Mexo por tentativa', description: 'Altero cliques, mas não registro o resultado', icon: Gauge },
+                    { id: 'registro', label: 'Meço SAG e registro testes', description: 'Já tenho método, quero mais precisão', icon: CircleGauge },
+                ],
+            },
+            {
+                id: 'terreno',
+                eyebrow: 'Resposta ao terreno',
+                title: 'Qual chão mais expõe o problema?',
+                hint: 'O terreno revela onde o conjunto perde equilíbrio.',
+                options: [
+                    { id: 'saltos', label: 'Saltos e frenagens', description: 'Recepções, costelas e entradas de curva', icon: Bike },
+                    { id: 'pedras', label: 'Pedras e raízes', description: 'Impactos sucessivos em baixa e média velocidade', icon: Mountain },
+                    { id: 'areia', label: 'Areia e canaletas', description: 'Frente solta e traseira buscando tração', icon: Waves },
+                    { id: 'misto', label: 'Terreno misto', description: 'A moto muda demais ao longo do percurso', icon: Route },
+                ],
+            },
+            {
+                id: 'ergonomia',
+                eyebrow: 'Cockpit e postura',
+                title: 'Quanto sua ergonomia foi ajustada?',
+                hint: 'Guidão, manetes, pedaleiras e postura mudam a leitura da suspensão.',
+                options: [
+                    { id: 'original', label: 'Está tudo original', description: 'Nunca adaptei o cockpit ao meu corpo', icon: Grip },
+                    { id: 'conforto', label: 'Ajustei pelo conforto', description: 'Posicionei até parecer mais confortável', icon: ShieldCheck },
+                    { id: 'arm_pump', label: 'Ainda tenho arm pump', description: 'Aperto demais a moto e perco mobilidade', icon: Zap },
+                    { id: 'metodica', label: 'Testo postura e comandos', description: 'Cruzo ergonomia, terreno e resposta da moto', icon: Target },
+                ],
+            },
+            {
+                id: 'objetivo',
+                eyebrow: 'Sua próxima pilotagem',
+                title: 'Qual mudança você quer sentir primeiro?',
+                hint: 'Seu diagnóstico vai priorizar este resultado.',
+                options: [
+                    { id: 'confianca', label: 'Frente previsível', description: 'Entrar e sustentar curvas com confiança', icon: Crosshair },
+                    { id: 'tracao', label: 'Mais tração', description: 'Acelerar sem a traseira espalhar', icon: Waves },
+                    { id: 'menos_fadiga', label: 'Menos fadiga', description: 'Pilotar mais solto e por mais tempo', icon: Grip },
+                    { id: 'consistencia', label: 'Voltas consistentes', description: 'Repetir o ritmo em qualquer terreno', icon: CircleGauge },
+                ],
+            },
         ],
+        'pt-PT': [
+            {
+                id: 'modalidade', eyebrow: 'O teu Off-Road', title: 'Onde pilotas mais?', hint: 'Todas as rotas deste diagnóstico são exclusivas para fora de estrada.',
+                options: [
+                    { id: 'motocross', label: 'Motocross', description: 'Pista, saltos e ondulações de travagem', icon: Bike },
+                    { id: 'enduro', label: 'Enduro', description: 'Provas longas e terreno técnico', icon: Route },
+                    { id: 'trilha', label: 'Trilho', description: 'Pedras, raízes, erosões e subidas', icon: Mountain },
+                    { id: 'hard_enduro', label: 'Hard Enduro', description: 'Obstáculos extremos e baixa velocidade', icon: Target },
+                ],
+            },
+            {
+                id: 'sintoma', eyebrow: 'Leitura da moto', title: 'Que sintoma mais te tira confiança?', hint: 'Escolhe o comportamento que surge primeiro quando aumentas o ritmo.',
+                options: [
+                    { id: 'fadiga', label: 'Os braços cansam e bloqueiam', description: 'A moto transfere demasiado impacto para o corpo', icon: Grip },
+                    { id: 'frente', label: 'A frente não comunica', description: 'Fecha, escapa ou parece vaga nas curvas', icon: Crosshair },
+                    { id: 'traseira', label: 'A traseira salta e espalha', description: 'Perde contacto e tração na aceleração', icon: Waves },
+                    { id: 'impacto', label: 'Bate seco ou chega ao fim', description: 'Falta conforto e controlo nos impactos', icon: Zap },
+                ],
+            },
+            {
+                id: 'metodo', eyebrow: 'O teu método atual', title: 'Como regulas a suspensão hoje?', hint: 'Não há resposta errada. Isto define onde deve começar a tua evolução.',
+                options: [
+                    { id: 'nunca', label: 'Nunca mexi', description: 'Uso a regulação com que a moto chegou', icon: ShieldCheck },
+                    { id: 'copio', label: 'Copio a afinação de alguém', description: 'Replico cliques sem considerar peso e pilotagem', icon: TimerReset },
+                    { id: 'tentativa', label: 'Mexo por tentativa', description: 'Altero cliques, mas não registo o resultado', icon: Gauge },
+                    { id: 'registro', label: 'Meço SAG e registo testes', description: 'Já tenho método e quero mais precisão', icon: CircleGauge },
+                ],
+            },
+            {
+                id: 'terreno', eyebrow: 'Resposta ao terreno', title: 'Que piso expõe mais o problema?', hint: 'O terreno revela onde o conjunto perde equilíbrio.',
+                options: [
+                    { id: 'saltos', label: 'Saltos e travagens', description: 'Receções, ondulações e entradas de curva', icon: Bike },
+                    { id: 'pedras', label: 'Pedras e raízes', description: 'Impactos sucessivos a baixa e média velocidade', icon: Mountain },
+                    { id: 'areia', label: 'Areia e regos', description: 'Frente solta e traseira à procura de tração', icon: Waves },
+                    { id: 'misto', label: 'Terreno misto', description: 'A moto muda demasiado ao longo do percurso', icon: Route },
+                ],
+            },
+            {
+                id: 'ergonomia', eyebrow: 'Cockpit e postura', title: 'Quanto ajustaste a tua ergonomia?', hint: 'Guiador, manetes, peseiras e postura mudam a leitura da suspensão.',
+                options: [
+                    { id: 'original', label: 'Está tudo original', description: 'Nunca adaptei o cockpit ao meu corpo', icon: Grip },
+                    { id: 'conforto', label: 'Ajustei pelo conforto', description: 'Posicionei até parecer mais confortável', icon: ShieldCheck },
+                    { id: 'arm_pump', label: 'Ainda tenho arm pump', description: 'Aperto demasiado a moto e perco mobilidade', icon: Zap },
+                    { id: 'metodica', label: 'Testo postura e comandos', description: 'Cruzo ergonomia, terreno e resposta da moto', icon: Target },
+                ],
+            },
+            {
+                id: 'objetivo', eyebrow: 'A tua próxima pilotagem', title: 'Que mudança queres sentir primeiro?', hint: 'O teu diagnóstico vai priorizar este resultado.',
+                options: [
+                    { id: 'confianca', label: 'Frente previsível', description: 'Entrar e manter curvas com confiança', icon: Crosshair },
+                    { id: 'tracao', label: 'Mais tração', description: 'Acelerar sem a traseira espalhar', icon: Waves },
+                    { id: 'menos_fadiga', label: 'Menos fadiga', description: 'Pilotar mais solto e durante mais tempo', icon: Grip },
+                    { id: 'consistencia', label: 'Voltas consistentes', description: 'Repetir o ritmo em qualquer terreno', icon: CircleGauge },
+                ],
+            },
+        ],
+        es: [
+            {
+                id: 'modalidade', eyebrow: 'Tu Off-Road', title: '¿Dónde pilotas más?', hint: 'Todas las rutas de este diagnóstico son exclusivamente Off-Road.',
+                options: [
+                    { id: 'motocross', label: 'Motocross', description: 'Circuito, saltos y baches de frenada', icon: Bike },
+                    { id: 'enduro', label: 'Enduro', description: 'Pruebas largas y terreno técnico', icon: Route },
+                    { id: 'trilha', label: 'Senderos', description: 'Piedras, raíces, erosiones y subidas', icon: Mountain },
+                    { id: 'hard_enduro', label: 'Hard Enduro', description: 'Obstáculos extremos y baja velocidad', icon: Target },
+                ],
+            },
+            {
+                id: 'sintoma', eyebrow: 'Lectura de la moto', title: '¿Qué síntoma te quita más confianza?', hint: 'Elige lo que aparece primero cuando aumentas el ritmo.',
+                options: [
+                    { id: 'fadiga', label: 'Los brazos se cansan y bloquean', description: 'La moto transfiere demasiado impacto al cuerpo', icon: Grip },
+                    { id: 'frente', label: 'El tren delantero no comunica', description: 'Se cierra, desliza o parece vago en curvas', icon: Crosshair },
+                    { id: 'traseira', label: 'La trasera rebota y se abre', description: 'Pierde contacto y tracción al acelerar', icon: Waves },
+                    { id: 'impacto', label: 'Golpea seco o hace tope', description: 'Falta comodidad y control en los impactos', icon: Zap },
+                ],
+            },
+            {
+                id: 'metodo', eyebrow: 'Tu método actual', title: '¿Cómo regulas la suspensión hoy?', hint: 'No hay respuesta incorrecta. Esto define dónde empezar.',
+                options: [
+                    { id: 'nunca', label: 'Nunca la toqué', description: 'Uso la configuración de entrega', icon: ShieldCheck },
+                    { id: 'copio', label: 'Copio la puesta a punto', description: 'Repito clics sin considerar peso y pilotaje', icon: TimerReset },
+                    { id: 'tentativa', label: 'Pruebo sin registrar', description: 'Cambio clics, pero no anoto el resultado', icon: Gauge },
+                    { id: 'registro', label: 'Mido SAG y registro pruebas', description: 'Ya tengo método y quiero más precisión', icon: CircleGauge },
+                ],
+            },
+            {
+                id: 'terreno', eyebrow: 'Respuesta al terreno', title: '¿Qué terreno expone más el problema?', hint: 'El suelo revela dónde el conjunto pierde equilibrio.',
+                options: [
+                    { id: 'saltos', label: 'Saltos y frenadas', description: 'Recepciones, baches y entradas de curva', icon: Bike },
+                    { id: 'pedras', label: 'Piedras y raíces', description: 'Impactos sucesivos a baja y media velocidad', icon: Mountain },
+                    { id: 'areia', label: 'Arena y roderas', description: 'Frente suelto y trasera buscando tracción', icon: Waves },
+                    { id: 'misto', label: 'Terreno mixto', description: 'La moto cambia demasiado durante el recorrido', icon: Route },
+                ],
+            },
+            {
+                id: 'ergonomia', eyebrow: 'Cockpit y postura', title: '¿Cuánto ajustaste tu ergonomía?', hint: 'Manillar, manetas, estriberas y postura cambian la lectura de la suspensión.',
+                options: [
+                    { id: 'original', label: 'Todo está original', description: 'Nunca adapté el cockpit a mi cuerpo', icon: Grip },
+                    { id: 'conforto', label: 'Ajusté por comodidad', description: 'Lo posicioné hasta sentirlo cómodo', icon: ShieldCheck },
+                    { id: 'arm_pump', label: 'Aún tengo arm pump', description: 'Aprieto demasiado la moto y pierdo movilidad', icon: Zap },
+                    { id: 'metodica', label: 'Pruebo postura y mandos', description: 'Cruzo ergonomía, terreno y respuesta', icon: Target },
+                ],
+            },
+            {
+                id: 'objetivo', eyebrow: 'Tu próxima rodada', title: '¿Qué cambio quieres sentir primero?', hint: 'Tu diagnóstico priorizará este resultado.',
+                options: [
+                    { id: 'confianca', label: 'Frente predecible', description: 'Entrar y mantener curvas con confianza', icon: Crosshair },
+                    { id: 'tracao', label: 'Más tracción', description: 'Acelerar sin que la trasera se abra', icon: Waves },
+                    { id: 'menos_fadiga', label: 'Menos fatiga', description: 'Pilotar más suelto durante más tiempo', icon: Grip },
+                    { id: 'consistencia', label: 'Vueltas consistentes', description: 'Repetir el ritmo en cualquier terreno', icon: CircleGauge },
+                ],
+            },
+        ],
+        en: [
+            {
+                id: 'modalidade', eyebrow: 'Your Off-Road ride', title: 'Where do you ride most?', hint: 'Every path in this diagnosis is built exclusively for Off-Road riding.',
+                options: [
+                    { id: 'motocross', label: 'Motocross', description: 'Tracks, jumps and braking bumps', icon: Bike },
+                    { id: 'enduro', label: 'Enduro', description: 'Long events and technical terrain', icon: Route },
+                    { id: 'trilha', label: 'Trail riding', description: 'Rocks, roots, erosion and climbs', icon: Mountain },
+                    { id: 'hard_enduro', label: 'Hard Enduro', description: 'Extreme obstacles at technical pace', icon: Target },
+                ],
+            },
+            {
+                id: 'sintoma', eyebrow: 'Reading the bike', title: 'Which symptom steals your confidence?', hint: 'Choose what shows up first when you increase the pace.',
+                options: [
+                    { id: 'fadiga', label: 'My arms tire and lock up', description: 'The bike transfers too much impact to the body', icon: Grip },
+                    { id: 'frente', label: 'The front gives no feedback', description: 'It tucks, slides or feels vague in turns', icon: Crosshair },
+                    { id: 'traseira', label: 'The rear kicks and steps out', description: 'It loses contact and traction under power', icon: Waves },
+                    { id: 'impacto', label: 'It feels harsh or bottoms out', description: 'Impacts lack comfort and control', icon: Zap },
+                ],
+            },
+            {
+                id: 'metodo', eyebrow: 'Your current method', title: 'How do you tune suspension today?', hint: 'There is no wrong answer. This sets the right starting point.',
+                options: [
+                    { id: 'nunca', label: 'I have never adjusted it', description: 'I ride the bike as delivered', icon: ShieldCheck },
+                    { id: 'copio', label: 'I copy someone else’s setup', description: 'I repeat clicks without matching weight or style', icon: TimerReset },
+                    { id: 'tentativa', label: 'I tune by trial and error', description: 'I change clicks but do not log the result', icon: Gauge },
+                    { id: 'registro', label: 'I measure SAG and log tests', description: 'I have a method and want more precision', icon: CircleGauge },
+                ],
+            },
+            {
+                id: 'terreno', eyebrow: 'Terrain response', title: 'Which terrain exposes the problem most?', hint: 'Terrain shows where the chassis loses balance.',
+                options: [
+                    { id: 'saltos', label: 'Jumps and braking bumps', description: 'Landings, chop and turn entry', icon: Bike },
+                    { id: 'pedras', label: 'Rocks and roots', description: 'Repeated impacts through technical terrain', icon: Mountain },
+                    { id: 'areia', label: 'Sand and ruts', description: 'Loose front and rear searching for grip', icon: Waves },
+                    { id: 'misto', label: 'Mixed terrain', description: 'The bike changes too much through the ride', icon: Route },
+                ],
+            },
+            {
+                id: 'ergonomia', eyebrow: 'Cockpit and posture', title: 'How much have you tuned your ergonomics?', hint: 'Bars, levers, pegs and posture change how suspension feels.',
+                options: [
+                    { id: 'original', label: 'Everything is stock', description: 'I have never fitted the cockpit to my body', icon: Grip },
+                    { id: 'conforto', label: 'I adjusted for comfort', description: 'I positioned things until they felt comfortable', icon: ShieldCheck },
+                    { id: 'arm_pump', label: 'I still get arm pump', description: 'I grip the bike too hard and lose mobility', icon: Zap },
+                    { id: 'metodica', label: 'I test posture and controls', description: 'I connect ergonomics, terrain and bike response', icon: Target },
+                ],
+            },
+            {
+                id: 'objetivo', eyebrow: 'Your next ride', title: 'Which change do you want to feel first?', hint: 'Your diagnosis will prioritize this outcome.',
+                options: [
+                    { id: 'confianca', label: 'A predictable front end', description: 'Enter and hold turns with confidence', icon: Crosshair },
+                    { id: 'tracao', label: 'More traction', description: 'Accelerate without the rear stepping out', icon: Waves },
+                    { id: 'menos_fadiga', label: 'Less fatigue', description: 'Ride looser for longer', icon: Grip },
+                    { id: 'consistencia', label: 'Consistent laps', description: 'Repeat your pace on any terrain', icon: CircleGauge },
+                ],
+            },
+        ],
+    };
+    return dictionaries[language];
+};
+
+const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
+    'pt-BR': {
+        seoTitle: 'Diagnóstico Off-Road de Suspensão e Ergonomia | W-Tech',
+        seoDescription: 'Descubra em 90 segundos qual ajuste de suspensão e ergonomia deve transformar primeiro a sua pilotagem Off-Road.',
+        badge: 'Diagnóstico imersivo Off-Road',
+        heroTitle: 'Pare de adivinhar.',
+        heroHighlight: 'Comece a sentir a moto.',
+        heroDescription: 'Em 6 decisões, identifique o que está tirando controle, tração e energia da sua pilotagem — um diagnóstico 100% voltado a Motocross e Off-Road.',
+        start: 'Iniciar meu diagnóstico',
+        free: '100% gratuito',
+        duration: 'Cerca de 90 segundos',
+        immediate: 'Resultado imediato',
+        dark: 'Escuro',
+        light: 'Claro',
+        step: 'Etapa',
+        of: 'de',
+        back: 'Voltar',
+        transitionEyebrow: 'Telemetria W-Tech',
+        transitionLabels: ['Lendo o equilíbrio da moto', 'Simulando transferência de peso', 'Cruzando terreno e hidráulica', 'Mapeando o cockpit do piloto', 'Construindo a sua prioridade técnica', 'Seu diagnóstico está pronto'],
+        transitionHint: 'Mova o cursor para explorar o conjunto em 3D',
+        resultEyebrow: 'Seu mapa de evolução',
+        resultTitle: 'A primeira mudança não é acelerar mais.',
+        resultDescription: 'É fazer a moto trabalhar com você. O diagnóstico abaixo define o melhor ponto de entrada para a sua regulagem.',
+        resultAction: 'Assistir à VSL recomendada',
+        resultFootnote: 'Na próxima etapa, a aula conecta este diagnóstico ao método completo. Ao final, a inscrição abre direto no checkout.',
+        restart: 'Refazer diagnóstico',
+        interaction: 'Interação 3D',
+        profiles: {
+            equilibrio: {
+                label: 'Prioridade: Equilíbrio dinâmico',
+                title: 'Sua moto muda demais quando o terreno muda.',
+                description: 'O conjunto precisa de uma base repetível: SAG correto, posição de pilotagem e sequência de testes antes de qualquer ajuste fino.',
+                insights: ['Crie uma referência de SAG para o seu peso equipado', 'Altere apenas uma variável por teste', 'Registre terreno, cliques e sensação da moto'],
+            },
+            tracao: {
+                label: 'Prioridade: Tração traseira',
+                title: 'A potência está chegando antes da aderência.',
+                description: 'A traseira está perdendo contato ou transferindo força de forma brusca. O caminho começa no SAG, retorno e posição do corpo.',
+                insights: ['Valide SAG estático e dinâmico antes dos cliques', 'Observe retorno em impactos sucessivos', 'Cruze posição do corpo com aceleração e terreno'],
+            },
+            dianteira: {
+                label: 'Prioridade: Confiança na dianteira',
+                title: 'Sua frente precisa conversar com você.',
+                description: 'A entrada e o apoio de curva pedem mais leitura. Altura, compressão, retorno e cockpit devem trabalhar como um único sistema.',
+                insights: ['Avalie altura e distribuição de peso', 'Teste compressão e retorno separadamente', 'Ajuste manetes e guidão para manter mobilidade'],
+            },
+            ergonomia: {
+                label: 'Prioridade: Ergonomia e fadiga',
+                title: 'Seu corpo está absorvendo o trabalho da moto.',
+                description: 'Arm pump e rigidez não se resolvem apenas com preparo físico. Cockpit, postura e suspensão precisam devolver liberdade ao piloto.',
+                insights: ['Ajuste comandos para pilotar em pé sem quebrar os punhos', 'Reduza tensão de mãos e antebraços', 'Cruze ergonomia com a resposta nos impactos'],
+            },
+        },
     },
-    mecanico: {
-        badge: 'Diagnóstico do Profissional',
-        title: <>Tem <span className="text-wtech-gold">faturamento parado</span> na sua bancada</>,
-        diagnosis: 'O acerto de suspensão é o serviço mais lucrativo da oficina — e é exatamente o que escapa pra concorrência quando falta método. Dominar SAG, cliques, hidráulica e revalvulação te coloca em outro patamar: você entrega um acerto que o piloto SENTE, cobra premium por isso e cria uma base de clientes fiel.',
-        solves: [
-            { icon: <DollarSign size={20} />, text: 'Agregar o serviço mais lucrativo: acerto e preparação de suspensão' },
-            { icon: <Crosshair size={20} />, text: 'Entregar acerto personalizado que o cliente sente na hora' },
-            { icon: <TrendingUp size={20} />, text: 'Cobrar premium e parar de mandar serviço pra concorrência' },
-            { icon: <Trophy size={20} />, text: 'Virar a referência de suspensão Off-Road na sua região' },
-        ],
+    'pt-PT': {
+        seoTitle: 'Diagnóstico Off-Road de Suspensão e Ergonomia | W-Tech',
+        seoDescription: 'Descobre em 90 segundos que ajuste de suspensão e ergonomia deve transformar primeiro a tua pilotagem Off-Road.',
+        badge: 'Diagnóstico imersivo Off-Road', heroTitle: 'Pára de adivinhar.', heroHighlight: 'Começa a sentir a moto.',
+        heroDescription: 'Em 6 decisões, identifica o que está a tirar controlo, tração e energia da tua pilotagem — um diagnóstico 100% dedicado a Motocross e Off-Road.',
+        start: 'Iniciar o meu diagnóstico', free: '100% gratuito', duration: 'Cerca de 90 segundos', immediate: 'Resultado imediato',
+        dark: 'Escuro', light: 'Claro', step: 'Etapa', of: 'de', back: 'Voltar',
+        transitionEyebrow: 'Telemetria W-Tech',
+        transitionLabels: ['A ler o equilíbrio da moto', 'A simular a transferência de peso', 'A cruzar terreno e hidráulica', 'A mapear o cockpit do piloto', 'A construir a tua prioridade técnica', 'O teu diagnóstico está pronto'],
+        transitionHint: 'Move o cursor para explorar o conjunto em 3D',
+        resultEyebrow: 'O teu mapa de evolução', resultTitle: 'A primeira mudança não é acelerar mais.',
+        resultDescription: 'É fazer a moto trabalhar contigo. O diagnóstico abaixo define o melhor ponto de entrada para a tua regulação.',
+        resultAction: 'Ver a VSL recomendada',
+        resultFootnote: 'Na próxima etapa, a aula liga este diagnóstico ao método completo. No final, a inscrição abre diretamente no checkout.',
+        restart: 'Repetir diagnóstico', interaction: 'Interação 3D',
+        profiles: {
+            equilibrio: { label: 'Prioridade: Equilíbrio dinâmico', title: 'A tua moto muda demasiado quando o terreno muda.', description: 'O conjunto precisa de uma base repetível: SAG correto, posição e sequência de testes antes de qualquer ajuste fino.', insights: ['Cria uma referência de SAG para o teu peso equipado', 'Altera apenas uma variável por teste', 'Regista terreno, cliques e sensação da moto'] },
+            tracao: { label: 'Prioridade: Tração traseira', title: 'A potência está a chegar antes da aderência.', description: 'A traseira perde contacto ou transfere força de forma brusca. O caminho começa no SAG, retorno e posição do corpo.', insights: ['Valida o SAG estático e dinâmico antes dos cliques', 'Observa o retorno em impactos sucessivos', 'Cruza posição do corpo, aceleração e terreno'] },
+            dianteira: { label: 'Prioridade: Confiança na dianteira', title: 'A tua frente precisa de comunicar contigo.', description: 'A entrada e o apoio de curva pedem mais leitura. Altura, compressão, retorno e cockpit devem funcionar como um sistema.', insights: ['Avalia altura e distribuição de peso', 'Testa compressão e retorno separadamente', 'Ajusta manetes e guiador para manter mobilidade'] },
+            ergonomia: { label: 'Prioridade: Ergonomia e fadiga', title: 'O teu corpo está a absorver o trabalho da moto.', description: 'Arm pump e rigidez não se resolvem apenas com preparação física. Cockpit, postura e suspensão devem libertar o piloto.', insights: ['Ajusta comandos para pilotar de pé sem dobrar os pulsos', 'Reduz tensão nas mãos e antebraços', 'Cruza ergonomia com a resposta aos impactos'] },
+        },
+    },
+    es: {
+        seoTitle: 'Diagnóstico Off-Road de Suspensión y Ergonomía | W-Tech',
+        seoDescription: 'Descubre en 90 segundos qué ajuste de suspensión y ergonomía debe transformar primero tu pilotaje Off-Road.',
+        badge: 'Diagnóstico inmersivo Off-Road', heroTitle: 'Deja de adivinar.', heroHighlight: 'Empieza a sentir la moto.',
+        heroDescription: 'En 6 decisiones, identifica qué te quita control, tracción y energía — un diagnóstico 100% dedicado al Motocross y Off-Road.',
+        start: 'Iniciar mi diagnóstico', free: '100% gratuito', duration: 'Unos 90 segundos', immediate: 'Resultado inmediato',
+        dark: 'Oscuro', light: 'Claro', step: 'Etapa', of: 'de', back: 'Volver',
+        transitionEyebrow: 'Telemetría W-Tech',
+        transitionLabels: ['Leyendo el equilibrio de la moto', 'Simulando transferencia de peso', 'Cruzando terreno e hidráulica', 'Mapeando el cockpit del piloto', 'Construyendo tu prioridad técnica', 'Tu diagnóstico está listo'],
+        transitionHint: 'Mueve el cursor para explorar el conjunto en 3D',
+        resultEyebrow: 'Tu mapa de evolución', resultTitle: 'El primer cambio no es acelerar más.',
+        resultDescription: 'Es hacer que la moto trabaje contigo. Este diagnóstico define el mejor punto de entrada para tu regulación.',
+        resultAction: 'Ver la VSL recomendada',
+        resultFootnote: 'En la siguiente etapa, la clase conecta este diagnóstico con el método completo. Al final, la inscripción abre directamente en el checkout.',
+        restart: 'Repetir diagnóstico', interaction: 'Interacción 3D',
+        profiles: {
+            equilibrio: { label: 'Prioridad: Equilibrio dinámico', title: 'Tu moto cambia demasiado cuando cambia el terreno.', description: 'El conjunto necesita una base repetible: SAG correcto, posición y secuencia de pruebas antes del ajuste fino.', insights: ['Crea una referencia de SAG para tu peso equipado', 'Cambia solo una variable en cada prueba', 'Registra terreno, clics y sensación de la moto'] },
+            tracao: { label: 'Prioridad: Tracción trasera', title: 'La potencia está llegando antes que el agarre.', description: 'La trasera pierde contacto o transfiere fuerza bruscamente. El camino empieza por SAG, rebote y posición del cuerpo.', insights: ['Valida SAG estático y dinámico antes de los clics', 'Observa el rebote en impactos sucesivos', 'Conecta posición del cuerpo, aceleración y terreno'] },
+            dianteira: { label: 'Prioridad: Confianza delantera', title: 'El tren delantero debe hablar contigo.', description: 'La entrada y apoyo en curva necesitan más lectura. Altura, compresión, rebote y cockpit deben ser un sistema.', insights: ['Evalúa altura y distribución de peso', 'Prueba compresión y rebote por separado', 'Ajusta manetas y manillar para conservar movilidad'] },
+            ergonomia: { label: 'Prioridad: Ergonomía y fatiga', title: 'Tu cuerpo está absorbiendo el trabajo de la moto.', description: 'El arm pump y la rigidez no se resuelven solo con físico. Cockpit, postura y suspensión deben liberar al piloto.', insights: ['Ajusta los mandos para pilotar de pie sin doblar las muñecas', 'Reduce tensión en manos y antebrazos', 'Conecta ergonomía con respuesta a impactos'] },
+        },
+    },
+    en: {
+        seoTitle: 'Off-Road Suspension & Ergonomics Diagnosis | W-Tech',
+        seoDescription: 'Discover in 90 seconds which suspension and ergonomics adjustment should transform your Off-Road riding first.',
+        badge: 'Immersive Off-Road diagnosis', heroTitle: 'Stop guessing.', heroHighlight: 'Start feeling the bike.',
+        heroDescription: 'In 6 decisions, identify what is taking away control, traction and energy — a diagnosis built 100% for Motocross and Off-Road riding.',
+        start: 'Start my diagnosis', free: '100% free', duration: 'About 90 seconds', immediate: 'Instant result',
+        dark: 'Dark', light: 'Light', step: 'Step', of: 'of', back: 'Back',
+        transitionEyebrow: 'W-Tech telemetry',
+        transitionLabels: ['Reading chassis balance', 'Simulating weight transfer', 'Matching terrain and damping', 'Mapping the rider cockpit', 'Building your technical priority', 'Your diagnosis is ready'],
+        transitionHint: 'Move your pointer to explore the assembly in 3D',
+        resultEyebrow: 'Your progression map', resultTitle: 'The first change is not going faster.',
+        resultDescription: 'It is making the bike work with you. This diagnosis defines the best entry point for your tuning.',
+        resultAction: 'Watch my recommended VSL',
+        resultFootnote: 'Next, the class connects this diagnosis to the complete method. At the end, enrollment opens directly in checkout.',
+        restart: 'Restart diagnosis', interaction: '3D interaction',
+        profiles: {
+            equilibrio: { label: 'Priority: Dynamic balance', title: 'Your bike changes too much when terrain changes.', description: 'The chassis needs a repeatable baseline: correct SAG, rider position and a test sequence before fine tuning.', insights: ['Create a SAG baseline for your fully equipped weight', 'Change only one variable per test', 'Log terrain, clicks and bike feedback'] },
+            tracao: { label: 'Priority: Rear traction', title: 'Power is arriving before grip.', description: 'The rear is losing contact or transferring force too abruptly. The path starts with SAG, rebound and body position.', insights: ['Validate static and rider SAG before clicks', 'Watch rebound through repeated impacts', 'Connect body position, throttle and terrain'] },
+            dianteira: { label: 'Priority: Front-end confidence', title: 'Your front end needs to talk to you.', description: 'Turn entry and support need clearer feedback. Height, compression, rebound and cockpit must work as one system.', insights: ['Review ride height and weight distribution', 'Test compression and rebound separately', 'Set levers and bars to preserve mobility'] },
+            ergonomia: { label: 'Priority: Ergonomics and fatigue', title: 'Your body is absorbing the bike’s work.', description: 'Arm pump and stiffness are not solved by fitness alone. Cockpit, posture and suspension must give the rider freedom.', insights: ['Set controls for standing without bent wrists', 'Reduce hand and forearm tension', 'Connect ergonomics with impact response'] },
+        },
     },
 };
 
-/* ─────────────────────────────────────────────────────────────
- *  COMPONENTE PRINCIPAL
- * ──────────────────────────────────────────────────────────── */
-const QuizSuspensao: React.FC = () => {
+const getProfile = (answers: Answers): Profile => {
+    const scores: Record<Profile, number> = { equilibrio: 1, tracao: 0, dianteira: 0, ergonomia: 0 };
+    if (answers.sintoma === 'fadiga') scores.ergonomia += 4;
+    if (answers.sintoma === 'frente') scores.dianteira += 4;
+    if (answers.sintoma === 'traseira') scores.tracao += 4;
+    if (answers.sintoma === 'impacto') scores.equilibrio += 3;
+    if (answers.terreno === 'areia') scores.tracao += 2;
+    if (answers.terreno === 'saltos') scores.dianteira += 1;
+    if (answers.terreno === 'misto') scores.equilibrio += 2;
+    if (answers.ergonomia === 'original' || answers.ergonomia === 'arm_pump') scores.ergonomia += 3;
+    if (answers.objetivo === 'confianca') scores.dianteira += 3;
+    if (answers.objetivo === 'tracao') scores.tracao += 3;
+    if (answers.objetivo === 'menos_fadiga') scores.ergonomia += 3;
+    if (answers.objetivo === 'consistencia') scores.equilibrio += 3;
+    return (Object.entries(scores) as [Profile, number][]).sort((a, b) => b[1] - a[1])[0][0];
+};
+
+const buildVslUrl = (theme: QuizTheme, profile: Profile, answers: Answers): string => {
+    const destination = theme === 'light'
+        ? '/curso-suspensao-piloto-vsl-clara'
+        : '/curso-suspensao-piloto-vsl';
+    if (typeof window === 'undefined') return destination;
+    const params = new URLSearchParams(window.location.search);
+    params.set('from', 'quiz');
+    params.set('src', `quiz_${theme}`);
+    params.set('quiz_theme', theme);
+    params.set('quiz_profile', profile);
+    params.set('quiz_discipline', answers.modalidade || 'offroad');
+    params.set('utm_content', `quiz_${theme}_${profile}`);
+    if (!params.has('utm_source')) params.set('utm_source', 'quiz');
+    if (!params.has('utm_medium')) params.set('utm_medium', 'diagnostico');
+    return `${destination}?${params.toString()}`;
+};
+
+const SuspensionRig: React.FC<{
+    light: boolean;
+    active?: boolean;
+    label: string;
+}> = ({ light, active = true, label }) => {
+    const [rotation, setRotation] = useState({ x: -7, y: 12 });
     const prefersReduced = useReducedMotion();
-    const animate = !prefersReduced;
 
-    /* Estado da máquina de etapas
-       index 0          → tela de boas-vindas
-       1 .. totalQ      → perguntas (1ª é segmentação)
-       'vsl'            → vídeo antes do resultado
-       'form'           → captura de lead
-       'analyzing'      → barra de progresso "gerando diagnóstico"
-       'result'         → resultado + oferta */
-    const [phase, setPhase] = useState<'welcome' | 'questions' | 'vsl' | 'form' | 'analyzing' | 'result'>('welcome');
-    const [qIndex, setQIndex] = useState(0);
-    const [answers, setAnswers] = useState<Record<string, { value: string; label: string }>>({});
-    const [track, setTrack] = useState<Track | null>(null);
-
-    // Sequência de perguntas montada dinamicamente após escolher a trilha
-    const steps: QuizStep[] = useMemo(() => {
-        if (!track) return [STEP_SEGMENT];
-        return [STEP_SEGMENT, ...STEPS_BY_TRACK[track]];
-    }, [track]);
-
-    const currentStep = steps[qIndex];
-    const progress = Math.round(((qIndex + 1) / (1 + 5)) * 100); // 1 segmentação + 5 perguntas
-
-    // Chave única da tela atual — muda a cada pergunta p/ disparar a transição
-    const screenKey = phase === 'questions' && currentStep ? `q-${currentStep.id}-${qIndex}` : phase;
-
-    // Atribuição de marketing (UTM/ads) capturada uma vez na montagem
-    const attribution = useMemo(getAttributionParams, []);
-
-    const topRef = useRef<HTMLDivElement>(null);
-    const scrollTop = () => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    const selectOption = (opt: QuizOption) => {
-        const step = currentStep;
-        setAnswers(prev => ({ ...prev, [step.id]: { value: opt.id, label: opt.label } }));
-
-        // Telemetria de funil (fire-and-forget): mostra onde o lead abandona
-        if (step.id === 'segmento') trackEvent('Quiz', 'segment', opt.label);
-        else trackEvent('Quiz', `answer_${step.id}`, opt.label);
-
-        // Pergunta de segmentação define a trilha
-        if (step.id === 'segmento' && opt.track) {
-            setTrack(opt.track);
-        }
-
-        // Avança após um respiro pra dar feedback visual da seleção
-        window.setTimeout(() => {
-            const lastQuestionIndex = (opt.track ? 1 + STEPS_BY_TRACK[opt.track].length : steps.length) - 1;
-            if (qIndex >= lastQuestionIndex) {
-                setPhase('vsl');
-            } else {
-                setQIndex(i => i + 1);
-            }
-            scrollTop();
-        }, animate ? 280 : 0);
+    const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (prefersReduced) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width - 0.5;
+        const y = (event.clientY - rect.top) / rect.height - 0.5;
+        setRotation({ x: -y * 18, y: x * 28 });
     };
-
-    const goBack = () => {
-        if (phase === 'form') { setPhase('vsl'); scrollTop(); return; }
-        if (phase === 'vsl') { setPhase('questions'); scrollTop(); return; }
-        if (qIndex > 0) { setQIndex(i => i - 1); scrollTop(); }
-        else { setPhase('welcome'); }
-    };
-
-    const startQuiz = () => { trackEvent('Quiz', 'start'); setPhase('questions'); scrollTop(); };
 
     return (
-        <div ref={topRef} className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden">
-            <SEO
-                title="Quiz: Descubra o Acerto Ideal da Sua Suspensão | W-Tech"
-                description="Responda 6 perguntas rápidas e receba um diagnóstico personalizado de suspensão Off-Road — pra piloto ou mecânico. Curso W-Tech com prática real."
-            />
-
-            {/* Barra de progresso fixa (some na análise, no resultado e na welcome) */}
-            {phase !== 'result' && phase !== 'welcome' && phase !== 'analyzing' && (
-                <div className="sticky top-0 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/5">
-                    <div className="container mx-auto px-6 py-3 max-w-3xl">
-                        <div className="flex items-center gap-4">
-                            <button onClick={goBack} className="text-gray-500 hover:text-white transition-colors shrink-0" aria-label="Voltar">
-                                <ArrowLeft size={20} />
-                            </button>
+        <div
+            className="relative h-[270px] w-full select-none overflow-hidden rounded-[2rem] sm:h-[320px]"
+            onPointerMove={handlePointerMove}
+            onPointerLeave={() => setRotation({ x: -7, y: 12 })}
+            role="img"
+            aria-label={label}
+        >
+            <div className={`absolute inset-0 ${light ? 'bg-[radial-gradient(circle_at_50%_35%,rgba(185,126,22,.18),transparent_45%)]' : 'bg-[radial-gradient(circle_at_50%_35%,rgba(215,173,79,.14),transparent_48%)]'}`} />
+            <div className="absolute inset-x-[12%] bottom-8 h-10 rounded-[100%] bg-black/35 blur-xl" />
+            <div className="absolute inset-0 flex items-center justify-center [perspective:900px]">
+                <div
+                    className="relative h-[220px] w-[220px] transition-transform duration-300 ease-out [transform-style:preserve-3d] sm:h-[260px] sm:w-[260px]"
+                    style={{ transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)` }}
+                >
+                    <div className={`absolute inset-[12%] rounded-full border-[16px] shadow-[inset_0_0_35px_rgba(0,0,0,.65),0_18px_38px_rgba(0,0,0,.28)] [transform:translateZ(-20px)] ${light ? 'border-[#292824]' : 'border-[#181818]'}`} />
+                    <div className={`absolute inset-[22%] rounded-full border-[3px] [transform:translateZ(-5px)] ${light ? 'border-[#aaa28f]' : 'border-zinc-600'}`} />
+                    {[0, 45, 90, 135].map((angle) => (
+                        <div
+                            key={angle}
+                            className={`absolute left-1/2 top-1/2 h-[2px] w-[38%] origin-left ${light ? 'bg-[#948b79]' : 'bg-zinc-600'}`}
+                            style={{ transform: `translateZ(-4px) rotate(${angle}deg)` }}
+                        />
+                    ))}
+                    <div className={`absolute left-[34%] top-[4%] h-[72%] w-5 rounded-full border shadow-xl [transform:translateZ(34px)_rotate(-8deg)] ${light ? 'border-[#b6ad99] bg-gradient-to-r from-[#d9d3c5] via-white to-[#9f9685]' : 'border-zinc-500 bg-gradient-to-r from-zinc-700 via-zinc-300 to-zinc-800'}`} />
+                    <div className={`absolute right-[34%] top-[4%] h-[72%] w-5 rounded-full border shadow-xl [transform:translateZ(34px)_rotate(8deg)] ${light ? 'border-[#b6ad99] bg-gradient-to-r from-[#d9d3c5] via-white to-[#9f9685]' : 'border-zinc-500 bg-gradient-to-r from-zinc-700 via-zinc-300 to-zinc-800'}`} />
+                    <div className="absolute left-1/2 top-[12%] h-[56%] w-10 -translate-x-1/2 [transform-style:preserve-3d] [transform:translateZ(58px)]">
+                        <div className={`absolute left-1/2 top-0 h-full w-3 -translate-x-1/2 rounded-full ${light ? 'bg-[#25241f]' : 'bg-zinc-800'}`} />
+                        <div className={`absolute left-1/2 top-[6%] h-[84%] w-8 -translate-x-1/2 rounded-full border-2 ${light ? 'border-[#af7b1d]/75' : 'border-[#d7ad4f]/80'}`} />
+                        {Array.from({ length: 11 }).map((_, index) => (
                             <div
-                                className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden"
-                                role="progressbar"
-                                aria-label="Progresso do quiz"
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                                aria-valuenow={phase === 'questions' ? progress : phase === 'vsl' ? 90 : 100}
-                            >
-                                <motion.div
-                                    className="h-full bg-gradient-to-r from-wtech-gold to-yellow-500"
-                                    initial={false}
-                                    animate={{ width: `${phase === 'questions' ? progress : phase === 'vsl' ? 90 : 100}%` }}
-                                    transition={{ duration: animate ? 0.4 : 0, ease: 'easeOut' }}
-                                />
-                            </div>
-                            <span className="text-[11px] font-black text-wtech-gold tabular-nums shrink-0">
-                                {phase === 'questions' ? `${qIndex + 1}/6` : phase === 'vsl' ? '6/6' : '✓'}
-                            </span>
-                        </div>
+                                key={index}
+                                className={`absolute left-1/2 h-3 w-12 -translate-x-1/2 rounded-[100%] border-2 ${light ? 'border-[#a96f12]' : 'border-[#e4bb56]'}`}
+                                style={{
+                                    top: `${8 + index * 7}%`,
+                                    transform: `translateX(-50%) rotateX(68deg) rotateZ(${index * 10}deg)`,
+                                    animation: active && !prefersReduced ? 'quizCoil 1.15s ease-in-out infinite alternate' : undefined,
+                                    animationDelay: `${index * -45}ms`,
+                                }}
+                            />
+                        ))}
                     </div>
+                    <div className="absolute left-1/2 top-[48%] h-11 w-11 -translate-x-1/2 rounded-full border-4 border-[#b5211f] bg-[#d02b27] shadow-[0_0_28px_rgba(181,33,31,.35)] [transform:translateZ(46px)]" />
                 </div>
-            )}
-
-            {/* Transição entre telas SEM AnimatePresence/mode="wait".
-                O motion.div é keyed por tela: ao mudar a key o React desmonta a
-                anterior e monta a nova IMEDIATAMENTE (no DOM), tocando só a
-                animação de entrada. Não há exit a "esperar", então nada trava
-                caso o rAF seja throttled (aba em background) — o que evitaria
-                perder o lead no meio do funil.
-
-                ErrorBoundary externo: se QUALQUER tela quebrar, em vez de tela
-                branca o usuário vê um fallback que ainda leva ao checkout. */}
-            <ErrorBoundary fallback={<QuizCrashFallback checkoutUrl={buildCheckoutUrl(attribution, track ?? 'piloto')} />}>
-                <motion.div
-                    key={screenKey}
-                    initial={{ opacity: 0, y: animate ? 12 : 0 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: animate ? 0.25 : 0, ease: 'easeOut' }}
-                >
-                    {phase === 'welcome' && (
-                        <WelcomeScreen animate={animate} onStart={startQuiz} />
-                    )}
-                    {phase === 'questions' && currentStep && (
-                        <QuestionScreen
-                            step={currentStep}
-                            selected={answers[currentStep.id]?.value}
-                            onSelect={selectOption}
-                            animate={animate}
-                        />
-                    )}
-                    {phase === 'vsl' && (
-                        <VslScreen
-                            animate={animate}
-                            track={track}
-                            onContinue={() => { setPhase('form'); scrollTop(); }}
-                        />
-                    )}
-                    {phase === 'form' && track && (
-                        <LeadFormScreen
-                            animate={animate}
-                            track={track}
-                            answers={answers}
-                            attribution={attribution}
-                            onDone={() => { setPhase('analyzing'); scrollTop(); }}
-                        />
-                    )}
-                    {phase === 'analyzing' && track && (
-                        <AnalyzingScreen
-                            animate={animate}
-                            track={track}
-                            onComplete={() => { setPhase('result'); scrollTop(); }}
-                        />
-                    )}
-                    {phase === 'result' && track && (
-                        <ResultScreen animate={animate} track={track} answers={answers} attribution={attribution} />
-                    )}
-                </motion.div>
-            </ErrorBoundary>
+            </div>
+            <style>{`
+                @keyframes quizCoil {
+                    from { margin-top: -2px; }
+                    to { margin-top: 3px; }
+                }
+            `}</style>
         </div>
     );
 };
 
-/* ─────────────────────────────────────────────────────────────
- *  FALLBACK DE CRASH — nunca deixa o usuário sem o caminho de compra
- * ──────────────────────────────────────────────────────────── */
-const QuizCrashFallback: React.FC<{ checkoutUrl: string }> = ({ checkoutUrl }) => (
-    <section className="min-h-[80vh] flex items-center justify-center px-6 py-16 text-center">
-        <div className="max-w-md">
-            <div className="w-16 h-16 rounded-2xl bg-wtech-gold/10 border border-wtech-gold/30 text-wtech-gold flex items-center justify-center mx-auto mb-6">
-                <ShieldCheck size={32} />
-            </div>
-            <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-3">
-                Seu diagnóstico está <span className="text-wtech-gold">pronto</span>
-            </h2>
-            <p className="text-gray-400 text-sm md:text-base mb-8">
-                Tivemos um probleminha ao montar a tela, mas a sua condição de lançamento do
-                <strong className="text-white"> Curso de Regulagem de Suspensão</strong> está garantida.
-            </p>
+const ThemeLinks: React.FC<{ theme: QuizTheme; copy: QuizCopy }> = ({ theme, copy }) => {
+    const query = typeof window === 'undefined' ? '' : window.location.search;
+    return (
+        <div className="inline-flex rounded-full border border-current/10 bg-current/[0.035] p-1 text-[10px] font-black uppercase tracking-[0.12em]">
             <a
-                href={checkoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                id="quiz-fallback-checkout-btn"
-                onClick={() => trackEvent('Quiz', 'checkout_click', 'fallback')}
-                className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all shadow-xl"
+                href={`/quiz-suspensao${query}`}
+                aria-current={theme === 'dark' ? 'page' : undefined}
+                className={`rounded-full px-3 py-1.5 transition-colors ${theme === 'dark' ? 'bg-[#171714] text-white shadow-sm' : 'opacity-55 hover:opacity-100'}`}
             >
-                Garantir Minha Vaga — 12x R$ 34,70 <ArrowRight strokeWidth={3} size={18} />
+                {copy.dark}
             </a>
-            <p className="text-gray-600 text-xs mt-4">ou R$ 347,00 à vista · Garantia de 7 dias</p>
+            <a
+                href={`/quiz-suspensao-clara${query}`}
+                aria-current={theme === 'light' ? 'page' : undefined}
+                className={`rounded-full px-3 py-1.5 transition-colors ${theme === 'light' ? 'bg-white text-[#171714] shadow-sm' : 'opacity-55 hover:opacity-100'}`}
+            >
+                {copy.light}
+            </a>
         </div>
-    </section>
-);
-
-/* ─────────────────────────────────────────────────────────────
- *  TELA: BOAS-VINDAS
- * ──────────────────────────────────────────────────────────── */
-const WelcomeScreen: React.FC<{ animate: boolean; onStart: () => void }> = ({ animate, onStart }) => (
-    <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: animate ? 0.4 : 0 }}
-        className="relative min-h-screen flex items-center justify-center overflow-hidden"
-    >
-        {/* BG hero */}
-        <div className="absolute inset-0 z-0">
-            <picture>
-                <source media="(min-width: 768px)" srcSet="/hero-desktop-alex.webp" type="image/webp" />
-                <img src="/hero-mobile-alex.webp" alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
-            </picture>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/85 to-black/70 z-10" />
-            <div className="absolute inset-0 bg-black/40 z-10" />
-        </div>
-
-        <div className="container mx-auto px-6 relative z-20 py-20 text-center max-w-2xl">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-7"
-            >
-                <Zap size={14} className="text-wtech-gold animate-pulse" />
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">Diagnóstico Gratuito — 60 segundos</span>
-            </motion.div>
-
-            <motion.h1
-                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-                className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-[0.92] mb-6 drop-shadow-2xl"
-            >
-                Descubra o <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">Acerto Ideal</span> da Sua Suspensão
-            </motion.h1>
-
-            <motion.p
-                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}
-                className="text-base md:text-lg text-gray-300 leading-relaxed mb-9 max-w-xl mx-auto"
-            >
-                Responda <strong className="text-white">6 perguntas rápidas</strong> e receba um diagnóstico personalizado — seja você <strong className="text-wtech-gold">piloto</strong> querendo dominar o acerto, ou <strong className="text-wtech-gold">mecânico</strong> querendo faturar mais com suspensão.
-            </motion.p>
-
-            <motion.button
-                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}
-                onClick={onStart}
-                whileHover={animate ? { scale: 1.03, boxShadow: '0 0 40px rgba(212,175,55,0.4)' } : undefined}
-                whileTap={animate ? { scale: 0.97 } : undefined}
-                className="group bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-10 py-5 rounded-2xl font-black text-sm md:text-base uppercase tracking-[0.12em] inline-flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(212,175,55,0.2)] hover:brightness-110 transition-all"
-            >
-                Começar Meu Diagnóstico
-                <ArrowRight strokeWidth={3} size={20} className="group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-
-            <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-[11px] font-bold uppercase tracking-widest text-gray-500"
-            >
-                <span className="flex items-center gap-2"><CheckCircle size={14} className="text-wtech-gold" /> 100% Gratuito</span>
-                <span className="flex items-center gap-2"><CheckCircle size={14} className="text-wtech-gold" /> +3.000 Alunos</span>
-                <span className="flex items-center gap-2"><CheckCircle size={14} className="text-wtech-gold" /> Resultado Imediato</span>
-            </motion.div>
-        </div>
-    </motion.section>
-);
-
-/* ─────────────────────────────────────────────────────────────
- *  TELA: PERGUNTA
- * ──────────────────────────────────────────────────────────── */
-const QuestionScreen: React.FC<{
-    step: QuizStep;
-    selected?: string;
-    onSelect: (opt: QuizOption) => void;
-    animate: boolean;
-}> = ({ step, selected, onSelect, animate }) => (
-    <motion.section
-        initial={{ opacity: 0, x: animate ? 40 : 0 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: animate ? -40 : 0 }}
-        transition={{ duration: animate ? 0.3 : 0, ease: 'easeOut' }}
-        className="container mx-auto px-6 py-10 md:py-16 max-w-3xl"
-    >
-        <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{step.eyebrow}</span>
-        <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight mt-3 mb-2 leading-tight">{step.question}</h2>
-        {step.hint && <p className="text-gray-500 text-sm mb-8">{step.hint}</p>}
-        {!step.hint && <div className="mb-8" />}
-
-        <div className="grid gap-3 md:gap-4">
-            {step.options.map((opt, i) => {
-                const isSelected = selected === opt.id;
-                return (
-                    <motion.button
-                        key={opt.id}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: animate ? i * 0.06 : 0 }}
-                        onClick={() => onSelect(opt)}
-                        whileHover={animate ? { scale: 1.015 } : undefined}
-                        whileTap={animate ? { scale: 0.99 } : undefined}
-                        className={`group flex items-center gap-4 md:gap-5 p-5 md:p-6 rounded-2xl border text-left transition-all ${
-                            isSelected
-                                ? 'border-wtech-gold bg-wtech-gold/10 shadow-[0_0_30px_rgba(212,175,55,0.2)]'
-                                : 'border-white/10 bg-zinc-900/50 hover:border-wtech-gold/40 hover:bg-zinc-900/80'
-                        }`}
-                    >
-                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                            isSelected ? 'bg-wtech-gold text-black' : 'bg-wtech-gold/10 text-wtech-gold group-hover:bg-wtech-gold/20'
-                        }`}>
-                            {opt.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="font-black text-white text-base md:text-lg leading-tight">{opt.label}</h3>
-                            {opt.desc && <p className="text-gray-400 text-xs md:text-sm mt-0.5 leading-snug">{opt.desc}</p>}
-                        </div>
-                        <ChevronRight
-                            size={22}
-                            className={`shrink-0 transition-all ${isSelected ? 'text-wtech-gold translate-x-1' : 'text-gray-600 group-hover:text-wtech-gold group-hover:translate-x-1'}`}
-                        />
-                    </motion.button>
-                );
-            })}
-        </div>
-    </motion.section>
-);
-
-/* ─────────────────────────────────────────────────────────────
- *  TELA: VSL
- * ──────────────────────────────────────────────────────────── */
-const VslScreen: React.FC<{
-    animate: boolean;
-    track: Track | null;
-    onContinue: () => void;
-}> = ({ animate, track, onContinue }) => {
-    const [playing, setPlaying] = useState(false);
-    const [activated, setActivated] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
-
-    // Telemetria: a VSL foi exibida
-    useEffect(() => { trackEvent('Quiz', 'vsl_view', track ?? 'desconhecido'); }, [track]);
-
-    const play = () => {
-        setActivated(true);
-        trackEvent('Quiz', 'vsl_play', track ?? 'desconhecido');
-        requestAnimationFrame(() => {
-            if (videoRef.current) {
-                videoRef.current.load();
-                videoRef.current.play().catch(() => {});
-                setPlaying(true);
-            }
-        });
-    };
-
-    return (
-        <motion.section
-            initial={{ opacity: 0, y: animate ? 30 : 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: animate ? 0.35 : 0 }}
-            className="container mx-auto px-6 py-10 md:py-16 max-w-3xl text-center"
-        >
-            <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Quase lá — assista antes do resultado</span>
-            <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight mt-3 mb-3 leading-tight">
-                Veja Como o Acerto <span className="text-wtech-gold">Muda Tudo</span>
-            </h2>
-            <p className="text-gray-400 text-sm md:text-base mb-8 max-w-xl mx-auto">
-                {track === 'mecanico'
-                    ? 'Em 2 minutos você entende por que o acerto de suspensão é o serviço mais lucrativo — e o mais procurado — de uma oficina Off-Road.'
-                    : 'Em 2 minutos você entende por que a sua suspensão muda da água pro vinho quando o acerto é feito do jeito certo.'}
-            </p>
-
-            <div
-                className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] bg-black group cursor-pointer mb-8"
-                onClick={!playing ? play : undefined}
-            >
-                <video
-                    ref={videoRef}
-                    poster={VSL_POSTER}
-                    controls={playing}
-                    playsInline
-                    preload="none"
-                    className="w-full h-full object-cover"
-                    onPlay={() => setPlaying(true)}
-                    onPause={() => setPlaying(false)}
-                >
-                    {activated && <source src={VSL_URL} type="video/mp4" />}
-                    Seu navegador não suporta vídeos.
-                </video>
-                {!playing && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors z-20">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-wtech-gold/40 rounded-full animate-ping scale-150 opacity-20" />
-                            <div className="relative w-20 h-20 bg-wtech-gold rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(212,175,55,0.6)] group-hover:scale-110 transition-transform">
-                                <Play fill="black" size={32} className="text-black ml-1" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <motion.button
-                onClick={onContinue}
-                whileHover={animate ? { scale: 1.02, boxShadow: '0 0 30px rgba(212,175,55,0.35)' } : undefined}
-                whileTap={animate ? { scale: 0.98 } : undefined}
-                className="group bg-gradient-to-r from-wtech-gold to-yellow-600 text-black px-9 py-5 rounded-2xl font-black text-sm md:text-base uppercase tracking-[0.12em] inline-flex items-center justify-center gap-3 hover:brightness-110 transition-all w-full sm:w-auto"
-            >
-                Ver Meu Diagnóstico
-                <ArrowRight strokeWidth={3} size={20} className="group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-        </motion.section>
     );
 };
 
-/* ─────────────────────────────────────────────────────────────
- *  TELA: CAPTURA DE LEAD
- * ──────────────────────────────────────────────────────────── */
-const maskPhone = (value: string): string => {
-    const d = value.replace(/\D/g, '').slice(0, 11);
-    if (d.length <= 2) return d.length ? `(${d}` : '';
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-};
+const QuizFallback: React.FC<{ light: boolean }> = ({ light }) => (
+    <div className={`flex min-h-screen items-center justify-center px-6 text-center ${light ? 'bg-[#f5f1e8] text-[#171714]' : 'bg-[#050505] text-white'}`}>
+        <div className="max-w-md">
+            <ShieldCheck className="mx-auto mb-5 text-[#d7ad4f]" size={42} />
+            <h1 className="text-2xl font-black uppercase">A experiência pode ser reiniciada com segurança.</h1>
+            <button className="mt-7 rounded-xl bg-[#d7ad4f] px-7 py-4 font-black uppercase text-black" onClick={() => window.location.reload()}>
+                Reiniciar diagnóstico
+            </button>
+        </div>
+    </div>
+);
 
-const buildWhatsAppMessage = (
-    name: string,
-    track: Track,
-    answers: Record<string, { value: string; label: string }>,
-): string => {
-    const firstName = name.trim().split(' ')[0] || name;
-    const dor = answers['dor']?.label?.toLowerCase() ?? '';
-    const objetivo = answers['objetivo']?.label?.toLowerCase() ?? '';
-    const terreno = answers['terreno']?.label ?? '';
+const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
+    const light = theme === 'light';
+    const { currentLang } = useLanguage();
+    const prefersReduced = useReducedMotion();
+    const copy = useMemo<QuizCopy>(() => ({ ...COPY[currentLang], steps: createSteps(currentLang) }), [currentLang]);
+    const [phase, setPhase] = useState<'welcome' | 'question' | 'transition' | 'result'>('welcome');
+    const [index, setIndex] = useState(0);
+    const [answers, setAnswers] = useState<Answers>({});
+    const [selected, setSelected] = useState<string | null>(null);
+    const transitionTimer = useRef<number | null>(null);
+    const step = copy.steps[index];
+    const profile = useMemo(() => getProfile(answers), [answers]);
+    const progress = phase === 'result' ? 100 : Math.round((index / copy.steps.length) * 100);
 
-    if (track === 'mecanico') {
-        return `Olá, ${firstName}! Tudo bem? 🛠️\n\n` +
-            `Aqui é o *Suporte oficial da W-Tech*. Recebemos o seu diagnóstico de suspensão aqui no nosso sistema.\n\n` +
-            `Pelo seu perfil, vi que hoje *${dor}* e que o seu objetivo é *${objetivo}*.\n\n` +
-            `O acerto de suspensão é o serviço mais lucrativo da oficina — e é exatamente o que você domina no *Curso de Regulagem de Suspensão* (foco: ${terreno}). Você passa a entregar acerto premium, cobrar mais e fidelizar o cliente que hoje vai pra concorrência.\n\n` +
-            `➡️ Sua condição de lançamento (de R$997 por *12x R$34,70* ou *R$347 à vista*) está liberada aqui:\n${CHECKOUT_URL}\n\n` +
-            `Qualquer dúvida, é só me chamar por aqui. Bora faturar mais com suspensão! 🚀`;
-    }
-
-    return `Olá, ${firstName}! Tudo bem? 🏁\n\n` +
-        `Aqui é o *Suporte oficial da W-Tech*. Recebemos o seu diagnóstico de suspensão aqui no nosso sistema.\n\n` +
-        `Pelo seu perfil (${terreno}), vi que o que mais te incomoda hoje é *${dor}* e que você quer *${objetivo}*.\n\n` +
-        `A boa notícia: isso tem solução — e é exatamente o que você aprende no *Curso de Regulagem de Suspensão Para Piloto* (do SAG aos cliques, com prática real na moto).\n\n` +
-        `➡️ Sua condição de lançamento (de R$997 por *12x R$34,70* ou *R$347 à vista*) está liberada aqui:\n${CHECKOUT_URL}\n\n` +
-        `Qualquer dúvida, é só me chamar por aqui. Bora acertar essa moto! 🛠️`;
-};
-
-const LeadFormScreen: React.FC<{
-    animate: boolean;
-    track: Track;
-    answers: Record<string, { value: string; label: string }>;
-    attribution: Record<string, string>;
-    onDone: () => void;
-}> = ({ animate, track, answers, attribution, onDone }) => {
-    const [name, setName] = useState('');
-    const [phone, setPhone] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    // Telemetria: o lead chegou na etapa de captura
-    useEffect(() => { trackEvent('Quiz', 'form_view', track); }, [track]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const digits = phone.replace(/\D/g, '');
-        if (name.trim().length < 2) { setError('Digite seu nome.'); return; }
-        if (digits.length < 10) { setError('Digite um WhatsApp válido com DDD.'); return; }
-
-        setError('');
-        setLoading(true);
-
-        // Conversão de lead — evento-chave do funil (GA4 + Supabase)
-        trackEvent('Quiz', 'lead', track);
-
-        // quiz_data: snapshot completo das respostas + atribuição (coluna jsonb já existe)
-        const quizData = {
-            track,
-            respostas: Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, v.label])),
-            atribuicao: attribution,
-            concluido_em: new Date().toISOString(),
-        };
-
-        // Persistência em BACKGROUND: a tela de análise (barra de %) cobre o
-        // tempo de UX, então não bloqueamos a transição. Falhas apenas logam.
-        handleLeadUpsert({
-            name: name.trim(),
-            phone,
-            type: 'Quiz_Suspension',
-            status: 'New',
-            context_id: 'Quiz_Suspensao_Piloto',
-            origin: attribution.utm_source || 'quiz-suspensao',
-            tags: ['Quiz_Suspensao', track === 'piloto' ? 'Perfil_Piloto' : 'Perfil_Mecanico'],
-            assigned_to: CRM_OWNER_ID,
-            quiz_data: quizData,
-        }).catch(err => console.error('[Quiz] Falha ao salvar lead:', err));
-
-        sendWhatsAppMessage(phone, buildWhatsAppMessage(name, track, answers), SUPPORT_INSTANCE)
-            .catch(err => console.error('[Quiz] Falha no disparo WhatsApp:', err));
-
-        // Vai imediatamente pra tela de análise (barra de progresso em tempo real)
-        onDone();
-    };
-
-    return (
-        <motion.section
-            initial={{ opacity: 0, y: animate ? 30 : 0 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: animate ? 0.35 : 0 }}
-            className="container mx-auto px-6 py-10 md:py-16 max-w-xl"
-        >
-            <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-wtech-gold to-amber-600 text-black flex items-center justify-center mx-auto mb-5 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-                    <CheckCircle2 size={32} />
-                </div>
-                <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Seu diagnóstico está pronto</span>
-                <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight mt-3 mb-3 leading-tight">
-                    Pra Onde Enviamos o Seu <span className="text-wtech-gold">Resultado</span>?
-                </h2>
-                <p className="text-gray-400 text-sm md:text-base max-w-md mx-auto">
-                    Liberamos o diagnóstico + a sua <strong className="text-white">condição de lançamento</strong> no WhatsApp. Sem spam — só o que importa.
-                </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Seu Nome</label>
-                    <input
-                        type="text"
-                        required
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-wtech-gold/50 focus:border-wtech-gold transition-all"
-                        placeholder="Ex: João da Silva"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">WhatsApp (com DDD)</label>
-                    <input
-                        type="tel"
-                        required
-                        value={phone}
-                        onChange={e => setPhone(maskPhone(e.target.value))}
-                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-wtech-gold/50 focus:border-wtech-gold transition-all"
-                        placeholder="(00) 00000-0000"
-                    />
-                </div>
-
-                {error && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        <p className="text-red-400 text-xs text-center font-bold">{error}</p>
-                    </div>
-                )}
-
-                <motion.button
-                    type="submit"
-                    disabled={loading}
-                    whileHover={animate && !loading ? { scale: 1.02 } : undefined}
-                    whileTap={animate && !loading ? { scale: 0.98 } : undefined}
-                    className="group w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black font-black py-5 px-6 rounded-2xl flex items-center justify-center gap-3 uppercase tracking-[0.1em] text-sm transition-all hover:brightness-110 disabled:opacity-60 shadow-[0_0_30px_rgba(212,175,55,0.25)]"
-                >
-                    {loading ? 'Gerando diagnóstico...' : 'Ver Meu Resultado Agora'}
-                    {!loading && <ArrowRight strokeWidth={3} size={18} className="group-hover:translate-x-1 transition-transform" />}
-                </motion.button>
-
-                <p className="text-center text-[10px] text-gray-500 uppercase font-black tracking-widest flex items-center justify-center gap-2">
-                    <ShieldCheck size={12} /> Seus dados estão seguros e criptografados
-                </p>
-            </form>
-        </motion.section>
-    );
-};
-
-/* ─────────────────────────────────────────────────────────────
- *  TELA: ANÁLISE (barra de progresso em tempo real)
- * ──────────────────────────────────────────────────────────── */
-const AnalyzingScreen: React.FC<{
-    animate: boolean;
-    track: Track;
-    onComplete: () => void;
-}> = ({ animate, track, onComplete }) => {
-    const [pct, setPct] = useState(0);
-    const onCompleteRef = useRef(onComplete);
-    onCompleteRef.current = onComplete;
-
-    // Progresso baseado em tempo real (Date.now): mesmo que o setInterval seja
-    // throttled em aba de fundo, a % salta pro valor correto e SEMPRE conclui —
-    // nunca trava o funil.
     useEffect(() => {
-        const DURATION = 3800; // ms até 100%
-        const start = Date.now();
-        const id = window.setInterval(() => {
-            const elapsed = Date.now() - start;
-            const p = Math.min(100, Math.round((elapsed / DURATION) * 100));
-            setPct(p);
-            if (p >= 100) {
-                window.clearInterval(id);
-                window.setTimeout(() => onCompleteRef.current(), 550); // respiro no 100%
-            }
-        }, 40);
-        return () => window.clearInterval(id);
+        captureTrackingParams();
+        return () => {
+            if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+        };
     }, []);
 
-    // Rótulo da etapa conforme a % avança (um deles é específico da trilha)
-    const stages = [
-        { at: 0, label: 'Analisando as suas respostas...' },
-        { at: 28, label: 'Calculando o SAG e os cliques ideais...' },
-        { at: 55, label: track === 'mecanico' ? 'Montando seu plano de faturamento...' : 'Cruzando com o seu terreno e nível...' },
-        { at: 82, label: 'Finalizando seu diagnóstico personalizado...' },
-    ];
-    const currentLabel = [...stages].reverse().find(s => pct >= s.at)?.label ?? stages[0].label;
-
-    // Checklist que vai marcando conforme processa
-    const checks = [
-        { at: 25, label: 'Respostas analisadas' },
-        { at: 55, label: 'Acerto ideal calculado' },
-        { at: 85, label: 'Diagnóstico montado' },
-    ];
-
-    return (
-        <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: animate ? 0.3 : 0 }}
-            className="min-h-[80vh] flex items-center justify-center px-6 py-16"
-        >
-            <div className="w-full max-w-md text-center">
-                {/* Engrenagem girando (tema mecânica) */}
-                <div className="relative w-20 h-20 mx-auto mb-8">
-                    <div className="absolute inset-0 rounded-full bg-wtech-gold/15 blur-xl" />
-                    <div className="relative w-20 h-20 rounded-2xl bg-wtech-gold/10 border border-wtech-gold/30 flex items-center justify-center text-wtech-gold">
-                        <Settings size={36} className={animate ? 'animate-spin' : ''} style={{ animationDuration: '2.4s' }} />
-                    </div>
-                </div>
-
-                <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Gerando seu diagnóstico</span>
-
-                {/* Porcentagem em tempo real */}
-                <div className="text-6xl md:text-7xl font-black tracking-tighter my-4 tabular-nums">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{pct}%</span>
-                </div>
-
-                {/* Barra */}
-                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden mb-6" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Gerando diagnóstico">
-                    <div
-                        className="h-full bg-gradient-to-r from-wtech-gold to-yellow-500 transition-[width] duration-100 ease-linear"
-                        style={{ width: `${pct}%` }}
-                    />
-                </div>
-
-                {/* Rótulo dinâmico da etapa */}
-                <p className="text-gray-300 text-sm md:text-base font-medium mb-8 h-6 transition-all">{currentLabel}</p>
-
-                {/* Checklist progressivo */}
-                <div className="space-y-3 text-left max-w-xs mx-auto">
-                    {checks.map((c) => {
-                        const done = pct >= c.at;
-                        return (
-                            <div key={c.label} className={`flex items-center gap-3 transition-all duration-300 ${done ? 'opacity-100' : 'opacity-35'}`}>
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${done ? 'bg-wtech-gold text-black' : 'bg-zinc-800 text-gray-600'}`}>
-                                    {done
-                                        ? <CheckCircle size={14} strokeWidth={3} />
-                                        : <div className="w-2 h-2 rounded-full bg-gray-600" />}
-                                </div>
-                                <span className={`text-sm font-semibold ${done ? 'text-white' : 'text-gray-500'}`}>{c.label}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </motion.section>
-    );
-};
-
-/* ─────────────────────────────────────────────────────────────
- *  TELA: RESULTADO + OFERTA
- * ──────────────────────────────────────────────────────────── */
-const ResultScreen: React.FC<{
-    animate: boolean;
-    track: Track;
-    answers: Record<string, { value: string; label: string }>;
-    attribution: Record<string, string>;
-}> = ({ animate, track, answers, attribution }) => {
-    const copy = RESULT_COPY[track];
-    const testimonials = TESTIMONIALS[track];
-    const checkoutUrl = buildCheckoutUrl(attribution, track);
-
-    // Telemetria: o resultado foi exibido (topo do funil de compra)
-    useEffect(() => { trackEvent('Quiz', 'result_view', track); }, [track]);
-
-    // Timer de escassez (7 min), igual à LP
-    const [timeLeft, setTimeLeft] = useState(7 * 60);
     useEffect(() => {
-        if (timeLeft <= 0) return;
-        const t = setInterval(() => setTimeLeft(p => (p > 0 ? p - 1 : 0)), 1000);
-        return () => clearInterval(t);
-    }, [timeLeft]);
-    const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-    const ss = String(timeLeft % 60).padStart(2, '0');
+        trackEvent('Quiz Off-Road', 'view', theme);
+    }, [theme]);
 
-    const goCheckout = () => {
-        trackEvent('Quiz', 'checkout_click', track);
-        window.open(checkoutUrl, '_blank');
+    const start = () => {
+        trackEvent('Quiz Off-Road', 'start', theme);
+        setPhase('question');
+        window.scrollTo({ top: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
     };
-    const objetivo = answers['objetivo']?.label ?? '';
+
+    const choose = (option: OptionCopy) => {
+        if (phase !== 'question') return;
+        const nextAnswers = { ...answers, [step.id]: option.id };
+        setAnswers(nextAnswers);
+        setSelected(option.id);
+        trackEvent('Quiz Off-Road', `answer_${step.id}`, option.id);
+        window.setTimeout(() => {
+            setPhase('transition');
+            setSelected(null);
+            transitionTimer.current = window.setTimeout(() => {
+                if (index >= copy.steps.length - 1) {
+                    const resultProfile = getProfile(nextAnswers);
+                    trackEvent('Quiz Off-Road', 'result_view', resultProfile);
+                    setPhase('result');
+                } else {
+                    setIndex((value) => value + 1);
+                    setPhase('question');
+                }
+                window.scrollTo({ top: 0, behavior: 'auto' });
+            }, prefersReduced ? 350 : 1050);
+        }, prefersReduced ? 0 : 220);
+    };
+
+    const back = () => {
+        if (phase !== 'question') return;
+        if (index === 0) {
+            setPhase('welcome');
+            return;
+        }
+        setIndex((value) => value - 1);
+    };
+
+    const restart = () => {
+        setAnswers({});
+        setIndex(0);
+        setSelected(null);
+        setPhase('welcome');
+        trackEvent('Quiz Off-Road', 'restart', theme);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const goToVsl = () => {
+        trackEvent('Quiz Off-Road', 'vsl_click', `${theme}_${profile}`);
+        window.location.assign(buildVslUrl(theme, profile, answers));
+    };
+
+    const root = light ? 'bg-[#f5f1e8] text-[#171714]' : 'bg-[#050505] text-white';
+    const muted = light ? 'text-[#655f54]' : 'text-zinc-400';
+    const card = light
+        ? 'border-[#d9d0bf] bg-white/75 hover:border-[#b77d16]/55 hover:bg-white'
+        : 'border-white/10 bg-white/[0.045] hover:border-[#d7ad4f]/45 hover:bg-white/[0.07]';
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: animate ? 0.4 : 0 }}
-        >
-            {/* ── Diagnóstico ── */}
-            <section className="container mx-auto px-6 pt-12 pb-16 md:pt-16 max-w-3xl text-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
-                    className="inline-flex items-center gap-2 border border-wtech-gold/30 bg-wtech-gold/10 px-4 py-1.5 rounded-full mb-6"
-                >
-                    <Trophy size={14} className="text-wtech-gold" />
-                    <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">{copy.badge}</span>
-                </motion.div>
+        <ErrorBoundary fallback={<QuizFallback light={light} />}>
+            <main className={`min-h-screen overflow-hidden font-sans selection:bg-[#d7ad4f] selection:text-black ${root}`}>
+                <SEO title={copy.seoTitle} description={copy.seoDescription} />
 
-                <motion.h1
-                    initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-                    className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-[0.95] mb-6"
-                >
-                    {copy.title}
-                </motion.h1>
+                <header className={`relative z-40 border-b px-4 py-3 backdrop-blur-xl sm:px-7 ${light ? 'border-black/10 bg-[#f5f1e8]/88' : 'border-white/10 bg-[#050505]/88'}`}>
+                    <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
+                        <img src="/logo-wtech-branca.webp" alt="W-Tech" className={`h-6 w-auto sm:h-7 ${light ? 'brightness-0' : ''}`} />
+                        <ThemeLinks theme={theme} copy={copy} />
+                        <LanguageSwitcher
+                            variant={light ? 'light' : 'dark'}
+                            compact
+                            className="order-3 w-full justify-center sm:order-none sm:w-auto"
+                        />
+                    </div>
+                </header>
 
-                <motion.p
-                    initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}
-                    className="text-gray-300 text-base md:text-lg leading-relaxed mb-10 max-w-2xl mx-auto"
-                >
-                    {copy.diagnosis}
-                </motion.p>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
-                    className="grid sm:grid-cols-2 gap-3 text-left max-w-2xl mx-auto"
-                >
-                    {copy.solves.map((s, i) => (
-                        <div key={i} className="flex items-start gap-3 p-4 bg-zinc-900/60 border border-white/5 rounded-xl">
-                            <div className="w-9 h-9 rounded-lg bg-wtech-gold/10 text-wtech-gold flex items-center justify-center shrink-0">{s.icon}</div>
-                            <span className="text-gray-300 text-sm font-medium leading-snug pt-1">{s.text}</span>
+                {phase !== 'welcome' && (
+                    <div className={`sticky top-0 z-30 border-b backdrop-blur-xl ${light ? 'border-black/10 bg-[#f5f1e8]/92' : 'border-white/10 bg-[#050505]/92'}`}>
+                        <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-3 sm:px-6">
+                            <button
+                                type="button"
+                                onClick={back}
+                                disabled={phase !== 'question'}
+                                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-opacity disabled:opacity-25 ${light ? 'border-black/10 bg-white/70' : 'border-white/10 bg-white/5'}`}
+                                aria-label={copy.back}
+                            >
+                                <ArrowLeft size={18} />
+                            </button>
+                            <div className={`h-2 flex-1 overflow-hidden rounded-full ${light ? 'bg-black/10' : 'bg-white/10'}`}>
+                                <motion.div
+                                    className="h-full rounded-full bg-gradient-to-r from-[#b5211f] via-[#dd5730] to-[#d7ad4f]"
+                                    animate={{ width: `${progress}%` }}
+                                    transition={{ duration: prefersReduced ? 0 : 0.45 }}
+                                />
+                            </div>
+                            <span className="w-14 text-right text-[10px] font-black uppercase tracking-[0.12em] text-[#b77d16]">
+                                {phase === 'result' ? '100%' : `${index + 1}/${copy.steps.length}`}
+                            </span>
                         </div>
-                    ))}
-                </motion.div>
-
-                {objetivo && (
-                    <p className="text-gray-500 text-sm mt-8">
-                        Seu objetivo declarado: <strong className="text-wtech-gold">{objetivo}</strong>. O curso foi desenhado exatamente pra isso. 👇
-                    </p>
+                    </div>
                 )}
-            </section>
 
-            {/* ── Prova social ── */}
-            <section className="py-10 bg-black border-y border-white/5">
-                <div className="text-center mb-8">
-                    <span className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Quem já fez, recomenda</span>
-                </div>
-                <div className="w-full max-w-5xl mx-auto">
-                    <Marquee speed={40} className="py-2">
-                        {testimonials.map((t, i) => (
-                            <div key={i} className="bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-7 relative w-[300px] md:w-[380px] shrink-0">
-                                <Quote size={28} className="text-wtech-gold/10 absolute top-5 right-5" />
-                                <div className="flex items-center gap-1 mb-3">
-                                    {[...Array(5)].map((_, j) => <Star key={j} size={13} className="text-wtech-gold fill-wtech-gold" />)}
+                {phase === 'welcome' && (
+                    <section className="relative isolate min-h-[calc(100svh-57px)] overflow-hidden">
+                        <img
+                            src={light ? '/images/lp-curso/hero-light-premium.webp' : '/hero-desktop-alex.webp'}
+                            alt=""
+                            aria-hidden="true"
+                            fetchPriority="high"
+                            className={`absolute inset-0 -z-30 h-full w-full object-cover ${light ? 'object-[62%_center]' : 'object-center'}`}
+                        />
+                        <div className={`absolute inset-0 -z-20 ${light ? 'bg-gradient-to-r from-[#f8f5ed]/98 via-[#f5f1e8]/92 to-[#f5f1e8]/55' : 'bg-gradient-to-r from-black via-black/88 to-black/45'}`} />
+                        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_75%_40%,rgba(215,173,79,.16),transparent_34%)]" />
+                        <div className="mx-auto grid min-h-[calc(100svh-57px)] max-w-6xl items-center gap-6 px-5 py-10 lg:grid-cols-[1.05fr_.95fr] lg:px-8">
+                            <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-2xl">
+                                <div className={`mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] ${light ? 'border-[#b77d16]/30 bg-white/75 text-[#875d0f]' : 'border-[#d7ad4f]/30 bg-[#d7ad4f]/10 text-[#e6c467]'}`}>
+                                    <Sparkles size={14} />
+                                    {copy.badge}
                                 </div>
-                                <p className="text-gray-300 text-sm leading-relaxed mb-5 italic whitespace-normal">"{t.text}"</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-wtech-gold/10 flex items-center justify-center text-wtech-gold font-black text-sm shrink-0">{t.name[0]}</div>
-                                    <div className="whitespace-normal">
-                                        <p className="font-bold text-white text-sm">{t.name}</p>
-                                        <p className="text-gray-400 text-xs">{t.role}</p>
+                                <h1 className="max-w-3xl text-[2.7rem] font-black uppercase leading-[.88] tracking-[-0.05em] sm:text-6xl lg:text-7xl">
+                                    {copy.heroTitle}{' '}
+                                    <span className="bg-gradient-to-r from-[#d7ad4f] via-[#e69a2f] to-[#b5211f] bg-clip-text text-transparent">
+                                        {copy.heroHighlight}
+                                    </span>
+                                </h1>
+                                <p className={`mt-6 max-w-xl text-base font-medium leading-relaxed sm:text-lg ${muted}`}>{copy.heroDescription}</p>
+                                <button
+                                    type="button"
+                                    onClick={start}
+                                    className="mt-8 flex min-h-16 w-full max-w-md items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-7 text-sm font-black uppercase tracking-[0.11em] text-black shadow-[0_18px_50px_rgba(181,126,22,.28)] transition-transform hover:scale-[1.015] sm:text-base"
+                                >
+                                    {copy.start}
+                                    <ArrowRight size={20} strokeWidth={3} />
+                                </button>
+                                <div className={`mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-[0.11em] ${muted}`}>
+                                    {[copy.free, copy.duration, copy.immediate].map((item) => (
+                                        <span key={item} className="inline-flex items-center gap-1.5"><Check size={13} className="text-[#d7ad4f]" />{item}</span>
+                                    ))}
+                                </div>
+                            </motion.div>
+                            <div className={`relative hidden rounded-[2.4rem] border backdrop-blur-md lg:block ${light ? 'border-white/70 bg-white/30 shadow-[0_25px_80px_rgba(47,38,21,.18)]' : 'border-white/10 bg-black/25 shadow-[0_25px_80px_rgba(0,0,0,.5)]'}`}>
+                                <SuspensionRig light={light} label={copy.interaction} />
+                                <span className={`absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.15em] ${light ? 'border-black/10 bg-white/80 text-[#655f54]' : 'border-white/10 bg-black/70 text-zinc-400'}`}>
+                                    {copy.transitionHint}
+                                </span>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {phase === 'question' && step && (
+                    <motion.section
+                        key={`${currentLang}-${index}`}
+                        initial={{ opacity: 0, x: prefersReduced ? 0 : 28 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="relative mx-auto grid min-h-[calc(100svh-118px)] max-w-6xl items-center gap-8 px-5 py-10 lg:grid-cols-[1fr_.75fr] lg:px-8"
+                    >
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.24em] text-[#b77d16]">{step.eyebrow}</span>
+                            <h1 className="mt-3 max-w-3xl text-3xl font-black uppercase leading-[.98] tracking-[-0.035em] sm:text-5xl">{step.title}</h1>
+                            <p className={`mt-3 max-w-xl text-sm leading-relaxed sm:text-base ${muted}`}>{step.hint}</p>
+                            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                                {step.options.map((option, optionIndex) => {
+                                    const Icon = option.icon;
+                                    const isSelected = selected === option.id;
+                                    return (
+                                        <motion.button
+                                            key={option.id}
+                                            type="button"
+                                            initial={{ opacity: 0, y: prefersReduced ? 0 : 14 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: prefersReduced ? 0 : optionIndex * 0.045 }}
+                                            onClick={() => choose(option)}
+                                            className={`group flex min-h-[106px] items-center gap-4 rounded-2xl border p-4 text-left transition-all sm:p-5 ${isSelected ? 'border-[#d7ad4f] bg-[#d7ad4f]/12 shadow-[0_0_30px_rgba(215,173,79,.16)]' : card}`}
+                                        >
+                                            <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isSelected ? 'bg-[#d7ad4f] text-black' : light ? 'bg-[#f2ead9] text-[#9b6911]' : 'bg-[#d7ad4f]/10 text-[#d7ad4f]'}`}>
+                                                <Icon size={23} />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block text-sm font-black sm:text-base">{option.label}</span>
+                                                <span className={`mt-1 block text-xs leading-snug ${muted}`}>{option.description}</span>
+                                            </span>
+                                            <ChevronRight size={18} className={`shrink-0 transition-transform group-hover:translate-x-1 ${light ? 'text-[#a89f8f]' : 'text-zinc-600'}`} />
+                                        </motion.button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className={`relative hidden rounded-[2.4rem] border lg:block ${light ? 'border-[#d9d0bf] bg-white/55' : 'border-white/10 bg-white/[0.025]'}`}>
+                            <SuspensionRig light={light} active={false} label={copy.interaction} />
+                            <div className={`absolute inset-x-6 bottom-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] ${muted}`}>
+                                <span>{copy.interaction}</span>
+                                <span>{copy.step} {index + 1} {copy.of} {copy.steps.length}</span>
+                            </div>
+                        </div>
+                    </motion.section>
+                )}
+
+                {phase === 'transition' && (
+                    <motion.section
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex min-h-[calc(100svh-118px)] items-center justify-center px-5 py-8 text-center"
+                    >
+                        <div className="w-full max-w-xl">
+                            <span className="text-[10px] font-black uppercase tracking-[0.26em] text-[#b77d16]">{copy.transitionEyebrow}</span>
+                            <SuspensionRig light={light} label={copy.interaction} />
+                            <h1 className="text-2xl font-black uppercase tracking-[-0.025em] sm:text-4xl">{copy.transitionLabels[index]}</h1>
+                            <div className={`mx-auto mt-6 h-1.5 max-w-xs overflow-hidden rounded-full ${light ? 'bg-black/10' : 'bg-white/10'}`}>
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: '100%' }}
+                                    transition={{ duration: prefersReduced ? 0.3 : 0.95, ease: 'easeInOut' }}
+                                    className="h-full bg-gradient-to-r from-[#b5211f] to-[#d7ad4f]"
+                                />
+                            </div>
+                            <p className={`mt-4 text-xs ${muted}`}>{copy.transitionHint}</p>
+                        </div>
+                    </motion.section>
+                )}
+
+                {phase === 'result' && (
+                    <motion.section
+                        initial={{ opacity: 0, y: prefersReduced ? 0 : 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative isolate min-h-[calc(100svh-118px)] overflow-hidden px-5 py-10 sm:py-16"
+                    >
+                        <div className="absolute inset-0 -z-20">
+                            <img src="/images/lp-curso/light-vsl-clicker-adjustment.webp" alt="" className="h-full w-full object-cover object-center" />
+                            <div className={`absolute inset-0 ${light ? 'bg-[#f5f1e8]/94' : 'bg-black/90'}`} />
+                        </div>
+                        <div className="mx-auto max-w-4xl">
+                            <div className="text-center">
+                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#b77d16]">{copy.resultEyebrow}</span>
+                                <h1 className="mx-auto mt-3 max-w-3xl text-3xl font-black uppercase leading-[.95] tracking-[-0.04em] sm:text-5xl">{copy.resultTitle}</h1>
+                                <p className={`mx-auto mt-4 max-w-2xl text-sm leading-relaxed sm:text-base ${muted}`}>{copy.resultDescription}</p>
+                            </div>
+
+                            <div className={`mt-9 overflow-hidden rounded-[2rem] border shadow-2xl ${light ? 'border-white bg-white/88 shadow-[#6d5524]/15' : 'border-white/10 bg-[#0d0d0d]/90 shadow-black/50'}`}>
+                                <div className="h-1.5 bg-gradient-to-r from-[#b5211f] via-[#e15a31] to-[#d7ad4f]" />
+                                <div className="p-6 sm:p-9">
+                                    <span className={`inline-flex rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] ${light ? 'border-[#b77d16]/25 bg-[#f4ead7] text-[#875d0f]' : 'border-[#d7ad4f]/25 bg-[#d7ad4f]/10 text-[#e4c46d]'}`}>
+                                        {copy.profiles[profile].label}
+                                    </span>
+                                    <h2 className="mt-4 text-2xl font-black leading-tight sm:text-4xl">{copy.profiles[profile].title}</h2>
+                                    <p className={`mt-3 max-w-3xl text-sm leading-relaxed sm:text-base ${muted}`}>{copy.profiles[profile].description}</p>
+                                    <div className="mt-7 grid gap-3 md:grid-cols-3">
+                                        {copy.profiles[profile].insights.map((insight, insightIndex) => (
+                                            <div key={insight} className={`rounded-2xl border p-4 ${light ? 'border-[#e0d8c9] bg-[#faf8f3]' : 'border-white/10 bg-white/[0.035]'}`}>
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d7ad4f] text-xs font-black text-black">0{insightIndex + 1}</span>
+                                                <p className="mt-3 text-sm font-bold leading-snug">{insight}</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </Marquee>
-                </div>
-            </section>
 
-            {/* ── Oferta + CTA ── */}
-            <section className="relative overflow-hidden bg-black py-16 md:py-24 flex items-center justify-center min-h-[80vh]">
-                {/* Fundo animado é enfeite: se o WebGL falhar, cai pra null SEM
-                    derrubar a oferta (que é o que importa nesta tela). */}
-                <ErrorBoundary fallback={null}>
-                    <Suspense fallback={null}>
-                        <AnimatedShaderBackground />
-                    </Suspense>
-                </ErrorBoundary>
-
-                <div className="container mx-auto px-6 relative z-10 flex justify-center">
-                    <div className="w-full max-w-3xl bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#E6241D]/20 rounded-2xl relative shadow-[0_0_120px_rgba(230,36,29,0.15)] overflow-hidden p-8 md:p-12 text-center">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#E6241D]/15 blur-[100px] rounded-full pointer-events-none" />
-                        <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-red-600 via-[#E6241D] to-orange-500 z-10" />
-
-                        <div className="flex justify-center mb-7">
-                            <img src="/images/modulos/logo-branca.webp" alt="W-Tech" loading="lazy" className="h-10 object-contain" />
+                            <div className="mx-auto mt-8 max-w-2xl text-center">
+                                <button
+                                    type="button"
+                                    onClick={goToVsl}
+                                    className="flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.1em] text-black shadow-[0_18px_55px_rgba(181,126,22,.25)] transition-transform hover:scale-[1.012] sm:text-base"
+                                >
+                                    {copy.resultAction}
+                                    <ArrowRight size={20} strokeWidth={3} />
+                                </button>
+                                <p className={`mt-4 text-xs leading-relaxed ${muted}`}>{copy.resultFootnote}</p>
+                                <button type="button" onClick={restart} className={`mt-5 text-xs font-bold underline underline-offset-4 ${muted}`}>
+                                    {copy.restart}
+                                </button>
+                            </div>
                         </div>
-
-                        <span className="text-wtech-gold font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs block mb-4">
-                            Condição de Lançamento — Liberada Pra Você
-                        </span>
-                        <h2 className="text-2xl md:text-4xl font-black text-white mb-3 tracking-tight">
-                            {track === 'mecanico' ? 'Domine o Serviço Mais Lucrativo' : 'Regule Sua Suspensão Do Zero'}
-                        </h2>
-                        <p className="text-gray-400 text-sm mb-7 max-w-lg mx-auto">
-                            11 módulos técnicos + Módulo Bônus com Paschoalin + Planilhas de Regulagem. Acesso por 1 ano.
-                        </p>
-
-                        <div className="text-gray-400 font-bold uppercase text-xs md:text-sm tracking-[0.15em] mb-2 line-through decoration-red-500/70 decoration-2">
-                            De R$ 997,00 por
-                        </div>
-                        <div className="mb-1">
-                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">12x R$ 34,70</span>
-                        </div>
-                        <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-8">ou R$ 347,00 à vista no Pix/Cartão</div>
-
-                        {/* Timer */}
-                        <div className="flex items-center justify-center gap-3 mb-8">
-                            {[{ v: mm, l: 'Minutos' }, { v: ss, l: 'Segundos' }].map((t, i) => (
-                                <React.Fragment key={t.l}>
-                                    {i === 1 && <span className="text-2xl font-black text-[#E6241D]/50 -mt-6 animate-pulse">:</span>}
-                                    <div className="flex flex-col items-center">
-                                        <div className="bg-[#111] border border-[#E6241D]/30 rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-3xl font-black text-[#E6241D] shadow-[inset_0_0_15px_rgba(230,36,29,0.2)]">{t.v}</div>
-                                        <span className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-2 font-bold">{t.l}</span>
-                                    </div>
-                                </React.Fragment>
-                            ))}
-                        </div>
-
-                        <div className="grid sm:grid-cols-2 gap-y-4 gap-x-2 max-w-xl mx-auto mb-9 text-left">
-                            {[
-                                '1 Ano de Acesso ao Curso',
-                                'Conteúdo 100% em Vídeo',
-                                'Certificado de Conclusão W-Tech',
-                                'Suporte Técnico na Plataforma',
-                                'BÔNUS: Planilha de Regulagem de SAG',
-                                'BÔNUS: Planilha de Regulagem de PSI',
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-3">
-                                    <CheckCircle size={16} className={i >= 4 ? 'text-wtech-gold shrink-0' : 'text-[#E6241D] shrink-0'} />
-                                    <span className={`text-xs sm:text-sm ${i >= 4 ? 'text-gray-300 font-bold' : 'text-gray-300 font-medium'}`}>{item}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="inline-flex items-center gap-2.5 bg-wtech-gold/10 border border-wtech-gold/40 rounded-full px-5 py-2.5 mb-6">
-                            <ShieldCheck size={18} className="text-wtech-gold shrink-0" />
-                            <span className="text-wtech-gold font-black uppercase text-[11px] sm:text-xs tracking-widest">Garantia Incondicional de 7 Dias</span>
-                        </div>
-
-                        <motion.a
-                            href={checkoutUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            id="quiz-checkout-btn"
-                            onClick={() => trackEvent('Quiz', 'checkout_click', track)}
-                            whileHover={animate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
-                            whileTap={animate ? { scale: 0.98 } : undefined}
-                            className="group w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-3 shadow-xl relative overflow-hidden flex justify-center items-center"
-                        >
-                            <div className="absolute inset-0 w-full h-full bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                            <span className="relative z-10">
-                                {track === 'mecanico' ? 'Quero Faturar Mais Com Suspensão' : 'Quero Regular Minha Suspensão Agora'}
-                            </span>
-                        </motion.a>
-                        <p className="text-gray-600 text-xs">Acesso imediato após a confirmação do pagamento</p>
-                    </div>
-                </div>
-            </section>
-
-            {/* pb extra no mobile p/ não ficar atrás do CTA sticky */}
-            <footer className="py-10 pb-28 md:pb-10 bg-[#050505] text-center border-t border-white/5">
-                <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-8 mx-auto mb-5 opacity-50" />
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-[0.4em]">W-Tech Brasil | Diagnóstico de Suspensão Off-Road</p>
-            </footer>
-
-            {/* CTA sticky no mobile: a oferta fica longe da dobra inicial,
-                então mantemos o botão de compra sempre ao alcance do polegar. */}
-            <div className="md:hidden fixed bottom-0 inset-x-0 z-50 p-3 bg-[#050505]/95 backdrop-blur-md border-t border-[#E6241D]/30">
-                <a
-                    href={checkoutUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    id="quiz-sticky-checkout-btn"
-                    onClick={() => trackEvent('Quiz', 'checkout_click', track)}
-                    className="w-full bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform flex justify-center items-center"
-                >
-                    {track === 'mecanico' ? 'Quero Faturar Mais' : 'Quero Regular Agora'} · 12x R$ 34,70
-                    <ArrowRight strokeWidth={3} size={16} />
-                </a>
-            </div>
-        </motion.div>
+                    </motion.section>
+                )}
+            </main>
+        </ErrorBoundary>
     );
 };
 

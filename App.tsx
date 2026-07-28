@@ -58,6 +58,7 @@ const LPErgonomiaLight = lazy(() => import('./pages/LPErgonomiaLight'));
 const PronelloImmersion = lazy(() => import('./pages/PronelloImmersion'));
 const WaitlistSuspension = lazy(() => import('./pages/WaitlistSuspension'));
 const QuizSuspensao = lazy(() => import('./pages/QuizSuspensao'));
+const QuizSuspensaoLight = lazy(() => import('./pages/QuizSuspensaoLight'));
 const CourseCheckout = lazy(() => import('./pages/CourseCheckout'));
 const InscricaoConfirmada = lazy(() => import('./pages/InscricaoConfirmada'));
 const LPGasGarage = lazy(() => import('./pages/LPGasGarage'));
@@ -140,6 +141,8 @@ const App = () => {
                     <Route path="/obrigado-suspensao" element={<ObrigadoSuspensao />} />
                     <Route path="/espera-suspensao-piloto" element={<WaitlistSuspension />} />
                     <Route path="/quiz-suspensao" element={<QuizSuspensao />} />
+                    <Route path="/quiz-suspensao-escuro" element={<QuizSuspensao />} />
+                    <Route path="/quiz-suspensao-clara" element={<QuizSuspensaoLight />} />
                     <Route path="/captura/:slug" element={<CaptureCampaignPage />} />
                     <Route path="/lp/:slug" element={<LandingPageViewer />} />
                     <Route path="/lp2/:slug" element={<LandingPageViewerV2 />} />

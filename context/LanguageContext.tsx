@@ -28,6 +28,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return () => controller.abort();
     }, []);
 
+    useEffect(() => {
+        document.documentElement.lang = currentLang;
+    }, [currentLang]);
+
     const setLanguage = (lang: SiteLanguage) => {
         setCurrentLang(lang);
         try {

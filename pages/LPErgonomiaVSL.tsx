@@ -12,12 +12,14 @@ import {
     ShieldCheck,
     Volume2,
 } from 'lucide-react';
-import { captureTrackingParams } from '../lib/tracking';
+import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
+import { trackEvent } from '../components/AnalyticsTracker';
 
 const VIDEO_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
+const CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
 const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
 
 const vslUi = {
@@ -45,6 +47,11 @@ const vslUi = {
         ready: 'Sua aula está pronta',
         remaining: 'restantes',
         startExclusive: 'Começar aula exclusiva',
+        quizStep: 'Etapa 2 de 2',
+        checkoutAction: 'Ir para a inscrição segura',
+        checkoutReleased: 'Inscrição liberada',
+        checkoutDestination: 'Você seguirá direto para o checkout seguro, sem outra página de venda.',
+        profile: 'Diagnóstico recebido',
     },
     'pt-PT': {
         exclusive: 'Aula exclusiva para pilotos Off-Road',
@@ -70,6 +77,11 @@ const vslUi = {
         ready: 'A tua aula está pronta',
         remaining: 'restantes',
         startExclusive: 'Começar aula exclusiva',
+        quizStep: 'Etapa 2 de 2',
+        checkoutAction: 'Ir para a inscrição segura',
+        checkoutReleased: 'Inscrição libertada',
+        checkoutDestination: 'Seguirás diretamente para o checkout seguro, sem outra página de venda.',
+        profile: 'Diagnóstico recebido',
     },
     es: {
         exclusive: 'Clase exclusiva para pilotos Off-Road',
@@ -95,6 +107,11 @@ const vslUi = {
         ready: 'Tu clase está lista',
         remaining: 'restantes',
         startExclusive: 'Empezar clase exclusiva',
+        quizStep: 'Etapa 2 de 2',
+        checkoutAction: 'Ir a la inscripción segura',
+        checkoutReleased: 'Inscripción desbloqueada',
+        checkoutDestination: 'Irás directamente al checkout seguro, sin otra página de venta.',
+        profile: 'Diagnóstico recibido',
     },
     en: {
         exclusive: 'Exclusive class for Off-Road riders',
@@ -120,6 +137,38 @@ const vslUi = {
         ready: 'Your class is ready',
         remaining: 'remaining',
         startExclusive: 'Start exclusive class',
+        quizStep: 'Step 2 of 2',
+        checkoutAction: 'Go to secure enrollment',
+        checkoutReleased: 'Enrollment unlocked',
+        checkoutDestination: 'You will go straight to secure checkout, with no additional sales page.',
+        profile: 'Diagnosis received',
+    },
+} as const;
+
+const vslProfileLabels = {
+    'pt-BR': {
+        equilibrio: 'equilíbrio dinâmico',
+        tracao: 'tração traseira',
+        dianteira: 'confiança na dianteira',
+        ergonomia: 'ergonomia e fadiga',
+    },
+    'pt-PT': {
+        equilibrio: 'equilíbrio dinâmico',
+        tracao: 'tração traseira',
+        dianteira: 'confiança na dianteira',
+        ergonomia: 'ergonomia e fadiga',
+    },
+    es: {
+        equilibrio: 'equilibrio dinámico',
+        tracao: 'tracción trasera',
+        dianteira: 'confianza delantera',
+        ergonomia: 'ergonomía y fatiga',
+    },
+    en: {
+        equilibrio: 'dynamic balance',
+        tracao: 'rear traction',
+        dianteira: 'front-end confidence',
+        ergonomia: 'ergonomics and fatigue',
     },
 } as const;
 
@@ -142,8 +191,17 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isUnlocked, setIsUnlocked] = useState(false);
+    const funnel = useMemo(() => {
+        if (typeof window === 'undefined') return { isQuiz: false, profile: '' };
+        const params = new URLSearchParams(window.location.search);
+        return {
+            isQuiz: params.get('from') === 'quiz',
+            profile: params.get('quiz_profile') || '',
+        };
+    }, []);
 
     const landingUrl = useMemo(() => {
+        if (funnel.isQuiz) return buildCheckoutUrl(CHECKOUT_URL);
         const destination = isLight ? '/curso-suspensao-piloto-clara' : '/curso-suspensao-piloto-completa';
         if (typeof window === 'undefined') return destination;
         const params = new URLSearchParams(window.location.search);
@@ -152,7 +210,14 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         if (!params.has('utm_source')) params.set('utm_source', source);
         const query = params.toString();
         return `${destination}${query ? `?${query}` : ''}`;
-    }, [isLight]);
+    }, [funnel.isQuiz, isLight]);
+
+    const enrollmentAction = funnel.isQuiz ? ui.checkoutAction : ui.continueEnrollment;
+    const enrollmentDestination = funnel.isQuiz ? ui.checkoutDestination : ui.destination;
+    const releasedAction = funnel.isQuiz ? ui.checkoutReleased : ui.released;
+    const profileLabel = funnel.profile in vslProfileLabels[currentLang]
+        ? vslProfileLabels[currentLang][funnel.profile as keyof typeof vslProfileLabels[typeof currentLang]]
+        : funnel.profile;
 
     useEffect(() => {
         captureTrackingParams();
@@ -229,6 +294,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const handleEnded = () => {
         setIsPlaying(false);
         setIsUnlocked(true);
+        trackEvent('VSL Suspensão', 'completed', funnel.isQuiz ? `quiz_${funnel.profile || 'geral'}` : 'standalone');
         try {
             sessionStorage.setItem(UNLOCK_KEY, 'true');
         } catch {
@@ -280,7 +346,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                     <div className="mb-4 flex w-full items-center justify-between sm:hidden">
                         <img src="/logo-wtech-branca.webp" alt="W-Tech" className={`h-5 w-auto ${isLight ? 'brightness-0' : ''}`} />
                         <span className={`rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] ${isLight ? 'border-[#cec5b4] bg-white/70 text-[#6d685f]' : 'border-white/10 bg-white/5 text-zinc-400'}`}>
-                            {ui.step}
+                            {funnel.isQuiz ? ui.quizStep : ui.step}
                         </span>
                     </div>
 
@@ -288,6 +354,12 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         <Headphones size={15} aria-hidden="true" />
                         {ui.watch}
                     </div>
+
+                    {funnel.isQuiz && funnel.profile && (
+                        <div className={`mb-4 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] sm:mb-5 sm:text-[10px] ${isLight ? 'border-[#b77d16]/25 bg-white/75 text-[#875d0f]' : 'border-[#d7ad4f]/25 bg-[#d7ad4f]/10 text-[#e5c879]'}`}>
+                            {ui.profile}: {profileLabel}
+                        </div>
+                    )}
 
                     <motion.h1
                         initial={{ opacity: 0, y: 18 }}
@@ -422,13 +494,16 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                 </div>
                                 <a
                                     href={landingUrl}
+                                    target={funnel.isQuiz ? '_blank' : undefined}
+                                    rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
+                                    onClick={() => trackEvent('VSL Suspensão', funnel.isQuiz ? 'checkout_click' : 'landing_click', funnel.profile || (isLight ? 'light' : 'dark'))}
                                     className="mx-auto flex min-h-14 w-full max-w-xl items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_16px_45px_rgba(215,173,79,.22)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
-                                    {ui.continueEnrollment}
+                                    {enrollmentAction}
                                     <ArrowRight size={20} strokeWidth={3} />
                                 </a>
                                 <p className={`mt-3 text-xs ${isLight ? 'text-[#6f695f]' : 'text-zinc-400'}`}>
-                                    {ui.destination}
+                                    {enrollmentDestination}
                                 </p>
                             </>
                         ) : (
@@ -464,9 +539,12 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                 {isUnlocked ? (
                     <a
                         href={landingUrl}
+                        target={funnel.isQuiz ? '_blank' : undefined}
+                        rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
+                        onClick={() => trackEvent('VSL Suspensão', funnel.isQuiz ? 'checkout_click_mobile' : 'landing_click_mobile', funnel.profile || (isLight ? 'light' : 'dark'))}
                         className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-5 text-xs font-black uppercase tracking-[0.11em] text-black shadow-[0_12px_35px_rgba(215,173,79,.25)]"
                     >
-                        {ui.released}
+                        {releasedAction}
                         <ArrowRight size={19} strokeWidth={3} />
                     </a>
                 ) : (
