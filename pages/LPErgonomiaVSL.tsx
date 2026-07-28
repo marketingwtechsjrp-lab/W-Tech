@@ -24,7 +24,8 @@ const formatTime = (seconds: number) => {
     return `${String(minutes).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
 };
 
-const LPErgonomiaVSL: React.FC = () => {
+const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark' }) => {
+    const isLight = theme === 'light';
     const videoRef = useRef<HTMLVideoElement>(null);
     const furthestWatchedRef = useRef(0);
     const [duration, setDuration] = useState(0);
@@ -34,13 +35,15 @@ const LPErgonomiaVSL: React.FC = () => {
     const [isUnlocked, setIsUnlocked] = useState(false);
 
     const landingUrl = useMemo(() => {
-        if (typeof window === 'undefined') return '/curso-suspensao-piloto-completa';
+        const destination = isLight ? '/curso-suspensao-piloto-clara' : '/curso-suspensao-piloto-completa';
+        if (typeof window === 'undefined') return destination;
         const params = new URLSearchParams(window.location.search);
-        params.set('src', 'vsl_obrigatoria');
-        if (!params.has('utm_source')) params.set('utm_source', 'vsl_obrigatoria');
+        const source = isLight ? 'vsl_clara_isolada' : 'vsl_obrigatoria';
+        params.set('src', source);
+        if (!params.has('utm_source')) params.set('utm_source', source);
         const query = params.toString();
-        return `/curso-suspensao-piloto-completa${query ? `?${query}` : ''}`;
-    }, []);
+        return `${destination}${query ? `?${query}` : ''}`;
+    }, [isLight]);
 
     useEffect(() => {
         captureTrackingParams();
@@ -51,7 +54,9 @@ const LPErgonomiaVSL: React.FC = () => {
         }
 
         const previousTitle = document.title;
-        document.title = 'Aula de Acerto de Suspensão Off-Road — W-Tech';
+        document.title = isLight
+            ? 'Aula Clara de Acerto de Suspensão Off-Road — W-Tech'
+            : 'Aula de Acerto de Suspensão Off-Road — W-Tech';
         let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
         const createdRobots = !robots;
         const previousRobots = robots?.content;
@@ -70,7 +75,7 @@ const LPErgonomiaVSL: React.FC = () => {
                 robots.content = previousRobots;
             }
         };
-    }, []);
+    }, [isLight]);
 
     const togglePlay = async () => {
         const video = videoRef.current;
@@ -126,25 +131,45 @@ const LPErgonomiaVSL: React.FC = () => {
     const remainingTime = duration > 0 ? Math.max(0, duration - currentTime) : 0;
 
     return (
-        <main className="min-h-screen overflow-x-hidden bg-[#050505] pb-[calc(6.5rem+env(safe-area-inset-bottom))] text-white selection:bg-[#d7ad4f] selection:text-black sm:pb-0">
-            <div className="border-b border-white/10 bg-[#b5211f] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-white sm:px-4 sm:py-2.5 sm:text-xs sm:tracking-[0.18em]">
+        <main className={`min-h-screen overflow-x-hidden pb-[calc(6.5rem+env(safe-area-inset-bottom))] selection:bg-[#d7ad4f] selection:text-black sm:pb-0 ${isLight ? 'bg-[#f6f4ee] text-[#171714]' : 'bg-[#050505] text-white'}`}>
+            <div className={`border-b bg-[#b5211f] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-white sm:px-4 sm:py-2.5 sm:text-xs sm:tracking-[0.18em] ${isLight ? 'border-[#9c1c1a]' : 'border-white/10'}`}>
                 Aula exclusiva para pilotos Off-Road
             </div>
 
             <section className="relative isolate min-h-[calc(100svh-34px)] overflow-hidden px-4 py-6 sm:min-h-[calc(100vh-38px)] sm:px-8 sm:py-10 lg:py-14">
-                <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_0%,rgba(181,33,31,0.25),transparent_38%),radial-gradient(circle_at_20%_70%,rgba(215,173,79,0.12),transparent_32%),#050505]" />
-                <div className="absolute inset-0 -z-10 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
-                <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-[#d7ad4f]/10 blur-[90px] sm:hidden" />
+                {isLight ? (
+                    <>
+                        <img
+                            src="/images/lp-curso/hero-light-vsl-rider.webp"
+                            alt=""
+                            aria-hidden="true"
+                            width={1600}
+                            height={900}
+                            fetchPriority="high"
+                            className="absolute inset-0 -z-30 h-full w-full object-cover object-[70%_center]"
+                        />
+                        <div className="absolute inset-0 -z-20 bg-gradient-to-b from-[#fbfaf6]/95 via-[#f7f1e5]/88 to-[#f6f4ee]/97" />
+                        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_5%,rgba(255,255,255,.95),transparent_34%),linear-gradient(90deg,rgba(255,255,255,.28),transparent_62%,rgba(181,33,31,.08))]" />
+                    </>
+                ) : (
+                    <>
+                        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_0%,rgba(181,33,31,0.25),transparent_38%),radial-gradient(circle_at_20%_70%,rgba(215,173,79,0.12),transparent_32%),#050505]" />
+                        <div className="absolute inset-0 -z-10 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
+                        <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-[#d7ad4f]/10 blur-[90px] sm:hidden" />
+                    </>
+                )}
 
                 <div className="mx-auto flex w-full max-w-5xl flex-col items-center">
                     <div className="mb-4 flex w-full items-center justify-between sm:hidden">
-                        <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-5 w-auto opacity-90" />
-                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-zinc-400">
+                        <span className="rounded-lg bg-[#171714] px-2.5 py-2">
+                            <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-4 w-auto" />
+                        </span>
+                        <span className={`rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] ${isLight ? 'border-[#cec5b4] bg-white/70 text-[#6d685f]' : 'border-white/10 bg-white/5 text-zinc-400'}`}>
                             Etapa 1 de 2
                         </span>
                     </div>
 
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7ad4f]/35 bg-[#d7ad4f]/10 px-3 py-2 text-center text-[9px] font-black uppercase tracking-[0.16em] text-[#e5c879] shadow-[0_0_35px_rgba(215,173,79,.08)] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.2em]">
+                    <div className={`mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7ad4f]/35 px-3 py-2 text-center text-[9px] font-black uppercase tracking-[0.16em] shadow-[0_0_35px_rgba(215,173,79,.08)] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.2em] ${isLight ? 'bg-white/80 text-[#875d0f] backdrop-blur' : 'bg-[#d7ad4f]/10 text-[#e5c879]'}`}>
                         <Headphones size={15} aria-hidden="true" />
                         Assista até o final para liberar sua inscrição
                     </div>
@@ -155,19 +180,19 @@ const LPErgonomiaVSL: React.FC = () => {
                         className="max-w-4xl text-center text-[2rem] font-black uppercase leading-[.98] tracking-[-0.04em] sm:text-5xl sm:leading-[1.02] lg:text-6xl"
                     >
                         Descubra por que sua moto cansa você — e como{' '}
-                        <span className="bg-gradient-to-r from-[#f2da93] via-[#d7ad4f] to-[#f08a36] bg-clip-text text-transparent">
+                        <span className={`bg-gradient-to-r bg-clip-text text-transparent ${isLight ? 'from-[#875d0f] via-[#b77d16] to-[#b5211f]' : 'from-[#f2da93] via-[#d7ad4f] to-[#f08a36]'}`}>
                             acertar a suspensão
                         </span>
                     </motion.h1>
 
-                    <p className="mt-4 max-w-2xl text-center text-[15px] font-medium leading-relaxed text-zinc-300 sm:mt-5 sm:text-lg">
+                    <p className={`mt-4 max-w-2xl text-center text-[15px] font-medium leading-relaxed sm:mt-5 sm:text-lg ${isLight ? 'text-[#555149]' : 'text-zinc-300'}`}>
                         Alex Crepaldi mostra o caminho do SAG aos cliques para você ganhar tração,
                         controle e confiança sem depender de tentativa e erro.
                     </p>
 
                     <div className="relative mt-6 w-full sm:mt-8">
-                        <div className="absolute -inset-2 -z-10 rounded-[1.8rem] bg-gradient-to-br from-[#d7ad4f]/15 via-transparent to-[#b5211f]/20 blur-xl sm:-inset-4 sm:rounded-[2.4rem] sm:blur-2xl" />
-                        <div className="w-full overflow-hidden rounded-[1.35rem] border border-[#d7ad4f]/35 bg-black shadow-[0_24px_80px_rgba(0,0,0,.75)] sm:rounded-3xl">
+                        <div className={`absolute -inset-2 -z-10 rounded-[1.8rem] bg-gradient-to-br from-[#d7ad4f]/20 via-transparent to-[#b5211f]/20 blur-xl sm:-inset-4 sm:rounded-[2.4rem] sm:blur-2xl ${isLight ? 'opacity-90' : ''}`} />
+                        <div className={`w-full overflow-hidden rounded-[1.35rem] border bg-black sm:rounded-3xl ${isLight ? 'border-white shadow-[0_24px_80px_rgba(48,38,18,.28)] sm:border-[6px]' : 'border-[#d7ad4f]/35 shadow-[0_24px_80px_rgba(0,0,0,.75)]'}`}>
                         <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950 px-3 py-2.5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-300 sm:px-6 sm:py-3 sm:text-xs sm:tracking-[0.15em]">
                             <span className="inline-flex items-center gap-2">
                                 <span className="h-2 w-2 animate-pulse rounded-full bg-red-500 sm:h-2.5 sm:w-2.5" />
@@ -265,15 +290,19 @@ const LPErgonomiaVSL: React.FC = () => {
 
                     <motion.div
                         layout
-                        className={`mt-4 w-full rounded-2xl border p-4 text-center sm:mt-6 sm:p-7 ${
+                        className={`mt-4 w-full rounded-2xl border p-4 text-center shadow-sm sm:mt-6 sm:p-7 ${
                             isUnlocked
-                                ? 'border-emerald-400/35 bg-emerald-400/10'
-                                : 'border-white/10 bg-white/[0.035]'
+                                ? isLight
+                                    ? 'border-emerald-600/30 bg-emerald-50/90'
+                                    : 'border-emerald-400/35 bg-emerald-400/10'
+                                : isLight
+                                    ? 'border-[#d9d1c1] bg-white/80 backdrop-blur'
+                                    : 'border-white/10 bg-white/[0.035]'
                         }`}
                     >
                         {isUnlocked ? (
                             <>
-                                <div className="mb-4 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-[0.14em] text-emerald-300">
+                                <div className={`mb-4 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-[0.14em] ${isLight ? 'text-emerald-700' : 'text-emerald-300'}`}>
                                     <CheckCircle2 size={20} />
                                     Inscrição liberada
                                 </div>
@@ -284,14 +313,14 @@ const LPErgonomiaVSL: React.FC = () => {
                                     Continuar para a inscrição
                                     <ArrowRight size={20} strokeWidth={3} />
                                 </a>
-                                <p className="mt-3 text-xs text-zinc-400">
+                                <p className={`mt-3 text-xs ${isLight ? 'text-[#6f695f]' : 'text-zinc-400'}`}>
                                     Você será encaminhado para os detalhes completos do curso e da oferta.
                                 </p>
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center gap-2 text-zinc-400">
+                            <div className={`flex flex-col items-center justify-center gap-2 ${isLight ? 'text-[#716c63]' : 'text-zinc-400'}`}>
                                 <LockKeyhole size={24} className="text-[#d7ad4f]" />
-                                <p className="text-xs font-black uppercase tracking-[0.11em] text-zinc-200 sm:text-sm sm:tracking-[0.12em]">
+                                <p className={`text-xs font-black uppercase tracking-[0.11em] sm:text-sm sm:tracking-[0.12em] ${isLight ? 'text-[#282620]' : 'text-zinc-200'}`}>
                                     O botão de inscrição será liberado ao final da aula
                                 </p>
                                 <p className="text-xs">O avanço do vídeo acompanha apenas o conteúdo já assistido.</p>
@@ -299,7 +328,7 @@ const LPErgonomiaVSL: React.FC = () => {
                         )}
                     </motion.div>
 
-                    <div className="mt-4 grid w-full grid-cols-3 gap-2 text-[9px] font-bold leading-tight text-zinc-300 sm:mt-7 sm:gap-3 sm:text-xs">
+                    <div className={`mt-4 grid w-full grid-cols-3 gap-2 text-[9px] font-bold leading-tight sm:mt-7 sm:gap-3 sm:text-xs ${isLight ? 'text-[#4f4b43]' : 'text-zinc-300'}`}>
                         {[
                             ['Acesso por 12 meses', Clock3],
                             ['Garantia de 7 dias', ShieldCheck],
@@ -307,7 +336,7 @@ const LPErgonomiaVSL: React.FC = () => {
                         ].map(([label, Icon]) => (
                             <div
                                 key={label as string}
-                                className="flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/30 px-2 text-center sm:min-h-12 sm:flex-row sm:gap-2 sm:px-4"
+                                className={`flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center sm:min-h-12 sm:flex-row sm:gap-2 sm:px-4 ${isLight ? 'border-[#d8d0c0] bg-white/75 backdrop-blur' : 'border-white/10 bg-black/30'}`}
                             >
                                 <Icon size={16} className="text-[#d7ad4f] sm:h-[17px] sm:w-[17px]" />
                                 {label as string}
@@ -317,7 +346,7 @@ const LPErgonomiaVSL: React.FC = () => {
                 </div>
             </section>
 
-            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d7ad4f]/20 bg-[#090909]/95 px-3 pt-3 shadow-[0_-18px_55px_rgba(0,0,0,.7)] backdrop-blur-xl sm:hidden [padding-bottom:max(12px,env(safe-area-inset-bottom))]">
+            <div className={`fixed inset-x-0 bottom-0 z-50 border-t px-3 pt-3 backdrop-blur-xl sm:hidden [padding-bottom:max(12px,env(safe-area-inset-bottom))] ${isLight ? 'border-[#d8d0c0] bg-white/95 shadow-[0_-18px_55px_rgba(38,32,20,.15)]' : 'border-[#d7ad4f]/20 bg-[#090909]/95 shadow-[0_-18px_55px_rgba(0,0,0,.7)]'}`}>
                 {isUnlocked ? (
                     <a
                         href={landingUrl}
@@ -330,7 +359,7 @@ const LPErgonomiaVSL: React.FC = () => {
                     <button
                         type="button"
                         onClick={togglePlay}
-                        className="relative flex min-h-14 w-full items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] px-4 text-left"
+                        className={`relative flex min-h-14 w-full items-center gap-3 overflow-hidden rounded-xl border px-4 text-left ${isLight ? 'border-[#25221c]/15 bg-[#171714] shadow-lg' : 'border-white/10 bg-white/[0.06]'}`}
                     >
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d7ad4f] text-black">
                             {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}

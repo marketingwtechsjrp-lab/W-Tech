@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.29.0",
+    "date": "2026-07-28",
+    "title": "VSL clara isolada e conteúdo oficial na landing clara",
+    "changes": [
+      "Adiciona a rota dedicada /curso-suspensao-piloto-vsl-clara, com player protegido, avanço progressivo e encaminhamento para a landing clara",
+      "Inclui as artes oficiais de SAG, molas, ergonomia e pneus nos quatro fundamentos",
+      "Adiciona o carrossel infinito com as oito capas reais dos módulos do curso",
+      "Substitui os depoimentos reescritos pelos quatro textos idênticos aos da página principal e os apresenta em loop contínuo",
+      "Amplia a validação automatizada para a nova rota, destino da inscrição, imagens, carrosséis e layout móvel"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.28.0",
     "date": "2026-07-28",
     "title": "Landing clara VSL com imersão premium",

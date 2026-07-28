@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Marquee } from '../components/ui/marquee';
 import {
     ArrowRight,
     Award,
@@ -153,20 +154,43 @@ const LPErgonomiaLight: React.FC = () => {
 
     const testimonials = [
         {
-            quote: 'Depois do curso, ajustei os cliques e o SAG para o meu peso. A moto parou de me expulsar da linha e ficou muito mais previsível.',
+            text: 'Depois do curso, finalmente ajustei os cliques e o SAG para o meu peso. Chega de tomar solavanco e ceder nas trilhas. Moto grudada no chão!',
             name: 'Ricardo F.',
-            role: 'Piloto amador — SP',
+            role: 'Piloto Amador — SP',
         },
         {
-            quote: 'Eu achava que precisava trocar componentes. Na prática, o problema era a hidráulica zerada. O método mudou completamente minha leitura da moto.',
-            name: 'Juliana M.',
-            role: 'Pilota Hard Enduro — RJ',
+            text: 'Comecei a oferecer regulagem e setup de suspensão na oficina. Ganhei novos clientes que antes iam buscar fora. O retorno foi imenso.',
+            name: 'Marcos S.',
+            role: 'Mecânico — MG',
         },
         {
-            quote: 'A frente agora transmite confiança nas curvas e a tração ficou constante nas subidas. Consigo terminar a trilha muito menos cansado.',
+            text: 'As ladeiras com cavas não são mais um problema. A dianteira da roda da moto agora me dá confiança nas curvas abertas e a tração é constante.',
             name: 'Tiago L.',
             role: 'Piloto de Enduro — PR',
         },
+        {
+            text: 'Eu achava minhas molas macias demais, mas na verdade a hidráulica estava zerada. Entender esse casamento através do curso virou a chave da minha tocada.',
+            name: 'Juliana M.',
+            role: 'Pilota Hard Enduro — RJ',
+        },
+    ];
+
+    const conceptImages = [
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-2.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-1.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3.webp',
+    ];
+
+    const moduleCovers = [
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-1.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-2.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4.webp',
+        '/images/lp-curso/oleo-e-viscosidades.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-3-1.webp',
+        '/images/modulos/CARDS-KWIFY-CURSO-AVANCADO-4-1.webp',
     ];
 
     const faq = [
@@ -399,13 +423,26 @@ const LPErgonomiaLight: React.FC = () => {
                         </div>
                         <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
                             {t.concepts.items.map((item, index) => (
-                                <article key={item.title} className="rounded-3xl border border-[#e4dfd3] bg-[#f8f6f0] p-7">
-                                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#171714] text-[#e4c46d]">
-                                        {methodIcons[index]}
+                                <article key={item.title} className="group overflow-hidden rounded-3xl border border-[#e4dfd3] bg-[#f8f6f0] shadow-[0_18px_55px_rgba(41,35,24,.07)]">
+                                    <div className="relative aspect-[4/3] overflow-hidden bg-[#171714]">
+                                        <img
+                                            src={conceptImages[index]}
+                                            alt={`Módulo sobre ${item.title}`}
+                                            width={320}
+                                            height={480}
+                                            loading="lazy"
+                                            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+                                        <div className="absolute bottom-4 left-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-black/75 text-[#e4c46d] shadow-lg backdrop-blur">
+                                            {methodIcons[index]}
+                                        </div>
                                     </div>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#a97816]">Etapa 0{index + 1}</span>
-                                    <h3 className="mt-2 text-xl font-black">{item.title}</h3>
-                                    <p className="mt-3 text-sm leading-relaxed text-[#69665e]">{item.desc}</p>
+                                    <div className="p-6">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#a97816]">Etapa 0{index + 1}</span>
+                                        <h3 className="mt-2 text-xl font-black">{item.title}</h3>
+                                        <p className="mt-3 text-sm leading-relaxed text-[#69665e]">{item.desc}</p>
+                                    </div>
                                 </article>
                             ))}
                         </div>
@@ -456,6 +493,31 @@ const LPErgonomiaLight: React.FC = () => {
                                 </article>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="relative mt-14 w-full overflow-hidden pb-2">
+                        <div className="mx-auto mb-7 max-w-7xl px-5 text-center sm:px-8">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a97816]">Veja por dentro</p>
+                            <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.025em] text-[#171714] sm:text-3xl">
+                                As aulas que formam sua nova regulagem
+                            </h3>
+                        </div>
+                        <Marquee pauseOnHover speed={55} className="py-3">
+                            {moduleCovers.map((source, index) => (
+                                <img
+                                    key={source}
+                                    src={source}
+                                    alt={`Capa oficial do módulo ${index + 1} do curso`}
+                                    width={320}
+                                    height={480}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-[250px] w-auto rounded-2xl border border-[#d8d0c0] object-contain shadow-[0_18px_50px_rgba(37,31,20,.14)] transition-transform duration-300 hover:-translate-y-1 sm:h-[310px]"
+                                />
+                            ))}
+                        </Marquee>
+                        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#efece4] to-transparent sm:w-32" />
+                        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#efece4] to-transparent sm:w-32" />
                     </div>
                 </section>
 
@@ -511,22 +573,24 @@ const LPErgonomiaLight: React.FC = () => {
                                 <span className="text-[#e4c46d]">Menos desgaste no corpo.</span>
                             </h2>
                         </div>
-                        <div className="mt-12 grid gap-5 lg:grid-cols-3">
+                        <div className="mt-12">
+                            <Marquee speed={42} className="py-4">
                             {testimonials.map((item) => (
-                                <article key={item.name} className="rounded-3xl border border-white/10 bg-white/[0.055] p-7">
+                                <article key={item.name} className="w-[300px] shrink-0 whitespace-normal rounded-3xl border border-white/10 bg-white/[0.065] p-7 backdrop-blur sm:w-[410px]">
                                     <div className="mb-5 flex items-center justify-between">
                                         <Quote size={26} className="text-[#e4c46d]" />
                                         <div className="flex gap-1 text-[#e4c46d]" aria-label="5 estrelas">
                                             {[0, 1, 2, 3, 4].map((star) => <Star key={star} size={14} fill="currentColor" />)}
                                         </div>
                                     </div>
-                                    <p className="leading-relaxed text-zinc-200">“{item.quote}”</p>
+                                    <p className="leading-relaxed text-zinc-200">“{item.text}”</p>
                                     <div className="mt-6 border-t border-white/10 pt-5">
                                         <p className="font-black">{item.name}</p>
                                         <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">{item.role}</p>
                                     </div>
                                 </article>
                             ))}
+                            </Marquee>
                         </div>
                     </div>
                 </section>

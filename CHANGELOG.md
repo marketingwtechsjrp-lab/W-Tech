@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.29.0 (2026-07-28) - VSL clara isolada e conteúdo oficial na landing clara
+- Adiciona a rota dedicada `/curso-suspensao-piloto-vsl-clara`, com player protegido, avanço progressivo e encaminhamento para a landing clara
+- Inclui as artes oficiais de SAG, molas, ergonomia e pneus nos quatro fundamentos
+- Adiciona o carrossel infinito com as oito capas reais dos módulos do curso
+- Substitui os depoimentos reescritos pelos quatro textos idênticos aos da página principal e os apresenta em loop contínuo
+- Amplia a validação automatizada para a nova rota, destino da inscrição, imagens, carrosséis e layout móvel
+
 ## v3.28.0 (2026-07-28) - Landing clara VSL com imersão premium
 - Reorganiza a versão clara do curso de suspensão para priorizar a VSL já na primeira dobra
 - Adiciona três cenários premium de motocross, ajuste de clickers e pilotagem em terreno técnico
