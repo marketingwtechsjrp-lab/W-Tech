@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.28.0 (2026-07-28) - Landing clara VSL com imersão premium
+- Reorganiza a versão clara do curso de suspensão para priorizar a VSL já na primeira dobra
+- Adiciona três cenários premium de motocross, ajuste de clickers e pilotagem em terreno técnico
+- Reforça a jornada visual do diagnóstico ao resultado, mantendo checkout, rastreamento e conteúdo comercial
+- Remove integralmente as versões V3 e V4 e suas rotas públicas
+- Adiciona validação automatizada para desktop, celular, carregamento das imagens e rotas removidas
+
 ## v3.27.0 (2026-07-28) - Glossário nativo e nova identidade visual do blog
 - Adiciona gerador nativo de glossário ao painel administrativo, com criação manual, geração por IA, revisão e publicação
 - Adiciona glossário público pesquisável com índice A-Z, páginas individuais, SEO e integração ao sitemap

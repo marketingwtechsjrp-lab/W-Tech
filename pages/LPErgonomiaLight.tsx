@@ -20,8 +20,6 @@ import {
     Sparkles,
     Star,
     Target,
-    Trophy,
-    Users,
     Wrench,
     Zap,
 } from 'lucide-react';
@@ -216,81 +214,79 @@ const LPErgonomiaLight: React.FC = () => {
             </header>
 
             <main>
-                <section className="relative isolate overflow-hidden border-b border-[#ddd7c9]">
-                    <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_10%,rgba(216,180,88,.22),transparent_30%),linear-gradient(135deg,#fbfaf6_0%,#f1eee5_100%)]" />
-                    <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(23,23,20,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(23,23,20,.045)_1px,transparent_1px)] [background-size:52px_52px]" />
-                    <div className="mx-auto grid min-h-[calc(100svh-57px)] max-w-7xl items-center gap-7 px-4 py-8 sm:min-h-[calc(100vh-65px)] sm:gap-10 sm:px-8 sm:py-12 lg:grid-cols-[.92fr_1.08fr] lg:py-16">
-                        <motion.div initial="hidden" animate="visible" variants={reveal} className="relative z-10">
-                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#c9a445]/35 bg-white/80 px-3 py-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#8b6212] shadow-sm sm:mb-5 sm:px-4 sm:text-xs sm:tracking-[0.2em]">
+                <section id="aula" className="relative isolate overflow-hidden border-b border-[#d7d0bf]">
+                    <img
+                        src="/images/lp-curso/hero-light-vsl-rider.webp"
+                        alt=""
+                        aria-hidden="true"
+                        width={1600}
+                        height={900}
+                        fetchPriority="high"
+                        className="absolute inset-0 -z-30 h-full w-full object-cover object-[68%_center]"
+                    />
+                    <div className="absolute inset-0 -z-20 bg-gradient-to-b from-[#fbfaf6]/92 via-[#f8f4e9]/80 to-[#f6f4ee]/96" />
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,.92),transparent_33%),linear-gradient(90deg,rgba(255,255,255,.46),transparent_52%,rgba(181,33,31,.08))]" />
+
+                    <div className="mx-auto flex min-h-[calc(100svh-57px)] max-w-6xl flex-col items-center px-4 py-7 text-center sm:min-h-[calc(100vh-65px)] sm:px-8 sm:py-10 lg:py-12">
+                        <motion.div initial="hidden" animate="visible" variants={reveal} className="relative z-10 flex w-full flex-col items-center">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-[#b88925]/35 bg-white/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#80580f] shadow-sm backdrop-blur sm:px-4 sm:text-xs sm:tracking-[0.2em]">
                                 <Sparkles size={15} />
-                                Método W-Tech para pilotos Off-Road
+                                Aula gratuita · Método W-Tech Off-Road
                             </div>
-                            <h1 className="max-w-2xl text-[2.55rem] font-black uppercase leading-[.94] tracking-[-0.05em] text-[#171714] sm:text-6xl sm:leading-[.98] sm:tracking-[-0.045em] lg:text-7xl">
-                                Acerte sua suspensão.{' '}
-                                <span className="bg-gradient-to-r from-[#9a6d13] via-[#c79a37] to-[#b5211f] bg-clip-text text-transparent">
-                                    Pilote mais longe.
+                            <h1 className="mt-4 max-w-5xl text-[2.35rem] font-black uppercase leading-[.94] tracking-[-0.05em] text-[#171714] sm:mt-5 sm:text-5xl sm:leading-[.98] lg:text-6xl">
+                                Regule sua suspensão.{' '}
+                                <span className="bg-gradient-to-r from-[#8a5d0c] via-[#bd8923] to-[#b5211f] bg-clip-text text-transparent">
+                                    Pilote no próximo nível.
                                 </span>
                             </h1>
-                            <p className="mt-4 max-w-xl text-[15px] font-medium leading-relaxed text-[#55534d] sm:mt-6 sm:text-xl">
-                                Aprenda a regular SAG, molas, cliques e ergonomia para ganhar controle,
-                                tração e confiança — sem depender de tentativa e erro.
+                            <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-[#4f4c45] sm:mt-4 sm:text-lg">
+                                Assista à aula e descubra como SAG, molas e cliques transformam controle,
+                                tração e confiança — sem trocar peças no escuro.
                             </p>
-
-                            <div className="mt-5 grid grid-cols-[1fr_auto] gap-2 sm:mt-7 sm:flex sm:flex-row sm:gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => scrollTo('oferta')}
-                                    className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#171714] to-[#39352c] px-4 text-[11px] font-black uppercase tracking-[0.1em] text-white shadow-[0_18px_45px_rgba(23,23,20,.18)] transition-transform hover:-translate-y-0.5 sm:w-auto sm:gap-3 sm:px-7 sm:text-sm sm:tracking-[0.12em]"
-                                >
-                                    <span className="sm:hidden">Quero pilotar melhor</span>
-                                    <span className="hidden sm:inline">Quero regular minha moto</span>
-                                    <ArrowRight size={19} strokeWidth={3} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => scrollTo('aula')}
-                                    className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#cac3b3] bg-white/75 px-4 text-[11px] font-black uppercase tracking-[0.1em] text-[#393730] hover:border-[#aa8129] sm:w-auto sm:px-7 sm:text-sm"
-                                    aria-label="Assistir à aula"
-                                >
-                                    <Play size={17} fill="currentColor" />
-                                    <span className="hidden sm:inline">Assistir à aula</span>
-                                </button>
-                            </div>
-
-                            <div className="mt-4 grid grid-cols-3 gap-2 text-[9px] font-bold leading-tight text-[#5e5b54] sm:mt-6 sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-3 sm:text-xs">
-                                <span className="inline-flex items-center gap-2"><ShieldCheck size={17} className="text-[#a97816]" />Garantia de 7 dias</span>
-                                <span className="inline-flex items-center gap-2"><Clock3 size={17} className="text-[#a97816]" />12 meses de acesso</span>
-                                <span className="inline-flex items-center gap-2"><GraduationCap size={17} className="text-[#a97816]" />Certificado incluso</span>
-                            </div>
                         </motion.div>
 
                         <motion.div
                             initial={{ opacity: 0, scale: 0.97, y: 18 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.7, delay: 0.12 }}
-                            className="relative mt-1 sm:mt-0"
+                            className="relative mt-5 w-full max-w-4xl sm:mt-7"
                         >
-                            <div className="absolute -inset-4 -z-10 rounded-[2.2rem] bg-gradient-to-br from-[#d8b458]/25 to-[#b5211f]/10 blur-2xl" />
-                            <div className="overflow-hidden rounded-[1.75rem] border border-white bg-white p-2 shadow-[0_30px_90px_rgba(65,54,29,.18)]">
-                                <img
-                                    src="/images/lp-curso/hero-light-premium.webp"
-                                    alt="Alex Crepaldi com amortecedor em oficina premium de suspensões"
-                                    width={1672}
-                                    height={941}
-                                    fetchPriority="high"
-                                    className="aspect-[16/9] w-full rounded-[1.3rem] object-cover object-center sm:aspect-[16/10] lg:aspect-[4/3]"
-                                />
+                            <div className="absolute -inset-3 -z-10 rounded-[2rem] bg-gradient-to-br from-[#d8b458]/35 via-white/40 to-[#b5211f]/20 blur-xl sm:-inset-5 sm:blur-2xl" />
+                            <div
+                                className="group relative aspect-video cursor-pointer overflow-hidden rounded-[1.35rem] border-[5px] border-white bg-black shadow-[0_28px_90px_rgba(45,34,13,.28)] sm:rounded-[1.8rem] sm:border-[7px]"
+                            >
+                                <video
+                                    ref={videoRef}
+                                    poster="/images/vsl-thumbnail.webp"
+                                    controls={videoPlaying}
+                                    playsInline
+                                    preload="none"
+                                    onPlay={() => setVideoPlaying(true)}
+                                    onPause={() => setVideoPlaying(false)}
+                                    className="h-full w-full object-cover"
+                                >
+                                    {videoActivated && <source src={COURSE_VIDEO} type="video/mp4" />}
+                                </video>
+                                {!videoPlaying && (
+                                    <button
+                                        type="button"
+                                        onClick={playVideo}
+                                        className="absolute inset-0 flex w-full cursor-pointer flex-col items-center justify-center gap-3 bg-gradient-to-t from-black/65 via-black/15 to-black/20 transition-colors group-hover:from-black/50"
+                                        aria-label="Assistir à aula gratuita"
+                                    >
+                                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#f0ce6f] to-[#c99022] text-black shadow-[0_0_55px_rgba(215,173,79,.65)] transition-transform group-hover:scale-105 sm:h-20 sm:w-20">
+                                            <Play size={30} fill="currentColor" className="ml-1" />
+                                        </span>
+                                        <span className="rounded-full bg-black/55 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white backdrop-blur sm:text-xs">
+                                            Assistir à aula agora
+                                        </span>
+                                    </button>
+                                )}
                             </div>
-                            <div className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/60 bg-white/90 p-3 shadow-xl backdrop-blur-xl sm:bottom-5 sm:left-7 sm:right-auto sm:max-w-xs sm:rounded-2xl sm:p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#171714] text-[#e4c46d] sm:h-11 sm:w-11 sm:rounded-xl">
-                                        <Trophy size={21} />
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#9a6d13] sm:text-[10px] sm:tracking-[0.18em]">Autoridade técnica</p>
-                                        <p className="mt-0.5 text-xs font-black text-[#171714] sm:text-sm">Alex Crepaldi · +3.000 alunos</p>
-                                    </div>
-                                </div>
+                            <div className="mt-4 grid grid-cols-3 gap-2 text-[9px] font-bold leading-tight text-[#4f4c45] sm:flex sm:flex-wrap sm:justify-center sm:gap-x-7 sm:text-xs">
+                                <span className="inline-flex items-center justify-center gap-1.5"><ShieldCheck size={16} className="text-[#9a6d13]" />7 dias de garantia</span>
+                                <span className="inline-flex items-center justify-center gap-1.5"><Clock3 size={16} className="text-[#9a6d13]" />12 meses de acesso</span>
+                                <span className="inline-flex items-center justify-center gap-1.5"><GraduationCap size={16} className="text-[#9a6d13]" />Certificado incluso</span>
                             </div>
                         </motion.div>
                     </div>
@@ -342,51 +338,49 @@ const LPErgonomiaLight: React.FC = () => {
                     </div>
                 </section>
 
-                <section id="aula" className="relative isolate overflow-hidden bg-[#11110f] px-5 py-20 text-white sm:px-8 lg:py-28">
-                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_20%,rgba(181,33,31,.23),transparent_35%),radial-gradient(circle_at_15%_80%,rgba(216,180,88,.12),transparent_35%)]" />
-                    <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[.8fr_1.2fr]">
-                        <div>
-                            <SectionEyebrow dark>Aula de acerto na moto real</SectionEyebrow>
+                <section className="relative isolate min-h-[560px] overflow-hidden border-y border-[#d8d2c4]">
+                    <img
+                        src="/images/lp-curso/light-vsl-clicker-adjustment.webp"
+                        alt="Ajuste técnico do clicker da suspensão dianteira de uma moto off-road"
+                        width={1600}
+                        height={900}
+                        loading="lazy"
+                        className="absolute inset-0 -z-20 h-full w-full object-cover object-[32%_center]"
+                    />
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f7f3e9]/25 via-[#f7f3e9]/10 to-[#f7f3e9]/35 lg:bg-gradient-to-r lg:from-transparent lg:via-[#f7f3e9]/40 lg:to-[#f7f3e9]/98" />
+                    <div className="mx-auto flex min-h-[560px] max-w-7xl items-end px-5 py-10 sm:px-8 lg:items-center lg:justify-end lg:py-20">
+                        <motion.div
+                            initial={{ opacity: 0, x: 24 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="w-full rounded-3xl border border-white/70 bg-white/[.92] p-7 shadow-[0_30px_90px_rgba(37,31,20,.18)] backdrop-blur-xl sm:p-10 lg:max-w-xl"
+                        >
+                            <SectionEyebrow>Da dúvida ao ajuste consciente</SectionEyebrow>
                             <h2 className="text-3xl font-black uppercase leading-[1.03] tracking-[-0.035em] sm:text-5xl">
-                                Veja o método antes de decidir.
+                                Cada clique passa a ter{' '}
+                                <span className="text-[#a97816]">um motivo.</span>
                             </h2>
-                            <p className="mt-5 max-w-lg leading-relaxed text-zinc-300">
-                                Em poucos minutos, você entende por que ajustes isolados não resolvem e
-                                como SAG, molas, hidráulica e ergonomia precisam trabalhar em conjunto.
+                            <p className="mt-5 leading-relaxed text-[#5f5b52]">
+                                Você aprende a medir, registrar e interpretar a resposta da moto. Em vez de
+                                copiar a regulagem de outro piloto, constrói uma base coerente com seu peso,
+                                ritmo e terreno.
                             </p>
-                            <div className="mt-7 space-y-3">
-                                {['Diagnóstico sem achismo', 'Explicação visual e objetiva', 'Aplicação direta na sua moto'].map((item) => (
-                                    <div key={item} className="flex items-center gap-3 text-sm font-bold text-zinc-200">
-                                        <CheckCircle2 size={19} className="text-[#e4c46d]" />
+                            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                                {['Medir o SAG', 'Regular cliques', 'Validar na pista'].map((item) => (
+                                    <div key={item} className="flex items-center gap-2 rounded-xl bg-[#f4efe3] px-3 py-3 text-xs font-black uppercase tracking-[0.08em]">
+                                        <CheckCircle2 size={17} className="shrink-0 text-[#a97816]" />
                                         {item}
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                        <div
-                            className="group relative aspect-video cursor-pointer overflow-hidden rounded-3xl border border-[#d8b458]/35 bg-black shadow-[0_30px_90px_rgba(0,0,0,.5)]"
-                            onClick={playVideo}
-                        >
-                            <video
-                                ref={videoRef}
-                                poster="/images/vsl-thumbnail.webp"
-                                controls={videoPlaying}
-                                playsInline
-                                preload="none"
-                                onPlay={() => setVideoPlaying(true)}
-                                onPause={() => setVideoPlaying(false)}
-                                className="h-full w-full object-cover"
+                            <button
+                                type="button"
+                                onClick={() => scrollTo('metodo')}
+                                className="mt-7 inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-[#171714] px-5 text-xs font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#a97816]"
                             >
-                                {videoActivated && <source src={COURSE_VIDEO} type="video/mp4" />}
-                            </video>
-                            {!videoPlaying && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/35 transition-colors group-hover:bg-black/20">
-                                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#f0ce6f] to-[#c99022] text-black shadow-[0_0_55px_rgba(215,173,79,.5)] transition-transform group-hover:scale-105">
-                                        <Play size={32} fill="currentColor" className="ml-1" />
-                                    </span>
-                                </div>
-                            )}
-                        </div>
+                                Conhecer o método <ArrowRight size={17} />
+                            </button>
+                        </motion.div>
                     </div>
                 </section>
 
@@ -534,6 +528,43 @@ const LPErgonomiaLight: React.FC = () => {
                                 </article>
                             ))}
                         </div>
+                    </div>
+                </section>
+
+                <section className="relative isolate min-h-[560px] overflow-hidden">
+                    <img
+                        src="/images/lp-curso/light-vsl-rider-outcome.webp"
+                        alt="Piloto de off-road percorrendo terreno técnico com controle e confiança"
+                        width={1600}
+                        height={900}
+                        loading="lazy"
+                        className="absolute inset-0 -z-20 h-full w-full object-cover object-[34%_center]"
+                    />
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-[#15130e]/10 to-[#15130e]/85 lg:bg-gradient-to-r lg:from-transparent lg:via-[#15130e]/25 lg:to-[#15130e]/92" />
+                    <div className="mx-auto flex min-h-[560px] max-w-7xl items-end px-5 py-12 sm:px-8 lg:items-center lg:justify-end lg:py-20">
+                        <motion.div
+                            initial={{ opacity: 0, y: 25 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="max-w-xl text-white"
+                        >
+                            <SectionEyebrow dark>O resultado aparece na pilotagem</SectionEyebrow>
+                            <h2 className="text-3xl font-black uppercase leading-[1.02] tracking-[-0.04em] sm:text-5xl">
+                                Menos luta com a moto.{' '}
+                                <span className="text-[#e4c46d]">Mais controle da linha.</span>
+                            </h2>
+                            <p className="mt-5 max-w-lg leading-relaxed text-zinc-200">
+                                Uma suspensão coerente conserva energia, mantém os pneus em contato com o
+                                chão e devolve confiança para você evoluir em cada treino.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => scrollTo('oferta')}
+                                className="mt-7 inline-flex min-h-14 cursor-pointer items-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d39f32] px-6 text-sm font-black uppercase tracking-[0.11em] text-black shadow-[0_18px_45px_rgba(215,173,79,.3)] transition-transform hover:-translate-y-0.5"
+                            >
+                                Quero regular minha moto <ArrowRight size={19} />
+                            </button>
+                        </motion.div>
                     </div>
                 </section>
 

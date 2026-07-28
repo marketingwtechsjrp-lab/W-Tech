@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.28.0",
+    "date": "2026-07-28",
+    "title": "Landing clara VSL com imersão premium",
+    "changes": [
+      "Reorganiza a versão clara do curso de suspensão para priorizar a VSL já na primeira dobra",
+      "Adiciona três cenários premium de motocross, ajuste de clickers e pilotagem em terreno técnico",
+      "Reforça a jornada visual do diagnóstico ao resultado, mantendo checkout, rastreamento e conteúdo comercial",
+      "Remove integralmente as versões V3 e V4 e suas rotas públicas",
+      "Adiciona validação automatizada para desktop, celular, carregamento das imagens e rotas removidas"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.27.0",
     "date": "2026-07-28",
     "title": "Glossário nativo e nova identidade visual do blog",

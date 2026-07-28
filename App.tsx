@@ -52,8 +52,6 @@ const Bio = lazy(() => import('./pages/bio'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const LPErgonomia = lazy(() => import('./pages/LPErgonomia'));
 const LPErgonomia2 = lazy(() => import('./pages/LPErgonomia2'));
-const LPErgonomia3 = lazy(() => import('./pages/LPErgonomia3'));
-const LPErgonomia4 = lazy(() => import('./pages/LPErgonomia4'));
 const LPErgonomiaVSL = lazy(() => import('./pages/LPErgonomiaVSL'));
 const LPErgonomiaLight = lazy(() => import('./pages/LPErgonomiaLight'));
 const PronelloImmersion = lazy(() => import('./pages/PronelloImmersion'));
@@ -132,8 +130,6 @@ const App = () => {
                     <Route path="/checkout-lisboa" element={<CheckoutLisboa />} />
                     <Route path="/curso-suspensao-piloto" element={<LPErgonomia />} />
                     <Route path="/curso-suspensao-piloto-v2" element={<LPErgonomia2 />} />
-                    <Route path="/curso-suspensao-piloto-v3" element={<LPErgonomia3 />} />
-                    <Route path="/curso-suspensao-piloto-v4" element={<LPErgonomia4 />} />
                     <Route path="/curso-suspensao-piloto-completa" element={<LPErgonomia forceFullContent />} />
                     <Route path="/curso-suspensao-piloto-vsl" element={<LPErgonomiaVSL />} />
                     <Route path="/curso-suspensao-piloto-clara" element={<LPErgonomiaLight />} />
