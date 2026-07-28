@@ -15,6 +15,7 @@ import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
 
 import { sanitizeHtml } from '../lib/utils';
+import { resolveBlogImage } from '../lib/blogImages';
 import { HeroSection } from '../components/ui/hero-section-5';
 import { ContainerAnimated, ContainerInset, ContainerScroll, ContainerStagger } from '../components/ui/hero-video';
 
@@ -576,7 +577,7 @@ const Home = () => {
                             posts.map(post => (
                                 <div key={post.id} className="min-w-[350px] md:min-w-[400px] snap-center group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100">
                                     <div className="overflow-hidden rounded-t-2xl h-60">
-                                        <img src={post.image} alt={post.title} width="400" height="240" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                        <img src={resolveBlogImage(post)} alt={post.title} width="400" height="240" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                     </div>
                                     <div className="p-6">
                                         <div className="flex gap-4 items-center mb-3">

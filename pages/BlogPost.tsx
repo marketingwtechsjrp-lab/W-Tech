@@ -9,6 +9,7 @@ import {
 import { motion, useScroll, useSpring } from 'framer-motion';
 import SEO from '../components/SEO';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
+import { normalizeBlogContentImages, resolveBlogImage } from '../lib/blogImages';
 
 const BlogPostReader: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -156,18 +157,21 @@ const BlogPostReader: React.FC = () => {
 
   if (!post) return <div className="text-center py-20">Post não encontrado.</div>;
 
+  const coverImage = resolveBlogImage(post);
+  const articleContent = normalizeBlogContentImages(post.content, post);
+
   return (
     <div className="bg-white min-h-screen relative">
       <SEO
         title={post.title}
         description={post.excerpt}
-        image={post.image}
+        image={coverImage}
         type="article"
         schema={{
           "@context": "https://schema.org",
           "@type": "BlogPosting",
           "headline": post.title,
-          "image": post.image,
+          "image": coverImage,
           "author": {
             "@type": "Person",
             "name": post.author
@@ -212,7 +216,7 @@ const BlogPostReader: React.FC = () => {
       {/* Hero Header */}
       <header className="relative h-[60vh] min-h-[400px]">
         <div className="absolute inset-0">
-          <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+          <img src={coverImage} alt={post.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
         </div>
 
@@ -264,7 +268,7 @@ const BlogPostReader: React.FC = () => {
                 prose-img:rounded-xl prose-img:shadow-lg
                 prose-blockquote:border-l-wtech-gold prose-blockquote:bg-gray-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic
                 "
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(articleContent) }}
           />
 
           {/* Tags */}

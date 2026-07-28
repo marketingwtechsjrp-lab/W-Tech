@@ -16,6 +16,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 
 import { sanitizeHtml } from '../lib/utils';
+import { resolveBlogImage } from '../lib/blogImages';
 // import { HeroSection } from '../components/ui/hero-section-5'; // Replaced by Animation
 import { HeroScrollAnimation } from '../components/HeroScrollAnimation';
 import { ContainerAnimated, ContainerInset, ContainerScroll, ContainerStagger } from '../components/ui/hero-video';
@@ -587,7 +588,7 @@ const Home3 = () => {
                                 <div key={post.id} className="min-w-[350px] md:min-w-[400px] snap-center group cursor-pointer bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100">
                                     <div className="overflow-hidden rounded-t-2xl h-60">
                                         <img 
-                                            src={(!post.image || post.image.includes('wp-content/uploads')) ? 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=800' : post.image} 
+                                            src={resolveBlogImage(post)}
                                             alt={post.title} 
                                             width="400" 
                                             height="240" 

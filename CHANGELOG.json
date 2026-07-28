@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.27.0",
+    "date": "2026-07-28",
+    "title": "Glossário nativo e nova identidade visual do blog",
+    "changes": [
+      "Adiciona gerador nativo de glossário ao painel administrativo, com criação manual, geração por IA, revisão e publicação",
+      "Adiciona glossário público pesquisável com índice A-Z, páginas individuais, SEO e integração ao sitemap",
+      "Substitui as 313 capas e 129 imagens internas legadas do blog por uma biblioteca editorial local de motocross, off-road e suspensão",
+      "Padroniza novas capas geradas ou importadas pelo painel e elimina dependências visuais de WordPress, Unsplash e geradores externos"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.26.1",
     "date": "2026-07-28",
     "title": "Correção da imagem da sede na home",

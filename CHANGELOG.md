@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.27.0 (2026-07-28) - Glossário nativo e nova identidade visual do blog
+- Adiciona gerador nativo de glossário ao painel administrativo, com criação manual, geração por IA, revisão e publicação
+- Adiciona glossário público pesquisável com índice A-Z, páginas individuais, SEO e integração ao sitemap
+- Substitui as 313 capas e 129 imagens internas legadas do blog por uma biblioteca editorial local de motocross, off-road e suspensão
+- Padroniza novas capas geradas ou importadas pelo painel e elimina dependências visuais de WordPress, Unsplash e geradores externos
+
 ## v3.26.1 (2026-07-28) - Correção da imagem da sede na home
 - Substitui a foto genérica com correia pela fachada oficial da sede W-Tech na página inicial
 - Atualiza o texto alternativo da imagem para descrever corretamente a sede

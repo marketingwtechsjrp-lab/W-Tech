@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { Course, Mechanic, BlogPost } from '../types';
 import CourseCard from '../components/CourseCard';
+import { resolveBlogImage } from '../lib/blogImages';
 
 declare const L: any; // Leaflet Global from CDN
 
@@ -361,7 +362,7 @@ const HomeP2: React.FC = () => {
                 {posts.map(post => (
                     <Link to={`/blog/${post.slug || post.id}`} key={post.id} className="group block bg-zinc-900 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all">
                         <div className="h-48 overflow-hidden">
-                            <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
+                            <img src={resolveBlogImage(post)} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
                         </div>
                         <div className="p-6">
                             <div className="flex items-center gap-2 text-xs text-blue-400 mb-3 font-bold uppercase">

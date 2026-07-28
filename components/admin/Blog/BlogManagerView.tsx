@@ -5,6 +5,12 @@ import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { generateBlogPost } from '../../../lib/ai';
 import { generateSitemapXml } from '../../../lib/sitemapUtils';
+import {
+    BLOG_IMAGE_LIBRARY,
+    getBlogImage,
+    normalizeBlogContentImages,
+    resolveBlogImage
+} from '../../../lib/blogImages';
 import type { BlogPost, PostComment } from '../../../types';
 
 const BlogManagerView = ({ permissions }: { permissions?: any }) => {
@@ -90,17 +96,18 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
 
     const handleSave = async () => {
         const score = calculateSeoScore(formData);
+        const image = resolveBlogImage(formData);
 
         const payload = {
             title: formData.title,
-            content: formData.content,
+            content: normalizeBlogContentImages(formData.content || '', { ...formData, image }),
             slug: formData.slug,
             excerpt: formData.excerpt,
             seo_title: formData.seoTitle,
             seo_description: formData.seoDescription,
             status: formData.status,
             seo_score: score,
-            image: formData.image,
+            image,
             author: formData.author || user?.name || 'Admin',
             category: formData.category || 'Blog',
             date: formData.date || new Date().toISOString()
@@ -135,7 +142,7 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
                 content: aiPost.content,
                 seoTitle: aiPost.title,
                 seoDescription: aiPost.seo_description,
-                image: `https://image.pollinations.ai/prompt/${encodeURIComponent(aiTopic)}?width=800&height=400&nologo=true`
+                image: getBlogImage(`${aiPost.title} ${aiTopic}`)
             });
             setShowAI(false);
         } catch (error: any) {
@@ -197,9 +204,7 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
                 // Set to a reasonable time (e.g., 09:00 AM) or keep current time
 
                 const aiPost = await generateBlogPost(topic, keywordList);
-                let coverImage = aiPost.image_prompt
-                    ? `https://image.pollinations.ai/prompt/${encodeURIComponent(aiPost.image_prompt)}?width=800&height=400&nologo=true`
-                    : `https://image.pollinations.ai/prompt/${encodeURIComponent(topic)}?width=800&height=400&nologo=true`;
+                const coverImage = getBlogImage(`${aiPost.title} ${topic} ${aiPost.image_prompt || ''}`);
 
                 const generatedSlug = aiPost.slug || aiPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substr(2, 5);
 
@@ -288,7 +293,7 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
                         status: 'Published',
                         author: 'Importado WP',
                         category: 'WordPress',
-                        image: featuredImage || `https://image.pollinations.ai/prompt/${encodeURIComponent(title)}?width=800&height=400`,
+                        image: getBlogImage(title),
                         seo_score: 70
                     }]);
                     totalImported++;
@@ -410,6 +415,27 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
                 </div>
 
                 <div className="w-72 flex-shrink-0 flex flex-col gap-6">
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <h3 className="font-bold text-gray-800 mb-3">Capa editorial</h3>
+                        <img
+                            src={resolveBlogImage(formData)}
+                            alt="Prévia da capa do artigo"
+                            className="w-full aspect-video object-cover rounded-lg mb-3"
+                        />
+                        <select
+                            className="w-full border border-gray-300 p-2 rounded text-sm text-gray-900 bg-white"
+                            value={resolveBlogImage(formData)}
+                            onChange={e => setFormData({ ...formData, image: e.target.value })}
+                        >
+                            {Object.values(BLOG_IMAGE_LIBRARY).map(option => (
+                                <option key={option.src} value={option.src}>{option.label}</option>
+                            ))}
+                        </select>
+                        <p className="text-[10px] text-gray-500 mt-2">
+                            Biblioteca local W-Tech: motocross, off-road e suspensão.
+                        </p>
+                    </div>
+
                     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 text-center">
                         <h3 className="font-bold text-gray-800 mb-2">SEO Score</h3>
                         <span className="text-4xl font-bold text-wtech-gold">{currentScore}</span>
