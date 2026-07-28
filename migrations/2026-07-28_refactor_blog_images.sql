@@ -30,14 +30,14 @@ UPDATE public."SITE_BlogPosts"
 SET content = regexp_replace(
     regexp_replace(
         content,
-        $rx$\s+(srcset|data-src|data-lazy-src)=(["'])[^"']*\2$rx$,
+        $rx$[[:space:]]+(srcset|data-src|data-lazy-src)[[:space:]]*=[[:space:]]*(["'])[^"']*\2$rx$,
         '',
         'gi'
     ),
-    $rx$(<img\b[^>]*\bsrc\s*=\s*)(["'])[^"']*\2$rx$,
+    $rx$(<img[^>]*[[:space:]]src[[:space:]]*=[[:space:]]*)(["'])[^"']*\2$rx$,
     E'\\1' || image || E'\\2',
     'gi'
 )
-WHERE content ~* '<img\b';
+WHERE content ~* '<img[[:space:]>]';
 
 NOTIFY pgrst, 'reload schema';
