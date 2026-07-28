@@ -182,7 +182,7 @@ const Reveal: React.FC<{
 };
 
 /* ─── Main Component ─── */
-const LPErgonomia: React.FC = () => {
+const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullContent = false }) => {
     const [currentLang, setCurrentLang] = useState<LPLanguage>('pt-PT');
     useEffect(() => {
         const detected = detectUserLanguage();
@@ -222,6 +222,7 @@ const LPErgonomia: React.FC = () => {
     const [videoProgress, setVideoProgress] = useState(0);
     const [videoCurrentTime, setVideoCurrentTime] = useState(0);
     const [isPitchRevealed, setIsPitchRevealed] = useState<boolean>(() => {
+        if (forceFullContent) return true;
         if (typeof window === 'undefined') return false;
         const sp = new URLSearchParams(window.location.search);
         if (sp.get('reveal') === 'true' || sp.get('reveal') === '1' || sp.get('preview') === 'true') return true;
