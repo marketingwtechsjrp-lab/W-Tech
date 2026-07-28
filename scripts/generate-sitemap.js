@@ -51,6 +51,17 @@ async function generateSitemap() {
   const { data: lpData } = await supabase.from('SITE_LandingPages').select('slug, updated_at');
   const { data: courseData } = await supabase.from('SITE_Courses').select('id, slug, type, date, updated_at').eq('status', 'Published');
   const { data: blogData } = await supabase.from('SITE_BlogPosts').select('slug, updated_at').eq('status', 'Published');
+  const { data: glossaryData, error: glossaryError } = await supabase
+    .from('SITE_GlossaryTerms')
+    .select('slug, updated_at')
+    .eq('published', true);
+
+  // A primeira build pode ocorrer antes da migração do glossário. Nesse caso,
+  // mantém o sitemap estático e passa a incluir os verbetes automaticamente
+  // assim que a tabela estiver disponível.
+  if (glossaryError && glossaryError.code !== '42P01') {
+    console.warn('⚠️ Glossário não incluído no sitemap:', glossaryError.message);
+  }
 
   const escapeXml = (unsafe) => {
     if (!unsafe) return '';
@@ -114,6 +125,14 @@ async function generateSitemap() {
     if (b.slug) {
       const lastmod = formatDate(b.updated_at);
       sitemap += `  <url>\n    <loc>${baseUrl}/blog/${escapeXml(b.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.6</priority>\n  </url>\n`;
+    }
+  });
+
+  // Glossary Terms
+  glossaryData?.forEach(term => {
+    if (term.slug) {
+      const lastmod = formatDate(term.updated_at);
+      sitemap += `  <url>\n    <loc>${baseUrl}/glossario/${escapeXml(term.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
     }
   });
 

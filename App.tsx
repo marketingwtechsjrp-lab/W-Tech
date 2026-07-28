@@ -108,7 +108,8 @@ const App = () => {
                     <Route path="/home-p2" element={<HomeP2 />} />
                     <Route path="/cursos" element={<Layout><Courses /></Layout>} />
                     <Route path="/cursos/:id" element={<Layout><CourseDetail /></Layout>} />
-                    <Route path="/glossario" element={<Glossary />} />
+                    <Route path="/glossario" element={<Layout><Glossary /></Layout>} />
+                    <Route path="/glossario/:slug" element={<Layout><Glossary /></Layout>} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/sou-mecanico" element={<MechanicRegister />} />
                     <Route path="/mapa" element={<Layout><MechanicsMap /></Layout>} />

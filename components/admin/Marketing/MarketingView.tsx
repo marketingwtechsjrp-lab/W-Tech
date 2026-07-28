@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    BarChart2, BookOpen, Layout, Fingerprint, Award, Rocket, Target, CalendarDays
+    BarChart2, BookOpen, Layout, Fingerprint, Award, Rocket, Target, CalendarDays, LibraryBig
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -12,6 +12,7 @@ import LandingPagesView from './LandingPagesView';
 import BioPageManager from './BioPageManager';
 import CaptureCampaignsView from './CaptureCampaignsView';
 import ContentPlannerView from './ContentPlannerView';
+import GlossaryManagerView from './GlossaryManagerView';
 
 const MarketingView = ({ permissions }: { permissions?: any }) => {
     const { user } = useAuth();
@@ -30,6 +31,7 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
     const tabs = [
         { id: 'Planejador', icon: CalendarDays, label: 'Planejador', permission: 'marketing_view' },
         { id: 'Blog', icon: BookOpen, label: 'Blog', permission: 'blog_view' },
+        { id: 'Glossario', icon: LibraryBig, label: 'Glossário', permission: 'marketing_view' },
         { id: 'LP', icon: Layout, label: 'Landing Pages', permission: 'landing_pages_view' },
         { id: 'Captura', icon: Target, label: 'Captura', permission: 'marketing_view' },
         { id: 'Bio', icon: Fingerprint, label: 'Bio Link', permission: 'marketing_view' },
@@ -78,9 +80,10 @@ const MarketingView = ({ permissions }: { permissions?: any }) => {
             </div>
 
             {/* Content Area */}
-            <div className={`bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'LP', 'Bio', 'Captura', 'Planejador'].includes(activeTab) ? '' : 'p-6'}`}>
+            <div className={`bg-[var(--admin-surface-1)] rounded-2xl border border-[var(--admin-border)] shadow-sm min-h-[600px] ${['Analytics', 'Certificates', 'Blog', 'Glossario', 'LP', 'Bio', 'Captura', 'Planejador'].includes(activeTab) ? '' : 'p-6'}`}>
                 {activeTab === 'Planejador' && <ContentPlannerView />}
                 {activeTab === 'Blog' && <BlogManagerView permissions={permissions} />}
+                {activeTab === 'Glossario' && <GlossaryManagerView />}
                 {activeTab === 'LP' && <LandingPagesView permissions={permissions} />}
                 {activeTab === 'Captura' && <CaptureCampaignsView />}
                 {activeTab === 'Bio' && <BioPageManager />}

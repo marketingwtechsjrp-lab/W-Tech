@@ -283,8 +283,22 @@ export interface Mechanic {
 export interface GlossaryTerm {
   id: string;
   term: string;
-  definition: string;
-  category: string;
+  slug?: string;
+  letter?: string;
+  definition?: string;
+  content?: string;
+  summary?: string;
+  seoTitle?: string;
+  niche?: string;
+  category?: string;
+  image?: string;
+  author?: string;
+  origin?: 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT';
+  published?: boolean;
+  reviewed?: boolean;
+  views?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // --- E-commerce & Finance Types ---
