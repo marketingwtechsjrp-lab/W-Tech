@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { Navigate, useLocation } from 'react-router-dom';
 import {
     Activity,
     ArrowDown,
@@ -27,6 +28,7 @@ import {
     Wrench,
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
+import { useLanguage } from '../context/LanguageContext';
 
 const CHECKOUT_BASE_URL = 'https://pay.kiwify.com.br/5zdsgcS';
 const WHATSAPP_URL =
@@ -333,6 +335,8 @@ const FAQItem: React.FC<{ question: string; answer: string; index: number }> = (
 };
 
 const LPErgonomia2: React.FC = () => {
+    const { currentLang } = useLanguage();
+    const location = useLocation();
     const [checkoutUrl, setCheckoutUrl] = useState(CHECKOUT_BASE_URL);
 
     useEffect(() => {
@@ -458,6 +462,13 @@ const LPErgonomia2: React.FC = () => {
             schema.remove();
         };
     }, []);
+
+    if (currentLang !== 'pt-BR') {
+        const params = new URLSearchParams(location.search);
+        params.set('lang', currentLang);
+        if (!params.has('src')) params.set('src', 'v2_geo_redirect');
+        return <Navigate to={`/curso-suspensao-piloto-completa?${params.toString()}`} replace />;
+    }
 
     return (
         <main

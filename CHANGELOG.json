@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.30.1",
+    "date": "2026-07-28",
+    "title": "Cobertura multilíngue da LP V2",
+    "changes": [
+      "Encaminha automaticamente visitantes internacionais da rota legada V2 para a landing completa no idioma detectado",
+      "Preserva parâmetros de campanha e mantém a experiência V2 original para o público brasileiro"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.30.0",
     "date": "2026-07-28",
     "title": "Depoimentos em vídeo e LPs multilíngues por geolocalização",

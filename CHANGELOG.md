@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.30.1 (2026-07-28) - Cobertura multilíngue da LP V2
+- Encaminha automaticamente visitantes internacionais da rota legada V2 para a landing completa no idioma detectado
+- Preserva parâmetros de campanha e mantém a experiência V2 original para o público brasileiro
+
 ## v3.30.0 (2026-07-28) - Depoimentos em vídeo e LPs multilíngues por geolocalização
 - Substitui os depoimentos em texto da landing clara por vídeos oficiais da W-Tech em carrossel contínuo, com reprodução em destaque
 - Acelera o loop das capas dos módulos e faz a pausa ao passar o mouse funcionar de verdade
