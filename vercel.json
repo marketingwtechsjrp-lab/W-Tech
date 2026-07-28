@@ -54,6 +54,10 @@
       "destination": "/api/jobs?task=send-test-email"
     },
     {
+      "source": "/api/glossary",
+      "destination": "/api/jobs?task=glossary"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },

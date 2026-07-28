@@ -3,6 +3,7 @@ import { processBalanceReminders } from './_balance.js';
 import { processActiveCampaigns } from './_campaigns.js';
 import { sendTemplate } from './_email.js';
 import { isCronAuthorized, denyCron } from './_cron.js';
+import glossary from './_glossary.js';
 
 /**
  * Vercel Serverless Function — Despachante de tarefas de cron/admin.
@@ -16,6 +17,7 @@ import { isCronAuthorized, denyCron } from './_cron.js';
  *   /api/balance-reminders   → /api/jobs?task=balance-reminders
  *   /api/process-campaigns   → /api/jobs?task=process-campaigns
  *   /api/send-test-email     → /api/jobs?task=send-test-email
+ *   /api/glossary            → /api/jobs?task=glossary
  */
 export default async function handler(req: any, res: any) {
     const task = String(req.query?.task || '');
@@ -24,6 +26,7 @@ export default async function handler(req: any, res: any) {
         case 'balance-reminders': return balanceReminders(req, res);
         case 'process-campaigns': return processCampaigns(req, res);
         case 'send-test-email': return sendTestEmail(req, res);
+        case 'glossary': return glossary(req, res);
         default: return res.status(404).json({ error: 'Tarefa desconhecida' });
     }
 }
