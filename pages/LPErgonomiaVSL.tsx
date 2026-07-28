@@ -13,9 +13,115 @@ import {
     Volume2,
 } from 'lucide-react';
 import { captureTrackingParams } from '../lib/tracking';
+import { lpTranslations } from '../lib/lpErgonomiaTranslations';
+import { useLanguage } from '../context/LanguageContext';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 
 const VIDEO_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
+
+const vslUi = {
+    'pt-BR': {
+        exclusive: 'Aula exclusiva para pilotos Off-Road',
+        step: 'Etapa 1 de 2',
+        watch: 'Assista até o final para liberar sua inscrição',
+        privateClass: 'Aula privada',
+        start: 'Começar agora',
+        pause: 'Pausar',
+        continue: 'Continuar',
+        soundOn: 'Ativar som',
+        soundActive: 'Som ativo',
+        restart: 'Recomeçar',
+        protected: 'Conteúdo protegido · avanço progressivo',
+        unlocked: 'Inscrição liberada',
+        continueEnrollment: 'Continuar para a inscrição',
+        destination: 'Você será encaminhado para os detalhes completos do curso e da oferta.',
+        locked: 'O botão de inscrição será liberado ao final da aula',
+        tracking: 'O avanço do vídeo acompanha apenas o conteúdo já assistido.',
+        benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
+        released: 'Ver inscrição liberada',
+        playing: 'Aula em andamento',
+        resume: 'Continue de onde parou',
+        ready: 'Sua aula está pronta',
+        remaining: 'restantes',
+        startExclusive: 'Começar aula exclusiva',
+    },
+    'pt-PT': {
+        exclusive: 'Aula exclusiva para pilotos Off-Road',
+        step: 'Etapa 1 de 2',
+        watch: 'Vê até ao fim para libertar a tua inscrição',
+        privateClass: 'Aula privada',
+        start: 'Começar agora',
+        pause: 'Pausar',
+        continue: 'Continuar',
+        soundOn: 'Ativar som',
+        soundActive: 'Som ativo',
+        restart: 'Recomeçar',
+        protected: 'Conteúdo protegido · avanço progressivo',
+        unlocked: 'Inscrição libertada',
+        continueEnrollment: 'Continuar para a inscrição',
+        destination: 'Serás encaminhado para os detalhes completos do curso e da oferta.',
+        locked: 'O botão de inscrição será libertado no final da aula',
+        tracking: 'O avanço do vídeo acompanha apenas o conteúdo já visto.',
+        benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
+        released: 'Ver inscrição libertada',
+        playing: 'Aula em curso',
+        resume: 'Continua de onde paraste',
+        ready: 'A tua aula está pronta',
+        remaining: 'restantes',
+        startExclusive: 'Começar aula exclusiva',
+    },
+    es: {
+        exclusive: 'Clase exclusiva para pilotos Off-Road',
+        step: 'Etapa 1 de 2',
+        watch: 'Mira hasta el final para desbloquear tu inscripción',
+        privateClass: 'Clase privada',
+        start: 'Empezar ahora',
+        pause: 'Pausar',
+        continue: 'Continuar',
+        soundOn: 'Activar sonido',
+        soundActive: 'Sonido activo',
+        restart: 'Reiniciar',
+        protected: 'Contenido protegido · avance progresivo',
+        unlocked: 'Inscripción desbloqueada',
+        continueEnrollment: 'Continuar a la inscripción',
+        destination: 'Accederás a todos los detalles del curso y de la oferta.',
+        locked: 'El botón de inscripción se desbloqueará al final de la clase',
+        tracking: 'El avance solo permite recorrer el contenido ya visto.',
+        benefits: ['Acceso por 12 meses', 'Garantía de 7 días', 'Certificado W-Tech'],
+        released: 'Ver inscripción desbloqueada',
+        playing: 'Clase en curso',
+        resume: 'Continúa donde lo dejaste',
+        ready: 'Tu clase está lista',
+        remaining: 'restantes',
+        startExclusive: 'Empezar clase exclusiva',
+    },
+    en: {
+        exclusive: 'Exclusive class for Off-Road riders',
+        step: 'Step 1 of 2',
+        watch: 'Watch to the end to unlock enrollment',
+        privateClass: 'Private class',
+        start: 'Start now',
+        pause: 'Pause',
+        continue: 'Continue',
+        soundOn: 'Turn sound on',
+        soundActive: 'Sound on',
+        restart: 'Restart',
+        protected: 'Protected content · progressive viewing',
+        unlocked: 'Enrollment unlocked',
+        continueEnrollment: 'Continue to enrollment',
+        destination: 'You will continue to the complete course and offer details.',
+        locked: 'The enrollment button unlocks at the end of the class',
+        tracking: 'You can only seek through content you have already watched.',
+        benefits: ['12-month access', '7-day guarantee', 'W-Tech certificate'],
+        released: 'View unlocked enrollment',
+        playing: 'Class in progress',
+        resume: 'Continue where you left off',
+        ready: 'Your class is ready',
+        remaining: 'remaining',
+        startExclusive: 'Start exclusive class',
+    },
+} as const;
 
 const formatTime = (seconds: number) => {
     if (!Number.isFinite(seconds) || seconds <= 0) return '00:00';
@@ -26,6 +132,9 @@ const formatTime = (seconds: number) => {
 
 const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark' }) => {
     const isLight = theme === 'light';
+    const { currentLang } = useLanguage();
+    const t = lpTranslations[currentLang];
+    const ui = vslUi[currentLang];
     const videoRef = useRef<HTMLVideoElement>(null);
     const furthestWatchedRef = useRef(0);
     const [duration, setDuration] = useState(0);
@@ -133,7 +242,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     return (
         <main className={`min-h-screen overflow-x-hidden pb-[calc(6.5rem+env(safe-area-inset-bottom))] selection:bg-[#d7ad4f] selection:text-black sm:pb-0 ${isLight ? 'bg-[#f6f4ee] text-[#171714]' : 'bg-[#050505] text-white'}`}>
             <div className={`border-b bg-[#b5211f] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.16em] text-white sm:px-4 sm:py-2.5 sm:text-xs sm:tracking-[0.18em] ${isLight ? 'border-[#9c1c1a]' : 'border-white/10'}`}>
-                Aula exclusiva para pilotos Off-Road
+                {ui.exclusive}
             </div>
 
             <section className="relative isolate min-h-[calc(100svh-34px)] overflow-hidden px-4 py-6 sm:min-h-[calc(100vh-38px)] sm:px-8 sm:py-10 lg:py-14">
@@ -160,18 +269,24 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                 )}
 
                 <div className="mx-auto flex w-full max-w-5xl flex-col items-center">
+                    <div className="mb-6 hidden w-full items-center justify-between sm:flex">
+                        <img
+                            src="/logo-wtech-branca.webp"
+                            alt="W-Tech"
+                            className={`h-7 w-auto ${isLight ? 'brightness-0' : ''}`}
+                        />
+                        <LanguageSwitcher variant={isLight ? 'light' : 'dark'} />
+                    </div>
                     <div className="mb-4 flex w-full items-center justify-between sm:hidden">
-                        <span className="rounded-lg bg-[#171714] px-2.5 py-2">
-                            <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-4 w-auto" />
-                        </span>
+                        <img src="/logo-wtech-branca.webp" alt="W-Tech" className={`h-5 w-auto ${isLight ? 'brightness-0' : ''}`} />
                         <span className={`rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] ${isLight ? 'border-[#cec5b4] bg-white/70 text-[#6d685f]' : 'border-white/10 bg-white/5 text-zinc-400'}`}>
-                            Etapa 1 de 2
+                            {ui.step}
                         </span>
                     </div>
 
                     <div className={`mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7ad4f]/35 px-3 py-2 text-center text-[9px] font-black uppercase tracking-[0.16em] shadow-[0_0_35px_rgba(215,173,79,.08)] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.2em] ${isLight ? 'bg-white/80 text-[#875d0f] backdrop-blur' : 'bg-[#d7ad4f]/10 text-[#e5c879]'}`}>
                         <Headphones size={15} aria-hidden="true" />
-                        Assista até o final para liberar sua inscrição
+                        {ui.watch}
                     </div>
 
                     <motion.h1
@@ -179,15 +294,14 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         animate={{ opacity: 1, y: 0 }}
                         className="max-w-4xl text-center text-[2rem] font-black uppercase leading-[.98] tracking-[-0.04em] sm:text-5xl sm:leading-[1.02] lg:text-6xl"
                     >
-                        Descubra por que sua moto cansa você — e como{' '}
+                        {t.hero.titlePart1}{' '}
                         <span className={`bg-gradient-to-r bg-clip-text text-transparent ${isLight ? 'from-[#875d0f] via-[#b77d16] to-[#b5211f]' : 'from-[#f2da93] via-[#d7ad4f] to-[#f08a36]'}`}>
-                            acertar a suspensão
+                            {t.hero.titleHighlight}
                         </span>
                     </motion.h1>
 
                     <p className={`mt-4 max-w-2xl text-center text-[15px] font-medium leading-relaxed sm:mt-5 sm:text-lg ${isLight ? 'text-[#555149]' : 'text-zinc-300'}`}>
-                        Alex Crepaldi mostra o caminho do SAG aos cliques para você ganhar tração,
-                        controle e confiança sem depender de tentativa e erro.
+                        {t.hero.subtitle}
                     </p>
 
                     <div className="relative mt-6 w-full sm:mt-8">
@@ -196,7 +310,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950 px-3 py-2.5 text-[9px] font-black uppercase tracking-[0.12em] text-zinc-300 sm:px-6 sm:py-3 sm:text-xs sm:tracking-[0.15em]">
                             <span className="inline-flex items-center gap-2">
                                 <span className="h-2 w-2 animate-pulse rounded-full bg-red-500 sm:h-2.5 sm:w-2.5" />
-                                Aula privada
+                                {ui.privateClass}
                             </span>
                             <span className="inline-flex items-center gap-2 text-[#d7ad4f]">
                                 <Clock3 size={13} />
@@ -232,13 +346,13 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     type="button"
                                     onClick={togglePlay}
                                     className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-3 bg-gradient-to-t from-black/60 via-black/20 to-black/20 transition-colors hover:from-black/50"
-                                    aria-label="Iniciar aula"
+                                    aria-label={ui.start}
                                 >
                                     <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/50 bg-gradient-to-br from-[#f0ce6f] to-[#c99022] text-black shadow-[0_0_55px_rgba(215,173,79,.55)] transition-transform hover:scale-105 sm:h-20 sm:w-20">
                                         <Play size={28} fill="currentColor" className="ml-1 sm:h-8 sm:w-8" />
                                     </span>
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] sm:text-xs">
-                                        Começar agora
+                                        {ui.start}
                                     </span>
                                 </button>
                             )}
@@ -259,7 +373,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-bold text-white transition-colors hover:border-[#d7ad4f]/50 hover:text-[#e5c879] sm:min-h-11 sm:justify-start sm:px-4"
                                 >
                                     {isPlaying ? <Pause size={17} /> : <Play size={17} />}
-                                    {isPlaying ? 'Pausar' : 'Continuar'}
+                                    {isPlaying ? ui.pause : ui.continue}
                                 </button>
                                 <button
                                     type="button"
@@ -267,7 +381,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-bold text-white transition-colors hover:border-[#d7ad4f]/50 sm:min-h-11 sm:justify-start sm:px-4"
                                 >
                                     <Volume2 size={17} />
-                                    {isMuted ? 'Ativar som' : 'Som ativo'}
+                                    {isMuted ? ui.soundOn : ui.soundActive}
                                 </button>
                             </div>
                             {currentTime > 0 ? (
@@ -277,11 +391,11 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     className="mx-auto mt-2 flex min-h-11 items-center gap-2 px-2 text-xs font-bold text-zinc-400 transition-colors hover:text-white sm:mx-0 sm:mt-0"
                                 >
                                     <RotateCcw size={16} />
-                                    Recomeçar
+                                    {ui.restart}
                                 </button>
                             ) : (
                                 <p className="mt-2 text-center text-[9px] font-black uppercase tracking-[0.14em] text-zinc-600 sm:hidden">
-                                    Conteúdo protegido · avanço progressivo
+                                    {ui.protected}
                                 </p>
                             )}
                         </div>
@@ -304,35 +418,35 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                             <>
                                 <div className={`mb-4 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-[0.14em] ${isLight ? 'text-emerald-700' : 'text-emerald-300'}`}>
                                     <CheckCircle2 size={20} />
-                                    Inscrição liberada
+                                    {ui.unlocked}
                                 </div>
                                 <a
                                     href={landingUrl}
                                     className="mx-auto flex min-h-14 w-full max-w-xl items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_16px_45px_rgba(215,173,79,.22)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
-                                    Continuar para a inscrição
+                                    {ui.continueEnrollment}
                                     <ArrowRight size={20} strokeWidth={3} />
                                 </a>
                                 <p className={`mt-3 text-xs ${isLight ? 'text-[#6f695f]' : 'text-zinc-400'}`}>
-                                    Você será encaminhado para os detalhes completos do curso e da oferta.
+                                    {ui.destination}
                                 </p>
                             </>
                         ) : (
                             <div className={`flex flex-col items-center justify-center gap-2 ${isLight ? 'text-[#716c63]' : 'text-zinc-400'}`}>
                                 <LockKeyhole size={24} className="text-[#d7ad4f]" />
                                 <p className={`text-xs font-black uppercase tracking-[0.11em] sm:text-sm sm:tracking-[0.12em] ${isLight ? 'text-[#282620]' : 'text-zinc-200'}`}>
-                                    O botão de inscrição será liberado ao final da aula
+                                    {ui.locked}
                                 </p>
-                                <p className="text-xs">O avanço do vídeo acompanha apenas o conteúdo já assistido.</p>
+                                <p className="text-xs">{ui.tracking}</p>
                             </div>
                         )}
                     </motion.div>
 
                     <div className={`mt-4 grid w-full grid-cols-3 gap-2 text-[9px] font-bold leading-tight sm:mt-7 sm:gap-3 sm:text-xs ${isLight ? 'text-[#4f4b43]' : 'text-zinc-300'}`}>
                         {[
-                            ['Acesso por 12 meses', Clock3],
-                            ['Garantia de 7 dias', ShieldCheck],
-                            ['Certificado W-Tech', CheckCircle2],
+                            [ui.benefits[0], Clock3],
+                            [ui.benefits[1], ShieldCheck],
+                            [ui.benefits[2], CheckCircle2],
                         ].map(([label, Icon]) => (
                             <div
                                 key={label as string}
@@ -352,7 +466,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         href={landingUrl}
                         className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-5 text-xs font-black uppercase tracking-[0.11em] text-black shadow-[0_12px_35px_rgba(215,173,79,.25)]"
                     >
-                        Ver inscrição liberada
+                        {ui.released}
                         <ArrowRight size={19} strokeWidth={3} />
                     </a>
                 ) : (
@@ -366,10 +480,10 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         </span>
                         <span className="min-w-0 flex-1">
                             <span className="block text-[9px] font-black uppercase tracking-[0.16em] text-[#d7ad4f]">
-                                {isPlaying ? 'Aula em andamento' : currentTime > 0 ? 'Continue de onde parou' : 'Sua aula está pronta'}
+                                {isPlaying ? ui.playing : currentTime > 0 ? ui.resume : ui.ready}
                             </span>
                             <span className="mt-0.5 block truncate text-sm font-black text-white">
-                                {duration > 0 ? `${formatTime(remainingTime)} restantes` : 'Começar aula exclusiva'}
+                                {duration > 0 ? `${formatTime(remainingTime)} ${ui.remaining}` : ui.startExclusive}
                             </span>
                         </span>
                         <span className="text-[9px] font-black uppercase tracking-[0.12em] text-zinc-500">

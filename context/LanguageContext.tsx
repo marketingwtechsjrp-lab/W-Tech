@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { siteTranslations, SiteLanguage, TranslationDictionary } from '../lib/siteTranslations';
+import {
+    detectBrowserLandingLanguage,
+    detectGeoLandingLanguage,
+} from '../lib/geoLanguage';
 
 interface LanguageContextType {
     currentLang: SiteLanguage;
@@ -12,62 +16,16 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const detectUserLanguage = (): SiteLanguage => {
-    if (typeof window === 'undefined') return 'pt-PT';
-
-    // 1. Storage override
-    try {
-        const saved = localStorage.getItem('wtech_global_lang') as SiteLanguage;
-        if (saved && siteTranslations[saved]) {
-            return saved;
-        }
-    } catch (e) {
-        // Storage unavailable
-    }
-
-    // 2. Browser Timezone Detection
-    try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-
-        if (tz.includes('Sao_Paulo') || tz.includes('Fortaleza') || tz.includes('Manaus') || tz.includes('Recife') || tz.includes('Belem') || tz.includes('Cuiaba') || tz.includes('Campo_Grande') || tz.includes('Bahia')) {
-            return 'pt-BR';
-        }
-        if (tz.includes('Lisbon') || tz.includes('Madeira') || tz.includes('Azores')) {
-            return 'pt-PT';
-        }
-        if (tz.includes('Madrid') || tz.includes('Canary') || tz.includes('Buenos_Aires') || tz.includes('Santiago') || tz.includes('Bogota') || tz.includes('Mexico') || tz.includes('Lima')) {
-            return 'es';
-        }
-        if (tz.includes('London') || tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Los_Angeles') || tz.includes('Toronto') || tz.includes('Sydney')) {
-            return 'en';
-        }
-    } catch (e) {
-        // Timezone detection failed
-    }
-
-    // 3. Navigator Languages Fallback
-    try {
-        const navLangs = navigator.languages || [navigator.language || ''];
-        for (const lang of navLangs) {
-            const lower = lang.toLowerCase();
-            if (lower.startsWith('es')) return 'es';
-            if (lower.startsWith('en')) return 'en';
-            if (lower === 'pt-br') return 'pt-BR';
-            if (lower.startsWith('pt')) return 'pt-PT';
-        }
-    } catch (e) {
-        // Navigator fallback failed
-    }
-
-    // Default for European / International portal
-    return 'pt-PT';
+    return detectBrowserLandingLanguage();
 };
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [currentLang, setCurrentLang] = useState<SiteLanguage>('pt-PT');
+    const [currentLang, setCurrentLang] = useState<SiteLanguage>(() => detectUserLanguage());
 
     useEffect(() => {
-        const detected = detectUserLanguage();
-        setCurrentLang(detected);
+        const controller = new AbortController();
+        detectGeoLandingLanguage(controller.signal).then(setCurrentLang);
+        return () => controller.abort();
     }, []);
 
     const setLanguage = (lang: SiteLanguage) => {

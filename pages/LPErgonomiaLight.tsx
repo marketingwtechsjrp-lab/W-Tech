@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
+import { VideoTestimonialsMarquee } from '../components/lp/VideoTestimonialsMarquee';
+import { useLanguage } from '../context/LanguageContext';
 import {
     ArrowRight,
     Award,
@@ -16,10 +19,8 @@ import {
     Headphones,
     Mountain,
     Play,
-    Quote,
     ShieldCheck,
     Sparkles,
-    Star,
     Target,
     Wrench,
     Zap,
@@ -29,7 +30,61 @@ import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 
 const COURSE_VIDEO = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const KIWIFY_BASE = 'https://pay.kiwify.com.br/19v4nIa';
-const t = lpTranslations['pt-BR'];
+
+const lightUi = {
+    'pt-BR': {
+        nav: ['Método', 'Conteúdo', 'Resultados'],
+        enrollment: 'Ver inscrição',
+        freeClass: 'Aula gratuita · Método W-Tech Off-Road',
+        watchNow: 'Assistir à aula agora',
+        testimonialsLabel: 'Resultados de alunos',
+        testimonialsTitle: 'Veja e ouça quem já viveu a experiência W-Tech.',
+        inside: 'Veja por dentro',
+        insideTitle: 'As aulas que formam sua nova regulagem',
+        modulesAlt: 'Capa oficial do módulo',
+        lessons: ['aula', 'aulas'],
+        course: 'Curso completo',
+    },
+    'pt-PT': {
+        nav: ['Método', 'Conteúdo', 'Resultados'],
+        enrollment: 'Ver inscrição',
+        freeClass: 'Aula gratuita · Método W-Tech Off-Road',
+        watchNow: 'Ver a aula agora',
+        testimonialsLabel: 'Resultados de alunos',
+        testimonialsTitle: 'Vê e ouve quem já viveu a experiência W-Tech.',
+        inside: 'Vê por dentro',
+        insideTitle: 'As aulas que formam a tua nova afinação',
+        modulesAlt: 'Capa oficial do módulo',
+        lessons: ['aula', 'aulas'],
+        course: 'Curso completo',
+    },
+    es: {
+        nav: ['Método', 'Contenido', 'Resultados'],
+        enrollment: 'Ver inscripción',
+        freeClass: 'Clase gratuita · Método W-Tech Off-Road',
+        watchNow: 'Ver la clase ahora',
+        testimonialsLabel: 'Resultados de alumnos',
+        testimonialsTitle: 'Mira y escucha a quienes ya vivieron la experiencia W-Tech.',
+        inside: 'Mira por dentro',
+        insideTitle: 'Las clases que forman tu nueva puesta a punto',
+        modulesAlt: 'Portada oficial del módulo',
+        lessons: ['clase', 'clases'],
+        course: 'Curso completo',
+    },
+    en: {
+        nav: ['Method', 'Content', 'Results'],
+        enrollment: 'View enrollment',
+        freeClass: 'Free class · W-Tech Off-Road Method',
+        watchNow: 'Watch the class now',
+        testimonialsLabel: 'Student results',
+        testimonialsTitle: 'See and hear from riders who experienced W-Tech.',
+        inside: 'See inside',
+        insideTitle: 'The lessons behind your new suspension setup',
+        modulesAlt: 'Official module cover',
+        lessons: ['lesson', 'lessons'],
+        course: 'Full course',
+    },
+} as const;
 
 const reveal = {
     hidden: { opacity: 0, y: 24 },
@@ -69,6 +124,9 @@ const LightFAQ: React.FC<{ question: string; answer: string }> = ({ question, an
 };
 
 const LPErgonomiaLight: React.FC = () => {
+    const { currentLang } = useLanguage();
+    const t = lpTranslations[currentLang];
+    const ui = lightUi[currentLang];
     const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
     const [videoActivated, setVideoActivated] = useState(false);
     const [videoPlaying, setVideoPlaying] = useState(false);
@@ -111,28 +169,12 @@ const LPErgonomiaLight: React.FC = () => {
         });
     };
 
-    const riderProblems = [
-        {
-            icon: <Gauge size={24} />,
-            title: 'Braços pesados cedo demais',
-            text: 'A moto devolve impacto para o guidão e você perde rendimento antes do fim da trilha.',
-        },
-        {
-            icon: <Mountain size={24} />,
-            title: 'Tração que desaparece',
-            text: 'A traseira pula, cava ou patina porque mola, SAG e hidráulica não trabalham juntos.',
-        },
-        {
-            icon: <Target size={24} />,
-            title: 'Frente sem confiança',
-            text: 'A moto espalha nas curvas e muda de comportamento sem avisar em terrenos diferentes.',
-        },
-        {
-            icon: <Bike size={24} />,
-            title: 'Ajustes no escuro',
-            text: 'Você gira cliques sem método e nunca sabe qual mudança realmente melhorou a pilotagem.',
-        },
-    ];
+    const problemIcons = [<Gauge size={24} />, <Mountain size={24} />, <Target size={24} />, <Bike size={24} />];
+    const riderProblems = t.profiles.items.map((item, index) => ({
+        icon: problemIcons[index],
+        title: item.title,
+        text: item.pain,
+    }));
 
     const methodIcons = [<CircleGauge size={25} />, <Wrench size={25} />, <Zap size={25} />, <Target size={25} />];
 
@@ -150,29 +192,6 @@ const LPErgonomiaLight: React.FC = () => {
         { title: 'Planilha de Pressão e PSI', value: 'R$ 257' },
         { title: 'Comparativo de Óleos', value: 'R$ 197' },
         { title: 'Comparativo de Molas', value: 'R$ 146' },
-    ];
-
-    const testimonials = [
-        {
-            text: 'Depois do curso, finalmente ajustei os cliques e o SAG para o meu peso. Chega de tomar solavanco e ceder nas trilhas. Moto grudada no chão!',
-            name: 'Ricardo F.',
-            role: 'Piloto Amador — SP',
-        },
-        {
-            text: 'Comecei a oferecer regulagem e setup de suspensão na oficina. Ganhei novos clientes que antes iam buscar fora. O retorno foi imenso.',
-            name: 'Marcos S.',
-            role: 'Mecânico — MG',
-        },
-        {
-            text: 'As ladeiras com cavas não são mais um problema. A dianteira da roda da moto agora me dá confiança nas curvas abertas e a tração é constante.',
-            name: 'Tiago L.',
-            role: 'Piloto de Enduro — PR',
-        },
-        {
-            text: 'Eu achava minhas molas macias demais, mas na verdade a hidráulica estava zerada. Entender esse casamento através do curso virou a chave da minha tocada.',
-            name: 'Juliana M.',
-            role: 'Pilota Hard Enduro — RJ',
-        },
     ];
 
     const conceptImages = [
@@ -214,26 +233,26 @@ const LPErgonomiaLight: React.FC = () => {
             <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f9f7f1]/92 backdrop-blur-xl">
                 <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:min-h-16 sm:gap-5 sm:px-8">
                     <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-[#171714] px-2.5 py-2 sm:px-3">
-                            <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-4 w-auto sm:h-5" />
-                        </div>
+                        <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-5 w-auto brightness-0 sm:h-6" />
                         <span className="hidden text-[10px] font-black uppercase tracking-[0.2em] text-[#69665e] sm:block">
                             Suspensão para pilotos
                         </span>
                     </div>
-                    <nav className="hidden items-center gap-7 text-xs font-black uppercase tracking-[0.12em] text-[#69665e] lg:flex">
-                        <button type="button" onClick={() => scrollTo('metodo')} className="cursor-pointer hover:text-[#9a6d13]">Método</button>
-                        <button type="button" onClick={() => scrollTo('conteudo')} className="cursor-pointer hover:text-[#9a6d13]">Conteúdo</button>
-                        <button type="button" onClick={() => scrollTo('depoimentos')} className="cursor-pointer hover:text-[#9a6d13]">Resultados</button>
+                    <nav className="hidden items-center gap-7 text-xs font-black uppercase tracking-[0.12em] text-[#69665e] xl:flex">
+                        <button type="button" onClick={() => scrollTo('metodo')} className="cursor-pointer hover:text-[#9a6d13]">{ui.nav[0]}</button>
+                        <button type="button" onClick={() => scrollTo('conteudo')} className="cursor-pointer hover:text-[#9a6d13]">{ui.nav[1]}</button>
+                        <button type="button" onClick={() => scrollTo('depoimentos')} className="cursor-pointer hover:text-[#9a6d13]">{ui.nav[2]}</button>
                     </nav>
-                    <button
-                        type="button"
-                        onClick={() => scrollTo('oferta')}
-                        className="min-h-11 cursor-pointer rounded-xl bg-[#171714] px-4 text-[10px] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#a97816] sm:px-6 sm:text-xs"
-                    >
-                        <span className="sm:hidden">Inscrição</span>
-                        <span className="hidden sm:inline">Ver inscrição</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <LanguageSwitcher variant="light" compact className="hidden sm:inline-flex" />
+                        <button
+                            type="button"
+                            onClick={() => scrollTo('oferta')}
+                            className="min-h-11 cursor-pointer rounded-xl bg-[#171714] px-4 text-[10px] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#a97816] sm:px-6 sm:text-xs"
+                        >
+                            {ui.enrollment}
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -255,17 +274,16 @@ const LPErgonomiaLight: React.FC = () => {
                         <motion.div initial="hidden" animate="visible" variants={reveal} className="relative z-10 flex w-full flex-col items-center">
                             <div className="inline-flex items-center gap-2 rounded-full border border-[#b88925]/35 bg-white/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#80580f] shadow-sm backdrop-blur sm:px-4 sm:text-xs sm:tracking-[0.2em]">
                                 <Sparkles size={15} />
-                                Aula gratuita · Método W-Tech Off-Road
+                                {ui.freeClass}
                             </div>
                             <h1 className="mt-4 max-w-5xl text-[2.35rem] font-black uppercase leading-[.94] tracking-[-0.05em] text-[#171714] sm:mt-5 sm:text-5xl sm:leading-[.98] lg:text-6xl">
-                                Regule sua suspensão.{' '}
+                                {t.hero.titlePart1}{' '}
                                 <span className="bg-gradient-to-r from-[#8a5d0c] via-[#bd8923] to-[#b5211f] bg-clip-text text-transparent">
-                                    Pilote no próximo nível.
+                                    {t.hero.titleHighlight}
                                 </span>
                             </h1>
                             <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-[#4f4c45] sm:mt-4 sm:text-lg">
-                                Assista à aula e descubra como SAG, molas e cliques transformam controle,
-                                tração e confiança — sem trocar peças no escuro.
+                                {t.hero.subtitle}
                             </p>
                         </motion.div>
 
@@ -302,7 +320,7 @@ const LPErgonomiaLight: React.FC = () => {
                                             <Play size={30} fill="currentColor" className="ml-1" />
                                         </span>
                                         <span className="rounded-full bg-black/55 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white backdrop-blur sm:text-xs">
-                                            Assistir à aula agora
+                                            {ui.watchNow}
                                         </span>
                                     </button>
                                 )}
@@ -335,11 +353,12 @@ const LPErgonomiaLight: React.FC = () => {
                 <section className="px-5 py-20 sm:px-8 lg:py-28">
                     <div className="mx-auto max-w-7xl">
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-80px' }} variants={reveal} className="max-w-3xl">
-                            <SectionEyebrow>O problema não é só preparo físico</SectionEyebrow>
+                            <SectionEyebrow>{t.profiles.label}</SectionEyebrow>
                             <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
-                                Quando a suspensão está errada,{' '}
-                                <span className="text-[#a97816]">seu corpo paga a conta.</span>
+                                {t.profiles.titlePart1}{' '}
+                                <span className="text-[#a97816]">{t.profiles.titleHighlight}</span>
                             </h2>
+                            <p className="mt-5 max-w-2xl leading-relaxed text-[#69665e]">{t.profiles.desc}</p>
                         </motion.div>
                         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                             {riderProblems.map((item, index) => (
@@ -411,15 +430,12 @@ const LPErgonomiaLight: React.FC = () => {
                 <section id="metodo" className="bg-white px-5 py-20 sm:px-8 lg:py-28">
                     <div className="mx-auto max-w-7xl">
                         <div className="mx-auto max-w-3xl text-center">
-                            <SectionEyebrow>O método W-Tech</SectionEyebrow>
+                            <SectionEyebrow>{t.concepts.label}</SectionEyebrow>
                             <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
-                                Quatro fundamentos.{' '}
-                                <span className="text-[#a97816]">Uma moto previsível.</span>
+                                {t.concepts.titlePart1}{' '}
+                                <span className="text-[#a97816]">{t.concepts.titleHighlight}</span>
                             </h2>
-                            <p className="mt-5 text-[#69665e]">
-                                Você aprende a analisar o conjunto, mudar uma variável por vez e construir
-                                uma regulagem que faz sentido para seu peso, ritmo e terreno.
-                            </p>
+                            <p className="mt-5 text-[#69665e]">{t.concepts.desc}</p>
                         </div>
                         <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
                             {t.concepts.items.map((item, index) => (
@@ -448,8 +464,8 @@ const LPErgonomiaLight: React.FC = () => {
                         </div>
                         <div className="mt-10 grid overflow-hidden rounded-3xl border border-[#d9d2c2] bg-[#171714] text-white lg:grid-cols-2">
                             <div className="p-7 sm:p-10">
-                                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#e4c46d]">Ao concluir, você será capaz de</p>
-                                <h3 className="mt-3 text-2xl font-black uppercase sm:text-3xl">Sair da tentativa e erro para um processo técnico.</h3>
+                                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#e4c46d]">{t.concepts.label}</p>
+                                <h3 className="mt-3 text-2xl font-black uppercase sm:text-3xl">{t.concepts.boxText}</h3>
                             </div>
                             <div className="grid gap-3 border-t border-white/10 p-7 sm:grid-cols-2 sm:p-10 lg:border-l lg:border-t-0">
                                 {outcomes.map((item) => (
@@ -467,10 +483,10 @@ const LPErgonomiaLight: React.FC = () => {
                     <div className="mx-auto max-w-7xl">
                         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
                             <div className="max-w-3xl">
-                                <SectionEyebrow>Conteúdo completo</SectionEyebrow>
+                                <SectionEyebrow>{t.modules.label}</SectionEyebrow>
                                 <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
-                                    11 módulos para dominar{' '}
-                                    <span className="text-[#a97816]">o acerto da sua moto.</span>
+                                    {t.modules.titlePart1}{' '}
+                                    <span className="text-[#a97816]">{t.modules.titleHighlight}</span>
                                 </h2>
                             </div>
                             <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#69665e]">
@@ -487,7 +503,7 @@ const LPErgonomiaLight: React.FC = () => {
                                         <div>
                                             <h3 className="font-black text-[#171714]">{module.title}</h3>
                                             <p className="mt-1 text-sm text-[#716e66]">{module.desc}</p>
-                                            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#a97816]">{module.aulas} {module.aulas === 1 ? 'aula' : 'aulas'}</p>
+                                            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.15em] text-[#a97816]">{module.aulas} {module.aulas === 1 ? ui.lessons[0] : ui.lessons[1]}</p>
                                         </div>
                                     </div>
                                 </article>
@@ -497,17 +513,17 @@ const LPErgonomiaLight: React.FC = () => {
 
                     <div className="relative mt-14 w-full overflow-hidden pb-2">
                         <div className="mx-auto mb-7 max-w-7xl px-5 text-center sm:px-8">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a97816]">Veja por dentro</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a97816]">{ui.inside}</p>
                             <h3 className="mt-2 text-2xl font-black uppercase tracking-[-0.025em] text-[#171714] sm:text-3xl">
-                                As aulas que formam sua nova regulagem
+                                {ui.insideTitle}
                             </h3>
                         </div>
-                        <Marquee pauseOnHover speed={55} className="py-3">
+                        <Marquee pauseOnHover speed={18} className="py-3">
                             {moduleCovers.map((source, index) => (
                                 <img
                                     key={source}
                                     src={source}
-                                    alt={`Capa oficial do módulo ${index + 1} do curso`}
+                                    alt={`${ui.modulesAlt} ${index + 1}`}
                                     width={320}
                                     height={480}
                                     loading="lazy"
@@ -567,30 +583,13 @@ const LPErgonomiaLight: React.FC = () => {
                 <section id="depoimentos" className="bg-[#171714] px-5 py-20 text-white sm:px-8 lg:py-28">
                     <div className="mx-auto max-w-7xl">
                         <div className="mx-auto max-w-3xl text-center">
-                            <SectionEyebrow dark>Resultados de alunos</SectionEyebrow>
+                            <SectionEyebrow dark>{ui.testimonialsLabel}</SectionEyebrow>
                             <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
-                                Mais confiança na moto.{' '}
-                                <span className="text-[#e4c46d]">Menos desgaste no corpo.</span>
+                                {ui.testimonialsTitle}
                             </h2>
                         </div>
                         <div className="mt-12">
-                            <Marquee speed={42} className="py-4">
-                            {testimonials.map((item) => (
-                                <article key={item.name} className="w-[300px] shrink-0 whitespace-normal rounded-3xl border border-white/10 bg-white/[0.065] p-7 backdrop-blur sm:w-[410px]">
-                                    <div className="mb-5 flex items-center justify-between">
-                                        <Quote size={26} className="text-[#e4c46d]" />
-                                        <div className="flex gap-1 text-[#e4c46d]" aria-label="5 estrelas">
-                                            {[0, 1, 2, 3, 4].map((star) => <Star key={star} size={14} fill="currentColor" />)}
-                                        </div>
-                                    </div>
-                                    <p className="leading-relaxed text-zinc-200">“{item.text}”</p>
-                                    <div className="mt-6 border-t border-white/10 pt-5">
-                                        <p className="font-black">{item.name}</p>
-                                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">{item.role}</p>
-                                    </div>
-                                </article>
-                            ))}
-                            </Marquee>
+                            <VideoTestimonialsMarquee language={currentLang} />
                         </div>
                     </div>
                 </section>
@@ -636,15 +635,11 @@ const LPErgonomiaLight: React.FC = () => {
                     <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_50%_20%,rgba(216,180,88,.2),transparent_32%),#f6f4ee]" />
                     <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-center">
                         <div>
-                            <SectionEyebrow>Materiais incluídos</SectionEyebrow>
+                            <SectionEyebrow>{t.offer.badge}</SectionEyebrow>
                             <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
-                                Curso completo +{' '}
-                                <span className="text-[#a97816]">ferramentas de aplicação.</span>
+                                {t.offer.title}
                             </h2>
-                            <p className="mt-5 max-w-xl leading-relaxed text-[#646159]">
-                                Você não recebe apenas aulas. Leva referências que ajudam a registrar,
-                                comparar e repetir sua regulagem com segurança.
-                            </p>
+                            <p className="mt-5 max-w-xl leading-relaxed text-[#646159]">{t.offer.sub}</p>
                             <div className="mt-8 grid gap-3 sm:grid-cols-2">
                                 {bonuses.map((bonus) => (
                                     <div key={bonus.title} className="rounded-2xl border border-[#ddd7c8] bg-white p-5">
@@ -666,7 +661,7 @@ const LPErgonomiaLight: React.FC = () => {
                             className="overflow-hidden rounded-[2rem] border border-[#c9a445]/45 bg-[#171714] text-white shadow-[0_35px_100px_rgba(32,29,22,.28)]"
                         >
                             <div className="bg-gradient-to-r from-[#a97816] via-[#d1a844] to-[#a97816] px-6 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-black">
-                                Oferta especial de lançamento
+                                {t.offer.badge}
                             </div>
                             <div className="p-7 sm:p-10">
                                 <div className="flex items-start justify-between gap-5">
@@ -695,18 +690,18 @@ const LPErgonomiaLight: React.FC = () => {
 
                                 <div className="my-8 h-px bg-white/10" />
 
-                                <p className="text-sm font-bold text-zinc-500 line-through">De R$ 997,00 por</p>
+                                <p className="text-sm font-bold text-zinc-500 line-through">{t.offer.strike}</p>
                                 <div className="mt-2 flex items-end gap-3">
-                                    <span className="text-5xl font-black tracking-[-0.045em] text-white sm:text-6xl">12x R$ 34,70</span>
+                                    <span className="text-5xl font-black tracking-[-0.045em] text-white sm:text-6xl">{t.offer.priceMain}</span>
                                 </div>
-                                <p className="mt-2 text-sm font-bold text-[#e4c46d]">ou R$ 347,00 à vista</p>
+                                <p className="mt-2 text-sm font-bold text-[#e4c46d]">{t.offer.priceAlt}</p>
 
                                 <a
                                     href={checkoutUrl}
                                     id="kiwify-checkout-btn-lp-ergonomia-light"
                                     className="mt-8 flex min-h-16 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d39f32] px-6 text-center text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_18px_45px_rgba(215,173,79,.2)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
-                                    Quero regular minha suspensão
+                                    {t.offer.cta}
                                     <ArrowRight size={20} strokeWidth={3} />
                                 </a>
                                 <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-[11px] font-bold text-zinc-400">
@@ -722,10 +717,10 @@ const LPErgonomiaLight: React.FC = () => {
                 <section className="border-t border-[#ddd7c9] bg-white px-5 py-20 sm:px-8 lg:py-28">
                     <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[.7fr_1.3fr]">
                         <div>
-                            <SectionEyebrow>Dúvidas frequentes</SectionEyebrow>
+                            <SectionEyebrow>{t.faq.label}</SectionEyebrow>
                             <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
-                                Decida com{' '}
-                                <span className="text-[#a97816]">segurança.</span>
+                                {t.faq.titlePart1}{' '}
+                                <span className="text-[#a97816]">{t.faq.titleHighlight}</span>
                             </h2>
                             <p className="mt-5 text-[#69665e]">
                                 As respostas mais importantes antes de começar sua formação.
@@ -753,11 +748,11 @@ const LPErgonomiaLight: React.FC = () => {
                     className="flex min-h-13 w-full cursor-pointer items-center justify-between rounded-xl bg-[#171714] px-5 text-left text-white"
                 >
                     <span>
-                        <span className="block text-[9px] font-black uppercase tracking-[0.15em] text-[#e4c46d]">Curso completo</span>
-                        <span className="block text-sm font-black">12x R$ 34,70</span>
+                        <span className="block text-[9px] font-black uppercase tracking-[0.15em] text-[#e4c46d]">{ui.course}</span>
+                        <span className="block text-sm font-black">{t.offer.priceMain}</span>
                     </span>
                     <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em]">
-                        Ver inscrição <ArrowRight size={17} />
+                        {t.offer.cta} <ArrowRight size={17} />
                     </span>
                 </button>
             </div>

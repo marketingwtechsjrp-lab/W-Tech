@@ -32,6 +32,7 @@ import waAtendentesWebhook from './edge/wa-atendentes-webhook.js';
 import { approvalsRouter } from './approvals.js';
 // ── POP de Marketing Fase 2 (compartilhamentos + alerta de ocupação) ─────────
 import { marketingRouter } from './marketing.js';
+import { countryToLandingLanguage } from '../lib/geoLanguage.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -73,6 +74,27 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Rotas /api (mesmos paths da Vercel) ──────────────────────────────────────
+app.get('/api/geo-language', (req: Request, res: Response) => {
+  const rawCountry = req.get('cf-ipcountry')
+    || req.get('x-vercel-ip-country')
+    || req.get('x-country-code')
+    || '';
+  const country = rawCountry.split(',')[0].trim().toUpperCase();
+  const acceptLanguage = req.get('accept-language')?.toLowerCase() || '';
+  const language = country
+    ? countryToLandingLanguage(country)
+    : acceptLanguage.startsWith('pt-br')
+      ? 'pt-BR'
+      : acceptLanguage.startsWith('pt')
+        ? 'pt-PT'
+        : acceptLanguage.startsWith('es')
+          ? 'es'
+          : 'en';
+
+  res.set('Cache-Control', 'private, no-store');
+  res.json({ country: country || null, language });
+});
+
 const rotasApi: Record<string, VercelStyleHandler> = {
   'asaas-payment-link': asaasPaymentLink,
   'checkout-recovery': checkoutRecovery,

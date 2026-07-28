@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.30.0",
+    "date": "2026-07-28",
+    "title": "Depoimentos em vídeo e LPs multilíngues por geolocalização",
+    "changes": [
+      "Substitui os depoimentos em texto da landing clara por vídeos oficiais da W-Tech em carrossel contínuo, com reprodução em destaque",
+      "Acelera o loop das capas dos módulos e faz a pausa ao passar o mouse funcionar de verdade",
+      "Centraliza a seleção de português do Brasil, português de Portugal, espanhol e inglês pela geolocalização da VPS/Cloudflare, mantendo seletor e parâmetro lang como alternativas",
+      "Adapta a landing clara, a landing principal e as VSLs clara/escura ao idioma detectado",
+      "Usa a versão escura da marca nas superfícies claras e a versão clara nas superfícies escuras"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.29.0",
     "date": "2026-07-28",
     "title": "VSL clara isolada e conteúdo oficial na landing clara",

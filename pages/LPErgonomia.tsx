@@ -3,7 +3,8 @@ import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
-import { lpTranslations, detectUserLanguage, LPLanguage } from '../lib/lpErgonomiaTranslations';
+import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
+import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { Globe, Flame } from 'lucide-react';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
@@ -183,17 +184,10 @@ const Reveal: React.FC<{
 
 /* ─── Main Component ─── */
 const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullContent = false }) => {
-    const [currentLang, setCurrentLang] = useState<LPLanguage>('pt-PT');
-    useEffect(() => {
-        const detected = detectUserLanguage();
-        setCurrentLang(detected);
-    }, []);
+    const { currentLang, setLanguage } = useLanguage();
 
     const handleLanguageChange = (lang: LPLanguage) => {
-        setCurrentLang(lang);
-        try {
-            localStorage.setItem('wtech_lp4_lang', lang);
-        } catch (e) {}
+        setLanguage(lang);
     };
 
     const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];

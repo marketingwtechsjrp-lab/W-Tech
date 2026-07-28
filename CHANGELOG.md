@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.30.0 (2026-07-28) - Depoimentos em vídeo e LPs multilíngues por geolocalização
+- Substitui os depoimentos em texto da landing clara por vídeos oficiais da W-Tech em carrossel contínuo, com reprodução em destaque
+- Acelera o loop das capas dos módulos e faz a pausa ao passar o mouse funcionar de verdade
+- Centraliza a seleção de português do Brasil, português de Portugal, espanhol e inglês pela geolocalização da VPS/Cloudflare, mantendo seletor e parâmetro `lang` como alternativas
+- Adapta a landing clara, a landing principal e as VSLs clara/escura ao idioma detectado
+- Usa a versão escura da marca nas superfícies claras e a versão clara nas superfícies escuras
+
 ## v3.29.0 (2026-07-28) - VSL clara isolada e conteúdo oficial na landing clara
 - Adiciona a rota dedicada `/curso-suspensao-piloto-vsl-clara`, com player protegido, avanço progressivo e encaminhamento para a landing clara
 - Inclui as artes oficiais de SAG, molas, ergonomia e pneus nos quatro fundamentos

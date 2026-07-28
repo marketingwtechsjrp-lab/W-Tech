@@ -6,16 +6,19 @@ import { Globe } from 'lucide-react';
 interface LanguageSwitcherProps {
     className?: string;
     compact?: boolean;
+    variant?: 'dark' | 'light';
 }
 
-export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = '', compact = false }) => {
+export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = '', compact = false, variant = 'dark' }) => {
     const { currentLang, setLanguage } = useLanguage();
 
     const languages: SiteLanguage[] = ['pt-PT', 'es', 'en', 'pt-BR'];
 
     return (
-        <div className={`inline-flex items-center gap-1 bg-black/60 p-1 rounded-full border border-white/15 backdrop-blur-md ${className}`}>
-            {!compact && <Globe size={13} className="text-amber-400 ml-1.5 shrink-0" />}
+        <div className={`inline-flex items-center gap-1 p-1 rounded-full border backdrop-blur-md ${
+            variant === 'light' ? 'border-black/10 bg-white/80' : 'border-white/15 bg-black/60'
+        } ${className}`}>
+            {!compact && <Globe size={13} className={`${variant === 'light' ? 'text-[#8a5d0c]' : 'text-amber-400'} ml-1.5 shrink-0`} />}
             {languages.map((langKey) => {
                 const item = siteTranslations[langKey];
                 const active = currentLang === langKey;
@@ -28,7 +31,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = 
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             active
                                 ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-black shadow-sm font-extrabold'
-                                : 'text-gray-400 hover:text-white hover:bg-white/10'
+                                : variant === 'light'
+                                    ? 'text-stone-500 hover:bg-black/5 hover:text-black'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/10'
                         }`}
                         title={item.langName}
                     >
