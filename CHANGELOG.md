@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.32.0 (2026-07-28) - Motor compartilhado de funis VSL e landing pages
+- Centraliza os funis de Controle, Ergonomia e Tração em uma única configuração reutilizada pelas versões clara e escura
+- Mantém a promessa e o tema visual entre VSL e landing page, preservando UTMs e identificando a origem de cada campanha
+- Infere o ângulo a partir do diagnóstico do quiz e preserva o caminho direto da VSL para o checkout nesse fluxo
+- Adiciona eventos de visualização, reprodução, marcos de vídeo e cliques por fluxo, ângulo e tema
+- Amplia a validação automatizada do funil e torna o ambiente de testes local determinístico
+
 ## v3.30.1 (2026-07-28) - Cobertura multilíngue da LP V2
 - Encaminha automaticamente visitantes internacionais da rota legada V2 para a landing completa no idioma detectado
 - Preserva parâmetros de campanha e mantém a experiência V2 original para o público brasileiro

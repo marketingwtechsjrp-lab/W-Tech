@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy, useMemo } from 'react';
 import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
@@ -6,6 +6,11 @@ import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
+import {
+    getSuspensionFunnelCopy,
+    readSuspensionFunnelContext,
+    suspensionFunnelEventLabel,
+} from '../lib/suspensionFunnel';
 import { Globe, Flame } from 'lucide-react';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
@@ -191,6 +196,9 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     };
 
     const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];
+    const funnel = useMemo(() => readSuspensionFunnelContext('dark'), []);
+    const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
+    const funnelEventLabel = suspensionFunnelEventLabel(funnel);
 
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
@@ -202,7 +210,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         // Persiste as UTMs/IDs de clique da campanha e monta o link com toda a atribuição.
         captureTrackingParams();
         setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
-    }, []);
+        trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
+    }, [funnelEventLabel]);
 
     const scrollTo = (id: string) => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -559,16 +568,22 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                         {/* Top Badge */}
                         <motion.div initial="hidden" animate="visible" variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/40 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6">
                             <Zap size={14} className="text-wtech-gold animate-pulse" />
-                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">AULA EXCLUSIVA PARA PILOTOS & MECÂNICOS</span>
+                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">
+                                {funnel.flow === 'vsl_lp'
+                                    ? funnelCopy.continuity
+                                    : funnel.personalized
+                                        ? funnelCopy.label
+                                        : 'AULA EXCLUSIVA PARA PILOTOS & MECÂNICOS'}
+                            </span>
                         </motion.div>
 
                         {/* VSL Main Headline */}
                         <motion.h1 initial="hidden" animate="visible" variants={v} className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] mb-4 text-white drop-shadow-2xl max-w-3xl">
-                            {t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{t.hero.titleHighlight}</span>
+                            {funnel.personalized ? funnelCopy.titlePart1 : t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{funnel.personalized ? funnelCopy.titleHighlight : t.hero.titleHighlight}</span>
                         </motion.h1>
 
                         <motion.p initial="hidden" animate="visible" variants={v} className="text-sm sm:text-lg text-gray-300 mb-8 max-w-2xl font-medium">
-                            {t.hero.subtitle} — Assista ao vídeo curto abaixo para entender como eliminar o cansaço nos braços e dominar qualquer terreno.
+                            {funnel.personalized ? funnelCopy.subtitle : `${t.hero.subtitle} — Assista ao vídeo curto abaixo para entender como eliminar o cansaço nos braços e dominar qualquer terreno.`}
                         </motion.p>
 
                         {/* VSL VIDEO PLAYER CONTAINER (DOMINANT CENTRAL FOCUS) */}
@@ -683,7 +698,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                                     <a
                                         href={checkoutUrl}
-                                        onClick={() => trackEvent('VSL', 'checkout_click_hero', 'Curso Piloto')}
+                                        onClick={() => trackEvent('Funil Suspensão', 'checkout_click_hero', funnelEventLabel)}
                                         className="bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 text-black px-8 py-5 rounded-xl font-black text-base sm:text-xl uppercase tracking-[0.15em] transition-all shadow-[0_0_50px_rgba(212,175,55,0.5)] flex items-center justify-center gap-3 w-full max-w-lg hover:brightness-110 hover:scale-[1.02] active:scale-95 relative overflow-hidden group cursor-pointer"
                                     >
                                         <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
@@ -1413,6 +1428,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                         <motion.a
                             href={checkoutUrl}
                             id="kiwify-checkout-btn-lp-ergonomia"
+                            onClick={() => trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel)}
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}
                             className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"
@@ -1606,7 +1622,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                             <a
                                 href={checkoutUrl}
-                                onClick={() => trackEvent('VSL', 'sticky_cta_click', 'Curso Piloto')}
+                                onClick={() => trackEvent('Funil Suspensão', 'checkout_click_sticky', funnelEventLabel)}
                                 className="bg-gradient-to-r from-wtech-gold to-amber-600 text-black px-5 py-3 rounded-lg font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
                             >
                                 <span>GARANTIR VAGA</span>

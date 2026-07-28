@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.32.0",
+    "date": "2026-07-28",
+    "title": "Motor compartilhado de funis VSL e landing pages",
+    "changes": [
+      "Centraliza os funis de Controle, Ergonomia e Tração em uma única configuração reutilizada pelas versões clara e escura",
+      "Mantém a promessa e o tema visual entre VSL e landing page, preservando UTMs e identificando a origem de cada campanha",
+      "Infere o ângulo a partir do diagnóstico do quiz e preserva o caminho direto da VSL para o checkout nesse fluxo",
+      "Adiciona eventos de visualização, reprodução, marcos de vídeo e cliques por fluxo, ângulo e tema",
+      "Amplia a validação automatizada do funil e torna o ambiente de testes local determinístico"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.30.1",
     "date": "2026-07-28",
     "title": "Cobertura multilíngue da LP V2",

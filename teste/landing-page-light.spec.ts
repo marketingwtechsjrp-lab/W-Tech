@@ -7,7 +7,7 @@ test.describe('Landing page clara VSL', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Regule sua suspensão. Pilote no próximo nível.',
+        name: 'O Único Curso Que Você Precisa Para Acertar Sua Moto',
       }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Assistir à aula gratuita' })).toBeVisible();
@@ -57,18 +57,9 @@ test.describe('Landing page clara VSL', () => {
     ]);
 
     await expect(page.locator('#conteudo img[alt^="Capa oficial do módulo"]')).toHaveCount(16);
-    await expect(
-      page.getByText(
-        'Comecei a oferecer regulagem e setup de suspensão na oficina. Ganhei novos clientes que antes iam buscar fora. O retorno foi imenso.',
-        { exact: false },
-      ),
-    ).toHaveCount(2);
-    await expect(
-      page.getByText(
-        'Eu achava minhas molas macias demais, mas na verdade a hidráulica estava zerada. Entender esse casamento através do curso virou a chave da minha tocada.',
-        { exact: false },
-      ),
-    ).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Assistir depoimento: Pedro' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Assistir depoimento: Euler' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Assistir depoimento: Guilherme' })).toBeVisible();
   });
 
   test('oferece uma VSL isolada clara e encaminha para a landing clara', async ({ page }) => {
@@ -79,10 +70,10 @@ test.describe('Landing page clara VSL', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Descubra por que sua moto cansa você — e como acertar a suspensão',
+        name: 'O Único Curso Que Você Precisa Para Acertar Sua Moto',
       }),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Iniciar aula' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Começar agora' })).toBeVisible();
     await expect(page.getByText('O botão de inscrição será liberado ao final da aula')).toBeVisible();
     await expect(page.locator('img[src="/images/lp-curso/hero-light-vsl-rider.webp"]')).toBeVisible();
     expect(

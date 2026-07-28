@@ -17,6 +17,12 @@ import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { trackEvent } from '../components/AnalyticsTracker';
+import {
+    buildSuspensionLandingUrl,
+    getSuspensionFunnelCopy,
+    readSuspensionFunnelContext,
+    suspensionFunnelEventLabel,
+} from '../lib/suspensionFunnel';
 
 const VIDEO_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
@@ -186,31 +192,21 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const ui = vslUi[currentLang];
     const videoRef = useRef<HTMLVideoElement>(null);
     const furthestWatchedRef = useRef(0);
+    const milestonesRef = useRef<Set<number>>(new Set());
+    const playTrackedRef = useRef(false);
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isUnlocked, setIsUnlocked] = useState(false);
-    const funnel = useMemo(() => {
-        if (typeof window === 'undefined') return { isQuiz: false, profile: '' };
-        const params = new URLSearchParams(window.location.search);
-        return {
-            isQuiz: params.get('from') === 'quiz',
-            profile: params.get('quiz_profile') || '',
-        };
-    }, []);
+    const funnel = useMemo(() => readSuspensionFunnelContext(theme), [theme]);
+    const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
+    const eventLabel = suspensionFunnelEventLabel(funnel);
 
     const landingUrl = useMemo(() => {
         if (funnel.isQuiz) return buildCheckoutUrl(CHECKOUT_URL);
-        const destination = isLight ? '/curso-suspensao-piloto-clara' : '/curso-suspensao-piloto-completa';
-        if (typeof window === 'undefined') return destination;
-        const params = new URLSearchParams(window.location.search);
-        const source = isLight ? 'vsl_clara_isolada' : 'vsl_obrigatoria';
-        params.set('src', source);
-        if (!params.has('utm_source')) params.set('utm_source', source);
-        const query = params.toString();
-        return `${destination}${query ? `?${query}` : ''}`;
-    }, [funnel.isQuiz, isLight]);
+        return buildSuspensionLandingUrl(funnel);
+    }, [funnel]);
 
     const enrollmentAction = funnel.isQuiz ? ui.checkoutAction : ui.continueEnrollment;
     const enrollmentDestination = funnel.isQuiz ? ui.checkoutDestination : ui.destination;
@@ -221,6 +217,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
 
     useEffect(() => {
         captureTrackingParams();
+        trackEvent('Funil Suspensão', 'vsl_view', eventLabel);
         try {
             setIsUnlocked(sessionStorage.getItem(UNLOCK_KEY) === 'true');
         } catch {
@@ -228,9 +225,11 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         }
 
         const previousTitle = document.title;
-        document.title = isLight
-            ? 'Aula Clara de Acerto de Suspensão Off-Road — W-Tech'
-            : 'Aula de Acerto de Suspensão Off-Road — W-Tech';
+        document.title = funnel.personalized
+            ? `${funnelCopy.label} — Aula W-Tech`
+            : isLight
+                ? 'Aula Clara de Acerto de Suspensão Off-Road — W-Tech'
+                : 'Aula de Acerto de Suspensão Off-Road — W-Tech';
         let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
         const createdRobots = !robots;
         const previousRobots = robots?.content;
@@ -249,12 +248,16 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                 robots.content = previousRobots;
             }
         };
-    }, [isLight]);
+    }, [eventLabel, funnel.personalized, funnelCopy.label, isLight]);
 
     const togglePlay = async () => {
         const video = videoRef.current;
         if (!video) return;
         if (video.paused) {
+            if (!playTrackedRef.current) {
+                playTrackedRef.current = true;
+                trackEvent('Funil Suspensão', 'vsl_play', eventLabel);
+            }
             await video.play().catch(() => undefined);
         } else {
             video.pause();
@@ -281,6 +284,15 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         if (!video.seeking) {
             furthestWatchedRef.current = Math.max(furthestWatchedRef.current, watched);
         }
+        if (video.duration > 0) {
+            const percentage = (watched / video.duration) * 100;
+            [25, 50, 75].forEach((milestone) => {
+                if (percentage >= milestone && !milestonesRef.current.has(milestone)) {
+                    milestonesRef.current.add(milestone);
+                    trackEvent('Funil Suspensão', `vsl_${milestone}`, eventLabel);
+                }
+            });
+        }
     };
 
     const handleSeeking = () => {
@@ -294,7 +306,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const handleEnded = () => {
         setIsPlaying(false);
         setIsUnlocked(true);
-        trackEvent('VSL Suspensão', 'completed', funnel.isQuiz ? `quiz_${funnel.profile || 'geral'}` : 'standalone');
+        trackEvent('Funil Suspensão', 'vsl_100', eventLabel);
         try {
             sessionStorage.setItem(UNLOCK_KEY, 'true');
         } catch {
@@ -352,7 +364,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
 
                     <div className={`mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7ad4f]/35 px-3 py-2 text-center text-[9px] font-black uppercase tracking-[0.16em] shadow-[0_0_35px_rgba(215,173,79,.08)] sm:mb-6 sm:px-4 sm:text-xs sm:tracking-[0.2em] ${isLight ? 'bg-white/80 text-[#875d0f] backdrop-blur' : 'bg-[#d7ad4f]/10 text-[#e5c879]'}`}>
                         <Headphones size={15} aria-hidden="true" />
-                        {ui.watch}
+                        {funnel.personalized ? `${funnelCopy.label} · ${ui.watch}` : ui.watch}
                     </div>
 
                     {funnel.isQuiz && funnel.profile && (
@@ -366,14 +378,14 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         animate={{ opacity: 1, y: 0 }}
                         className="max-w-4xl text-center text-[2rem] font-black uppercase leading-[.98] tracking-[-0.04em] sm:text-5xl sm:leading-[1.02] lg:text-6xl"
                     >
-                        {t.hero.titlePart1}{' '}
+                        {funnel.personalized ? funnelCopy.titlePart1 : t.hero.titlePart1}{' '}
                         <span className={`bg-gradient-to-r bg-clip-text text-transparent ${isLight ? 'from-[#875d0f] via-[#b77d16] to-[#b5211f]' : 'from-[#f2da93] via-[#d7ad4f] to-[#f08a36]'}`}>
-                            {t.hero.titleHighlight}
+                            {funnel.personalized ? funnelCopy.titleHighlight : t.hero.titleHighlight}
                         </span>
                     </motion.h1>
 
                     <p className={`mt-4 max-w-2xl text-center text-[15px] font-medium leading-relaxed sm:mt-5 sm:text-lg ${isLight ? 'text-[#555149]' : 'text-zinc-300'}`}>
-                        {t.hero.subtitle}
+                        {funnel.personalized ? funnelCopy.vslSubtitle : t.hero.subtitle}
                     </p>
 
                     <div className="relative mt-6 w-full sm:mt-8">
@@ -496,7 +508,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     href={landingUrl}
                                     target={funnel.isQuiz ? '_blank' : undefined}
                                     rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
-                                    onClick={() => trackEvent('VSL Suspensão', funnel.isQuiz ? 'checkout_click' : 'landing_click', funnel.profile || (isLight ? 'light' : 'dark'))}
+                                    onClick={() => trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click' : 'landing_click', eventLabel)}
                                     className="mx-auto flex min-h-14 w-full max-w-xl items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_16px_45px_rgba(215,173,79,.22)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
                                     {enrollmentAction}
@@ -518,17 +530,17 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                     </motion.div>
 
                     <div className={`mt-4 grid w-full grid-cols-3 gap-2 text-[9px] font-bold leading-tight sm:mt-7 sm:gap-3 sm:text-xs ${isLight ? 'text-[#4f4b43]' : 'text-zinc-300'}`}>
-                        {[
+                        {([
                             [ui.benefits[0], Clock3],
                             [ui.benefits[1], ShieldCheck],
                             [ui.benefits[2], CheckCircle2],
-                        ].map(([label, Icon]) => (
+                        ] as Array<[string, typeof Clock3]>).map(([label, Icon]) => (
                             <div
-                                key={label as string}
+                                key={label}
                                 className={`flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-center sm:min-h-12 sm:flex-row sm:gap-2 sm:px-4 ${isLight ? 'border-[#d8d0c0] bg-white/75 backdrop-blur' : 'border-white/10 bg-black/30'}`}
                             >
                                 <Icon size={16} className="text-[#d7ad4f] sm:h-[17px] sm:w-[17px]" />
-                                {label as string}
+                                {label}
                             </div>
                         ))}
                     </div>
@@ -541,7 +553,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         href={landingUrl}
                         target={funnel.isQuiz ? '_blank' : undefined}
                         rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
-                        onClick={() => trackEvent('VSL Suspensão', funnel.isQuiz ? 'checkout_click_mobile' : 'landing_click_mobile', funnel.profile || (isLight ? 'light' : 'dark'))}
+                        onClick={() => trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click_mobile' : 'landing_click_mobile', eventLabel)}
                         className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-5 text-xs font-black uppercase tracking-[0.11em] text-black shadow-[0_12px_35px_rgba(215,173,79,.25)]"
                     >
                         {releasedAction}

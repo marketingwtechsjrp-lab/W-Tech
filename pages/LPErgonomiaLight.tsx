@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
@@ -27,6 +27,12 @@ import {
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
+import { trackEvent } from '../components/AnalyticsTracker';
+import {
+    getSuspensionFunnelCopy,
+    readSuspensionFunnelContext,
+    suspensionFunnelEventLabel,
+} from '../lib/suspensionFunnel';
 
 const COURSE_VIDEO = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const KIWIFY_BASE = 'https://pay.kiwify.com.br/19v4nIa';
@@ -127,6 +133,9 @@ const LPErgonomiaLight: React.FC = () => {
     const { currentLang } = useLanguage();
     const t = lpTranslations[currentLang];
     const ui = lightUi[currentLang];
+    const funnel = useMemo(() => readSuspensionFunnelContext('light'), []);
+    const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
+    const funnelEventLabel = suspensionFunnelEventLabel(funnel);
     const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
     const [videoActivated, setVideoActivated] = useState(false);
     const [videoPlaying, setVideoPlaying] = useState(false);
@@ -135,9 +144,12 @@ const LPErgonomiaLight: React.FC = () => {
     useEffect(() => {
         captureTrackingParams();
         setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
+        trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
 
         const previousTitle = document.title;
-        document.title = 'Curso de Suspensão para Pilotos — Edição Premium W-Tech';
+        document.title = funnel.personalized
+            ? `${funnelCopy.label} — Curso W-Tech`
+            : 'Curso de Suspensão para Pilotos — Edição Premium W-Tech';
         let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
         const createdRobots = !robots;
         const previousRobots = robots?.content;
@@ -156,7 +168,7 @@ const LPErgonomiaLight: React.FC = () => {
                 robots.content = previousRobots;
             }
         };
-    }, []);
+    }, [funnel.personalized, funnelCopy.label, funnelEventLabel]);
 
     const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
@@ -274,16 +286,20 @@ const LPErgonomiaLight: React.FC = () => {
                         <motion.div initial="hidden" animate="visible" variants={reveal} className="relative z-10 flex w-full flex-col items-center">
                             <div className="inline-flex items-center gap-2 rounded-full border border-[#b88925]/35 bg-white/85 px-3 py-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#80580f] shadow-sm backdrop-blur sm:px-4 sm:text-xs sm:tracking-[0.2em]">
                                 <Sparkles size={15} />
-                                {ui.freeClass}
+                                {funnel.flow === 'vsl_lp'
+                                    ? funnelCopy.continuity
+                                    : funnel.personalized
+                                        ? `${funnelCopy.label} · ${ui.freeClass}`
+                                        : ui.freeClass}
                             </div>
                             <h1 className="mt-4 max-w-5xl text-[2.35rem] font-black uppercase leading-[.94] tracking-[-0.05em] text-[#171714] sm:mt-5 sm:text-5xl sm:leading-[.98] lg:text-6xl">
-                                {t.hero.titlePart1}{' '}
+                                {funnel.personalized ? funnelCopy.titlePart1 : t.hero.titlePart1}{' '}
                                 <span className="bg-gradient-to-r from-[#8a5d0c] via-[#bd8923] to-[#b5211f] bg-clip-text text-transparent">
-                                    {t.hero.titleHighlight}
+                                    {funnel.personalized ? funnelCopy.titleHighlight : t.hero.titleHighlight}
                                 </span>
                             </h1>
                             <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-[#4f4c45] sm:mt-4 sm:text-lg">
-                                {t.hero.subtitle}
+                                {funnel.personalized ? funnelCopy.subtitle : t.hero.subtitle}
                             </p>
                         </motion.div>
 
@@ -699,6 +715,7 @@ const LPErgonomiaLight: React.FC = () => {
                                 <a
                                     href={checkoutUrl}
                                     id="kiwify-checkout-btn-lp-ergonomia-light"
+                                    onClick={() => trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel)}
                                     className="mt-8 flex min-h-16 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d39f32] px-6 text-center text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_18px_45px_rgba(215,173,79,.2)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
                                     {t.offer.cta}
