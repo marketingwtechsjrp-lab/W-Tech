@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.26.1",
+    "date": "2026-07-28",
+    "title": "Correção da imagem da sede na home",
+    "changes": [
+      "Substitui a foto genérica com correia pela fachada oficial da sede W-Tech na página inicial",
+      "Atualiza o texto alternativo da imagem para descrever corretamente a sede"
+    ],
+    "author": "viniciussaldanharosario"
+  },
+  {
     "version": "3.26.0",
     "date": "2026-07-27",
     "title": "Refatoracao VSL Obrigatoria Curso Piloto",

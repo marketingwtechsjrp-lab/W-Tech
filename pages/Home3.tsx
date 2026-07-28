@@ -237,9 +237,9 @@ const Home3 = () => {
                         <div className="relative">
                             <div className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-gray-100 rotate-2 hover:rotate-0 transition-all duration-500">
                                 <img
-                                    src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=1000"
+                                    src="https://w-techstore.com.br/wp-content/uploads/2024/02/WhatsApp-Image-2022-12-04-at-16.56.52-25-e1715343402705.jpeg"
                                     className="w-full h-full object-cover"
-                                    alt="Sede W-Tech Brasil - Estrutura Técnica de 1.200m²"
+                                    alt="Fachada da sede da W-Tech Brasil em São José do Rio Preto"
                                     width="768"
                                     height="495"
                                     loading="lazy"

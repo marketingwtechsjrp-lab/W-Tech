@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.26.1 (2026-07-28) - Correção da imagem da sede na home
+- Substitui a foto genérica com correia pela fachada oficial da sede W-Tech na página inicial
+- Atualiza o texto alternativo da imagem para descrever corretamente a sede
+
 ## v3.26.0 (2026-07-27) - Refatoracao VSL Obrigatoria Curso Piloto
 - Refatorada VSL com player central e alerta de audio
 - Adicionado pitch reveal delay timer
