@@ -189,11 +189,11 @@ const LPErgonomiaLight: React.FC = () => {
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-[#f6f4ee] pb-20 text-[#171714] selection:bg-[#d8b458] selection:text-black lg:pb-0">
-            <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f9f7f1]/90 backdrop-blur-xl">
-                <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-5 px-5 sm:px-8">
+            <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f9f7f1]/92 backdrop-blur-xl">
+                <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:min-h-16 sm:gap-5 sm:px-8">
                     <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-[#171714] px-3 py-2">
-                            <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-5 w-auto" />
+                        <div className="rounded-lg bg-[#171714] px-2.5 py-2 sm:px-3">
+                            <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-4 w-auto sm:h-5" />
                         </div>
                         <span className="hidden text-[10px] font-black uppercase tracking-[0.2em] text-[#69665e] sm:block">
                             Suspensão para pilotos
@@ -207,9 +207,10 @@ const LPErgonomiaLight: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => scrollTo('oferta')}
-                        className="min-h-11 cursor-pointer rounded-xl bg-[#171714] px-4 text-xs font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#a97816] sm:px-6"
+                        className="min-h-11 cursor-pointer rounded-xl bg-[#171714] px-4 text-[10px] font-black uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#a97816] sm:px-6 sm:text-xs"
                     >
-                        Ver inscrição
+                        <span className="sm:hidden">Inscrição</span>
+                        <span className="hidden sm:inline">Ver inscrição</span>
                     </button>
                 </div>
             </header>
@@ -218,43 +219,45 @@ const LPErgonomiaLight: React.FC = () => {
                 <section className="relative isolate overflow-hidden border-b border-[#ddd7c9]">
                     <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_15%_10%,rgba(216,180,88,.22),transparent_30%),linear-gradient(135deg,#fbfaf6_0%,#f1eee5_100%)]" />
                     <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(23,23,20,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(23,23,20,.045)_1px,transparent_1px)] [background-size:52px_52px]" />
-                    <div className="mx-auto grid min-h-[calc(100vh-65px)] max-w-7xl items-center gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:py-16">
+                    <div className="mx-auto grid min-h-[calc(100svh-57px)] max-w-7xl items-center gap-7 px-4 py-8 sm:min-h-[calc(100vh-65px)] sm:gap-10 sm:px-8 sm:py-12 lg:grid-cols-[.92fr_1.08fr] lg:py-16">
                         <motion.div initial="hidden" animate="visible" variants={reveal} className="relative z-10">
-                            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#c9a445]/35 bg-white/75 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#8b6212] shadow-sm sm:text-xs">
+                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#c9a445]/35 bg-white/80 px-3 py-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#8b6212] shadow-sm sm:mb-5 sm:px-4 sm:text-xs sm:tracking-[0.2em]">
                                 <Sparkles size={15} />
                                 Método W-Tech para pilotos Off-Road
                             </div>
-                            <h1 className="max-w-2xl text-4xl font-black uppercase leading-[.98] tracking-[-0.045em] text-[#171714] sm:text-6xl lg:text-7xl">
+                            <h1 className="max-w-2xl text-[2.55rem] font-black uppercase leading-[.94] tracking-[-0.05em] text-[#171714] sm:text-6xl sm:leading-[.98] sm:tracking-[-0.045em] lg:text-7xl">
                                 Acerte sua suspensão.{' '}
                                 <span className="bg-gradient-to-r from-[#9a6d13] via-[#c79a37] to-[#b5211f] bg-clip-text text-transparent">
                                     Pilote mais longe.
                                 </span>
                             </h1>
-                            <p className="mt-6 max-w-xl text-base font-medium leading-relaxed text-[#55534d] sm:text-xl">
+                            <p className="mt-4 max-w-xl text-[15px] font-medium leading-relaxed text-[#55534d] sm:mt-6 sm:text-xl">
                                 Aprenda a regular SAG, molas, cliques e ergonomia para ganhar controle,
                                 tração e confiança — sem depender de tentativa e erro.
                             </p>
 
-                            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                            <div className="mt-5 grid grid-cols-[1fr_auto] gap-2 sm:mt-7 sm:flex sm:flex-row sm:gap-3">
                                 <button
                                     type="button"
                                     onClick={() => scrollTo('oferta')}
-                                    className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#171714] to-[#39352c] px-7 text-sm font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_45px_rgba(23,23,20,.18)] transition-transform hover:-translate-y-0.5 sm:w-auto"
+                                    className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#171714] to-[#39352c] px-4 text-[11px] font-black uppercase tracking-[0.1em] text-white shadow-[0_18px_45px_rgba(23,23,20,.18)] transition-transform hover:-translate-y-0.5 sm:w-auto sm:gap-3 sm:px-7 sm:text-sm sm:tracking-[0.12em]"
                                 >
-                                    Quero regular minha moto
+                                    <span className="sm:hidden">Quero pilotar melhor</span>
+                                    <span className="hidden sm:inline">Quero regular minha moto</span>
                                     <ArrowRight size={19} strokeWidth={3} />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => scrollTo('aula')}
-                                    className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#cac3b3] bg-white/70 px-7 text-sm font-black uppercase tracking-[0.1em] text-[#393730] hover:border-[#aa8129] sm:w-auto"
+                                    className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#cac3b3] bg-white/75 px-4 text-[11px] font-black uppercase tracking-[0.1em] text-[#393730] hover:border-[#aa8129] sm:w-auto sm:px-7 sm:text-sm"
+                                    aria-label="Assistir à aula"
                                 >
                                     <Play size={17} fill="currentColor" />
-                                    Assistir à aula
+                                    <span className="hidden sm:inline">Assistir à aula</span>
                                 </button>
                             </div>
 
-                            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-bold text-[#5e5b54]">
+                            <div className="mt-4 grid grid-cols-3 gap-2 text-[9px] font-bold leading-tight text-[#5e5b54] sm:mt-6 sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-3 sm:text-xs">
                                 <span className="inline-flex items-center gap-2"><ShieldCheck size={17} className="text-[#a97816]" />Garantia de 7 dias</span>
                                 <span className="inline-flex items-center gap-2"><Clock3 size={17} className="text-[#a97816]" />12 meses de acesso</span>
                                 <span className="inline-flex items-center gap-2"><GraduationCap size={17} className="text-[#a97816]" />Certificado incluso</span>
@@ -265,7 +268,7 @@ const LPErgonomiaLight: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.97, y: 18 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             transition={{ duration: 0.7, delay: 0.12 }}
-                            className="relative"
+                            className="relative mt-1 sm:mt-0"
                         >
                             <div className="absolute -inset-4 -z-10 rounded-[2.2rem] bg-gradient-to-br from-[#d8b458]/25 to-[#b5211f]/10 blur-2xl" />
                             <div className="overflow-hidden rounded-[1.75rem] border border-white bg-white p-2 shadow-[0_30px_90px_rgba(65,54,29,.18)]">
@@ -275,17 +278,17 @@ const LPErgonomiaLight: React.FC = () => {
                                     width={1672}
                                     height={941}
                                     fetchPriority="high"
-                                    className="aspect-[16/10] w-full rounded-[1.3rem] object-cover object-center lg:aspect-[4/3]"
+                                    className="aspect-[16/9] w-full rounded-[1.3rem] object-cover object-center sm:aspect-[16/10] lg:aspect-[4/3]"
                                 />
                             </div>
-                            <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/60 bg-white/88 p-4 shadow-xl backdrop-blur-xl sm:left-7 sm:right-auto sm:max-w-xs">
+                            <div className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/60 bg-white/90 p-3 shadow-xl backdrop-blur-xl sm:bottom-5 sm:left-7 sm:right-auto sm:max-w-xs sm:rounded-2xl sm:p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#171714] text-[#e4c46d]">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#171714] text-[#e4c46d] sm:h-11 sm:w-11 sm:rounded-xl">
                                         <Trophy size={21} />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9a6d13]">Autoridade técnica</p>
-                                        <p className="mt-0.5 text-sm font-black text-[#171714]">Alex Crepaldi · +3.000 alunos</p>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#9a6d13] sm:text-[10px] sm:tracking-[0.18em]">Autoridade técnica</p>
+                                        <p className="mt-0.5 text-xs font-black text-[#171714] sm:text-sm">Alex Crepaldi · +3.000 alunos</p>
                                     </div>
                                 </div>
                             </div>
@@ -648,7 +651,7 @@ const LPErgonomiaLight: React.FC = () => {
                 <p className="mt-2 text-xs text-zinc-600">Todos os direitos reservados © {new Date().getFullYear()}</p>
             </footer>
 
-            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d8d2c4] bg-white/95 p-3 shadow-[0_-12px_35px_rgba(26,24,18,.12)] backdrop-blur lg:hidden">
+            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d8d2c4] bg-white/95 px-3 pt-3 shadow-[0_-12px_35px_rgba(26,24,18,.12)] backdrop-blur lg:hidden [padding-bottom:max(12px,env(safe-area-inset-bottom))]">
                 <button
                     type="button"
                     onClick={() => scrollTo('oferta')}
