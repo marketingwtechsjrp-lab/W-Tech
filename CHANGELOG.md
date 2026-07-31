@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.32.3 (2026-07-31) - Evolucao do atendente e exportacao em PDF
+- Nova aba Evolucao nos Atendentes WhatsApp: compara todos os relatorios de IA ja gerados para um atendente e mostra se o atendimento melhorou ou piorou ao longo do tempo
+- Grafico da serie de notas por periodo (cordialidade, agilidade, clareza, comercial e resolucao) com veredito de evolucao
+- Exportacao em PDF do relatorio de um periodo e do comparativo de evolucao, com graficos vetoriais desenhados no jsPDF
+- Nova tabela SITE_WaAtendenteEvolucao com RLS (migration create_wa_atendente_evolucao.sql)
+
 ## v3.32.2 (2026-07-31) - Corrige sincronizacao do WhatsApp dos atendentes
 - Webhook das 4 instancias da Evolution voltou a entregar neste site: apos a migracao para o VPS elas continuavam apontando para o Supabase antigo e o espelho de mensagens parou em 15/07
 - Recuperadas 20.301 mensagens que ficaram presas no banco antigo entre 15/07 e 31/07

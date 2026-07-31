@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Smartphone, QrCode, RefreshCw, Trash2, Unplug, MessageCircle, Bot, Loader2, Clock, AlertTriangle } from 'lucide-react';
+import { Smartphone, QrCode, RefreshCw, Trash2, Unplug, MessageCircle, Bot, Loader2, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import {
     WaAtendente, listAtendentes, updateAtendente, defaultInstanceName,
     createAtendenteInstance, connectAtendenteInstance, getAtendenteConnectionState,
@@ -8,6 +8,7 @@ import {
 } from '../../../../lib/waAtendentes';
 import AtendentesMonitor from './AtendentesMonitor';
 import AtendentesRelatorios from './AtendentesRelatorios';
+import AtendentesEvolucao from './AtendentesEvolucao';
 
 /**
  * Configurações → Atendentes WhatsApp.
@@ -16,7 +17,7 @@ import AtendentesRelatorios from './AtendentesRelatorios';
  * de qualidade de atendimento com a IA — que NUNCA responde no WhatsApp.
  */
 
-type Tab = 'conexoes' | 'monitor' | 'relatorios';
+type Tab = 'conexoes' | 'monitor' | 'relatorios' | 'evolucao';
 
 const STATUS_LABEL: Record<string, string> = {
     open: 'Conectado',
@@ -211,6 +212,7 @@ const AtendentesWhatsApp: React.FC = () => {
         { id: 'conexoes', label: 'Conexões', Icon: Smartphone },
         { id: 'monitor', label: 'Conversas', Icon: MessageCircle },
         { id: 'relatorios', label: 'Relatórios IA', Icon: Bot },
+        { id: 'evolucao', label: 'Evolução', Icon: TrendingUp },
     ];
 
     return (
@@ -354,6 +356,7 @@ const AtendentesWhatsApp: React.FC = () => {
 
             {tab === 'monitor' && <AtendentesMonitor atendentes={atendentes} />}
             {tab === 'relatorios' && <AtendentesRelatorios atendentes={atendentes} />}
+            {tab === 'evolucao' && <AtendentesEvolucao atendentes={atendentes} />}
         </div>
     );
 };

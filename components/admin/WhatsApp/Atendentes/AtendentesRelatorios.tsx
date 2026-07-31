@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bot, Loader2, ChevronDown, ChevronUp, Trash2, Copy, Check, Sparkles } from 'lucide-react';
+import { Bot, Loader2, ChevronDown, ChevronUp, Trash2, Copy, Check, Sparkles, FileDown } from 'lucide-react';
+import { exportarRelatorioPDF } from '../../../../lib/waPdf';
 import {
     WaAtendente, WaAnalise, AtendenteStats,
     listAnalises, deleteAnalise, gerarRelatorioIA,
@@ -74,6 +75,14 @@ const AtendentesRelatorios: React.FC<Props> = ({ atendentes }) => {
         if (!confirm('Excluir este relatório?')) return;
         const ok = await deleteAnalise(id);
         if (ok) setAnalises(prev => prev.filter(a => a.id !== id));
+    };
+
+    const handleExportarPDF = (analise: WaAnalise) => {
+        try {
+            exportarRelatorioPDF(analise);
+        } catch (e: any) {
+            alert('Não foi possível gerar o PDF: ' + String(e?.message || e));
+        }
     };
 
     const handleCopiar = async (analise: WaAnalise) => {
@@ -196,6 +205,12 @@ const AtendentesRelatorios: React.FC<Props> = ({ atendentes }) => {
                                         {analise.relatorio}
                                     </pre>
                                     <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleExportarPDF(analise)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-[var(--admin-accent-gold)] text-black hover:brightness-110"
+                                        >
+                                            <FileDown size={12} /> Exportar PDF
+                                        </button>
                                         <button
                                             onClick={() => handleCopiar(analise)}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-[var(--admin-surface-2)] text-[var(--admin-text-secondary)] hover:bg-[var(--admin-surface-3)]"

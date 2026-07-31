@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.32.3",
+    "date": "2026-07-31",
+    "title": "Evolucao do atendente e exportacao em PDF",
+    "changes": [
+      "Nova aba Evolucao nos Atendentes WhatsApp: compara todos os relatorios de IA ja gerados para um atendente e mostra se o atendimento melhorou ou piorou ao longo do tempo",
+      "Grafico da serie de notas por periodo (cordialidade, agilidade, clareza, comercial e resolucao) com veredito de evolucao",
+      "Exportacao em PDF do relatorio de um periodo e do comparativo de evolucao, com graficos vetoriais desenhados no jsPDF",
+      "Nova tabela SITE_WaAtendenteEvolucao com RLS (migration create_wa_atendente_evolucao.sql)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.32.2",
     "date": "2026-07-31",
     "title": "Corrige sincronizacao do WhatsApp dos atendentes",
