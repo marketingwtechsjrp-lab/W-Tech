@@ -63,7 +63,13 @@ serve(async (req) => {
 
       const { error: updateError } = await supabase
         .from('SITE_Enrollments')
-        .update({ amount_paid: newTotalPaid, status: 'Confirmed', enrolled_by_name: 'Automático' })
+        .update({
+          amount_paid: newTotalPaid,
+          status: 'Confirmed',
+          enrolled_by_name: 'Automático',
+          payment_method: 'Stripe',
+          payment_id: session.id
+        })
         .eq('id', enrollmentId)
 
       if (updateError) {
@@ -111,6 +117,7 @@ serve(async (req) => {
           status: 'Completed',
           payment_method: 'Stripe',
           enrollment_id: enrollmentId,
+          course_id: enrollment.course_id,
           currency: currency,
           date: new Date().toISOString()
         }])

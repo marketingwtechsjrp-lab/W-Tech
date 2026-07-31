@@ -1,6 +1,16 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.32.1 (2026-07-31) - Corrige webhook do Stripe apos migracao para VPS
+- Webhook do Stripe voltou a confirmar pagamentos: faltava o segredo de assinatura no VPS e as 10 ultimas entregas falhavam com HTTP 500
+- Chave do Stripe no webhook agora e resolvida igual ao checkout (env ou SITE_Config), eliminando a dependencia da env STRIPE_API_KEY
+- Health check em GET /api/stripe-webhook mostra qual peca de configuracao falta, sem expor segredos
+- Idempotencia no webhook: reenviar um evento nao dobra mais o amount_paid nem duplica a receita
+- E-mail de confirmacao de inscricao passa a ser enviado tambem nas vendas via Stripe (antes so o Mercado Pago enviava)
+- Nova chave stripe_webhook_secret protegida de leitura anonima por RLS (migration 2026-07-30)
+- Mercado Pago: pagamento de saldo agora e registrado no financeiro
+- Asaas: envia externalReference no link de pagamento
+
 ## v3.32.0 (2026-07-28) - Motor compartilhado de funis VSL e landing pages
 - Centraliza os funis de Controle, Ergonomia e Tração em uma única configuração reutilizada pelas versões clara e escura
 - Mantém a promessa e o tema visual entre VSL e landing page, preservando UTMs e identificando a origem de cada campanha

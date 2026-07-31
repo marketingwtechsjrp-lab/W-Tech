@@ -268,6 +268,23 @@ export default async function handler(req: any, res: any) {
         console.error('[MP Webhook] Falha ao creditar saldo:', balErr);
         return res.status(500).json({ error: 'Failed to credit balance' });
       }
+      const { error: balanceTxError } = await supabase
+        .from('SITE_Transactions')
+        .insert([{
+          description: `Pagamento de saldo Mercado Pago: ${String(paymentId).slice(-12)}`,
+          amount: amountPaid,
+          type: 'Income',
+          category: 'Sales',
+          status: 'Completed',
+          payment_method: 'Mercado Pago',
+          course_id: enrollment.course_id,
+          currency,
+          date: new Date().toISOString(),
+          enrollment_id: enrollmentId
+        }]);
+      if (balanceTxError) {
+        console.error('[MP Webhook] Falha ao registrar pagamento de saldo no financeiro:', balanceTxError);
+      }
       console.log(`[MP Webhook] Saldo de ${amountPaid} creditado na inscrição ${enrollmentId} → total pago ${newPaid} ✓`);
       return res.status(200).json({ received: true, balance_credited: amountPaid, new_amount_paid: newPaid });
     }

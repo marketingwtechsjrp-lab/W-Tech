@@ -12,6 +12,7 @@ export const SECRET_CONFIG_KEYS = new Set([
     'stripe_api_key',
     'stripe_api_key_live',
     'stripe_api_key_test',
+    'stripe_webhook_secret',
     'mercadopago_access_token',
     'whatsapp_cloud_app_secret',
     'whatsapp_cloud_access_token',

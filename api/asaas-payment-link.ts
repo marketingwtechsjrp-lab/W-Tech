@@ -126,6 +126,7 @@ export default async function handler(req: any, res: any) {
         value: numericValue,
         dueDate: dueDateStr,
         description: description || 'Cobrança',
+        externalReference: enrollmentId || undefined,
         postalService: false,
       }),
     });

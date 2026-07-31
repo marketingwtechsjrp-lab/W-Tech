@@ -1,5 +1,21 @@
 [
   {
+    "version": "3.32.1",
+    "date": "2026-07-31",
+    "title": "Corrige webhook do Stripe apos migracao para VPS",
+    "changes": [
+      "Webhook do Stripe voltou a confirmar pagamentos: faltava o segredo de assinatura no VPS e as 10 ultimas entregas falhavam com HTTP 500",
+      "Chave do Stripe no webhook agora e resolvida igual ao checkout (env ou SITE_Config), eliminando a dependencia da env STRIPE_API_KEY",
+      "Health check em GET /api/stripe-webhook mostra qual peca de configuracao falta, sem expor segredos",
+      "Idempotencia no webhook: reenviar um evento nao dobra mais o amount_paid nem duplica a receita",
+      "E-mail de confirmacao de inscricao passa a ser enviado tambem nas vendas via Stripe (antes so o Mercado Pago enviava)",
+      "Nova chave stripe_webhook_secret protegida de leitura anonima por RLS (migration 2026-07-30)",
+      "Mercado Pago: pagamento de saldo agora e registrado no financeiro",
+      "Asaas: envia externalReference no link de pagamento"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.32.0",
     "date": "2026-07-28",
     "title": "Motor compartilhado de funis VSL e landing pages",
