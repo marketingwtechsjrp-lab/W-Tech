@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { getGlobalWhatsAppConfig } from './whatsapp';
 import { generateContent } from './ai';
+import { publicApiUrl, isOwnWebhookUrl } from './publicUrl';
 
 /**
  * Atendentes WhatsApp — espelho de conversas + análise por IA.
@@ -113,9 +114,10 @@ export async function registerAtendenteWebhook(instanceName: string): Promise<{ 
         return { ok: false, error: e?.message || 'Falha ao gerar token do webhook.' };
     }
 
-    // O webhook agora é servido pelo próprio site (Express em /api). URL absoluta é
-    // obrigatória: quem chama é a Evolution API (serviço externo), não o navegador.
-    const url = `${window.location.origin}/api/wa-atendentes-webhook?token=${token}`;
+    // O webhook é servido pelo próprio site (Express em /api). URL absoluta e
+    // CANÔNICA: quem chama é a Evolution API (serviço externo), não o navegador —
+    // window.location.origin gravaria aqui o domínio de onde o admin foi aberto.
+    const url = publicApiUrl(`/api/wa-atendentes-webhook?token=${token}`);
 
     try {
         const res = await fetch(`${evo.serverUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
@@ -231,6 +233,29 @@ export async function getAtendenteConnectionState(instanceName: string): Promise
         return data?.instance?.state || data?.state || data?.connectionStatus?.state || 'disconnected';
     } catch {
         return 'error';
+    }
+}
+
+/**
+ * Confere para ONDE a instância está mandando os eventos.
+ * Uma instância pode estar "Conectada" e mesmo assim não sincronizar nada, se o
+ * webhook aponta para outro domínio — foi o que aconteceu entre 15/07 e 31/07 de
+ * 2026, quando as 4 instâncias continuaram entregando no Supabase antigo.
+ * Retorna null quando não dá para checar (sem config / falha de rede).
+ */
+export async function checkAtendenteWebhook(instanceName: string): Promise<{ url: string | null; aponta_para_ca: boolean } | null> {
+    const evo = await getEvoConfig();
+    if (!evo) return null;
+    try {
+        const res = await fetch(`${evo.serverUrl}/webhook/find/${encodeURIComponent(instanceName)}`, {
+            method: 'GET',
+            headers: { apikey: evo.apiKey },
+        });
+        const data = await res.json().catch(() => null);
+        const url: string | null = data?.url || data?.webhook?.url || null;
+        return { url, aponta_para_ca: isOwnWebhookUrl(url) };
+    } catch {
+        return null;
     }
 }
 

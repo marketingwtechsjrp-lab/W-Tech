@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Smartphone, QrCode, RefreshCw, Trash2, Unplug, MessageCircle, Bot, Loader2, Clock } from 'lucide-react';
+import { Smartphone, QrCode, RefreshCw, Trash2, Unplug, MessageCircle, Bot, Loader2, Clock, AlertTriangle } from 'lucide-react';
 import {
     WaAtendente, listAtendentes, updateAtendente, defaultInstanceName,
     createAtendenteInstance, connectAtendenteInstance, getAtendenteConnectionState,
     fetchAtendentePhone, logoutAtendenteInstance, deleteAtendenteInstance,
+    registerAtendenteWebhook, checkAtendenteWebhook,
 } from '../../../../lib/waAtendentes';
 import AtendentesMonitor from './AtendentesMonitor';
 import AtendentesRelatorios from './AtendentesRelatorios';
@@ -40,6 +41,8 @@ const AtendentesWhatsApp: React.FC = () => {
     const [nomes, setNomes] = useState<Record<string, string>>({});
     const [busySlot, setBusySlot] = useState<number | null>(null);
     const [qrPorSlot, setQrPorSlot] = useState<Record<number, string>>({});
+    /** id do atendente → webhook está apontando para outro domínio (não sincroniza). */
+    const [webhookForaPorId, setWebhookForaPorId] = useState<Record<string, boolean>>({});
     const pollRef = useRef<number | null>(null);
 
     const carregar = useCallback(async () => {
@@ -55,6 +58,40 @@ const AtendentesWhatsApp: React.FC = () => {
     }, []);
 
     useEffect(() => { carregar(); }, [carregar]);
+
+    /**
+     * Uma instância pode estar "Conectada" e mesmo assim não sincronizar nada, se o
+     * webhook dela aponta para outro domínio. Sem esta checagem o sintoma é mudo:
+     * a última mensagem sincronizada simplesmente para de avançar.
+     */
+    useEffect(() => {
+        const comInstancia = atendentes.filter(a => a.instance_name);
+        if (!comInstancia.length) return;
+        let cancelado = false;
+
+        (async () => {
+            const pares = await Promise.all(comInstancia.map(async a => {
+                const check = await checkAtendenteWebhook(a.instance_name!);
+                return [a.id, check ? !check.aponta_para_ca : false] as const;
+            }));
+            if (!cancelado) setWebhookForaPorId(Object.fromEntries(pares));
+        })();
+
+        return () => { cancelado = true; };
+    }, [atendentes.length]);
+
+    /** Reaponta o webhook da instância para este site (sem precisar de novo QR). */
+    const handleCorrigirWebhook = async (atendente: WaAtendente) => {
+        if (!atendente.instance_name) return;
+        setBusySlot(atendente.slot);
+        try {
+            const res = await registerAtendenteWebhook(atendente.instance_name);
+            if (!res.ok) return alert(res.error);
+            setWebhookForaPorId(prev => ({ ...prev, [atendente.id]: false }));
+        } finally {
+            setBusySlot(null);
+        }
+    };
 
     /** Confere o estado real na Evolution e persiste no banco. */
     const sincronizarStatus = useCallback(async (atendente: WaAtendente): Promise<string> => {
@@ -241,6 +278,26 @@ const AtendentesWhatsApp: React.FC = () => {
                                             <p className="flex items-center gap-1"><Clock size={11} /> Última mensagem sincronizada: {ultimaSync}</p>
                                         )}
                                     </div>
+
+                                    {webhookForaPorId[atendente.id] && (
+                                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-2.5 text-[11px] text-amber-800 dark:text-amber-200">
+                                            <p className="flex items-start gap-1.5 font-bold">
+                                                <AlertTriangle size={13} className="shrink-0 mt-px" />
+                                                Conectado, mas não está sincronizando
+                                            </p>
+                                            <p className="mt-1 leading-relaxed">
+                                                O webhook desta instância aponta para outro endereço — as mensagens estão sendo
+                                                entregues fora deste sistema.
+                                            </p>
+                                            <button
+                                                onClick={() => handleCorrigirWebhook(atendente)}
+                                                disabled={busy}
+                                                className="mt-2 w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md text-[11px] font-black disabled:opacity-50"
+                                            >
+                                                {busy ? 'Corrigindo…' : 'Apontar para este site'}
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {qr && (
                                         <div className="p-3 bg-white rounded-lg flex flex-col items-center border border-[var(--admin-border)]">

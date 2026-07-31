@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Bot, Loader2, RefreshCw, Send, Webhook, MessageSquareText, History } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { upsertSiteConfig } from '../../../lib/siteConfig';
+import { publicApiUrl } from '../../../lib/publicUrl';
 import { useAuth } from '../../../context/AuthContext';
 import {
     AI_AGENT_BY_ID,
@@ -32,8 +33,6 @@ interface LogRow {
     answer: string | null;
     created_at: string;
 }
-
-const PROD_BASE = 'https://site.w-techbrasil.com.br';
 
 const cfgKeys = [
     CFG_GROUP_BOT_ENABLED, CFG_GROUP_BOT_GROUP_JID, CFG_GROUP_BOT_GROUP_NAME,
@@ -147,8 +146,9 @@ const GroupBotPanel: React.FC = () => {
                 token = crypto.randomUUID();
                 await saveCfg({ [CFG_GROUP_WEBHOOK_TOKEN]: token });
             }
-            const base = window.location.origin.includes('w-techbrasil.com.br') ? window.location.origin : PROD_BASE;
-            const url = `${base}/api/whatsapp-cloud-webhook?source=evolution&token=${token}`;
+            // Domínio canônico, nunca a origem do navegador: site.w-techbrasil.com.br
+            // responde 308 e webhook não segue redirect — a entrega falharia calada.
+            const url = publicApiUrl(`/api/whatsapp-cloud-webhook?source=evolution&token=${token}`);
 
             // Evolution v2
             let res = await fetch(`${serverUrl}/webhook/set/${encodeURIComponent(instance)}`, {

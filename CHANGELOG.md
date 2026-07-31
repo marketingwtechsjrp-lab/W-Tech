@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.32.2 (2026-07-31) - Corrige sincronizacao do WhatsApp dos atendentes
+- Webhook das 4 instancias da Evolution voltou a entregar neste site: apos a migracao para o VPS elas continuavam apontando para o Supabase antigo e o espelho de mensagens parou em 15/07
+- Recuperadas 20.301 mensagens que ficaram presas no banco antigo entre 15/07 e 31/07
+- URL de webhook agora usa dominio canonico (lib/publicUrl.ts) em vez de window.location.origin, que gravava o dominio de onde o admin foi aberto
+- site.w-techbrasil.com.br nao serve mais de base para webhook: responde 308 e webhook nao segue redirect
+- Painel de Atendentes avisa quando a instancia esta conectada mas com webhook apontando para fora, com botao de correcao em um clique
+- Status do atendente Michael corrigido de Erro para Conectado (estado de 15/07 que nunca foi ressincronizado)
+
 ## v3.32.1 (2026-07-31) - Corrige webhook do Stripe apos migracao para VPS
 - Webhook do Stripe voltou a confirmar pagamentos: faltava o segredo de assinatura no VPS e as 10 ultimas entregas falhavam com HTTP 500
 - Chave do Stripe no webhook agora e resolvida igual ao checkout (env ou SITE_Config), eliminando a dependencia da env STRIPE_API_KEY
