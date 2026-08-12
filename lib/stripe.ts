@@ -46,6 +46,9 @@ export const createStripePaymentLink = async ({
     email,
     enrollmentId,
     orderId,
+    leadId,
+    courseId,
+    paymentType,
     successUrl
 }: {
     title: string,
@@ -54,6 +57,15 @@ export const createStripePaymentLink = async ({
     email?: string,
     enrollmentId?: string,
     orderId?: string,
+    /**
+     * Fluxo "inscrição só depois do pagamento" (ex.: /checkout-lisboa): não existe
+     * inscrição na hora do checkout, então mandamos o lead. O webhook cria/confirma
+     * a inscrição a partir dele — sem isso a sessão chega ao webhook sem metadata
+     * nenhuma e o pagamento nunca é registrado.
+     */
+    leadId?: string,
+    courseId?: string,
+    paymentType?: 'deposit' | 'full',
     successUrl?: string
 }): Promise<{ success: boolean; url?: string; sessionId?: string; error?: string }> => {
     try {
@@ -67,6 +79,9 @@ export const createStripePaymentLink = async ({
                 email,
                 enrollmentId,
                 orderId,
+                leadId,
+                courseId,
+                paymentType,
                 successUrl,
                 origin: typeof window !== 'undefined' ? window.location.origin : undefined
             })

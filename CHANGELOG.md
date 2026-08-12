@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.33.0 (2026-08-12) - Pagamento Stripe de Lisboa confirmado pelo servidor
+- Corrige o webhook do Stripe que falhava em 100 por cento das entregas por falta do segredo de assinatura
+- Checkout de Lisboa passa a enviar leadId e courseId na sessao, para o pagamento nao depender do navegador voltar
+- Inscricao de Lisboa passa a ser criada e confirmada pelo webhook com o valor real da sessao
+- Remove a confirmacao client-side em /obrigado-lisboa que permitia marcar matricula como paga sem pagamento
+- Pagina de obrigado exibe os valores reais do banco e ganha estado de confirmacao pendente
+- Moeda da inscricao passa a seguir a moeda do curso, corrigindo Lisboa exibida em BRL
+- Admin exibe aviso de modulo nao encontrado para views desconhecidas
+
 ## v3.32.3 (2026-07-31) - Evolucao do atendente e exportacao em PDF
 - Nova aba Evolucao nos Atendentes WhatsApp: compara todos os relatorios de IA ja gerados para um atendente e mostra se o atendimento melhorou ou piorou ao longo do tempo
 - Grafico da serie de notas por periodo (cordialidade, agilidade, clareza, comercial e resolucao) com veredito de evolucao

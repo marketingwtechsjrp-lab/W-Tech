@@ -8,10 +8,16 @@ import { CheckCircle, ArrowRight, Instagram, Globe, MessageCircle } from 'lucide
 // Curso Lisboa II — Outubro 2026 (mesmo COURSE_ID usado no CheckoutLisboa).
 const COURSE_ID = 'b88e8979-520a-4c37-8cb8-1128e7e5dffc';
 
+// O webhook do Stripe normalmente grava antes do redirect chegar aqui, mas não é
+// garantido (rede do cliente, retry do Stripe). Em vez de confirmar por conta
+// própria, esta página espera o servidor confirmar.
+const POLL_INTERVAL_MS = 2000;
+const POLL_TIMEOUT_MS = 40000;
+
 const ObrigadoLisboa: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [status, setStatus] = useState<'loading' | 'success' | 'pending' | 'error'>('loading');
     const [enrollment, setEnrollment] = useState<any>(null);
 
     const [qForm, setQForm] = useState({
@@ -33,13 +39,14 @@ const ObrigadoLisboa: React.FC = () => {
     const [savingQ, setSavingQ] = useState(false);
     const [qSubmitted, setQSubmitted] = useState(false);
 
+    // `session_id` e `type` continuam na URL (úteis para suporte/analytics), mas NÃO
+    // alimentam mais nada nesta página — o que vale é o que o webhook gravou no banco.
     const enrollmentId = searchParams.get('eid');
     const leadId = searchParams.get('lid');
-    const sessionId = searchParams.get('session_id');
-    const paymentType = searchParams.get('type') || 'full';
-    const amount = paymentType === 'deposit' ? 150 : 480;
 
     useEffect(() => {
+        let cancelled = false;
+
         const confirmPayment = async () => {
             if (enrollmentId === 'test' || enrollmentId === 'mock') {
                 const mockEnr = {
@@ -57,7 +64,11 @@ const ObrigadoLisboa: React.FC = () => {
                     works_with_suspensions: false,
                     took_suspension_course: false,
                     experience_years: '',
-                    SITE_Courses: { title: 'W-Tech Lisboa Out 2026' }
+                    // Valores só para a pré-visualização (?eid=test) não renderizar € 0,00.
+                    amount_paid: 150,
+                    total_amount: 480,
+                    currency: 'EUR',
+                    SITE_Courses: { title: 'W-Tech Lisboa Out 2026', currency: 'EUR' }
                 };
                 setEnrollment(mockEnr);
                 setQForm(prev => ({
@@ -78,65 +89,56 @@ const ObrigadoLisboa: React.FC = () => {
             }
 
             try {
-                // 1. Resolve a inscrição.
-                //    Fluxo NOVO (lid): a inscrição ainda não existe — ela só é criada
-                //    aqui, após o pagamento confirmado, a partir dos dados do lead.
-                //    Fluxo antigo/compat (eid): a inscrição já foi criada no checkout.
+                // 1. Consulta a inscrição — SOMENTE LEITURA.
+                //    Quem cria e confirma é o WEBHOOK do Stripe, com o valor real da
+                //    sessão. Antes esta página criava a inscrição e a marcava como paga
+                //    a partir do ?type= da URL: qualquer pessoa que abrisse o link
+                //    marcava matrícula como quitada sem ter pago nada.
+                //    O retry existe porque o redirect pode chegar antes do webhook.
                 let enr: any = null;
 
-                if (enrollmentId) {
-                    const { data, error: fetchError } = await supabase
-                        .from('SITE_Enrollments')
-                        .select('*, SITE_Courses(title)')
-                        .eq('id', enrollmentId)
-                        .single();
-                    if (fetchError || !data) throw new Error('Inscrição não encontrada.');
-                    enr = data;
-                } else {
-                    // Cria a inscrição a partir do lead, no momento do pagamento confirmado.
-                    const { data: lead, error: leadErr } = await supabase
+                const fetchEnrollment = async (): Promise<any | null> => {
+                    if (enrollmentId) {
+                        const { data } = await supabase
+                            .from('SITE_Enrollments')
+                            .select('*, SITE_Courses(title, currency)')
+                            .eq('id', enrollmentId)
+                            .maybeSingle();
+                        return data;
+                    }
+
+                    const { data: lead } = await supabase
                         .from('SITE_Leads')
-                        .select('*')
+                        .select('email')
                         .eq('id', leadId)
-                        .single();
-                    if (leadErr || !lead) throw new Error('Cadastro não encontrado.');
+                        .maybeSingle();
 
-                    const leadEmail = (lead.email || '').trim().toLowerCase();
+                    const leadEmail = ((lead as any)?.email || '').trim().toLowerCase();
+                    if (!leadEmail) return null;
 
-                    // Dedupe: reaproveita inscrição existente do mesmo aluno neste curso
-                    // (evita linhas duplicadas em retentativas de pagamento).
-                    const { data: existing } = await supabase
+                    // ilike porque o webhook grava em minúsculas mas registros antigos
+                    // podem ter maiúsculas; `%`/`_` escapados (ilike trata como padrão).
+                    const { data } = await supabase
                         .from('SITE_Enrollments')
-                        .select('*, SITE_Courses(title)')
+                        .select('*, SITE_Courses(title, currency)')
                         .eq('course_id', COURSE_ID)
-                        .eq('student_email', leadEmail)
+                        .ilike('student_email', leadEmail.replace(/[%_\\]/g, '\\$&'))
                         .order('created_at', { ascending: false })
                         .limit(1);
 
-                    if (existing && existing[0]) {
-                        enr = existing[0];
-                    } else {
-                        const { data: created, error: createErr } = await supabase
-                            .from('SITE_Enrollments')
-                            .insert([{
-                                course_id: COURSE_ID,
-                                student_name: lead.name,
-                                student_email: leadEmail,
-                                student_phone: lead.phone,
-                                student_cpf: lead.cpf || null,
-                                status: 'Pending',
-                                amount_paid: 0,
-                                total_amount: 480,
-                                currency: 'EUR',
-                                payment_method: 'Stripe',
-                                enrolled_by_name: 'Automático'
-                            }])
-                            .select('*, SITE_Courses(title)')
-                            .single();
-                        if (createErr || !created) throw new Error('Falha ao registrar a inscrição.');
-                        enr = created;
-                    }
+                    return data?.[0] || null;
+                };
+
+                const deadline = Date.now() + POLL_TIMEOUT_MS;
+                while (!cancelled) {
+                    enr = await fetchEnrollment();
+                    if (enr?.status === 'Confirmed') break;
+                    if (Date.now() >= deadline) break;
+                    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
                 }
+
+                if (cancelled) return;
+                if (!enr) throw new Error('Inscrição não encontrada.');
 
                 setEnrollment(enr);
                 setQForm(prev => ({
@@ -161,61 +163,11 @@ const ObrigadoLisboa: React.FC = () => {
                     setQSubmitted(true);
                 }
 
-                // 2. Update status to Confirmed and set amount paid
-                const { error: updateError } = await supabase
-                    .from('SITE_Enrollments')
-                    .update({
-                        status: 'Confirmed',
-                        amount_paid: amount,
-                        payment_method: 'Stripe',
-                        enrolled_by_name: 'Automático'
-                    })
-                    .eq('id', enr.id);
-
-                if (updateError) throw updateError;
-
-                // Sync the confirmed payment to update lead status to 'Converted' (Approved/Won) in CRM
-                await syncStudentToLeads({
-                    ...enr,
-                    status: 'Confirmed',
-                    amountPaid: amount,
-                    paymentMethod: 'Stripe',
-                    studentName: enr.student_name,
-                    studentEmail: enr.student_email,
-                    studentPhone: enr.student_phone,
-                    zipCode: enr.zip_code,
-                    city: enr.city,
-                    state: enr.state,
-                    studentCpf: enr.student_cpf,
-                    tShirtSize: enr.t_shirt_size,
-                    hasWorkshop: enr.has_workshop,
-                    workshopName: enr.workshop_name,
-                    worksWithSuspensions: enr.works_with_suspensions,
-                    tookSuspensionCourse: enr.took_suspension_course,
-                    experienceYears: enr.experience_years
-                });
-
-                // 3. Also insert a transaction for financial control
-                const { data: existingTx } = await supabase
-                    .from('SITE_Transactions')
-                    .select('id')
-                    .eq('enrollment_id', enr.id)
-                    .maybeSingle();
-
-                if (!existingTx) {
-                    await supabase.from('SITE_Transactions').insert([{
-                        description: `Matrícula Online (${paymentType === 'deposit' ? 'Sinal' : 'Total'}): ${enr.SITE_Courses?.title} - ${enr.student_name}`,
-                        category: 'Sales',
-                        type: 'Income',
-                        amount: amount,
-                        currency: 'EUR',
-                        payment_method: 'Stripe',
-                        enrollment_id: enr.id,
-                        date: new Date().toISOString()
-                    }]);
-                }
-
-                setStatus('success');
+                // 2. Nada é gravado aqui. Status, valor pago, transação financeira e
+                //    e-mail de confirmação são responsabilidade do webhook do Stripe
+                //    (server/edge/stripe-webhook.ts), que valida a assinatura HMAC e usa
+                //    o amount_total real da sessão — nunca um valor vindo da URL.
+                setStatus(enr.status === 'Confirmed' ? 'success' : 'pending');
             } catch (err) {
                 console.error('Error confirming payment:', err);
                 setStatus('error');
@@ -223,7 +175,8 @@ const ObrigadoLisboa: React.FC = () => {
         };
 
         confirmPayment();
-    }, [enrollmentId, leadId, amount, paymentType]);
+        return () => { cancelled = true; };
+    }, [enrollmentId, leadId]);
 
     const handleQSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -291,6 +244,17 @@ const ObrigadoLisboa: React.FC = () => {
         setSavingQ(false);
     };
 
+    // Tudo o que é dinheiro vem do banco (gravado pelo webhook a partir da sessão
+    // do Stripe). Nada é derivado do ?type= da URL — era daí que saía o "€150/€480"
+    // fixo, que mentia sempre que o valor real fosse outro.
+    const paidAmount = Number(enrollment?.amount_paid || 0);
+    const totalAmount = Number(enrollment?.total_amount || 0);
+    const remaining = Math.max(0, totalAmount - paidAmount);
+    const isPartial = remaining > 0;
+    const curCode = String(enrollment?.currency || enrollment?.SITE_Courses?.currency || 'EUR').toUpperCase();
+    const curSymbol = curCode === 'EUR' ? '€' : curCode === 'USD' ? '$' : 'R$';
+    const money = (n: number) => `${curSymbol} ${Number(n || 0).toFixed(2).replace('.', ',')}`;
+
     if (status === 'loading') {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
@@ -324,7 +288,7 @@ const ObrigadoLisboa: React.FC = () => {
                             animate={{ y: 0, opacity: 1 }}
                             className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-4"
                         >
-                            Inscrição <span className="text-wtech-red">{paymentType === 'deposit' ? 'Pré-Reservada!' : 'Confirmada!'}</span>
+                            Inscrição <span className="text-wtech-red">{isPartial ? 'Pré-Reservada!' : 'Confirmada!'}</span>
                         </motion.h1>
 
                         <motion.p 
@@ -334,7 +298,7 @@ const ObrigadoLisboa: React.FC = () => {
                             className="text-gray-400 text-lg mb-8"
                         >
                             Parabéns, <strong>{enrollment?.student_name}</strong>! <br/>
-                            Sua vaga para o <strong>W-Tech Europa em Lisboa</strong> foi assegurada e seu {paymentType === 'deposit' ? 'sinal de €150' : 'pagamento de €480'} foi processado com sucesso.
+                            Sua vaga para o <strong>W-Tech Europa em Lisboa</strong> foi assegurada e seu {isPartial ? 'sinal' : 'pagamento'} de <strong>{money(paidAmount)}</strong> foi processado com sucesso.
                         </motion.p>
 
                         <div className="bg-black/50 border border-white/5 p-6 rounded-xl mb-8 text-left">
@@ -350,9 +314,9 @@ const ObrigadoLisboa: React.FC = () => {
                                 </li>
                                 <li className="flex gap-3 text-sm font-medium">
                                     <span className="text-wtech-red font-bold">03.</span>
-                                    <span>{paymentType === 'deposit'
-                                        ? 'Sinal de entrada pago (€150). Restante (€330) a ser acertado até 10 dias antes do curso, conforme orientação da equipe.'
-                                        : 'Pagamento integral concluído (€480). Não há saldo pendente — sua vaga está 100% quitada.'}</span>
+                                    <span>{isPartial
+                                        ? `Sinal de entrada pago (${money(paidAmount)}). Restante (${money(remaining)}) a ser acertado até 10 dias antes do curso, conforme orientação da equipe.`
+                                        : `Pagamento concluído (${money(paidAmount)}). Não há saldo pendente — sua vaga está 100% quitada.`}</span>
                                 </li>
                             </ul>
                         </div>
@@ -613,6 +577,27 @@ const ObrigadoLisboa: React.FC = () => {
                                 W-Tech Europa Experience | Lisboa 2026
                             </p>
                         </div>
+                    </div>
+                ) : status === 'pending' ? (
+                    /* Pagamento feito, mas o webhook ainda não gravou (ou falhou). Nunca
+                       mostrar erro aqui: o dinheiro do cliente JÁ saiu, e "algo deu errado"
+                       gera pânico e chamado no suporte sem necessidade. */
+                    <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                        <h2 className="text-2xl font-black uppercase mb-4">Pagamento recebido!</h2>
+                        <p className="text-gray-500 mb-8">
+                            Estamos a confirmar a sua inscrição — costuma levar alguns segundos.
+                            Pode fechar esta página com tranquilidade: assim que confirmar, você
+                            recebe o e-mail com todos os detalhes. Qualquer dúvida, fale connosco.
+                        </p>
+                        <a
+                            href="https://wa.me/351912345678"
+                            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-black uppercase text-sm tracking-widest transition-all"
+                        >
+                            <MessageCircle size={20} /> Falar com Suporte
+                        </a>
                     </div>
                 ) : (
                     <div className="text-center py-12">

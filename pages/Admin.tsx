@@ -7738,6 +7738,19 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
 
 // --- Main Admin Layout ---
 
+// Todas as views que o Admin sabe renderizar. Precisa espelhar exatamente a
+// cadeia de `currentView === '...'` do bloco de conteúdo abaixo — como aquela
+// cadeia é só um encadeamento de `&&`, uma view fora desta lista renderizaria
+// uma área de conteúdo em branco, sem erro e sem pista do que houve.
+const KNOWN_ADMIN_VIEWS = new Set([
+    'dashboard', 'analytics', 'whatsapp_inbox', 'crm', 'team', 'orders',
+    'catalog_manager', 'springs_manager', 'suspension_oil_manager', 'finance',
+    'mechanics', 'courses_manager', 'certificates', 'lp_builder', 'blog_manager',
+    'email_marketing', 'marketing_hub', 'pop_marketing', 'intelligence', 'tasks',
+    'settings', 'system_logs', 'clients', 'invoices', 'sales_recovery',
+    'affiliates_manager', 'ai_assistants',
+]);
+
 const Admin = () => {
     const mainContentRef = useRef<HTMLDivElement>(null);
     const { user, loading, logout, impersonateUser } = useAuth();
@@ -8274,6 +8287,31 @@ const Admin = () => {
                         {currentView === 'sales_recovery' && (hasPermission('orders_view') || hasPermission('marketing_view')) && <SalesRecoveryView />}
                         {currentView === 'affiliates_manager' && hasPermission('marketing_view') && <AffiliatesManagerView />}
                         {currentView === 'ai_assistants' && hasPermission('ai_assistants_super_admin') && <AIAssistantsHub />}
+
+                        {/* View desconhecida (ex.: ?view= digitado à mão ou link antigo).
+                            Sem este guard a área de conteúdo fica em branco e sem explicação. */}
+                        {!KNOWN_ADMIN_VIEWS.has(currentView) && (
+                            <div className="flex flex-col items-center justify-center text-center py-24 px-6">
+                                <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-500/10 flex items-center justify-center mb-5">
+                                    <AlertTriangle className="w-8 h-8 text-amber-600 dark:text-amber-500" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                                    Módulo não encontrado
+                                </h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
+                                    O módulo <code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/10 font-mono text-xs">{String(currentView)}</code> não existe neste sistema.
+                                    Verifique o link ou volte para a visão geral.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentView('dashboard')}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-wtech-gold text-black font-semibold text-sm hover:brightness-110 transition"
+                                >
+                                    <LayoutDashboard className="w-4 h-4" />
+                                    Ir para a Visão Geral
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 </AnimatePresence>
             </div>

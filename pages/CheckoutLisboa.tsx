@@ -196,8 +196,11 @@ const CheckoutLisboa: React.FC = () => {
                 stage: 'checkout_started'
             });
 
-            // 3. Gera o link do Stripe. A inscrição será criada/confirmada apenas no
-            //    retorno (/obrigado-lisboa), a partir do lead, após o pagamento.
+            // 3. Gera o link do Stripe. A inscrição é criada/confirmada pelo WEBHOOK
+            //    (server-side), a partir do leadId+courseId que vão na metadata da
+            //    sessão. O /obrigado-lisboa só exibe o resultado — sem esses metadados
+            //    a sessão chega ao webhook "órfã" e o pagamento some do sistema se o
+            //    cliente fechar a aba antes do redirect.
             const stripeResult = await createStripePaymentLink({
                 title: paymentType === 'deposit'
                     ? `Sinal de Reserva: W-Tech Lisboa (Out 2026) - ${nome}`
@@ -205,6 +208,9 @@ const CheckoutLisboa: React.FC = () => {
                 price: selectedPrice,
                 currency: 'eur',
                 email: emailLc,
+                leadId,
+                courseId: COURSE_ID,
+                paymentType,
                 successUrl: window.location.origin + `/obrigado-lisboa?lid=${leadId}&session_id={CHECKOUT_SESSION_ID}&type=${paymentType}`
             });
 

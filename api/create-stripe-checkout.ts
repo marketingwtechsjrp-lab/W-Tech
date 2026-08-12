@@ -22,6 +22,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const STRIPE_URL = 'https://api.stripe.com/v1';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Só deixa virar metadata o que tem forma de id do nosso banco — o corpo vem do navegador. */
+const isUuid = (v: unknown): v is string => typeof v === 'string' && UUID_RE.test(v);
+
 type StripeMode = 'live' | 'test';
 
 async function resolveStripeKey(): Promise<string | null> {
@@ -66,6 +71,9 @@ export default async function handler(req: any, res: any) {
     email,
     enrollmentId,
     orderId,
+    leadId,
+    courseId,
+    paymentType,
     successUrl,
     origin: bodyOrigin,
   } = req.body || {};
@@ -116,6 +124,15 @@ export default async function handler(req: any, res: any) {
     if (email) params.append('customer_email', email);
     if (enrollmentId) params.append('metadata[enrollmentId]', enrollmentId);
     if (orderId) params.append('metadata[orderId]', orderId);
+
+    // Fluxo sem inscrição prévia (/checkout-lisboa): o webhook usa o leadId para
+    // criar/confirmar a inscrição. Sessão sem NENHUMA metadata é recebida, validada
+    // e ignorada pelo webhook — o pagamento entra no Stripe e some do sistema.
+    if (isUuid(leadId)) params.append('metadata[leadId]', leadId);
+    if (isUuid(courseId)) params.append('metadata[courseId]', courseId);
+    if (paymentType === 'deposit' || paymentType === 'full') {
+      params.append('metadata[paymentType]', paymentType);
+    }
 
     const stripeRes = await fetch(`${STRIPE_URL}/checkout/sessions`, {
       method: 'POST',

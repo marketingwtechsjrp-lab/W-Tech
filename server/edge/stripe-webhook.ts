@@ -92,6 +92,89 @@ function buildStripe(apiKey: string | null): Stripe | null {
   return cachedStripe;
 }
 
+/**
+ * Fluxo "inscrição só depois do pagamento" (/checkout-lisboa): no checkout existe
+ * apenas o lead — de propósito, para checkout abandonado não virar inscrição
+ * fantasma ocupando vaga. A inscrição nasce AQUI, com o valor e a moeda que o
+ * Stripe confirmou, nunca com um valor vindo da URL do navegador.
+ *
+ * Devolve o id da inscrição para o fluxo normal seguir igual, ou null se não der
+ * para resolver (o pagamento então fica só no Stripe, e o log diz por quê).
+ */
+async function resolveEnrollmentFromLead(
+  supabase: SupabaseClient,
+  leadId: string,
+  courseId: string | undefined,
+  currency: string
+): Promise<string | null> {
+  if (!courseId) {
+    console.error(`[Stripe Webhook] metadata.courseId ausente (lead ${leadId}) — inscrição não criada.`);
+    return null;
+  }
+
+  const { data: lead } = await supabase
+    .from('SITE_Leads')
+    .select('id, name, email, phone, cpf')
+    .eq('id', leadId)
+    .maybeSingle();
+
+  if (!lead) {
+    console.error(`[Stripe Webhook] Lead ${leadId} não encontrado — inscrição não criada.`);
+    return null;
+  }
+
+  const email = ((lead as any).email || '').trim().toLowerCase();
+
+  // Dedupe: retentativa de pagamento (ou 2ª parcela) não pode gerar uma segunda
+  // inscrição do mesmo aluno no mesmo curso. `_` e `%` escapados porque ilike
+  // trata o valor como padrão, e e-mail pode conter os dois.
+  if (email) {
+    const { data: existing } = await supabase
+      .from('SITE_Enrollments')
+      .select('id')
+      .eq('course_id', courseId)
+      .ilike('student_email', email.replace(/[%_\\]/g, '\\$&'))
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (existing?.[0]) return (existing[0] as any).id;
+  }
+
+  const { data: course } = await supabase
+    .from('SITE_Courses')
+    .select('price, currency')
+    .eq('id', courseId)
+    .maybeSingle();
+
+  const { data: created, error } = await supabase
+    .from('SITE_Enrollments')
+    .insert([{
+      course_id: courseId,
+      student_name: (lead as any).name,
+      student_email: email,
+      student_phone: (lead as any).phone,
+      student_cpf: (lead as any).cpf || null,
+      // Nasce Pending/0 de propósito: quem confirma e soma é o fluxo abaixo,
+      // com o valor real da sessão — mesmo caminho do checkout com inscrição prévia.
+      status: 'Pending',
+      amount_paid: 0,
+      total_amount: (course as any)?.price ?? null,
+      currency: ((course as any)?.currency || currency || 'BRL').toUpperCase(),
+      payment_method: 'Stripe',
+      enrolled_by_name: 'Automático',
+    }])
+    .select('id')
+    .single();
+
+  if (error || !created) {
+    console.error('[Stripe Webhook] Falha ao criar inscrição a partir do lead:', error);
+    return null;
+  }
+
+  console.log(`[Stripe Webhook] Inscrição ${(created as any).id} criada a partir do lead ${leadId}.`);
+  return (created as any).id;
+}
+
 /** Corre um best-effort sem deixar o webhook pendurado (o Stripe expira em 20s). */
 function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -155,12 +238,20 @@ export default async function stripeWebhookHandler(req: Request, res: Response) 
 
   if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
     const session = event.data.object as any;
-    const enrollmentId = session.metadata?.enrollmentId;
+    let enrollmentId = session.metadata?.enrollmentId;
     const orderId = session.metadata?.orderId;
+    const leadId = session.metadata?.leadId;
+    const courseId = session.metadata?.courseId;
 
     // session.amount_total is in cents
     const amountPaidRaw = (session.amount_total || session.amount || 0) / 100;
     const currency = (session.currency || 'brl').toUpperCase();
+
+    // Checkout que não cria inscrição antes de pagar manda o lead. Resolvido aqui,
+    // o resto do fluxo é idêntico ao do checkout com inscrição prévia.
+    if (!enrollmentId && !orderId && leadId) {
+      enrollmentId = await resolveEnrollmentFromLead(supabase, leadId, courseId, currency);
+    }
 
     // ── ENROLLMENT PAYMENT ────────────────────────────────────────────────
     if (enrollmentId) {
@@ -187,6 +278,22 @@ export default async function stripeWebhookHandler(req: Request, res: Response) 
 
       const newTotalPaid = (enrollment.amount_paid || 0) + amountPaidRaw;
 
+      // A moeda da inscrição segue o CURSO — é nele que total_amount está denominado.
+      // NÃO segue a moeda da sessão de propósito: o admin pode gerar link em outra
+      // moeda via conversão, e isso não muda a moeda da matrícula. Sem este patch a
+      // inscrição fica no default 'BRL' da coluna e Lisboa aparece como R$ no admin.
+      const { data: courseCurrencyRow } = await supabase
+        .from('SITE_Courses')
+        .select('currency')
+        .eq('id', enrollment.course_id)
+        .maybeSingle();
+
+      const courseCurrency = ((courseCurrencyRow as any)?.currency || '').toUpperCase();
+      const currencyPatch =
+        courseCurrency && courseCurrency !== (enrollment.currency || '').toUpperCase()
+          ? { currency: courseCurrency }
+          : {};
+
       const { error: updateError } = await supabase
         .from('SITE_Enrollments')
         .update({
@@ -194,7 +301,8 @@ export default async function stripeWebhookHandler(req: Request, res: Response) 
           status: 'Confirmed',
           enrolled_by_name: 'Automático',
           payment_method: 'Stripe',
-          payment_id: session.id
+          payment_id: session.id,
+          ...currencyPatch
         })
         .eq('id', enrollmentId);
 
