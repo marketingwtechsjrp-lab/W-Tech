@@ -267,7 +267,10 @@ export interface CloudStatus {
 export async function getCloudStatus(): Promise<CloudStatus | null> {
   try {
     // GET no mesmo endpoint do envio (status). POST = enviar mensagem.
-    const res = await fetch('/api/whatsapp-cloud-send');
+    const res = await fetch('/api/whatsapp-cloud-send', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+    });
     if (!res.ok) return null;
     return (await res.json()) as CloudStatus;
   } catch {

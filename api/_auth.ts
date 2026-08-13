@@ -278,6 +278,31 @@ export async function requireStaffPermission(
   return staff;
 }
 
+/**
+ * Igual a `requireStaffPermission`, mas basta UMA das chaves da lista. Para
+ * leituras que servem a papéis diferentes pelo mesmo endpoint — ex.: o status
+ * da conexão do WhatsApp, que o admin lê para configurar o motor e o atendente
+ * lê só para saber se pode enviar. Sem isso o atendente (que tem
+ * `whatsapp_send` mas não `whatsapp_engine_config`) tomaria 403 e ficaria com
+ * o compositor travado.
+ */
+export async function requireStaffAnyPermission(
+  req: any,
+  res: any,
+  permissions: readonly string[],
+): Promise<StaffSessionUser | null> {
+  const staff = await requireStaffSession(req);
+  if (!staff) {
+    denyAuth(res);
+    return null;
+  }
+  if (!permissions.some((p) => isPermissionGranted(staff.permissions, p))) {
+    denyForbidden(res);
+    return null;
+  }
+  return staff;
+}
+
 /** Middleware Express: aplica requireStaffPermission antes do handler da rota. */
 export function requireStaffPermissionMiddleware(permission: string) {
   return async (req: any, res: any, next: any) => {

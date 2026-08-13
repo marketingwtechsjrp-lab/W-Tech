@@ -7,14 +7,16 @@ import {
   upsertConversation,
   type CloudConfig,
 } from './_whatsappCloud.js';
-import { requireStaffPermission, requireSameOrigin } from './_auth.js';
+import { requireStaffPermission, requireStaffAnyPermission, requireSameOrigin } from './_auth.js';
 
 /**
  * Vercel Serverless Function — WhatsApp Cloud API (Meta): status + envio.
  * URL: /api/whatsapp-cloud-send
  *
  *   GET  → status da integração (config/webhook/displayNumber/apiVersion —
- *          exige permissão `whatsapp_engine_config`, sessão de staff válida).
+ *          sessão de staff válida + `whatsapp_engine_config` OU
+ *          `whatsapp_inbox_view` OU `whatsapp_send`: são dados não-sensíveis
+ *          que o Inbox precisa ler para liberar o envio ao atendente).
  *   POST → envia mensagem (texto/imagem/áudio/vídeo/documento) — exige
  *          `whatsapp_send`.
  *
@@ -37,6 +39,9 @@ import { requireStaffPermission, requireSameOrigin } from './_auth.js';
  */
 
 const MEDIA_TYPES = ['image', 'audio', 'video', 'document'];
+
+/** Quem pode LER o status da conexão (basta uma). Ver comentário do GET. */
+const STATUS_PERMISSIONS = ['whatsapp_engine_config', 'whatsapp_inbox_view', 'whatsapp_send'] as const;
 
 /** Separa o mime e os bytes de um data URL ou base64 puro. */
 function decodeMedia(mediaBase64: string, fallbackMime: string): { buffer: Buffer; mime: string } {
@@ -71,7 +76,7 @@ export default async function handler(req: any, res: any) {
   // "configured" = credenciais preenchidas. "live" = o token REALMENTE tem
   // acesso ao número na Meta (testa de verdade, pra não mostrar falso positivo).
   if (req.method === 'GET') {
-    if (!(await requireStaffPermission(req, res, 'whatsapp_engine_config'))) return;
+    if (!(await requireStaffAnyPermission(req, res, STATUS_PERMISSIONS))) return;
     try {
       const cfg = await loadCloudConfig();
       const configured = !!cfg.accessToken && !!cfg.phoneNumberId;

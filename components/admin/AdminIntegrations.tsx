@@ -2159,8 +2159,27 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                     <button
                         onClick={async () => {
                             try {
-                                const res = await fetch('/api/whatsapp-cloud-send');
+                                const res = await fetch('/api/whatsapp-cloud-send', {
+                                    credentials: 'same-origin',
+                                    cache: 'no-store',
+                                });
+                                // 401/403 não dizem nada sobre a Meta — são a
+                                // sessão de staff deste painel. Sem essa
+                                // distinção o alerta abaixo culpava as
+                                // credenciais da Meta por uma sessão expirada.
+                                if (res.status === 401) {
+                                    alert('🔒 Sua sessão expirou. Recarregue a página (Cmd/Ctrl + Shift + R) e faça login de novo para testar a conexão.');
+                                    return;
+                                }
+                                if (res.status === 403) {
+                                    alert('🔒 Seu usuário não tem a permissão "Configurar Motor de Envio" (whatsapp_engine_config).');
+                                    return;
+                                }
                                 const data = await res.json();
+                                if (!res.ok) {
+                                    alert(`Erro ${res.status} ao checar status: ${data?.error || 'desconhecido'}`);
+                                    return;
+                                }
                                 if (data.live) {
                                     alert(`✅ Conectado de verdade!\nNúmero: ${data.displayNumber || '—'}\nAPI: ${data.apiVersion}\nVerify token: ${data.hasWebhookToken ? 'ok' : 'faltando'}`);
                                 } else if (data.configured) {
