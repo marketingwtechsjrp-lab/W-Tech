@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { fetchStaffDirectory } from './staffDirectory';
 import { Enrollment } from '../types';
 
 /**
@@ -115,15 +116,8 @@ export async function syncStudentToLeads(enrollment: any) {
 
 /** Lista de atendentes (usuários do sistema) para atribuição de leads. */
 export async function fetchAttendants(): Promise<{ id: string; name: string }[]> {
-    const { data, error } = await supabase
-        .from('SITE_Users')
-        .select('id, name')
-        .order('name', { ascending: true });
-    if (error) {
-        console.error('Error fetching attendants:', error.message);
-        return [];
-    }
-    return (data || []) as { id: string; name: string }[];
+    const users = await fetchStaffDirectory();
+    return [...users].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export interface CreateLeadFromContactInput {

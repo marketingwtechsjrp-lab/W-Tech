@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { fetchStaffDirectory } from './staffDirectory';
 
 /**
  * Consultas client-side para o dashboard "Assistentes de IA" (super admin).
@@ -190,7 +191,7 @@ export async function getRitaStats(): Promise<RitaStats> {
 export async function getSofiaStats(): Promise<SofiaStats> {
     const monthStart = startOfMonthISO();
 
-    const [{ data: auditLogs }, { data: leads }, { data: enrollments }, { data: txs }, { data: users }, rita] =
+    const [{ data: auditLogs }, { data: leads }, { data: enrollments }, { data: txs }, users, rita] =
         await Promise.all([
             supabase.from('SITE_AuditLogs').select('user_name, created_at').gte('created_at', monthStart).limit(5000),
             supabase.from('SITE_Leads').select('assigned_to').not('assigned_to', 'is', null).limit(5000),
@@ -206,11 +207,11 @@ export async function getSofiaStats(): Promise<SofiaStats> {
                 .gte('date', monthStart)
                 .not('attendant_id', 'is', null)
                 .limit(5000),
-            supabase.from('SITE_Users').select('id, name'),
+            fetchStaffDirectory(),
             getRitaStats(),
         ]);
 
-    const nameById = new Map((users || []).map((u: any) => [u.id, u.name]));
+    const nameById = new Map((users || []).map((u) => [u.id, u.name]));
     const stats = new Map<string, StaffActivityRow>();
     const bump = (name: string | null | undefined, field: keyof Omit<StaffActivityRow, 'userName' | 'lastSeen'>, when?: string) => {
         const key = (name || '').trim();

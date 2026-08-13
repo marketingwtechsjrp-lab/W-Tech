@@ -469,12 +469,12 @@ export const ClientDetailModal: React.FC<ClientDetailModalProps> = ({ client, on
                                         >
                                             <option value="">Sem Atendente Definido</option>
                                             {users.map(u => (
-                                                <option key={u.id} value={u.id}>{u.name || u.full_name || u.email} ({u.role || 'User'})</option>
+                                                <option key={u.id} value={u.id}>{u.name}</option>
                                             ))}
                                         </select>
                                     ) : (
                                         <div className="w-full md:w-1/2 p-3 bg-[var(--admin-surface-2)] border border-blue-200 dark:border-blue-800 rounded-xl text-sm font-bold text-gray-500">
-                                            {users.find(u => u.id === formData.assigned_to)?.name || users.find(u => u.id === formData.assigned_to)?.full_name || users.find(u => u.id === formData.assigned_to)?.email || 'Sem Atendente / Não Visível'}
+                                            {users.find(u => u.id === formData.assigned_to)?.name || 'Sem Atendente / Não Visível'}
                                         </div>
                                     )}
                                     <p className="text-xs text-blue-500 dark:text-blue-300 font-medium">

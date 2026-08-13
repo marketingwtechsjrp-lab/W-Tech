@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { IntelligenceAIService } from './IntelligenceAI';
 import { useSettings } from '../../../context/SettingsContext';
 import ReactApexChart from 'react-apexcharts';
@@ -69,9 +70,10 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
             const { data: enrollments } = await enrollmentsQuery;
             const { count: tasksCount } = await tasksQuery;
             
-            // Attendants: "Quero todos"
-            const { data: team } = await supabase.from('SITE_Users').select('id, name, role').order('name');
-            setAttendants(team || []);
+            // Attendants: "Quero todos" — diretório mínimo (id+name), sem
+            // e-mail/cargo (não é requisito operacional aqui) nem `manage_users`.
+            const team = (await fetchStaffDirectory()).sort((a, b) => a.name.localeCompare(b.name));
+            setAttendants(team);
 
             // Revenue from Leads (as requested)
             const wonStatuses = ['Converted', 'Matriculated', 'CheckedIn', 'Fechamento', 'Ganho', 'Closed'];
@@ -143,7 +145,6 @@ const IntelligenceView = ({ permissions }: { permissions?: any }) => {
                 
                 return {
                     name: att.name,
-                    role: att.role,
                     totalLeads: leads || 0,
                     conversionCount: closed || 0,
                     pendingTasks: tasks || 0

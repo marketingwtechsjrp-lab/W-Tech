@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { randomUUID } from 'node:crypto';
-import { isKnownUser, denyAuth, getServiceClient } from '../api/_auth.js';
+import { requireStaffPermissionMiddleware, requireSameOriginMiddleware, getServiceClient } from '../api/_auth.js';
 import {
   type ApprovalDecision,
   type ApprovalItem,
@@ -24,9 +24,9 @@ import {
 /**
  * Rotas /api/approvals — módulo de Aprovações de Marketing.
  *
- * Todas as rotas exigem usuário conhecido (header x-wtech-user-id, mesmo
- * padrão interino das demais rotas admin — ver api/_auth.ts). A decisão via
- * WhatsApp NÃO passa por aqui: chega pelo webhook público já existente
+ * Todas as rotas exigem sessão de staff válida + permissão
+ * `marketing_manage_campaigns` (cookie httpOnly, ver api/_auth.ts). A decisão
+ * via WhatsApp NÃO passa por aqui: chega pelo webhook público já existente
  * (/api/wa-atendentes-webhook) e é roteada em server/approvalsCore.ts.
  */
 
@@ -50,11 +50,8 @@ interface UploadedFile {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Autorização interina: header x-wtech-user-id precisa existir em SITE_Users. */
-async function requireUser(req: Request, res: Response, next: NextFunction) {
-  if (!(await isKnownUser(req))) return denyAuth(res);
-  next();
-}
+/** Sessão de staff + permissão de gerenciar campanhas de marketing. */
+const requireMarketingCampaigns = requireStaffPermissionMiddleware('marketing_manage_campaigns');
 
 /** Wrapper: rejeição de handler async não pode derrubar o processo. */
 function h(fn: (req: Request, res: Response) => Promise<unknown>) {
@@ -128,7 +125,10 @@ function publicOrigin(req: Request): string {
 }
 
 export const approvalsRouter = Router();
-approvalsRouter.use(requireUser);
+// Gate CSRF fail-closed nas mutações (a sessão agora vive num cookie, que o
+// browser manda sozinho mesmo em pedido disparado por outro site).
+approvalsRouter.use(requireSameOriginMiddleware);
+approvalsRouter.use(requireMarketingCampaigns);
 
 // ─── POST /api/approvals/upload — sobe mídias para o Storage ────────────────
 // multipart/form-data, campo "files" (até 10 arquivos de 200MB).
@@ -300,7 +300,12 @@ approvalsRouter.post('/', h(async (req, res) => {
   const description = String(req.body?.description || '').trim() || null;
   const media = parseMediaArray(req.body?.media);
   const requestId = String(req.body?.request_id || '').trim() || null;
-  const createdBy = String(req.body?.created_by || '').trim() || 'sistema';
+  // Autoria SEMPRE da sessão autenticada (req.staffUser, anexado pelo
+  // middleware requireMarketingCampaigns) — nunca de req.body.created_by,
+  // que qualquer chamador com a sessão poderia forjar pra assinar como
+  // outra pessoa (mesmo tratamento de /decide e /resend abaixo).
+  const staffUserForCreate = (req as any).staffUser;
+  const createdBy = staffUserForCreate?.email || staffUserForCreate?.name || staffUserForCreate?.id || 'sistema';
 
   if (!title) return res.status(400).json({ error: 'title_required' });
   if (!media.length) return res.status(400).json({ error: 'media_required' });
@@ -452,7 +457,11 @@ approvalsRouter.post('/:id/decide', h(async (req, res) => {
     return res.status(400).json({ error: 'invalid_decision', message: "decision deve ser 'Aprovado', 'Reprovado' ou 'Ajustes'." });
   }
   const note = String(req.body?.note || '').trim() || null;
-  const actor = String(req.body?.actor || '').trim() || 'admin';
+  // Autoria SEMPRE da sessão autenticada (req.staffUser, anexado pelo
+  // middleware requireMarketingCampaigns) — nunca de req.body.actor, que
+  // qualquer chamador com a sessão poderia forjar pra assinar como outra pessoa.
+  const staffUser = (req as any).staffUser;
+  const actor = staffUser?.email || staffUser?.name || staffUser?.id || 'admin';
 
   const result = await decideItem(supabase, item, { decision, note, actor, via: 'sistema' });
   if (!result.ok) return res.status(500).json({ error: result.error || 'decide_failed' });
@@ -475,7 +484,9 @@ approvalsRouter.post('/:id/resend', h(async (req, res) => {
   const evo = await loadEvolutionBase(supabase);
   if (!evo) return res.status(409).json({ error: 'settings_missing', detail: 'evolution' });
 
-  const actor = String(req.body?.actor || '').trim() || 'admin';
+  // Autoria SEMPRE da sessão autenticada — ver nota em /decide acima.
+  const staffUser = (req as any).staffUser;
+  const actor = staffUser?.email || staffUser?.name || staffUser?.id || 'admin';
   const version = (Number(item.version) || 1) + 1;
 
   const { sentCount, messageIds } = await sendItemMedia(

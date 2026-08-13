@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import type { NextFunction, Request, Response } from 'express';
-import { isKnownUser, denyAuth, getServiceClient } from '../api/_auth.js';
+import type { Request, Response } from 'express';
+import { requireStaffPermissionMiddleware, requireSameOriginMiddleware, getServiceClient } from '../api/_auth.js';
+import { requireStaffOrS2SPermission } from '../api/_s2s.js';
 import { isCronAuthorized, denyCron } from '../api/_cron.js';
 import {
   DEFAULT_COURSE_ALERT_DAYS,
@@ -35,8 +36,9 @@ import {
  *  - GET  /course-occupancy      (staff) ocupação das turmas na janela do alerta
  *  - POST /course-alerts/scan    (cron)  varre turmas em risco e alerta o grupo do time
  *
- * Staff = mesmo padrão interino das rotas de aprovação (x-wtech-user-id).
- * Cron  = Bearer CRON_SECRET / x-vercel-cron (mesmo guard de /api/checkout-recovery).
+ * Staff = mesma sessão httpOnly + permissão `manage_marketing` das rotas de
+ * aprovação (ver api/_auth.ts).
+ * Cron  = Bearer CRON_SECRET (mesmo guard de /api/checkout-recovery — ver api/_cron.ts).
  */
 
 type ShareType = 'meeting_note' | 'campaign_result' | 'traffic_plan';
@@ -44,11 +46,8 @@ const SHARE_TYPES: ShareType[] = ['meeting_note', 'campaign_result', 'traffic_pl
 
 // ─── Helpers (mesmo padrão de server/approvals.ts) ───────────────────────────
 
-/** Autorização interina: header x-wtech-user-id precisa existir em SITE_Users. */
-async function requireUser(req: Request, res: Response, next: NextFunction) {
-  if (!(await isKnownUser(req))) return denyAuth(res);
-  next();
-}
+/** Sessão de staff + permissão de administrar o módulo de marketing. */
+const requireManageMarketing = requireStaffPermissionMiddleware('manage_marketing');
 
 /** Wrapper: rejeição de handler async não pode derrubar o processo. */
 function h(fn: (req: Request, res: Response) => Promise<unknown>) {
@@ -73,19 +72,42 @@ function requireSupabase(res: Response) {
 }
 
 export const marketingRouter = Router();
-// SEM requireUser no router inteiro: /course-alerts/scan usa auth de cron.
+// SEM requireManageMarketing no router inteiro: /course-alerts/scan usa auth de cron.
+// Gate CSRF fail-closed nas mutações staff (mesmo motivo de approvals.ts) —
+// /course-alerts/scan (cron) não depende de cookie, então não precisa dele,
+// mas passar por aqui não o afeta (POST cron não é same-origin nem precisa ser).
+// S2S (x-wtech-svc) só pula o gate em /share — a ÚNICA rota deste router que
+// aceita chamada S2S (ver requireStaffOrS2SPermission ali). Restringir por
+// path evita que um header x-wtech-svc arbitrário (mesmo com assinatura
+// inválida, que só é verificada DENTRO do handler de /share) remova o gate
+// CSRF de QUALQUER outra rota do router — /course-occupancy continua staff-
+// only via cookie, então um GET sem CSRF nela já não seria state-changing,
+// mas o princípio é não deixar o bypass vazar pra rotas que não o esperam.
+marketingRouter.use((req, res, next) => {
+  if (req.path === '/course-alerts/scan') return next();
+  if (req.path === '/share' && req.headers?.['x-wtech-svc']) return next();
+  return requireSameOriginMiddleware(req, res, next);
+});
 
 // ─── POST /api/marketing/share — envia registro formatado ao WhatsApp ───────
 // body: { type: 'meeting_note'|'campaign_result'|'traffic_plan', id,
 //         target?: 'team'|'requester', request_id?, actor? }
-marketingRouter.post('/share', requireUser, h(async (req, res) => {
+// Aceita staff (cookie httpOnly) OU S2S assinado do ERP (x-wtech-svc + HMAC —
+// ver api/_s2s.ts), ambos exigindo `manage_marketing`.
+marketingRouter.post('/share', h(async (req, res) => {
+  const staffOrActor = await requireStaffOrS2SPermission(req, res, 'manage_marketing');
+  if (!staffOrActor) return;
+
   const supabase = requireSupabase(res);
   if (!supabase) return;
 
   const type = String(req.body?.type || '') as ShareType;
   const id = String(req.body?.id || '').trim();
   const target: 'team' | 'requester' = req.body?.target === 'requester' ? 'requester' : 'team';
-  const actor = String(req.body?.actor || '').trim() || 'sistema';
+  // Autoria SEMPRE do ator autenticado (sessão de staff ou ator S2S
+  // rehidratado) — nunca de req.body.actor, que qualquer chamador pode
+  // forjar pra assinar a auditoria com outro nome.
+  const actor = staffOrActor.email || staffOrActor.name || staffOrActor.id;
 
   if (!SHARE_TYPES.includes(type)) {
     return res.status(400).json({ error: 'invalid_type', message: "type deve ser 'meeting_note', 'campaign_result' ou 'traffic_plan'." });
@@ -207,7 +229,7 @@ marketingRouter.post('/share', requireUser, h(async (req, res) => {
 }));
 
 // ─── GET /api/marketing/course-occupancy — painel de ocupação (staff) ───────
-marketingRouter.get('/course-occupancy', requireUser, h(async (req, res) => {
+marketingRouter.get('/course-occupancy', requireManageMarketing, h(async (req, res) => {
   const supabase = requireSupabase(res);
   if (!supabase) return;
 
@@ -220,8 +242,8 @@ marketingRouter.get('/course-occupancy', requireUser, h(async (req, res) => {
 }));
 
 // ─── POST /api/marketing/course-alerts/scan — varredura (cron) ──────────────
-// Protegida por Bearer CRON_SECRET / x-vercel-cron (mesmo guard das demais
-// rotas de automação). O agendamento em si é responsabilidade externa.
+// Protegida por Bearer CRON_SECRET (mesmo guard das demais rotas de
+// automação — ver api/_cron.ts). O agendamento em si é responsabilidade externa.
 marketingRouter.post('/course-alerts/scan', h(async (req, res) => {
   if (!isCronAuthorized(req)) return denyCron(res);
 

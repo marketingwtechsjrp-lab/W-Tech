@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { Task, TaskCategory } from '../../../types';
 import {
     Plus, Clock, CheckCircle2, AlertTriangle, Trash2, User,
@@ -241,12 +242,10 @@ const TaskManagerView: React.FC<{ permissions?: any }> = ({ permissions }) => {
     }, [user]);
 
     const fetchUsers = async () => {
-        const { data } = await supabase.from('SITE_Users').select('id, name');
-        if (data) {
-            const map: Record<string, string> = {};
-            data.forEach((u: any) => { map[u.id] = u.name; });
-            setUsersMap(map);
-        }
+        const data = await fetchStaffDirectory();
+        const map: Record<string, string> = {};
+        data.forEach((u) => { map[u.id] = u.name; });
+        setUsersMap(map);
     };
     const fetchLeads = async () => {
         const { data } = await supabase.from('SITE_Leads').select('id, name').order('name');

@@ -1,5 +1,5 @@
 import { callLLM, loadAIKeys } from './_aiReply.js';
-import { denyAuth, getServiceClient, isKnownUser } from './_auth.js';
+import { denyAuth, getServiceClient, requireStaffSession, requireSameOrigin } from './_auth.js';
 
 type GlossaryOrigin = 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT';
 
@@ -309,8 +309,13 @@ async function updateTerm(supabase: any, body: any) {
 }
 
 export default async function handler(req: any, res: any) {
-  const userId = await isKnownUser(req);
-  if (!userId) return denyAuth(res);
+  // Gate CSRF fail-closed nas mutações (a sessão vive num cookie httpOnly,
+  // que o browser manda sozinho mesmo em pedido disparado por outro site).
+  if (req.method !== 'GET' && !requireSameOrigin(req, res)) return;
+
+  const staff = await requireStaffSession(req);
+  if (!staff) return denyAuth(res);
+  const userId = staff.id;
 
   const supabase = getServiceClient();
   if (!supabase) {

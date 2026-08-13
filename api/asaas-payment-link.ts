@@ -1,4 +1,5 @@
-import { isKnownUser, denyAuth, getServiceClient } from './_auth.js';
+import { requireSameOrigin, getServiceClient } from './_auth.js';
+import { requireStaffOrS2SPermission } from './_s2s.js';
 
 /**
  * Vercel Serverless Function — Gera link de cobrança Asaas (SERVER-SIDE).
@@ -8,8 +9,11 @@ import { isKnownUser, denyAuth, getServiceClient } from './_auth.js';
  * chave `asaas_api_key` era lida de SITE_Config e usada direto no cliente.
  * Agora a chave NUNCA sai do servidor.
  *
- * Auth (interina — FASE 1): header `x-wtech-user-id` de um usuário existente.
- * Na FASE 2 passa a exigir token de sessão admin.
+ * Auth: sessão de staff httpOnly + permissão `financial_add_transaction`
+ * (cookie + digest — ver api/_auth.ts), OU chamada S2S assinada do ERP
+ * (header x-wtech-svc + HMAC — ver api/_s2s.ts) com a mesma permissão,
+ * ator rehidratado no banco. Gate CSRF same-origin só se aplica ao
+ * caminho de browser — S2S não tem Origin/Sec-Fetch-Site.
  *
  * POST {
  *   enrollmentId?: string,                       // se informado, resolve o contato pela inscrição
@@ -73,8 +77,14 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  // Auth interina — bloqueia chamada pública.
-  if (!(await isKnownUser(req))) return denyAuth(res);
+  // Gate CSRF fail-closed antes de sequer olhar a sessão — só se aplica ao
+  // caminho de browser (cookie httpOnly). S2S (x-wtech-svc) não tem
+  // Origin/Sec-Fetch-Site nenhum — é autorizado por assinatura HMAC abaixo.
+  const svcHeader = String(req.headers?.['x-wtech-svc'] || '');
+  if (!svcHeader && !requireSameOrigin(req, res)) return;
+  // Bloqueia chamada pública — exige sessão de staff válida OU S2S com a
+  // mesma permissão financeira.
+  if (!(await requireStaffOrS2SPermission(req, res, 'financial_add_transaction'))) return;
 
   const { enrollmentId, lead: leadInput, value, description, dueDate } = req.body || {};
 

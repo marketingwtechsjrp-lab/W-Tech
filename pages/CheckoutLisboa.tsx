@@ -11,14 +11,17 @@ import { createStripePaymentLink } from '../lib/stripe';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { formatDateLocal } from '../lib/utils';
+import { LISBOA_COURSE_ID, LISBOA_DEPOSIT_PRICE, LISBOA_FULL_PRICE } from '../lib/lisboaOffer';
 
 // Curso Lisboa II — Outubro 2026 (23, 24 e 25/10 · 3 dias)
-const COURSE_ID = 'b88e8979-520a-4c37-8cb8-1128e7e5dffc';
+const COURSE_ID = LISBOA_COURSE_ID;
 const ASSIGNED_TO = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
 
 // Valores oficiais em EUR (fallback caso o registro do curso ainda não esteja atualizado no admin)
-const FULL_PRICE = 480;
-const DEPOSIT_PRICE = 150;
+// Fonte única: lib/lisboaOffer.ts — o servidor (api/create-stripe-checkout.ts)
+// cobra exatamente esses mesmos valores, nunca o que a página mandar no body.
+const FULL_PRICE = LISBOA_FULL_PRICE;
+const DEPOSIT_PRICE = LISBOA_DEPOSIT_PRICE;
 
 interface CourseData {
     id: string;

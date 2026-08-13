@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { useAuth } from '../../../context/AuthContext';
 import { 
     Users, DollarSign, ShoppingBag, TrendingUp, Calendar, 
@@ -83,39 +84,26 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
             // However, we must ensure we don't accidentally revoke it due to shallow checking
             
             if (user?.id) {
-                // Verify against DB to ensure real-time validity
-                // Fetches User AND their Role (if possible via join, or manual)
-                // We'll fetch role_id and perform a deeper check
-                const { data: currentUserProfile } = await supabase
-                    .from('SITE_Users')
-                    .select('role_id, role, permissions')
-                    .eq('id', user.id)
-                    .single();
-                
-                if (currentUserProfile) {
-                    const r = currentUserProfile.role;
-                    const rName = typeof r === 'string' ? r.toLowerCase() : (r?.name?.toLowerCase() || '');
-                    
-                    // 1. Direct Role Name Check
-                    if (rName === 'admin' || rName === 'super admin' || rName === 'super_admin') {
-                        isAdminView = true;
-                    } 
-                    // 2. User Specific Permission Check
-                    else if (currentUserProfile.permissions?.dashboard_view_all) {
-                        isAdminView = true;
-                    }
-                    // 3. Role-Based Permission Check (The missing link)
-                    else if (currentUserProfile.role_id) {
-                        const { data: roleData } = await supabase
-                            .from('SITE_Roles')
-                            .select('permissions')
-                            .eq('id', currentUserProfile.role_id)
-                            .single();
-                        
-                        if (roleData?.permissions?.dashboard_view_all) {
-                            isAdminView = true;
+                // Verifica contra o servidor (GET /api/staff/me, sessão httpOnly) em vez
+                // de ler SITE_Users/SITE_Roles direto do browser com a chave anon.
+                try {
+                    const meRes = await fetch('/api/staff/me', { credentials: 'same-origin', cache: 'no-store' });
+                    if (meRes.ok) {
+                        const meData = await meRes.json();
+                        const profile = meData?.user;
+                        if (profile) {
+                            const r = profile.role;
+                            const rName = typeof r === 'string' ? r.toLowerCase() : (r?.name?.toLowerCase() || '');
+
+                            if (rName === 'admin' || rName === 'super admin' || rName === 'super_admin') {
+                                isAdminView = true;
+                            } else if (profile.permissions?.dashboard_view_all) {
+                                isAdminView = true;
+                            }
                         }
                     }
+                } catch (err) {
+                    console.error('Error verifying dashboard permissions:', err);
                 }
             }
             setIsSuperAdmin(isAdminView);
@@ -138,7 +126,8 @@ const DashboardView = ({ isAdmin = false, userId, permissions }: { isAdmin?: boo
                 supabase.from('SITE_Courses').select('*'),
                 supabase.from('SITE_Tasks').select('*'),
                 supabase.from('SITE_EmailCampaigns').select('*').order('created_at', { ascending: false }).limit(5),
-                supabase.from('SITE_Users').select('id, name')
+                // Diretório mínimo (id+name) via endpoint autenticado — não lê SITE_Users direto.
+                fetchStaffDirectory().then((data): { data: any[] } => ({ data }))
             ]);
 
             // Maps

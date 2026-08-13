@@ -18,7 +18,6 @@ import { supabase } from '../lib/supabaseClient';
 import { createHasPermission, createPermissionResolver, PERMISSION_CATALOG } from '../lib/permissions';
 import { generateSitemapXml } from '../lib/sitemapUtils';
 import { generateSEOContent } from '../lib/ai';
-import { seedDatabase } from '../lib/seedData';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logUserActivity } from '../lib/auditLogger';
@@ -46,7 +45,6 @@ import CatalogManagerView from '../components/admin/Catalog/CatalogManagerView';
 import SpringsManagerView from '../components/admin/Springs/SpringsManagerView';
 import SuspensionOilManagerView from '../components/admin/SuspensionOil/SuspensionOilManagerView';
 
-import DevUserSwitcher from '../components/admin/DevUserSwitcher';
 import TaskManagerView from '../components/admin/Tasks/TaskManagerView';
 import SalesHistoryView from '../components/admin/Financial/SalesHistoryView';
 
@@ -84,7 +82,60 @@ import type { CertificateLayout } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { fetchStaffDirectory } from '../lib/staffDirectory';
 
+
+// --- Staff Identity API (server-side, sessão httpOnly — ver api/_auth.ts) ---
+// Substitui leitura/escrita direta em SITE_Users/SITE_Roles pelo browser: o
+// servidor valida o cookie de sessão e devolve/aceita só DTOs seguros (nunca
+// password/password_hash). A autorização real (quem pode criar/editar/excluir)
+// é decidida no SQL a partir do digest da sessão — nunca de um id declarado
+// pelo cliente.
+async function staffApiFetch(path: string, options: RequestInit = {}): Promise<any> {
+    const res = await fetch(`/api/staff${path}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data?.success === false) {
+        throw new Error(data?.error || `Falha na requisição (${res.status}).`);
+    }
+    return data;
+}
+
+async function fetchStaffUsers(): Promise<UserType[]> {
+    const data = await staffApiFetch('/users');
+    return data.users || [];
+}
+
+async function fetchStaffRoles(): Promise<Role[]> {
+    const data = await staffApiFetch('/roles');
+    return data.roles || [];
+}
+
+async function createStaffUser(payload: Record<string, unknown>) {
+    return staffApiFetch('/users', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+async function updateStaffUser(id: string, payload: Record<string, unknown>) {
+    return staffApiFetch(`/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+async function deleteStaffUser(id: string) {
+    return staffApiFetch(`/users/${id}`, { method: 'DELETE' });
+}
+
+async function saveStaffRole(id: string | undefined, payload: Record<string, unknown>) {
+    return id
+        ? staffApiFetch(`/roles/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+        : staffApiFetch('/roles', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+async function deleteStaffRole(id: string) {
+    return staffApiFetch(`/roles/${id}`, { method: 'DELETE' });
+}
 
 // --- Types for Local State ---
 declare const L: any;
@@ -4142,11 +4193,11 @@ const FinanceView = ({ permissions }: { permissions?: any }) => {
             // Fetch Reference Data
             const { data: coursesData } = await supabase.from('SITE_Courses').select('id, title');
             const { data: eventsData } = await supabase.from('SITE_Events').select('id, title');
-            const { data: usersData } = await supabase.from('SITE_Users').select('id, name');
+            const usersData = await fetchStaffDirectory().catch(() => []);
 
             setCourses(coursesData || []);
             setEvents(eventsData || []);
-            setUsersList(usersData || []);
+            setUsersList(usersData);
         };
         fetchReferenceData();
     }, []);
@@ -5021,12 +5072,9 @@ const AuditLogsTab = () => {
 
     const fetchFilterData = async () => {
         try {
-            // Fetch users for the filter
-            const { data: usersData } = await supabase
-                .from('SITE_Users')
-                .select('id, name')
-                .order('name');
-            if (usersData) setUsers(usersData);
+            // Diretório mínimo (id+name) pro filtro — não precisa de manage_users.
+            const usersData = await fetchStaffDirectory().catch(() => []);
+            setUsers(usersData);
 
             // Fetch distinct screen list from logs
             const { data: screensData } = await supabase
@@ -5318,8 +5366,8 @@ const SettingsView = () => {
     };
 
     const fetchRoles = async () => {
-        const { data } = await supabase.from('SITE_Roles').select('*').order('level', { ascending: false });
-        if (data) setRoles(data);
+        const data = await fetchStaffRoles().catch(() => []);
+        setRoles(data.sort((a, b) => (b.level || 0) - (a.level || 0)));
     };
 
     const handleChange = (key: string, value: any) => {
@@ -5359,7 +5407,7 @@ const SettingsView = () => {
         }
     };
 
-    // Role Management Handlers
+    // Role Management Handlers — via endpoint server-side (RPC site_staff_papel_salvar).
     const handleSaveRole = async () => {
         if (!editingRole || !editingRole.name) return;
 
@@ -5370,30 +5418,26 @@ const SettingsView = () => {
             level: editingRole.level || 1
         };
 
-        let error = null;
-
-        if (editingRole.id) {
-            const res = await supabase.from('SITE_Roles').update(payload).eq('id', editingRole.id);
-            error = res.error;
-        } else {
-            const res = await supabase.from('SITE_Roles').insert([payload]);
-            error = res.error;
-        }
-
-        if (error) {
-            console.error("Error saving role:", error);
-            alert("Erro ao salvar cargo: " + error.message);
-        } else {
+        try {
+            await saveStaffRole(editingRole.id, payload);
             setEditingRole(null);
             fetchRoles();
             alert("Cargo salvo com sucesso!");
+        } catch (error: any) {
+            console.error("Error saving role:", error);
+            alert("Erro ao salvar cargo: " + error.message);
         }
     };
 
     const handleDeleteRole = async (id: string) => {
         if (confirm('Tem certeza? Isso pode afetar usuários com este cargo.')) {
-            await supabase.from('SITE_Roles').delete().eq('id', id);
-            fetchRoles();
+            try {
+                await deleteStaffRole(id);
+                fetchRoles();
+            } catch (error: any) {
+                console.error("Error deleting role:", error);
+                alert("Erro ao excluir cargo: " + error.message);
+            }
         }
     };
 
@@ -5778,18 +5822,9 @@ const SettingsView = () => {
                             {/* Dev Tools */}
                             <div className="space-y-6">
                                 <h3 className="font-bold text-[var(--admin-text-primary)] border-b pb-2 flex items-center gap-2"><Shield size={18} /> Ferramentas do Sistema</h3>
-                                <div className="flex items-center justify-between p-4 bg-[var(--admin-surface-2)] rounded-lg border border-[var(--admin-border)]">
-                                    <div>
-                                        <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Super Admin</h4>
-                                        <p className="text-xs text-[var(--admin-text-secondary)]">Ativa botão flutuante para troca rápida de usuários (para testes).</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleChange('enable_dev_panel', config.enable_dev_panel === 'true' ? 'false' : 'true')}
-                                        className={`w-12 h-6 rounded-full transition-colors relative ${config.enable_dev_panel === 'true' ? 'bg-red-600' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                    >
-                                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.enable_dev_panel === 'true' ? 'left-7' : 'left-1'}`}></div>
-                                    </button>
-                                </div>
+                                {/* "Super Admin" (troca de usuário sem reautenticar) removido: era um
+                                    bypass 100% client-side da sessão real — incompatível com o modelo
+                                    de sessão httpOnly validada no servidor. */}
                                 <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-900/40">
                                     <div>
                                         <h4 className="font-bold text-sm text-[var(--admin-text-primary)]">Distribuição de Leads (CRM)</h4>
@@ -6512,7 +6547,11 @@ const SettingsView = () => {
                                         <button
                                             key={item.table}
                                             onClick={async () => {
-                                                const { data } = await supabase.from(item.table).select('*');
+                                                // SITE_Users nunca sai do browser via select('*') — passaria
+                                                // password/password_hash/face_descriptor. Usa o DTO seguro do servidor.
+                                                const data = item.table === 'SITE_Users'
+                                                    ? await fetchStaffUsers().catch(() => null)
+                                                    : (await supabase.from(item.table).select('*')).data;
                                                 if (!data || data.length === 0) return alert('Sem dados para exportar.');
                                                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                                                 const url = URL.createObjectURL(blob);
@@ -7433,15 +7472,18 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
     }, []);
 
     const fetchUsers = async () => {
-        const { data } = await supabase.from('SITE_Users').select('*');
-        if (data) setUsers(data);
+        const data = await fetchStaffUsers().catch(() => []);
+        setUsers(data);
     };
 
     const fetchRoles = async () => {
-        const { data } = await supabase.from('SITE_Roles').select('*');
-        if (data) setRoles(data);
+        const data = await fetchStaffRoles().catch(() => []);
+        setRoles(data);
     };
 
+    // CRUD de usuários via endpoint server-side — a RPC (site_staff_usuario_salvar)
+    // recebe o digest da sessão de quem está chamando, não um id declarado pelo
+    // cliente, e decide no SQL se a operação é permitida.
     const handleSaveUser = async () => {
         if (!editingUser.name || !editingUser.email) return;
 
@@ -7450,97 +7492,39 @@ const TeamView = ({ permissions, onOpenProfile }: { permissions?: any, onOpenPro
             email: editingUser.email,
             role_id: editingUser.role_id || null,
             status: editingUser.status || 'Active',
-            receives_leads: editingUser.receives_leads || false
+            receives_leads: editingUser.receives_leads || false,
+            permissions: editingUser.permissions,
+            password: editingUser.password || undefined,
         };
 
-        // Logic: Use RPC only if Password needs update (requires Admin privileges on Auth)
-        // Otherwise, use standard Table Update for speed and reliability without RPC
-        if (editingUser.id) {
-            let rpcError = null;
-
-            // 1. If Password is being changed, TRY RPC
-            if (editingUser.password) {
-                const { error } = await supabase.rpc('admin_update_user', {
-                    target_user_id: editingUser.id,
-                    new_email: editingUser.email,
-                    new_password: editingUser.password,
-                    new_name: payload.name,
-                    new_role_id: payload.role_id || null,
-                    new_status: payload.status || 'Active'
-                });
-                rpcError = error;
-            }
-
-            // 2. Always update public profile (SITE_Users) to ensure data consistency
-            // This handles cases where RPC is missing OR we just want to update non-sensitive data
-            const { error: stdError } = await supabase.from('SITE_Users').update({
-                name: payload.name,
-                role_id: payload.role_id,
-                status: payload.status,
-                receives_leads: payload.receives_leads,
-                permissions: editingUser.permissions
-            }).eq('id', editingUser.id);
-
-            if (stdError) {
-                alert('Erro ao atualizar perfil: ' + stdError.message);
-            } else if (rpcError) {
-                // Profile updated, but Password failed
-                alert('Perfil atualizado, MAS a SENHA não foi alterada.\n\nMotivo: O script de administração (RPC) não foi encontrado no banco de dados.\n\nPara corrigir: Execute o arquivo "admin_user_management.sql" no Supabase.');
+        try {
+            if (editingUser.id) {
+                await updateStaffUser(editingUser.id, payload);
             } else {
-                // Success
-                setIsModalOpen(false);
-                setEditingUser({});
-                fetchUsers();
-                return;
-            }
-        } else {
-            // Create New User (Requires Auth API or different flow, but for now insert into public)
-            // Ideally, we should use supabase.auth.signUp() but that logs the user in.
-            // For this simplified admin, we'll stick to inserting into SITE_Users and assume Auth is handled separately or via Invite.
-            // OR we can use the same RPC if we adjust it to INSERT if not exists, but auth.users insert is tricky without admin API.
-            // Let's keep the existing logic for INSERT but warn about password.
-
-            // Create New User Logic
-            if (!editingUser.password) {
-                alert('Senha é obrigatória para novos usuários.');
-                return;
-            }
-
-            const { data, error } = await supabase.rpc('admin_create_user', {
-                new_email: editingUser.email,
-                new_password: editingUser.password,
-                new_name: payload.name,
-                new_role_id: payload.role_id,
-                new_status: payload.status || 'Active',
-                new_receives_leads: payload.receives_leads
-            });
-
-            if (error) {
-                console.error("Create User Error:", error);
-                if (error.message?.includes('function') || error.code === '42883') {
-                    alert('Erro: O script de criação de usuários (RPC) não foi encontrado no banco de dados.\n\nExecute o arquivo "admin_user_management.sql" no Supabase.');
-                } else {
-                    alert('Erro ao criar usuário: ' + error.message);
+                if (!editingUser.password) {
+                    alert('Senha é obrigatória para novos usuários.');
+                    return;
                 }
-                return;
+                await createStaffUser(payload);
             }
-
-            // Success
             setIsModalOpen(false);
             setEditingUser({});
             fetchUsers();
+        } catch (error: any) {
+            console.error('Save User Error:', error);
+            alert((editingUser.id ? 'Erro ao atualizar usuário: ' : 'Erro ao criar usuário: ') + error.message);
         }
     };
 
     const handleDeleteUser = async (id: string) => {
         if (!confirm('Tem certeza? Esta ação removerá o acesso do usuário permanentemente.')) return;
 
-        const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id });
-        if (error) {
-            alert('Erro ao excluir: ' + error.message);
-        } else {
+        try {
+            await deleteStaffUser(id);
             setUsers(prev => prev.filter(u => u.id !== id));
             setIsModalOpen(false);
+        } catch (error: any) {
+            alert('Erro ao excluir: ' + error.message);
         }
     };
 
@@ -7753,7 +7737,7 @@ const KNOWN_ADMIN_VIEWS = new Set([
 
 const Admin = () => {
     const mainContentRef = useRef<HTMLDivElement>(null);
-    const { user, loading, logout, impersonateUser } = useAuth();
+    const { user, loading, logout } = useAuth();
     const navigate = useNavigate();
     const { settings: config } = useSettings();
     const [collapsed, setCollapsed] = useState(false);
@@ -8075,33 +8059,15 @@ const Admin = () => {
         }
     }, [user, loading, navigate]);
 
-    // FETCH LIVE PERMISSIONS
+    // FETCH LIVE PERMISSIONS — revalida via GET /api/staff/me (sessão httpOnly),
+    // que já resolve o cargo no servidor (service_role). O browser não lê mais
+    // SITE_Users/SITE_Roles diretamente.
     useEffect(() => {
         const fetchLivePermissions = async () => {
             if (!user) return;
             try {
-                // Refresh user role_id from DB to be safe
-                const { data: userData } = await supabase.from('SITE_Users').select('role_id, role').eq('id', user.id).single();
-
-                let roleId = userData?.role_id || user.role_id;
-                let roleName = typeof userData?.role === 'string' ? userData.role : (typeof user.role === 'string' ? user.role : null);
-
-                if (roleId) {
-                    const { data } = await supabase.from('SITE_Roles').select('permissions').eq('id', roleId).single();
-                    if (data) setLivePermissions(data.permissions);
-                } else if (roleName) {
-                    // Try exact match first
-                    let { data } = await supabase.from('SITE_Roles').select('permissions').eq('name', roleName).maybeSingle();
-
-                    // If no data, try case-insensitive match assuming roles might differ in case
-                    if (!data) {
-                        const { data: allRoles } = await supabase.from('SITE_Roles').select('name, permissions');
-                        const match = allRoles?.find((r: any) => r.name.toLowerCase() === roleName?.toLowerCase());
-                        if (match) data = match;
-                    }
-
-                    if (data) setLivePermissions(data.permissions);
-                }
+                const data = await staffApiFetch('/me');
+                if (data?.user?.permissions) setLivePermissions(data.user.permissions);
             } catch (err) {
                 console.error("Error fetching live permissions in Admin:", err);
             }
@@ -8354,8 +8320,6 @@ const Admin = () => {
             <SplashedPushNotifications ref={notificationRef} />
 
             <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
-
-            {config?.enable_dev_panel === 'true' && <DevUserSwitcher />}
 
             {/* Controle por teclado: paleta de comandos (⌘K) + ajuda de atalhos (?) */}
             <CommandPalette />

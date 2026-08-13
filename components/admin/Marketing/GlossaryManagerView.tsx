@@ -86,10 +86,8 @@ const GlossaryManagerView: React.FC = () => {
   const request = useCallback(async (method: string, body?: Record<string, unknown>) => {
     const response = await fetch('/api/glossary', {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-wtech-user-id': user?.id || '',
-      },
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     const payload = await response.json().catch(() => ({}));
@@ -99,7 +97,7 @@ const GlossaryManagerView: React.FC = () => {
       throw error;
     }
     return payload;
-  }, [user?.id]);
+  }, []);
 
   const loadTerms = useCallback(async () => {
     if (!user?.id) return;

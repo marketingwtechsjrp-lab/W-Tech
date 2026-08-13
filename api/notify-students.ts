@@ -1,4 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { isSameOriginRequest } from './_auth.js';
+import { requireStaffOrS2SPermission } from './_s2s.js';
+import { isCronAuthorized } from './_cron.js';
 import { processNotify, type NotifyAction, type NotifyChannel } from './_notify.js';
 import { previewSystemReport, sendSystemReport } from './_report.js';
 import { previewAgentsReport, sendAgentsReport } from './_agentsReport.js';
@@ -20,7 +22,7 @@ import { answerGroupQuestion } from './_aiGroupBot.js';
  * POST { action: 'system-report', mode?: 'preview' | 'send', force?: boolean }
  *   → relatório diário para o grupo do dono (categoria 'report' do dispatcher).
  *   Auth: Authorization: Bearer <CRON_SECRET> (cron do GitHub Actions)
- *         OU header x-wtech-user-id de um usuário existente (painel admin).
+ *         OU sessão de staff httpOnly válida (painel admin — ver api/_auth.ts).
  *   mode 'preview' devolve { text } sem enviar; force ignora o toggle.
  *
  * POST { action: 'ai-agents-report', mode?: 'preview' | 'send', force?: boolean }
@@ -35,34 +37,38 @@ import { answerGroupQuestion } from './_aiGroupBot.js';
  * Acionado pelo painel admin (lista de inscritos): cobrança individual,
  * cobrança de todos os devedores e envio de informações do curso em massa.
  * Reaproveita os motores de e-mail (Brevo) e WhatsApp (instância de automação).
+ *
+ * Auth de todas as ações (exceto o bypass de cron nas duas de relatório):
+ * sessão de staff httpOnly same-origin OU chamada S2S assinada do ERP
+ * (x-wtech-svc + HMAC — ver api/_s2s.ts), ambas exigindo a permissão
+ * `courses_view_reports`.
  */
 const VALID_ACTIONS: NotifyAction[] = ['balance', 'course-info'];
 const VALID_CHANNELS: NotifyChannel[] = ['whatsapp', 'email', 'both'];
 
-/** Cron (Bearer CRON_SECRET) ou usuário existente do painel (SITE_Users). */
-async function isAuthorized(req: any): Promise<boolean> {
-    const secret = (process.env.CRON_SECRET || '').trim();
-    const auth = String(req.headers?.['authorization'] || '');
-    if (secret && auth === `Bearer ${secret}`) return true;
+/**
+ * Cron (Bearer CRON_SECRET — imune a CSRF, não depende de cookie) autoriza
+ * direto (só as ações de relatório usam isso, chamadas pelo GitHub Actions).
+ * S2S (x-wtech-svc) pula o gate CSRF — não é um browser, não tem Origin/
+ * Sec-Fetch-Site, é autorizado pela assinatura HMAC dentro de
+ * requireStaffOrS2SPermission. Chamada de browser exige gate CSRF same-origin
+ * (fail-closed: o cookie sozinho não basta) + sessão de staff. Nos dois
+ * casos (staff ou S2S) a mesma permissão `courses_view_reports` é exigida.
+ * Já responde 401/403/origin_not_allowed — o caller só precisa checar
+ * `if (!(await authorize(req, res))) return;`.
+ */
+async function authorize(req: any, res: any): Promise<boolean> {
+    // Mesmo guard fail-closed/timing-safe/sem-trim de todas as rotas de
+    // automação — ver api/_cron.ts (evita duplicar a lógica e divergir dela).
+    if (isCronAuthorized(req)) return true;
 
-    try {
-        const userId = String(req.headers?.['x-wtech-user-id'] || '').trim();
-        if (!userId) return false;
-        const url = process.env.VITE_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!url || !serviceKey) return false;
-        const supabase = createClient(url, serviceKey);
-        const { data, error } = await supabase
-            .from('SITE_Users')
-            .select('id, status')
-            .eq('id', userId)
-            .maybeSingle();
-        if (error || !data) return false;
-        if (data.status && String(data.status).toLowerCase() === 'inactive') return false;
-        return true;
-    } catch {
+    const svcHeader = String(req.headers?.['x-wtech-svc'] || '');
+    if (!svcHeader && !isSameOriginRequest(req)) {
+        res.status(403).json({ ok: false, error: 'origin_not_allowed' });
         return false;
     }
+    const staff = await requireStaffOrS2SPermission(req, res, 'courses_view_reports');
+    return Boolean(staff);
 }
 
 export default async function handler(req: any, res: any) {
@@ -72,9 +78,7 @@ export default async function handler(req: any, res: any) {
 
     // ── Relatório diário do sistema (grupo do dono) ──────────────────────────
     if (action === 'system-report') {
-        if (!(await isAuthorized(req))) {
-            return res.status(401).json({ ok: false, error: 'Não autorizado' });
-        }
+        if (!(await authorize(req, res))) return;
         try {
             if (req.body?.mode === 'preview') {
                 const { text } = await previewSystemReport();
@@ -90,9 +94,7 @@ export default async function handler(req: any, res: any) {
 
     // ── Relatório consolidado dos Assistentes de IA (Léo/Bia/Rita/Sofia) ─────
     if (action === 'ai-agents-report') {
-        if (!(await isAuthorized(req))) {
-            return res.status(401).json({ ok: false, error: 'Não autorizado' });
-        }
+        if (!(await authorize(req, res))) return;
         try {
             if (req.body?.mode === 'preview') {
                 const { text } = await previewAgentsReport();
@@ -108,9 +110,7 @@ export default async function handler(req: any, res: any) {
 
     // ── Sandbox do bot do grupo (Assistentes de IA) ──────────────────────────
     if (action === 'ai-group-ask') {
-        if (!(await isAuthorized(req))) {
-            return res.status(401).json({ ok: false, error: 'Não autorizado' });
-        }
+        if (!(await authorize(req, res))) return;
         const question = String(req.body?.question || '').trim();
         if (!question) return res.status(400).json({ ok: false, error: 'question é obrigatório' });
         try {
@@ -125,6 +125,10 @@ export default async function handler(req: any, res: any) {
     }
 
     // ── Disparo manual para alunos de um curso ───────────────────────────────
+    // Antes deste corte, este caminho não tinha auth nenhuma — qualquer um
+    // conseguia disparar cobrança/aviso em massa pra alunos de qualquer curso.
+    if (!(await authorize(req, res))) return;
+
     const courseId = (req.body?.courseId as string | undefined)?.trim();
     const channel = req.body?.channel as NotifyChannel | undefined;
     const enrollmentId = (req.body?.enrollmentId as string | undefined)?.trim() || undefined;

@@ -19,6 +19,7 @@ import {
 import { supabase } from '../../../../lib/supabaseClient';
 import { useAuth } from '../../../../context/AuthContext';
 import { createHasPermission } from '../../../../lib/permissions';
+import { fetchStaffDirectory } from '../../../../lib/staffDirectory';
 import { analyzeAndLearn } from '../../../../lib/waAnalysis';
 import ConversationList from './ConversationList';
 import ChatThread from './ChatThread';
@@ -72,12 +73,10 @@ const WhatsAppCloudInbox: React.FC<InboxProps> = ({ canViewAll = true }) => {
   // Mapa de id→nome dos atendentes (para mostrar quem assumiu).
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('SITE_Users').select('id, name');
-      if (data) {
-        const map: Record<string, string> = {};
-        data.forEach((u: any) => { map[u.id] = u.name; });
-        setUsersMap(map);
-      }
+      const data = await fetchStaffDirectory();
+      const map: Record<string, string> = {};
+      data.forEach((u) => { map[u.id] = u.name; });
+      setUsersMap(map);
     })();
   }, []);
 
