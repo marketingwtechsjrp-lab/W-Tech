@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { MarketingList } from '../../../types';
 import { Plus, Users, Search, Filter, Trash2, Edit, Save, X, Check, RefreshCw, Eye, Mail, Phone, Upload, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -63,8 +64,9 @@ const ListsManager = ({ permissions }: { permissions?: any }) => {
     }, [selectedList, isMembersModalOpen]);
 
     const fetchUsers = async () => {
-        const { data } = await supabase.from('SITE_Users').select('id, name, email');
-        if (data) setUsers(data);
+        // Diretório mínimo (id+name) — não é requisito operacional aqui ver
+        // e-mail/cargo, e /api/staff/users agora exige manage_users.
+        setUsers(await fetchStaffDirectory());
     };
 
     const fetchLists = async () => {

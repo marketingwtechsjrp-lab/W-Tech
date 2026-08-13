@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
+import { requireSameOrigin } from './_auth.js';
+import { requireStaffOrS2SPermission } from './_s2s.js';
 
 /**
  * Vercel Serverless Function — Lançamento de curso por cidade/região.
  * URL: /api/launch-course-campaign
+ *
+ * Antes deste corte, esta rota era pública — qualquer um conseguia disparar
+ * um lançamento de e-mail em massa pra até 500 leads por chamada. Agora
+ * exige sessão de staff (browser, com gate CSRF) OU chamada S2S assinada do
+ * ERP, nos dois casos com a permissão `marketing_manage_campaigns`.
  *
  * POST { courseId, dryRun?: boolean }
  *
@@ -39,6 +46,10 @@ const fmtDate = (d?: string) => {
 
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    const svcHeader = String(req.headers?.['x-wtech-svc'] || '');
+    if (!svcHeader && !requireSameOrigin(req, res)) return;
+    if (!(await requireStaffOrS2SPermission(req, res, 'marketing_manage_campaigns'))) return;
 
     const courseId = (req.body?.courseId as string | undefined)?.trim();
     const dryRun = req.body?.dryRun === true;

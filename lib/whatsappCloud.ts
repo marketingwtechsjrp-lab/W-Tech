@@ -214,16 +214,18 @@ interface SendResult {
 }
 
 /**
- * O app usa autenticação própria (tabela SITE_Users, sem Supabase Auth), então
- * identificamos quem envia pelo id do usuário logado, validado no servidor.
+ * O app usa autenticação própria (tabela SITE_Users, sem Supabase Auth). A
+ * identidade de quem envia vem do cookie de sessão httpOnly (mandado sozinho
+ * pelo browser em requests same-origin) e é validada no servidor — não mais
+ * de um id declarado pelo cliente. `actorId` fica só por compatibilidade de
+ * assinatura com quem chama; não é mais usado para autenticar nada.
  */
-async function postSend(payload: Record<string, unknown>, actorId?: string): Promise<SendResult> {
+async function postSend(payload: Record<string, unknown>, _actorId?: string): Promise<SendResult> {
   try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (actorId) headers['x-wtech-user-id'] = actorId;
     const res = await fetch('/api/whatsapp-cloud-send', {
       method: 'POST',
-      headers,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await res.json();

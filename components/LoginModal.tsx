@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Mail, Loader2, ArrowRight, Database } from 'lucide-react';
+import { X, Lock, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ASSETS } from '../constants';
-import { seedDatabase } from '../lib/seedData';
 import { useNavigate } from 'react-router-dom';
 
 const LoginModal: React.FC = () => {
   const { showLoginModal, setShowLoginModal, login } = useAuth();
-  const [email, setEmail] = useState('admin@w-tech.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,20 +26,6 @@ const LoginModal: React.FC = () => {
         navigate('/admin');
     }
     setIsSubmitting(false);
-  };
-
-  const handleSeed = async () => {
-    setIsSeeding(true);
-    setError('');
-    try {
-        const msg = await seedDatabase();
-        alert(msg + '\n\nLogin: admin@w-tech.com\nSenha: 123');
-    } catch (e: any) {
-        console.error("Seed Error caught in UI:", e);
-        setError(`Erro ao gerar dados: ${e}`);
-    } finally {
-        setIsSeeding(false);
-    }
   };
 
   return (
@@ -135,16 +119,6 @@ const LoginModal: React.FC = () => {
                 <p className="text-white/40 text-xs">
                   Ainda não tem acesso? <a href="#" className="text-wtech-gold hover:underline">Solicite ao administrador.</a>
                 </p>
-                <div className="mt-4 pt-4 border-t border-white/10">
-                    <button 
-                        onClick={handleSeed}
-                        disabled={isSeeding}
-                        className="text-[10px] text-white/40 hover:text-wtech-gold flex items-center justify-center gap-1 mx-auto transition-colors"
-                    >
-                        {isSeeding ? <Loader2 size={10} className="animate-spin"/> : <Database size={10} />}
-                        Primeiro Acesso? Gerar Admin de Teste
-                    </button>
-                </div>
               </div>
             </div>
           </motion.div>

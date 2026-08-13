@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { MarketingList } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import ListsManager from '../Marketing/ListsManager';
 import { ClientDetailModal } from './ClientDetailModal';
 import { cn } from '../../../lib/utils';
@@ -85,9 +86,10 @@ const ClientsManagerView = ({ permissions }: { permissions?: any }) => {
     }, [isGroupModalOpen, user?.id, permissions]);
 
     const fetchAttendants = async () => {
-        // Always fetch users to display their names/assignments
-        const { data } = await supabase.from('SITE_Users').select('id, name, email, role');
-        if (data) setAttendants(data);
+        // Diretório mínimo (id+name) via endpoint autenticado — não precisa de
+        // e-mail/cargo (decorativo, não é requisito operacional aqui) nem de
+        // `manage_users` (que /api/staff/users agora exige).
+        setAttendants(await fetchStaffDirectory());
     };
 
     const fetchClients = async () => {

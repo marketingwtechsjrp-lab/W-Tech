@@ -187,7 +187,8 @@ const GroupBotPanel: React.FC = () => {
         try {
             const res = await fetch('/api/notify-students', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-wtech-user-id': user?.id || '' },
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'ai-group-ask', question: q }),
             });
             const data = await res.json();

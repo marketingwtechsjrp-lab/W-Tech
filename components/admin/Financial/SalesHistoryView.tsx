@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { Filter, TrendingUp, User, RotateCcw, Calendar, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -25,14 +26,10 @@ const SalesHistoryView: React.FC = () => {
     useEffect(() => { fetchUsers(); }, []);
 
     const fetchUsers = async () => {
-        try {
-            const { data: users } = await supabase.from('SITE_Users').select('id, name');
-            const map: Record<string, string> = {};
-            users?.forEach(user => { map[user.id] = user.name; });
-            setUsersMap(map);
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        }
+        const users = await fetchStaffDirectory();
+        const map: Record<string, string> = {};
+        users.forEach(user => { map[user.id] = user.name; });
+        setUsersMap(map);
     };
 
     useEffect(() => { fetchSales(); }, []);

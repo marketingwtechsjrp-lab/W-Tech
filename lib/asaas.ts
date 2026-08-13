@@ -5,19 +5,11 @@
  * (api/asaas-payment-link.ts). A `asaas_api_key` nunca sai do backend, e o valor
  * é validado no servidor. Antes, esta lib lia a chave de SITE_Config e chamava
  * a API do Asaas direto do navegador (chave exposta no DevTools).
+ *
+ * Identidade: o endpoint valida a sessão de staff pelo cookie httpOnly
+ * (enviado automaticamente pelo browser em requests same-origin) — não há
+ * mais header de usuário auto-declarado.
  */
-
-/** Id do usuário logado (auth interina da FASE 1: header x-wtech-user-id). */
-function currentUserId(): string {
-  try {
-    const raw = localStorage.getItem('wtech_user');
-    if (!raw) return '';
-    const u = JSON.parse(raw);
-    return String(u?.id || '');
-  } catch {
-    return '';
-  }
-}
 
 export const createPaymentLink = async ({
   lead,
@@ -35,10 +27,8 @@ export const createPaymentLink = async ({
   try {
     const res = await fetch('/api/asaas-payment-link', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-wtech-user-id': currentUserId(),
-      },
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lead, value, description, dueDate, enrollmentId }),
     });
     const data = await res.json().catch(() => null);

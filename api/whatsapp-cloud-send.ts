@@ -7,20 +7,23 @@ import {
   upsertConversation,
   type CloudConfig,
 } from './_whatsappCloud.js';
+import { requireStaffPermission, requireSameOrigin } from './_auth.js';
 
 /**
  * Vercel Serverless Function — WhatsApp Cloud API (Meta): status + envio.
  * URL: /api/whatsapp-cloud-send
  *
- *   GET  → status da integração (dados NÃO-sensíveis: booleans + número).
- *   POST → envia mensagem (texto/imagem/áudio/vídeo/documento).
+ *   GET  → status da integração (config/webhook/displayNumber/apiVersion —
+ *          exige permissão `whatsapp_engine_config`, sessão de staff válida).
+ *   POST → envia mensagem (texto/imagem/áudio/vídeo/documento) — exige
+ *          `whatsapp_send`.
  *
  * GET e POST ficam no mesmo arquivo para respeitar o limite de 12 funções
  * serverless do plano Hobby da Vercel. O webhook continua separado.
  *
  * O app usa autenticação própria (tabela SITE_Users, sem Supabase Auth), então
- * o POST exige o header x-wtech-user-id com o id de um usuário existente —
- * validado no servidor — para não ficar aberto ao público.
+ * as duas rotas exigem sessão de staff httpOnly válida + a permissão exata
+ * (cookie + digest — ver api/_auth.ts) para não ficar aberto ao público.
  *
  * Body do POST (JSON):
  *   { to, type, text?, mediaBase64?, mediaMime?, filename?, caption? }
@@ -34,25 +37,6 @@ import {
  */
 
 const MEDIA_TYPES = ['image', 'audio', 'video', 'document'];
-
-/** Confere se quem chama é um usuário existente do painel (SITE_Users). */
-async function requireAuth(req: any): Promise<boolean> {
-  try {
-    const userId = String(req.headers?.['x-wtech-user-id'] || '').trim();
-    if (!userId) return false;
-    const supabase = getServiceClient();
-    const { data, error } = await supabase
-      .from('SITE_Users')
-      .select('id, status')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error || !data) return false;
-    if (data.status && String(data.status).toLowerCase() === 'inactive') return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** Separa o mime e os bytes de um data URL ou base64 puro. */
 function decodeMedia(mediaBase64: string, fallbackMime: string): { buffer: Buffer; mime: string } {
@@ -87,6 +71,7 @@ export default async function handler(req: any, res: any) {
   // "configured" = credenciais preenchidas. "live" = o token REALMENTE tem
   // acesso ao número na Meta (testa de verdade, pra não mostrar falso positivo).
   if (req.method === 'GET') {
+    if (!(await requireStaffPermission(req, res, 'whatsapp_engine_config'))) return;
     try {
       const cfg = await loadCloudConfig();
       const configured = !!cfg.accessToken && !!cfg.phoneNumberId;
@@ -131,9 +116,8 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!(await requireAuth(req))) {
-    return res.status(401).json({ error: 'Não autorizado.' });
-  }
+  if (!requireSameOrigin(req, res)) return;
+  if (!(await requireStaffPermission(req, res, 'whatsapp_send'))) return;
 
   const supabase = getServiceClient();
   const cfg = await loadCloudConfig(supabase);

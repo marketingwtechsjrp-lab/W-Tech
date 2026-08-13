@@ -32,7 +32,61 @@ import waAtendentesWebhook from './edge/wa-atendentes-webhook.js';
 import { approvalsRouter } from './approvals.js';
 // ── POP de Marketing Fase 2 (compartilhamentos + alerta de ocupação) ─────────
 import { marketingRouter } from './marketing.js';
+// ── Identidade e sessão do painel admin (cookie httpOnly — ver api/_auth.ts) ─
+import { staffAuthRouter } from './staffAuth.js';
+import { isLoopbackHostname } from '../api/_auth.js';
 import { countryToLandingLanguage } from '../lib/geoLanguage.js';
+
+/**
+ * Gate de startup — só em produção. Falha ANTES de `app.listen()` se a config
+ * de segurança estiver ausente/malformada, pra nunca subir um deploy "200 OK"
+ * com todas as mutações batendo 403 (STAFF_TRUSTED_ORIGINS vazia) ou o
+ * boundary S2S aberto/quebrado (SITE_API_SECRET/CRON_SECRET ausentes ou
+ * curtos demais pra servir de segredo HMAC). Mensagens citam só o NOME da
+ * env que falhou, nunca o valor (nem de STAFF_TRUSTED_ORIGINS, que não é
+ * segredo mas não precisa aparecer em log de erro de boot).
+ */
+function validateProductionConfig(): void {
+  if (process.env.NODE_ENV !== 'production') return;
+
+  const problems: string[] = [];
+
+  const originsRaw = String(process.env.STAFF_TRUSTED_ORIGINS || '').trim();
+  if (!originsRaw) {
+    problems.push('STAFF_TRUSTED_ORIGINS ausente ou vazia');
+  } else {
+    const origins = originsRaw.split(',').map((s) => s.trim()).filter(Boolean);
+    for (const origin of origins) {
+      let valid = true;
+      try {
+        const u = new URL(origin);
+        if (u.protocol !== 'https:') valid = false;
+        // Mesmo helper de loopback usado por normalizeOriginEntry
+        // (api/_auth.ts) — nunca divergir entre o gate de startup e a
+        // normalização em runtime.
+        if (isLoopbackHostname(u.hostname)) valid = false;
+        if (u.pathname !== '/' && u.pathname !== '') valid = false;
+        if (u.search || u.hash) valid = false;
+      } catch {
+        valid = false;
+      }
+      if (!valid) problems.push('STAFF_TRUSTED_ORIGINS contém uma entrada inválida (precisa ser URL https explícita, sem localhost, sem path/query)');
+    }
+  }
+
+  for (const name of ['SITE_API_SECRET', 'CRON_SECRET']) {
+    const value = process.env[name] || '';
+    if (!value) problems.push(`${name} ausente`);
+    else if (value.length < 32) problems.push(`${name} curto demais (mínimo 32 caracteres)`);
+  }
+
+  if (problems.length > 0) {
+    console.error('[startup] Configuração de produção inválida — servidor NÃO vai subir:');
+    for (const p of problems) console.error(`  - ${p}`);
+    process.exit(1);
+  }
+}
+validateProductionConfig();
 
 const app = express();
 app.disable('x-powered-by');
@@ -70,7 +124,16 @@ function adapt(handler: VercelStyleHandler) {
 // rota, registrada ANTES do express.json() para o body chegar como Buffer.
 app.all('/api/stripe-webhook', express.raw({ type: () => true }), adapt(stripeWebhook));
 
-app.use(express.json({ limit: '10mb' }));
+// `verify` captura os bytes crus do body ANTES do parse — o boundary S2S
+// (api/_s2s.ts) precisa do buffer exato pra recomputar SHA256(rawBody) na
+// assinatura HMAC; sem isso, uma reserialização do JSON já parseado poderia
+// divergir do que o ERP assinou (ordem de chaves, espaços, etc.) e toda
+// assinatura válida falharia. Não muda nada pras rotas que não usam S2S —
+// `req.body` continua populado normalmente por este mesmo middleware.
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, _res, buf: Buffer) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Rotas /api (mesmos paths da Vercel) ──────────────────────────────────────
@@ -120,8 +183,8 @@ for (const [nome, handler] of Object.entries(rotasApi)) {
 }
 
 // ── Aprovações de Marketing ──────────────────────────────────────────────────
-// Router nativo (subrotas + upload multipart via multer). Auth pelo mesmo
-// padrão interino das rotas admin (x-wtech-user-id — ver api/_auth.ts).
+// Router nativo (subrotas + upload multipart via multer). Auth pela sessão de
+// staff httpOnly (cookie + digest — ver api/_auth.ts).
 // A decisão via WhatsApp NÃO tem rota própria: chega pelo webhook público
 // /api/wa-atendentes-webhook e é roteada pelo remoteJid do grupo.
 app.use('/api/approvals', approvalsRouter);
@@ -130,6 +193,9 @@ app.use('/api/approvals', approvalsRouter);
 // /share e /course-occupancy usam a auth staff; /course-alerts/scan usa o
 // guard de cron (Bearer CRON_SECRET) — por isso a auth fica POR ROTA no router.
 app.use('/api/marketing', marketingRouter);
+
+// ── Identidade/sessão do painel admin (login, /me, logout, CRUD de equipe) ───
+app.use('/api/staff', staffAuthRouter);
 
 // ── Rewrites herdados do vercel.json (URLs antigas continuam funcionando) ────
 // /api/<task> → /api/jobs?task=<task>

@@ -388,11 +388,13 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
             if (enrollError || !enrollment) throw new Error(enrollError?.message || 'Erro ao criar inscrição de teste.');
 
-            // Cria preferência no MP
+            // Cria preferência no MP — o backend cria sua PRÓPRIA inscrição a partir de
+            // courseId+customer (não aceita um enrollmentId pré-existente), então a
+            // `enrollment` de teste criada acima serve só pra validar a FK/RLS antes de
+            // chamar o MP; não é referenciada aqui (não existe `leadId` nesse fluxo de teste).
             const mpResult = await createMercadoPagoPreference({
-                course: { id: course.id, title: '⚠️ TESTE INTEGRAÇÃO MP', price: 1.00 },
+                courseId: course.id,
                 customer: { name: 'Teste Integração W-Tech', email: user?.email || 'teste@w-tech.com', cpf: '00000000000', phone: '11900000000' },
-                enrollmentId: enrollment.id,
             });
 
             if (!mpResult.success) throw new Error(mpResult.error || 'Erro ao criar preferência MP.');
@@ -779,7 +781,8 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         try {
             const res = await fetch('/api/notify-students', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-wtech-user-id': user?.id || '' },
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'system-report', mode: 'preview' })
             });
             const data = await res.json();
@@ -800,7 +803,8 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         try {
             const res = await fetch('/api/notify-students', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-wtech-user-id': user?.id || '' },
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'system-report', force: true })
             });
             const data = await res.json();

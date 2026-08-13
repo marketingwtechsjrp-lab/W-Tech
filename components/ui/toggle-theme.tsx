@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabaseClient';
 
 const THEME_OPTIONS = [
 	{
@@ -40,7 +39,19 @@ export function ToggleTheme() {
     const handleThemeChange = async (newTheme: string) => {
         setTheme(newTheme);
         if (user?.id) {
-            await supabase.from('SITE_Users').update({ theme: newTheme }).eq('id', user.id);
+            // Persiste o tema via endpoint server-side (RPC site_staff_tema_definir):
+            // a sessão httpOnly autoriza a escrita, o browser nunca grava direto na tabela.
+            try {
+                await fetch('/api/staff/theme', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theme: newTheme }),
+                });
+            } catch (err) {
+                console.error('Failed to persist theme:', err);
+            }
         }
     };
 

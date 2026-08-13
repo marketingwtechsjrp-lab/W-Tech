@@ -7,6 +7,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { OrdersKanbanBoard } from './OrdersKanbanBoard';
 import { NewOrderModal } from './OrderEditor';
 import { cn } from '../../../lib/utils';
@@ -88,8 +89,8 @@ const SalesManagerView: React.FC<{
     }, [initialLead]);
 
     const fetchUsers = async () => {
-        const { data } = await supabase.from('SITE_Users').select('id, name');
-        if (data) setUsersList(data);
+        const data = await fetchStaffDirectory();
+        setUsersList(data);
     };
 
     const fetchSales = async () => {

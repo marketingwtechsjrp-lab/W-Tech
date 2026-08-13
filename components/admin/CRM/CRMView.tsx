@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
+import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import type { Lead } from '../../../types';
 import { createPaymentLink } from '../../../lib/asaas';
 import { createStripePaymentLink } from '../../../lib/stripe';
@@ -1072,15 +1073,12 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
             const { data: settings } = await supabase.from('SITE_SystemSettings').select('value').eq('key', 'crm_distribution_mode').single();
             if (settings) setDistMode(settings.value);
 
-            // 2. Users (Map ID -> Name)
-            // Safer to select specific columns we know exist. 'full_name' might be missing from schema causing errors.
-            const { data: usersData } = await supabase.from('SITE_Users').select('id, name');
-            if (usersData) {
-                setUsersList(usersData);
-                const map: Record<string, string> = {};
-                usersData.forEach((u: any) => { map[u.id] = u.name || 'Usuário'; });
-                setUsersMap(map);
-            }
+            // 2. Users (Map ID -> Name) — via endpoint autenticado, não SITE_Users direto.
+            const usersData = await fetchStaffDirectory();
+            setUsersList(usersData);
+            const map: Record<string, string> = {};
+            usersData.forEach((u) => { map[u.id] = u.name || 'Usuário'; });
+            setUsersMap(map);
         };
         fetchSettingsAndUsers();
     }, []);

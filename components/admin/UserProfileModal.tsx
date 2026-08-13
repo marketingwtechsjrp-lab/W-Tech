@@ -22,9 +22,11 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
         name: '',
         email: '',
         phone: '',
-        password: '',
         avatar_url: ''
     });
+
+    const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [passwordLoading, setPasswordLoading] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -32,9 +34,9 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                 name: user.name || '',
                 email: user.email || '',
                 phone: user.phone || '',
-                password: '',
                 avatar_url: user.avatar_url || ''
             });
+            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         }
     }, [user, isOpen]);
 
@@ -58,13 +60,19 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                 .from('site-assets')
                 .getPublicUrl(filePath);
 
-            // 3. Update User Record
-            const { error: dbError } = await supabase
-                .from('SITE_Users')
-                .update({ avatar_url: publicUrl })
-                .eq('id', user.id);
-
-            if (dbError) throw dbError;
+            // 3. Update User Record — via endpoint server-side (RPC
+            // site_staff_perfil_definir), autoatendimento autorizado pela sessão.
+            const profileRes = await fetch('/api/staff/profile', {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ avatar_url: publicUrl }),
+            });
+            const profileData = await profileRes.json().catch(() => ({}));
+            if (!profileRes.ok || profileData?.success === false) {
+                throw new Error(profileData?.error || 'Falha ao salvar avatar.');
+            }
 
             // Trigger global refresh
             await refreshUser();
@@ -82,39 +90,25 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
-        
+
         setLoading(true);
         setSuccess(false);
 
         try {
-            // 1. Update Password IF AND ONLY IF user intentionally provided a new one
-            // We check for length > 5 and trim to avoid browser autofill issues
-            const newPassword = formData.password.trim();
-            if (newPassword && newPassword.length >= 6) {
-                // Check session explicitly
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    throw new Error('Sessão expirada. Por favor, faça login novamente.');
-                }
-
-                const { error: authError } = await supabase.auth.updateUser({ 
-                    password: newPassword 
-                });
-                if (authError) throw authError;
-            } else if (newPassword && newPassword.length > 0) {
-                throw new Error('A nova senha deve ter pelo menos 6 caracteres.');
+            // Update Public Profile — via endpoint server-side (RPC
+            // site_staff_perfil_definir), autoatendimento autorizado pela sessão
+            // httpOnly (nunca um update direto na tabela vindo do browser).
+            const profileRes = await fetch('/api/staff/profile', {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: formData.name, phone: formData.phone }),
+            });
+            const profileData = await profileRes.json().catch(() => ({}));
+            if (!profileRes.ok || profileData?.success === false) {
+                throw new Error(profileData?.error || 'Falha ao salvar perfil.');
             }
-
-            // 2. Update Public Profile
-            const { error: dbError } = await supabase
-                .from('SITE_Users')
-                .update({
-                    name: formData.name,
-                    phone: formData.phone
-                })
-                .eq('id', user.id);
-
-            if (dbError) throw dbError;
 
             // Trigger global refresh to update UI everywhere
             await refreshUser();
@@ -129,6 +123,51 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
             alert('Erro ao atualizar perfil: ' + (error.message || 'Erro desconhecido'));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) return;
+
+        const { currentPassword, newPassword, confirmPassword } = passwordForm;
+        if (!currentPassword || !newPassword) {
+            alert('Preencha a senha atual e a nova senha.');
+            return;
+        }
+        if (newPassword.length < 8) {
+            alert('A nova senha deve ter pelo menos 8 caracteres.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            alert('A confirmação não bate com a nova senha.');
+            return;
+        }
+
+        setPasswordLoading(true);
+        try {
+            const res = await fetch('/api/staff/password', {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentPassword, newPassword }),
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || data?.success !== true) {
+                throw new Error(data?.error || 'Não foi possível trocar a senha.');
+            }
+
+            // Sucesso revoga TODAS as sessões (inclusive esta) — o servidor já
+            // limpou o cookie. Precisa logar de novo.
+            alert('Senha alterada com sucesso! Faça login novamente.');
+            window.location.href = '/';
+        } catch (error: any) {
+            console.error('Change Password Error:', error);
+            alert('Erro ao trocar senha: ' + (error.message || 'Erro desconhecido'));
+        } finally {
+            setPasswordLoading(false);
         }
     };
 
@@ -223,7 +262,8 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
                         {activeTab === 'profile' ? (
-                            <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-md mx-auto">
+                            <div className="space-y-10 max-w-md mx-auto">
+                            <form onSubmit={handleUpdateProfile} className="space-y-6">
                                 <div className="grid grid-cols-1 gap-6">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Nome Completo</label>
@@ -261,32 +301,14 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                                             />
                                         </div>
                                     </div>
-
-                                    <div className="pt-4 border-t border-gray-100 mt-2">
-                                        <label className="block text-xs font-bold text-gray-900 uppercase mb-4 tracking-tighter flex items-center gap-2">
-                                            <Lock size={14} /> Segurança
-                                        </label>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Nova Senha</label>
-                                            <input 
-                                                type="password"
-                                                className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl px-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
-                                                value={formData.password}
-                                                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                                placeholder="••••••••"
-                                                autoComplete="new-password"
-                                            />
-                                            <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Deixe em branco para manter a senha atual.</p>
-                                        </div>
-                                    </div>
                                 </div>
 
-                                <button 
+                                <button
                                     type="submit"
                                     disabled={loading}
                                     className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-xl transition-all flex items-center justify-center gap-3 mt-8 ${
-                                        success 
-                                        ? 'bg-green-500 text-white' 
+                                        success
+                                        ? 'bg-green-500 text-white'
                                         : 'bg-wtech-gold text-black hover:brightness-110 hover:scale-[1.02] active:scale-95'
                                     }`}
                                 >
@@ -299,6 +321,60 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                                     )}
                                 </button>
                             </form>
+
+                            {/* Troca de senha — formulário separado (RPC self-service
+                                site_staff_senha_trocar, exige senha atual + nova). */}
+                            <form onSubmit={handleChangePassword} className="space-y-4 pt-6 border-t border-gray-100">
+                                <label className="block text-xs font-bold text-gray-900 uppercase mb-2 tracking-tighter flex items-center gap-2">
+                                    <Lock size={14} /> Trocar Senha
+                                </label>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Senha Atual</label>
+                                    <input
+                                        type="password"
+                                        className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl px-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
+                                        value={passwordForm.currentPassword}
+                                        onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                                        placeholder="••••••••"
+                                        autoComplete="current-password"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Nova Senha</label>
+                                    <input
+                                        type="password"
+                                        className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl px-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
+                                        value={passwordForm.newPassword}
+                                        onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                        placeholder="Mínimo 8 caracteres"
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Confirmar Nova Senha</label>
+                                    <input
+                                        type="password"
+                                        className="w-full border border-[var(--admin-border)] bg-[var(--admin-surface-2)] rounded-xl px-4 py-3.5 text-sm font-bold focus:bg-[var(--admin-surface-1)] focus:border-wtech-gold transition-all outline-none"
+                                        value={passwordForm.confirmPassword}
+                                        onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                        placeholder="••••••••"
+                                        autoComplete="new-password"
+                                    />
+                                    <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Ao trocar, todas as suas sessões são encerradas — você vai precisar entrar de novo.</p>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={passwordLoading}
+                                    className="w-full py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-xl transition-all flex items-center justify-center gap-3 bg-gray-900 text-white hover:brightness-110 hover:scale-[1.02] active:scale-95"
+                                >
+                                    {passwordLoading ? (
+                                        <><Loader2 size={20} className="animate-spin" /> Trocando...</>
+                                    ) : (
+                                        <><Lock size={20} /> Trocar Senha</>
+                                    )}
+                                </button>
+                            </form>
+                            </div>
                         ) : (
                             <div className="animate-in fade-in slide-in-from-bottom-4">
                                 <UserWhatsAppConnection />

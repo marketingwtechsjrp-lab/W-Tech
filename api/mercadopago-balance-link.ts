@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { requireSameOrigin } from './_auth.js';
+import { requireStaffOrS2SPermission } from './_s2s.js';
 
 /**
  * Vercel Serverless Function — Link de pagamento do SALDO de uma inscrição.
@@ -15,10 +17,17 @@ import { createClient } from '@supabase/supabase-js';
  * amount_paid) quando o pagamento é aprovado.
  *
  * Uso: o atendente gera o link no painel (modal "Quitar Saldo"), copia e envia
- * manualmente pelo WhatsApp.
+ * manualmente pelo WhatsApp. Exige sessão de staff (browser, CSRF) OU S2S do
+ * ERP, nos dois casos com `financial_add_transaction` — antes deste corte a
+ * rota era pública e qualquer um conseguia gerar cobrança pra qualquer
+ * inscrição.
  */
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    const svcHeader = String(req.headers?.['x-wtech-svc'] || '');
+    if (!svcHeader && !requireSameOrigin(req, res)) return;
+    if (!(await requireStaffOrS2SPermission(req, res, 'financial_add_transaction'))) return;
 
     const enrollmentId = (req.body?.enrollmentId as string | undefined)?.trim();
     const amount = Number(req.body?.amount);
