@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { isSameOriginRequest } from './_auth.js';
 import { requireStaffOrS2SPermission } from './_s2s.js';
 import { isCronAuthorized } from './_cron.js';
@@ -74,9 +74,13 @@ async function authorize(req: any, res: any): Promise<boolean> {
 }
 
 function isRhEmailAuthorized(req: any): boolean {
-    const secret = (process.env.RH_EMAIL_SECRET || '').trim();
+    const secret = process.env.RH_EMAIL_SECRET || process.env.SITE_API_SECRET || '';
     const auth = String(req.headers?.['authorization'] || '');
-    return Boolean(secret && auth === `Bearer ${secret}`);
+    if (!secret) return false;
+
+    const received = Buffer.from(auth, 'utf8');
+    const expected = Buffer.from(`Bearer ${secret}`, 'utf8');
+    return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
 export default async function handler(req: any, res: any) {
