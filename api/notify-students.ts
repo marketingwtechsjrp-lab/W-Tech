@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { isSameOriginRequest } from './_auth.js';
 import { requireStaffOrS2SPermission } from './_s2s.js';
 import { isCronAuthorized } from './_cron.js';
@@ -5,6 +6,7 @@ import { processNotify, type NotifyAction, type NotifyChannel } from './_notify.
 import { previewSystemReport, sendSystemReport } from './_report.js';
 import { previewAgentsReport, sendAgentsReport } from './_agentsReport.js';
 import { answerGroupQuestion } from './_aiGroupBot.js';
+import { alreadySentForRecipient, sendEmail } from './_email.js';
 
 /**
  * Vercel Serverless Function — Disparo manual de mensagens para alunos
@@ -71,10 +73,42 @@ async function authorize(req: any, res: any): Promise<boolean> {
     return Boolean(staff);
 }
 
+function isRhEmailAuthorized(req: any): boolean {
+    const secret = (process.env.RH_EMAIL_SECRET || '').trim();
+    const auth = String(req.headers?.['authorization'] || '');
+    return Boolean(secret && auth === `Bearer ${secret}`);
+}
+
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const action = req.body?.action as string | undefined;
+
+    // ── E-mail transacional do RH (somente servidor do Gestão) ──────────────
+    if (action === 'rh-email') {
+        if (!isRhEmailAuthorized(req)) {
+            return res.status(401).json({ sent: false, error: 'Não autorizado' });
+        }
+        const destinatario = String(req.body?.destinatario || '').trim().toLowerCase();
+        const assunto = String(req.body?.assunto || '').trim();
+        const html = String(req.body?.html || '');
+        const idempotencia = String(req.body?.idempotencia || '').trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(destinatario)) {
+            return res.status(400).json({ sent: false, error: 'Destinatário inválido' });
+        }
+        if (!assunto || assunto.length > 180 || !html || html.length > 100_000) {
+            return res.status(400).json({ sent: false, error: 'Conteúdo de e-mail inválido' });
+        }
+        if (!idempotencia || idempotencia.length > 300) {
+            return res.status(400).json({ sent: false, error: 'Idempotência inválida' });
+        }
+        const tipo = `rh_${createHash('sha256').update(idempotencia).digest('hex')}`;
+        if (await alreadySentForRecipient(destinatario, tipo)) {
+            return res.status(200).json({ sent: true, skipped: 'already sent' });
+        }
+        const resultado = await sendEmail({ to: destinatario, subject: assunto, html, type: tipo });
+        return res.status(resultado.sent || resultado.skipped ? 200 : 502).json(resultado);
+    }
 
     // ── Relatório diário do sistema (grupo do dono) ──────────────────────────
     if (action === 'system-report') {

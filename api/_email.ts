@@ -162,6 +162,24 @@ export async function alreadySent(enrollmentId: string, type: string): Promise<b
     }
 }
 
+/** Idempotência para comunicações sem matrícula, como as automações do RH. */
+export async function alreadySentForRecipient(to: string, type: string): Promise<boolean> {
+    try {
+        const supabase = getServiceClient();
+        const { data } = await supabase
+            .from('SITE_EmailLogs')
+            .select('id')
+            .eq('recipient_email', to)
+            .eq('type', type)
+            .eq('status', 'Sent')
+            .limit(1)
+            .maybeSingle();
+        return !!data;
+    } catch {
+        return false;
+    }
+}
+
 /** Atalho: renderiza um template e envia. */
 export async function sendTemplate(
     to: string,
