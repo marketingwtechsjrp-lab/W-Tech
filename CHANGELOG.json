@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.34.0",
+    "date": "2026-08-13",
+    "title": "Sessao opaca de staff, canal S2S assinado e correcao do WhatsApp",
+    "changes": [
+      "Rotas administrativas deixam de aceitar identidade declarada pelo browser: sessao opaca com cookie httpOnly e permissoes reidratadas no servidor",
+      "Canal server-to-server assinado com HMAC (corpo bruto, timestamp e nonce) para cron e integracoes",
+      "Checkout confirma preco e oferta no servidor, nao mais no cliente",
+      "Inbox do WhatsApp volta a liberar envio para o cargo Atendente: o status da conexao exigia permissao de configuracao do motor",
+      "Botao Testar Conexao do WhatsApp (Meta) passa a distinguir sessao expirada e falta de permissao de problema nas credenciais da Meta"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.33.0",
     "date": "2026-08-12",
     "title": "Pagamento Stripe de Lisboa confirmado pelo servidor",

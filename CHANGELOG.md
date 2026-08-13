@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.34.0 (2026-08-13) - Sessao opaca de staff, canal S2S assinado e correcao do WhatsApp
+- Rotas administrativas deixam de aceitar identidade declarada pelo browser: sessao opaca com cookie httpOnly e permissoes reidratadas no servidor
+- Canal server-to-server assinado com HMAC (corpo bruto, timestamp e nonce) para cron e integracoes
+- Checkout confirma preco e oferta no servidor, nao mais no cliente
+- Inbox do WhatsApp volta a liberar envio para o cargo Atendente: o status da conexao exigia permissao de configuracao do motor
+- Botao Testar Conexao do WhatsApp (Meta) passa a distinguir sessao expirada e falta de permissao de problema nas credenciais da Meta
+
 ## v3.33.0 (2026-08-12) - Pagamento Stripe de Lisboa confirmado pelo servidor
 - Corrige o webhook do Stripe que falhava em 100 por cento das entregas por falta do segredo de assinatura
 - Checkout de Lisboa passa a enviar leadId e courseId na sessao, para o pagamento nao depender do navegador voltar
