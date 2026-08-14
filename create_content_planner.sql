@@ -34,18 +34,30 @@ CREATE TABLE IF NOT EXISTS "SITE_ContentPosts" (
     reference    TEXT,                          -- referência (post antigo, concorrente, marca)
     obs          TEXT,                          -- validações pendentes (Serginho, Alex/Kaká)
     paid_traffic BOOLEAN NOT NULL DEFAULT false,
+    ai_detail    JSONB,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT site_content_posts_status_check
+        CHECK (status IN ('nao_iniciado', 'gravado', 'publicado', 'nao_realizado', 'excluido')),
+    CONSTRAINT site_content_posts_category_check
+        CHECK (category IN ('ENDOMARKETING', 'PAUTA FRIA', 'PAUTA QUENTE', 'REAL TIME')),
+    CONSTRAINT site_content_posts_format_check
+        CHECK (format IN ('video', 'stories', 'carrossel', 'estatico', 'youtube')),
+    CONSTRAINT site_content_posts_networks_check
+        CHECK (jsonb_typeof(networks) = 'array')
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_posts_date ON "SITE_ContentPosts"(post_date);
 
--- ─── RLS (padrão permissivo do projeto — painel usa anon key) ────────────────
+-- ─── RLS: o navegador acessa somente /api/content-planner ───────────────────
 ALTER TABLE "SITE_ContentPosts" ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS content_posts_all ON "SITE_ContentPosts";
-CREATE POLICY content_posts_all ON "SITE_ContentPosts"
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS content_posts_service_only ON "SITE_ContentPosts";
+REVOKE ALL ON TABLE "SITE_ContentPosts" FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "SITE_ContentPosts" TO service_role;
+CREATE POLICY content_posts_service_only ON "SITE_ContentPosts"
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ─── Seed: semanas de 20/07 a 02/08/2026 (migração do calendário do Notion) ──
 INSERT INTO "SITE_ContentPosts" (title, post_date, status, category, format, content, objective, editorial, obs)

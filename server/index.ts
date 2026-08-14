@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import asaasPaymentLink from '../api/asaas-payment-link.js';
 import checkoutRecovery from '../api/checkout-recovery.js';
 import createStripeCheckout from '../api/create-stripe-checkout.js';
+import contentPlanner from '../api/content-planner.js';
 import glossary from '../api/_glossary.js';
 import jobs from '../api/jobs.js';
 import launchCourseCampaign from '../api/launch-course-campaign.js';
@@ -162,6 +163,7 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'asaas-payment-link': asaasPaymentLink,
   'checkout-recovery': checkoutRecovery,
   'create-stripe-checkout': createStripeCheckout,
+  'content-planner': contentPlanner,
   'glossary': glossary,
   'jobs': jobs,
   'launch-course-campaign': launchCourseCampaign,

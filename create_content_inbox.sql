@@ -24,15 +24,20 @@ CREATE TABLE IF NOT EXISTS "SITE_ContentInbox" (
     author      TEXT,                            -- quem registrou (Serginho, André, Kaká…)
     product_ref TEXT,                            -- produto/peça relacionada, quando houver
     processed   BOOLEAN NOT NULL DEFAULT false,  -- já virou card / foi arquivada
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT site_content_inbox_kind_check
+        CHECK (kind IN ('duvida', 'ideia', 'conhecimento'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_inbox_pending ON "SITE_ContentInbox"(processed, created_at);
 
 ALTER TABLE "SITE_ContentInbox" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS content_inbox_all ON "SITE_ContentInbox";
-CREATE POLICY content_inbox_all ON "SITE_ContentInbox"
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS content_inbox_service_only ON "SITE_ContentInbox";
+REVOKE ALL ON TABLE "SITE_ContentInbox" FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "SITE_ContentInbox" TO service_role;
+CREATE POLICY content_inbox_service_only ON "SITE_ContentInbox"
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ─── Seed: conhecimentos e dúvidas citados na reunião de 17/07/2026 ─────────
 INSERT INTO "SITE_ContentInbox" (kind, text, author, product_ref)
