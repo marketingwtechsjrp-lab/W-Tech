@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Course, LandingPage } from '../types';
-import { DEFAULT_COURSE_TESTIMONIALS, getYouTubeId } from '../lib/testimonials';
+import { DEFAULT_COURSE_TESTIMONIALS, filterBlockedTestimonials, getYouTubeId } from '../lib/testimonials';
 import { DEFAULT_SCHEDULE_MODULES, scheduleModulesToText, ScheduleModule } from '../lib/schedule';
 import { LP_SECTIONS, DEFAULT_SECTION_ORDER, resolveSectionOrder, LPSectionConfig } from '../lib/lpSections';
-import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star, CalendarClock, Target, Trophy, GripVertical, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { X, Save, Plus, Trash2, Layout, Video, User, CheckSquare, Loader2, Link as LinkIcon, Image as ImageIcon, Layers, Sparkles, Check, MessageSquare, ArrowUp, ArrowDown, Star, CalendarClock, Target, Trophy, GripVertical, Eye, EyeOff, RotateCcw, Wrench } from 'lucide-react';
 
 interface LandingPageEditorProps {
     course: Course;
@@ -136,9 +136,10 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                 modules: data.modules || [], // Ensure array
                 quizEnabled: data.quiz_enabled,
                 fakeAlertsEnabled: data.fake_alerts_enabled,
+                handsOnEnabled: data.hands_on_enabled !== false,
                 template: data.template || 'v1',
                 testimonials: (data.testimonials && data.testimonials.length > 0)
-                    ? data.testimonials
+                    ? filterBlockedTestimonials(data.testimonials)
                     : DEFAULT_COURSE_TESTIMONIALS,
                 scheduleModules: (data.schedule_modules && data.schedule_modules.length > 0)
                     ? data.schedule_modules
@@ -170,6 +171,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     whatsapp_number: lp.whatsappNumber,
                     quiz_enabled: lp.quizEnabled,
                     fake_alerts_enabled: lp.fakeAlertsEnabled,
+                    hands_on_enabled: lp.handsOnEnabled !== false,
                     template: lp.template || 'v1',
                     testimonials: lp.testimonials || [],
                     schedule_modules: lp.scheduleModules || [],
@@ -202,6 +204,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                     modules: data.modules,
                     quizEnabled: data.quiz_enabled,
                     fakeAlertsEnabled: data.fake_alerts_enabled,
+                    handsOnEnabled: data.hands_on_enabled !== false,
                     testimonials: data.testimonials || []
                 }));
             }
@@ -1057,6 +1060,19 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" className="sr-only peer" checked={lp.fakeAlertsEnabled || false} onChange={e => setLp({ ...lp, fakeAlertsEnabled: e.target.checked })} />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+
+                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between mt-4">
+                                    <div>
+                                        <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                            <Wrench className="text-amber-600" size={18} /> Destaque "100% Mão na Massa" (Prática na Bancada)
+                                        </h4>
+                                        <p className="text-xs text-gray-500 max-w-md">Ative para exibir o módulo/selo de 100% Prática Mão na Massa nas Landing Pages. Desative para modalidades teóricas ou online sem aulas de bancada.</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" className="sr-only peer" checked={lp.handsOnEnabled !== false} onChange={e => setLp({ ...lp, handsOnEnabled: e.target.checked })} />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
                                     </label>
                                 </div>
                             </div>

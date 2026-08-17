@@ -261,6 +261,7 @@ const LandingPageViewerV2: React.FC = () => {
           heroSecondaryImage: (lpData as any).hero_secondary_image,
           quizEnabled: (lpData as any).quiz_enabled,
           fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
+          handsOnEnabled: (lpData as any).hands_on_enabled !== false,
           testimonials: resolveCourseTestimonials((lpData as any).testimonials),
           scheduleModules: resolveScheduleModules((lpData as any).schedule_modules),
           course: mappedCourse,

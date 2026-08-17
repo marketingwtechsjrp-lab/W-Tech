@@ -3,6 +3,9 @@ import { LandingPage } from '../types';
 /** Formato de um depoimento de aluno (mesmo shape do campo testimonials da LandingPage). */
 export type Testimonial = NonNullable<LandingPage['testimonials']>[number];
 
+/** Depoimentos retirados de circulação em todas as páginas e templates. */
+const BLOCKED_TESTIMONIAL_VIDEO_IDS = new Set(['_K7qfx_hC-k']);
+
 /**
  * Extrai o ID de 11 caracteres de qualquer formato de URL do YouTube,
  * incluindo Shorts (youtube.com/shorts/ID), youtu.be, embed e watch?v=.
@@ -12,7 +15,15 @@ export function getYouTubeId(url?: string | null): string {
     if (!url) return '';
     const regExp = /(?:youtu\.be\/|shorts\/|live\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?/]{11})/;
     const match = url.match(regExp);
-    return match ? match[1] : '';
+    const id = match ? match[1] : '';
+    return BLOCKED_TESTIMONIAL_VIDEO_IDS.has(id) ? '' : id;
+}
+
+export function filterBlockedTestimonials(list?: Testimonial[] | null): Testimonial[] {
+    return (list || []).filter((testimonial) => {
+        const url = testimonial?.videoUrl || '';
+        return !Array.from(BLOCKED_TESTIMONIAL_VIDEO_IDS).some((id) => url.includes(id));
+    });
 }
 
 /**
@@ -23,8 +34,7 @@ export function getYouTubeId(url?: string | null): string {
 export const DEFAULT_COURSE_TESTIMONIALS: Testimonial[] = [
     { name: 'Pedro', text: '', image: '', videoUrl: 'https://www.youtube.com/shorts/8TaJ_e8o14Q' },
     { name: 'Thiago', text: '', image: '', videoUrl: 'https://www.youtube.com/shorts/8TaJ_e8o14Q' },
-    { name: 'Euler', text: '', image: '', videoUrl: 'https://www.youtube.com/shorts/YDXZQgZmiw0' },
-    { name: 'Guilherme', text: '', image: '', videoUrl: 'https://www.youtube.com/shorts/_K7qfx_hC-k' }
+    { name: 'Euler', text: '', image: '', videoUrl: 'https://www.youtube.com/shorts/YDXZQgZmiw0' }
 ];
 
 /** Normaliza qualquer URL de YouTube para o formato canônico watch?v=ID. */
@@ -40,7 +50,7 @@ const toCanonicalUrl = (id: string): string => `https://www.youtube.com/watch?v=
  */
 export function resolveCourseTestimonials(list?: Testimonial[] | null): Testimonial[] {
     const videoOnly: Testimonial[] = [];
-    for (const t of list || []) {
+    for (const t of filterBlockedTestimonials(list)) {
         const id = getYouTubeId(t?.videoUrl);
         if (id) videoOnly.push({ ...t, videoUrl: toCanonicalUrl(id) });
     }

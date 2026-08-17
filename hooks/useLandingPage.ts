@@ -146,6 +146,7 @@ export function useLandingPage(ownTemplate: string) {
                 pixelId: lpData.pixel_id,
                 quizEnabled: lpData.quiz_enabled,
                 fakeAlertsEnabled: lpData.fake_alerts_enabled,
+                handsOnEnabled: lpData.hands_on_enabled !== false,
                 testimonials: resolveCourseTestimonials(lpData.testimonials),
                 scheduleModules: resolveScheduleModules(lpData.schedule_modules),
                 sectionOrder: lpData.section_order,

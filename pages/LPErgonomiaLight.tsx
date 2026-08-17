@@ -28,6 +28,7 @@ import {
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
     getSuspensionFunnelCopy,
     readSuspensionFunnelContext,
@@ -41,8 +42,8 @@ const lightUi = {
     'pt-BR': {
         nav: ['Método', 'Conteúdo', 'Resultados'],
         enrollment: 'Ver inscrição',
-        freeClass: 'Aula gratuita · Método W-Tech Off-Road',
-        watchNow: 'Assistir à aula agora',
+        freeClass: 'Apresentação · Método W-Tech Off-Road',
+        watchNow: 'Assistir à apresentação agora',
         testimonialsLabel: 'Resultados de alunos',
         testimonialsTitle: 'Veja e ouça quem já viveu a experiência W-Tech.',
         inside: 'Veja por dentro',
@@ -54,8 +55,8 @@ const lightUi = {
     'pt-PT': {
         nav: ['Método', 'Conteúdo', 'Resultados'],
         enrollment: 'Ver inscrição',
-        freeClass: 'Aula gratuita · Método W-Tech Off-Road',
-        watchNow: 'Ver a aula agora',
+        freeClass: 'Apresentação · Método W-Tech Off-Road',
+        watchNow: 'Ver a apresentação agora',
         testimonialsLabel: 'Resultados de alunos',
         testimonialsTitle: 'Vê e ouve quem já viveu a experiência W-Tech.',
         inside: 'Vê por dentro',
@@ -67,8 +68,8 @@ const lightUi = {
     es: {
         nav: ['Método', 'Contenido', 'Resultados'],
         enrollment: 'Ver inscripción',
-        freeClass: 'Clase gratuita · Método W-Tech Off-Road',
-        watchNow: 'Ver la clase ahora',
+        freeClass: 'Presentación · Método W-Tech Off-Road',
+        watchNow: 'Ver la presentación ahora',
         testimonialsLabel: 'Resultados de alumnos',
         testimonialsTitle: 'Mira y escucha a quienes ya vivieron la experiencia W-Tech.',
         inside: 'Mira por dentro',
@@ -80,8 +81,8 @@ const lightUi = {
     en: {
         nav: ['Method', 'Content', 'Results'],
         enrollment: 'View enrollment',
-        freeClass: 'Free class · W-Tech Off-Road Method',
-        watchNow: 'Watch the class now',
+        freeClass: 'Presentation · W-Tech Off-Road Method',
+        watchNow: 'Watch the presentation now',
         testimonialsLabel: 'Student results',
         testimonialsTitle: 'See and hear from riders who experienced W-Tech.',
         inside: 'See inside',
@@ -269,7 +270,7 @@ const LPErgonomiaLight: React.FC = () => {
             </header>
 
             <main>
-                <section id="aula" className="relative isolate overflow-hidden border-b border-[#d7d0bf]">
+                <section id="apresentacao" className="relative isolate overflow-hidden border-b border-[#d7d0bf]">
                     <img
                         src="/images/lp-curso/hero-light-vsl-rider.webp"
                         alt=""
@@ -330,7 +331,7 @@ const LPErgonomiaLight: React.FC = () => {
                                         type="button"
                                         onClick={playVideo}
                                         className="absolute inset-0 flex w-full cursor-pointer flex-col items-center justify-center gap-3 bg-gradient-to-t from-black/65 via-black/15 to-black/20 transition-colors group-hover:from-black/50"
-                                        aria-label="Assistir à aula gratuita"
+                                        aria-label="Assistir à apresentação"
                                     >
                                         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#f0ce6f] to-[#c99022] text-black shadow-[0_0_55px_rgba(215,173,79,.65)] transition-transform group-hover:scale-105 sm:h-20 sm:w-20">
                                             <Play size={30} fill="currentColor" className="ml-1" />
@@ -677,7 +678,7 @@ const LPErgonomiaLight: React.FC = () => {
                             className="overflow-hidden rounded-[2rem] border border-[#c9a445]/45 bg-[#171714] text-white shadow-[0_35px_100px_rgba(32,29,22,.28)]"
                         >
                             <div className="bg-gradient-to-r from-[#a97816] via-[#d1a844] to-[#a97816] px-6 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-black">
-                                {t.offer.badge}
+                                Plano Premium · {t.offer.badge}
                             </div>
                             <div className="p-7 sm:p-10">
                                 <div className="flex items-start justify-between gap-5">
@@ -773,6 +774,7 @@ const LPErgonomiaLight: React.FC = () => {
                     </span>
                 </button>
             </div>
+            <WhatsAppLeadCapture pageLabel="Landing completa clara · Curso Online de Suspensão" floating />
         </div>
     );
 };

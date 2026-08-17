@@ -29,20 +29,18 @@ import {
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { useLanguage } from '../context/LanguageContext';
+import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 
 const CHECKOUT_BASE_URL = 'https://pay.kiwify.com.br/5zdsgcS';
-const WHATSAPP_URL =
-    'https://wa.me/5512982976468?text=Ol%C3%A1%21%20Vim%20da%20p%C3%A1gina%20do%20Curso%20Online%20de%20Suspens%C3%A3o%20e%20quero%20tirar%20uma%20d%C3%BAvida.';
 const VSL_URL =
     'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const COURSE_URL = 'https://w-techbrasil.com.br/curso-suspensao-piloto-v2';
 const OG_IMAGE = 'https://w-techbrasil.com.br/hero-desktop-alex.webp';
 
 const TESTIMONIALS = [
-    { id: '_K7qfx_hC-k', label: 'Relato de aluno W-Tech 1' },
-    { id: 'mYoN-gxpnq0', label: 'Relato de aluno W-Tech 2' },
-    { id: 'rY3M9H6qE4M', label: 'Relato de aluno W-Tech 3' },
-    { id: '8TaJ_e8o14Q', label: 'Relato de aluno W-Tech 4' },
+    { id: 'mYoN-gxpnq0', label: 'Relato de aluno W-Tech 1' },
+    { id: 'rY3M9H6qE4M', label: 'Relato de aluno W-Tech 2' },
+    { id: '8TaJ_e8o14Q', label: 'Relato de aluno W-Tech 3' },
 ];
 
 const MODULE_GROUPS = [
@@ -122,7 +120,7 @@ const FAQS = [
     {
         question: 'E se o curso não fizer sentido para mim?',
         answer:
-            'Você conta com garantia incondicional de 30 dias. Dentro desse período, pode solicitar o reembolso conforme as regras informadas na compra.',
+            'Você conta com garantia incondicional de 7 dias. Dentro desse período, pode solicitar o reembolso conforme as regras informadas na compra.',
     },
 ];
 
@@ -140,10 +138,11 @@ const CheckoutButton: React.FC<{
     trackingLabel: TrackingLabel;
     compact?: boolean;
     className?: string;
-}> = ({ checkoutUrl, label, trackingLabel, compact = false, className = '' }) => (
+    scrollToOffer?: boolean;
+}> = ({ checkoutUrl, label, trackingLabel, compact = false, className = '', scrollToOffer = false }) => (
     <a
-        href={checkoutUrl}
-        data-track="checkout_click"
+        href={scrollToOffer ? '#oferta' : checkoutUrl}
+        data-track={scrollToOffer ? 'offer_scroll' : 'checkout_click'}
         data-track-label={`${trackingLabel} - Curso Suspensão Piloto V2`}
         data-track-category="LP Curso Suspensão V2"
         className={`group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl bg-[#e52421] font-extrabold text-white shadow-[0_12px_30px_rgba(229,36,33,0.22)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#c91d1a] hover:shadow-[0_16px_36px_rgba(229,36,33,0.30)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200 ${
@@ -496,6 +495,7 @@ const LPErgonomia2: React.FC = () => {
                             label="Quero começar"
                             trackingLabel="Header"
                             compact
+                            scrollToOffer
                         />
                     </div>
 
@@ -560,6 +560,7 @@ const LPErgonomia2: React.FC = () => {
                                 checkoutUrl={checkoutUrl}
                                 label="Quero acertar minha moto"
                                 trackingLabel="Hero"
+                                scrollToOffer
                             />
                             <a
                                 href="#metodo"
@@ -571,7 +572,7 @@ const LPErgonomia2: React.FC = () => {
                         </div>
 
                         <p className="mt-5 text-sm font-semibold text-[#6d6863]">
-                            R$ 267 à vista ou 10x de R$ 32,09 · garantia de 30 dias
+                            R$ 267 à vista ou 10x de R$ 32,09 · garantia de 7 dias
                         </p>
                     </motion.div>
 
@@ -632,7 +633,7 @@ const LPErgonomia2: React.FC = () => {
                         { icon: BookOpen, value: '11 módulos', label: 'sequência completa' },
                         { icon: MonitorPlay, value: '100% online', label: 'aulas gravadas' },
                         { icon: TimerReset, value: '12 meses', label: 'para acessar' },
-                        { icon: ShieldCheck, value: '30 dias', label: 'de garantia' },
+                        { icon: ShieldCheck, value: '7 dias', label: 'de garantia' },
                     ].map(({ icon: Icon, value, label }, index) => (
                         <div
                             key={value}
@@ -890,6 +891,7 @@ const LPErgonomia2: React.FC = () => {
                             checkoutUrl={checkoutUrl}
                             label="Quero aprender esse método"
                             trackingLabel="Método"
+                            scrollToOffer
                         />
                     </Reveal>
                 </div>
@@ -980,6 +982,7 @@ const LPErgonomia2: React.FC = () => {
                             checkoutUrl={checkoutUrl}
                             label="Quero acesso aos 11 módulos"
                             trackingLabel="Conteúdo"
+                            scrollToOffer
                         />
                     </Reveal>
                 </div>
@@ -1095,7 +1098,7 @@ const LPErgonomia2: React.FC = () => {
                                     aria-hidden="true"
                                 />
                                 <div>
-                                    <p className="font-bold">Garantia incondicional de 30 dias</p>
+                                    <p className="font-bold">Garantia incondicional de 7 dias</p>
                                     <p className="mt-1 text-sm leading-6 text-white/55">
                                         Você tem tempo para entrar, assistir e avaliar o método.
                                     </p>
@@ -1105,7 +1108,7 @@ const LPErgonomia2: React.FC = () => {
 
                         <div className="flex flex-col justify-center bg-[#f7f5f1] p-7 sm:p-10 lg:p-12">
                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#b9201d]">
-                                Inscrição online
+                                Plano Premium · inscrição online
                             </p>
                             <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-[#7b746e]">
                                 À vista
@@ -1133,18 +1136,13 @@ const LPErgonomia2: React.FC = () => {
                                 Pagamento processado com segurança pela Kiwify
                             </div>
 
-                            <a
-                                href={WHATSAPP_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                data-track="whatsapp_click"
-                                data-track-label="Oferta - Curso Suspensão Piloto V2"
-                                data-track-category="LP Curso Suspensão V2"
+                            <WhatsAppLeadCapture
+                                pageLabel="Oferta · Landing V2 · Curso Online de Suspensão"
                                 className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-black/12 bg-white px-5 text-sm font-bold text-[#272320] transition hover:border-[#25D366] hover:text-[#14883f]"
                             >
                                 <MessageCircle size={18} aria-hidden="true" />
                                 Ainda tenho uma dúvida
-                            </a>
+                            </WhatsAppLeadCapture>
                         </div>
                     </div>
                 </div>
@@ -1164,18 +1162,13 @@ const LPErgonomia2: React.FC = () => {
                             <p className="mt-5 leading-7 text-[#6d6761]">
                                 Se a sua pergunta não estiver aqui, fale com a equipe pelo WhatsApp.
                             </p>
-                            <a
-                                href={WHATSAPP_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                data-track="whatsapp_click"
-                                data-track-label="FAQ - Curso Suspensão Piloto V2"
-                                data-track-category="LP Curso Suspensão V2"
+                            <WhatsAppLeadCapture
+                                pageLabel="FAQ · Landing V2 · Curso Online de Suspensão"
                                 className="mt-6 inline-flex min-h-12 items-center gap-2 font-bold text-[#178b43] underline decoration-green-300 underline-offset-4"
                             >
                                 <MessageCircle size={18} aria-hidden="true" />
                                 Falar com a equipe
-                            </a>
+                            </WhatsAppLeadCapture>
                         </div>
                     </Reveal>
 
@@ -1221,18 +1214,7 @@ const LPErgonomia2: React.FC = () => {
                 </div>
             </footer>
 
-            <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Falar com a equipe no WhatsApp"
-                data-track="whatsapp_click"
-                data-track-label="Flutuante - Curso Suspensão Piloto V2"
-                data-track-category="LP Curso Suspensão V2"
-                className="fixed bottom-24 right-4 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_14px_35px_rgba(37,211,102,0.34)] transition hover:-translate-y-1 lg:flex"
-            >
-                <MessageCircle size={27} fill="currentColor" aria-hidden="true" />
-            </a>
+            <WhatsAppLeadCapture pageLabel="Botão flutuante · Landing V2 · Curso Online de Suspensão" floating />
 
             <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/10 bg-white/96 px-4 py-3 shadow-[0_-12px_35px_rgba(25,21,18,0.10)] backdrop-blur-xl lg:hidden">
                 <div className="mx-auto flex max-w-xl items-center gap-3">
@@ -1250,6 +1232,7 @@ const LPErgonomia2: React.FC = () => {
                         trackingLabel="Mobile"
                         compact
                         className="flex-1"
+                        scrollToOffer
                     />
                 </div>
             </div>

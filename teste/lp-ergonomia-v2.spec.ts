@@ -17,18 +17,27 @@ test.describe('LP Curso de Suspensão para Pilotos V2', () => {
             }),
         ).toBeVisible();
 
-        const heroCheckout = page
+        const heroCta = page
             .getByRole('link', { name: 'Quero acertar minha moto' })
             .first();
-        await expect(heroCheckout).toHaveAttribute(
+        await expect(heroCta).toHaveAttribute('href', '#oferta');
+
+        const offerCheckout = page
+            .getByRole('link', { name: 'Quero começar agora' })
+            .first();
+        await expect(offerCheckout).toHaveAttribute(
             'href',
             /pay\.kiwify\.com\.br\/5zdsgcS.*utm_source=playwright/,
         );
-        await expect(heroCheckout).toHaveAttribute('href', /utm_campaign=lp_conversion/);
+        await expect(offerCheckout).toHaveAttribute('href', /utm_campaign=lp_conversion/);
 
         await expect(page.getByText('Nova inscrição confirmada')).toHaveCount(0);
         await expect(page.getByText('Últimas vagas do lote atual')).toHaveCount(0);
         await expect(page.getByText(/ou 10x de R\$ 32,09 no cartão/i)).toBeVisible();
+        await expect(page.getByText('Plano Premium · inscrição online')).toBeVisible();
+        await expect(page.getByText('Garantia incondicional de 7 dias', { exact: true })).toBeVisible();
+        await expect(page.getByText(/30 dias/i)).toHaveCount(0);
+        await expect(page.locator('section iframe[src*="_K7qfx_hC-k"]')).toHaveCount(0);
     });
 
     test('carrega o vídeo somente depois da intenção do visitante', async ({ page }) => {
@@ -66,5 +75,15 @@ test.describe('LP Curso de Suspensão para Pilotos V2', () => {
             () => document.documentElement.scrollWidth > window.innerWidth + 1,
         );
         expect(hasHorizontalOverflow).toBe(false);
+    });
+
+    test('capta o lead antes de abrir o WhatsApp', async ({ page }) => {
+        await page.goto(PAGE_PATH);
+
+        await page.getByRole('button', { name: 'Falar com a equipe no WhatsApp' }).last().click();
+        await expect(page.getByRole('dialog', { name: 'Falar com a W-Tech' })).toBeVisible();
+        await expect(page.getByPlaceholder('Seu nome')).toBeVisible();
+        await expect(page.getByPlaceholder('(12) 99999-9999')).toBeVisible();
+        await expect(page.getByPlaceholder('voce@email.com')).toBeVisible();
     });
 });
