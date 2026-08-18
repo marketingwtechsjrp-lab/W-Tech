@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.35.0 (2026-08-18) - IA do WhatsApp presa a agenda real + prerender para buscas por IA
+- IA do WhatsApp (Bia) responde apenas com cursos da agenda real do banco e admite quando nao ha turma aberta, sem inventar preco ou data
+- Prerender das rotas publicas: HTML completo para crawlers de IA (ChatGPT, Perplexity, Claude)
+- Trava de build: imagem nao compila sem VITE_SUPABASE_URL/ANON_KEY, prevenindo gravacao em banco errado
+- CRM e sitemap deixam de truncar em 1000 linhas (fetchAllRows)
+- Merge das novidades da VPS: planejador de conteudo, funil do curso online, certificados com fundo e emails do RH
+
 ## v3.34.0 (2026-08-13) - Sessao opaca de staff, canal S2S assinado e correcao do WhatsApp
 - Rotas administrativas deixam de aceitar identidade declarada pelo browser: sessao opaca com cookie httpOnly e permissoes reidratadas no servidor
 - Canal server-to-server assinado com HMAC (corpo bruto, timestamp e nonce) para cron e integracoes

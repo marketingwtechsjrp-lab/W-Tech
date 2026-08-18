@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.35.0",
+    "date": "2026-08-18",
+    "title": "IA do WhatsApp presa a agenda real + prerender para buscas por IA",
+    "changes": [
+      "IA do WhatsApp (Bia) responde apenas com cursos da agenda real do banco e admite quando nao ha turma aberta, sem inventar preco ou data",
+      "Prerender das rotas publicas: HTML completo para crawlers de IA (ChatGPT, Perplexity, Claude)",
+      "Trava de build: imagem nao compila sem VITE_SUPABASE_URL/ANON_KEY, prevenindo gravacao em banco errado",
+      "CRM e sitemap deixam de truncar em 1000 linhas (fetchAllRows)",
+      "Merge das novidades da VPS: planejador de conteudo, funil do curso online, certificados com fundo e emails do RH"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.34.0",
     "date": "2026-08-13",
     "title": "Sessao opaca de staff, canal S2S assinado e correcao do WhatsApp",
