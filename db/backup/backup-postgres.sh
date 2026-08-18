@@ -86,10 +86,16 @@ log "4/6 Gerando manifesto (contagens exatas das tabelas críticas + sha256)"
   echo "dump_file=$(basename "$DUMP")"
   echo "dump_bytes=$(stat -c %s "$DUMP" 2>/dev/null || stat -f %z "$DUMP")"
   echo ""
-  echo "## Contagens exatas (comparar após restore de teste)"
+  echo "## Contagens exatas + fingerprint de conteúdo (comparar após restore de teste)"
+  # fingerprint = soma dos hashes das linhas (ordem-independente). Detecta divergência
+  # de CONTEÚDO que a contagem esconde. Válido comparado no mesmo cluster/versão de PG
+  # (caso do teste em banco scratch); em restore cross-versão usar apenas count.
   for t in "${CRITICAL_TABLES[@]}"; do
     n=$(pg psql -U "$PGUSER" -d "$PGDATABASE" -Atc "SELECT count(*) FROM \"$t\";")
+    fp=$(pg psql -U "$PGUSER" -d "$PGDATABASE" -Atc \
+      "SELECT coalesce(sum(hashtext(x::text)),0) FROM \"$t\" x;" 2>/dev/null || echo "NA")
     echo "count.$t=$n"
+    echo "fingerprint.$t=$fp"
   done
   echo ""
   echo "## Estimativas de todas as tabelas (contexto, não critério)"

@@ -44,12 +44,14 @@ psql -U postgres -c 'CREATE DATABASE restore_test;'
 pg_restore -U postgres --no-owner --role=postgres -d restore_test /tmp/restore-test/wtech_<TS>.dump
 # exit code 0 esperado; warnings de "already exists" de extensões são aceitáveis, erros não.
 
-# 3. Recontar as tabelas críticas no banco restaurado
+# 3. Recontar e re-fingerprint das tabelas críticas no banco restaurado
 for t in SITE_Leads SITE_Sales SITE_Transactions SITE_Users SITE_Enrollments; do
   echo "count.$t=$(psql -U postgres -d restore_test -Atc "SELECT count(*) FROM \"$t\";")"
+  echo "fingerprint.$t=$(psql -U postgres -d restore_test -Atc "SELECT coalesce(sum(hashtext(x::text)),0) FROM \"$t\" x;")"
 done
 
-# 4. Comparar com as linhas count.* do manifest_<TS>.txt  → 5/5 idênticas = APROVADO
+# 4. Comparar com as linhas count.* E fingerprint.* do manifest_<TS>.txt
+#    → 5/5 counts idênticos E 5/5 fingerprints idênticos = APROVADO
 
 # 5. Limpar
 psql -U postgres -c 'DROP DATABASE restore_test;'
@@ -68,14 +70,17 @@ Documentar o drill completo é etapa futura; o teste acima cobre a fidelidade do
 | V2 | Dump legível | `pg_restore --list` exit 0 (já embutido no script) |
 | V3 | Manifesto completo | 5 linhas `count.*` presentes, nenhuma vazia ou com erro |
 | V4 | Restore funciona | `pg_restore` no `restore_test` exit 0 |
-| V5 | **Fidelidade** | 5/5 contagens pós-restore idênticas às do manifesto |
+| V5 | **Fidelidade** | 5/5 contagens **e** 5/5 fingerprints pós-restore idênticos aos do manifesto |
 | V6 | Off-site íntegro | `rclone check` sem diffs; sha256 do arquivo baixado bate com o manifesto |
 | V7 | Off-site utilizável | o restore do teste partiu do arquivo **baixado do remoto** (passo 0) |
 | V8 | Retenção ativa | após 2ª execução, arquivos antigos além da janela são removidos localmente |
 
 Aprovação = V1–V7 obrigatórios (V8 verifica-se na segunda execução do cron).
-Contagem igual com conteúdo diferente é teoricamente possível; se o testador quiser endurecer,
-adicionar `max(id)`/`max(created_at)` por tabela ao manifesto é mudança de 3 linhas no script.
+O fingerprint (`sum(hashtext(linha))`, ordem-independente) está incluído por padrão: detecta
+divergência de conteúdo que a contagem esconde. Preferido a `max(id)` porque os `id` destas
+tabelas são UUID (máximo de UUID não diz nada sobre fidelidade). Ressalva: fingerprint só é
+comparável no mesmo cluster/versão de Postgres — exatamente o caso do teste em scratch; num
+restore cross-versão (DR em stack nova), usar apenas as contagens como critério.
 
 ## O que falta do Daniel para EXECUTAR (nada roda sem isto)
 
