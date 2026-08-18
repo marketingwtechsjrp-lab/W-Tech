@@ -370,6 +370,28 @@ interface AttendantRow {
 /** Papéis fora da roleta aleatória (citação nominal continua valendo p/ todos). */
 const ROLETA_EXCLUDED_ROLES = ['super admin', 'financeiro'];
 
+// ─── MODO SOMENTE TRANSFERÊNCIA (atendimento por IA suspenso) ────────────────
+// A Bia NÃO responde nem gera rascunho: toda mensagem recebida vira handoff
+// imediato para um atendente humano. Para reativar a IA, mude para false.
+const TRANSFER_ONLY = true;
+
+/**
+ * Pool de atendentes do modo transferência (primeiro nome, sem acento,
+ * minúsculo). Variantes de grafia cobrem diferenças entre o pedido e o
+ * cadastro em SITE_Users.
+ */
+const TRANSFER_POOL_FIRST_NAMES: string[][] = [
+  ['emerson'],
+  ['michael', 'michel', 'mikael'],
+  ['christofer', 'christopher', 'cristofer', 'cristopher', 'kristofer'],
+  ['andre'],
+];
+
+function isInTransferPool(user: AttendantRow): boolean {
+  const first = stripAccents(String(user.name).trim().split(/\s+/)[0].toLowerCase());
+  return TRANSFER_POOL_FIRST_NAMES.some((variants) => variants.includes(first));
+}
+
 async function loadActiveUsers(supabase: SupabaseClient): Promise<AttendantRow[]> {
   const { data } = await supabase.from('SITE_Users').select('id, name, status, role');
   return ((data || []) as AttendantRow[]).filter(
@@ -602,6 +624,44 @@ export async function runAIResponder(
     .maybeSingle();
   if (!conv || conv.bot_enabled === false) return;
   if (conv.status === 'humano' || conv.status === 'encerrado') return;
+
+  // Atendimento por IA suspenso: a Bia só transfere para um humano.
+  // Não classifica intenção, não consulta agenda, não chama LLM, não responde
+  // pergunta nenhuma — apenas garante o lead no CRM com o dono certo e avisa
+  // o cliente UMA vez que um atendente vai assumir.
+  if (TRANSFER_ONLY) {
+    const activeUsers = await loadActiveUsers(supabase);
+    const pool = activeUsers.filter(isInTransferPool);
+    if (!pool.length) {
+      console.warn('[aiReply] Nenhum atendente do pool de transferência ativo — usando roleta geral.');
+    }
+    const users = pool.length ? pool : activeUsers;
+    // Citação nominal só força o dono quando vem com palavra de atendimento
+    // ("falar com o Emerson"); "aqui é o André" não rouba o lead de ninguém.
+    const wantsAttendant = /(^|[^a-z])(falar|atendente|atendimento|transferir|chama(r)?|passa(r)?|humano)([^a-z]|$)/.test(
+      stripAccents(incomingText.toLowerCase())
+    );
+    const mentioned = wantsAttendant ? findMentionedAttendant(users, incomingText) : null;
+    const routed = await routeHandoffToCRM(
+      supabase,
+      waId,
+      incomingText,
+      'Atendimento por IA suspenso — transferência automática para atendente',
+      users,
+      mentioned
+    );
+
+    const alreadyPending = conv.status === 'pendente';
+    await setStatus(supabase, conversationId, 'pendente');
+    if (!alreadyPending) {
+      const msg = routed.chosenFirstName
+        ? `Olá! Aqui é a Bia, da W-Tech. 😊 Já estou te passando para ${routed.chosenFirstName}, da nossa equipe, que vai continuar seu atendimento em instantes.`
+        : config.fallback_message;
+      const msgId = await sendCloudText(cloudCfg, waId, msg);
+      if (msgId) await storeOutMessage(supabase, conversationId, waId, msg, 'ai', 'sent', msgId);
+    }
+    return;
+  }
 
   if (!withinWorkingHours(config.working_hours)) {
     await setStatus(supabase, conversationId, 'pendente');
