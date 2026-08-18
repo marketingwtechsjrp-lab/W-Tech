@@ -191,7 +191,8 @@ async function retrieveMemory(
 
 // ─── Dados vivos: cursos publicados (preço/datas/local/link reais) ───────────
 
-const SITE_BASE = 'https://site.w-techbrasil.com.br';
+// Domínio canônico: site.w-techbrasil.com.br responde 308 (ver lib/publicUrl.ts).
+const SITE_BASE = 'https://w-techbrasil.com.br';
 
 function fmtMoney(v: any, currency?: string | null): string {
   const n = Number(v || 0);
@@ -222,12 +223,21 @@ function fmtDateRange(a: any, b: any): string {
   return da;
 }
 
-/** Monta um bloco compacto com os cursos publicados, pra IA nunca inventar dado. */
-async function loadCourseContext(supabase: SupabaseClient): Promise<string> {
+/**
+ * Agenda REAL de cursos, com estado explícito. A distinção importa para o prompt:
+ *   - ok    → lista fechada; a IA só pode citar o que está nela.
+ *   - empty → não há turma aberta; a IA deve dizer isso e NUNCA citar curso.
+ *   - error → consulta falhou; a IA não pode afirmar nada de agenda de memória.
+ * Sem essa distinção, agenda vazia/erro sumia do prompt em silêncio e a IA
+ * preenchia o buraco com dado inventado.
+ */
+type CourseAgenda = { state: 'ok'; block: string } | { state: 'empty' } | { state: 'error' };
+
+async function loadCourseAgenda(supabase: SupabaseClient): Promise<CourseAgenda> {
   try {
     // Hoje em BRT (UTC-3) no formato YYYY-MM-DD — mesma convenção da coluna `date`.
     const todayYMD = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('SITE_Courses')
       .select(
         'id, title, price, currency, date, date_end, location, location_type, city, state, status, custom_link, capacity, registered_count'
@@ -238,9 +248,13 @@ async function loadCourseContext(supabase: SupabaseClient): Promise<string> {
       // turma cuja data já passou (ex.: curso de março ainda marcado Published).
       .or(`date_end.gte.${todayYMD},and(date_end.is.null,date.gte.${todayYMD})`)
       .order('date', { ascending: true })
-      .limit(15);
-    if (!data || !data.length) return '';
-    return (data as any[])
+      .limit(30);
+    if (error) {
+      console.error('[aiReply] loadCourseAgenda falhou:', error.message);
+      return { state: 'error' };
+    }
+    if (!data || !data.length) return { state: 'empty' };
+    const block = (data as any[])
       .map((c) => {
         const url = (c.custom_link && String(c.custom_link).trim()) || `${SITE_BASE}/checkout-curso/${c.id}`;
         const local =
@@ -258,9 +272,10 @@ async function loadCourseContext(supabase: SupabaseClient): Promise<string> {
         return `• ${c.title} — ${local}${when ? `, ${when}` : ''}. Investimento: ${price}. ${vagas}. Inscrição: ${url}`;
       })
       .join('\n');
+    return { state: 'ok', block };
   } catch (e: any) {
-    console.error('[aiReply] loadCourseContext falhou:', e?.message);
-    return '';
+    console.error('[aiReply] loadCourseAgenda falhou:', e?.message);
+    return { state: 'error' };
   }
 }
 
@@ -658,11 +673,33 @@ export async function runAIResponder(
   const rules = await loadRules(supabase);
   // RAG: aprende com atendimentos anteriores (requer chave Gemini para embeddings).
   const memory = await retrieveMemory(supabase, keys.gemini || '', incomingText);
-  // Dados vivos: cursos reais do banco (só quando a dúvida é sobre curso/venda).
-  const liveCourses =
-    config.useLiveCourses && (intent === 'course' || intent === 'sales')
-      ? await loadCourseContext(supabase)
-      : '';
+  // Dados vivos: agenda REAL de cursos do banco. Entra SEMPRE que habilitado —
+  // a conversa pode desviar para curso a qualquer momento, e condicionar ao
+  // classificador de intenção deixava a IA sem dados quando ele errava
+  // (era exatamente aí que ela inventava curso/preço/data).
+  const agenda = config.useLiveCourses ? await loadCourseAgenda(supabase) : null;
+
+  let agendaBlock = '';
+  if (agenda) {
+    if (agenda.state === 'ok') {
+      agendaBlock =
+        `AGENDA OFICIAL DE CURSOS (fonte ÚNICA da verdade, ao vivo do sistema — se não está aqui, NÃO existe turma aberta):\n${agenda.block}\n\n` +
+        `REGRAS DA AGENDA (OBRIGATÓRIAS):\n` +
+        `- Só cite curso, data, cidade, preço, vaga e link que estejam EXATAMENTE na agenda acima.\n` +
+        `- Se o cliente perguntar por curso, cidade ou data que NÃO está na agenda, diga com honestidade que não há turma aberta disso no momento e ofereça as turmas listadas ou anotar o interesse para avisar quando abrir.\n` +
+        `- Preço, data ou link de curso vindo da base de conhecimento, de atendimentos anteriores ou do histórico está DESATUALIZADO: ignore e use somente a agenda acima.\n\n`;
+    } else if (agenda.state === 'empty') {
+      agendaBlock =
+        `AGENDA OFICIAL DE CURSOS (fonte ÚNICA da verdade, ao vivo do sistema): NENHUMA turma com inscrições abertas no momento.\n` +
+        `- Se perguntarem de curso, diga isso com honestidade. NUNCA cite nome de curso, data, cidade, preço ou link de inscrição — qualquer dado desses vindo de outra fonte está desatualizado.\n` +
+        `- Ofereça anotar o interesse do cliente para avisar assim que abrir nova turma e indique o site ${SITE_BASE}.\n\n`;
+    } else {
+      agendaBlock =
+        `ATENÇÃO — AGENDA DE CURSOS INDISPONÍVEL AGORA (falha temporária na consulta):\n` +
+        `- NÃO afirme curso, data, cidade, preço ou vaga de memória.\n` +
+        `- Se perguntarem de curso, diga que vai confirmar a agenda certinho e ofereça passar para um atendente, ou indique o site ${SITE_BASE}.\n\n`;
+    }
+  }
 
   // Últimas mensagens para dar contexto.
   const { data: history } = await supabase
@@ -680,21 +717,27 @@ export async function runAIResponder(
   const systemPrompt =
     `${config.persona}\n\n` +
     `INFORMAÇÕES DO NEGÓCIO:\n${config.business_info}\n\n` +
-    (liveCourses
-      ? `CURSOS DISPONÍVEIS AGORA (dados reais do sistema — use SEMPRE estes valores e este link de inscrição; NUNCA invente preço, data ou vaga):\n${liveCourses}\n\n`
+    agendaBlock +
+    (knowledge
+      ? `O QUE VOCÊ PODE DIZER (base de conhecimento${agendaBlock ? ' — para curso, data, preço e link vale SEMPRE a agenda oficial acima' : ''}):\n${knowledge}\n\n`
       : '') +
-    (knowledge ? `O QUE VOCÊ PODE DIZER (base de conhecimento):\n${knowledge}\n\n` : '') +
-    (memory ? `ATENDIMENTOS ANTERIORES PARECIDOS (use como referência do que funcionou):\n${memory}\n\n` : '') +
+    (memory
+      ? `ATENDIMENTOS ANTERIORES PARECIDOS (referência de tom e abordagem; preços, datas e links citados aqui podem estar vencidos — não os repita):\n${memory}\n\n`
+      : '') +
     (rules ? `REGRAS OBRIGATÓRIAS:\n${rules}\n\n` : '') +
     `COMO CONVERSAR:\n` +
     `- Responda em português do Brasil com tom natural e conversacional, como uma pessoa de verdade digitando no WhatsApp.\n` +
     `- Se o cliente só cumprimentou ("oi", "bom dia", "boa noite"), responda o cumprimento com simpatia, se apresente em uma frase e pergunte como pode ajudar. NUNCA transfira nem fique em silêncio diante de um cumprimento.\n` +
     `- Faça UMA pergunta por vez. Não despeje todas as informações de uma vez: descubra primeiro o que o cliente precisa (qual curso, qual cidade, se já é mecânico).\n` +
-    `- Quando falar de curso, conduza para a inscrição: informe valor, data e cidade reais e envie o link de inscrição. Mencione que dá para parcelar no cartão.\n` +
+    (!agenda
+      ? `- Quando falar de curso, conduza para a inscrição: informe valor, data e cidade reais e envie o link de inscrição. Mencione que dá para parcelar no cartão.\n`
+      : agenda.state === 'ok'
+      ? `- Quando falar de curso, conduza para a inscrição usando SOMENTE a agenda oficial acima: informe valor, data e cidade listados e envie o link de inscrição listado. Mencione que dá para parcelar no cartão.\n`
+      : '') +
     `- Use mensagens curtas. Quando a resposta tiver mais de uma ideia, separe em blocos curtos com UMA LINHA EM BRANCO entre eles — cada bloco vira uma mensagem.\n` +
     `- Evite textão e não use markdown, asteriscos ou listas numeradas.\n` +
-    `- Só fale em transferir para um atendente se: (a) o cliente pedir explicitamente, (b) for reclamação/cancelamento/reembolso, ou (c) você realmente não tiver a informação nem nos cursos nem na base de conhecimento. Nesses casos, avise com educação e pare de responder.\n` +
-    `- Nunca invente preço, data, vaga ou condição de pagamento que não esteja nos dados acima.`;
+    `- Só fale em transferir para um atendente se: (a) o cliente pedir explicitamente, (b) for reclamação/cancelamento/reembolso, ou (c) você realmente não tiver a informação nem na agenda nem na base de conhecimento. Nesses casos, avise com educação e pare de responder.\n` +
+    `- NUNCA invente curso, preço, data, cidade, vaga ou condição de pagamento. Se a informação não está nos dados acima, diga que não tem essa informação no momento e ofereça confirmar com um atendente.`;
 
   let reply = '';
   try {
