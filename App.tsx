@@ -30,6 +30,7 @@ const LandingPageViewerV8 = lazy(() => import('./pages/LandingPageViewerV8'));
 const LandingPageViewerV9 = lazy(() => import('./pages/LandingPageViewerV9'));
 const HomeP2 = lazy(() => import('./pages/HomeP2'));
 const Home3 = lazy(() => import('./pages/Home3'));
+const Home5 = lazy(() => import('./pages/Home5'));
 const LPEuropa = lazy(() => import('./pages/LPEuropa'));
 const LPLisboaFev2026 = lazy(() => import('./pages/LPLisboaFev2026'));
 const LPWTechLisboa = lazy(() => import('./pages/LPWTechLisboa'));
@@ -104,6 +105,9 @@ const App = () => {
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     <Route path="/" element={<Layout><Home3 /></Layout>} />
+                    {/* Home5: variante GEO em teste. Vai substituir a "/" quando aprovada —
+                        até lá fica fora do sitemap para não competir com a home atual. */}
+                    <Route path="/home5" element={<Layout><Home5 /></Layout>} />
                     <Route path="/home-legacy" element={<Layout><Home /></Layout>} />
                     <Route path="/home-p2" element={<HomeP2 />} />
                     <Route path="/cursos" element={<Layout><Courses /></Layout>} />

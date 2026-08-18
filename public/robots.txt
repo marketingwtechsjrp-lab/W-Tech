@@ -1,3 +1,38 @@
+# W-TECH Brasil — https://w-techbrasil.com.br
+#
+# robots.txt controla RASTREAMENTO, não indexação. Para tirar uma página do índice
+# use <meta name="robots" content="noindex"> e mantenha o rastreamento liberado —
+# um Disallow aqui impede o robô de LER o noindex.
+#
+# Nunca bloquear /assets/ nem os módulos JS: sem eles o crawler não consegue
+# renderizar a página e vê um site quebrado.
+
 User-agent: *
 Allow: /
+
+# Painel e API
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+
+# Áreas privadas do cliente
+Disallow: /meus-pedidos
+
+# Fluxo transacional — sem valor de busca e gera duplicata
+Disallow: /checkout
+Disallow: /checkout-curso
+Disallow: /checkout-lisboa
+Disallow: /pagamento-sucesso
+Disallow: /inscricao-confirmada
+Disallow: /obrigado-lisboa
+Disallow: /obrigado-suspensao
+
+# Campanhas de captura: variações quase idênticas da mesma oferta
+Disallow: /captura/
+
+# Parâmetros de rastreamento não criam páginas novas
+Disallow: /*?utm_
+Disallow: /*?fbclid=
+Disallow: /*?gclid=
+
 Sitemap: https://w-techbrasil.com.br/sitemap.xml

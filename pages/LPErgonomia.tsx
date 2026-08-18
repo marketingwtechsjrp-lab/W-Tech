@@ -3,6 +3,7 @@ import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
+import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -370,8 +371,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     /* (SPA: Google executa JS e lê isto; para preview garantido no WhatsApp seria
         necessário SSR/prerender — mantemos as tags corretas mesmo assim.) */
     useEffect(() => {
-        const COURSE_URL = 'https://site.w-techbrasil.com.br/curso-suspensao-piloto';
-        const OG_IMAGE = 'https://site.w-techbrasil.com.br/hero-desktop-alex.webp';
+        // Domínio canônico: site.w-techbrasil.com.br responde 308 e não pode ser
+        // canonical nem og:image (ver lib/publicUrl.ts).
+        const COURSE_URL = `${PUBLIC_BASE_URL}/curso-suspensao-piloto`;
+        const OG_IMAGE = `${PUBLIC_BASE_URL}/hero-desktop-alex.webp`;
         const prevTitle = document.title;
         document.title = 'Curso de Suspensão Off-Road | Regule a Suspensão da Sua Moto — W-Tech';
 

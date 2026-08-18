@@ -1,9 +1,17 @@
 import { supabase } from './supabaseClient';
+import { PUBLIC_BASE_URL } from './publicUrl';
 
+/**
+ * Prévia do sitemap para o painel admin. A fonte de verdade do arquivo publicado é
+ * `scripts/generate-sitemap.js`, que roda no build — mantenha as duas listas em sincronia.
+ *
+ * As rotas abaixo estavam em inglês ('courses', 'about', 'glossary'), que NÃO existem
+ * em App.tsx: a prévia gerava um sitemap inteiro de soft 404.
+ */
 export const generateSitemapXml = async () => {
-    const baseUrl = "https://w-techbrasil.com.br";
-    const staticPages = ['', 'courses', 'mechanics-map', 'blog', 'contact', 'about', 'glossary'];
-    
+    const baseUrl = PUBLIC_BASE_URL;
+    const staticPages = ['', 'cursos', 'mapa', 'molas', 'oleo', 'blog', 'contato', 'glossario', 'sou-mecanico'];
+
     // Helper to escape XML special characters
     const escapeXml = (unsafe: string) => {
         if (!unsafe) return '';

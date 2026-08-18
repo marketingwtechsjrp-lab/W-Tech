@@ -22,16 +22,22 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function generateSitemap() {
   console.log('📡 Fetching data from Supabase for Sitemap...');
 
-  const baseUrl = "https://site.w-techbrasil.com.br";
+  // Domínio canônico único — ver lib/publicUrl.ts (PUBLIC_BASE_URL).
+  // site.w-techbrasil.com.br responde 308: listá-lo aqui fazia com que TODAS as
+  // URLs do sitemap fossem redirect, servidas a partir de outro host.
+  const baseUrl = "https://w-techbrasil.com.br";
 
-  // Comprehensive list of static routes from App.tsx
+  // Rotas estáticas públicas. Toda entrada aqui PRECISA existir em App.tsx e ser
+  // indexável — URL que não existe vira soft 404 e queima orçamento de rastreamento.
+  // Removidos: 'sobre' (não há rota em App.tsx) e 'meus-pedidos' (portal privado).
   const staticPages = [
     '',
     'cursos',
     'mapa',
+    'molas',
+    'oleo',
     'blog',
     'contato',
-    'sobre',
     'glossario',
     'sou-mecanico',
     'termos',
@@ -40,7 +46,6 @@ async function generateSitemap() {
     'suporte',
     'bio',
     'rastreio',
-    'meus-pedidos',
     'wtech-lisboa',
     'lp-lisboa-fev-2026',
     'lp-wtech-lisboa',
@@ -138,6 +143,25 @@ async function generateSitemap() {
 
   sitemap += `</urlset>`;
 
+  // ── Validação: um sitemap inválido é pior que sitemap ausente ──────────────
+  // Falha o build em vez de publicar URLs duplicadas ou de outro host.
+  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+
+  const foreign = locs.filter((l) => !l.startsWith(`${baseUrl}/`) && l !== baseUrl + '/');
+  if (foreign.length) {
+    throw new Error(`Sitemap contém ${foreign.length} URLs fora de ${baseUrl}: ${foreign.slice(0, 3).join(', ')}`);
+  }
+
+  const seen = new Set();
+  const duplicates = locs.filter((l) => (seen.has(l) ? true : (seen.add(l), false)));
+  if (duplicates.length) {
+    throw new Error(`Sitemap contém URLs duplicadas: ${[...new Set(duplicates)].slice(0, 5).join(', ')}`);
+  }
+
+  if (locs.length > 50000) {
+    throw new Error(`Sitemap com ${locs.length} URLs excede o limite de 50.000 — dividir em índice de sitemaps.`);
+  }
+
   // Save to public/sitemap.xml (standard for Vite)
   const publicPath = path.resolve(__dirname, '../public/sitemap.xml');
   fs.writeFileSync(publicPath, sitemap);
@@ -146,7 +170,9 @@ async function generateSitemap() {
   const rootPath = path.resolve(__dirname, '../sitemap.xml');
   fs.writeFileSync(rootPath, sitemap);
 
+  const withLastmod = (sitemap.match(/<lastmod>/g) || []).length;
   console.log(`✅ Sitemap updated successfully!`);
+  console.log(`📊 ${locs.length} URLs (${withLastmod} com lastmod) em ${baseUrl}`);
   console.log(`📍 Public: ${publicPath}`);
   console.log(`📍 Root: ${rootPath}`);
 }

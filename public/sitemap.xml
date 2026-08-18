@@ -1,147 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://site.w-techbrasil.com.br/</loc>
+    <loc>https://w-techbrasil.com.br/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/cursos</loc>
+    <loc>https://w-techbrasil.com.br/cursos</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/mapa</loc>
+    <loc>https://w-techbrasil.com.br/mapa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/blog</loc>
+    <loc>https://w-techbrasil.com.br/molas</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/contato</loc>
+    <loc>https://w-techbrasil.com.br/oleo</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/sobre</loc>
+    <loc>https://w-techbrasil.com.br/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/glossario</loc>
+    <loc>https://w-techbrasil.com.br/contato</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/sou-mecanico</loc>
+    <loc>https://w-techbrasil.com.br/glossario</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/termos</loc>
+    <loc>https://w-techbrasil.com.br/sou-mecanico</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/privacidade</loc>
+    <loc>https://w-techbrasil.com.br/termos</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/cancelamento</loc>
+    <loc>https://w-techbrasil.com.br/privacidade</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/suporte</loc>
+    <loc>https://w-techbrasil.com.br/cancelamento</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/bio</loc>
+    <loc>https://w-techbrasil.com.br/suporte</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/rastreio</loc>
+    <loc>https://w-techbrasil.com.br/bio</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/meus-pedidos</loc>
+    <loc>https://w-techbrasil.com.br/rastreio</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/wtech-lisboa</loc>
+    <loc>https://w-techbrasil.com.br/wtech-lisboa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp-lisboa-fev-2026</loc>
+    <loc>https://w-techbrasil.com.br/lp-lisboa-fev-2026</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp-wtech-lisboa</loc>
+    <loc>https://w-techbrasil.com.br/lp-wtech-lisboa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp-proriders-lisboa</loc>
+    <loc>https://w-techbrasil.com.br/lp-proriders-lisboa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/curso-suspensao-piloto</loc>
+    <loc>https://w-techbrasil.com.br/curso-suspensao-piloto</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/curso-suspensao-w-tech</loc>
+    <loc>https://w-techbrasil.com.br/lp/curso-suspensao-w-tech</loc>
     <lastmod>2026-01-12</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-so-jos-do-rio-preto</loc>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-so-jos-do-rio-preto</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-fortaleza</loc>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-fortaleza</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/cusro-de-experience-w-tech-em-so-jos-do-rio-preto</loc>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-experience-w-tech-em-so-jos-do-rio-preto</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/pro-riders-e--w-tech---bmw-avanado</loc>
+    <loc>https://w-techbrasil.com.br/lp/pro-riders-e--w-tech---bmw-avanado</loc>
     <lastmod>2026-03-02</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/curso-de-suspenso-w-tech-em-chapec</loc>
+    <loc>https://w-techbrasil.com.br/lp/curso-de-suspenso-w-tech-em-chapec</loc>
     <lastmod>2026-03-16</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/cusro-de-experience-w-tech-em-so-jos-do-rio-preto---sede</loc>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-experience-w-tech-em-so-jos-do-rio-preto---sede</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-belo-horizonte</loc>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-belo-horizonte</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://site.w-techbrasil.com.br/lp/curso-de-suspensao-w-tech-em-sao-paulo</loc>
+    <loc>https://w-techbrasil.com.br/lp/curso-de-suspensao-w-tech-em-sao-paulo</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>

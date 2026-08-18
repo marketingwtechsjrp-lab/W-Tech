@@ -74,7 +74,9 @@ export default async function handler(req: any, res: any) {
             .maybeSingle();
         const tpl = lpRow?.template || 'v1';
         const lpPath = tpl === 'v1' ? 'lp' : `lp${String(tpl).replace('v', '')}`;
-        const lpUrl = `https://site.w-techbrasil.com.br/${lpPath}/${lpRow?.slug || courseId}`;
+        // Domínio canônico: site.w-techbrasil.com.br responde 308 e cada link de
+        // campanha sairia com um salto extra (ver lib/publicUrl.ts).
+        const lpUrl = `https://w-techbrasil.com.br/${lpPath}/${lpRow?.slug || courseId}`;
 
         // 2. Segmentação geográfica (cidade > estado), leads perdidos inclusos
         const city = String(course.city).trim();

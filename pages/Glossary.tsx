@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { MOCK_GLOSSARY } from '../constants';
 import { supabase } from '../lib/supabaseClient';
+import { PUBLIC_BASE_URL, ORGANIZATION_ID } from '../lib/publicUrl';
 import { sanitizeHtml } from '../lib/utils';
 import type { GlossaryTerm } from '../types';
 
@@ -112,18 +113,17 @@ const Glossary: React.FC = () => {
     }
 
     const description = selected.summary || selected.definition || `Entenda ${selected.term} no glossário técnico da W-Tech Brasil.`;
-    const canonical = `https://site.w-techbrasil.com.br/glossario/${selected.slug}`;
+    const canonical = `${PUBLIC_BASE_URL}/glossario/${selected.slug}`;
+    const termSetId = `${PUBLIC_BASE_URL}/glossario#termset`;
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'DefinedTerm',
+      '@id': `${canonical}#term`,
       name: selected.term,
       description,
       url: canonical,
-      inDefinedTermSet: {
-        '@type': 'DefinedTermSet',
-        name: 'Glossário Técnico W-Tech Brasil',
-        url: 'https://site.w-techbrasil.com.br/glossario',
-      },
+      inDefinedTermSet: { '@id': termSetId },
+      publisher: { '@id': ORGANIZATION_ID },
     };
 
     return (
@@ -170,7 +170,24 @@ const Glossary: React.FC = () => {
       <SEO
         title="Glossário Técnico de Suspensão"
         description="Consulte definições sobre suspensão de motocicletas, ajustes, componentes, preparação e diagnóstico técnico."
-        url="https://site.w-techbrasil.com.br/glossario"
+        url={`${PUBLIC_BASE_URL}/glossario`}
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'DefinedTermSet',
+          '@id': `${PUBLIC_BASE_URL}/glossario#termset`,
+          name: 'Glossário Técnico W-Tech Brasil',
+          url: `${PUBLIC_BASE_URL}/glossario`,
+          inLanguage: 'pt-BR',
+          publisher: { '@id': ORGANIZATION_ID },
+          // Só os termos realmente listados na tela — schema tem que espelhar o visível.
+          hasDefinedTerm: filtered.map((item) => ({
+            '@type': 'DefinedTerm',
+            '@id': `${PUBLIC_BASE_URL}/glossario/${item.slug}#term`,
+            name: item.term,
+            description: item.summary || item.definition,
+            url: `${PUBLIC_BASE_URL}/glossario/${item.slug}`,
+          })),
+        }}
       />
       <main className="bg-gray-50 min-h-screen">
         <section className="bg-wtech-black text-white">

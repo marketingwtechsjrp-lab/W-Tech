@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
 import { fetchStaffDirectory } from '../../../lib/staffDirectory';
+import { fetchAllRows } from '../../../lib/fetchAllRows';
 import type { Lead } from '../../../types';
 import { createPaymentLink } from '../../../lib/asaas';
 import { createStripePaymentLink } from '../../../lib/stripe';
@@ -1092,9 +1093,6 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
     const fetchData = async () => {
         setLeads([]); // Clear before fetch to show loading state if desired
-        // NULL não casa em .neq() no Postgres — sem o is.null, leads sem context_id
-        // (ex: enviados das Campanhas de Captura antes do fix) sumiam do funil.
-        let query = supabase.from('SITE_Leads').select('*').or('context_id.is.null,context_id.neq.Import').order('created_at', { ascending: false });
 
         // Privacy Logic
         const hasFullAccess =
@@ -1107,11 +1105,25 @@ const CRMView: React.FC<CRMViewProps & { permissions?: any }> = ({ onConvertLead
 
         console.log("CRM Access Level:", { role: user?.role, hasFullAccess });
 
-        if (!hasFullAccess && user?.id) {
-            query = query.eq('assigned_to', user.id);
-        }
+        // Paginado: o PostgREST corta em 1000 linhas sem avisar. Com a base acima de mil
+        // leads, uma query única devolvia só os 1000 mais recentes e os mais antigos
+        // desapareciam do funil silenciosamente.
+        const { data, error } = await fetchAllRows<any>((de, ate) => {
+            // NULL não casa em .neq() no Postgres — sem o is.null, leads sem context_id
+            // (ex: enviados das Campanhas de Captura antes do fix) sumiam do funil.
+            let query = supabase
+                .from('SITE_Leads')
+                .select('*')
+                .or('context_id.is.null,context_id.neq.Import')
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false }) // desempate: paginação estável
+                .range(de, ate);
 
-        const { data, error } = await query;
+            if (!hasFullAccess && user?.id) {
+                query = query.eq('assigned_to', user.id);
+            }
+            return query;
+        });
 
         if (error) {
             console.error("Error fetching leads:", error);

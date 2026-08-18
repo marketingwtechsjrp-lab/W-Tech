@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
 import type { Lead, Mechanic, Order, User as UserType, Transaction, Course, BlogPost, PostComment, LandingPage, Enrollment, Role, SystemConfig, Event } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { fetchAllRows } from '../lib/fetchAllRows';
 import { createHasPermission, createPermissionResolver, PERMISSION_CATALOG } from '../lib/permissions';
 import { generateSitemapXml } from '../lib/sitemapUtils';
 import { generateSEOContent } from '../lib/ai';
@@ -477,7 +478,11 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             // 3. Fetch Leads & Calculate Origins
             // Strategy: Fetch leads and match strictly against Course Title OR any Linked LP
             // We fetch wider and filter to ensure accuracy with "LP: Title (slug)" format
-            const { data: allLeadsRaw } = await supabase.from('SITE_Leads').select('*');
+            // Paginado: sem isso o PostgREST devolve só 1000 leads e a origem dos
+            // demais some do relatório do curso, sem erro nenhum.
+            const { data: allLeadsRaw } = await fetchAllRows<any>((de, ate) =>
+                supabase.from('SITE_Leads').select('*').order('id', { ascending: true }).range(de, ate)
+            );
 
             let leads: any[] = [];
             let leadsByOrigin: any[] = [];
@@ -700,7 +705,9 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         })));
 
         // Fetch Leads for Courses (Client-side estimation based on context_id)
-        const { data: leads } = await supabase.from('SITE_Leads').select('id, context_id');
+        const { data: leads } = await fetchAllRows<any>((de, ate) =>
+            supabase.from('SITE_Leads').select('id, context_id').order('id', { ascending: true }).range(de, ate)
+        );
         if (leads && data) {
             const counts: Record<string, number> = {};
             data.forEach((c: any) => {

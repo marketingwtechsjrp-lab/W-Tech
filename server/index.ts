@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
@@ -221,9 +222,36 @@ app.use('/api', (_req: Request, res: Response) => {
 // Nomes próprios (sem __dirname) para não colidir com o banner CJS do esbuild.
 const dirAtual = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(dirAtual, '..', 'dist');
-const indexHtml = path.join(distDir, 'index.html');
+// dist/index.html passa a ser a HOME prerenderizada. Servi-la como fallback faria
+// toda rota desconhecida devolver o conteúdo da home (H1 e canonical errados, soft 404
+// com conteúdo alheio). O prerender guarda a casca original em app-shell.html
+// justamente para o fallback ter algo neutro para entregar.
+const appShell = path.join(distDir, 'app-shell.html');
+const indexHtml = existsSync(appShell) ? appShell : path.join(distDir, 'index.html');
 
-app.use(express.static(distDir));
+// `redirect: false` evita o 301 de /cursos para /cursos/ que o express.static faz ao
+// encontrar o diretório do prerender — um salto a mais em toda URL do sitemap.
+app.use(express.static(distDir, { index: false, redirect: false }));
+
+// ── HTML prerenderizado (scripts/prerender.mjs) ─────────────────────────────
+// Tem que vir ANTES do fallback: dist/<rota>/index.html contém o DOM já renderizado,
+// com H1, texto e links. É o que os crawlers de assistentes de IA — que não executam
+// JavaScript — conseguem ler. Sem isto, toda rota devolve a casca vazia de 6,7 KB.
+// Se a rota não foi prerenderizada, cai no fallback normal e a SPA renderiza no cliente.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+
+  const safePath = path.normalize(decodeURIComponent(req.path)).replace(/^(\.\.[/\\])+/, '');
+  const candidate = path.join(distDir, safePath, 'index.html');
+
+  // Guarda contra path traversal: o arquivo resolvido tem que estar dentro de dist/.
+  if (!candidate.startsWith(distDir + path.sep)) return next();
+  if (!existsSync(candidate)) return next();
+
+  res.sendFile(candidate, (err) => {
+    if (err) next(err);
+  });
+});
 
 // Fallback SPA: qualquer GET não-/api devolve o index.html (BrowserRouter).
 app.use((req: Request, res: Response, next: NextFunction) => {

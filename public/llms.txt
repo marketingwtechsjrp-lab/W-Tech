@@ -11,11 +11,11 @@ O fundador e instrutor principal é Alex Crepaldi, com mais de 20 anos de experi
 - [Início](https://w-techbrasil.com.br/): Apresentação da escola, próximos cursos, mapa de mecânicos certificados e blog.
 - [Cursos Presenciais](https://w-techbrasil.com.br/cursos): Calendário de cursos presenciais em todo o Brasil — datas, cidades e inscrições.
 - [Banco de Dados de Molas (/molas)](https://w-techbrasil.com.br/molas): Catálogo técnico de molas calibradas (dianteira e traseira) por peso do piloto e modelo de motocicleta, com constantes elásticas seguindo tabelas de referência internacional.
+- [Calculadora de Óleo (/oleo)](https://w-techbrasil.com.br/oleo): Referência de volume e viscosidade de óleo de suspensão por modelo de motocicleta.
 - [Mapa de Mecânicos](https://w-techbrasil.com.br/mapa): Diretório geolocalizado de mecânicos certificados pela W-Tech em todo o Brasil.
 - [Blog](https://w-techbrasil.com.br/blog): Artigos técnicos sobre suspensão de motos, SAG, regulagem de garfo e amortecedor.
 - [Glossário](https://w-techbrasil.com.br/glossario): Definições dos principais termos técnicos de suspensão de motocicletas.
 - [Contato](https://w-techbrasil.com.br/contato): Formulário de contato, telefone e endereço da sede (São José do Rio Preto - SP).
-- [Sobre](https://w-techbrasil.com.br/sobre): Histórico da escola, missão e perfil do instrutor Alex Crepaldi.
 
 ## Cursos
 

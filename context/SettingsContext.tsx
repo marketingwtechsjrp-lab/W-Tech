@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { PUBLIC_BASE_URL, ORGANIZATION_ID, canonicalUrl } from '../lib/publicUrl';
 
 interface SettingsContextType {
     settings: any;
@@ -85,15 +86,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 if (config.seo_site_name || config.site_title) setMeta('property', 'og:site_name', config.seo_site_name || config.site_title);
                 if (config.seo_og_type) setMeta('property', 'og:type', config.seo_og_type);
 
-                // Canonical
-                if (config.seo_canonical_url) {
+                // Canonical da ROTA ATUAL.
+                // Antes gravava `config.seo_canonical_url` cru — um único valor do banco
+                // para o site inteiro. Como este provider fica ACIMA do Router e roda em
+                // toda página, ele sobrescrevia o canonical correto do componente SEO e
+                // apontava /molas, /cursos, /blog etc. todos para a mesma URL. Agora usa o
+                // mesmo cálculo do SEO.tsx, então os dois escrevem o mesmo valor.
+                {
                     let canonical: HTMLLinkElement | null = document.querySelector("link[rel='canonical']");
                     if (!canonical) {
                         canonical = document.createElement('link');
                         canonical.rel = 'canonical';
                         document.head.appendChild(canonical);
                     }
-                    canonical.href = config.seo_canonical_url;
+                    canonical.href = canonicalUrl(window.location.pathname, window.location.search);
                 }
 
                 // Google / Bing Verification
@@ -109,17 +115,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                         schemaScript.type = 'application/ld+json';
                         document.head.appendChild(schemaScript);
                     }
-                    schemaScript.textContent = JSON.stringify({
+                    // O @id é o mesmo do grafo estático do index.html, então os dois blocos
+                    // descrevem UMA entidade em vez de duas Organizations concorrentes.
+                    // Campos vazios são removidos: schema com string vazia é pior que ausente.
+                    const orgNode: Record<string, unknown> = {
                         "@context": "https://schema.org",
                         "@type": config.seo_schema_type || "EducationalOrganization",
+                        "@id": ORGANIZATION_ID,
                         "name": config.seo_schema_name || config.site_title || "W-TECH Brasil",
-                        "url": config.seo_canonical_url || "https://w-techbrasil.com.br",
-                        "logo": config.seo_schema_logo || config.logo_url || "",
-                        "telephone": config.seo_schema_phone || "",
-                        "email": config.seo_schema_email || "",
-                        "address": config.seo_schema_address || "",
-                        "sameAs": [config.instagram, config.facebook, config.linkedin].filter(Boolean)
-                    });
+                        "url": PUBLIC_BASE_URL,
+                        "logo": config.seo_schema_logo || config.logo_url,
+                        "telephone": config.seo_schema_phone,
+                        "email": config.seo_schema_email,
+                        "address": config.seo_schema_address,
+                        "sameAs": [config.instagram, config.facebook, config.linkedin].filter(Boolean),
+                    };
+                    for (const [k, v] of Object.entries(orgNode)) {
+                        if (!v || (Array.isArray(v) && !v.length)) delete orgNode[k];
+                    }
+                    schemaScript.textContent = JSON.stringify(orgNode);
                 }
 
                 // Inject Analytics (Facebook Pixel)

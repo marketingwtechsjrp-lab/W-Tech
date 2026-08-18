@@ -20,7 +20,9 @@
   <!-- Atualize og:image e twitter:image com a URL da imagem configurada em Admin > Configurações > SEO. -->
   <!-- Tamanho ideal: 1200x630px. Cole a URL do Supabase Storage aqui. -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://site.w-techbrasil.com.br/" />
+  <meta property="og:url" content="https://w-techbrasil.com.br/" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="W-TECH Brasil" />
   <meta property="og:title" content="W-TECH Brasil | Autoridade em Suspensões" />
   <meta property="og:description"
     content="Escola líder em treinamentos técnicos de suspensão e mecânica de alta performance. Motocross, Enduro e Rally." />
@@ -30,13 +32,83 @@
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://site.w-techbrasil.com.br/" />
+  <meta property="twitter:url" content="https://w-techbrasil.com.br/" />
   <meta property="twitter:title" content="W-TECH Brasil | Autoridade em Suspensões" />
   <meta property="twitter:description"
     content="Escola líder em treinamentos técnicos de suspensão e mecânica de alta performance." />
   <meta property="twitter:image" content="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/settings/seo_og_image-1770812063458.jpg" />
 
-  <link rel="canonical" href="https://site.w-techbrasil.com.br/" />
+  <link rel="canonical" href="https://w-techbrasil.com.br/" />
+
+  <!-- Grafo de entidade — ESTÁTICO de propósito.
+       A maioria dos crawlers de assistentes de IA não executa JavaScript. Este bloco
+       é a única informação estruturada que eles recebem antes do prerender hidratar.
+       Os @id abaixo são referenciados pelo JSON-LD de cada página (components/SEO.tsx);
+       se mudarem, o grafo se quebra. Só inclua fato verificável e publicado no site. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://w-techbrasil.com.br/#organization",
+        "name": "W-TECH Brasil",
+        "alternateName": ["W-Tech", "W-Tech Treinamentos"],
+        "url": "https://w-techbrasil.com.br",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://w-techbrasil.com.br/logo-wtech-letreiro.png"
+        },
+        "description": "Escola especializada em suspensão de motocicletas: cursos técnicos presenciais e online para mecânicos e pilotos, rede de oficinas credenciadas e banco de dados de molas calibradas.",
+        "founder": { "@id": "https://w-techbrasil.com.br/#/schema/person/alex-crepaldi" },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "R. Zumbi dos Palmares, 410 - Jd. Paulista",
+          "addressLocality": "São José do Rio Preto",
+          "addressRegion": "SP",
+          "postalCode": "15060-190",
+          "addressCountry": "BR"
+        },
+        "contactPoint": [{
+          "@type": "ContactPoint",
+          "telephone": "+55-17-3231-2858",
+          "email": "contato@w-techbrasil.com.br",
+          "contactType": "customer support",
+          "areaServed": ["BR", "PT"],
+          "availableLanguage": ["Portuguese"]
+        }],
+        "sameAs": [
+          "https://www.instagram.com/wtechbrasil",
+          "https://www.facebook.com/wtechbrasil",
+          "https://www.youtube.com/@wtechbrasil"
+        ]
+      },
+      {
+        "@type": "Person",
+        "@id": "https://w-techbrasil.com.br/#/schema/person/alex-crepaldi",
+        "name": "Alex Crepaldi",
+        "jobTitle": "Fundador e instrutor principal",
+        "worksFor": { "@id": "https://w-techbrasil.com.br/#organization" },
+        "knowsAbout": [
+          "Suspensão de motocicletas",
+          "Regulagem de suspensão",
+          "Motocross",
+          "Enduro",
+          "Calibração de molas"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://w-techbrasil.com.br/#website",
+        "url": "https://w-techbrasil.com.br",
+        "name": "W-TECH Brasil",
+        "publisher": { "@id": "https://w-techbrasil.com.br/#organization" },
+        "inLanguage": "pt-BR"
+      }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
