@@ -99,15 +99,33 @@ Para garantir que este guia nunca fique desatualizado, o sistema possui uma **Gi
 3. Garante que qualquer nova pasta ou módulo importante seja documentado.
 
 ### 🚀 Processo de Deploy
-Sempre prefira o comando:
+
+⚠️ **`git push` NÃO publica nada.** Produção (`w-techbrasil.com.br`) roda na VPS
+`179.197.76.99`, no serviço Docker Swarm `wtechprod_psite` (imagem `wtech-site:prod`).
+Nada é automático: sem o passo 2 abaixo, o código continua só no GitHub — inclusive
+as rotas `api/*` (o Express em `server/index.ts` monta os mesmos paths da Vercel).
+
+**Passo 1 — versionar e enviar ao GitHub:**
 ```bash
 npm run release
 ```
-Este comando executa o script `scripts/deploy-update.js`, que:
-- Incrementa a versão no `package.json`.
-- Atualiza o `CHANGELOG.json` e `CHANGELOG.md`.
-- Realiza o `git commit` e `git push` com as tags corretas.
-- Aciona a atualização automática deste `guia.md`.
+O script `scripts/deploy-update.js` incrementa a versão no `package.json`, atualiza
+`CHANGELOG.json`/`CHANGELOG.md`, faz commit e push com as tags e dispara a
+atualização automática deste `guia.md`.
+
+**Passo 2 — publicar na VPS (obrigatório):**
+```bash
+ssh root@179.197.76.99 'bash /root/deploy-site.sh'
+```
+O script faz `git pull` em `/root/W-Tech`, salva backup da imagem atual como
+`wtech-site:prod-backup-<data>`, reconstrói (reaproveitando os build args
+`VITE_SUPABASE_*` do serviço em execução) e roda `docker service update`.
+O rollback exato é impresso no fim da execução.
+
+**Como conferir se o que está no ar é o commit atual:**
+```bash
+ssh root@179.197.76.99 'cd /root/W-Tech && git log -1 --format="%h %s"'
+```
 
 ---
 
