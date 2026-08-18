@@ -303,7 +303,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
 
         if (confirm(`Gerar ${validEnrollments.length} ${isBadge ? 'crachás' : 'certificados'}?`)) {
-            await generateCertificatesPDF(layout, currentCourse, validEnrollments);
+            try {
+                await generateCertificatesPDF(layout, currentCourse, validEnrollments);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+                alert(`Não foi possível gerar o PDF. ${message}`);
+            }
         }
     };
 
@@ -323,7 +328,12 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
         }
 
         if (confirm(`Gerar ${isBadge ? 'crachá' : 'certificado'} para ${enrollment.studentName}?`)) {
-            await generateCertificatesPDF(layout, currentCourse, [enrollment]);
+            try {
+                await generateCertificatesPDF(layout, currentCourse, [enrollment]);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+                alert(`Não foi possível gerar o PDF. ${message}`);
+            }
         }
     };
 

@@ -34,8 +34,11 @@ CREATE INDEX IF NOT EXISTS idx_ig_metrics_posted ON "SITE_InstagramMetrics"(post
 
 ALTER TABLE "SITE_InstagramMetrics" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ig_metrics_all ON "SITE_InstagramMetrics";
-CREATE POLICY ig_metrics_all ON "SITE_InstagramMetrics"
-    FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS ig_metrics_service_only ON "SITE_InstagramMetrics";
+REVOKE ALL ON TABLE "SITE_InstagramMetrics" FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "SITE_InstagramMetrics" TO service_role;
+CREATE POLICY ig_metrics_service_only ON "SITE_InstagramMetrics"
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ─── Seed: últimos 90 dias (Windsor.ai, coletado em 18/07/2026) ─────────────
 INSERT INTO "SITE_InstagramMetrics"

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { isIP } from 'node:net';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
@@ -12,6 +13,7 @@ import helmet from 'helmet';
 import asaasPaymentLink from '../api/asaas-payment-link.js';
 import checkoutRecovery from '../api/checkout-recovery.js';
 import createStripeCheckout from '../api/create-stripe-checkout.js';
+import contentPlanner from '../api/content-planner.js';
 import glossary from '../api/_glossary.js';
 import jobs from '../api/jobs.js';
 import launchCourseCampaign from '../api/launch-course-campaign.js';
@@ -103,6 +105,63 @@ app.use(helmet({
 
 type VercelStyleHandler = (req: Request, res: Response) => unknown | Promise<unknown>;
 
+const GEO_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const geoCountryCache = new Map<string, { country: string; expiresAt: number }>();
+
+function normalizeClientIp(value?: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim().replace(/^\[|\]$/g, '').replace(/^::ffff:/, '');
+  if (!isIP(trimmed)) return null;
+
+  // Nunca envia endereços locais/privados ao serviço de geolocalização.
+  if (
+    trimmed === '::1'
+    || trimmed === '127.0.0.1'
+    || /^10\./.test(trimmed)
+    || /^192\.168\./.test(trimmed)
+    || /^172\.(1[6-9]|2\d|3[01])\./.test(trimmed)
+    || /^fc/i.test(trimmed)
+    || /^fd/i.test(trimmed)
+  ) return null;
+
+  return trimmed;
+}
+
+function getRequestClientIp(req: Request): string | null {
+  const forwarded = req.get('x-forwarded-for')
+    ?.split(',')
+    .map((part) => normalizeClientIp(part))
+    .filter((part): part is string => Boolean(part));
+
+  // O Traefik acrescenta o endereço recebido ao final da cadeia X-Forwarded-For.
+  return normalizeClientIp(req.get('cf-connecting-ip'))
+    || normalizeClientIp(req.get('x-real-ip'))
+    || forwarded?.at(-1)
+    || normalizeClientIp(req.socket.remoteAddress);
+}
+
+async function lookupCountryByIp(ip: string): Promise<string | null> {
+  const cached = geoCountryCache.get(ip);
+  if (cached && cached.expiresAt > Date.now()) return cached.country;
+
+  try {
+    const response = await fetch(`https://api.country.is/${encodeURIComponent(ip)}`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(1800),
+    });
+    if (!response.ok) return null;
+
+    const data = await response.json() as { country?: string };
+    const country = data.country?.trim().toUpperCase() || '';
+    if (!/^[A-Z]{2}$/.test(country)) return null;
+
+    geoCountryCache.set(ip, { country, expiresAt: Date.now() + GEO_CACHE_TTL_MS });
+    return country;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Adaptador Vercel → Express. Os handlers usam apenas req.method/headers/query/body
  * e res.status().json(), que o Express já fornece (req.body via express.json).
@@ -138,12 +197,15 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Rotas /api (mesmos paths da Vercel) ──────────────────────────────────────
-app.get('/api/geo-language', (req: Request, res: Response) => {
+app.get('/api/geo-language', async (req: Request, res: Response) => {
   const rawCountry = req.get('cf-ipcountry')
     || req.get('x-vercel-ip-country')
     || req.get('x-country-code')
     || '';
-  const country = rawCountry.split(',')[0].trim().toUpperCase();
+  const headerCountry = rawCountry.split(',')[0].trim().toUpperCase();
+  const clientIp = headerCountry ? null : getRequestClientIp(req);
+  const ipCountry = clientIp ? await lookupCountryByIp(clientIp) : null;
+  const country = headerCountry || ipCountry || '';
   const acceptLanguage = req.get('accept-language')?.toLowerCase() || '';
   const language = country
     ? countryToLandingLanguage(country)
@@ -156,13 +218,18 @@ app.get('/api/geo-language', (req: Request, res: Response) => {
           : 'en';
 
   res.set('Cache-Control', 'private, no-store');
-  res.json({ country: country || null, language });
+  res.json({
+    country: country || null,
+    language,
+    source: headerCountry ? 'edge' : ipCountry ? 'ip' : 'browser',
+  });
 });
 
 const rotasApi: Record<string, VercelStyleHandler> = {
   'asaas-payment-link': asaasPaymentLink,
   'checkout-recovery': checkoutRecovery,
   'create-stripe-checkout': createStripeCheckout,
+  'content-planner': contentPlanner,
   'glossary': glossary,
   'jobs': jobs,
   'launch-course-campaign': launchCourseCampaign,

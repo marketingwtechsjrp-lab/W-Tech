@@ -17,6 +17,7 @@ import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
     buildSuspensionLandingUrl,
     getSuspensionFunnelCopy,
@@ -30,10 +31,10 @@ const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
 
 const vslUi = {
     'pt-BR': {
-        exclusive: 'Aula exclusiva para pilotos Off-Road',
+        exclusive: 'Apresentação exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
         watch: 'Assista até o final para liberar sua inscrição',
-        privateClass: 'Aula privada',
+        privateClass: 'Apresentação em vídeo',
         start: 'Começar agora',
         pause: 'Pausar',
         continue: 'Continuar',
@@ -44,26 +45,27 @@ const vslUi = {
         unlocked: 'Inscrição liberada',
         continueEnrollment: 'Continuar para a inscrição',
         destination: 'Você será encaminhado para os detalhes completos do curso e da oferta.',
-        locked: 'O botão de inscrição será liberado ao final da aula',
+        locked: 'O botão de inscrição será liberado ao final da apresentação',
         tracking: 'O avanço do vídeo acompanha apenas o conteúdo já assistido.',
         benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
         released: 'Ver inscrição liberada',
-        playing: 'Aula em andamento',
+        playing: 'Apresentação em andamento',
         resume: 'Continue de onde parou',
-        ready: 'Sua aula está pronta',
+        ready: 'Sua apresentação está pronta',
         remaining: 'restantes',
-        startExclusive: 'Começar aula exclusiva',
+        startExclusive: 'Começar apresentação',
         quizStep: 'Etapa 2 de 2',
         checkoutAction: 'Ir para a inscrição segura',
         checkoutReleased: 'Inscrição liberada',
         checkoutDestination: 'Você seguirá direto para o checkout seguro, sem outra página de venda.',
         profile: 'Diagnóstico recebido',
+        premium: 'Plano Premium',
     },
     'pt-PT': {
-        exclusive: 'Aula exclusiva para pilotos Off-Road',
+        exclusive: 'Apresentação exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
         watch: 'Vê até ao fim para libertar a tua inscrição',
-        privateClass: 'Aula privada',
+        privateClass: 'Apresentação em vídeo',
         start: 'Começar agora',
         pause: 'Pausar',
         continue: 'Continuar',
@@ -74,26 +76,27 @@ const vslUi = {
         unlocked: 'Inscrição libertada',
         continueEnrollment: 'Continuar para a inscrição',
         destination: 'Serás encaminhado para os detalhes completos do curso e da oferta.',
-        locked: 'O botão de inscrição será libertado no final da aula',
+        locked: 'O botão de inscrição será libertado no final da apresentação',
         tracking: 'O avanço do vídeo acompanha apenas o conteúdo já visto.',
         benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
         released: 'Ver inscrição libertada',
-        playing: 'Aula em curso',
+        playing: 'Apresentação em curso',
         resume: 'Continua de onde paraste',
-        ready: 'A tua aula está pronta',
+        ready: 'A tua apresentação está pronta',
         remaining: 'restantes',
-        startExclusive: 'Começar aula exclusiva',
+        startExclusive: 'Começar apresentação',
         quizStep: 'Etapa 2 de 2',
         checkoutAction: 'Ir para a inscrição segura',
         checkoutReleased: 'Inscrição libertada',
         checkoutDestination: 'Seguirás diretamente para o checkout seguro, sem outra página de venda.',
         profile: 'Diagnóstico recebido',
+        premium: 'Plano Premium',
     },
     es: {
-        exclusive: 'Clase exclusiva para pilotos Off-Road',
+        exclusive: 'Presentación exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
         watch: 'Mira hasta el final para desbloquear tu inscripción',
-        privateClass: 'Clase privada',
+        privateClass: 'Presentación en vídeo',
         start: 'Empezar ahora',
         pause: 'Pausar',
         continue: 'Continuar',
@@ -104,26 +107,27 @@ const vslUi = {
         unlocked: 'Inscripción desbloqueada',
         continueEnrollment: 'Continuar a la inscripción',
         destination: 'Accederás a todos los detalles del curso y de la oferta.',
-        locked: 'El botón de inscripción se desbloqueará al final de la clase',
+        locked: 'El botón de inscripción se desbloqueará al final de la presentación',
         tracking: 'El avance solo permite recorrer el contenido ya visto.',
         benefits: ['Acceso por 12 meses', 'Garantía de 7 días', 'Certificado W-Tech'],
         released: 'Ver inscripción desbloqueada',
-        playing: 'Clase en curso',
+        playing: 'Presentación en curso',
         resume: 'Continúa donde lo dejaste',
-        ready: 'Tu clase está lista',
+        ready: 'Tu presentación está lista',
         remaining: 'restantes',
-        startExclusive: 'Empezar clase exclusiva',
+        startExclusive: 'Empezar presentación',
         quizStep: 'Etapa 2 de 2',
         checkoutAction: 'Ir a la inscripción segura',
         checkoutReleased: 'Inscripción desbloqueada',
         checkoutDestination: 'Irás directamente al checkout seguro, sin otra página de venta.',
         profile: 'Diagnóstico recibido',
+        premium: 'Plan Premium',
     },
     en: {
-        exclusive: 'Exclusive class for Off-Road riders',
+        exclusive: 'Exclusive presentation for Off-Road riders',
         step: 'Step 1 of 2',
         watch: 'Watch to the end to unlock enrollment',
-        privateClass: 'Private class',
+        privateClass: 'Video presentation',
         start: 'Start now',
         pause: 'Pause',
         continue: 'Continue',
@@ -134,20 +138,21 @@ const vslUi = {
         unlocked: 'Enrollment unlocked',
         continueEnrollment: 'Continue to enrollment',
         destination: 'You will continue to the complete course and offer details.',
-        locked: 'The enrollment button unlocks at the end of the class',
+        locked: 'The enrollment button unlocks at the end of the presentation',
         tracking: 'You can only seek through content you have already watched.',
         benefits: ['12-month access', '7-day guarantee', 'W-Tech certificate'],
         released: 'View unlocked enrollment',
-        playing: 'Class in progress',
+        playing: 'Presentation in progress',
         resume: 'Continue where you left off',
-        ready: 'Your class is ready',
+        ready: 'Your presentation is ready',
         remaining: 'remaining',
-        startExclusive: 'Start exclusive class',
+        startExclusive: 'Start presentation',
         quizStep: 'Step 2 of 2',
         checkoutAction: 'Go to secure enrollment',
         checkoutReleased: 'Enrollment unlocked',
         checkoutDestination: 'You will go straight to secure checkout, with no additional sales page.',
         profile: 'Diagnosis received',
+        premium: 'Premium Plan',
     },
 } as const;
 
@@ -226,10 +231,10 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
 
         const previousTitle = document.title;
         document.title = funnel.personalized
-            ? `${funnelCopy.label} — Aula W-Tech`
+            ? `${funnelCopy.label} — Apresentação W-Tech`
             : isLight
-                ? 'Aula Clara de Acerto de Suspensão Off-Road — W-Tech'
-                : 'Aula de Acerto de Suspensão Off-Road — W-Tech';
+                ? 'Apresentação Clara do Curso de Suspensão Off-Road — W-Tech'
+                : 'Apresentação do Curso de Suspensão Off-Road — W-Tech';
         let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
         const createdRobots = !robots;
         const previousRobots = robots?.content;
@@ -502,7 +507,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                             <>
                                 <div className={`mb-4 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-[0.14em] ${isLight ? 'text-emerald-700' : 'text-emerald-300'}`}>
                                     <CheckCircle2 size={20} />
-                                    {ui.unlocked}
+                                    {ui.premium} · {ui.unlocked}
                                 </div>
                                 <a
                                     href={landingUrl}
@@ -586,6 +591,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                     </button>
                 )}
             </div>
+            <WhatsAppLeadCapture pageLabel={`${isLight ? 'VSL clara' : 'VSL escura'} · Curso Online de Suspensão`} floating />
         </main>
     );
 };

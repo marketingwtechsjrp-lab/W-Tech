@@ -1201,8 +1201,9 @@ const ContentPlannerView = () => {
                     <div>
                         <p className="font-bold">Não consegui carregar o planejador.</p>
                         <p className="mt-1 text-[var(--admin-text-secondary)]">
-                            Se a tabela ainda não existe, rode <code className="font-mono">create_content_planner.sql</code> no
-                            SQL Editor do banco. Detalhe: {loadError}
+                            {loadError === 'Não autorizado'
+                                ? 'Sua sessão expirou. Entre novamente no painel e tente de novo.'
+                                : `Atualize a página e tente novamente. Detalhe: ${loadError}`}
                         </p>
                     </div>
                 </div>

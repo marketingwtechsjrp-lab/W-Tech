@@ -1,15 +1,44 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useSettings } from '../context/SettingsContext';
+import { captureTrackingParams, stripAutoDirectTracking } from '../lib/tracking';
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
 
 export const AnalyticsTracker = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { get } = useSettings();
     const gaId = get('ga_id');
+    const cleanSearch = useMemo(() => stripAutoDirectTracking(location.search), [location.search]);
+    const shouldCleanAutoTracking = cleanSearch !== location.search;
+
+    // O GTM decora visitas diretas antes do React iniciar. Guardamos os dados
+    // para o checkout e retiramos somente a decoração automática da URL pública.
+    // UTMs reais de Meta/Google/WhatsApp permanecem visíveis e propagadas.
+    useEffect(() => {
+        const cleanAndReplace = () => {
+            const currentSearch = window.location.search;
+            const nextSearch = stripAutoDirectTracking(currentSearch);
+            if (nextSearch === currentSearch) return;
+
+            // Captura antes da limpeza: o checkout ainda recebe o identificador
+            // individual da sessão, embora ele não apareça na URL compartilhável.
+            captureTrackingParams();
+            navigate(
+                { pathname: window.location.pathname, search: nextSearch, hash: window.location.hash },
+                { replace: true },
+            );
+        };
+
+        cleanAndReplace();
+
+        // O GTM pode decorar a URL depois do primeiro render/gtm.dom.
+        const timers = [100, 500, 1200].map((delay) => window.setTimeout(cleanAndReplace, delay));
+        return () => timers.forEach((timer) => window.clearTimeout(timer));
+    }, [cleanSearch, location.hash, location.pathname, navigate, shouldCleanAutoTracking]);
 
     // GA Intection & Global Click Listener
     useEffect(() => {
@@ -50,6 +79,8 @@ export const AnalyticsTracker = () => {
 
     // Page View Tracking
     useEffect(() => {
+        if (shouldCleanAutoTracking) return;
+
         const trackPageView = async () => {
             try {
                 // GA Pageview
@@ -103,7 +134,7 @@ export const AnalyticsTracker = () => {
             const t = setTimeout(trackPageView, 1500);
             return () => clearTimeout(t);
         }
-    }, [location, gaId]);
+    }, [location, gaId, shouldCleanAutoTracking]);
 
     return null;
 };

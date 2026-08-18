@@ -10,7 +10,7 @@ test.describe('Landing page clara VSL', () => {
         name: 'O Único Curso Que Você Precisa Para Acertar Sua Moto',
       }),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Assistir à aula gratuita' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Assistir à apresentação' })).toBeVisible();
     await expect(page.locator('video[poster="/images/vsl-thumbnail.webp"]')).toBeVisible();
 
     const premiumImages = [
@@ -35,7 +35,7 @@ test.describe('Landing page clara VSL', () => {
     await page.goto('/curso-suspensao-piloto-clara');
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Assistir à aula gratuita' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Assistir à apresentação' })).toBeVisible();
 
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
@@ -59,14 +59,14 @@ test.describe('Landing page clara VSL', () => {
     await expect(page.locator('#conteudo img[alt^="Capa oficial do módulo"]')).toHaveCount(16);
     await expect(page.getByRole('button', { name: 'Assistir depoimento: Pedro' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Assistir depoimento: Euler' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Assistir depoimento: Guilherme' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Assistir depoimento: Guilherme' })).toHaveCount(0);
   });
 
   test('oferece uma VSL isolada clara e encaminha para a landing clara', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/curso-suspensao-piloto-vsl-clara?utm_source=teste');
 
-    await expect(page).toHaveTitle('Aula Clara de Acerto de Suspensão Off-Road — W-Tech');
+    await expect(page).toHaveTitle('Apresentação Clara do Curso de Suspensão Off-Road — W-Tech');
     await expect(
       page.getByRole('heading', {
         level: 1,
@@ -74,7 +74,7 @@ test.describe('Landing page clara VSL', () => {
       }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Começar agora' })).toBeVisible();
-    await expect(page.getByText('O botão de inscrição será liberado ao final da aula')).toBeVisible();
+    await expect(page.getByText('O botão de inscrição será liberado ao final da apresentação')).toBeVisible();
     await expect(page.locator('img[src="/images/lp-curso/hero-light-vsl-rider.webp"]')).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),

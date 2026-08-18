@@ -73,6 +73,7 @@ interface QuizCopy {
     transitionEyebrow: string;
     transitionLabels: string[];
     transitionHint: string;
+    interactionHint: string;
     resultEyebrow: string;
     resultTitle: string;
     resultDescription: string;
@@ -349,14 +350,15 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         step: 'Etapa',
         of: 'de',
         back: 'Voltar',
-        transitionEyebrow: 'Telemetria W-Tech',
-        transitionLabels: ['Lendo o equilíbrio da moto', 'Simulando transferência de peso', 'Cruzando terreno e hidráulica', 'Mapeando o cockpit do piloto', 'Construindo a sua prioridade técnica', 'Seu diagnóstico está pronto'],
-        transitionHint: 'Mova o cursor para explorar o conjunto em 3D',
+        transitionEyebrow: 'W-Tech preparando seu resultado',
+        transitionLabels: ['Conectando seu estilo de pilotagem', 'Interpretando os sintomas da moto', 'Organizando sua base de regulagem', 'Cruzando terreno e resposta da suspensão', 'Relacionando ergonomia e fadiga', 'Finalizando seu diagnóstico'],
+        transitionHint: 'Sua leitura personalizada está quase pronta.',
+        interactionHint: 'Mova o cursor para explorar o conjunto em 3D',
         resultEyebrow: 'Seu mapa de evolução',
         resultTitle: 'A primeira mudança não é acelerar mais.',
         resultDescription: 'É fazer a moto trabalhar com você. O diagnóstico abaixo define o melhor ponto de entrada para a sua regulagem.',
         resultAction: 'Assistir à VSL recomendada',
-        resultFootnote: 'Na próxima etapa, a aula conecta este diagnóstico ao método completo. Ao final, a inscrição abre direto no checkout.',
+        resultFootnote: 'Na próxima etapa, a VSL conecta este diagnóstico ao método completo. Ao final, a inscrição abre direto no checkout.',
         restart: 'Refazer diagnóstico',
         interaction: 'Interação 3D',
         profiles: {
@@ -393,13 +395,14 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         heroDescription: 'Em 6 decisões, identifica o que está a tirar controlo, tração e energia da tua pilotagem — um diagnóstico 100% dedicado a Motocross e Off-Road.',
         start: 'Iniciar o meu diagnóstico', free: '100% gratuito', duration: 'Cerca de 90 segundos', immediate: 'Resultado imediato',
         dark: 'Escuro', light: 'Claro', step: 'Etapa', of: 'de', back: 'Voltar',
-        transitionEyebrow: 'Telemetria W-Tech',
-        transitionLabels: ['A ler o equilíbrio da moto', 'A simular a transferência de peso', 'A cruzar terreno e hidráulica', 'A mapear o cockpit do piloto', 'A construir a tua prioridade técnica', 'O teu diagnóstico está pronto'],
-        transitionHint: 'Move o cursor para explorar o conjunto em 3D',
+        transitionEyebrow: 'W-Tech a preparar o teu resultado',
+        transitionLabels: ['A ligar o teu estilo de pilotagem', 'A interpretar os sintomas da mota', 'A organizar a tua base de afinação', 'A cruzar terreno e resposta da suspensão', 'A relacionar ergonomia e fadiga', 'A finalizar o teu diagnóstico'],
+        transitionHint: 'A tua leitura personalizada está quase pronta.',
+        interactionHint: 'Move o cursor para explorar o conjunto em 3D',
         resultEyebrow: 'O teu mapa de evolução', resultTitle: 'A primeira mudança não é acelerar mais.',
         resultDescription: 'É fazer a moto trabalhar contigo. O diagnóstico abaixo define o melhor ponto de entrada para a tua regulação.',
         resultAction: 'Ver a VSL recomendada',
-        resultFootnote: 'Na próxima etapa, a aula liga este diagnóstico ao método completo. No final, a inscrição abre diretamente no checkout.',
+        resultFootnote: 'Na próxima etapa, a VSL liga este diagnóstico ao método completo. No final, a inscrição abre diretamente no checkout.',
         restart: 'Repetir diagnóstico', interaction: 'Interação 3D',
         profiles: {
             equilibrio: { label: 'Prioridade: Equilíbrio dinâmico', title: 'A tua moto muda demasiado quando o terreno muda.', description: 'O conjunto precisa de uma base repetível: SAG correto, posição e sequência de testes antes de qualquer ajuste fino.', insights: ['Cria uma referência de SAG para o teu peso equipado', 'Altera apenas uma variável por teste', 'Regista terreno, cliques e sensação da moto'] },
@@ -415,13 +418,14 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         heroDescription: 'En 6 decisiones, identifica qué te quita control, tracción y energía — un diagnóstico 100% dedicado al Motocross y Off-Road.',
         start: 'Iniciar mi diagnóstico', free: '100% gratuito', duration: 'Unos 90 segundos', immediate: 'Resultado inmediato',
         dark: 'Oscuro', light: 'Claro', step: 'Etapa', of: 'de', back: 'Volver',
-        transitionEyebrow: 'Telemetría W-Tech',
-        transitionLabels: ['Leyendo el equilibrio de la moto', 'Simulando transferencia de peso', 'Cruzando terreno e hidráulica', 'Mapeando el cockpit del piloto', 'Construyendo tu prioridad técnica', 'Tu diagnóstico está listo'],
-        transitionHint: 'Mueve el cursor para explorar el conjunto en 3D',
+        transitionEyebrow: 'W-Tech preparando tu resultado',
+        transitionLabels: ['Conectando tu estilo de pilotaje', 'Interpretando los síntomas de la moto', 'Organizando tu base de ajuste', 'Cruzando terreno y respuesta de la suspensión', 'Relacionando ergonomía y fatiga', 'Finalizando tu diagnóstico'],
+        transitionHint: 'Tu lectura personalizada está casi lista.',
+        interactionHint: 'Mueve el cursor para explorar el conjunto en 3D',
         resultEyebrow: 'Tu mapa de evolución', resultTitle: 'El primer cambio no es acelerar más.',
         resultDescription: 'Es hacer que la moto trabaje contigo. Este diagnóstico define el mejor punto de entrada para tu regulación.',
         resultAction: 'Ver la VSL recomendada',
-        resultFootnote: 'En la siguiente etapa, la clase conecta este diagnóstico con el método completo. Al final, la inscripción abre directamente en el checkout.',
+        resultFootnote: 'En la siguiente etapa, la VSL conecta este diagnóstico con el método completo. Al final, la inscripción abre directamente en el checkout.',
         restart: 'Repetir diagnóstico', interaction: 'Interacción 3D',
         profiles: {
             equilibrio: { label: 'Prioridad: Equilibrio dinámico', title: 'Tu moto cambia demasiado cuando cambia el terreno.', description: 'El conjunto necesita una base repetible: SAG correcto, posición y secuencia de pruebas antes del ajuste fino.', insights: ['Crea una referencia de SAG para tu peso equipado', 'Cambia solo una variable en cada prueba', 'Registra terreno, clics y sensación de la moto'] },
@@ -437,13 +441,14 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         heroDescription: 'In 6 decisions, identify what is taking away control, traction and energy — a diagnosis built 100% for Motocross and Off-Road riding.',
         start: 'Start my diagnosis', free: '100% free', duration: 'About 90 seconds', immediate: 'Instant result',
         dark: 'Dark', light: 'Light', step: 'Step', of: 'of', back: 'Back',
-        transitionEyebrow: 'W-Tech telemetry',
-        transitionLabels: ['Reading chassis balance', 'Simulating weight transfer', 'Matching terrain and damping', 'Mapping the rider cockpit', 'Building your technical priority', 'Your diagnosis is ready'],
-        transitionHint: 'Move your pointer to explore the assembly in 3D',
+        transitionEyebrow: 'W-Tech preparing your result',
+        transitionLabels: ['Connecting your riding style', 'Interpreting the bike symptoms', 'Organizing your setup baseline', 'Matching terrain and suspension response', 'Connecting ergonomics and fatigue', 'Finalizing your diagnosis'],
+        transitionHint: 'Your personalized reading is almost ready.',
+        interactionHint: 'Move your pointer to explore the assembly in 3D',
         resultEyebrow: 'Your progression map', resultTitle: 'The first change is not going faster.',
         resultDescription: 'It is making the bike work with you. This diagnosis defines the best entry point for your tuning.',
         resultAction: 'Watch my recommended VSL',
-        resultFootnote: 'Next, the class connects this diagnosis to the complete method. At the end, enrollment opens directly in checkout.',
+        resultFootnote: 'Next, the VSL connects this diagnosis to the complete method. At the end, enrollment opens directly in checkout.',
         restart: 'Restart diagnosis', interaction: '3D interaction',
         profiles: {
             equilibrio: { label: 'Priority: Dynamic balance', title: 'Your bike changes too much when terrain changes.', description: 'The chassis needs a repeatable baseline: correct SAG, rider position and a test sequence before fine tuning.', insights: ['Create a SAG baseline for your fully equipped weight', 'Change only one variable per test', 'Log terrain, clicks and bike feedback'] },
@@ -555,6 +560,63 @@ const SuspensionRig: React.FC<{
                     to { margin-top: 3px; }
                 }
             `}</style>
+        </div>
+    );
+};
+
+const WTechLogo3D: React.FC<{ light: boolean }> = ({ light }) => {
+    const prefersReduced = useReducedMotion();
+    const depthLayers = Array.from({ length: 9 });
+
+    return (
+        <div
+            className="relative mx-auto h-[260px] w-full max-w-lg select-none overflow-hidden rounded-[2rem] sm:h-[300px]"
+            role="img"
+            aria-label="Logo W-Tech em 3D"
+        >
+            <div className={`absolute inset-0 ${light ? 'bg-[radial-gradient(circle_at_50%_48%,rgba(181,33,31,.16),transparent_46%)]' : 'bg-[radial-gradient(circle_at_50%_48%,rgba(215,173,79,.13),transparent_48%)]'}`} />
+            <motion.div
+                className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#d7ad4f]/25"
+                animate={prefersReduced ? undefined : { rotate: 360, scale: [0.94, 1.06, 0.94] }}
+                transition={{ rotate: { duration: 7, repeat: Infinity, ease: 'linear' }, scale: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } }}
+            >
+                <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#d7ad4f] shadow-[0_0_18px_rgba(215,173,79,.9)]" />
+                <span className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#b5211f] shadow-[0_0_18px_rgba(181,33,31,.9)]" />
+            </motion.div>
+
+            <div className="absolute inset-0 flex items-center justify-center [perspective:1100px]">
+                <motion.div
+                    className="relative flex h-32 w-[88%] max-w-[390px] items-center justify-center [transform-style:preserve-3d]"
+                    animate={prefersReduced ? { rotateX: 0, rotateY: 0 } : { rotateX: [7, -4, 7], rotateY: [-17, 17, -17], y: [0, -7, 0] }}
+                    transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                    {depthLayers.map((_, layer) => (
+                        <img
+                            key={layer}
+                            src="/logo-wtech-branca.webp"
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute w-full opacity-35"
+                            style={{
+                                filter: 'brightness(.16) saturate(.8)',
+                                transform: `translate3d(${9 - layer}px, ${(9 - layer) * 0.65}px, ${-layer * 4}px)`,
+                            }}
+                        />
+                    ))}
+                    <div className="absolute inset-x-0 top-1/2 h-28 -translate-y-1/2 rounded-[1.7rem] border border-white/10 bg-gradient-to-br from-[#171717]/96 via-black/95 to-[#260909]/92 shadow-[0_28px_65px_rgba(0,0,0,.45),inset_0_1px_0_rgba(255,255,255,.1)] [transform:translateZ(12px)]" />
+                    <img
+                        src="/logo-wtech-branca.webp"
+                        alt="W-Tech Suspension"
+                        className="relative z-10 w-[88%] drop-shadow-[0_12px_20px_rgba(0,0,0,.65)] [transform:translateZ(28px)]"
+                    />
+                    <motion.span
+                        className="pointer-events-none absolute inset-y-3 z-20 w-16 skew-x-[-18deg] bg-gradient-to-r from-transparent via-white/35 to-transparent blur-sm [transform:translateZ(34px)]"
+                        animate={prefersReduced ? { left: '110%' } : { left: ['-25%', '110%'] }}
+                        transition={{ duration: 1.7, repeat: Infinity, repeatDelay: 0.55, ease: 'easeInOut' }}
+                    />
+                </motion.div>
+            </div>
+            <div className="absolute inset-x-[20%] bottom-8 h-5 rounded-[100%] bg-black/45 blur-xl" />
         </div>
     );
 };
@@ -760,7 +822,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                             <div className={`relative hidden rounded-[2.4rem] border backdrop-blur-md lg:block ${light ? 'border-white/70 bg-white/30 shadow-[0_25px_80px_rgba(47,38,21,.18)]' : 'border-white/10 bg-black/25 shadow-[0_25px_80px_rgba(0,0,0,.5)]'}`}>
                                 <SuspensionRig light={light} label={copy.interaction} />
                                 <span className={`absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.15em] ${light ? 'border-black/10 bg-white/80 text-[#655f54]' : 'border-white/10 bg-black/70 text-zinc-400'}`}>
-                                    {copy.transitionHint}
+                                    {copy.interactionHint}
                                 </span>
                             </div>
                         </div>
@@ -823,7 +885,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                     >
                         <div className="w-full max-w-xl">
                             <span className="text-[10px] font-black uppercase tracking-[0.26em] text-[#b77d16]">{copy.transitionEyebrow}</span>
-                            <SuspensionRig light={light} label={copy.interaction} />
+                            <WTechLogo3D light={light} />
                             <h1 className="text-2xl font-black uppercase tracking-[-0.025em] sm:text-4xl">{copy.transitionLabels[index]}</h1>
                             <div className={`mx-auto mt-6 h-1.5 max-w-xs overflow-hidden rounded-full ${light ? 'bg-black/10' : 'bg-white/10'}`}>
                                 <motion.div

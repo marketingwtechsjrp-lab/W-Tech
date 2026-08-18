@@ -6,7 +6,7 @@
  * conhecimento técnico do Serginho (→ matéria-prima de compilados).
  * A IA lê os itens pendentes e os transforma em cards do calendário.
  */
-import { supabase } from './supabaseClient';
+import { contentPlannerRequest } from './contentPlannerApi';
 
 export type InboxKind = 'duvida' | 'ideia' | 'conhecimento';
 
@@ -28,40 +28,25 @@ export const INBOX_KIND_META: Record<InboxKind, { label: string; emoji: string }
 
 /** Busca os itens pendentes (não processados), mais antigos primeiro. */
 export const fetchPendingInbox = async (): Promise<InboxItem[]> => {
-    const { data, error } = await supabase
-        .from('SITE_ContentInbox')
-        .select('*')
-        .eq('processed', false)
-        .order('created_at', { ascending: true });
-    if (error) throw error;
-    return (data || []) as InboxItem[];
+    return contentPlannerRequest<InboxItem[]>('inbox');
 };
 
 /** Registra uma nova pauta na caixinha. */
 export const addInboxItem = async (
     item: { kind: InboxKind; text: string; author?: string; product_ref?: string },
 ): Promise<InboxItem> => {
-    const { data, error } = await supabase
-        .from('SITE_ContentInbox')
-        .insert({
-            kind: item.kind,
-            text: item.text.trim(),
-            author: item.author?.trim() || null,
-            product_ref: item.product_ref?.trim() || null,
-        })
-        .select()
-        .single();
-    if (error) throw error;
-    return data as InboxItem;
+    return contentPlannerRequest<InboxItem>('inbox', {
+        method: 'POST',
+        body: item,
+    });
 };
 
 /** Marca uma pauta como processada (virou card ou foi arquivada). */
 export const markInboxProcessed = async (id: string): Promise<void> => {
-    const { error } = await supabase
-        .from('SITE_ContentInbox')
-        .update({ processed: true })
-        .eq('id', id);
-    if (error) throw error;
+    await contentPlannerRequest<InboxItem>('inbox', {
+        method: 'PUT',
+        body: { id },
+    });
 };
 
 // ─── Grounding do catálogo real ──────────────────────────────────────────────
@@ -72,13 +57,13 @@ export const markInboxProcessed = async (id: string): Promise<void> => {
  * verdade na prateleira, em vez de peças genéricas.
  */
 export const buildCatalogContext = async (): Promise<string> => {
-    const { data, error } = await supabase
-        .from('SITE_Products')
-        .select('name, category, current_stock')
-        .gt('current_stock', 0)
-        .order('updated_at', { ascending: false })
-        .limit(70);
-    if (error || !data || data.length === 0) return '';
+    let data: { name: string; category: string | null; current_stock: number | null }[];
+    try {
+        data = await contentPlannerRequest<typeof data>('catalog');
+    } catch {
+        return '';
+    }
+    if (data.length === 0) return '';
     const byCategory: Record<string, string[]> = {};
     for (const p of data as { name: string; category: string | null }[]) {
         const cat = (p.category || 'Outros').split(',')[0].trim();

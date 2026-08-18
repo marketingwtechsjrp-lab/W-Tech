@@ -35,6 +35,55 @@ const TRACKED_KEYS = [
 
 type TrackingParams = Record<string, string>;
 
+const CAMPAIGN_SIGNAL_KEYS = [
+  'utm_medium',
+  'utm_campaign',
+  'utm_content',
+  'utm_term',
+  'fbclid',
+  'gclid',
+  'gad_source',
+  'gbraid',
+  'wbraid',
+] as const;
+
+/**
+ * O decorador do GTM cria estes três parâmetros ao abrir qualquer URL limpa:
+ *   utm_source=direto&src=direto|...&sck=...
+ *
+ * Eles são úteis internamente para correlacionar a sessão com o checkout, mas
+ * não devem virar parte permanente da URL pública nem ser copiados para todos
+ * os links internos. UTMs reais de campanha nunca são removidas.
+ */
+export function stripAutoDirectTracking(search: string): string {
+  const sp = new URLSearchParams(search);
+  const source = sp.get('utm_source')?.toLowerCase();
+  const src = sp.get('src')?.toLowerCase() || '';
+  const sck = sp.get('sck');
+  const hasCampaignSignal = CAMPAIGN_SIGNAL_KEYS.some((key) => sp.has(key));
+  const hasAutoDecoratorSrc = Boolean(sck) && src.includes('|');
+  const isAutoDirect = source === 'direto'
+    && (!src || src === 'direto' || src.startsWith('direto|'))
+    && !hasCampaignSignal;
+
+  // `sck` identifica a sessão e continua salvo internamente para o checkout,
+  // mas não deve fazer parte de uma URL que será copiada ou compartilhada.
+  if (sck) sp.delete('sck');
+
+  // O `src` comprimido com barras verticais também é criado pelo decorador.
+  // Fontes explícitas do funil (quiz_dark, vsl_obrigatoria etc.) permanecem.
+  if (hasAutoDecoratorSrc) sp.delete('src');
+
+  if (isAutoDirect) {
+    sp.delete('utm_source');
+    sp.delete('src');
+  }
+
+  const clean = sp.toString();
+  const normalized = clean ? `?${clean}` : '';
+  return normalized === search ? search : normalized;
+}
+
 /** Lê um cookie pelo nome (cookies não-httpOnly, acessíveis via JS). */
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;

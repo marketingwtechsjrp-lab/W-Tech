@@ -136,15 +136,17 @@ const LandingPageViewerV5: React.FC = () => {
                             Pare de perder serviço por não dominar suspensão. Este é o treinamento presencial que transforma
                             mecânicos comuns em especialistas procurados — técnica de pista aplicada na bancada da sua oficina.
                         </p>
-                        <div className={`bg-black p-6 ${brutalBox}`}>
-                            <div className="flex items-center gap-3 mb-3">
-                                <Wrench className="text-wtech-gold" size={22} />
-                                <span className="font-black uppercase tracking-wide">100% mão na massa</span>
+                        {lp.handsOnEnabled !== false && (
+                            <div className={`bg-black p-6 ${brutalBox}`}>
+                                <div className="flex items-center gap-3 mb-3">
+                                    <Wrench className="text-wtech-gold" size={22} />
+                                    <span className="font-black uppercase tracking-wide">100% mão na massa</span>
+                                </div>
+                                <p className="text-white/50 text-sm leading-relaxed">
+                                    Você desmonta, ajusta e revalva com acompanhamento direto do instrutor. Sai do curso aplicando no dia seguinte.
+                                </p>
                             </div>
-                            <p className="text-white/50 text-sm leading-relaxed">
-                                Você desmonta, ajusta e revalva com acompanhamento direto do instrutor. Sai do curso aplicando no dia seguinte.
-                            </p>
-                        </div>
+                        )}
                     </div>
                     <div className={`bg-black overflow-hidden ${brutalBox}`}>
                         {lp.videoUrl ? (

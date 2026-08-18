@@ -8,7 +8,7 @@
  * Padrão semanal (reunião de marketing de 17/07/2026):
  *   dom/ter/qui = produto · seg/qua/sex = dicas/diversos · sáb = reciclagem/corrida
  */
-import { supabase } from './supabaseClient';
+import { contentPlannerRequest } from './contentPlannerApi';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -184,31 +184,23 @@ export const fetchContentPosts = async (
     startDate: string,
     endDate: string,
 ): Promise<ContentPost[]> => {
-    const { data, error } = await supabase
-        .from('SITE_ContentPosts')
-        .select('*')
-        .gte('post_date', startDate)
-        .lte('post_date', endDate)
-        .order('post_date', { ascending: true })
-        .order('created_at', { ascending: true });
-    if (error) throw error;
-    return (data || []) as ContentPost[];
+    return contentPlannerRequest<ContentPost[]>('posts', {
+        query: { startDate, endDate },
+    });
 };
 
 /** Cria ou atualiza um card do planejador. */
 export const saveContentPost = async (input: ContentPostInput): Promise<ContentPost> => {
-    const { id, ...fields } = input;
-    const payload = { ...fields, updated_at: new Date().toISOString() };
-    const query = id
-        ? supabase.from('SITE_ContentPosts').update(payload).eq('id', id)
-        : supabase.from('SITE_ContentPosts').insert(payload);
-    const { data, error } = await query.select().single();
-    if (error) throw error;
-    return data as ContentPost;
+    return contentPlannerRequest<ContentPost>('posts', {
+        method: input.id ? 'PUT' : 'POST',
+        body: input,
+    });
 };
 
 /** Remove um card do planejador. */
 export const deleteContentPost = async (id: string): Promise<void> => {
-    const { error } = await supabase.from('SITE_ContentPosts').delete().eq('id', id);
-    if (error) throw error;
+    await contentPlannerRequest<void>('posts', {
+        method: 'DELETE',
+        query: { id },
+    });
 };

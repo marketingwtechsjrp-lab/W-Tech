@@ -7,6 +7,7 @@ import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
     getSuspensionFunnelCopy,
     readSuspensionFunnelContext,
@@ -576,7 +577,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     ? funnelCopy.continuity
                                     : funnel.personalized
                                         ? funnelCopy.label
-                                        : 'AULA EXCLUSIVA PARA PILOTOS & MECÂNICOS'}
+                                        : 'APRESENTAÇÃO EXCLUSIVA PARA PILOTOS & MECÂNICOS'}
                             </span>
                         </motion.div>
 
@@ -603,7 +604,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
                                     </span>
-                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-200">AULA DE ACERTO AO VIVO</span>
+                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-200">APRESENTAÇÃO DO MÉTODO W-TECH</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     {isMuted ? (
@@ -688,7 +689,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     className="flex flex-col items-center gap-4 bg-gradient-to-b from-zinc-900/90 to-black p-6 sm:p-8 rounded-2xl border-2 border-wtech-gold/50 shadow-[0_0_50px_rgba(212,175,55,0.3)] backdrop-blur-xl"
                                 >
                                     <div className="inline-flex items-center gap-2 text-wtech-gold font-extrabold text-xs uppercase tracking-widest bg-wtech-gold/10 px-4 py-1 rounded-full border border-wtech-gold/30">
-                                        <Unlock size={14} /> OFERTA ESPECIAL REVELADA
+                                        <Unlock size={14} /> PLANO PREMIUM · OFERTA ESPECIAL REVELADA
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
@@ -1353,7 +1354,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                         </div>
 
                         <span className="text-wtech-gold font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs block mb-4">
-                            {t.offer.badge}
+                            Plano Premium · {t.offer.badge}
                         </span>
 
                         <h2 className="text-2xl md:text-4xl font-black text-white mb-3 tracking-tight">
@@ -1692,6 +1693,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     </motion.div>
                 </div>
             )}
+
+            <WhatsAppLeadCapture pageLabel="Landing completa escura · Curso Online de Suspensão" floating />
 
         </div >
     );

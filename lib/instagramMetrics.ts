@@ -5,7 +5,7 @@
  * conteúdo por IA com o desempenho real (alcance, engajamento, salvamentos,
  * compartilhamentos por post). Sincronizada semanalmente via Windsor.ai.
  */
-import { supabase } from './supabaseClient';
+import { contentPlannerRequest } from './contentPlannerApi';
 
 export interface InstagramPostMetric {
     media_id: string;
@@ -36,15 +36,7 @@ export interface FormatSummary {
 
 /** Busca as métricas dos últimos N dias, mais recentes primeiro. */
 export const fetchInstagramMetrics = async (days = 90): Promise<InstagramPostMetric[]> => {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-    const { data, error } = await supabase
-        .from('SITE_InstagramMetrics')
-        .select('*')
-        .gte('posted_at', since.toISOString())
-        .order('posted_at', { ascending: false });
-    if (error) throw error;
-    return (data || []) as InstagramPostMetric[];
+    return contentPlannerRequest<InstagramPostMetric[]>('instagram', { query: { days } });
 };
 
 /** Taxa de engajamento de um post (engajamento / alcance), em %. */

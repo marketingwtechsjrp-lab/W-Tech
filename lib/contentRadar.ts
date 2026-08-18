@@ -7,7 +7,7 @@
  * prontas calibradas pelas métricas reais. A aba Planejador exibe o radar da
  * semana e transforma ideias em cards do calendário com 1 clique.
  */
-import { supabase } from './supabaseClient';
+import { contentPlannerRequest } from './contentPlannerApi';
 
 export type RadarKind = 'corrida' | 'concorrente' | 'ideia';
 
@@ -27,24 +27,13 @@ export interface RadarItem {
 
 /** Busca os itens do radar das últimas N semanas, mais recentes primeiro. */
 export const fetchRadarItems = async (weeksBack = 2): Promise<RadarItem[]> => {
-    const since = new Date();
-    since.setDate(since.getDate() - weeksBack * 7);
-    const iso = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, '0')}-${String(since.getDate()).padStart(2, '0')}`;
-    const { data, error } = await supabase
-        .from('SITE_ContentRadar')
-        .select('*')
-        .gte('radar_week', iso)
-        .order('radar_week', { ascending: false })
-        .order('created_at', { ascending: true });
-    if (error) throw error;
-    return (data || []) as RadarItem[];
+    return contentPlannerRequest<RadarItem[]>('radar', { query: { weeksBack } });
 };
 
 /** Marca um item do radar como aproveitado (virou card no calendário). */
 export const markRadarUsed = async (id: string): Promise<void> => {
-    const { error } = await supabase
-        .from('SITE_ContentRadar')
-        .update({ used: true })
-        .eq('id', id);
-    if (error) throw error;
+    await contentPlannerRequest<RadarItem>('radar', {
+        method: 'PUT',
+        body: { id },
+    });
 };

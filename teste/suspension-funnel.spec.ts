@@ -3,19 +3,19 @@ import { expect, test } from '@playwright/test';
 const angles = [
   {
     key: 'controle',
-    title: 'Controle e confiança Off-Road — Aula W-Tech',
+    title: 'Controle e confiança Off-Road — Apresentação W-Tech',
     heading: 'Faça a moto trabalhar com você.',
     continuity: 'Etapa 2 de 2 · Seu plano para uma moto previsível',
   },
   {
     key: 'ergonomia',
-    title: 'Ergonomia e menos fadiga — Aula W-Tech',
+    title: 'Ergonomia e menos fadiga — Apresentação W-Tech',
     heading: 'Talvez o seu braço não seja o problema.',
     continuity: 'Etapa 2 de 2 · Seu plano para pilotar mais solto',
   },
   {
     key: 'tracao',
-    title: 'SAG, cliques e tração — Aula W-Tech',
+    title: 'SAG, cliques e tração — Apresentação W-Tech',
     heading: 'Potência sem regulagem não vira tração.',
     continuity: 'Etapa 2 de 2 · Seu plano para ganhar tração',
   },
