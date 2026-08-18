@@ -317,15 +317,46 @@ async function loadRules(supabase: SupabaseClient): Promise<string> {
   return (data || []).map((r: any) => `[${r.type}] ${r.value}`).join('\n');
 }
 
-function withinWorkingHours(wh: AIConfig['working_hours']): boolean {
+type WorkingHours = { start?: number; end?: number; days?: number[] } | null;
+
+function withinWorkingHours(wh: WorkingHours, nowMs: number = Date.now()): boolean {
   if (!wh || (wh.start == null && wh.end == null)) return true;
-  const now = new Date(Date.now() - 3 * 60 * 60 * 1000); // BRT ≈ UTC-3
+  const now = new Date(nowMs - 3 * 60 * 60 * 1000); // BRT ≈ UTC-3
   const hour = now.getUTCHours();
   const day = now.getUTCDay();
   if (wh.days && wh.days.length && !wh.days.includes(day)) return false;
   if (wh.start != null && hour < wh.start) return false;
   if (wh.end != null && hour >= wh.end) return false;
   return true;
+}
+
+/**
+ * Horário comercial padrão (BRT), usado quando o painel não configurou
+ * working_hours em SITE_WhatsAppAIConfig — hoje o campo está vazio, e sem esse
+ * padrão TODA mensagem cairia como "dentro do horário".
+ */
+const DEFAULT_BUSINESS_HOURS = {
+  weekday: { start: 8, end: 18 }, // seg–sex
+  saturday: { start: 8, end: 12 }, // sáb
+} as const;
+
+const DEFAULT_BUSINESS_HOURS_LABEL = 'de segunda a sexta, das 8h às 18h, e sábado das 8h às 12h';
+
+/** Painel configurou horário? Respeita. Senão, padrão da W-Tech (domingo fechado). */
+export function withinBusinessHours(wh: WorkingHours, nowMs: number = Date.now()): boolean {
+  if (wh && (wh.start != null || wh.end != null)) return withinWorkingHours(wh, nowMs);
+  const now = new Date(nowMs - 3 * 60 * 60 * 1000); // BRT ≈ UTC-3
+  const hour = now.getUTCHours();
+  const day = now.getUTCDay(); // 0 = domingo
+  if (day === 0) return false;
+  const win = day === 6 ? DEFAULT_BUSINESS_HOURS.saturday : DEFAULT_BUSINESS_HOURS.weekday;
+  return hour >= win.start && hour < win.end;
+}
+
+/** Frase do horário para a mensagem de fora do expediente. */
+function businessHoursLabel(wh: WorkingHours): string {
+  if (wh && (wh.start != null || wh.end != null)) return 'no nosso horário de atendimento';
+  return DEFAULT_BUSINESS_HOURS_LABEL;
 }
 
 // ─── Envio de texto via API oficial (resposta dentro da janela de 24h) ───────
@@ -374,6 +405,9 @@ const ROLETA_EXCLUDED_ROLES = ['super admin', 'financeiro'];
 // A Bia NÃO responde nem gera rascunho: toda mensagem recebida vira handoff
 // imediato para um atendente humano. Para reativar a IA, mude para false.
 const TRANSFER_ONLY = true;
+
+/** Saudação da W-Tech — abre toda mensagem do modo transferência. */
+const GREETING = 'Olá! Aqui é a Bia, da W-Tech Brasil. 😊';
 
 /**
  * Pool de atendentes do modo transferência (primeiro nome, sem acento,
@@ -642,11 +676,14 @@ export async function runAIResponder(
       stripAccents(incomingText.toLowerCase())
     );
     const mentioned = wantsAttendant ? findMentionedAttendant(users, incomingText) : null;
+    const open = withinBusinessHours(config.working_hours);
     const routed = await routeHandoffToCRM(
       supabase,
       waId,
       incomingText,
-      'Atendimento por IA suspenso — transferência automática para atendente',
+      open
+        ? 'Atendimento por IA suspenso — transferência automática para atendente'
+        : 'Atendimento por IA suspenso — mensagem recebida FORA do horário comercial',
       users,
       mentioned
     );
@@ -654,9 +691,15 @@ export async function runAIResponder(
     const alreadyPending = conv.status === 'pendente';
     await setStatus(supabase, conversationId, 'pendente');
     if (!alreadyPending) {
-      const msg = routed.chosenFirstName
-        ? `Olá! Aqui é a Bia, da W-Tech. 😊 Já estou te passando para ${routed.chosenFirstName}, da nossa equipe, que vai continuar seu atendimento em instantes.`
-        : config.fallback_message;
+      const msg = open
+        ? `${GREETING}\n\n${
+            routed.chosenFirstName
+              ? `Já estou chamando ${routed.chosenFirstName}, da nossa equipe, para te atender.`
+              : 'Já estou chamando um atendente da nossa equipe para te atender.'
+          } É só um instante! 😉`
+        : `${GREETING}\n\nNossos atendentes não estão online agora — o atendimento funciona ${businessHoursLabel(
+            config.working_hours
+          )}.\n\nJá registrei sua mensagem aqui e, assim que a equipe voltar, alguém te responde por este WhatsApp. 👍`;
       const msgId = await sendCloudText(cloudCfg, waId, msg);
       if (msgId) await storeOutMessage(supabase, conversationId, waId, msg, 'ai', 'sent', msgId);
     }
