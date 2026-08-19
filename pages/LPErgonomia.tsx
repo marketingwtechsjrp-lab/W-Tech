@@ -4,7 +4,8 @@ import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
-import { getCoursePrice } from '../lib/coursePricing';
+import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
+import { useBillingRegion } from '../hooks/useBillingRegion';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -199,7 +200,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     };
 
     const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];
-    const price = getCoursePrice(currentLang);
+    const billingRegion = useBillingRegion();
+    const price = getCoursePrice(billingRegion, currentLang);
     const funnel = useMemo(() => readSuspensionFunnelContext('dark'), []);
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const funnelEventLabel = suspensionFunnelEventLabel(funnel);
@@ -207,15 +209,14 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
 
-    const KIWIFY_BASE = "https://pay.kiwify.com.br/19v4nIa";
-    const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
+    const [checkoutUrl, setCheckoutUrl] = useState(() => getCheckoutUrl(billingRegion));
 
     useEffect(() => {
         // Persiste as UTMs/IDs de clique da campanha e monta o link com toda a atribuição.
         captureTrackingParams();
-        setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
+        setCheckoutUrl(buildCheckoutUrl(getCheckoutUrl(billingRegion)));
         trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
-    }, [funnelEventLabel]);
+    }, [funnelEventLabel, billingRegion]);
 
     const scrollTo = (id: string) => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -697,7 +698,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
                                         <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Investimento com desconto:</span>
                                         <div className="text-3xl sm:text-4xl font-black text-wtech-gold tracking-tight">
-                                            {t.offer.priceMain}
+                                            {price.installmentsShort}
                                         </div>
                                         <span className="text-xs text-gray-400 font-semibold">(Acesso por 12 meses + Bônus)</span>
                                     </div>
@@ -1363,18 +1364,18 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             {t.offer.title}
                         </h2>
                         <p className="text-gray-400 text-sm mb-8 max-w-lg mx-auto">
-                            {t.offer.sub}
+                            {price.bonusSubLabel}
                         </p>
 
                         <div className="text-gray-400 font-bold uppercase text-xs md:text-sm tracking-[0.15em] mb-2 line-through decoration-red-500/70 decoration-2">
-                            {t.offer.strike}
+                            {price.strikeLabel}
                         </div>
 
                         <div className="mb-2 flex flex-col items-center justify-center">
-                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">{t.offer.priceMain}</span>
+                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">{price.installmentsShort}</span>
                         </div>
                         <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-2">
-                            {t.offer.priceAlt} no Pix/Cartão
+                            {price.cashLabel}
                         </div>
                         {price.chargedNotice && (
                             <div className="mb-8 max-w-md text-[11px] font-medium text-zinc-400">
@@ -1627,8 +1628,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                             <div className="flex flex-col text-left sm:text-right">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase">{t.offer.strike}</span>
-                                <span className="text-lg sm:text-xl font-black text-wtech-gold leading-none">{t.offer.priceMain}</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase">{price.strikeLabel}</span>
+                                <span className="text-lg sm:text-xl font-black text-wtech-gold leading-none">{price.installmentsShort}</span>
                             </div>
 
                             <a

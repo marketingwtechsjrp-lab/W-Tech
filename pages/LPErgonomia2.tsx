@@ -30,9 +30,9 @@ import {
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { useLanguage } from '../context/LanguageContext';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
-import { COURSE_CHECKOUT_URL, getCoursePrice } from '../lib/coursePricing';
+import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
+import { useBillingRegion } from '../hooks/useBillingRegion';
 
-const CHECKOUT_BASE_URL = COURSE_CHECKOUT_URL;
 const VSL_URL =
     'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const COURSE_URL = 'https://w-techbrasil.com.br/curso-suspensao-piloto-v2';
@@ -336,14 +336,16 @@ const FAQItem: React.FC<{ question: string; answer: string; index: number }> = (
 
 const LPErgonomia2: React.FC = () => {
     const { currentLang } = useLanguage();
-    const price = getCoursePrice(currentLang);
+    const billingRegion = useBillingRegion();
+    const price = getCoursePrice(billingRegion, currentLang);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion);
     const location = useLocation();
-    const [checkoutUrl, setCheckoutUrl] = useState(CHECKOUT_BASE_URL);
+    const [checkoutUrl, setCheckoutUrl] = useState(checkoutBaseUrl);
 
     useEffect(() => {
         captureTrackingParams();
-        setCheckoutUrl(buildCheckoutUrl(CHECKOUT_BASE_URL));
-    }, []);
+        setCheckoutUrl(buildCheckoutUrl(checkoutBaseUrl));
+    }, [checkoutBaseUrl]);
 
     useEffect(() => {
         const previousTitle = document.title;
@@ -444,7 +446,7 @@ const LPErgonomia2: React.FC = () => {
                 '@type': 'Offer',
                 price: price.schemaPrice,
                 priceCurrency: price.schemaCurrency,
-                url: CHECKOUT_BASE_URL,
+                url: checkoutBaseUrl,
                 availability: 'https://schema.org/InStock',
             },
         });

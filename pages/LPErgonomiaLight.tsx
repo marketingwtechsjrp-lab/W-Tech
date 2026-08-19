@@ -26,7 +26,8 @@ import {
     Zap,
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
-import { getCoursePrice } from '../lib/coursePricing';
+import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
+import { useBillingRegion } from '../hooks/useBillingRegion';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
@@ -37,7 +38,6 @@ import {
 } from '../lib/suspensionFunnel';
 
 const COURSE_VIDEO = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
-const KIWIFY_BASE = 'https://pay.kiwify.com.br/19v4nIa';
 
 const lightUi = {
     'pt-BR': {
@@ -134,19 +134,20 @@ const LightFAQ: React.FC<{ question: string; answer: string }> = ({ question, an
 const LPErgonomiaLight: React.FC = () => {
     const { currentLang } = useLanguage();
     const t = lpTranslations[currentLang];
-    const price = getCoursePrice(currentLang);
+    const billingRegion = useBillingRegion();
+    const price = getCoursePrice(billingRegion, currentLang);
     const ui = lightUi[currentLang];
     const funnel = useMemo(() => readSuspensionFunnelContext('light'), []);
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const funnelEventLabel = suspensionFunnelEventLabel(funnel);
-    const [checkoutUrl, setCheckoutUrl] = useState(KIWIFY_BASE);
+    const [checkoutUrl, setCheckoutUrl] = useState(() => getCheckoutUrl(billingRegion));
     const [videoActivated, setVideoActivated] = useState(false);
     const [videoPlaying, setVideoPlaying] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
         captureTrackingParams();
-        setCheckoutUrl(buildCheckoutUrl(KIWIFY_BASE));
+        setCheckoutUrl(buildCheckoutUrl(getCheckoutUrl(billingRegion)));
         trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
 
         const previousTitle = document.title;
@@ -171,7 +172,7 @@ const LPErgonomiaLight: React.FC = () => {
                 robots.content = previousRobots;
             }
         };
-    }, [funnel.personalized, funnelCopy.label, funnelEventLabel]);
+    }, [funnel.personalized, funnelCopy.label, funnelEventLabel, billingRegion]);
 
     const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
@@ -658,7 +659,7 @@ const LPErgonomiaLight: React.FC = () => {
                             <h2 className="text-3xl font-black uppercase leading-[1.05] tracking-[-0.035em] sm:text-5xl">
                                 {t.offer.title}
                             </h2>
-                            <p className="mt-5 max-w-xl leading-relaxed text-[#646159]">{t.offer.sub}</p>
+                            <p className="mt-5 max-w-xl leading-relaxed text-[#646159]">{price.bonusSubLabel}</p>
                             <div className="mt-8 grid gap-3 sm:grid-cols-2">
                                 {bonuses.map((bonus) => (
                                     <div key={bonus.title} className="rounded-2xl border border-[#ddd7c8] bg-white p-5">
@@ -709,11 +710,11 @@ const LPErgonomiaLight: React.FC = () => {
 
                                 <div className="my-8 h-px bg-white/10" />
 
-                                <p className="text-sm font-bold text-zinc-500 line-through">{t.offer.strike}</p>
+                                <p className="text-sm font-bold text-zinc-500 line-through">{price.strikeLabel}</p>
                                 <div className="mt-2 flex items-end gap-3">
-                                    <span className="text-5xl font-black tracking-[-0.045em] text-white sm:text-6xl">{t.offer.priceMain}</span>
+                                    <span className="text-5xl font-black tracking-[-0.045em] text-white sm:text-6xl">{price.installmentsShort}</span>
                                 </div>
-                                <p className="mt-2 text-sm font-bold text-[#e4c46d]">{t.offer.priceAlt}</p>
+                                <p className="mt-2 text-sm font-bold text-[#e4c46d]">{price.cashLabel}</p>
                                 {price.chargedNotice && (
                                     <p className="mt-2 text-xs font-medium text-zinc-400">{price.chargedNotice}</p>
                                 )}
@@ -772,7 +773,7 @@ const LPErgonomiaLight: React.FC = () => {
                 >
                     <span>
                         <span className="block text-[9px] font-black uppercase tracking-[0.15em] text-[#e4c46d]">{ui.course}</span>
-                        <span className="block text-sm font-black">{t.offer.priceMain}</span>
+                        <span className="block text-sm font-black">{price.installmentsShort}</span>
                     </span>
                     <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em]">
                         {t.offer.cta} <ArrowRight size={17} />

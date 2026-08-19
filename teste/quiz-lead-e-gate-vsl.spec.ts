@@ -61,7 +61,10 @@ test.describe('Quiz de suspensão — captura de lead antes da VSL', () => {
 });
 
 test.describe('VSL de suspensão — liberação por tempo assistido', () => {
+    // O vídeo é remoto e o teste precisa de reprodução real; sob concorrência o
+    // download compete com as outras specs, então damos folga explícita.
     test('libera a inscrição aos 50s e ignora tentativa de adiantar o vídeo', async ({ page }) => {
+        test.slow();
         await page.goto('/curso-suspensao-piloto-vsl?lang=pt-BR');
         await expect(
             page.getByText('O botão de inscrição libera após 50 segundos de apresentação'),
@@ -87,7 +90,7 @@ test.describe('VSL de suspensão — liberação por tempo assistido', () => {
         await expect
             .poll(
                 () => page.evaluate(() => sessionStorage.getItem('wtech_suspensao_vsl_completed')),
-                { timeout: 20_000 },
+                { timeout: 60_000, intervals: [500] },
             )
             .toBe('true');
     });

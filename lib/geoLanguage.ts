@@ -63,23 +63,51 @@ export const detectBrowserLandingLanguage = (): SiteLanguage => {
     return 'en';
 };
 
-export const detectGeoLandingLanguage = async (signal?: AbortSignal): Promise<SiteLanguage> => {
+export interface GeoLookup {
+    country: string | null;
+    language: string | null;
+}
+
+/**
+ * Uma consulta por carregamento de página, compartilhada entre a escolha de
+ * idioma e a de checkout. Sem isto, cada consumidor dispararia o próprio fetch
+ * de /api/geo-language.
+ */
+let geoLookupPromise: Promise<GeoLookup> | null = null;
+
+/**
+ * Deliberadamente sem AbortSignal: a promessa é compartilhada, então um
+ * consumidor que desmonta cancelaria a consulta dos outros. Quem não precisa
+ * mais do resultado simplesmente o ignora.
+ */
+export const fetchGeoLookup = (): Promise<GeoLookup> => {
+    if (geoLookupPromise) return geoLookupPromise;
+
+    geoLookupPromise = (async () => {
+        try {
+            const response = await fetch('/api/geo-language', {
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+            });
+            if (response.ok) {
+                const data = await response.json() as { country?: string; language?: string };
+                return { country: data.country ?? null, language: data.language ?? null };
+            }
+        } catch {
+            // A detecção local continua sendo um fallback confiável.
+        }
+        return { country: null, language: null };
+    })();
+
+    return geoLookupPromise;
+};
+
+export const detectGeoLandingLanguage = async (_signal?: AbortSignal): Promise<SiteLanguage> => {
     const explicit = getExplicitLanguage();
     if (explicit) return explicit;
 
-    try {
-        const response = await fetch('/api/geo-language', {
-            headers: { Accept: 'application/json' },
-            cache: 'no-store',
-            signal,
-        });
-        if (response.ok) {
-            const data = await response.json() as { language?: string };
-            if (isSupported(data.language)) return data.language;
-        }
-    } catch {
-        // A detecção local continua sendo um fallback confiável.
-    }
+    const { language } = await fetchGeoLookup();
+    if (isSupported(language)) return language;
 
     return detectBrowserLandingLanguage();
 };

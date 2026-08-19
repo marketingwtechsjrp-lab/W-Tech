@@ -13,6 +13,8 @@ import {
     Volume2,
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
+import { getCheckoutUrl } from '../lib/coursePricing';
+import { useBillingRegion } from '../hooks/useBillingRegion';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
@@ -26,7 +28,6 @@ import {
 } from '../lib/suspensionFunnel';
 
 const VIDEO_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
-const CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
 const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
 // Segundos de conteúdo efetivamente assistido para liberar a inscrição. Conta o
 // avanço real do vídeo (furthestWatchedRef), então adiantar não abre o botão.
@@ -196,6 +197,7 @@ const formatTime = (seconds: number) => {
 const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark' }) => {
     const isLight = theme === 'light';
     const { currentLang } = useLanguage();
+    const billingRegion = useBillingRegion();
     const t = lpTranslations[currentLang];
     const ui = vslUi[currentLang];
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -212,9 +214,9 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const eventLabel = suspensionFunnelEventLabel(funnel);
 
     const landingUrl = useMemo(() => {
-        if (funnel.isQuiz) return buildCheckoutUrl(CHECKOUT_URL);
+        if (funnel.isQuiz) return buildCheckoutUrl(getCheckoutUrl(billingRegion));
         return buildSuspensionLandingUrl(funnel);
-    }, [funnel]);
+    }, [funnel, billingRegion]);
 
     const enrollmentAction = funnel.isQuiz ? ui.checkoutAction : ui.continueEnrollment;
     const enrollmentDestination = funnel.isQuiz ? ui.checkoutDestination : ui.destination;
