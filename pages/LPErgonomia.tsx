@@ -6,6 +6,7 @@ import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { VSL_VIDEO_URL } from '../lib/vslVideo';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -650,7 +651,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                 onPause={() => setVideoPlaying(false)}
                             >
                                 {videoActivated && (
-                                    <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
+                                    <source src={VSL_VIDEO_URL} type="video/mp4" />
                                 )}
                                 Seu navegador não suporta vídeos.
                             </video>

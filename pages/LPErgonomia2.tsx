@@ -32,9 +32,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { VSL_VIDEO_URL as VSL_URL } from '../lib/vslVideo';
 
-const VSL_URL =
-    'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
+
 const COURSE_URL = 'https://w-techbrasil.com.br/curso-suspensao-piloto-v2';
 const OG_IMAGE = 'https://w-techbrasil.com.br/hero-desktop-alex.webp';
 

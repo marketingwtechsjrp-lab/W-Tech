@@ -28,6 +28,7 @@ import {
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { VSL_VIDEO_URL as COURSE_VIDEO } from '../lib/vslVideo';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
@@ -37,7 +38,7 @@ import {
     suspensionFunnelEventLabel,
 } from '../lib/suspensionFunnel';
 
-const COURSE_VIDEO = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
+
 
 const lightUi = {
     'pt-BR': {

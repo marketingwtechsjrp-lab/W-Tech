@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { getCheckoutUrl } from '../lib/coursePricing';
+import { VSL_VIDEO_URL as VIDEO_URL } from '../lib/vslVideo';
+import { useVslProgress } from '../hooks/useVslProgress';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
@@ -27,7 +29,7 @@ import {
     suspensionFunnelEventLabel,
 } from '../lib/suspensionFunnel';
 
-const VIDEO_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
+
 const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
 // Segundos de conteúdo efetivamente assistido para liberar a inscrição. Conta o
 // avanço real do vídeo (furthestWatchedRef), então adiantar não abre o botão.
@@ -210,6 +212,12 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const [isMuted, setIsMuted] = useState(false);
     const [isUnlocked, setIsUnlocked] = useState(false);
     const funnel = useMemo(() => readSuspensionFunnelContext(theme), [theme]);
+    const { registrarAvanco } = useVslProgress(videoRef, {
+        page: isLight ? 'vsl_light' : 'vsl_dark',
+        theme,
+        language: currentLang,
+        quizProfile: funnel.profile,
+    });
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const eventLabel = suspensionFunnelEventLabel(funnel);
 
@@ -305,6 +313,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         setCurrentTime(watched);
         if (!video.seeking) {
             furthestWatchedRef.current = Math.max(furthestWatchedRef.current, watched);
+            registrarAvanco(furthestWatchedRef.current);
         }
         if (!isUnlocked && furthestWatchedRef.current >= UNLOCK_AFTER_SECONDS) {
             releaseEnrollment('tempo_minimo');

@@ -3,12 +3,13 @@ import { supabase } from '../../../lib/supabaseClient';
 import ReactApexChart from 'react-apexcharts';
 import { Users, Eye, Smartphone, Monitor, Activity, MessageCircle, Globe, Database, RefreshCw } from 'lucide-react';
 import { fetchGA4Data, fetchGA4Realtime, RealtimeData } from '../../../lib/googleAnalytics';
+import VSLRetentionPanel from './VSLRetentionPanel';
 
 const AnalyticsView = () => {
     // State
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState(30);
-    const [activeTab, setActiveTab] = useState<'overview' | 'acquisition' | 'engagement' | 'realtime'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'acquisition' | 'engagement' | 'realtime' | 'vsl'>('overview');
     const [dataSource, setDataSource] = useState<'supabase' | 'google'>('supabase');
     const [stats, setStats] = useState({
         totalViews: 0,
@@ -129,7 +130,8 @@ const AnalyticsView = () => {
                     { id: 'overview', label: 'Visão Geral' },
                     { id: 'acquisition', label: 'Aquisição' },
                     { id: 'engagement', label: 'Engajamento' },
-                    { id: 'realtime', label: 'Tempo Real' }
+                    { id: 'realtime', label: 'Tempo Real' },
+                    { id: 'vsl', label: 'Retenção da VSL' }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -141,6 +143,8 @@ const AnalyticsView = () => {
                     </button>
                 ))}
             </div>
+
+            {activeTab === 'vsl' && <VSLRetentionPanel />}
 
             {activeTab === 'overview' && (
                 <div className="space-y-6 animate-fade-in">

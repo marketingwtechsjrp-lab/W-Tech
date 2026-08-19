@@ -1,3 +1,4 @@
+import { VSL_VIDEO_URL } from '../../../lib/vslVideo';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GridVignetteBackground } from '../../ui/vignette-grid-background';
@@ -308,7 +309,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                     onPause={() => setVideoPlaying(false)}
                                 >
                                     {videoActivated && (
-                                        <source src="https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4" type="video/mp4" />
+                                        <source src={VSL_VIDEO_URL} type="video/mp4" />
                                     )}
                                     Seu navegador não suporta vídeos.
                                 </video>

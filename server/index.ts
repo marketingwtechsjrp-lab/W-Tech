@@ -24,6 +24,7 @@ import notifyStudents from '../api/notify-students.js';
 import whatsappCloudSend from '../api/whatsapp-cloud-send.js';
 import whatsappCloudWebhook from '../api/whatsapp-cloud-webhook.js';
 import whatsappSend from '../api/whatsapp-send.js';
+import vslProgress from '../api/vsl-progress.js';
 
 // ── Edge Functions do Supabase portadas para Express (Deno → Node) ───────────
 import kiwifyWebhook from './edge/kiwify-webhook.js';
@@ -240,6 +241,7 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'whatsapp-cloud-send': whatsappCloudSend,
   'whatsapp-cloud-webhook': whatsappCloudWebhook,
   'whatsapp-send': whatsappSend,
+  'vsl-progress': vslProgress,
   // Edge Functions portadas (antes em <supabase>/functions/v1/<nome>)
   'kiwify-webhook': kiwifyWebhook,
   'get-kiwify-affiliates': getKiwifyAffiliates,
