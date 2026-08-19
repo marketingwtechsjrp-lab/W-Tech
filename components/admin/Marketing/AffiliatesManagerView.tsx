@@ -499,7 +499,7 @@ const AffiliatesManagerView = ({ publicMode = false }: { publicMode?: boolean })
                                                 <Coins size={14} /> Ticket Baixo & Alto ROI
                                             </h4>
                                             <p className="text-[10px] text-neutral-400 leading-relaxed">
-                                                O valor promocional de R$ 347,00 (em até 12x de R$ 34,70) estimula a compra imediata por impulso, maximizando o ROI e minimizando o custo de aquisição (CPA) nas suas campanhas.
+                                                O valor promocional de R$ 347,00 (em até 12x de R$ 35,89) estimula a compra imediata por impulso, maximizando o ROI e minimizando o custo de aquisição (CPA) nas suas campanhas.
                                             </p>
                                         </div>
                                     </div>

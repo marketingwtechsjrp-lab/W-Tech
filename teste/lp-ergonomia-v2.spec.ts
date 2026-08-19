@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { VSL_VIDEO_URL } from '../lib/vslVideo';
 
 const PAGE_PATH =
     '/curso-suspensao-piloto-v2?utm_source=playwright&utm_campaign=lp_conversion';
@@ -33,7 +34,7 @@ test.describe('LP Curso de Suspensão para Pilotos V2', () => {
 
         await expect(page.getByText('Nova inscrição confirmada')).toHaveCount(0);
         await expect(page.getByText('Últimas vagas do lote atual')).toHaveCount(0);
-        await expect(page.getByText(/ou 12x de R\$ 34,70 no cartão/i)).toBeVisible();
+        await expect(page.getByText(/ou 12x de R\$ 35,89 no cartão/i)).toBeVisible();
         await expect(page.getByText('Plano Premium · inscrição online')).toBeVisible();
         await expect(page.getByText('Garantia incondicional de 7 dias', { exact: true })).toBeVisible();
         await expect(page.getByText(/30 dias/i)).toHaveCount(0);
@@ -48,7 +49,9 @@ test.describe('LP Curso de Suspensão para Pilotos V2', () => {
 
         await page.getByRole('button', { name: 'Assistir à apresentação do curso' }).click();
         await expect(video.locator('source')).toHaveCount(1);
-        await expect(video.locator('source')).toHaveAttribute('src', /vsl-suspensao\.mp4/);
+        // Compara com a constante, e não com um nome de arquivo cravado: trocar a
+        // VSL não pode deixar este teste verde apontando para o vídeo antigo.
+        await expect(video.locator('source')).toHaveAttribute('src', VSL_VIDEO_URL);
     });
 
     test('abre respostas do FAQ com semântica acessível', async ({ page }) => {

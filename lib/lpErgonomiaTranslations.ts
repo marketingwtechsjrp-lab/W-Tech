@@ -583,7 +583,7 @@ export const lpTranslations: Record<LPLanguage, LPTranslation> = {
       title: 'O Curso Completo + Bônus',
       sub: 'Mais de R$ 997 em Planilhas e Material Complementar Grátis.',
       strike: 'De R$ 997,00 por',
-      priceMain: '12x R$ 34,70',
+      priceMain: '12x R$ 35,89',
       priceAlt: 'ou apenas R$ 347,00 à vista',
       cta: 'Quero Minha Vaga Agora',
       footnote: 'Acesso liberado automaticamente em seu e-mail.',

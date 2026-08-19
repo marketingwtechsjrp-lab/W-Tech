@@ -60,9 +60,11 @@ export interface CoursePrice {
     /** Valor riscado de cada item do material bônus, na ordem em que a página os
      *  lista (SAG, PSI, Óleos, Molas). A soma bate com `bonusValue`. */
     bonusItems: [string, string, string, string];
-    /** Parcelamento por extenso — ex.: '12x de R$ 34,70 no cartão'. */
+    /** Parcelamento por extenso, exatamente como o checkout cobra — ex.:
+     *  '12x de R$ 35,89 no cartão'. O total parcelado é maior que o à vista
+     *  porque o Kiwify aplica juros; anunciar 347/12 seria propaganda enganosa. */
     installments: string;
-    /** Parcelamento compacto para barra fixa — ex.: '12x R$ 34,70'. */
+    /** Parcelamento compacto para barra fixa — ex.: '12x R$ 35,89'. */
     installmentsShort: string;
     /** 'De R$ 997,00 por' / 'De 179 € por' — texto no idioma, número na região. */
     strikeLabel: string;
@@ -87,8 +89,8 @@ const brl = (language: LPLanguage): CoursePrice => ({
     anchor: 'R$ 997,00',
     bonusValue: 'R$ 997,00',
     bonusItems: ['R$ 397,00', 'R$ 257,00', 'R$ 197,00', 'R$ 146,00'],
-    installments: '12x de R$ 34,70 no cartão',
-    installmentsShort: '12x R$ 34,70',
+    installments: '12x de R$ 35,89 no cartão',
+    installmentsShort: '12x R$ 35,89',
     strikeLabel: (LABELS[language] || LABELS['pt-BR']).strike('R$ 997,00'),
     cashLabel: (LABELS[language] || LABELS['pt-BR']).cash('R$ 347,00'),
     bonusSubLabel: (LABELS[language] || LABELS['pt-BR']).bonusSub('R$ 997,00'),
@@ -100,7 +102,7 @@ const brl = (language: LPLanguage): CoursePrice => ({
 /**
  * Textos que emolduram os números. O idioma escolhe a frase; a região escolhe o
  * valor que entra nela. É a separação que impede um português lendo em pt-BR de
- * ver "12x R$ 34,70" ao lado de bônus em euro.
+ * ver "12x R$ 35,89" ao lado de bônus em euro.
  */
 const LABELS: Record<LPLanguage, { strike: (v: string) => string; cash: (v: string) => string; bonusSub: (v: string) => string }> = {
     'pt-BR': {
