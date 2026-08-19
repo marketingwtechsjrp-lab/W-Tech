@@ -43,10 +43,13 @@ const UNLOCK_AFTER_SECONDS = 90;
  *
  * Expoente < 1 gera uma curva côncava: sempre crescente (barra nunca trava nem
  * volta) e ancorada nos extremos, 0% no início e 100% exatamente no fim.
- * Em 10% do vídeo mostra ~25%; na metade, ~65%; nos últimos 25% ela anda devagar
- * para compensar o adiantamento.
+ * Em 5% do vídeo mostra ~26%; em 25%, ~54%; na metade, ~73%; e o último quarto
+ * anda devagar para devolver o adiantamento.
+ *
+ * Não baixar muito mais que isto: abaixo de ~0,40 a cauda quase congela, e uma
+ * barra parada denuncia o adiantamento tanto quanto uma barra honesta.
  */
-const DISPLAY_CURVE_EXPONENT = 0.62;
+const DISPLAY_CURVE_EXPONENT = 0.45;
 
 const displayedProgress = (watched: number, total: number): number => {
     if (!(total > 0)) return 0;
