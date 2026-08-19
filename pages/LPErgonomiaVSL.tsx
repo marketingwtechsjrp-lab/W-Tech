@@ -23,7 +23,6 @@ import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
-    buildSuspensionLandingUrl,
     getSuspensionFunnelCopy,
     readSuspensionFunnelContext,
     suspensionFunnelEventLabel,
@@ -33,13 +32,33 @@ import {
 const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
 // Segundos de conteúdo efetivamente assistido para liberar a inscrição. Conta o
 // avanço real do vídeo (furthestWatchedRef), então adiantar não abre o botão.
-const UNLOCK_AFTER_SECONDS = 50;
+// Este número NUNCA aparece na tela: nenhuma copy pode revelar quando o botão
+// abre, senão o espectador espera o relógio em vez de assistir.
+const UNLOCK_AFTER_SECONDS = 90;
+
+/**
+ * A barra mostra um progresso propositalmente adiantado no começo e vai
+ * desacelerando até reencontrar o real no fim — a apresentação parece mais
+ * curta nos primeiros minutos, que é onde a maior parte do público abandona.
+ *
+ * Expoente < 1 gera uma curva côncava: sempre crescente (barra nunca trava nem
+ * volta) e ancorada nos extremos, 0% no início e 100% exatamente no fim.
+ * Em 10% do vídeo mostra ~25%; na metade, ~65%; nos últimos 25% ela anda devagar
+ * para compensar o adiantamento.
+ */
+const DISPLAY_CURVE_EXPONENT = 0.62;
+
+const displayedProgress = (watched: number, total: number): number => {
+    if (!(total > 0)) return 0;
+    const real = Math.min(1, Math.max(0, watched / total));
+    return Math.min(100, Math.pow(real, DISPLAY_CURVE_EXPONENT) * 100);
+};
 
 const vslUi = {
     'pt-BR': {
         exclusive: 'Apresentação exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
-        watch: 'Assista aos primeiros 50 segundos para liberar sua inscrição',
+        watch: 'Apresentação exclusiva — assista para liberar sua inscrição',
         privateClass: 'Apresentação em vídeo',
         start: 'Começar agora',
         pause: 'Pausar',
@@ -51,7 +70,7 @@ const vslUi = {
         unlocked: 'Inscrição liberada',
         continueEnrollment: 'Continuar para a inscrição',
         destination: 'Você será encaminhado para os detalhes completos do curso e da oferta.',
-        locked: 'O botão de inscrição libera após 50 segundos de apresentação',
+        locked: 'O botão de inscrição aparece durante a apresentação',
         tracking: 'O avanço do vídeo acompanha apenas o conteúdo já assistido.',
         benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
         released: 'Ver inscrição liberada',
@@ -70,7 +89,7 @@ const vslUi = {
     'pt-PT': {
         exclusive: 'Apresentação exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
-        watch: 'Vê os primeiros 50 segundos para libertar a tua inscrição',
+        watch: 'Apresentação exclusiva — vê para libertares a tua inscrição',
         privateClass: 'Apresentação em vídeo',
         start: 'Começar agora',
         pause: 'Pausar',
@@ -82,7 +101,7 @@ const vslUi = {
         unlocked: 'Inscrição libertada',
         continueEnrollment: 'Continuar para a inscrição',
         destination: 'Serás encaminhado para os detalhes completos do curso e da oferta.',
-        locked: 'O botão de inscrição liberta após 50 segundos de apresentação',
+        locked: 'O botão de inscrição aparece durante a apresentação',
         tracking: 'O avanço do vídeo acompanha apenas o conteúdo já visto.',
         benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
         released: 'Ver inscrição libertada',
@@ -101,7 +120,7 @@ const vslUi = {
     es: {
         exclusive: 'Presentación exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
-        watch: 'Mira los primeros 50 segundos para desbloquear tu inscripción',
+        watch: 'Presentación exclusiva — mírala para desbloquear tu inscripción',
         privateClass: 'Presentación en vídeo',
         start: 'Empezar ahora',
         pause: 'Pausar',
@@ -113,7 +132,7 @@ const vslUi = {
         unlocked: 'Inscripción desbloqueada',
         continueEnrollment: 'Continuar a la inscripción',
         destination: 'Accederás a todos los detalles del curso y de la oferta.',
-        locked: 'El botón de inscripción se desbloquea tras 50 segundos de presentación',
+        locked: 'El botón de inscripción aparece durante la presentación',
         tracking: 'El avance solo permite recorrer el contenido ya visto.',
         benefits: ['Acceso por 12 meses', 'Garantía de 7 días', 'Certificado W-Tech'],
         released: 'Ver inscripción desbloqueada',
@@ -132,7 +151,7 @@ const vslUi = {
     en: {
         exclusive: 'Exclusive presentation for Off-Road riders',
         step: 'Step 1 of 2',
-        watch: 'Watch the first 50 seconds to unlock enrollment',
+        watch: 'Exclusive presentation — watch to unlock enrollment',
         privateClass: 'Video presentation',
         start: 'Start now',
         pause: 'Pause',
@@ -144,7 +163,7 @@ const vslUi = {
         unlocked: 'Enrollment unlocked',
         continueEnrollment: 'Continue to enrollment',
         destination: 'You will continue to the complete course and offer details.',
-        locked: 'The enrollment button unlocks after 50 seconds of the presentation',
+        locked: 'The enrollment button appears during the presentation',
         tracking: 'You can only seek through content you have already watched.',
         benefits: ['12-month access', '7-day guarantee', 'W-Tech certificate'],
         released: 'View unlocked enrollment',
@@ -189,13 +208,6 @@ const vslProfileLabels = {
     },
 } as const;
 
-const formatTime = (seconds: number) => {
-    if (!Number.isFinite(seconds) || seconds <= 0) return '00:00';
-    const minutes = Math.floor(seconds / 60);
-    const remaining = Math.floor(seconds % 60);
-    return `${String(minutes).padStart(2, '0')}:${String(remaining).padStart(2, '0')}`;
-};
-
 const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark' }) => {
     const isLight = theme === 'light';
     const { currentLang } = useLanguage();
@@ -221,14 +233,16 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const eventLabel = suspensionFunnelEventLabel(funnel);
 
-    const landingUrl = useMemo(() => {
-        if (funnel.isQuiz) return buildCheckoutUrl(getCheckoutUrl(billingRegion));
-        return buildSuspensionLandingUrl(funnel);
-    }, [funnel, billingRegion]);
+    // A VSL é o último passo antes do pagamento: nunca devolve para uma landing
+    // page, sempre entrega no checkout.
+    const landingUrl = useMemo(
+        () => buildCheckoutUrl(getCheckoutUrl(billingRegion)),
+        [billingRegion],
+    );
 
-    const enrollmentAction = funnel.isQuiz ? ui.checkoutAction : ui.continueEnrollment;
-    const enrollmentDestination = funnel.isQuiz ? ui.checkoutDestination : ui.destination;
-    const releasedAction = funnel.isQuiz ? ui.checkoutReleased : ui.released;
+    const enrollmentAction = ui.checkoutAction;
+    const enrollmentDestination = ui.checkoutDestination;
+    const releasedAction = ui.checkoutReleased;
     const profileLabel = funnel.profile in vslProfileLabels[currentLang]
         ? vslProfileLabels[currentLang][funnel.profile as keyof typeof vslProfileLabels[typeof currentLang]]
         : funnel.profile;
@@ -343,8 +357,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         releaseEnrollment('video_completo');
     };
 
-    const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
-    const remainingTime = duration > 0 ? Math.max(0, duration - currentTime) : 0;
+    const progress = displayedProgress(currentTime, duration);
 
     return (
         <main className={`min-h-screen overflow-x-hidden pb-[calc(6.5rem+env(safe-area-inset-bottom))] selection:bg-[#d7ad4f] selection:text-black sm:pb-0 ${isLight ? 'bg-[#f6f4ee] text-[#171714]' : 'bg-[#050505] text-white'}`}>
@@ -424,10 +437,6 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                             <span className="inline-flex items-center gap-2">
                                 <span className="h-2 w-2 animate-pulse rounded-full bg-red-500 sm:h-2.5 sm:w-2.5" />
                                 {ui.privateClass}
-                            </span>
-                            <span className="inline-flex items-center gap-2 text-[#d7ad4f]">
-                                <Clock3 size={13} />
-                                {formatTime(currentTime)} / {formatTime(duration)}
                             </span>
                         </div>
 
@@ -602,7 +611,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                 {isPlaying ? ui.playing : currentTime > 0 ? ui.resume : ui.ready}
                             </span>
                             <span className="mt-0.5 block truncate text-sm font-black text-white">
-                                {duration > 0 ? `${formatTime(remainingTime)} ${ui.remaining}` : ui.startExclusive}
+                                {currentTime > 0 ? ui.resume : ui.startExclusive}
                             </span>
                         </span>
                         <span className="text-[9px] font-black uppercase tracking-[0.12em] text-zinc-500">

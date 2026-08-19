@@ -62,7 +62,7 @@ test.describe('Landing page clara VSL', () => {
     await expect(page.getByRole('button', { name: 'Assistir depoimento: Guilherme' })).toHaveCount(0);
   });
 
-  test('oferece uma VSL isolada clara e encaminha para a landing clara', async ({ page }) => {
+  test('oferece uma VSL isolada clara e encaminha direto para o checkout', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/curso-suspensao-piloto-vsl-clara?utm_source=teste');
 
@@ -74,7 +74,7 @@ test.describe('Landing page clara VSL', () => {
       }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Começar agora' })).toBeVisible();
-    await expect(page.getByText('O botão de inscrição libera após 50 segundos de apresentação')).toBeVisible();
+    await expect(page.getByText('O botão de inscrição aparece durante a apresentação')).toBeVisible();
     await expect(page.locator('img[src="/images/lp-curso/hero-light-vsl-rider.webp"]')).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
@@ -83,12 +83,11 @@ test.describe('Landing page clara VSL', () => {
     await page.evaluate(() => sessionStorage.setItem('wtech_suspensao_vsl_completed', 'true'));
     await page.reload();
 
-    const nextStep = page.getByRole('link', { name: 'Continuar para a inscrição' });
+    // A VSL entrega direto no checkout: nenhuma landing page entre o vídeo e o
+    // pagamento.
+    const nextStep = page.getByRole('link', { name: 'Ir para a inscrição segura' });
     await expect(nextStep).toBeVisible();
-    await expect(nextStep).toHaveAttribute(
-      'href',
-      /\/curso-suspensao-piloto-clara\?.*utm_source=teste.*src=vsl_clara_isolada/,
-    );
+    await expect(nextStep).toHaveAttribute('href', /pay\.kiwify\.com\.br\/.*utm_source=teste/);
   });
 
   test('não expõe mais as versões V3 e V4', async ({ page }) => {

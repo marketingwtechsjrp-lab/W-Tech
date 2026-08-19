@@ -37,7 +37,7 @@ const paisDaRequisicao = (req: any): string | null => {
 };
 
 /** Segundos de conteúdo assistido que liberam a inscrição (espelha a VSL). */
-const UNLOCK_AFTER_SECONDS = 50;
+const UNLOCK_AFTER_SECONDS = 90;
 
 async function registrarProgresso(req: any, res: any) {
     const supabase = getServiceClient();

@@ -63,25 +63,28 @@ test.describe('Quiz de suspensão — captura de lead antes da VSL', () => {
 test.describe('VSL de suspensão — liberação por tempo assistido', () => {
     // O vídeo é remoto e o teste precisa de reprodução real; sob concorrência o
     // download compete com as outras specs, então damos folga explícita.
-    test('libera a inscrição aos 50s e ignora tentativa de adiantar o vídeo', async ({ page }) => {
+    test('libera a inscrição a 1min30 e ignora tentativa de adiantar o vídeo', async ({ page }) => {
         test.slow();
         await page.goto('/curso-suspensao-piloto-vsl?lang=pt-BR');
         await expect(
-            page.getByText('O botão de inscrição libera após 50 segundos de apresentação'),
+            page.getByText('O botão de inscrição aparece durante a apresentação'),
         ).toBeVisible();
 
         await page.getByRole('button', { name: 'Começar agora' }).click();
+
+        // Nenhuma copy pode revelar quando o botão abre.
+        await expect(page.getByText(/\d+\s*(segundos|seconds|minuto)/i)).toHaveCount(0);
 
         // Pular para depois do limiar não pode liberar: o gate conta o avanço real.
         await page.evaluate(() => {
             const video = document.querySelector('video') as HTMLVideoElement;
             video.muted = true;
-            video.currentTime = 120;
+            video.currentTime = 150;
         });
         await page.waitForTimeout(1500);
         expect(await page.evaluate(() => sessionStorage.getItem('wtech_suspensao_vsl_completed'))).toBeNull();
 
-        // Assistindo de verdade (acelerado), a inscrição abre ao cruzar os 50s.
+        // Assistindo de verdade (acelerado), a inscrição abre ao cruzar 1min30.
         await page.evaluate(() => {
             const video = document.querySelector('video') as HTMLVideoElement;
             video.playbackRate = 16;
