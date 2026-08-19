@@ -26,7 +26,10 @@ import { trackEvent } from '../components/AnalyticsTracker';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
 import type { SiteLanguage } from '../lib/siteTranslations';
-import { captureTrackingParams } from '../lib/tracking';
+import { captureTrackingParams, getLeadTrackingFields } from '../lib/tracking';
+import { distributeLead } from '../lib/leadDistribution';
+import { supabase } from '../lib/supabaseClient';
+import { triggerWebhook } from '../lib/webhooks';
 
 type QuizTheme = 'dark' | 'light';
 type Profile = 'equilibrio' | 'tracao' | 'dianteira' | 'ergonomia';
@@ -79,6 +82,15 @@ interface QuizCopy {
     resultDescription: string;
     resultAction: string;
     resultFootnote: string;
+    formTitle: string;
+    formSubtitle: string;
+    formName: string;
+    formPhone: string;
+    formNameError: string;
+    formPhoneError: string;
+    formFailure: string;
+    formSending: string;
+    formPrivacy: string;
     restart: string;
     interaction: string;
     profiles: Record<Profile, ResultCopy>;
@@ -353,12 +365,21 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         transitionEyebrow: 'W-Tech preparando seu resultado',
         transitionLabels: ['Conectando seu estilo de pilotagem', 'Interpretando os sintomas da moto', 'Organizando sua base de regulagem', 'Cruzando terreno e resposta da suspensão', 'Relacionando ergonomia e fadiga', 'Finalizando seu diagnóstico'],
         transitionHint: 'Sua leitura personalizada está quase pronta.',
-        interactionHint: 'Mova o cursor para explorar o conjunto em 3D',
+        interactionHint: 'Mova o cursor para girar a marca em 3D',
         resultEyebrow: 'Seu mapa de evolução',
         resultTitle: 'A primeira mudança não é acelerar mais.',
         resultDescription: 'É fazer a moto trabalhar com você. O diagnóstico abaixo define o melhor ponto de entrada para a sua regulagem.',
-        resultAction: 'Assistir à VSL recomendada',
-        resultFootnote: 'Na próxima etapa, a VSL conecta este diagnóstico ao método completo. Ao final, a inscrição abre direto no checkout.',
+        resultAction: 'Ver meu plano de regulagem',
+        formTitle: 'Para onde enviamos seu plano?',
+        formSubtitle: 'Seu diagnóstico fica salvo e o acompanhamento chega no seu WhatsApp.',
+        formName: 'Seu nome',
+        formPhone: 'WhatsApp com DDD',
+        formNameError: 'Informe seu nome.',
+        formPhoneError: 'Informe um WhatsApp válido com DDD.',
+        formFailure: 'Não foi possível salvar seus dados. Confira e tente de novo.',
+        formSending: 'Preparando seu plano...',
+        formPrivacy: 'Usamos seus dados apenas para enviar o plano e o acompanhamento do curso.',
+        resultFootnote: 'A seguir você assiste à apresentação que liga este diagnóstico ao método completo — e a inscrição abre direto no checkout.',
         restart: 'Refazer diagnóstico',
         interaction: 'Interação 3D',
         profiles: {
@@ -398,11 +419,20 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         transitionEyebrow: 'W-Tech a preparar o teu resultado',
         transitionLabels: ['A ligar o teu estilo de pilotagem', 'A interpretar os sintomas da mota', 'A organizar a tua base de afinação', 'A cruzar terreno e resposta da suspensão', 'A relacionar ergonomia e fadiga', 'A finalizar o teu diagnóstico'],
         transitionHint: 'A tua leitura personalizada está quase pronta.',
-        interactionHint: 'Move o cursor para explorar o conjunto em 3D',
+        interactionHint: 'Move o cursor para girar a marca em 3D',
         resultEyebrow: 'O teu mapa de evolução', resultTitle: 'A primeira mudança não é acelerar mais.',
         resultDescription: 'É fazer a moto trabalhar contigo. O diagnóstico abaixo define o melhor ponto de entrada para a tua regulação.',
-        resultAction: 'Ver a VSL recomendada',
-        resultFootnote: 'Na próxima etapa, a VSL liga este diagnóstico ao método completo. No final, a inscrição abre diretamente no checkout.',
+        resultAction: 'Ver o meu plano de regulação',
+        formTitle: 'Para onde enviamos o teu plano?',
+        formSubtitle: 'O teu diagnóstico fica guardado e o acompanhamento chega ao teu WhatsApp.',
+        formName: 'O teu nome',
+        formPhone: 'WhatsApp com indicativo',
+        formNameError: 'Indica o teu nome.',
+        formPhoneError: 'Indica um WhatsApp válido com indicativo.',
+        formFailure: 'Não foi possível guardar os teus dados. Confirma e tenta de novo.',
+        formSending: 'A preparar o teu plano...',
+        formPrivacy: 'Usamos os teus dados apenas para enviar o plano e o acompanhamento do curso.',
+        resultFootnote: 'A seguir vês a apresentação que liga este diagnóstico ao método completo — e a inscrição abre diretamente no checkout.',
         restart: 'Repetir diagnóstico', interaction: 'Interação 3D',
         profiles: {
             equilibrio: { label: 'Prioridade: Equilíbrio dinâmico', title: 'A tua moto muda demasiado quando o terreno muda.', description: 'O conjunto precisa de uma base repetível: SAG correto, posição e sequência de testes antes de qualquer ajuste fino.', insights: ['Cria uma referência de SAG para o teu peso equipado', 'Altera apenas uma variável por teste', 'Regista terreno, cliques e sensação da moto'] },
@@ -421,11 +451,20 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         transitionEyebrow: 'W-Tech preparando tu resultado',
         transitionLabels: ['Conectando tu estilo de pilotaje', 'Interpretando los síntomas de la moto', 'Organizando tu base de ajuste', 'Cruzando terreno y respuesta de la suspensión', 'Relacionando ergonomía y fatiga', 'Finalizando tu diagnóstico'],
         transitionHint: 'Tu lectura personalizada está casi lista.',
-        interactionHint: 'Mueve el cursor para explorar el conjunto en 3D',
+        interactionHint: 'Mueve el cursor para girar la marca en 3D',
         resultEyebrow: 'Tu mapa de evolución', resultTitle: 'El primer cambio no es acelerar más.',
         resultDescription: 'Es hacer que la moto trabaje contigo. Este diagnóstico define el mejor punto de entrada para tu regulación.',
-        resultAction: 'Ver la VSL recomendada',
-        resultFootnote: 'En la siguiente etapa, la VSL conecta este diagnóstico con el método completo. Al final, la inscripción abre directamente en el checkout.',
+        resultAction: 'Ver mi plan de reglaje',
+        formTitle: '¿A dónde enviamos tu plan?',
+        formSubtitle: 'Tu diagnóstico queda guardado y el seguimiento llega a tu WhatsApp.',
+        formName: 'Tu nombre',
+        formPhone: 'WhatsApp con prefijo',
+        formNameError: 'Indica tu nombre.',
+        formPhoneError: 'Indica un WhatsApp válido con prefijo.',
+        formFailure: 'No pudimos guardar tus datos. Revísalos e inténtalo de nuevo.',
+        formSending: 'Preparando tu plan...',
+        formPrivacy: 'Usamos tus datos solo para enviarte el plan y el seguimiento del curso.',
+        resultFootnote: 'A continuación verás la presentación que conecta este diagnóstico con el método completo — y la inscripción abre directamente en el checkout.',
         restart: 'Repetir diagnóstico', interaction: 'Interacción 3D',
         profiles: {
             equilibrio: { label: 'Prioridad: Equilibrio dinámico', title: 'Tu moto cambia demasiado cuando cambia el terreno.', description: 'El conjunto necesita una base repetible: SAG correcto, posición y secuencia de pruebas antes del ajuste fino.', insights: ['Crea una referencia de SAG para tu peso equipado', 'Cambia solo una variable en cada prueba', 'Registra terreno, clics y sensación de la moto'] },
@@ -444,11 +483,20 @@ const COPY: Record<SiteLanguage, Omit<QuizCopy, 'steps'>> = {
         transitionEyebrow: 'W-Tech preparing your result',
         transitionLabels: ['Connecting your riding style', 'Interpreting the bike symptoms', 'Organizing your setup baseline', 'Matching terrain and suspension response', 'Connecting ergonomics and fatigue', 'Finalizing your diagnosis'],
         transitionHint: 'Your personalized reading is almost ready.',
-        interactionHint: 'Move your pointer to explore the assembly in 3D',
+        interactionHint: 'Move your pointer to spin the brand in 3D',
         resultEyebrow: 'Your progression map', resultTitle: 'The first change is not going faster.',
         resultDescription: 'It is making the bike work with you. This diagnosis defines the best entry point for your tuning.',
-        resultAction: 'Watch my recommended VSL',
-        resultFootnote: 'Next, the VSL connects this diagnosis to the complete method. At the end, enrollment opens directly in checkout.',
+        resultAction: 'See my setup plan',
+        formTitle: 'Where should we send your plan?',
+        formSubtitle: 'Your diagnosis is saved and follow-up arrives on your WhatsApp.',
+        formName: 'Your name',
+        formPhone: 'WhatsApp with country code',
+        formNameError: 'Please enter your name.',
+        formPhoneError: 'Please enter a valid WhatsApp number with country code.',
+        formFailure: 'We could not save your details. Please check and try again.',
+        formSending: 'Preparing your plan...',
+        formPrivacy: 'We use your details only to send the plan and course follow-up.',
+        resultFootnote: 'Next you will watch the presentation that connects this diagnosis to the complete method — and enrollment opens directly in checkout.',
         restart: 'Restart diagnosis', interaction: '3D interaction',
         profiles: {
             equilibrio: { label: 'Priority: Dynamic balance', title: 'Your bike changes too much when terrain changes.', description: 'The chassis needs a repeatable baseline: correct SAG, rider position and a test sequence before fine tuning.', insights: ['Create a SAG baseline for your fully equipped weight', 'Change only one variable per test', 'Log terrain, clicks and bike feedback'] },
@@ -493,86 +541,34 @@ const buildVslUrl = (theme: QuizTheme, profile: Profile, answers: Answers): stri
     return `${destination}?${params.toString()}`;
 };
 
-const SuspensionRig: React.FC<{
+const WTechLogo3D: React.FC<{
     light: boolean;
-    active?: boolean;
-    label: string;
-}> = ({ light, active = true, label }) => {
-    const [rotation, setRotation] = useState({ x: -7, y: 12 });
+    interactive?: boolean;
+    label?: string;
+}> = ({ light, interactive = false, label = 'Logo W-Tech em 3D' }) => {
     const prefersReduced = useReducedMotion();
+    const depthLayers = Array.from({ length: 9 });
+    // Quando o painel é interativo, o cursor assume o comando da inclinação e a
+    // animação em loop só volta a rodar depois que o ponteiro sai da área.
+    const [tilt, setTilt] = useState<{ x: number; y: number } | null>(null);
 
     const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-        if (prefersReduced) return;
+        if (!interactive || prefersReduced) return;
         const rect = event.currentTarget.getBoundingClientRect();
         const x = (event.clientX - rect.left) / rect.width - 0.5;
         const y = (event.clientY - rect.top) / rect.height - 0.5;
-        setRotation({ x: -y * 18, y: x * 28 });
+        setTilt({ x: -y * 22, y: x * 34 });
     };
 
     return (
         <div
-            className="relative h-[270px] w-full select-none overflow-hidden rounded-[2rem] sm:h-[320px]"
+            className={`relative mx-auto w-full select-none overflow-hidden rounded-[2rem] ${
+                interactive ? 'h-[270px] sm:h-[320px]' : 'h-[260px] max-w-lg sm:h-[300px]'
+            }`}
             onPointerMove={handlePointerMove}
-            onPointerLeave={() => setRotation({ x: -7, y: 12 })}
+            onPointerLeave={() => setTilt(null)}
             role="img"
             aria-label={label}
-        >
-            <div className={`absolute inset-0 ${light ? 'bg-[radial-gradient(circle_at_50%_35%,rgba(185,126,22,.18),transparent_45%)]' : 'bg-[radial-gradient(circle_at_50%_35%,rgba(215,173,79,.14),transparent_48%)]'}`} />
-            <div className="absolute inset-x-[12%] bottom-8 h-10 rounded-[100%] bg-black/35 blur-xl" />
-            <div className="absolute inset-0 flex items-center justify-center [perspective:900px]">
-                <div
-                    className="relative h-[220px] w-[220px] transition-transform duration-300 ease-out [transform-style:preserve-3d] sm:h-[260px] sm:w-[260px]"
-                    style={{ transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)` }}
-                >
-                    <div className={`absolute inset-[12%] rounded-full border-[16px] shadow-[inset_0_0_35px_rgba(0,0,0,.65),0_18px_38px_rgba(0,0,0,.28)] [transform:translateZ(-20px)] ${light ? 'border-[#292824]' : 'border-[#181818]'}`} />
-                    <div className={`absolute inset-[22%] rounded-full border-[3px] [transform:translateZ(-5px)] ${light ? 'border-[#aaa28f]' : 'border-zinc-600'}`} />
-                    {[0, 45, 90, 135].map((angle) => (
-                        <div
-                            key={angle}
-                            className={`absolute left-1/2 top-1/2 h-[2px] w-[38%] origin-left ${light ? 'bg-[#948b79]' : 'bg-zinc-600'}`}
-                            style={{ transform: `translateZ(-4px) rotate(${angle}deg)` }}
-                        />
-                    ))}
-                    <div className={`absolute left-[34%] top-[4%] h-[72%] w-5 rounded-full border shadow-xl [transform:translateZ(34px)_rotate(-8deg)] ${light ? 'border-[#b6ad99] bg-gradient-to-r from-[#d9d3c5] via-white to-[#9f9685]' : 'border-zinc-500 bg-gradient-to-r from-zinc-700 via-zinc-300 to-zinc-800'}`} />
-                    <div className={`absolute right-[34%] top-[4%] h-[72%] w-5 rounded-full border shadow-xl [transform:translateZ(34px)_rotate(8deg)] ${light ? 'border-[#b6ad99] bg-gradient-to-r from-[#d9d3c5] via-white to-[#9f9685]' : 'border-zinc-500 bg-gradient-to-r from-zinc-700 via-zinc-300 to-zinc-800'}`} />
-                    <div className="absolute left-1/2 top-[12%] h-[56%] w-10 -translate-x-1/2 [transform-style:preserve-3d] [transform:translateZ(58px)]">
-                        <div className={`absolute left-1/2 top-0 h-full w-3 -translate-x-1/2 rounded-full ${light ? 'bg-[#25241f]' : 'bg-zinc-800'}`} />
-                        <div className={`absolute left-1/2 top-[6%] h-[84%] w-8 -translate-x-1/2 rounded-full border-2 ${light ? 'border-[#af7b1d]/75' : 'border-[#d7ad4f]/80'}`} />
-                        {Array.from({ length: 11 }).map((_, index) => (
-                            <div
-                                key={index}
-                                className={`absolute left-1/2 h-3 w-12 -translate-x-1/2 rounded-[100%] border-2 ${light ? 'border-[#a96f12]' : 'border-[#e4bb56]'}`}
-                                style={{
-                                    top: `${8 + index * 7}%`,
-                                    transform: `translateX(-50%) rotateX(68deg) rotateZ(${index * 10}deg)`,
-                                    animation: active && !prefersReduced ? 'quizCoil 1.15s ease-in-out infinite alternate' : undefined,
-                                    animationDelay: `${index * -45}ms`,
-                                }}
-                            />
-                        ))}
-                    </div>
-                    <div className="absolute left-1/2 top-[48%] h-11 w-11 -translate-x-1/2 rounded-full border-4 border-[#b5211f] bg-[#d02b27] shadow-[0_0_28px_rgba(181,33,31,.35)] [transform:translateZ(46px)]" />
-                </div>
-            </div>
-            <style>{`
-                @keyframes quizCoil {
-                    from { margin-top: -2px; }
-                    to { margin-top: 3px; }
-                }
-            `}</style>
-        </div>
-    );
-};
-
-const WTechLogo3D: React.FC<{ light: boolean }> = ({ light }) => {
-    const prefersReduced = useReducedMotion();
-    const depthLayers = Array.from({ length: 9 });
-
-    return (
-        <div
-            className="relative mx-auto h-[260px] w-full max-w-lg select-none overflow-hidden rounded-[2rem] sm:h-[300px]"
-            role="img"
-            aria-label="Logo W-Tech em 3D"
         >
             <div className={`absolute inset-0 ${light ? 'bg-[radial-gradient(circle_at_50%_48%,rgba(181,33,31,.16),transparent_46%)]' : 'bg-[radial-gradient(circle_at_50%_48%,rgba(215,173,79,.13),transparent_48%)]'}`} />
             <motion.div
@@ -587,8 +583,18 @@ const WTechLogo3D: React.FC<{ light: boolean }> = ({ light }) => {
             <div className="absolute inset-0 flex items-center justify-center [perspective:1100px]">
                 <motion.div
                     className="relative flex h-32 w-[88%] max-w-[390px] items-center justify-center [transform-style:preserve-3d]"
-                    animate={prefersReduced ? { rotateX: 0, rotateY: 0 } : { rotateX: [7, -4, 7], rotateY: [-17, 17, -17], y: [0, -7, 0] }}
-                    transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                    animate={
+                        tilt
+                            ? { rotateX: tilt.x, rotateY: tilt.y, y: 0 }
+                            : prefersReduced
+                                ? { rotateX: 0, rotateY: 0 }
+                                : { rotateX: [7, -4, 7], rotateY: [-17, 17, -17], y: [0, -7, 0] }
+                    }
+                    transition={
+                        tilt
+                            ? { type: 'spring', stiffness: 140, damping: 18 }
+                            : { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }
+                    }
                 >
                     {depthLayers.map((_, layer) => (
                         <img
@@ -664,6 +670,9 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
     const [index, setIndex] = useState(0);
     const [answers, setAnswers] = useState<Answers>({});
     const [selected, setSelected] = useState<string | null>(null);
+    const [lead, setLead] = useState({ name: '', phone: '' });
+    const [leadLoading, setLeadLoading] = useState(false);
+    const [leadError, setLeadError] = useState('');
     const transitionTimer = useRef<number | null>(null);
     const step = copy.steps[index];
     const profile = useMemo(() => getProfile(answers), [answers]);
@@ -725,6 +734,57 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
         setPhase('welcome');
         trackEvent('Quiz Off-Road', 'restart', theme);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // O lead é obrigatório antes da VSL: sem nome e WhatsApp o funil não avança.
+    // Falha ao gravar não trava o piloto — registramos o erro e seguimos, porque
+    // perder a venda por indisponibilidade do banco é pior que perder o contato.
+    const submitLead = async (event: React.FormEvent) => {
+        event.preventDefault();
+        if (leadLoading) return;
+
+        const name = lead.name.trim();
+        const phone = lead.phone.replace(/\D/g, '');
+        if (name.length < 2) {
+            setLeadError(copy.formNameError);
+            return;
+        }
+        if (phone.length < 10) {
+            setLeadError(copy.formPhoneError);
+            return;
+        }
+
+        setLeadLoading(true);
+        setLeadError('');
+        trackEvent('Quiz Off-Road', 'lead_submit', `${theme}_${profile}`);
+
+        try {
+            const assignedTo = await distributeLead();
+            const payload = {
+                name,
+                phone,
+                email: null,
+                type: 'Quiz_Suspensao',
+                status: 'New',
+                context_id: `Quiz Suspensão · ${theme} · ${profile}`,
+                tags: ['curso_online_suspensao', 'quiz_suspensao', `perfil_${profile}`],
+                assigned_to: assignedTo,
+                origin: window.location.href,
+                quiz_data: { theme, profile, answers },
+                ...getLeadTrackingFields(),
+            };
+
+            const { error: insertError } = await supabase.from('SITE_Leads').insert([payload]);
+            if (insertError) throw insertError;
+
+            await triggerWebhook('webhook_lead', payload).catch(() => undefined);
+            trackEvent('Quiz Off-Road', 'lead_captured', `${theme}_${profile}`);
+        } catch (submitError) {
+            console.error('Falha ao registrar lead do quiz:', submitError);
+            trackEvent('Quiz Off-Road', 'lead_failed', `${theme}_${profile}`);
+        }
+
+        goToVsl();
     };
 
     const goToVsl = () => {
@@ -820,7 +880,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                                 </div>
                             </motion.div>
                             <div className={`relative hidden rounded-[2.4rem] border backdrop-blur-md lg:block ${light ? 'border-white/70 bg-white/30 shadow-[0_25px_80px_rgba(47,38,21,.18)]' : 'border-white/10 bg-black/25 shadow-[0_25px_80px_rgba(0,0,0,.5)]'}`}>
-                                <SuspensionRig light={light} label={copy.interaction} />
+                                <WTechLogo3D light={light} interactive label={copy.interaction} />
                                 <span className={`absolute bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.15em] ${light ? 'border-black/10 bg-white/80 text-[#655f54]' : 'border-white/10 bg-black/70 text-zinc-400'}`}>
                                     {copy.interactionHint}
                                 </span>
@@ -848,6 +908,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                                         <motion.button
                                             key={option.id}
                                             type="button"
+                                            data-testid="quiz-option"
                                             initial={{ opacity: 0, y: prefersReduced ? 0 : 14 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: prefersReduced ? 0 : optionIndex * 0.045 }}
@@ -868,7 +929,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                             </div>
                         </div>
                         <div className={`relative hidden rounded-[2.4rem] border lg:block ${light ? 'border-[#d9d0bf] bg-white/55' : 'border-white/10 bg-white/[0.025]'}`}>
-                            <SuspensionRig light={light} active={false} label={copy.interaction} />
+                            <WTechLogo3D light={light} label={copy.interaction} />
                             <div className={`absolute inset-x-6 bottom-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] ${muted}`}>
                                 <span>{copy.interaction}</span>
                                 <span>{copy.step} {index + 1} {copy.of} {copy.steps.length}</span>
@@ -937,14 +998,58 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                             </div>
 
                             <div className="mx-auto mt-8 max-w-2xl text-center">
-                                <button
-                                    type="button"
-                                    onClick={goToVsl}
-                                    className="flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.1em] text-black shadow-[0_18px_55px_rgba(181,126,22,.25)] transition-transform hover:scale-[1.012] sm:text-base"
+                                <form
+                                    onSubmit={submitLead}
+                                    className={`rounded-[1.7rem] border p-5 text-left sm:p-7 ${light ? 'border-[#e0d8c9] bg-white/85' : 'border-white/10 bg-white/[0.04]'}`}
                                 >
-                                    {copy.resultAction}
-                                    <ArrowRight size={20} strokeWidth={3} />
-                                </button>
+                                    <h3 className="text-center text-lg font-black uppercase tracking-[-0.02em] sm:text-xl">{copy.formTitle}</h3>
+                                    <p className={`mt-2 text-center text-xs leading-relaxed sm:text-sm ${muted}`}>{copy.formSubtitle}</p>
+
+                                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                        <label className="block">
+                                            <span className="sr-only">{copy.formName}</span>
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                autoComplete="name"
+                                                required
+                                                value={lead.name}
+                                                onChange={(event) => setLead((value) => ({ ...value, name: event.target.value }))}
+                                                placeholder={copy.formName}
+                                                className={`min-h-14 w-full rounded-xl border px-4 text-sm font-semibold outline-none transition focus:border-[#d7ad4f] ${light ? 'border-[#d9d0bf] bg-white text-[#171714] placeholder:text-[#9a927f]' : 'border-white/12 bg-black/45 text-white placeholder:text-zinc-500'}`}
+                                            />
+                                        </label>
+                                        <label className="block">
+                                            <span className="sr-only">{copy.formPhone}</span>
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                inputMode="tel"
+                                                autoComplete="tel"
+                                                required
+                                                value={lead.phone}
+                                                onChange={(event) => setLead((value) => ({ ...value, phone: event.target.value }))}
+                                                placeholder={copy.formPhone}
+                                                className={`min-h-14 w-full rounded-xl border px-4 text-sm font-semibold outline-none transition focus:border-[#d7ad4f] ${light ? 'border-[#d9d0bf] bg-white text-[#171714] placeholder:text-[#9a927f]' : 'border-white/12 bg-black/45 text-white placeholder:text-zinc-500'}`}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    {leadError && (
+                                        <p role="alert" className="mt-3 text-center text-xs font-bold text-[#e0564f]">{leadError}</p>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={leadLoading}
+                                        className="mt-5 flex min-h-16 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.1em] text-black shadow-[0_18px_55px_rgba(181,126,22,.25)] transition-transform hover:scale-[1.012] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 sm:text-base"
+                                    >
+                                        {leadLoading ? copy.formSending : copy.resultAction}
+                                        {!leadLoading && <ArrowRight size={20} strokeWidth={3} />}
+                                    </button>
+
+                                    <p className={`mt-3 text-center text-[11px] leading-relaxed ${muted}`}>{copy.formPrivacy}</p>
+                                </form>
                                 <p className={`mt-4 text-xs leading-relaxed ${muted}`}>{copy.resultFootnote}</p>
                                 <button type="button" onClick={restart} className={`mt-5 text-xs font-bold underline underline-offset-4 ${muted}`}>
                                     {copy.restart}

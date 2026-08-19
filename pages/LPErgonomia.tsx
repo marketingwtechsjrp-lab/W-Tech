@@ -4,6 +4,7 @@ import { Marquee } from '../components/ui/marquee';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
+import { getCoursePrice } from '../lib/coursePricing';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -198,6 +199,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     };
 
     const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];
+    const price = getCoursePrice(currentLang);
     const funnel = useMemo(() => readSuspensionFunnelContext('dark'), []);
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const funnelEventLabel = suspensionFunnelEventLabel(funnel);
@@ -1215,7 +1217,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
                         <motion.span variants={v} className="text-[#E6241D] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Material de Apoio Oficial</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
-                            Mais de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E6241D] to-orange-500">R$ 997,00</span> em Bônus
+                            Mais de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E6241D] to-orange-500">{price.bonusValue}</span> em Bônus
                         </motion.h2>
                         <motion.p variants={v} className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
                             Ao garantir sua vaga agora, você leva ferramentas complementares que nossa própria equipe usa.
@@ -1224,10 +1226,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
                         {[
-                            { title: 'Planilha de Regulagem de SAG', value: '397,00', icon: <Activity size={24} /> },
-                            { title: 'Planilha de Regulagem de PSI', value: '257,00', icon: <Gauge size={24} /> },
-                            { title: 'Comparativo de Óleos', value: '197,00', icon: <Move size={24} /> },
-                            { title: 'Comparativo de Molas', value: '146,00', icon: <CheckCircle size={24} /> },
+                            { title: 'Planilha de Regulagem de SAG', value: price.bonusItems[0], icon: <Activity size={24} /> },
+                            { title: 'Planilha de Regulagem de PSI', value: price.bonusItems[1], icon: <Gauge size={24} /> },
+                            { title: 'Comparativo de Óleos', value: price.bonusItems[2], icon: <Move size={24} /> },
+                            { title: 'Comparativo de Molas', value: price.bonusItems[3], icon: <CheckCircle size={24} /> },
                         ].map((bonus, i) => (
                             <motion.div
                                 key={i}
@@ -1246,7 +1248,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                 </div>
                                 <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-2 relative z-10 mt-2">
                                     <span className="text-gray-400 font-black text-lg tracking-tight line-through decoration-red-500/60 decoration-2">
-                                        R$ {bonus.value}
+                                        {bonus.value}
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 bg-wtech-gold/15 border border-wtech-gold/40 text-wtech-gold font-black uppercase text-[11px] tracking-widest px-3 py-1.5 rounded-lg">
                                         <CheckCircle size={13} /> Incluso hoje
@@ -1371,9 +1373,14 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                         <div className="mb-2 flex flex-col items-center justify-center">
                             <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">{t.offer.priceMain}</span>
                         </div>
-                        <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-10">
+                        <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-2">
                             {t.offer.priceAlt} no Pix/Cartão
                         </div>
+                        {price.chargedNotice && (
+                            <div className="mb-8 max-w-md text-[11px] font-medium text-zinc-400">
+                                {price.chargedNotice}
+                            </div>
+                        )}
 
                         {/* Real Timer */}
                         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-8">
@@ -1620,7 +1627,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                             <div className="flex flex-col text-left sm:text-right">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase">De R$ 997 por apenas</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase">{t.offer.strike}</span>
                                 <span className="text-lg sm:text-xl font-black text-wtech-gold leading-none">{t.offer.priceMain}</span>
                             </div>
 

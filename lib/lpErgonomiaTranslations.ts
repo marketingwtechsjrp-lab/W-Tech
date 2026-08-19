@@ -540,7 +540,7 @@ export const lpTranslations: Record<LPLanguage, LPTranslation> = {
     modules: {
       label: 'Conteúdo do Curso',
       titlePart1: '11 Módulos ',
-      titleHighlight: '+ Bónus',
+      titleHighlight: '+ Bônus',
       cta: 'Ver Todos os Módulos Agora',
       items: [
         { num: '01', title: 'Boas-Vindas ao Curso', desc: 'Apresentação e visão geral do método', aulas: 4 },
@@ -580,7 +580,7 @@ export const lpTranslations: Record<LPLanguage, LPTranslation> = {
     },
     offer: {
       badge: 'Oferta Especial de Lançamento',
-      title: 'O Curso Completo + Bónus',
+      title: 'O Curso Completo + Bônus',
       sub: 'Mais de R$ 997 em Planilhas e Material Complementar Grátis.',
       strike: 'De R$ 997,00 por',
       priceMain: '12x R$ 34,70',

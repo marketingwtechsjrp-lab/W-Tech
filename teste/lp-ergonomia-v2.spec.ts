@@ -27,13 +27,13 @@ test.describe('LP Curso de Suspensão para Pilotos V2', () => {
             .first();
         await expect(offerCheckout).toHaveAttribute(
             'href',
-            /pay\.kiwify\.com\.br\/5zdsgcS.*utm_source=playwright/,
+            /pay\.kiwify\.com\.br\/19v4nIa.*utm_source=playwright/,
         );
         await expect(offerCheckout).toHaveAttribute('href', /utm_campaign=lp_conversion/);
 
         await expect(page.getByText('Nova inscrição confirmada')).toHaveCount(0);
         await expect(page.getByText('Últimas vagas do lote atual')).toHaveCount(0);
-        await expect(page.getByText(/ou 10x de R\$ 32,09 no cartão/i)).toBeVisible();
+        await expect(page.getByText(/ou 12x de R\$ 34,70 no cartão/i)).toBeVisible();
         await expect(page.getByText('Plano Premium · inscrição online')).toBeVisible();
         await expect(page.getByText('Garantia incondicional de 7 dias', { exact: true })).toBeVisible();
         await expect(page.getByText(/30 dias/i)).toHaveCount(0);

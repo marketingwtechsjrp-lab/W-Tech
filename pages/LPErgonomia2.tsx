@@ -30,8 +30,9 @@ import {
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { useLanguage } from '../context/LanguageContext';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
+import { COURSE_CHECKOUT_URL, getCoursePrice } from '../lib/coursePricing';
 
-const CHECKOUT_BASE_URL = 'https://pay.kiwify.com.br/5zdsgcS';
+const CHECKOUT_BASE_URL = COURSE_CHECKOUT_URL;
 const VSL_URL =
     'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const COURSE_URL = 'https://w-techbrasil.com.br/curso-suspensao-piloto-v2';
@@ -335,6 +336,7 @@ const FAQItem: React.FC<{ question: string; answer: string; index: number }> = (
 
 const LPErgonomia2: React.FC = () => {
     const { currentLang } = useLanguage();
+    const price = getCoursePrice(currentLang);
     const location = useLocation();
     const [checkoutUrl, setCheckoutUrl] = useState(CHECKOUT_BASE_URL);
 
@@ -440,8 +442,8 @@ const LPErgonomia2: React.FC = () => {
             },
             offers: {
                 '@type': 'Offer',
-                price: '267.00',
-                priceCurrency: 'BRL',
+                price: price.schemaPrice,
+                priceCurrency: price.schemaCurrency,
                 url: CHECKOUT_BASE_URL,
                 availability: 'https://schema.org/InStock',
             },
@@ -572,7 +574,7 @@ const LPErgonomia2: React.FC = () => {
                         </div>
 
                         <p className="mt-5 text-sm font-semibold text-[#6d6863]">
-                            R$ 267 à vista ou 10x de R$ 32,09 · garantia de 7 dias
+                            {price.full} à vista ou {price.installmentsShort} · garantia de 7 dias
                         </p>
                     </motion.div>
 
@@ -1114,15 +1116,20 @@ const LPErgonomia2: React.FC = () => {
                                 À vista
                             </p>
                             <div className="mt-1 flex items-start gap-1 text-[#1f1c1a]">
-                                <span className="mt-3 font-display text-2xl font-bold">R$</span>
+                                <span className="mt-3 font-display text-2xl font-bold">{price.symbol}</span>
                                 <span className="font-display text-7xl font-bold leading-none tracking-[-0.06em] sm:text-8xl">
-                                    267
+                                    {price.integer}
                                 </span>
-                                <span className="mt-3 font-display text-2xl font-bold">,00</span>
+                                <span className="mt-3 font-display text-2xl font-bold">{price.cents}</span>
                             </div>
                             <p className="mt-3 text-sm font-semibold text-[#69635e]">
-                                ou 10x de R$ 32,09 no cartão
+                                ou {price.installments}
                             </p>
+                            {price.chargedNotice && (
+                                <p className="mt-2 text-xs font-medium text-[#7b746e]">
+                                    {price.chargedNotice}
+                                </p>
+                            )}
 
                             <CheckoutButton
                                 checkoutUrl={checkoutUrl}
@@ -1223,7 +1230,7 @@ const LPErgonomia2: React.FC = () => {
                             Curso completo
                         </p>
                         <p className="font-display text-xl font-bold leading-none text-[#201d1b]">
-                            10x R$ 32,09
+                            {price.installmentsShort}
                         </p>
                     </div>
                     <CheckoutButton

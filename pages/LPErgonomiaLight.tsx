@@ -26,6 +26,7 @@ import {
     Zap,
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
+import { getCoursePrice } from '../lib/coursePricing';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
@@ -133,6 +134,7 @@ const LightFAQ: React.FC<{ question: string; answer: string }> = ({ question, an
 const LPErgonomiaLight: React.FC = () => {
     const { currentLang } = useLanguage();
     const t = lpTranslations[currentLang];
+    const price = getCoursePrice(currentLang);
     const ui = lightUi[currentLang];
     const funnel = useMemo(() => readSuspensionFunnelContext('light'), []);
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
@@ -712,6 +714,9 @@ const LPErgonomiaLight: React.FC = () => {
                                     <span className="text-5xl font-black tracking-[-0.045em] text-white sm:text-6xl">{t.offer.priceMain}</span>
                                 </div>
                                 <p className="mt-2 text-sm font-bold text-[#e4c46d]">{t.offer.priceAlt}</p>
+                                {price.chargedNotice && (
+                                    <p className="mt-2 text-xs font-medium text-zinc-400">{price.chargedNotice}</p>
+                                )}
 
                                 <a
                                     href={checkoutUrl}

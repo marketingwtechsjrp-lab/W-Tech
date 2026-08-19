@@ -74,7 +74,7 @@ test.describe('Landing page clara VSL', () => {
       }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Começar agora' })).toBeVisible();
-    await expect(page.getByText('O botão de inscrição será liberado ao final da apresentação')).toBeVisible();
+    await expect(page.getByText('O botão de inscrição libera após 50 segundos de apresentação')).toBeVisible();
     await expect(page.locator('img[src="/images/lp-curso/hero-light-vsl-rider.webp"]')).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),

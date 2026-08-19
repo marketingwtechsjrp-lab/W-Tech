@@ -28,12 +28,15 @@ import {
 const VIDEO_URL = 'https://niesvylxwfaffgnmdoql.supabase.co/storage/v1/object/public/site-assets/vsl-suspensao.mp4';
 const CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
 const UNLOCK_KEY = 'wtech_suspensao_vsl_completed';
+// Segundos de conteúdo efetivamente assistido para liberar a inscrição. Conta o
+// avanço real do vídeo (furthestWatchedRef), então adiantar não abre o botão.
+const UNLOCK_AFTER_SECONDS = 50;
 
 const vslUi = {
     'pt-BR': {
         exclusive: 'Apresentação exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
-        watch: 'Assista até o final para liberar sua inscrição',
+        watch: 'Assista aos primeiros 50 segundos para liberar sua inscrição',
         privateClass: 'Apresentação em vídeo',
         start: 'Começar agora',
         pause: 'Pausar',
@@ -45,7 +48,7 @@ const vslUi = {
         unlocked: 'Inscrição liberada',
         continueEnrollment: 'Continuar para a inscrição',
         destination: 'Você será encaminhado para os detalhes completos do curso e da oferta.',
-        locked: 'O botão de inscrição será liberado ao final da apresentação',
+        locked: 'O botão de inscrição libera após 50 segundos de apresentação',
         tracking: 'O avanço do vídeo acompanha apenas o conteúdo já assistido.',
         benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
         released: 'Ver inscrição liberada',
@@ -64,7 +67,7 @@ const vslUi = {
     'pt-PT': {
         exclusive: 'Apresentação exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
-        watch: 'Vê até ao fim para libertar a tua inscrição',
+        watch: 'Vê os primeiros 50 segundos para libertar a tua inscrição',
         privateClass: 'Apresentação em vídeo',
         start: 'Começar agora',
         pause: 'Pausar',
@@ -76,7 +79,7 @@ const vslUi = {
         unlocked: 'Inscrição libertada',
         continueEnrollment: 'Continuar para a inscrição',
         destination: 'Serás encaminhado para os detalhes completos do curso e da oferta.',
-        locked: 'O botão de inscrição será libertado no final da apresentação',
+        locked: 'O botão de inscrição liberta após 50 segundos de apresentação',
         tracking: 'O avanço do vídeo acompanha apenas o conteúdo já visto.',
         benefits: ['Acesso por 12 meses', 'Garantia de 7 dias', 'Certificado W-Tech'],
         released: 'Ver inscrição libertada',
@@ -95,7 +98,7 @@ const vslUi = {
     es: {
         exclusive: 'Presentación exclusiva para pilotos Off-Road',
         step: 'Etapa 1 de 2',
-        watch: 'Mira hasta el final para desbloquear tu inscripción',
+        watch: 'Mira los primeros 50 segundos para desbloquear tu inscripción',
         privateClass: 'Presentación en vídeo',
         start: 'Empezar ahora',
         pause: 'Pausar',
@@ -107,7 +110,7 @@ const vslUi = {
         unlocked: 'Inscripción desbloqueada',
         continueEnrollment: 'Continuar a la inscripción',
         destination: 'Accederás a todos los detalles del curso y de la oferta.',
-        locked: 'El botón de inscripción se desbloqueará al final de la presentación',
+        locked: 'El botón de inscripción se desbloquea tras 50 segundos de presentación',
         tracking: 'El avance solo permite recorrer el contenido ya visto.',
         benefits: ['Acceso por 12 meses', 'Garantía de 7 días', 'Certificado W-Tech'],
         released: 'Ver inscripción desbloqueada',
@@ -126,7 +129,7 @@ const vslUi = {
     en: {
         exclusive: 'Exclusive presentation for Off-Road riders',
         step: 'Step 1 of 2',
-        watch: 'Watch to the end to unlock enrollment',
+        watch: 'Watch the first 50 seconds to unlock enrollment',
         privateClass: 'Video presentation',
         start: 'Start now',
         pause: 'Pause',
@@ -138,7 +141,7 @@ const vslUi = {
         unlocked: 'Enrollment unlocked',
         continueEnrollment: 'Continue to enrollment',
         destination: 'You will continue to the complete course and offer details.',
-        locked: 'The enrollment button unlocks at the end of the presentation',
+        locked: 'The enrollment button unlocks after 50 seconds of the presentation',
         tracking: 'You can only seek through content you have already watched.',
         benefits: ['12-month access', '7-day guarantee', 'W-Tech certificate'],
         released: 'View unlocked enrollment',
@@ -278,6 +281,18 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         await video.play().catch(() => undefined);
     };
 
+    const releaseEnrollment = (reason: 'tempo_minimo' | 'video_completo') => {
+        setIsUnlocked((alreadyUnlocked) => {
+            if (!alreadyUnlocked) trackEvent('Funil Suspensão', `vsl_unlock_${reason}`, eventLabel);
+            return true;
+        });
+        try {
+            sessionStorage.setItem(UNLOCK_KEY, 'true');
+        } catch {
+            // A liberação permanece válida durante a renderização atual.
+        }
+    };
+
     const handleTimeUpdate = () => {
         const video = videoRef.current;
         if (!video) return;
@@ -288,6 +303,9 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
         setCurrentTime(watched);
         if (!video.seeking) {
             furthestWatchedRef.current = Math.max(furthestWatchedRef.current, watched);
+        }
+        if (!isUnlocked && furthestWatchedRef.current >= UNLOCK_AFTER_SECONDS) {
+            releaseEnrollment('tempo_minimo');
         }
         if (video.duration > 0) {
             const percentage = (watched / video.duration) * 100;
@@ -310,13 +328,8 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
 
     const handleEnded = () => {
         setIsPlaying(false);
-        setIsUnlocked(true);
         trackEvent('Funil Suspensão', 'vsl_100', eventLabel);
-        try {
-            sessionStorage.setItem(UNLOCK_KEY, 'true');
-        } catch {
-            // A liberação permanece válida durante a renderização atual.
-        }
+        releaseEnrollment('video_completo');
     };
 
     const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
