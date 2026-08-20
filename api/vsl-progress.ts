@@ -120,21 +120,31 @@ async function lerRelatorio(req: any, res: any) {
     const dias = Math.min(365, Math.max(1, Number(req.query?.dias) || 30));
     const desde = new Date(Date.now() - dias * 86400_000).toISOString();
 
-    let consulta = supabase
+    // Busca o período inteiro e filtra em memória: o seletor de página do painel
+    // precisa listar TODAS as páginas com sessões, inclusive quando o usuário já
+    // escolheu uma. Filtrar no banco esconderia as outras opções.
+    const { data, error } = await supabase
         .from('SITE_VSLProgress')
         .select('video_id, page, theme, watched_ratio, max_watched_seconds, duration_seconds, completed, reached_unlock, utm_source, created_at')
         .gte('created_at', desde)
         .limit(50_000);
-
-    const video = texto(req.query?.video);
-    if (video) consulta = consulta.eq('video_id', video);
-    const pagina = texto(req.query?.page);
-    if (pagina) consulta = consulta.eq('page', pagina);
-
-    const { data, error } = await consulta;
     if (error) return res.status(500).json({ error: error.message });
 
-    const sessoes = data || [];
+    const todas = data || [];
+
+    const paginasDisponiveis = Object.entries(
+        todas.reduce<Record<string, number>>((acc, s) => {
+            acc[s.page] = (acc[s.page] || 0) + 1;
+            return acc;
+        }, {}),
+    ).map(([pagina, sessoesDaPagina]) => ({ pagina, sessoes: sessoesDaPagina }))
+        .sort((a, b) => b.sessoes - a.sessoes);
+
+    const video = texto(req.query?.video);
+    const pagina = texto(req.query?.page);
+    const sessoes = todas.filter((s) => (
+        (!video || s.video_id === video) && (!pagina || s.page === pagina)
+    ));
     const total = sessoes.length;
 
     // Curva de retenção em faixas de 5%: quantas sessões chegaram a cada ponto.
@@ -173,15 +183,10 @@ async function lerRelatorio(req: any, res: any) {
         liberaram_inscricao: sessoes.filter((s) => s.reached_unlock).length,
         retencao,
         maior_queda: maiorQueda,
-        por_pagina: Object.entries(
-            sessoes.reduce<Record<string, number>>((acc, s) => {
-                const chave = `${s.page}${s.theme ? ` · ${s.theme}` : ''}`;
-                acc[chave] = (acc[chave] || 0) + 1;
-                return acc;
-            }, {}),
-        ).map(([pagina, sessoesDaPagina]) => ({ pagina, sessoes: sessoesDaPagina }))
-            .sort((a, b) => b.sessoes - a.sessoes),
+        pagina_selecionada: pagina,
+        paginas_disponiveis: paginasDisponiveis,
         videos: [...new Set(sessoes.map((s) => s.video_id))],
+        total_geral: todas.length,
     });
 }
 

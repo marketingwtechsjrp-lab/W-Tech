@@ -15,6 +15,17 @@ interface PontoRetencao {
     taxa: number;
 }
 
+/** Nomes técnicos gravados pelo player viram nomes de gente no painel. */
+const NOME_DA_PAGINA: Record<string, string> = {
+    vsl_dark: 'VSL escura',
+    vsl_light: 'VSL clara',
+    lp_v2: 'Landing V2',
+    lp_completa: 'Landing completa',
+    lp_clara: 'Landing clara',
+};
+
+const rotuloPagina = (pagina: string) => NOME_DA_PAGINA[pagina] || pagina;
+
 interface Relatorio {
     periodo_dias: number;
     duracao_segundos: number;
@@ -25,8 +36,10 @@ interface Relatorio {
     liberaram_inscricao: number;
     retencao: PontoRetencao[];
     maior_queda: { de: number; para: number; perdidas: number };
-    por_pagina: { pagina: string; sessoes: number }[];
+    pagina_selecionada: string | null;
+    paginas_disponiveis: { pagina: string; sessoes: number }[];
     videos: string[];
+    total_geral: number;
 }
 
 const mmss = (segundos: number) => {
@@ -55,12 +68,14 @@ const VSLRetentionPanel: React.FC = () => {
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
     const [dias, setDias] = useState(30);
+    const [pagina, setPagina] = useState<string | null>(null);
 
-    const buscar = async (periodo: number) => {
+    const buscar = async (periodo: number, paginaAlvo: string | null) => {
         setCarregando(true);
         setErro('');
         try {
-            const resposta = await fetch(`/api/vsl-progress?dias=${periodo}`, {
+            const query = `dias=${periodo}${paginaAlvo ? `&page=${encodeURIComponent(paginaAlvo)}` : ''}`;
+            const resposta = await fetch(`/api/vsl-progress?${query}`, {
                 credentials: 'include',
                 headers: { Accept: 'application/json' },
             });
@@ -74,7 +89,7 @@ const VSLRetentionPanel: React.FC = () => {
         }
     };
 
-    useEffect(() => { void buscar(dias); }, [dias]);
+    useEffect(() => { void buscar(dias, pagina); }, [dias, pagina]);
 
     if (carregando && !dados) {
         return <div className="py-16 text-center text-sm text-gray-500">Carregando retenção da VSL…</div>;
@@ -86,14 +101,14 @@ const VSLRetentionPanel: React.FC = () => {
                 <p className="flex items-center gap-2 font-bold text-red-700 dark:text-red-300">
                     <AlertTriangle size={18} /> {erro}
                 </p>
-                <button onClick={() => void buscar(dias)} className="mt-3 text-sm font-bold text-red-700 underline dark:text-red-300">
+                <button onClick={() => void buscar(dias, pagina)} className="mt-3 text-sm font-bold text-red-700 underline dark:text-red-300">
                     Tentar de novo
                 </button>
             </div>
         );
     }
 
-    if (!dados || dados.total_sessoes === 0) {
+    if (!dados || dados.total_geral === 0) {
         return (
             <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center dark:border-white/10 dark:bg-white/[0.03]">
                 <PlayCircle className="mx-auto mb-3 text-gray-400" size={38} />
@@ -104,6 +119,35 @@ const VSLRetentionPanel: React.FC = () => {
             </div>
         );
     }
+
+    const seletorDePagina = (
+        <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-500">Página</span>
+            <button
+                onClick={() => setPagina(null)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    pagina === null
+                        ? 'bg-wtech-gold text-black'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300'
+                }`}
+            >
+                Todas ({dados.total_geral})
+            </button>
+            {dados.paginas_disponiveis.map((item) => (
+                <button
+                    key={item.pagina}
+                    onClick={() => setPagina(item.pagina)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                        pagina === item.pagina
+                            ? 'bg-wtech-gold text-black'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300'
+                    }`}
+                >
+                    {rotuloPagina(item.pagina)} ({item.sessoes})
+                </button>
+            ))}
+        </div>
+    );
 
     const duracao = dados.duracao_segundos || 0;
     const taxaConclusao = dados.total_sessoes ? (dados.concluiram / dados.total_sessoes) * 100 : 0;
@@ -150,9 +194,11 @@ const VSLRetentionPanel: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h3 className="text-lg font-black text-gray-900 dark:text-white">Retenção da VSL</h3>
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white">
+                        Retenção da VSL · {pagina ? rotuloPagina(pagina) : 'todas as páginas'}
+                    </h3>
                     <p className="text-sm text-gray-500">
-                        {dados.videos.join(', ')} · {duracao ? mmss(duracao) : '—'} de duração
+                        {dados.videos.join(', ') || '—'} · {duracao ? mmss(duracao) : '—'} de duração
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -170,7 +216,7 @@ const VSLRetentionPanel: React.FC = () => {
                         </button>
                     ))}
                     <button
-                        onClick={() => void buscar(dias)}
+                        onClick={() => void buscar(dias, pagina)}
                         className="rounded-lg bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300"
                         aria-label="Atualizar"
                     >
@@ -179,6 +225,20 @@ const VSLRetentionPanel: React.FC = () => {
                 </div>
             </div>
 
+            {seletorDePagina}
+
+            {dados.total_sessoes === 0 ? (
+                <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center dark:border-white/10 dark:bg-white/[0.03]">
+                    <PlayCircle className="mx-auto mb-3 text-gray-400" size={34} />
+                    <p className="font-bold text-gray-700 dark:text-gray-200">
+                        Sem sessões em {rotuloPagina(pagina || '')} neste período
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Há dados em outras páginas — escolha outra acima ou amplie o período.
+                    </p>
+                </div>
+            ) : (
+            <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Cartao icone={<Eye size={15} />} rotulo="Sessões" valor={String(dados.total_sessoes)} apoio={`últimos ${dados.periodo_dias} dias`} />
                 <Cartao
@@ -209,18 +269,9 @@ const VSLRetentionPanel: React.FC = () => {
                     {duracao ? ` (por volta de ${mmss((dados.maior_queda.de / 100) * duracao)})` : ''} — {dados.maior_queda.perdidas} sessões saíram aí.
                 </p>
             </div>
+            </>
+            )}
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.03]">
-                <h4 className="mb-3 text-sm font-black uppercase tracking-wider text-gray-500">Por página</h4>
-                <div className="space-y-2">
-                    {dados.por_pagina.map((linha) => (
-                        <div key={linha.pagina} className="flex items-center justify-between text-sm">
-                            <span className="font-semibold text-gray-700 dark:text-gray-200">{linha.pagina}</span>
-                            <span className="font-black text-gray-900 dark:text-white">{linha.sessoes}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 };
