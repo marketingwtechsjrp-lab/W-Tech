@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
 import ReactApexChart from 'react-apexcharts';
 import { Users, Eye, Smartphone, Monitor, Activity, MessageCircle, Globe, Database, RefreshCw } from 'lucide-react';
@@ -9,7 +10,19 @@ const AnalyticsView = () => {
     // State
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState(30);
-    const [activeTab, setActiveTab] = useState<'overview' | 'acquisition' | 'engagement' | 'realtime' | 'vsl'>('overview');
+    // A aba vive na URL (?tab=) para que um painel específico possa ser
+    // compartilhado por link, em vez de "entra em Analytics e clica em tal aba".
+    const [searchParams, setSearchParams] = useSearchParams();
+    const abaDaUrl = searchParams.get('tab');
+    const activeTab = (['overview', 'acquisition', 'engagement', 'realtime', 'vsl'].includes(abaDaUrl || '')
+        ? abaDaUrl
+        : 'overview') as 'overview' | 'acquisition' | 'engagement' | 'realtime' | 'vsl';
+
+    const setActiveTab = (aba: string) => {
+        const proximos = new URLSearchParams(searchParams);
+        proximos.set('tab', aba);
+        setSearchParams(proximos, { replace: true });
+    };
     const [dataSource, setDataSource] = useState<'supabase' | 'google'>('supabase');
     const [stats, setStats] = useState({
         totalViews: 0,
