@@ -1,4 +1,5 @@
 import { denyAuth, getServiceClient, requireStaffSession, setNoStoreHeaders } from './_auth.js';
+import { resolveCountry } from './_geoip.js';
 
 /**
  * Retenção da VSL — /api/vsl-progress
@@ -25,15 +26,6 @@ const texto = (valor: unknown): string | null => {
 const numero = (valor: unknown): number | null => {
     const n = typeof valor === 'number' ? valor : Number(valor);
     return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
-};
-
-const paisDaRequisicao = (req: any): string | null => {
-    const bruto = req.headers?.['cf-ipcountry']
-        || req.headers?.['x-vercel-ip-country']
-        || req.headers?.['x-country-code']
-        || '';
-    const codigo = String(bruto).split(',')[0].trim().toUpperCase();
-    return codigo && codigo.length === 2 ? codigo : null;
 };
 
 /** Segundos de conteúdo assistido que liberam a inscrição (espelha a VSL). */
@@ -72,7 +64,7 @@ async function registrarProgresso(req: any, res: any) {
         page,
         theme: texto(corpo.theme),
         language: texto(corpo.language),
-        country: paisDaRequisicao(req),
+        country: null as string | null,
         duration_seconds: duration,
         max_watched_seconds: maxWatched,
         last_position_seconds: numero(corpo.last_position_seconds),
@@ -91,11 +83,16 @@ async function registrarProgresso(req: any, res: any) {
     // registrado, senão o abandono apareceria antes do que de fato aconteceu.
     const { data: atual } = await supabase
         .from('SITE_VSLProgress')
-        .select('max_watched_seconds')
+        .select('max_watched_seconds, country')
         .eq('visitor_id', visitorId)
         .eq('session_id', sessionId)
         .eq('video_id', videoId)
         .maybeSingle();
+
+    // Atrás do Traefik não há header de país, então a resolução é por IP e custa
+    // uma chamada externa. A sessão já resolvida reaproveita o valor: sem isso,
+    // cada batida de 5s repetiria a consulta.
+    linha.country = atual?.country || await resolveCountry(req);
 
     if (atual && Number(atual.max_watched_seconds) > maxWatched) {
         linha.max_watched_seconds = Number(atual.max_watched_seconds);

@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { isIP } from 'node:net';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
@@ -25,6 +24,7 @@ import whatsappCloudSend from '../api/whatsapp-cloud-send.js';
 import whatsappCloudWebhook from '../api/whatsapp-cloud-webhook.js';
 import whatsappSend from '../api/whatsapp-send.js';
 import vslProgress from '../api/vsl-progress.js';
+import { getRequestClientIp, lookupCountryByIp } from '../api/_geoip.js';
 
 // ── Edge Functions do Supabase portadas para Express (Deno → Node) ───────────
 import kiwifyWebhook from './edge/kiwify-webhook.js';
@@ -106,62 +106,6 @@ app.use(helmet({
 
 type VercelStyleHandler = (req: Request, res: Response) => unknown | Promise<unknown>;
 
-const GEO_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
-const geoCountryCache = new Map<string, { country: string; expiresAt: number }>();
-
-function normalizeClientIp(value?: string | null): string | null {
-  if (!value) return null;
-  const trimmed = value.trim().replace(/^\[|\]$/g, '').replace(/^::ffff:/, '');
-  if (!isIP(trimmed)) return null;
-
-  // Nunca envia endereços locais/privados ao serviço de geolocalização.
-  if (
-    trimmed === '::1'
-    || trimmed === '127.0.0.1'
-    || /^10\./.test(trimmed)
-    || /^192\.168\./.test(trimmed)
-    || /^172\.(1[6-9]|2\d|3[01])\./.test(trimmed)
-    || /^fc/i.test(trimmed)
-    || /^fd/i.test(trimmed)
-  ) return null;
-
-  return trimmed;
-}
-
-function getRequestClientIp(req: Request): string | null {
-  const forwarded = req.get('x-forwarded-for')
-    ?.split(',')
-    .map((part) => normalizeClientIp(part))
-    .filter((part): part is string => Boolean(part));
-
-  // O Traefik acrescenta o endereço recebido ao final da cadeia X-Forwarded-For.
-  return normalizeClientIp(req.get('cf-connecting-ip'))
-    || normalizeClientIp(req.get('x-real-ip'))
-    || forwarded?.at(-1)
-    || normalizeClientIp(req.socket.remoteAddress);
-}
-
-async function lookupCountryByIp(ip: string): Promise<string | null> {
-  const cached = geoCountryCache.get(ip);
-  if (cached && cached.expiresAt > Date.now()) return cached.country;
-
-  try {
-    const response = await fetch(`https://api.country.is/${encodeURIComponent(ip)}`, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(1800),
-    });
-    if (!response.ok) return null;
-
-    const data = await response.json() as { country?: string };
-    const country = data.country?.trim().toUpperCase() || '';
-    if (!/^[A-Z]{2}$/.test(country)) return null;
-
-    geoCountryCache.set(ip, { country, expiresAt: Date.now() + GEO_CACHE_TTL_MS });
-    return country;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Adaptador Vercel → Express. Os handlers usam apenas req.method/headers/query/body
