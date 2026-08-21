@@ -37,6 +37,10 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         kiwifyClientId: '',
         kiwifyClientSecret: '',
         kiwifyAccountId: '',
+        hotmartCheckoutUrl: '',
+        hotmartWebhookToken: '',
+        hotmartClientId: '',
+        hotmartClientSecret: '',
         affiliatesDriveUrl: '',
         brevoEnabled: false,
         brevoSmtpHost: 'smtp-relay.brevo.com',
@@ -271,6 +275,10 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 kiwifyClientId: configMap['kiwify_client_id'] || '',
                 kiwifyClientSecret: configMap['kiwify_client_secret'] || '',
                 kiwifyAccountId: configMap['kiwify_account_id'] || '',
+                hotmartCheckoutUrl: configMap['hotmart_checkout_url'] || '',
+                hotmartWebhookToken: configMap['hotmart_webhook_token'] || '',
+                hotmartClientId: configMap['hotmart_client_id'] || '',
+                hotmartClientSecret: configMap['hotmart_client_secret'] || '',
                 affiliatesDriveUrl: configMap['affiliates_drive_url'] || '',
                 brevoEnabled: configMap['brevo_enabled'] === 'true',
                 brevoSmtpHost: configMap['brevo_smtp_host'] || 'smtp-relay.brevo.com',
@@ -840,6 +848,10 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 { key: 'kiwify_client_id', value: globalConfig.kiwifyClientId },
                 { key: 'kiwify_client_secret', value: globalConfig.kiwifyClientSecret },
                 { key: 'kiwify_account_id', value: globalConfig.kiwifyAccountId },
+                { key: 'hotmart_checkout_url', value: globalConfig.hotmartCheckoutUrl },
+                { key: 'hotmart_webhook_token', value: globalConfig.hotmartWebhookToken },
+                { key: 'hotmart_client_id', value: globalConfig.hotmartClientId },
+                { key: 'hotmart_client_secret', value: globalConfig.hotmartClientSecret },
                 { key: 'affiliates_drive_url', value: globalConfig.affiliatesDriveUrl },
                 { key: 'brevo_enabled', value: String(globalConfig.brevoEnabled) },
                 { key: 'brevo_smtp_host', value: globalConfig.brevoSmtpHost },
@@ -1984,6 +1996,70 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                         </button>
                     </div>
                 )}
+            </div>
+
+            {/* 5.4. Hotmart — checkout em euro e webhooks (público internacional) */}
+            <div className="bg-[var(--admin-surface-1)] p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-2 mb-4">
+                    <Server className="text-orange-600 dark:text-orange-400" />
+                    <h3 className="font-bold text-[var(--admin-text-primary)]">Integração Hotmart (Europa / Internacional)</h3>
+                </div>
+                <p className="text-sm text-[var(--admin-text-secondary)] mb-6 font-medium">
+                    O checkout do público internacional. A landing page decide pelo país do visitante (IP):
+                    Brasil vai para a Kiwify em real, o resto do mundo vem para cá em euro.
+                </p>
+                <p className="text-sm mb-6 rounded-lg border border-amber-300 bg-amber-50 p-3 font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                    ⚠️ O receptor <code className="font-mono text-xs">/api/hotmart-webhook</code> ainda não existe.
+                    Guarde as credenciais aqui, mas <strong>não cadastre o webhook na Hotmart antes de ele estar no ar</strong> —
+                    a Hotmart chamaria uma URL inexistente e as vendas não gerariam matrícula nem automação.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Link do Checkout em Euro</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.hotmartCheckoutUrl}
+                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartCheckoutUrl: e.target.value })}
+                            placeholder="https://pay.hotmart.com/..."
+                        />
+                        <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+                            Enquanto estiver vazio, o visitante internacional continua caindo na Kiwify — que cobra em real e pede CPF.
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Hottok (token do webhook)</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            value={globalConfig.hotmartWebhookToken}
+                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartWebhookToken: e.target.value })}
+                            placeholder="hottok exibido ao cadastrar o webhook"
+                        />
+                        <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+                            É o que prova que a chamada veio mesmo da Hotmart. Sem ele, qualquer um poderia liberar acesso.
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Hotmart Client ID</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            value={globalConfig.hotmartClientId}
+                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartClientId: e.target.value })}
+                            placeholder="Ferramentas -> Credenciais na Hotmart"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Hotmart Client Secret</label>
+                        <input
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            value={globalConfig.hotmartClientSecret}
+                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartClientSecret: e.target.value })}
+                            placeholder="client_secret da Hotmart"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* 5.5. Kiwify & Affiliates Config */}
