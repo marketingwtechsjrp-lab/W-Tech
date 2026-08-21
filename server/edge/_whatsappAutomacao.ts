@@ -112,16 +112,17 @@ export async function registrarNaFila(
     supabase: SupabaseClient,
     linha: { order_id: string; phone: string; caption: string; video_url?: string | null },
 ): Promise<void> {
-    try {
-        await supabase.from('SITE_Automacao_Fila').insert({
-            order_id: linha.order_id,
-            phone: linha.phone,
-            caption: linha.caption,
-            video_url: linha.video_url ?? null,
-            send_at: new Date().toISOString(),
-            processed: true,
-        });
-    } catch (erro) {
-        console.error('[automacao] Não foi possível registrar na fila:', erro);
+    // video_url é NOT NULL na tabela: mensagens sem mídia gravam string vazia.
+    // Passar null aqui fazia o insert falhar em silêncio.
+    const { error } = await supabase.from('SITE_Automacao_Fila').insert({
+        order_id: linha.order_id,
+        phone: linha.phone,
+        caption: linha.caption,
+        video_url: linha.video_url || '',
+        send_at: new Date().toISOString(),
+        processed: true,
+    });
+    if (error) {
+        console.error('[automacao] Não foi possível registrar na fila:', error.message);
     }
 }
