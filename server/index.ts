@@ -28,6 +28,7 @@ import { getRequestClientIp, lookupCountryByIp } from '../api/_geoip.js';
 
 // ── Edge Functions do Supabase portadas para Express (Deno → Node) ───────────
 import kiwifyWebhook from './edge/kiwify-webhook.js';
+import hotmartWebhook from './edge/hotmart-webhook.js';
 import stripeWebhook from './edge/stripe-webhook.js';
 import getKiwifyAffiliates from './edge/get-kiwify-affiliates.js';
 import waAtendentesWebhook from './edge/wa-atendentes-webhook.js';
@@ -188,6 +189,7 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'vsl-progress': vslProgress,
   // Edge Functions portadas (antes em <supabase>/functions/v1/<nome>)
   'kiwify-webhook': kiwifyWebhook,
+  'hotmart-webhook': hotmartWebhook,
   'get-kiwify-affiliates': getKiwifyAffiliates,
   'wa-atendentes-webhook': waAtendentesWebhook,
 };

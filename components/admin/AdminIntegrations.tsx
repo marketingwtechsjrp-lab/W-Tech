@@ -2008,10 +2008,11 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                     O checkout do público internacional. A landing page decide pelo país do visitante (IP):
                     Brasil vai para a Kiwify em real, o resto do mundo vem para cá em euro.
                 </p>
-                <p className="text-sm mb-6 rounded-lg border border-amber-300 bg-amber-50 p-3 font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-                    ⚠️ O receptor <code className="font-mono text-xs">/api/hotmart-webhook</code> ainda não existe.
-                    Guarde as credenciais aqui, mas <strong>não cadastre o webhook na Hotmart antes de ele estar no ar</strong> —
-                    a Hotmart chamaria uma URL inexistente e as vendas não gerariam matrícula nem automação.
+                <p className="text-sm mb-6 rounded-lg border border-blue-300 bg-blue-50 p-3 font-medium text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+                    Cadastre o webhook na Hotmart apontando para{' '}
+                    <code className="font-mono text-xs">https://w-techbrasil.com.br/api/hotmart-webhook</code> e cole o
+                    hottok abaixo. <strong>Sem o hottok salvo aqui, o webhook recusa toda chamada</strong> — é o que impede
+                    alguém de forjar uma venda e disparar mensagem em nome da W-Tech.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
