@@ -6,6 +6,8 @@ import { toJsPdfStyle, ensurePdfFont } from './certificateFonts';
 
 type PdfImageFormat = 'PNG' | 'JPEG' | 'WEBP';
 
+const GLOBAL_CERTIFICATE_BACKGROUND_URL = '/certificates/background-emerson-2026.png';
+
 interface PdfBackgroundImage {
     dataUrl: string;
     format: PdfImageFormat;
@@ -251,17 +253,26 @@ export const generateCertificatesPDF = async (
     // jsPDF não baixa uma URL remota recebida por addImage. A arte precisa ser
     // carregada e convertida antes; fazer isso uma vez também evita um download
     // por aluno nos lotes de certificados.
-    if (!layout.backgroundUrl) {
-        throw new Error('Não foi possível gerar o PDF. O modelo do certificado não possui imagem de fundo.');
-    }
-
     let backgroundImage: PdfBackgroundImage;
     try {
-        backgroundImage = await loadCertificateBackgroundForPdf(layout.backgroundUrl);
+        const source = layout.backgroundUrl || GLOBAL_CERTIFICATE_BACKGROUND_URL;
+        backgroundImage = await loadCertificateBackgroundForPdf(source);
     } catch (error) {
-        console.warn('Não foi possível carregar o fundo do certificado.', error);
-        const message = error instanceof Error ? error.message : 'Erro desconhecido.';
-        throw new Error(`Não foi possível gerar o PDF. ${message}`);
+        if (layout.backgroundUrl === GLOBAL_CERTIFICATE_BACKGROUND_URL) {
+            console.warn('Não foi possível carregar o fundo padrão do certificado.', error);
+            const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+            throw new Error(`Não foi possível gerar o PDF. ${message}`);
+        }
+
+        console.warn('Não foi possível carregar o fundo do certificado definido no layout; usando fundo padrão.', error);
+        try {
+            backgroundImage = await loadCertificateBackgroundForPdf(GLOBAL_CERTIFICATE_BACKGROUND_URL);
+        } catch (fallbackError) {
+            console.error('Não foi possível carregar o fundo padrão de certificado.', fallbackError);
+            const message = fallbackError instanceof Error ? fallbackError.message : 'Erro desconhecido.';
+            throw new Error(`Não foi possível gerar o PDF. ${message}`);
+        }
+
     }
 
     for (let i = 0; i < enrollments.length; i++) {
