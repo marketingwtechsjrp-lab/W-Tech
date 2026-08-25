@@ -1,5 +1,6 @@
 import { requireSameOrigin, getServiceClient } from './_auth.js';
 import { requireStaffOrS2SPermission } from './_s2s.js';
+import { PAYMENT_LINK_PERMISSIONS } from '../lib/permissions.js';
 
 /**
  * Vercel Serverless Function — Gera link de cobrança Asaas (SERVER-SIDE).
@@ -9,7 +10,8 @@ import { requireStaffOrS2SPermission } from './_s2s.js';
  * chave `asaas_api_key` era lida de SITE_Config e usada direto no cliente.
  * Agora a chave NUNCA sai do servidor.
  *
- * Auth: sessão de staff httpOnly + permissão `financial_add_transaction`
+ * Auth: sessão de staff httpOnly + UMA das permissões de PAYMENT_LINK_PERMISSIONS
+ * (`orders_payment_link` OU `financial_add_transaction`)
  * (cookie + digest — ver api/_auth.ts), OU chamada S2S assinada do ERP
  * (header x-wtech-svc + HMAC — ver api/_s2s.ts) com a mesma permissão,
  * ator rehidratado no banco. Gate CSRF same-origin só se aplica ao
@@ -84,7 +86,7 @@ export default async function handler(req: any, res: any) {
   if (!svcHeader && !requireSameOrigin(req, res)) return;
   // Bloqueia chamada pública — exige sessão de staff válida OU S2S com a
   // mesma permissão financeira.
-  if (!(await requireStaffOrS2SPermission(req, res, 'financial_add_transaction'))) return;
+  if (!(await requireStaffOrS2SPermission(req, res, PAYMENT_LINK_PERMISSIONS))) return;
 
   const { enrollmentId, lead: leadInput, value, description, dueDate } = req.body || {};
 

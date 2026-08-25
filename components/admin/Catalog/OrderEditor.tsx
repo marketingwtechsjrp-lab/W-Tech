@@ -5,10 +5,11 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { FileDown, Printer, Receipt, Zap, Loader2, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
+import { FileDown, Printer, Receipt, Zap, Loader2, CheckCircle2, Copy, ExternalLink, Lock } from 'lucide-react';
 import { useSettings } from '../../../context/SettingsContext';
 import { createStripePaymentLink } from '../../../lib/stripe';
-import { createHasPermission } from '../../../lib/permissions';
+import { createHasPermission, PAYMENT_LINK_PERMISSIONS } from '../../../lib/permissions';
+import { describePaymentLinkError } from '../../../lib/paymentLinkErrors';
 import { getExchangeRates, convertBRLTo, ExchangeRates } from '../../../lib/currency';
 import { TrendingUp } from 'lucide-react';
 
@@ -152,7 +153,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                     payment_method: 'Stripe'
                 }));
             } else {
-                alert('Erro ao gerar link do Stripe: ' + result.error);
+                alert(describePaymentLinkError(result.error));
             }
         } catch (error: any) {
             alert('Erro: ' + error.message);
@@ -177,6 +178,9 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     const can = createHasPermission(user, permissions);
     const canManageOrders = can('manage_orders');
     const canDeleteOrders = can('orders_delete');
+    // Espelha o gate do backend (PAYMENT_LINK_PERMISSIONS) — sem isso o botão
+    // aparece pra quem o endpoint vai negar com 403.
+    const canGeneratePaymentLink = PAYMENT_LINK_PERMISSIONS.some((key) => can(key));
 
     useEffect(() => {
         if (isOpen) {
@@ -1289,7 +1293,15 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                                 </div>
                                                             </div>
 
-                                                            {!stripePaymentUrl ? (
+                                                            {!stripePaymentUrl && !canGeneratePaymentLink ? (
+                                                                <div className="w-full p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-start gap-3">
+                                                                    <Lock size={16} className="opacity-50 shrink-0 mt-0.5" />
+                                                                    <p className="text-[11px] leading-relaxed opacity-70">
+                                                                        Seu perfil não pode gerar links de pagamento. Peça a um administrador a
+                                                                        permissão <strong>&ldquo;Gerar Link de Pagamento&rdquo;</strong> em Equipe &amp; Acesso.
+                                                                    </p>
+                                                                </div>
+                                                            ) : !stripePaymentUrl ? (
                                                                 <button
                                                                     onClick={handleGenerateStripeLink}
                                                                     disabled={isGeneratingStripeLink || total <= 0}

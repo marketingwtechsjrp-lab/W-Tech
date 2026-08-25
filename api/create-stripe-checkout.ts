@@ -11,6 +11,7 @@ import {
 } from './_auth.js';
 import { requireStaffOrS2SPermission } from './_s2s.js';
 import { LISBOA_COURSE_ID, LISBOA_CURRENCY, LISBOA_DEPOSIT_PRICE, LISBOA_FULL_PRICE } from '../lib/lisboaOffer.js';
+import { PAYMENT_LINK_PERMISSIONS } from '../lib/permissions.js';
 
 /**
  * Vercel Serverless Function — Stripe Create Checkout Session (SERVER-SIDE)
@@ -42,10 +43,11 @@ import { LISBOA_COURSE_ID, LISBOA_CURRENCY, LISBOA_DEPOSIT_PRICE, LISBOA_FULL_PR
  *          inscrição. Qualquer combinação fora desses dois formatos é
  *          REJEITADA (403).
  *   2. STAFF (cookie httpOnly válido) — valor negociado/dinâmico (pedidos,
- *      vendas manuais). Exige permissão `financial_add_transaction` E gate
+ *      vendas manuais). Exige UMA das permissões de PAYMENT_LINK_PERMISSIONS
+ *      (`orders_payment_link` OU `financial_add_transaction`) E gate
  *      CSRF same-origin (é um POST vindo de browser).
  *   3. S2S (header x-wtech-svc + assinatura HMAC — wrapper `checkoutStripe`
- *      do ERP/Gestão) — mesma permissão `financial_add_transaction`, mas
+ *      do ERP/Gestão) — mesmas permissões, mas
  *      autorizado por ator rehidratado (api/_s2s.ts), não por cookie. NÃO
  *      passa pelo gate CSRF (não é um browser — Origin/Sec-Fetch-Site não
  *      fazem sentido pra uma chamada servidor-a-servidor).
@@ -219,7 +221,7 @@ export default async function handler(req: any, res: any) {
     // Caminho 3 — S2S (wrapper checkoutStripe do ERP): ator rehidratado,
     // mesma permissão do staff, valor negociado confiado (mesmo nível de
     // confiança que já existia pro staff autenticado).
-    const actor = await requireStaffOrS2SPermission(req, res, 'financial_add_transaction');
+    const actor = await requireStaffOrS2SPermission(req, res, PAYMENT_LINK_PERMISSIONS);
     if (!actor) return;
 
     const numericPrice = Number(bodyPrice);
@@ -249,7 +251,7 @@ export default async function handler(req: any, res: any) {
     const staff = await requireStaffSession(req);
     if (staff) {
       // Caminho 2 — staff via cookie: valor negociado, exige a mesma permissão.
-      if (!isPermissionGranted(staff.permissions, 'financial_add_transaction')) {
+      if (!PAYMENT_LINK_PERMISSIONS.some((p) => isPermissionGranted(staff.permissions, p))) {
         return denyForbidden(res);
       }
       const numericPrice = Number(bodyPrice);

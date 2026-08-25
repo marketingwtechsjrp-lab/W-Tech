@@ -6,6 +6,7 @@ import {
   getServiceClient,
   isPermissionGranted,
   rehydrateActor,
+  requireStaffAnyPermission,
   requireStaffPermission,
   type StaffSessionUser,
 } from './_auth.js';
@@ -247,12 +248,19 @@ export async function verifyS2SRequest(req: any): Promise<S2SVerifyResult> {
  * sessão/assinatura válida, 403 com sessão/assinatura válida mas sem a
  * permissão. Nunca aceita x-wtech-user-id nem qualquer id declarado sem
  * prova (cookie validado no banco, ou assinatura HMAC + ator rehidratado).
+ *
+ * `permission` aceita uma chave OU uma lista — na lista basta UMA para
+ * autorizar (mesma semântica de `requireStaffAnyPermission`). Usado nas rotas
+ * de link de pagamento, que servem tanto quem lança no caixa
+ * (`financial_add_transaction`) quanto quem só cobra o cliente
+ * (`orders_payment_link`).
  */
 export async function requireStaffOrS2SPermission(
   req: any,
   res: any,
-  permission: string,
+  permission: string | readonly string[],
 ): Promise<StaffSessionUser | null> {
+  const required: readonly string[] = Array.isArray(permission) ? permission : [permission as string];
   const svcHeader = String(req.headers?.[S2S_SERVICE_HEADER] || '');
 
   if (svcHeader) {
@@ -271,7 +279,7 @@ export async function requireStaffOrS2SPermission(
       denyAuth(res);
       return null;
     }
-    if (!isPermissionGranted(actor.permissions, permission)) {
+    if (!required.some((p) => isPermissionGranted(actor.permissions, p))) {
       denyForbidden(res);
       return null;
     }
@@ -279,5 +287,7 @@ export async function requireStaffOrS2SPermission(
   }
 
   // Sem header de serviço: caminho normal do browser (cookie httpOnly).
-  return requireStaffPermission(req, res, permission);
+  return required.length === 1
+    ? requireStaffPermission(req, res, required[0])
+    : requireStaffAnyPermission(req, res, required);
 }

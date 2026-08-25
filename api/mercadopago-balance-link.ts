@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { requireSameOrigin } from './_auth.js';
 import { requireStaffOrS2SPermission } from './_s2s.js';
+import { PAYMENT_LINK_PERMISSIONS } from '../lib/permissions.js';
 
 /**
  * Vercel Serverless Function — Link de pagamento do SALDO de uma inscrição.
@@ -18,7 +19,7 @@ import { requireStaffOrS2SPermission } from './_s2s.js';
  *
  * Uso: o atendente gera o link no painel (modal "Quitar Saldo"), copia e envia
  * manualmente pelo WhatsApp. Exige sessão de staff (browser, CSRF) OU S2S do
- * ERP, nos dois casos com `financial_add_transaction` — antes deste corte a
+ * ERP, nos dois casos com PAYMENT_LINK_PERMISSIONS — antes deste corte a
  * rota era pública e qualquer um conseguia gerar cobrança pra qualquer
  * inscrição.
  */
@@ -27,7 +28,7 @@ export default async function handler(req: any, res: any) {
 
     const svcHeader = String(req.headers?.['x-wtech-svc'] || '');
     if (!svcHeader && !requireSameOrigin(req, res)) return;
-    if (!(await requireStaffOrS2SPermission(req, res, 'financial_add_transaction'))) return;
+    if (!(await requireStaffOrS2SPermission(req, res, PAYMENT_LINK_PERMISSIONS))) return;
 
     const enrollmentId = (req.body?.enrollmentId as string | undefined)?.trim();
     const amount = Number(req.body?.amount);

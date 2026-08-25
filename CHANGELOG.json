@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.36.0",
+    "date": "2026-08-25",
+    "title": "Atendentes podem gerar link de pagamento",
+    "changes": [
+      "Nova permissao orders_payment_link (Gerar Link de Pagamento): o atendente cobra o cliente sem ganhar acesso ao lancamento manual no fluxo de caixa",
+      "Stripe, Asaas e Mercado Pago passam a aceitar orders_payment_link OU financial_add_transaction",
+      "Botao Gerar Link de Pagamento agora respeita a permissao no gestor de cursos e no editor de pedidos - antes aparecia para todos e so falhava depois do clique com o erro forbidden",
+      "Erros dos endpoints de cobranca traduzidos para portugues em lib/paymentLinkErrors.ts",
+      "Cargos Atendente, Gerente Atendimento e Financeiro receberam a nova permissao via migration 2026-08-25"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.35.1",
     "date": "2026-08-25",
     "title": "Leads da Europa com dono: rodizio automatico Cris/Michael/Emerson",

@@ -155,6 +155,11 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
       { key: 'financial_view_all', label: 'Visualizar Todo o Fluxo de Caixa (Gestor)' },
       { key: 'invoices_view', label: 'Acessar Notas Fiscais' },
       { key: 'financial_add_transaction', label: 'Lançar Transação' },
+      {
+        key: 'orders_payment_link',
+        label: 'Gerar Link de Pagamento (Stripe / Asaas / Mercado Pago)',
+        note: 'Cobrar o cliente SEM liberar lançamento manual no fluxo de caixa. É o que o atendente precisa para fechar matrícula e pedido.',
+      },
       { key: 'financial_export', label: 'Exportar Relatórios' },
       { key: 'financial_delete_transaction', label: 'Excluir Transações (Risco)', danger: true },
     ],
@@ -201,6 +206,21 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
 export const ALL_PERMISSION_KEYS: string[] = PERMISSION_CATALOG.flatMap((m) =>
   m.perms.map((p) => p.key)
 );
+
+/**
+ * Quem pode gerar link de cobrança (Stripe / Asaas / Mercado Pago). Basta UMA
+ * das chaves. Fonte única, consumida pelos três endpoints e pelos botões do
+ * admin — sem isso o front esconde o botão por um critério e o backend nega
+ * por outro.
+ *
+ * `orders_payment_link` existe justamente para o atendente COBRAR o cliente
+ * sem ganhar `financial_add_transaction`, que também libera lançamento manual
+ * no fluxo de caixa.
+ */
+export const PAYMENT_LINK_PERMISSIONS = [
+  'orders_payment_link',
+  'financial_add_transaction',
+] as const;
 
 // -----------------------------------------------------------------------------
 // RESOLUÇÃO DE PERMISSÕES — única implementação para todo o app.
@@ -319,7 +339,7 @@ export const ROLE_PRESETS: RolePreset[] = [
       'courses_add_student', 'courses_edit_attendant', 'courses_print_list', 'certificates_view',
       'courses_view_reports', 'crm_view', 'crm_manage_all', 'crm_move_back', 'crm_view_team',
       'crm_view_all', 'crm_config_dist', 'crm_export', 'orders_view', 'orders_view_all',
-      'manage_orders', 'clients_view', 'clients_view_all', 'clients_manage', 'tasks_view',
+      'manage_orders', 'orders_payment_link', 'clients_view', 'clients_view_all', 'clients_manage', 'tasks_view',
       'tasks_view_team', 'whatsapp_inbox_view', 'whatsapp_view_all', 'whatsapp_send',
       'whatsapp_assume', 'whatsapp_view_metrics', 'whatsapp_ai_manage', 'whatsapp_ai_train',
       'whatsapp_engine_config'
@@ -331,8 +351,8 @@ export const ROLE_PRESETS: RolePreset[] = [
     level: 8,
     permissions: on(
       'dashboard_view', 'financial_view', 'financial_view_all', 'invoices_view',
-      'financial_add_transaction', 'financial_export', 'orders_view', 'orders_view_all',
-      'clients_view', 'clients_view_all'
+      'financial_add_transaction', 'orders_payment_link', 'financial_export', 'orders_view',
+      'orders_view_all', 'clients_view', 'clients_view_all'
     ),
   },
   {
@@ -352,7 +372,8 @@ export const ROLE_PRESETS: RolePreset[] = [
     level: 2,
     permissions: on(
       'crm_view', 'crm_manage_all', 'courses_view', 'courses_add_student', 'orders_view',
-      'clients_view', 'tasks_view', 'whatsapp_inbox_view', 'whatsapp_send', 'whatsapp_assume'
+      'orders_payment_link', 'clients_view', 'tasks_view', 'whatsapp_inbox_view', 'whatsapp_send',
+      'whatsapp_assume'
     ),
   },
 ];

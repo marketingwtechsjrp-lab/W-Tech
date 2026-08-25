@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.36.0 (2026-08-25) - Atendentes podem gerar link de pagamento
+- Nova permissao orders_payment_link (Gerar Link de Pagamento): o atendente cobra o cliente sem ganhar acesso ao lancamento manual no fluxo de caixa
+- Stripe, Asaas e Mercado Pago passam a aceitar orders_payment_link OU financial_add_transaction
+- Botao Gerar Link de Pagamento agora respeita a permissao no gestor de cursos e no editor de pedidos - antes aparecia para todos e so falhava depois do clique com o erro forbidden
+- Erros dos endpoints de cobranca traduzidos para portugues em lib/paymentLinkErrors.ts
+- Cargos Atendente, Gerente Atendimento e Financeiro receberam a nova permissao via migration 2026-08-25
+
 ## v3.35.1 (2026-08-25) - Leads da Europa com dono: rodizio automatico Cris/Michael/Emerson
 - Fix: as paginas de Europa/Lisboa gravavam o lead com um UUID de atendente inexistente (407d09b8-8205-4697-a726-1738cf7e20ef), entao o lead entrava atribuido a um usuario fantasma e aparecia SEM DONO no CRM (5 leads orfaos no banco, 4 deles WTECH EUROPA LISBOA OUTUBRO 2026).
 - distributeLead() deixou de ser stub que retornava null: agora sorteia aleatoriamente entre Christopher (cris), Michael e Emerson, os tres marcados com receives_leads

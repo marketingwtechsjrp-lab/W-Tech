@@ -16,7 +16,8 @@ import { UserRole } from '../types';
 import type { Lead, Mechanic, Order, User as UserType, Transaction, Course, BlogPost, PostComment, LandingPage, Enrollment, Role, SystemConfig, Event } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { fetchAllRows } from '../lib/fetchAllRows';
-import { createHasPermission, createPermissionResolver, PERMISSION_CATALOG } from '../lib/permissions';
+import { createHasPermission, createPermissionResolver, PAYMENT_LINK_PERMISSIONS, PERMISSION_CATALOG } from '../lib/permissions';
+import { describePaymentLinkError } from '../lib/paymentLinkErrors';
 import { generateSitemapXml } from '../lib/sitemapUtils';
 import { generateSEOContent } from '../lib/ai';
 import { useAuth } from '../context/AuthContext';
@@ -585,8 +586,14 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
 
     const hasPermission = createHasPermission(user, permissions);
 
-
-
+    /**
+     * Espelha exatamente o gate dos endpoints de cobrança
+     * (PAYMENT_LINK_PERMISSIONS, mesma constante que /api/create-stripe-checkout,
+     * /api/asaas-payment-link e /api/mercadopago-balance-link usam). Antes o botão
+     * era renderizado pra todo mundo e o atendente só descobria que não podia
+     * depois de preencher o valor e tomar um "forbidden" cru na tela.
+     */
+    const canGeneratePaymentLink = PAYMENT_LINK_PERMISSIONS.some((key) => hasPermission(key));
 
     const handleBlurCEP = async (e: React.FocusEvent<HTMLInputElement>) => {
         const cep = e.target.value.replace(/\D/g, '');
@@ -1415,7 +1422,7 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
             if (result?.success) {
                 setGeneratedLink(result.url || result.invoiceUrl);
             } else {
-                alert('Erro ao gerar link: ' + result?.error);
+                alert(describePaymentLinkError(result?.error));
             }
         } catch (err: any) {
             alert('Erro: ' + err.message);
@@ -2530,14 +2537,24 @@ const CoursesManagerView = ({ initialLead, initialCourseId, onConsumeInitialLead
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={handleGeneratePaymentLink}
-                                                disabled={isGeneratingLink}
-                                                className="w-full mt-3 py-4 bg-black dark:bg-wtech-gold dark:text-black text-white rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                                            >
-                                                {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                                                Gerar Link de Pagamento
-                                            </button>
+                                            {canGeneratePaymentLink ? (
+                                                <button
+                                                    onClick={handleGeneratePaymentLink}
+                                                    disabled={isGeneratingLink}
+                                                    className="w-full mt-3 py-4 bg-black dark:bg-wtech-gold dark:text-black text-white rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                                                >
+                                                    {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+                                                    Gerar Link de Pagamento
+                                                </button>
+                                            ) : (
+                                                <div className="w-full mt-3 p-4 rounded-xl bg-[var(--admin-surface-2)] border border-[var(--admin-border)] flex items-start gap-3">
+                                                    <Lock size={16} className="text-[var(--admin-text-tertiary)] shrink-0 mt-0.5" />
+                                                    <p className="text-[11px] leading-relaxed text-[var(--admin-text-secondary)]">
+                                                        Seu perfil não pode gerar links de pagamento. Peça a um administrador a
+                                                        permissão <strong>&ldquo;Gerar Link de Pagamento&rdquo;</strong> em Equipe &amp; Acesso.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
