@@ -7,6 +7,7 @@ import { toJsPdfStyle, ensurePdfFont } from './certificateFonts';
 type PdfImageFormat = 'PNG' | 'JPEG' | 'WEBP';
 
 const GLOBAL_CERTIFICATE_BACKGROUND_URLS = [
+    '/certificado-em-branco-2026-v2.png',
     '/background-emerson-2026.png',
     '/certificates/background-emerson-2026.png',
 ];
