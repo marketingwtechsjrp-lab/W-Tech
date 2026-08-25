@@ -71,6 +71,7 @@ const getFormatFromBlob = async (blob: Blob, source: string): Promise<PdfImageFo
 const normalizeImageSource = (source: string): string[] => {
     const trimmed = source.trim();
     if (!trimmed) return [];
+    const noQuerySource = trimmed.split(/[?#]/)[0];
 
     const candidates = new Set<string>([
         trimmed,
@@ -107,7 +108,7 @@ const normalizeImageSource = (source: string): string[] => {
 
     // Migração de caminhos antigos do domínio principal do WP -> bucket atual (se disponível).
     // Mantém compatibilidade com registros antigos armazenados em wp-content/uploads/xxxx/filename.png.
-    const legacyWpMatch = trimmed.match(/\/wp-content\/uploads\/.*\/([^/]+\.[a-z0-9]+)\s*$/i);
+    const legacyWpMatch = noQuerySource.match(/\/wp-content\/uploads\/.*\/([^/]+\.[a-z0-9]+)\s*$/i);
     if (legacyWpMatch) {
         const fileName = legacyWpMatch[1];
         candidates.add(`/${fileName}`);
