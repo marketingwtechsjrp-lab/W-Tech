@@ -25,15 +25,47 @@ const detectPdfImageFormat = (mimeType: string, source: string): PdfImageFormat 
     return null;
 };
 
-const isTextBasedContentType = (contentType: string): boolean => {
-    const normalized = contentType.toLowerCase().trim();
-    return (
-        normalized.startsWith('text/') ||
-        normalized.includes('application/json') ||
-        normalized.includes('application/javascript') ||
-        normalized.includes('application/xml') ||
-        normalized.includes('text/plain')
-    );
+const detectPdfImageFormatFromBytes = (bytes: Uint8Array): PdfImageFormat | null => {
+    if (bytes.length >= 8 &&
+        bytes[0] === 0x89 &&
+        bytes[1] === 0x50 &&
+        bytes[2] === 0x4E &&
+        bytes[3] === 0x47
+    ) {
+        return 'PNG';
+    }
+
+    if (bytes.length >= 3 &&
+        bytes[0] === 0xFF &&
+        bytes[1] === 0xD8 &&
+        bytes[2] === 0xFF
+    ) {
+        return 'JPEG';
+    }
+
+    if (
+        bytes.length >= 12 &&
+        bytes[0] === 0x52 &&
+        bytes[1] === 0x49 &&
+        bytes[2] === 0x46 &&
+        bytes[3] === 0x46 &&
+        bytes[8] === 0x57 &&
+        bytes[9] === 0x45 &&
+        bytes[10] === 0x42 &&
+        bytes[11] === 0x50
+    ) {
+        return 'WEBP';
+    }
+
+    return null;
+};
+
+const getFormatFromBlob = async (blob: Blob, source: string): Promise<PdfImageFormat | null> => {
+    const fromHeader = detectPdfImageFormat(blob.type || '', source);
+    if (fromHeader) return fromHeader;
+
+    const bytes = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
+    return detectPdfImageFormatFromBytes(bytes);
 };
 
 const normalizeImageSource = (source: string): string[] => {
@@ -70,6 +102,21 @@ const normalizeImageSource = (source: string): string[] => {
     for (const candidate of Array.from(candidates)) {
         if (candidate.includes(' ')) {
             candidates.add(encodeURI(candidate));
+        }
+    }
+
+    // Migração de caminhos antigos do domínio principal do WP -> bucket atual (se disponível).
+    // Mantém compatibilidade com registros antigos armazenados em wp-content/uploads/xxxx/filename.png.
+    const legacyWpMatch = trimmed.match(/\/wp-content\/uploads\/.*\/([^/]+\.[a-z0-9]+)\s*$/i);
+    if (legacyWpMatch) {
+        const fileName = legacyWpMatch[1];
+        candidates.add(`/${fileName}`);
+        candidates.add(`/storage/v1/object/public/site-assets/${fileName}`);
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+            const base = supabaseUrl.replace(/\/$/, '');
+            candidates.add(`${base}/storage/v1/object/public/site-assets/${fileName}`);
+            candidates.add(`${base}/storage/v1/object/public/site-assets/wp-content/uploads/${fileName}`);
         }
     }
 
@@ -115,8 +162,10 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
 
     const candidates = normalizeImageSource(normalizedSource);
     let response: Response | null = null;
+    let responseBlob: Blob | null = null;
     let sourceUsed = normalizedSource;
     const rejectedSources: string[] = [];
+    let imageFormat: PdfImageFormat | null = null;
 
     for (const candidate of candidates) {
         sourceUsed = candidate;
@@ -127,15 +176,24 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
             });
 
             if (current.ok) {
-                const contentType = current.headers.get('content-type') || '';
+                const blob = await current.blob();
+                if (!blob.size) {
+                    rejectedSources.push(`${candidate} (arquivo vazio)`);
+                    console.debug(`Arquivo vazio recebido para fundo de certificado: ${candidate}`);
+                    continue;
+                }
 
-                if (isTextBasedContentType(contentType)) {
+                const detectedFormat = await getFormatFromBlob(blob, candidate);
+                if (!detectedFormat) {
+                    const contentType = current.headers.get('content-type') || 'desconhecido';
                     rejectedSources.push(`${candidate} (content-type: ${contentType})`);
-                    console.debug(`Resposta de texto para fundo do certificado: ${candidate}`);
+                    console.debug(`Resposta sem assinatura de imagem para fundo do certificado: ${candidate}`);
                     continue;
                 }
 
                 response = current;
+                responseBlob = blob;
+                imageFormat = detectedFormat;
                 break;
             }
 
@@ -158,10 +216,8 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
         throw new Error(`Não foi possível baixar a imagem de fundo do certificado (HTTP ${response.status}).`);
     }
 
-    const blob = await response.blob();
-    if (!blob.size) throw new Error('A imagem de fundo do certificado está vazia.');
-
-    const format = detectPdfImageFormat(blob.type, sourceUsed);
+    const blob = responseBlob || await response.blob();
+    const format = imageFormat || (await getFormatFromBlob(blob, sourceUsed));
     if (!format) throw new Error('O formato da imagem de fundo não é compatível com PDF. Use PNG, JPG ou WebP.');
 
     return {
@@ -194,14 +250,17 @@ export const generateCertificatesPDF = async (
     // jsPDF não baixa uma URL remota recebida por addImage. A arte precisa ser
     // carregada e convertida antes; fazer isso uma vez também evita um download
     // por aluno nos lotes de certificados.
-    let backgroundImage: PdfBackgroundImage | null = null;
-    if (layout.backgroundUrl) {
-        try {
-            backgroundImage = await loadCertificateBackgroundForPdf(layout.backgroundUrl);
-        } catch (error) {
-            console.warn('Não foi possível carregar o fundo do certificado. Continuando sem imagem.', error);
-            backgroundImage = null;
-        }
+    if (!layout.backgroundUrl) {
+        throw new Error('Não foi possível gerar o PDF. O modelo do certificado não possui imagem de fundo.');
+    }
+
+    let backgroundImage: PdfBackgroundImage;
+    try {
+        backgroundImage = await loadCertificateBackgroundForPdf(layout.backgroundUrl);
+    } catch (error) {
+        console.warn('Não foi possível carregar o fundo do certificado.', error);
+        const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+        throw new Error(`Não foi possível gerar o PDF. ${message}`);
     }
 
     for (let i = 0; i < enrollments.length; i++) {

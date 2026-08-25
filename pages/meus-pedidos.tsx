@@ -195,7 +195,8 @@ const ClientPortal = () => {
             
         } catch (err) {
             console.error('Download Error:', err);
-            alert('Erro ao gerar certificado.');
+            const message = err instanceof Error ? err.message : 'Erro desconhecido.';
+            alert(`Não foi possível gerar o certificado: ${message}`);
         }
     };
 
