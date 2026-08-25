@@ -6,7 +6,10 @@ import { toJsPdfStyle, ensurePdfFont } from './certificateFonts';
 
 type PdfImageFormat = 'PNG' | 'JPEG' | 'WEBP';
 
-const GLOBAL_CERTIFICATE_BACKGROUND_URL = '/certificates/background-emerson-2026.png';
+const GLOBAL_CERTIFICATE_BACKGROUND_URLS = [
+    '/background-emerson-2026.png',
+    '/certificates/background-emerson-2026.png',
+];
 
 interface PdfBackgroundImage {
     dataUrl: string;
@@ -253,13 +256,22 @@ export const generateCertificatesPDF = async (
     // jsPDF não baixa uma URL remota recebida por addImage. A arte precisa ser
     // carregada e convertida antes; fazer isso uma vez também evita um download
     // por aluno nos lotes de certificados.
-    let backgroundImage: PdfBackgroundImage;
-    try {
-        // Sempre usa o background padrão para garantir consistência em todos os certificados gerados.
-        backgroundImage = await loadCertificateBackgroundForPdf(GLOBAL_CERTIFICATE_BACKGROUND_URL);
-    } catch (error) {
-        console.error('Não foi possível carregar o fundo padrão do certificado.', error);
-        const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+    let backgroundImage: PdfBackgroundImage | null = null;
+    let backgroundError: string | null = null;
+
+    for (const candidate of GLOBAL_CERTIFICATE_BACKGROUND_URLS) {
+        try {
+            backgroundImage = await loadCertificateBackgroundForPdf(candidate);
+            break;
+        } catch (error) {
+            backgroundError = error instanceof Error ? error.message : 'Erro desconhecido.';
+            console.error(`Tentativa de fundo padrão falhou para ${candidate}.`, error);
+        }
+    }
+
+    if (!backgroundImage) {
+        const message = backgroundError || 'Não foi possível carregar o fundo padrão.';
+        console.error('Não foi possível carregar o fundo padrão do certificado.', message);
         throw new Error(`Não foi possível gerar o PDF. ${message}`);
     }
 
