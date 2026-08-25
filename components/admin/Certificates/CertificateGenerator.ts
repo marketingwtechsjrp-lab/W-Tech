@@ -14,14 +14,73 @@ interface PdfBackgroundImage {
 const detectPdfImageFormat = (mimeType: string, source: string): PdfImageFormat | null => {
     const normalizedMime = mimeType.toLowerCase().split(';')[0].trim();
     if (normalizedMime === 'image/png') return 'PNG';
-    if (normalizedMime === 'image/jpeg' || normalizedMime === 'image/jpg') return 'JPEG';
+    if (normalizedMime === 'image/jpeg' || normalizedMime === 'image/jpg' || normalizedMime === 'image/pjpeg') return 'JPEG';
     if (normalizedMime === 'image/webp') return 'WEBP';
 
     const cleanSource = source.toLowerCase().split(/[?#]/)[0];
     if (cleanSource.endsWith('.png')) return 'PNG';
     if (cleanSource.endsWith('.jpg') || cleanSource.endsWith('.jpeg')) return 'JPEG';
+    if (cleanSource.endsWith('.jfif') || cleanSource.endsWith('.pjpeg')) return 'JPEG';
     if (cleanSource.endsWith('.webp')) return 'WEBP';
     return null;
+};
+
+const normalizeImageSource = (source: string): string[] => {
+    const trimmed = source.trim();
+    if (!trimmed) return [];
+
+    const candidates = new Set<string>([
+        trimmed,
+        trimmed.replace(/^\/\//, 'https://')
+    ]);
+
+    if (trimmed.startsWith('http://')) {
+        candidates.add(`https://${trimmed.slice(7)}`);
+    }
+
+    // Paths used no domínio do domínio atual (ou bucket local do projeto)
+    if (trimmed.startsWith('/storage/v1/object/public/')) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+            candidates.add(`${supabaseUrl.replace(/\/$/, '')}${trimmed}`);
+            candidates.add(trimmed.replace(/^\//, ''));
+        }
+    }
+
+    // Caminhos curtos gravados na coluna (ex.: "site-assets/...png")
+    if (!/^https?:\/\//i.test(trimmed) && !trimmed.startsWith('/') && trimmed.includes('site-assets/')) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+            candidates.add(`${supabaseUrl.replace(/\/$/, '')}/storage/v1/object/public/${trimmed}`);
+        }
+    }
+
+    // Corrige espaços no caminho (caso alguma URL tenha vindo sem encode)
+    for (const candidate of Array.from(candidates)) {
+        if (candidate.includes(' ')) {
+            candidates.add(encodeURI(candidate));
+        }
+    }
+
+    // Se o host é antigo de Supabase, tenta também a URL base atual do projeto
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (supabaseUrl) {
+        try {
+            const currentOrigin = new URL(supabaseUrl).origin;
+            for (const candidate of Array.from(candidates)) {
+                if (!/^https?:\/\//i.test(candidate)) continue;
+                const parsed = new URL(candidate);
+                if (!parsed.pathname.includes('/storage/v1/object/')) continue;
+                if (!parsed.pathname.startsWith('/storage/v1/object/public/')) continue;
+
+                candidates.add(`${currentOrigin}${parsed.pathname}${parsed.search}`);
+            }
+        } catch {
+            // Ignore candidate build failures.
+        }
+    }
+
+    return [...candidates].filter((value, index, self) => self.indexOf(value) === index);
 };
 
 const blobToDataUrl = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
@@ -43,14 +102,31 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
         return { dataUrl: normalizedSource, format };
     }
 
-    let response: Response;
-    try {
-        response = await fetch(normalizedSource, {
-            mode: 'cors',
-            credentials: 'omit'
-        });
-    } catch {
-        throw new Error('Não foi possível baixar a imagem de fundo do certificado.');
+    const candidates = normalizeImageSource(normalizedSource);
+    let response: Response | null = null;
+    let sourceUsed = normalizedSource;
+
+    for (const candidate of candidates) {
+        sourceUsed = candidate;
+        try {
+            const current = await fetch(candidate, {
+                mode: 'cors',
+                credentials: 'omit'
+            });
+
+            if (current.ok) {
+                response = current;
+                break;
+            }
+
+            console.debug(`URL de fundo recusada (${current.status}): ${candidate}`);
+        } catch {
+            console.debug(`Erro de fetch ao baixar fundo de certificado: ${candidate}`);
+        }
+    }
+
+    if (!response) {
+        throw new Error(`Não foi possível baixar a imagem de fundo do certificado. Origem testada: ${sourceUsed}`);
     }
 
     if (!response.ok) {
