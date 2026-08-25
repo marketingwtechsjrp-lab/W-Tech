@@ -2,12 +2,29 @@ import { supabase } from './supabaseClient';
 import { triggerWebhook } from './webhooks';
 import { getLeadTrackingFields } from './tracking';
 
-export const distributeLead = async () => {
-    // 1. Check Mode
-    // const { data: setting } = await supabase.from('SITE_SystemSettings').select('value').eq('key', 'crm_distribution_mode').single();
-    // const mode = setting?.value || 'Manual';
+/**
+ * Atendentes que recebem leads no rodizio automatico.
+ *
+ * Os IDs ficam fixos aqui porque as landing pages sao publicas (chave anon) e
+ * SITE_Users nao e legivel pelo browser — a leitura da tabela exige sessao de
+ * staff (ver lib/staffDirectory.ts). Espelha a flag receives_leads = true no
+ * admin; ao ligar/desligar a flag de alguem, atualize esta lista tambem.
+ */
+export const LEAD_ATTENDANTS = [
+    { id: '30c76614-3df4-47c5-89e7-6987b8328d8f', name: 'Christopher' },
+    { id: '95cfe965-58f8-4f11-9449-464fabac15d9', name: 'Michael' },
+    { id: '1a370d9a-8bd1-447e-85c0-82694770b089', name: 'Emerson' },
+];
 
-    return null; // Force Manual/Null for now to prevent FK crashes.
+/**
+ * Sorteia (aleatorio) um atendente para um lead novo.
+ * Se a lista estiver vazia devolve null e o lead entra sem dono — nesse caso a
+ * trigger auto_distribute_lead do banco assume a distribuicao.
+ */
+export const distributeLead = async (): Promise<string | null> => {
+    if (LEAD_ATTENDANTS.length === 0) return null;
+    const pick = LEAD_ATTENDANTS[Math.floor(Math.random() * LEAD_ATTENDANTS.length)];
+    return pick.id;
 };
 
 interface LeadPayload {

@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.35.1 (2026-08-25) - Leads da Europa com dono: rodizio automatico Cris/Michael/Emerson
+- Fix: as paginas de Europa/Lisboa gravavam o lead com um UUID de atendente inexistente (407d09b8-8205-4697-a726-1738cf7e20ef), entao o lead entrava atribuido a um usuario fantasma e aparecia SEM DONO no CRM (5 leads orfaos no banco, 4 deles WTECH EUROPA LISBOA OUTUBRO 2026).
+- distributeLead() deixou de ser stub que retornava null: agora sorteia aleatoriamente entre Christopher (cris), Michael e Emerson, os tres marcados com receives_leads
+
 ## v3.35.0 (2026-08-18) - IA do WhatsApp presa a agenda real + prerender para buscas por IA
 - IA do WhatsApp (Bia) responde apenas com cursos da agenda real do banco e admite quando nao ha turma aberta, sem inventar preco ou data
 - Prerender das rotas publicas: HTML completo para crawlers de IA (ChatGPT, Perplexity, Claude)

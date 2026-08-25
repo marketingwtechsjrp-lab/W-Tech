@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.35.1",
+    "date": "2026-08-25",
+    "title": "Leads da Europa com dono: rodizio automatico Cris/Michael/Emerson",
+    "changes": [
+      "Fix: as paginas de Europa/Lisboa gravavam o lead com um UUID de atendente inexistente (407d09b8-8205-4697-a726-1738cf7e20ef), entao o lead entrava atribuido a um usuario fantasma e aparecia SEM DONO no CRM (5 leads orfaos no banco, 4 deles WTECH EUROPA LISBOA OUTUBRO 2026).",
+      "distributeLead() deixou de ser stub que retornava null: agora sorteia aleatoriamente entre Christopher (cris), Michael e Emerson, os tres marcados com receives_leads"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.35.0",
     "date": "2026-08-18",
     "title": "IA do WhatsApp presa a agenda real + prerender para buscas por IA",

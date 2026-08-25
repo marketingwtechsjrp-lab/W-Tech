@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { distributeLead } from '../lib/leadDistribution';
 import { triggerWebhook } from '../lib/webhooks';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
@@ -57,7 +58,7 @@ const LPWTechLisboa: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
+            const assignedTo = await distributeLead(); // Rodizio automatico: Christopher, Michael ou Emerson
             const payload = {
                 name: form.name,
                 email: form.email,

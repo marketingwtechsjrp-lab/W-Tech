@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { distributeLead } from '../lib/leadDistribution';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { createStripePaymentLink } from '../lib/stripe';
@@ -35,7 +36,7 @@ const WTechLisboa: React.FC = () => {
         setLoading(true);
         try {
             // 1. Create Lead in SITE_Leads (for CRM tracking)
-            const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
+            const assignedTo = await distributeLead(); // Rodizio automatico: Christopher, Michael ou Emerson
             const leadPayload = {
                 name: form.name,
                 email: form.email,

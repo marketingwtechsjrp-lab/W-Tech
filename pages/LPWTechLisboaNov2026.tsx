@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { distributeLead } from '../lib/leadDistribution';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
@@ -213,7 +214,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
+            const assignedTo = await distributeLead(); // Rodizio automatico: Christopher, Michael ou Emerson
 
             // 1. Cria o Lead no CRM (SITE_Leads) — fica "pretendido" mesmo que não conclua o pagamento
             const leadPayload = {

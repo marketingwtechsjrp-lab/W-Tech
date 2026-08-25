@@ -29,7 +29,7 @@ const RegistrationForm = () => {
                 status: 'New',
                 context_id: 'LP_Pronello_Immersion',
                 tags: ['Pronello_Event', 'Gratuito'],
-                assigned_to: '407d09b8-8205-4697-a726-1738cf7e20ef', // Noemi
+                assigned_to: '96702eb3-a930-41de-872b-ca179cc3944c', // Noemi
                 ...getLeadTrackingFields()
             }]);
 

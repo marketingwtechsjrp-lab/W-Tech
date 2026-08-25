@@ -33,6 +33,8 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_BASE_URL=/api
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:?VITE_SUPABASE_URL ausente no .env da VPS}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:?VITE_SUPABASE_ANON_KEY ausente no .env da VPS}
     image: wtech-frontend:latest
     networks:
       - hidro

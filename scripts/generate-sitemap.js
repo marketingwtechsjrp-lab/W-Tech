@@ -13,9 +13,17 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
 
-// Fallback to project values if env is missing
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://niesvylxwfaffgnmdoql.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pZXN2eWx4d2ZhZmZnbm1kb3FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNzI2MjMsImV4cCI6MjA3MDc0ODYyM30.KkhyL5Qu57c_5YCm3GBmhCkx4kT8giHOm1QnWGzdy4g';
+function requireEnv(...names) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+
+  throw new Error(`Variável de ambiente obrigatória ausente: defina ${names.join(' ou ')}.`);
+}
+
+const supabaseUrl = requireEnv('VITE_SUPABASE_URL', 'SUPABASE_URL');
+const supabaseKey = requireEnv('VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

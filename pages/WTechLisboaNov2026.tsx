@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
+import { distributeLead } from '../lib/leadDistribution';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import {
@@ -185,7 +186,7 @@ const WTechLisboaNov2026: React.FC = () => {
         setLoading(true);
         try {
             // 1. Cria o Lead no CRM (fica "pretendido" mesmo sem concluir o pagamento)
-            const assignedTo = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
+            const assignedTo = await distributeLead(); // Rodizio automatico: Christopher, Michael ou Emerson
             const leadPayload = {
                 name: form.name,
                 email: form.email,

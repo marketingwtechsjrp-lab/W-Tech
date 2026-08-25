@@ -7,6 +7,7 @@ import {
     Users, Award, BadgeCheck, RotateCcw, Sparkles, FileText
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { distributeLead } from '../lib/leadDistribution';
 import { createStripePaymentLink } from '../lib/stripe';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
@@ -15,7 +16,6 @@ import { LISBOA_COURSE_ID, LISBOA_DEPOSIT_PRICE, LISBOA_FULL_PRICE } from '../li
 
 // Curso Lisboa II — Outubro 2026 (23, 24 e 25/10 · 3 dias)
 const COURSE_ID = LISBOA_COURSE_ID;
-const ASSIGNED_TO = '407d09b8-8205-4697-a726-1738cf7e20ef'; // Andre (Exclusivo para Lisboa)
 
 // Valores oficiais em EUR (fallback caso o registro do curso ainda não esteja atualizado no admin)
 // Fonte única: lib/lisboaOffer.ts — o servidor (api/create-stripe-checkout.ts)
@@ -178,7 +178,7 @@ const CheckoutLisboa: React.FC = () => {
                             status: 'New',
                             context_id: 'WTECH EUROPA LISBOA OUTUBRO 2026 (CHECKOUT)',
                             tags: leadTags,
-                            assigned_to: ASSIGNED_TO,
+                            assigned_to: await distributeLead(), // Rodizio automatico: Christopher, Michael ou Emerson
                             ...getLeadTrackingFields()
                         }])
                         .select()
