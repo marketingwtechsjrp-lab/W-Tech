@@ -255,24 +255,12 @@ export const generateCertificatesPDF = async (
     // por aluno nos lotes de certificados.
     let backgroundImage: PdfBackgroundImage;
     try {
-        const source = layout.backgroundUrl || GLOBAL_CERTIFICATE_BACKGROUND_URL;
-        backgroundImage = await loadCertificateBackgroundForPdf(source);
+        // Sempre usa o background padrão para garantir consistência em todos os certificados gerados.
+        backgroundImage = await loadCertificateBackgroundForPdf(GLOBAL_CERTIFICATE_BACKGROUND_URL);
     } catch (error) {
-        if (layout.backgroundUrl === GLOBAL_CERTIFICATE_BACKGROUND_URL) {
-            console.warn('Não foi possível carregar o fundo padrão do certificado.', error);
-            const message = error instanceof Error ? error.message : 'Erro desconhecido.';
-            throw new Error(`Não foi possível gerar o PDF. ${message}`);
-        }
-
-        console.warn('Não foi possível carregar o fundo do certificado definido no layout; usando fundo padrão.', error);
-        try {
-            backgroundImage = await loadCertificateBackgroundForPdf(GLOBAL_CERTIFICATE_BACKGROUND_URL);
-        } catch (fallbackError) {
-            console.error('Não foi possível carregar o fundo padrão de certificado.', fallbackError);
-            const message = fallbackError instanceof Error ? fallbackError.message : 'Erro desconhecido.';
-            throw new Error(`Não foi possível gerar o PDF. ${message}`);
-        }
-
+        console.error('Não foi possível carregar o fundo padrão do certificado.', error);
+        const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+        throw new Error(`Não foi possível gerar o PDF. ${message}`);
     }
 
     for (let i = 0; i < enrollments.length; i++) {
