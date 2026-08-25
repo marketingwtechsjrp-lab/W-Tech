@@ -25,6 +25,17 @@ const detectPdfImageFormat = (mimeType: string, source: string): PdfImageFormat 
     return null;
 };
 
+const isTextBasedContentType = (contentType: string): boolean => {
+    const normalized = contentType.toLowerCase().trim();
+    return (
+        normalized.startsWith('text/') ||
+        normalized.includes('application/json') ||
+        normalized.includes('application/javascript') ||
+        normalized.includes('application/xml') ||
+        normalized.includes('text/plain')
+    );
+};
+
 const normalizeImageSource = (source: string): string[] => {
     const trimmed = source.trim();
     if (!trimmed) return [];
@@ -105,6 +116,7 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
     const candidates = normalizeImageSource(normalizedSource);
     let response: Response | null = null;
     let sourceUsed = normalizedSource;
+    const rejectedSources: string[] = [];
 
     for (const candidate of candidates) {
         sourceUsed = candidate;
@@ -115,18 +127,31 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
             });
 
             if (current.ok) {
+                const contentType = current.headers.get('content-type') || '';
+
+                if (isTextBasedContentType(contentType)) {
+                    rejectedSources.push(`${candidate} (content-type: ${contentType})`);
+                    console.debug(`Resposta de texto para fundo do certificado: ${candidate}`);
+                    continue;
+                }
+
                 response = current;
                 break;
             }
 
+            rejectedSources.push(`${candidate} (status: ${current.status})`);
             console.debug(`URL de fundo recusada (${current.status}): ${candidate}`);
         } catch {
+            rejectedSources.push(`${candidate} (erro de rede)`);
             console.debug(`Erro de fetch ao baixar fundo de certificado: ${candidate}`);
         }
     }
 
     if (!response) {
-        throw new Error(`Não foi possível baixar a imagem de fundo do certificado. Origem testada: ${sourceUsed}`);
+        const rejectReason = rejectedSources.length
+            ? ` Tentativas: ${rejectedSources.join(' | ')}`
+            : '';
+        throw new Error(`Não foi possível baixar a imagem de fundo do certificado. Origem testada: ${sourceUsed}.${rejectReason}`);
     }
 
     if (!response.ok) {
@@ -136,7 +161,7 @@ export const loadCertificateBackgroundForPdf = async (source: string): Promise<P
     const blob = await response.blob();
     if (!blob.size) throw new Error('A imagem de fundo do certificado está vazia.');
 
-    const format = detectPdfImageFormat(blob.type, normalizedSource);
+    const format = detectPdfImageFormat(blob.type, sourceUsed);
     if (!format) throw new Error('O formato da imagem de fundo não é compatível com PDF. Use PNG, JPG ou WebP.');
 
     return {
@@ -171,7 +196,12 @@ export const generateCertificatesPDF = async (
     // por aluno nos lotes de certificados.
     let backgroundImage: PdfBackgroundImage | null = null;
     if (layout.backgroundUrl) {
-        backgroundImage = await loadCertificateBackgroundForPdf(layout.backgroundUrl);
+        try {
+            backgroundImage = await loadCertificateBackgroundForPdf(layout.backgroundUrl);
+        } catch (error) {
+            console.warn('Não foi possível carregar o fundo do certificado. Continuando sem imagem.', error);
+            backgroundImage = null;
+        }
     }
 
     for (let i = 0; i < enrollments.length; i++) {
