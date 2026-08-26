@@ -165,6 +165,28 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
     ],
   },
   {
+    id: 'manager_chat',
+    title: 'Chat de IA da Gerência',
+    perms: [
+      {
+        key: 'manager_chat_view',
+        label: 'Conversar com a IA',
+        note: 'Abre o chat e enxerga o desempenho de atendimento de TODA a equipe. Todas as conversas ficam gravadas e auditáveis.',
+      },
+      {
+        key: 'manager_chat_train',
+        label: 'Treinar a IA (persona, conhecimento e regras)',
+        note: 'Muda como a IA responde para todo mundo que usa o chat.',
+      },
+      {
+        key: 'manager_chat_audit',
+        label: 'Auditar conversas de todos e ver o relatório',
+        note: 'Lê o chat de qualquer gerente e o consumo de tokens.',
+        danger: true,
+      },
+    ],
+  },
+  {
     id: 'tasks',
     title: 'Gestão de Tarefas',
     perms: [
@@ -342,7 +364,7 @@ export const ROLE_PRESETS: RolePreset[] = [
       'manage_orders', 'orders_payment_link', 'clients_view', 'clients_view_all', 'clients_manage', 'tasks_view',
       'tasks_view_team', 'whatsapp_inbox_view', 'whatsapp_view_all', 'whatsapp_send',
       'whatsapp_assume', 'whatsapp_view_metrics', 'whatsapp_ai_manage', 'whatsapp_ai_train',
-      'whatsapp_engine_config'
+      'whatsapp_engine_config', 'manager_chat_view'
     ),
   },
   {

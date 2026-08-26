@@ -16,6 +16,7 @@ import contentPlanner from '../api/content-planner.js';
 import glossary from '../api/_glossary.js';
 import jobs from '../api/jobs.js';
 import launchCourseCampaign from '../api/launch-course-campaign.js';
+import managerChat from '../api/manager-chat.js';
 import mercadopagoBalanceLink from '../api/mercadopago-balance-link.js';
 import mercadopagoCheckout from '../api/mercadopago-checkout.js';
 import mercadopagoWebhook from '../api/mercadopago-webhook.js';
@@ -179,6 +180,7 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'glossary': glossary,
   'jobs': jobs,
   'launch-course-campaign': launchCourseCampaign,
+  'manager-chat': managerChat,
   'mercadopago-balance-link': mercadopagoBalanceLink,
   'mercadopago-checkout': mercadopagoCheckout,
   'mercadopago-webhook': mercadopagoWebhook,

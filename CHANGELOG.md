@@ -1,6 +1,16 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.37.0 (2026-08-26) - Chat de IA da Gerencia (Claude Opus 5)
+- Nova tela Chat da Geren
+cia no admin: o gerente pergunta em portugues e a IA consulta o banco antes de responder, com 9 ferramentas SOMENTE LEITURA (colaboradores, desempenho de leads, leads parados, atendimento no WhatsApp, transcricoes, relatorio de qualidade, evolucao do atendente, matriculas e tarefas)
+- Tela de Treinamento da IA: persona, informacoes da empresa, base de conhecimento e regras (proibido/obrigatorio/escalar), no mesmo padrao da Bia do WhatsApp
+- Relatorio de uso por gerente com conversas, perguntas, tokens e custo estimado em dolar - todo o chat fica gravado para auditoria do dono
+- Tres permissoes novas: manager_chat_view (conversar, ja concedida ao cargo Gerente Atendimento), manager_chat_train (treinar a IA) e manager_chat_audit (ler o chat de todos e ver o relatorio)
+- A chave da Anthropic e lida SO de variavel de ambiente do servidor, nunca do banco - a tabela SITE_SystemSettings tem leitura publica e vazaria a chave
+- Fix: o envio manual do WhatsApp pelo inbox nao gravava a autoria (sent_by), entao toda resposta humana sumia das metricas - o contador humanSent de _aiSectorData.ts reportava zero
+- Banco: 5 tabelas novas com RLS fechada a service_role, e a coluna user_id em SITE_WaAtendentes que liga o atendente do WhatsApp ao usuario do sistema (a grafia Cristofer x Christopher fazia o WhatsApp dele sumir dos relatorios)
+
 ## v3.36.0 (2026-08-25) - Atendentes podem gerar link de pagamento
 - Nova permissao orders_payment_link (Gerar Link de Pagamento): o atendente cobra o cliente sem ganhar acesso ao lancamento manual no fluxo de caixa
 - Stripe, Asaas e Mercado Pago passam a aceitar orders_payment_link OU financial_add_transaction

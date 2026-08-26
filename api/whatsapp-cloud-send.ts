@@ -213,6 +213,13 @@ export default async function handler(req: any, res: any) {
       media_filename: type === 'document' ? filename ?? null : null,
       status: 'sent',
       timestamp: whenISO,
+      // Esta rota é o envio MANUAL do atendente pelo inbox. Sem marcar a autoria,
+      // a linha ficava com sent_by NULL e toda resposta humana desaparecia das
+      // métricas: api/_aiSectorData.ts:435 conta `humanSent` por este campo e
+      // reportava ~zero, e o Chat da Gerência concluiria que a equipe humana não
+      // responde nada. Os únicos outros escritores são o webhook ('customer') e
+      // a Bia ('ai'); ninguém gravava 'human'.
+      sent_by: 'human',
     });
 
     return res.status(200).json({ success: true, wa_message_id: waMessageId, conversation_id: conversationId });

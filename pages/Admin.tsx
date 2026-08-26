@@ -66,6 +66,7 @@ import UserProfileModal from '../components/admin/UserProfileModal';
 import ChangelogViewer from '../components/admin/Settings/ChangelogViewer';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AIAssistantsHub from '../components/admin/AIAssistants/AIAssistantsHub';
+import ManagerChatView from '../components/admin/ManagerChat/ManagerChatView';
 import { AdminKeyboardProvider, useRegisterPage } from '../components/admin/keyboard/AdminKeyboardProvider';
 import CommandPalette from '../components/admin/keyboard/CommandPalette';
 import ShortcutsHelp from '../components/admin/keyboard/ShortcutsHelp';
@@ -166,7 +167,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing';
+type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing' | 'manager_chat';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -7766,7 +7767,7 @@ const KNOWN_ADMIN_VIEWS = new Set([
     'mechanics', 'courses_manager', 'certificates', 'lp_builder', 'blog_manager',
     'email_marketing', 'marketing_hub', 'pop_marketing', 'intelligence', 'tasks',
     'settings', 'system_logs', 'clients', 'invoices', 'sales_recovery',
-    'affiliates_manager', 'ai_assistants',
+    'affiliates_manager', 'ai_assistants', 'manager_chat',
 ]);
 
 const Admin = () => {
@@ -8199,6 +8200,7 @@ const Admin = () => {
                                 {hasPermission('marketing_view') && <MobileMenuItem icon={Megaphone} label="Campanhas" onClick={() => { setCurrentView('email_marketing'); setIsMobileMenuOpen(false); }} />}
                                 {(hasPermission('marketing_view') || hasPermission('blog_view')) && <MobileMenuItem icon={Rocket} label="Marketing" onClick={() => { setCurrentView('marketing_hub'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('marketing_view') && <MobileMenuItem icon={ClipboardList} label="POP Marketing" onClick={() => { setCurrentView('pop_marketing'); setIsMobileMenuOpen(false); }} />}
+                                {hasPermission('manager_chat_view') && <MobileMenuItem icon={BrainCircuit} label="Chat IA" onClick={() => { setCurrentView('manager_chat'); setIsMobileMenuOpen(false); }} />}
                                 {hasPermission('manage_settings') && <MobileMenuItem icon={Settings} label="Ajustes" onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />}
 
                                 <button onClick={handleLogout} className="flex flex-col items-center gap-3 group">
@@ -8287,6 +8289,7 @@ const Admin = () => {
                         {currentView === 'sales_recovery' && (hasPermission('orders_view') || hasPermission('marketing_view')) && <SalesRecoveryView />}
                         {currentView === 'affiliates_manager' && hasPermission('marketing_view') && <AffiliatesManagerView />}
                         {currentView === 'ai_assistants' && hasPermission('ai_assistants_super_admin') && <AIAssistantsHub />}
+                        {currentView === 'manager_chat' && hasPermission('manager_chat_view') && <ManagerChatView user={user} permissions={livePermissions} />}
 
                         {/* View desconhecida (ex.: ?view= digitado à mão ou link antigo).
                             Sem este guard a área de conteúdo fica em branco e sem explicação. */}

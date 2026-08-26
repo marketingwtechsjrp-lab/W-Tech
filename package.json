@@ -1,7 +1,7 @@
 {
   "name": "w-tech-experience-portal",
   "private": true,
-  "version": "3.36.0",
+  "version": "3.37.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
     "release": "node scripts/deploy-update.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "@breezystack/lamejs": "^1.2.7",
     "@google/genai": "^1.31.0",
     "@google/generative-ai": "^0.24.1",

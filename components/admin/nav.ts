@@ -2,7 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
-    ClipboardCheck, Droplets, MessageCircle, Bot,
+    ClipboardCheck, Droplets, MessageCircle, Bot, BrainCircuit,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -84,6 +84,9 @@ export const NAV_GROUPS: AdminNavGroup[] = [
             // nunca aparece como toggle em "Equipe & Acesso", então só super admin
             // (que sempre bypassa hasPermission) enxerga este módulo.
             { icon: Bot, label: 'Assistentes de IA', view: 'ai_assistants', permission: 'ai_assistants_super_admin', goKey: 'u', keywords: 'ia agentes leo bia rita sofia inteligencia assistentes' },
+            // Diferente do item acima: esta permissão ESTÁ em PERMISSION_CATALOG,
+            // porque o chat é do Gerente — e não só do super admin.
+            { icon: BrainCircuit, label: 'Chat da Gerência', view: 'manager_chat', permission: 'manager_chat_view', goKey: 'j', keywords: 'ia chat gerente atendimento desempenho colaborador equipe analise claude' },
         ],
     },
 ];
