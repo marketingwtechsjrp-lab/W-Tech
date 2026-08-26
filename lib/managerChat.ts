@@ -15,17 +15,50 @@
 
 /** Conversar com a IA e ver as próprias conversas. */
 export const PERM_CHAT = 'manager_chat_view';
-/** Editar persona, base de conhecimento e regras. */
+/**
+ * Editar persona, base de conhecimento e regras. SUPER ADMIN APENAS —
+ * fora de PERMISSION_CATALOG de propósito, então nenhum cargo consegue ligar
+ * este toggle em "Equipe & Acesso". O servidor exige `admin_access === true`.
+ */
 export const PERM_TREINAR = 'manager_chat_train';
-/** Ver as conversas de TODOS os gerentes e o relatório de uso. */
+/**
+ * Ver as conversas de TODOS os gerentes e o relatório de consumo.
+ * SUPER ADMIN APENAS, pela mesma razão acima.
+ */
 export const PERM_AUDITAR = 'manager_chat_audit';
 
 // ─── Modelos disponíveis ────────────────────────────────────────────────────
 
+/**
+ * Modelos oferecidos na tela de Treinamento. Os IDs e preços foram conferidos
+ * ao vivo em https://openrouter.ai/api/v1/models (26/08/2026) filtrando por
+ * suporte a `tools` — sem tool calling o chat não consegue consultar o banco.
+ *
+ * O campo aceita qualquer ID do OpenRouter, não só estes: a lista é atalho, não
+ * limite. Modelo sem suporte a ferramentas responde sem consultar nada e passa a
+ * inventar número — por isso a tela avisa.
+ */
 export const MODELOS_DISPONIVEIS = [
-  { id: 'claude-opus-5', nome: 'Claude Opus 5', nota: 'Mais capaz. US$ 5 / US$ 25 por milhão de tokens (entrada/saída).' },
-  { id: 'claude-sonnet-5', nome: 'Claude Sonnet 5', nota: 'Equilíbrio. US$ 3 / US$ 15 por milhão de tokens.' },
-  { id: 'claude-haiku-4-5', nome: 'Claude Haiku 4.5', nota: 'Mais barato e rápido. US$ 1 / US$ 5 por milhão de tokens.' },
+  {
+    id: 'anthropic/claude-opus-5',
+    nome: 'Claude Opus 5',
+    nota: 'O mais capaz para analisar atendimento. US$ 5 / US$ 25 por milhão de tokens (entrada/saída).',
+  },
+  {
+    id: 'anthropic/claude-sonnet-5',
+    nome: 'Claude Sonnet 5',
+    nota: 'Ótimo equilíbrio e o mais barato dos Claude aqui: US$ 2 / US$ 10 por milhão. Rende ~2,5x mais perguntas que o Opus.',
+  },
+  {
+    id: 'anthropic/claude-sonnet-4.6',
+    nome: 'Claude Sonnet 4.6',
+    nota: 'Geração anterior do Sonnet. US$ 3 / US$ 15 por milhão.',
+  },
+  {
+    id: 'anthropic/claude-opus-4.8',
+    nome: 'Claude Opus 4.8',
+    nota: 'Geração anterior do Opus. US$ 5 / US$ 25 por milhão.',
+  },
 ] as const;
 
 export const NIVEIS_ESFORCO = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
@@ -65,6 +98,12 @@ export interface ManagerChatMessage {
   /** Token de ESCRITA de cache custa 1,25x o de entrada — sem isto o custo do
    *  relatório fica otimista justamente no 1º turno de cada conversa. */
   cache_creation_tokens?: number | null;
+  /**
+   * Custo REAL desta resposta em dólar, informado pelo próprio OpenRouter no
+   * campo `usage.cost`. Preferir sempre este valor à estimativa por tabela de
+   * preço — a tabela envelhece, este número vem da fatura.
+   */
+  cost_usd?: number | null;
   latency_ms: number | null;
   error: string | null;
   created_at: string;
@@ -128,7 +167,12 @@ export interface ManagerChatReport {
     output_tokens: number;
     cache_read_tokens: number;
     cache_creation_tokens?: number;
+    /** Soma de tudo — parte medida, parte estimada. Ver os dois campos abaixo. */
     custo_estimado_usd: number;
+    /** A parcela que veio da FATURA do OpenRouter (usage.cost), não de tabela de preço. */
+    custo_medido_usd?: number;
+    /** Quantas respostas ainda foram calculadas por estimativa. Zero = tudo medido. */
+    respostas_estimadas?: number;
     erros: number;
     /** true quando a janela pedida estourou o teto de leitura e os números são parciais. */
     truncado?: boolean;
@@ -138,9 +182,12 @@ export interface ManagerChatReport {
 
 /** Estado de configuração do servidor — a UI usa para avisar em vez de falhar mudo. */
 export interface ManagerChatStatus {
-  /** true quando ANTHROPIC_API_KEY existe no servidor. */
+  /** true quando existe chave utilizável (OpenRouter no banco, ou Anthropic no ambiente). */
   ia_configurada: boolean;
   modelo_padrao: string;
+  /** Qual caminho está ativo — a tela mostra isso para não haver dúvida de onde vem a conta. */
+  provedor?: 'openrouter' | 'anthropic' | null;
+  /** Decidido pelo SERVIDOR (admin_access). A tela obedece, não recalcula. */
   pode_treinar: boolean;
   pode_auditar: boolean;
 }
@@ -154,7 +201,20 @@ const MENSAGENS: Record<string, string> = {
   unauthorized: 'Sua sessão expirou. Entre no sistema novamente.',
   ia_nao_configurada:
     'A inteligência ainda não foi ligada.\n\n' +
-    'Falta cadastrar a ANTHROPIC_API_KEY no servidor. Enquanto isso, o chat abre e guarda o histórico, mas não responde.',
+    'Cadastre a chave do OpenRouter em Configurações → GPT & Gemini. Enquanto isso, o chat abre e guarda o histórico, mas não responde.',
+  openrouter_auth:
+    'A chave do OpenRouter foi recusada.\n\n' +
+    'Confira a chave em Configurações → GPT & Gemini — ela pode ter sido revogada ou digitada errada.',
+  openrouter_sem_credito:
+    'O crédito do OpenRouter acabou.\n\n' +
+    'Adicione saldo em openrouter.ai/credits. O histórico do chat continua guardado; assim que houver crédito, volta a responder.',
+  openrouter_rate_limit:
+    'O OpenRouter limitou o volume de chamadas. Espere alguns segundos e tente de novo.',
+  openrouter_error:
+    'O OpenRouter devolveu um erro (ou a conexão caiu no meio). Tente novamente; se persistir, avise um administrador.',
+  modelo_invalido:
+    'O modelo configurado não existe no OpenRouter.\n\n' +
+    'Confira o campo Modelo na tela de Treinamento — o ID precisa do prefixo do provedor (ex.: anthropic/claude-opus-5).',
   rate_limited: 'Muitas perguntas em pouco tempo. Espere alguns segundos e tente de novo.',
   thread_not_found: 'Esta conversa não existe mais. Recarregue a página.',
   chat_desativado: 'O Chat de IA está desativado nas configurações de treinamento.',

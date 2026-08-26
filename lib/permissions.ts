@@ -173,17 +173,13 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
         label: 'Conversar com a IA',
         note: 'Abre o chat e enxerga o desempenho de atendimento de TODA a equipe. Todas as conversas ficam gravadas e auditáveis.',
       },
-      {
-        key: 'manager_chat_train',
-        label: 'Treinar a IA (persona, conhecimento e regras)',
-        note: 'Muda como a IA responde para todo mundo que usa o chat.',
-      },
-      {
-        key: 'manager_chat_audit',
-        label: 'Auditar conversas de todos e ver o relatório',
-        note: 'Lê o chat de qualquer gerente e o consumo de tokens.',
-        danger: true,
-      },
+      // `manager_chat_train` e `manager_chat_audit` NÃO entram neste catálogo,
+      // de propósito — mesmo mecanismo de 'ai_assistants_super_admin' descrito
+      // no topo do arquivo. Treinar a IA muda como ela responde para TODO MUNDO,
+      // e auditar lê a conversa de qualquer gerente: são de super admin. Fora do
+      // catálogo, a chave nunca aparece como toggle em "Equipe & Acesso", então
+      // nenhum cargo consegue habilitá-la — e `api/manager-chat.ts` ainda exige
+      // `admin_access === true` no servidor, sem depender só disto.
     ],
   },
   {

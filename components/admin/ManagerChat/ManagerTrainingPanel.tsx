@@ -249,6 +249,12 @@ export const ManagerTrainingPanel: React.FC<{ podeEditar: boolean; onFechar: () 
   const rotulo = 'block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1';
   const cartao = 'bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl p-5';
   const modeloAtual = MODELOS_DISPONIVEIS.find((m) => m.id === config.model);
+  // Modelo gravado no banco que não está na lista sugerida (o campo aceita
+  // qualquer ID do OpenRouter). Ele PRECISA continuar aparecendo no select:
+  // sem uma opção correspondente o campo renderiza em branco e o próximo
+  // "Salvar" grava outro modelo — trocando a escolha do dono em silêncio.
+  const modeloDoBanco = (config.model || '').trim();
+  const modeloForaDaLista = !modeloAtual && modeloDoBanco.length > 0;
 
   const botaoSalvarConfig = (
     <div className="flex items-center gap-3 flex-wrap">
@@ -436,15 +442,26 @@ export const ManagerTrainingPanel: React.FC<{ podeEditar: boolean; onFechar: () 
                     value={config.model}
                     onChange={(e) => alterarConfig({ model: e.target.value })}
                   >
+                    {modeloForaDaLista && (
+                      <option value={modeloDoBanco}>{modeloDoBanco} (definido manualmente)</option>
+                    )}
                     {MODELOS_DISPONIVEIS.map((m) => (
                       <option key={m.id} value={m.id}>{m.nome}</option>
                     ))}
                   </select>
                   <p className="text-[11px] text-[var(--admin-text-tertiary)] mt-1">
-                    {modeloAtual?.nota || 'Selecione um modelo.'}
+                    {modeloForaDaLista
+                      ? 'Modelo definido manualmente, fora da lista sugerida. Ele foi mantido como está — confira no OpenRouter o preço e o suporte a ferramentas antes de salvar.'
+                      : modeloAtual?.nota || 'Selecione um modelo.'}
                   </p>
-                  <p className="text-[11px] text-amber-500 font-bold mt-1">
-                    O Opus é o mais caro dos três: use-o quando a análise precisar ser profunda.
+                  <p className="text-[11px] text-amber-500 font-bold mt-1 leading-relaxed">
+                    O modelo PRECISA suportar ferramentas (tool calling). Sem isso a IA responde sem consultar o
+                    banco — e passa a inventar número sobre a equipe.
+                  </p>
+                  <p className="text-[11px] text-[var(--admin-text-tertiary)] mt-1 leading-relaxed">
+                    Os IDs seguem o formato do OpenRouter, com o prefixo do fabricante
+                    (<span className="font-mono">anthropic/…</span>). Entre os Claude, o Opus é o mais caro: use-o
+                    quando a análise precisar ser profunda; o Sonnet 5 rende mais perguntas pelo mesmo valor.
                   </p>
                 </div>
 

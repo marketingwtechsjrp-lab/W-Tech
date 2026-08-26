@@ -2,7 +2,6 @@ import {
   createIpRateLimiter,
   denyForbidden,
   getServiceClient,
-  isPermissionGranted,
   requireSameOrigin,
   requireStaffAnyPermission,
   setNoStoreHeaders,
@@ -16,10 +15,18 @@ import {
   PERM_CHAT,
   PERM_TREINAR,
   type ManagerChatConfig,
+  type ManagerChatReport,
   type ManagerChatReportRow,
   type NivelEsforco,
 } from '../lib/managerChat.js';
-import { anthropicConfigurado, codigoDeErroAnthropic, rodarConversa, type ToolCallLog } from './_anthropic.js';
+import {
+  anthropicConfigurado,
+  codigoDeErroAnthropic,
+  rodarConversa,
+  type RunResult,
+  type ToolCallLog,
+} from './_anthropic.js';
+import { codigoDeErroOpenRouter, lerChaveOpenRouter, rodarConversaOpenRouter } from './_openrouter.js';
 import { FERRAMENTAS_GERENCIA, executarFerramentaGerencia, montarCatalogoEstavel } from './_managerTools.js';
 
 /**
@@ -47,16 +54,27 @@ import { FERRAMENTAS_GERENCIA, executarFerramentaGerencia, montarCatalogoEstavel
  *                               muda como a IA responde para TODO MUNDO.
  *        · manager_chat_audit → ler conversa de qualquer gerente
  *                               (`list-threads-all`) e o relatório de consumo.
- *   5. `getServiceClient()` (service_role, bypassa RLS) — 503
+ *   5. SEGUNDO gate, para TREINAMENTO e AUDITORIA: `exigirSuperAdmin`. Essas
+ *      duas capacidades são do DONO do sistema, não do gerente — quem treina a
+ *      IA decide o que ela responde para todo mundo, e quem audita lê a
+ *      conversa alheia e o custo de cada pessoa. `manager_chat_train` e
+ *      `manager_chat_audit` foram RETIRADAS de `PERMISSION_CATALOG`
+ *      (lib/permissions.ts), então nenhum cargo consegue ligá-las na tela de
+ *      Equipe & Acesso — mas o servidor NÃO depende disso: exige
+ *      `staff.permissions.admin_access === true` explicitamente, senão 403.
+ *      Uma linha antiga do banco com `manager_chat_audit: true` gravado
+ *      continuaria passando pelo passo 4; é este passo que a barra.
+ *   6. `getServiceClient()` (service_role, bypassa RLS) — 503
  *      `supabase_unavailable` se faltar env.
- *   6. Despacho por action.
+ *   7. Despacho por action.
  *
  * ── Isolamento de thread (a checagem que impede um gerente ler o outro) ────
  * Permissão só diz "pode usar o chat"; ela NÃO diz "pode ler esta conversa".
  * Toda action que recebe `thread_id` passa por `carregarThread`, que confere
  * `thread.user_id === staff.id`. Quem não é dono só passa em LEITURA e só se
- * tiver `manager_chat_audit`. ESCRITA (ask/rename/archive) exige ser dono,
- * sempre — auditor lê, não escreve na conversa alheia.
+ * for SUPER ADMIN (mesmo critério do passo 5 — ler a conversa de outra pessoa é
+ * auditoria). ESCRITA (ask/rename/archive) exige ser dono, sempre — nem o dono
+ * do sistema escreve na conversa alheia.
  *
  * ── A IA é SOMENTE LEITURA ────────────────────────────────────────────────
  * Nada aqui envia WhatsApp, altera lead, matrícula ou tarefa. As únicas
@@ -64,12 +82,22 @@ import { FERRAMENTAS_GERENCIA, executarFerramentaGerencia, montarCatalogoEstavel
  * treinamento. As ferramentas do Claude (api/_managerTools.ts) são todas de
  * consulta.
  *
- * ── Chave da Anthropic ────────────────────────────────────────────────────
- * `process.env.ANTHROPIC_API_KEY`, SÓ no servidor (lida dentro de
- * api/_anthropic.ts). Nunca de tabela do banco e nunca com prefixo VITE_:
- * `SITE_SystemSettings` tem leitura pública neste projeto e já vaza as outras
- * chaves de IA. Sem a chave o chat continua abrindo e GRAVANDO a pergunta
- * (auditoria do dono), e devolve `ia_nao_configurada`.
+ * ── De onde vem a chave da IA (ordem de preferência) ──────────────────────
+ * Ponto ÚNICO de decisão: `escolherProvedor` (logo abaixo).
+ *   1. `SITE_SystemSettings.openrouter_api_key` → OpenRouter. É a chave que a
+ *      empresa já paga; evita abrir conta nova na Anthropic.
+ *   2. `process.env.ANTHROPIC_API_KEY` → Anthropic direta (caminho antigo,
+ *      mantido intacto para quem já tem a env configurada).
+ *   3. Nenhuma das duas → `ia_nao_configurada`.
+ *
+ * A chave é lida SÓ NO SERVIDOR, com o cliente service_role, e nunca sai daqui:
+ * não vai para resposta, log nem mensagem de erro. `SITE_SystemSettings` tem
+ * leitura pública neste projeto (ver SEGURANCA_RLS_PENDENTE.md) — isso é motivo
+ * para tratá-la com mais cuidado, não menos.
+ *
+ * Sem chave nenhuma o chat continua abrindo e GRAVANDO a pergunta (auditoria do
+ * dono), grava também a linha de falha do assistente e devolve
+ * `ia_nao_configurada`.
  */
 
 // ─── Tabelas ────────────────────────────────────────────────────────────────
@@ -119,7 +147,35 @@ const MAX_DIAS_RELATORIO = 366;
 const MAX_THREADS_RELATORIO = 20_000;
 const MAX_MENSAGENS_RELATORIO = 50_000;
 
-const MODELOS_VALIDOS = new Set<string>(MODELOS_DISPONIVEIS.map((m) => m.id));
+/**
+ * Id aceito → id CANÔNICO (o do contrato, com prefixo do provedor).
+ *
+ * Aceita o id nos DOIS formatos de propósito. Uma linha antiga de
+ * `SITE_ManagerChatConfig` guarda `claude-sonnet-5`; sem esta tradução ela não
+ * seria reconhecida e cairia no padrão — trocando, EM SILÊNCIO, o modelo que o
+ * dono escolheu por um 2,5x mais caro. Modelo fora da lista continua caindo no
+ * padrão.
+ */
+const MODELO_CANONICO = new Map<string, string>();
+for (const modelo of MODELOS_DISPONIVEIS) {
+  MODELO_CANONICO.set(modelo.id, modelo.id);
+  MODELO_CANONICO.set(normalizarModelo(modelo.id), modelo.id);
+}
+/** Devolve o id canônico, ou o padrão quando o modelo não é conhecido. */
+/**
+ * Normaliza o ID do modelo SEM sequestrar a escolha de quem configurou.
+ * MODELO_CANONICO traduz os IDs antigos (sem prefixo) para o formato do
+ * OpenRouter. Um ID fora da lista é PRESERVADO: o contrato diz que a lista é
+ * atalho, não limite, e a tela de Treinamento mantém a opção "(definido
+ * manualmente)". Reescrever para o padrão trocaria, em silêncio, um modelo
+ * barato escolhido de propósito pelo mais caro do catálogo.
+ * Só o vazio cai no padrão.
+ */
+function modeloConhecido(raw: unknown): string {
+  const bruto = String(raw || '').trim();
+  if (!bruto) return CONFIG_PADRAO.model;
+  return MODELO_CANONICO.get(bruto) || bruto;
+}
 const ESFORCOS_VALIDOS = new Set<string>(NIVEIS_ESFORCO);
 const TIPOS_REGRA = new Set(['forbidden', 'required', 'escalate']);
 
@@ -153,13 +209,51 @@ const PERMISSAO_POR_ACTION: Record<string, readonly string[]> = Object.assign(Ob
   report: [PERM_AUDITAR],
 });
 
+/**
+ * Actions de TREINAMENTO e AUDITORIA — do dono do sistema, não do gerente.
+ * Treinar muda o que a IA responde para todo mundo; auditar lê a conversa
+ * alheia e o custo de cada pessoa. Passam pelo mapa acima E por
+ * `exigirSuperAdmin`.
+ */
+const ACTIONS_SUPER_ADMIN = new Set<string>([
+  'config-save',
+  'knowledge-save',
+  'knowledge-delete',
+  'rules-save',
+  'rules-delete',
+  'list-threads-all',
+  'report',
+  // `training-get` devolve persona, base de conhecimento e TODAS as regras de
+  // operação — o material do dono. Sem ele aqui, quem só tem manager_chat_view
+  // bastava chamar a action direto: o botão escondido nunca foi proteção.
+  'training-get',
+]);
+
+/**
+ * Super admin é `admin_access === true` no DTO da sessão, e SÓ isso — nunca
+ * nome de cargo, nunca texto. Mesmo critério de `api/_auth.ts`.
+ */
+function ehSuperAdmin(staff: StaffSessionUser): boolean {
+  return staff.permissions?.admin_access === true;
+}
+
+/** Gate explícito. Devolve false JÁ TENDO respondido 403. */
+function exigirSuperAdmin(staff: StaffSessionUser, res: any): boolean {
+  if (ehSuperAdmin(staff)) return true;
+  denyForbidden(res);
+  return false;
+}
+
 // ─── Config padrão (usada enquanto a linha única não foi criada) ────────────
 const CONFIG_PADRAO: ManagerChatConfig = {
   enabled: true,
   persona: '',
   business_info: '',
   guardrails_extra: '',
-  model: 'claude-opus-5',
+  // ID no formato do OpenRouter (com o prefixo do provedor). Linha antiga do
+  // banco com o id sem prefixo é traduzido por `modeloConhecido`; id desconhecido
+  // cai aqui — por isso o padrão precisa ser o formato NOVO.
+  model: 'anthropic/claude-opus-5',
   effort: 'high',
   max_tokens: MAX_TOKENS_TETO,
 };
@@ -184,28 +278,87 @@ REGRAS INEGOCIÁVEIS:
 10. Esta conversa é gravada e auditada pelo dono da empresa. Escreva como quem sabe que será lido depois.`;
 
 /**
- * Preço da API da Anthropic por MILHÃO de tokens (USD).
+ * Preço por MILHÃO de tokens (USD) — usado APENAS para ESTIMAR o custo de
+ * linhas antigas, que não têm `cost_usd` gravado. Quando a linha tem o custo
+ * real do OpenRouter, o relatório soma o número da fatura e ignora esta tabela.
  *
- * ATENÇÃO: tabela ESTÁTICA, copiada da tabela pública da Anthropic. Se a
- * Anthropic mudar preço ou um modelo novo entrar em `MODELOS_DISPONIVEIS`,
- * este mapa precisa ser conferido À MÃO — o relatório de custo continua
- * somando com o número velho sem reclamar.
+ * Chave = id do modelo SEM o prefixo do provedor: `normalizarModelo` tira o
+ * `anthropic/`, então `anthropic/claude-opus-5` e `claude-opus-5` (formato
+ * antigo, gravado antes da migration) caem na mesma linha. Sem isso o custo
+ * estimado das linhas novas viraria o fallback em silêncio.
+ *
+ * Quando o mesmo modelo tem preço diferente na Anthropic direta e no
+ * OpenRouter, vale aqui o MAIS CARO dos dois (ex.: Sonnet 5 custa 2/10 no
+ * OpenRouter e 3/15 na Anthropic → fica 3/15). Estimativa que erra precisa
+ * errar para cima; o número exato vem de `cost_usd`, não daqui.
+ *
+ * ATENÇÃO: tabela ESTÁTICA e conferida À MÃO. Modelo novo em
+ * `MODELOS_DISPONIVEIS` sem linha aqui cai no fallback do Opus.
  *
  * Token LIDO de cache custa 10% do preço de entrada (`FATOR_CACHE_LEITURA`).
  * Token de ESCRITA de cache (cache_creation) custa 1,25x a entrada normal
- * (`FATOR_CACHE_ESCRITA`) e agora É gravado em `SITE_ManagerChatMessages` — sem
- * ele o custo do PRIMEIRO turno de cada conversa (justamente o que paga o bloco
+ * (`FATOR_CACHE_ESCRITA`) e É gravado em `SITE_ManagerChatMessages` — sem ele o
+ * custo do PRIMEIRO turno de cada conversa (justamente o que paga o bloco
  * cacheado inteiro) saía subestimado no relatório do dono.
  */
 const PRECO_POR_MILHAO: Record<string, { entrada: number; saida: number }> = {
   'claude-opus-5': { entrada: 5, saida: 25 },
+  'claude-opus-4.8': { entrada: 5, saida: 25 },
   'claude-sonnet-5': { entrada: 3, saida: 15 },
+  'claude-sonnet-4.6': { entrada: 3, saida: 15 },
   'claude-haiku-4-5': { entrada: 1, saida: 5 },
 };
 const FATOR_CACHE_LEITURA = 0.1;
 const FATOR_CACHE_ESCRITA = 1.25;
 /** Modelo desconhecido (ex.: linha antiga) é cobrado pelo mais caro — nunca subestima. */
 const PRECO_FALLBACK = PRECO_POR_MILHAO['claude-opus-5'];
+
+/** `anthropic/claude-opus-5` → `claude-opus-5`. Id sem prefixo passa igual. */
+function normalizarModelo(id: unknown): string {
+  const texto = String(id || '').trim();
+  const barra = texto.indexOf('/');
+  return barra >= 0 ? texto.slice(barra + 1) : texto;
+}
+
+// ─── Provedor de IA (PONTO ÚNICO de decisão) ────────────────────────────────
+type Provedor = 'openrouter' | 'anthropic';
+
+interface EscolhaDeProvedor {
+  provedor: Provedor | null;
+  /**
+   * Chave do OpenRouter. Só existe no caminho `openrouter` e NÃO PODE sair
+   * daqui para resposta HTTP, log ou mensagem de erro — só para o cliente.
+   */
+  chave: string | null;
+}
+
+/**
+ * Ordem de preferência, e o porquê de cada passo:
+ *   1. `openrouter_api_key` em `SITE_SystemSettings` — a chave que a empresa já
+ *      paga. É o caminho preferido justamente para não exigir conta nova.
+ *   2. `ANTHROPIC_API_KEY` no ambiente — caminho antigo, que já funciona; fica
+ *      como reserva para quem já tinha a env configurada.
+ *   3. Nenhuma das duas → `provedor: null`, e o chamador responde
+ *      `ia_nao_configurada` DEPOIS de gravar a auditoria.
+ */
+async function escolherProvedor(supabase: any): Promise<EscolhaDeProvedor> {
+  const chave = await lerChaveOpenRouter(supabase);
+  if (chave) return { provedor: 'openrouter', chave };
+  if (anthropicConfigurado()) return { provedor: 'anthropic', chave: null };
+  return { provedor: null, chave: null };
+}
+
+/**
+ * Id do modelo no formato que CADA provedor exige. O OpenRouter precisa do
+ * prefixo do provedor (sem ele devolve 404); a Anthropic direta precisa do id
+ * puro (com prefixo ela não reconhece o modelo). Id que já traz outro prefixo
+ * (ex.: `google/...`) passa intacto no OpenRouter.
+ */
+function modeloDoProvedor(provedor: Provedor, model: string): string {
+  const bruto = String(model || '').trim();
+  if (provedor === 'anthropic') return normalizarModelo(bruto);
+  return bruto.includes('/') ? bruto : `anthropic/${bruto}`;
+}
 
 // ─── Respostas padrão ───────────────────────────────────────────────────────
 function ok(res: any, data: unknown) {
@@ -257,7 +410,11 @@ function cortarTitulo(pergunta: string): string {
 /**
  * Carrega a thread e aplica o isolamento. Devolve null quando JÁ respondeu.
  * `escrita: true` (ask/rename/archive) exige ser o dono — nem auditor escreve
- * na conversa alheia. Em leitura, quem tem `manager_chat_audit` passa.
+ * na conversa alheia. Em LEITURA, só o SUPER ADMIN passa na conversa de outra
+ * pessoa: o critério é `admin_access`, o mesmo de `exigirSuperAdmin`, e não
+ * mais `isPermissionGranted(PERM_AUDITAR)` — uma linha de permissão antiga com
+ * `manager_chat_audit: true` gravada no banco ainda passaria naquela checagem,
+ * mesmo com a chave fora de `PERMISSION_CATALOG`.
  */
 async function carregarThread(
   supabase: any,
@@ -281,8 +438,7 @@ async function carregarThread(
     return null;
   }
   if (data.user_id !== staff.id) {
-    const podeAuditar = isPermissionGranted(staff.permissions, PERM_AUDITAR);
-    if (opts.escrita || !podeAuditar) {
+    if (opts.escrita || !ehSuperAdmin(staff)) {
       denyForbidden(res);
       return null;
     }
@@ -305,7 +461,9 @@ async function lerConfig(supabase: any): Promise<{ config: ManagerChatConfig; er
       persona: data.persona || '',
       business_info: data.business_info || '',
       guardrails_extra: data.guardrails_extra || '',
-      model: MODELOS_VALIDOS.has(data.model) ? data.model : CONFIG_PADRAO.model,
+      // Traduz o id antigo (sem `anthropic/`) para o canônico em vez de trocar o
+      // modelo escolhido pelo padrão sem avisar ninguém.
+      model: modeloConhecido(data.model),
       effort: (ESFORCOS_VALIDOS.has(data.effort) ? data.effort : CONFIG_PADRAO.effort) as NivelEsforco,
       max_tokens: inteiroLimitado(data.max_tokens, CONFIG_PADRAO.max_tokens, MAX_TOKENS_PISO, MAX_TOKENS_TETO),
       updated_at: data.updated_at,
@@ -454,8 +612,16 @@ function montarMensagens(historico: any[], pergunta: string): Array<{ role: 'use
   return mensagens;
 }
 
-/** Coluna de tokens de ESCRITA de cache — pode ainda não existir no banco. */
+/**
+ * Colunas de `SITE_ManagerChatMessages` que podem AINDA NÃO EXISTIR no banco —
+ * são criadas por migration, e a serverless sobe antes de a migration rodar.
+ * Nenhuma delas pode derrubar a gravação da resposta nem o relatório: perder a
+ * contabilidade de um token não vale perder a linha de auditoria.
+ */
 const COL_CACHE_ESCRITA = 'cache_creation_tokens';
+/** Custo REAL em dólar informado pelo OpenRouter (`usage.cost`). */
+const COL_CUSTO = 'cost_usd';
+const COLUNAS_OPCIONAIS_MENSAGEM = [COL_CACHE_ESCRITA, COL_CUSTO] as const;
 
 /**
  * O PostgREST reclama de coluna inexistente citando o NOME dela na mensagem
@@ -467,28 +633,35 @@ function erroDeColunaAusente(error: { message?: string } | null, coluna: string)
 }
 
 /**
- * Grava a mensagem do assistente com `cache_creation_tokens`. Se a migration
- * que cria essa coluna ainda não rodou, o insert é REFEITO sem ela: perder a
- * contabilidade de um token não pode custar a linha de auditoria da resposta —
- * thread com pergunta e sem resposta é exatamente o buraco que evitamos.
+ * Roda uma consulta que depende de colunas OPCIONAIS e, quando o PostgREST
+ * reclama de uma delas, refaz SEM ela — uma por vez, até passar.
+ *
+ * Devolve `ausentes` de propósito: quem consome precisa poder DECLARAR o que
+ * ficou de fora. Coluna que some em silêncio vira número menor com cara de
+ * fato, e este relatório avalia gente de verdade.
  */
-async function inserirMensagemComCacheEscrita(
-  supabase: any,
-  linha: Record<string, unknown>,
-  select: string,
-): Promise<{ data: any; error: { message: string } | null }> {
-  const executar = (payload: Record<string, unknown>) =>
-    supabase.from(T_MENSAGENS).insert(payload).select(select).maybeSingle();
-
-  const primeira = await executar(linha);
-  if (primeira.error && erroDeColunaAusente(primeira.error, COL_CACHE_ESCRITA)) {
-    console.warn(
-      `[manager-chat] coluna ${COL_CACHE_ESCRITA} ausente em ${T_MENSAGENS}; gravando sem ela (custo de cache write ficará subestimado até a migration rodar).`,
-    );
-    const { [COL_CACHE_ESCRITA]: _semColuna, ...resto } = linha;
-    return executar(resto);
+async function comColunasOpcionais<R extends { data?: any; error: { message: string } | null }>(
+  opcionais: readonly string[],
+  executar: (colunas: string[]) => PromiseLike<R>,
+): Promise<{ resposta: R; ausentes: string[] }> {
+  let disponiveis = [...opcionais];
+  const ausentes: string[] = [];
+  for (;;) {
+    const resposta = await executar(disponiveis);
+    if (!resposta.error) return { resposta, ausentes };
+    const faltando = disponiveis.find((coluna) => erroDeColunaAusente(resposta.error, coluna));
+    // Erro que não é de coluna ausente é erro de verdade: devolve para o
+    // chamador tratar, sem mascarar.
+    if (!faltando) return { resposta, ausentes };
+    console.warn(`[manager-chat] coluna ${faltando} ausente em ${T_MENSAGENS}; refazendo a consulta sem ela.`);
+    disponiveis = disponiveis.filter((coluna) => coluna !== faltando);
+    ausentes.push(faltando);
   }
-  return primeira;
+}
+
+/** `SELECT_MENSAGEM` acrescido das colunas opcionais que este banco tem. */
+function selectMensagem(opcionais: string[]): string {
+  return [SELECT_MENSAGEM, ...opcionais].join(', ');
 }
 
 /**
@@ -545,6 +718,12 @@ async function acaoPerguntar(req: any, res: any, supabase: any, staff: StaffSess
   if (erroConfig) return erroBanco(res, 'ler a configuração do chat', erroConfig);
   if (config.enabled === false) return falha(res, 400, 'chat_desativado');
 
+  // 2.1 Provedor: OpenRouter (chave do banco) na frente, Anthropic (env) como
+  // reserva. Resolvido ANTES do `try` porque o catch precisa saber quem falhou
+  // para traduzir o erro — culpar a Anthropic por um erro do OpenRouter mandaria
+  // o dono conferir a chave errada.
+  const { provedor, chave } = await escolherProvedor(supabase);
+
   // 3. O `try` começa AQUI, ANTES de gravar a pergunta. Daqui para baixo TODA
   // falha sai por exceção e o catch é o PONTO ÚNICO de resposta e de gravação da
   // linha de auditoria: um `return erroBanco(...)` de dentro do try sai por
@@ -566,10 +745,11 @@ async function acaoPerguntar(req: any, res: any, supabase: any, staff: StaffSess
     // continua aparecendo nomeada na lista do gestor.
     thread = await tocarThread(supabase, thread, bruta);
 
-    // Sem chave, a pergunta já ficou gravada — mas thread com pergunta e NENHUMA
-    // linha de assistant é buraco de auditoria, ainda que benigno. Grava a linha
-    // de falha do mesmo jeito que o catch faz, ANTES de responder o erro.
-    if (!anthropicConfigurado()) {
+    // Sem chave NENHUMA (nem OpenRouter no banco, nem Anthropic no ambiente), a
+    // pergunta já ficou gravada — mas thread com pergunta e NENHUMA linha de
+    // assistant é buraco de auditoria, ainda que benigno. Grava a linha de falha
+    // do mesmo jeito que o catch faz, ANTES de responder o erro.
+    if (!provedor) {
       try {
         // O postgrest-js NÃO lança em falha: devolve `{ error }`. Sem ler esse
         // campo, um insert de auditoria rejeitado sumiria sem log — e o try/catch
@@ -578,7 +758,8 @@ async function acaoPerguntar(req: any, res: any, supabase: any, staff: StaffSess
           thread_id: thread.id,
           role: 'assistant',
           content:
-            'A inteligência artificial não está configurada neste servidor (falta a chave da Anthropic). ' +
+            'A inteligência artificial não está configurada neste servidor: não há chave do OpenRouter ' +
+            'cadastrada em Configurações → GPT & Gemini nem ANTHROPIC_API_KEY no ambiente. ' +
             'A pergunta ficou registrada, mas não houve resposta.',
           model: config.model,
           latency_ms: Date.now() - inicio,
@@ -658,22 +839,52 @@ async function acaoPerguntar(req: any, res: any, supabase: any, staff: StaffSess
     historico.pop();
     const messages = montarMensagens(historico, bruta);
 
-    // Daqui para baixo, uma exceção veio da Anthropic. Antes disso ela veio do
-    // banco (montar o catálogo, ler o histórico) — e a linha de auditoria não
-    // pode culpar a Anthropic por uma falha que foi do banco.
+    // Daqui para baixo, uma exceção veio do provedor de IA. Antes disso ela veio
+    // do banco (montar o catálogo, ler o histórico) — e a linha de auditoria não
+    // pode culpar a IA por uma falha que foi do banco.
     chamouIA = true;
 
-    // Roda a conversa (o loop de tool use mora em api/_anthropic.ts).
-    const resultado = await rodarConversa({
-      model: config.model,
-      effort: config.effort,
-      maxTokens: config.max_tokens,
-      systemBlocks,
-      messages,
-      tools: FERRAMENTAS_GERENCIA,
-      executarTool: (nome: string, input: any) => executarFerramentaGerencia(supabase, nome, input),
-    });
+    // Roda a conversa. O laço de tool use mora no cliente de cada provedor
+    // (api/_openrouter.ts ou api/_anthropic.ts): os dois falam formatos
+    // diferentes de tool call, mas devolvem o MESMO `RunResult` — por isso o
+    // resto desta função não sabe qual dos dois respondeu.
+    const executarTool = (nome: string, input: any) => executarFerramentaGerencia(supabase, nome, input);
+    const resultado: RunResult & { custoUsd?: number | null } =
+      provedor === 'openrouter'
+        ? await rodarConversaOpenRouter({
+            chave: chave as string,
+            model: modeloDoProvedor('openrouter', config.model),
+            // O esforço também vale aqui: o OpenRouter aceita `reasoning.effort`
+            // (medido em 26/08/2026 — low custou US$ 0,000076 e high US$ 0,000256
+            // na mesma pergunta). Sem repassar, o seletor da tela de Treinamento
+            // prometeria "mais cuidadosa, mais lenta e mais cara" sem efeito nenhum.
+            effort: config.effort,
+            maxTokens: config.max_tokens,
+            systemBlocks,
+            messages,
+            tools: FERRAMENTAS_GERENCIA,
+            executarTool,
+          })
+        : await rodarConversa({
+            model: modeloDoProvedor('anthropic', config.model),
+            effort: config.effort,
+            maxTokens: config.max_tokens,
+            systemBlocks,
+            messages,
+            tools: FERRAMENTAS_GERENCIA,
+            executarTool,
+          });
     const latencia = Date.now() - inicio;
+    // Custo REAL da fatura — só o OpenRouter informa, e só quando TODAS as voltas
+    // do laço vieram com `cost` (senão ele mesmo devolve null). Ausência vira
+    // NULL na coluna, nunca 0: com null o relatório estima esta linha e declara a
+    // estimativa; um zero gravado diria que a resposta foi de graça.
+    // `Number(null)` é 0, por isso o null/undefined é testado ANTES.
+    const custoBruto = resultado.custoUsd;
+    const custoReal =
+      custoBruto !== null && custoBruto !== undefined && Number.isFinite(Number(custoBruto))
+        ? Number(custoBruto)
+        : null;
 
     // 6. Grava a resposta. Recusa também é gravada — com o motivo no corpo.
     //
@@ -712,23 +923,33 @@ async function acaoPerguntar(req: any, res: any, supabase: any, staff: StaffSess
           : 'resposta_vazia';
     }
 
-    const { data: mensagem, error: erroAssistente } = await inserirMensagemComCacheEscrita(
-      supabase,
-      {
-        thread_id: thread.id,
-        role: 'assistant',
-        content: conteudo,
-        tool_calls: (resultado.toolCalls as ToolCallLog[] | undefined) ?? null,
-        model: resultado.model || config.model,
-        input_tokens: resultado.usage?.input_tokens ?? null,
-        output_tokens: resultado.usage?.output_tokens ?? null,
-        cache_read_tokens: resultado.usage?.cache_read_tokens ?? null,
-        [COL_CACHE_ESCRITA]: resultado.usage?.cache_creation_tokens ?? null,
-        latency_ms: latencia,
-        error: codigoDeErro,
-      },
-      SELECT_MENSAGEM,
-    );
+    // Colunas opcionais (`cache_creation_tokens`, `cost_usd`) entram no insert só
+    // se existirem no banco: se a migration ainda não rodou, a gravação é
+    // REFEITA sem elas. Perder a contabilidade de um token não pode custar a
+    // linha de auditoria da resposta — thread com pergunta e sem resposta é
+    // exatamente o buraco que evitamos.
+    const opcionais: Record<string, unknown> = {
+      [COL_CACHE_ESCRITA]: resultado.usage?.cache_creation_tokens ?? null,
+      [COL_CUSTO]: custoReal,
+    };
+    const base: Record<string, unknown> = {
+      thread_id: thread.id,
+      role: 'assistant',
+      content: conteudo,
+      tool_calls: (resultado.toolCalls as ToolCallLog[] | undefined) ?? null,
+      model: resultado.model || config.model,
+      input_tokens: resultado.usage?.input_tokens ?? null,
+      output_tokens: resultado.usage?.output_tokens ?? null,
+      cache_read_tokens: resultado.usage?.cache_read_tokens ?? null,
+      latency_ms: latencia,
+      error: codigoDeErro,
+    };
+    const { resposta: gravacao } = await comColunasOpcionais(COLUNAS_OPCIONAIS_MENSAGEM, (colunas) => {
+      const linha = { ...base };
+      for (const coluna of colunas) linha[coluna] = opcionais[coluna];
+      return supabase.from(T_MENSAGENS).insert(linha).select(selectMensagem(colunas)).maybeSingle();
+    });
+    const { data: mensagem, error: erroAssistente } = gravacao;
     if (erroAssistente || !mensagem) throw new FalhaDeContexto('gravar a resposta', erroAssistente);
 
     // 7. Thread sobe na lista e ganha título na primeira pergunta.
@@ -738,14 +959,18 @@ async function acaoPerguntar(req: any, res: any, supabase: any, staff: StaffSess
   } catch (err) {
     // 8. Falha também vira linha no histórico — auditoria não pode ter buraco.
     // Antes da chamada à IA o culpado é o banco (catálogo/histórico): rotular
-    // isso de 'anthropic_error' mandaria o gestor conferir a chave errada.
+    // isso de erro do provedor mandaria o gestor conferir a chave errada.
     // `FalhaDeContexto` é sempre do banco, inclusive DEPOIS da IA responder
-    // (falha ao gravar a resposta) — culpar a Anthropic ali seria mentira.
+    // (falha ao gravar a resposta) — culpar o provedor ali seria mentira.
+    // E a tradução do erro segue QUEM foi chamado: erro do OpenRouter traduzido
+    // como erro da Anthropic manda conferir uma chave que nem está em uso.
     const falhaDeBanco = err instanceof FalhaDeContexto;
     const codigo = falhaDeBanco
       ? err.codigo
       : chamouIA
-        ? codigoDeErroAnthropic(err)
+        ? provedor === 'openrouter'
+          ? codigoDeErroOpenRouter(err)
+          : codigoDeErroAnthropic(err)
         : 'contexto_indisponivel';
     console.error('[manager-chat] pergunta falhou:', codigo, err);
     // O próprio insert de auditoria precisa de rede: se ELE estourar, o catch
@@ -796,6 +1021,11 @@ function dataValida(raw: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * ESTIMATIVA por tabela de preço — usada só quando a linha não tem `cost_usd`.
+ * O id chega nos dois formatos (com e sem `anthropic/`); `normalizarModelo`
+ * junta os dois na mesma chave, senão a linha nova cairia no fallback calada.
+ */
 function custoUsd(
   modelo: string | null,
   entrada: number,
@@ -803,7 +1033,7 @@ function custoUsd(
   cacheLido: number,
   cacheEscrito: number,
 ): number {
-  const preco = PRECO_POR_MILHAO[String(modelo || '')] || PRECO_FALLBACK;
+  const preco = PRECO_POR_MILHAO[normalizarModelo(modelo)] || PRECO_FALLBACK;
   const total =
     (entrada * preco.entrada +
       saida * preco.saida +
@@ -879,35 +1109,25 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
   );
   if (erroThreads) return erroBanco(res, 'listar conversas do relatório', erroThreads);
 
-  // `cache_creation_tokens` pode não existir ainda (migration em andamento):
-  // se o select falhar por causa dela, relê sem a coluna em vez de derrubar o
-  // relatório inteiro.
-  let comCacheEscrita = true;
-  let { data: mensagens, error: erroMensagens, truncado: mensagensTruncadas } = await lerComTeto<any>(
-    (ini, fim) =>
-      supabase
-        .from(T_MENSAGENS)
-        .select(`${COLUNAS_MENSAGEM_RELATORIO}, ${COL_CACHE_ESCRITA}`)
-        .gte('created_at', deIso)
-        .lte('created_at', ateIso)
-        .order('id', { ascending: true })
-        .range(ini, fim),
-    MAX_MENSAGENS_RELATORIO,
-  );
-  if (erroMensagens && erroDeColunaAusente(erroMensagens, COL_CACHE_ESCRITA)) {
-    comCacheEscrita = false;
-    ({ data: mensagens, error: erroMensagens, truncado: mensagensTruncadas } = await lerComTeto<any>(
+  // `cache_creation_tokens` e `cost_usd` podem não existir ainda (migration em
+  // andamento): se o select falhar por causa de uma delas, relê sem ela em vez
+  // de derrubar o relatório inteiro — e o que faltou é DECLARADO nos avisos.
+  const { resposta: leitura, ausentes } = await comColunasOpcionais(COLUNAS_OPCIONAIS_MENSAGEM, (colunas) =>
+    lerComTeto<any>(
       (ini, fim) =>
         supabase
           .from(T_MENSAGENS)
-          .select(COLUNAS_MENSAGEM_RELATORIO)
+          .select([COLUNAS_MENSAGEM_RELATORIO, ...colunas].join(', '))
           .gte('created_at', deIso)
           .lte('created_at', ateIso)
           .order('id', { ascending: true })
           .range(ini, fim),
       MAX_MENSAGENS_RELATORIO,
-    ));
-  }
+    ),
+  );
+  const { data: mensagens, error: erroMensagens, truncado: mensagensTruncadas } = leitura;
+  const comCacheEscrita = !ausentes.includes(COL_CACHE_ESCRITA);
+  const comCustoReal = !ausentes.includes(COL_CUSTO);
   if (erroMensagens) return erroBanco(res, 'listar mensagens do relatório', erroMensagens);
 
   const donoDaThread = new Map<string, { user_id: string; user_name: string }>();
@@ -922,6 +1142,13 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
   // (o contrato compartilhado não tem esse campo), mas entra no CUSTO de cada
   // gerente e é devolvido como total para o dono conferir.
   let cacheEscritoTotal = 0;
+  // Quanto do custo é MEDIDO e quanto é chute. Linha com `cost_usd` traz o valor
+  // que o OpenRouter cobrou de verdade; linha sem ele (turno antigo, ou resposta
+  // da Anthropic direta) é estimada pela tabela de preço. Somar os dois sem
+  // separar entregaria ao dono um número com duas naturezas e uma cara só.
+  let linhasComCustoReal = 0;
+  let custoMedidoTotal = 0;
+  let linhasComCustoEstimado = 0;
 
   for (const m of mensagens) {
     const dono = donoDaThread.get(m.thread_id);
@@ -958,7 +1185,22 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
     linha.output_tokens += saida;
     linha.cache_read_tokens += cacheLido;
     cacheEscritoTotal += cacheEscrito;
-    linha.custo_estimado_usd += custoUsd(m.model, entrada, saida, cacheLido, cacheEscrito);
+
+    // Custo: o REAL da fatura vence a estimativa sempre que existir.
+    const custoGravado = Number(m[COL_CUSTO]);
+    if (m[COL_CUSTO] !== null && m[COL_CUSTO] !== undefined && Number.isFinite(custoGravado)) {
+      linha.custo_estimado_usd += custoGravado;
+      // Somado à parte: a tela precisa separar o que É fatura do que é estimativa.
+      // Sem isto o relatório chamava de "estimado" um número que veio do OpenRouter.
+      custoMedidoTotal += custoGravado;
+      linhasComCustoReal += 1;
+    } else {
+      linha.custo_estimado_usd += custoUsd(m.model, entrada, saida, cacheLido, cacheEscrito);
+      // Só conta como ESTIMADA a linha que realmente consumiu token. A pergunta
+      // do gerente (role 'user') não tem uso nem custo: contá-la inflaria o
+      // aviso e faria o dono desconfiar de um número que está certo.
+      if (entrada + saida + cacheLido + cacheEscrito > 0) linhasComCustoEstimado += 1;
+    }
 
     if (!linha.ultima_atividade || m.created_at > linha.ultima_atividade) linha.ultima_atividade = m.created_at;
 
@@ -976,7 +1218,7 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
     }))
     .sort((a, b) => b.custo_estimado_usd - a.custo_estimado_usd);
 
-  const totais = linhas.reduce(
+  const totais: ManagerChatReport['totais'] = linhas.reduce(
     (acc, l) => ({
       threads: acc.threads + l.threads,
       perguntas: acc.perguntas + l.perguntas,
@@ -989,6 +1231,10 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
     { threads: 0, perguntas: 0, input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, custo_estimado_usd: 0, erros: 0 },
   );
   totais.custo_estimado_usd = Math.round(totais.custo_estimado_usd * 1e6) / 1e6;
+  // Nomes lidos por components/admin/ManagerChat/ManagerChatReport.tsx. Sem eles
+  // a tela chamava de "estimado" o custo que veio da fatura do OpenRouter.
+  totais.custo_medido_usd = Math.round(custoMedidoTotal * 1e6) / 1e6;
+  totais.respostas_estimadas = linhasComCustoEstimado;
 
   const ferramentasMaisUsadas = [...ferramentas.entries()]
     .map(([name, vezes]) => ({ name, vezes }))
@@ -996,7 +1242,12 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
 
   // Relatório truncado é relatório PARCIAL — e precisa dizer isso, senão vira
   // um número menor com cara de fato na avaliação de um funcionário real.
-  const parcial = threadsTruncadas || mensagensTruncadas || !comCacheEscrita;
+  // `!comCustoReal` e as linhas estimadas entram aqui de propósito: a tela só
+  // exibe os `avisos` quando o relatório se declara parcial, e um custo estimado
+  // apresentado como se fosse a fatura é o tipo de número que faz o dono cobrar
+  // a pessoa errada.
+  const parcial =
+    threadsTruncadas || mensagensTruncadas || !comCacheEscrita || !comCustoReal || linhasComCustoEstimado > 0;
   const avisos: string[] = [];
   if (mensagensTruncadas) {
     avisos.push(
@@ -1013,11 +1264,26 @@ async function acaoRelatorio(req: any, res: any, supabase: any) {
       'A coluna de tokens de escrita de cache ainda não existe no banco: o custo mostrado é um piso, subestimado no primeiro turno de cada conversa.',
     );
   }
+  if (!comCustoReal) {
+    avisos.push(
+      'A coluna de custo real ainda não existe no banco (migration pendente): TODO o custo abaixo é estimado por tabela de preço, não medido.',
+    );
+  } else if (linhasComCustoEstimado) {
+    avisos.push(
+      `${linhasComCustoEstimado.toLocaleString('pt-BR')} de ${(linhasComCustoEstimado + linhasComCustoReal).toLocaleString('pt-BR')} resposta(s) não têm custo real gravado e foram ESTIMADAS por tabela de preço — respostas anteriores à migração ou geradas pela Anthropic direta. As demais trazem o valor cobrado pelo OpenRouter.`,
+    );
+  }
 
   return ok(res, {
     de: deIso,
     ate: ateIso,
     porGerente: linhas,
+    // Quanto do número é medido e quanto é chute. Campos extras (como
+    // `cache_creation_tokens`): o contrato não os declara, mas o dono precisa
+    // saber a natureza do que está lendo antes de cobrar alguém por ele.
+    linhas_com_custo_estimado: linhasComCustoEstimado,
+    linhas_com_custo_real: linhasComCustoReal,
+    custo_real_disponivel: comCustoReal,
     // `totais.truncado` é declarado no contrato e faltava: uma tela que lesse só
     // os totais mostrava número parcial com cara de total fechado.
     totais: { ...totais, truncado: threadsTruncadas || mensagensTruncadas },
@@ -1062,6 +1328,11 @@ export default async function handler(req: any, res: any) {
   const staff = await requireStaffAnyPermission(req, res, permissoes);
   if (!staff) return;
 
+  // Segundo gate: treinar e auditar são do DONO do sistema. Não basta a chave de
+  // permissão estar fora de PERMISSION_CATALOG — o servidor exige admin_access
+  // aqui, para que uma linha de permissão antiga no banco não abra a porta.
+  if (ACTIONS_SUPER_ADMIN.has(action) && !exigirSuperAdmin(staff, res)) return;
+
   const supabase = getServiceClient();
   if (!supabase) return falha(res, 503, 'supabase_unavailable');
 
@@ -1073,11 +1344,21 @@ export default async function handler(req: any, res: any) {
       // configurado. Dano menor que o de `training-get`, mesma regra.
       const { config, erro: erroConfig } = await lerConfig(supabase);
       if (erroConfig) return erroBanco(res, 'ler a configuração do chat', erroConfig);
+      // Só o `provedor` sai daqui — a chave fica na função, nunca na resposta.
+      const { provedor } = await escolherProvedor(supabase);
+      // `pode_treinar` e `pode_auditar` saem do MESMO critério que os gates de
+      // `exigirSuperAdmin`. A tela obedece este campo para mostrar ou esconder
+      // os botões de Treinamento e Relatório; ela não recalcula permissão.
+      const superAdmin = ehSuperAdmin(staff);
       return ok(res, {
-        ia_configurada: anthropicConfigurado(),
+        ia_configurada: provedor !== null,
         modelo_padrao: config.model,
-        pode_treinar: isPermissionGranted(staff.permissions, PERM_TREINAR),
-        pode_auditar: isPermissionGranted(staff.permissions, PERM_AUDITAR),
+        // Id exatamente como vai para a API do provedor ativo (o OpenRouter
+        // exige o prefixo `anthropic/`; a Anthropic direta exige o id sem ele).
+        modelo_em_uso: provedor ? modeloDoProvedor(provedor, config.model) : null,
+        provedor,
+        pode_treinar: superAdmin,
+        pode_auditar: superAdmin,
       });
     }
 
@@ -1147,12 +1428,17 @@ export default async function handler(req: any, res: any) {
       // Teto explícito: lê as MAIS RECENTES (uma a mais, só para saber se
       // sobrou coisa) e devolve em ordem cronológica. Sem isso, uma thread de
       // mil mensagens virava uma resposta de dezenas de MB.
-      const { data, error } = await supabase
-        .from(T_MENSAGENS)
-        .select(SELECT_MENSAGEM)
-        .eq('thread_id', thread.id)
-        .order('created_at', { ascending: false })
-        .limit(MAX_MENSAGENS_LISTADAS + 1);
+      // As colunas opcionais (custo real e cache write) vão junto quando o banco
+      // já as tem; se a migration não rodou, a leitura é refeita sem elas.
+      const { resposta } = await comColunasOpcionais(COLUNAS_OPCIONAIS_MENSAGEM, (colunas) =>
+        supabase
+          .from(T_MENSAGENS)
+          .select(selectMensagem(colunas))
+          .eq('thread_id', thread.id)
+          .order('created_at', { ascending: false })
+          .limit(MAX_MENSAGENS_LISTADAS + 1),
+      );
+      const { data, error } = resposta;
       if (error) return erroBanco(res, 'listar mensagens', error);
       const recentes = data || [];
       const truncado = recentes.length > MAX_MENSAGENS_LISTADAS;
@@ -1230,7 +1516,7 @@ export default async function handler(req: any, res: any) {
         persona: texto(bruta.persona, 20000),
         business_info: texto(bruta.business_info, 20000),
         guardrails_extra: texto(bruta.guardrails_extra, 20000),
-        model: MODELOS_VALIDOS.has(modelo) ? modelo : CONFIG_PADRAO.model,
+        model: modeloConhecido(modelo),
         effort: esforco,
         max_tokens: maxTokens,
         updated_at: new Date().toISOString(),

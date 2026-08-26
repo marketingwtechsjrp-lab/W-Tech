@@ -5,8 +5,11 @@
  * isso está custando". Tudo vem de managerChatApi.relatorio(de, ate), que só
  * responde para quem tem a permissão de auditoria.
  *
- * O custo é SEMPRE apresentado como ESTIMADO: é calculado no servidor com a
- * tabela de preços pública da Anthropic e pode divergir da fatura real.
+ * Sobre o custo: parte dele pode vir MEDIDA (o OpenRouter informa o valor
+ * cobrado em `usage.cost` a cada resposta) e parte pode continuar ESTIMADA por
+ * tabela de preços. A tela distingue os dois e só chama de estimativa o que
+ * realmente é — mas nunca o contrário: enquanto o servidor não declarar o valor
+ * medido, tudo segue rotulado como estimativa.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -48,6 +51,39 @@ function diaISO(diasAtras = 0): string {
   d.setDate(d.getDate() - diasAtras);
   return d.toISOString().slice(0, 10);
 }
+
+// ─── Custo medido x estimado ────────────────────────────────────────────────
+
+/**
+ * CONFERIDO EM 26/08/2026: a action 'report' de api/manager-chat.ts ainda NÃO
+ * devolve custo medido nem contagem de linhas estimadas — só `custo_estimado_usd`.
+ * Como o campo está previsto para chegar, lemos de forma defensiva os nomes
+ * plausíveis; enquanto nenhum existir, a tela chama TUDO de estimativa.
+ *
+ * O erro seguro é rotular medido como estimado. O inverso — dizer "medido" sobre
+ * um número que saiu de tabela de preço — seria mentir sobre a fatura.
+ */
+function numeroDe(fonte: unknown, chaves: readonly string[]): number | null {
+  if (!fonte || typeof fonte !== 'object') return null;
+  const obj = fonte as Record<string, unknown>;
+  for (const chave of chaves) {
+    const bruto = obj[chave];
+    if (bruto === null || bruto === undefined || bruto === '') continue;
+    const n = Number(bruto);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/** Custo já cobrado de verdade pelo provedor (subconjunto do custo total). */
+const CHAVES_CUSTO_MEDIDO = ['custo_medido_usd', 'custo_real_usd', 'cost_usd'] as const;
+/** Quantas respostas do período ainda não têm custo medido. */
+const CHAVES_ESTIMADAS = [
+  'respostas_estimadas',
+  'linhas_estimadas',
+  'perguntas_estimadas',
+  'mensagens_estimadas',
+] as const;
 
 // ─── Ordenação ──────────────────────────────────────────────────────────────
 
@@ -150,10 +186,45 @@ export const ManagerChatReport: React.FC<{ onFechar: () => void }> = ({ onFechar
   // Ressalvas do servidor (ex.: campo que só passou a ser gravado em certa data).
   const avisos = (dados?.avisos ?? []).filter((a) => typeof a === 'string' && a.trim().length > 0);
 
+  // `custo_estimado_usd` continua sendo o custo TOTAL do período (é o único
+  // número que o servidor sempre devolve). Quando o custo medido chegar, ele é
+  // a PARTE desse total que já veio da fatura do provedor.
+  const custoTotal = Number(totais?.custo_estimado_usd) || 0;
+  const custoMedido = numeroDe(totais, CHAVES_CUSTO_MEDIDO) ?? numeroDe(dados, CHAVES_CUSTO_MEDIDO);
+  const respostasEstimadas = numeroDe(totais, CHAVES_ESTIMADAS) ?? numeroDe(dados, CHAVES_ESTIMADAS);
+
+  // Se o medido passar do total, a suposição "medido ⊂ total" caiu — o servidor
+  // mudou o significado dos campos. Nesse caso a tela NÃO tenta reconciliar nem
+  // escolhe um dos dois: declara a divergência e mostra os dois números.
+  const custoReconciliavel = custoMedido === null || custoMedido <= custoTotal * 1.0001 + 1e-9;
+  const parteEstimada =
+    custoMedido !== null && custoReconciliavel ? Math.max(0, custoTotal - custoMedido) : null;
+  const tudoMedido =
+    parteEstimada !== null && parteEstimada <= 1e-9 && (respostasEstimadas === null || respostasEstimadas <= 0);
+
+  // O rótulo do número acompanha o que ele de fato é.
+  const rotuloCusto =
+    custoMedido === null
+      ? 'Custo estimado'
+      : !custoReconciliavel
+        ? 'Custo (ver ressalva)'
+        : tudoMedido
+          ? 'Custo medido'
+          : 'Custo medido + estimado';
+
+  const rotuloCustoCurto =
+    custoMedido === null
+      ? 'Custo estimado'
+      : !custoReconciliavel
+        ? 'Custo'
+        : tudoMedido
+          ? 'Custo medido'
+          : 'Custo (med. + est.)';
+
   const cartoes = [
     { rotulo: 'Conversas', valor: numero(totais?.threads), Icone: MessagesSquare, cor: 'text-sky-500', fundo: 'bg-sky-500/15' },
     { rotulo: 'Perguntas', valor: numero(totais?.perguntas), Icone: MessageCircleQuestion, cor: 'text-violet-500', fundo: 'bg-violet-500/15' },
-    { rotulo: 'Custo estimado', valor: dinheiro(totais?.custo_estimado_usd), Icone: DollarSign, cor: 'text-emerald-500', fundo: 'bg-emerald-500/15' },
+    { rotulo: rotuloCusto, valor: dinheiro(custoTotal), Icone: DollarSign, cor: 'text-emerald-500', fundo: 'bg-emerald-500/15' },
     { rotulo: 'Erros', valor: numero(totais?.erros), Icone: AlertTriangle, cor: 'text-red-500', fundo: 'bg-red-500/15' },
   ];
 
@@ -338,15 +409,57 @@ export const ManagerChatReport: React.FC<{ onFechar: () => void }> = ({ onFechar
                 ))}
               </section>
 
-              {/* Aviso obrigatório sobre o custo */}
-              <div className="flex items-start gap-2.5 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-1)] px-4 py-3">
-                <Info size={16} className="text-wtech-gold shrink-0 mt-0.5" />
-                <p className="text-xs text-[var(--admin-text-secondary)]">
-                  <strong className="text-[var(--admin-text-primary)]">O custo é estimado.</strong>{' '}
-                  Ele é calculado a partir dos tokens registrados e da tabela de preços pública da Anthropic.
-                  Pode divergir da fatura real (descontos, cache e arredondamentos do provedor não entram nesta conta).
-                </p>
-              </div>
+              {/* Aviso obrigatório sobre o custo: só é chamado de estimativa
+                  o que realmente é estimativa. */}
+              {!custoReconciliavel ? (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2.5 rounded-xl border-2 border-[var(--admin-warning)] bg-[var(--admin-warning-muted)] px-4 py-3"
+                >
+                  <AlertTriangle size={16} className="text-[var(--admin-warning)] shrink-0 mt-0.5" />
+                  <p className="text-xs text-[var(--admin-text-secondary)] leading-relaxed">
+                    <strong className="text-[var(--admin-text-primary)]">
+                      Os dois números de custo não fecham entre si.
+                    </strong>{' '}
+                    O servidor informou {dinheiro(custoMedido)} de custo medido, valor maior que o total de{' '}
+                    {dinheiro(custoTotal)}. Esta tela não sabe como somá-los sem inventar, então mostra os dois como
+                    vieram. Trate ambos como indicativos e confira a fatura do provedor antes de decidir qualquer
+                    coisa com base neles.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-1)] px-4 py-3">
+                  <Info size={16} className="text-wtech-gold shrink-0 mt-0.5" />
+                  <p className="text-xs text-[var(--admin-text-secondary)] leading-relaxed">
+                    {custoMedido === null ? (
+                      <>
+                        <strong className="text-[var(--admin-text-primary)]">O custo é estimado.</strong>{' '}
+                        Ele é calculado a partir dos tokens registrados e da tabela de preços pública do modelo. Pode
+                        divergir da fatura real (descontos, cache e arredondamentos do provedor não entram nesta
+                        conta).
+                      </>
+                    ) : tudoMedido ? (
+                      <>
+                        <strong className="text-[var(--admin-text-primary)]">O custo é medido, não estimado.</strong>{' '}
+                        Todo o valor deste período veio do que o provedor cobrou em cada resposta. É o mesmo número
+                        que aparece na fatura, sem tabela de preço no meio.
+                      </>
+                    ) : (
+                      <>
+                        <strong className="text-[var(--admin-text-primary)]">
+                          Parte deste custo é medida, parte é estimativa.
+                        </strong>{' '}
+                        {dinheiro(custoMedido)} vieram do valor que o provedor cobrou em cada resposta. Os{' '}
+                        {dinheiro(parteEstimada)} restantes
+                        {respostasEstimadas !== null && respostasEstimadas > 0
+                          ? ` — ${numero(respostasEstimadas)} ${respostasEstimadas === 1 ? 'resposta' : 'respostas'} —`
+                          : ''}{' '}
+                        ainda são estimados por tabela de preços e podem divergir da fatura.
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
 
               {/* ── Tabela por gerente ─────────────────────────────────────── */}
               <section className={cartao}>
@@ -355,7 +468,7 @@ export const ManagerChatReport: React.FC<{ onFechar: () => void }> = ({ onFechar
                     <MessagesSquare size={15} /> Uso por gerente ({linhas.length})
                   </h4>
                   <span className="text-[11px] text-[var(--admin-text-tertiary)]">
-                    Clique em "Perguntas" ou "Custo estimado" para reordenar.
+                    Clique em "Perguntas" ou na coluna de custo para reordenar.
                   </span>
                 </div>
 
@@ -382,7 +495,7 @@ export const ManagerChatReport: React.FC<{ onFechar: () => void }> = ({ onFechar
                             onClick={() => alternarOrdem('custo')}
                             className={`inline-flex items-center gap-1 uppercase ${coluna === 'custo' ? 'text-wtech-gold' : ''}`}
                           >
-                            Custo estimado <ArrowUpDown size={12} />
+                            {rotuloCustoCurto} <ArrowUpDown size={12} />
                           </button>
                         </th>
                         <th className={`${th} text-right`}>Erros</th>
@@ -398,7 +511,23 @@ export const ManagerChatReport: React.FC<{ onFechar: () => void }> = ({ onFechar
                           <td className={`${td} text-right text-[var(--admin-text-secondary)]`}>{numero(l.input_tokens)}</td>
                           <td className={`${td} text-right text-[var(--admin-text-secondary)]`}>{numero(l.output_tokens)}</td>
                           <td className={`${td} text-right text-[var(--admin-text-secondary)]`}>{numero(l.cache_read_tokens)}</td>
-                          <td className={`${td} text-right font-bold`}>{dinheiro(l.custo_estimado_usd)}</td>
+                          <td className={`${td} text-right font-bold`}>
+                            {dinheiro(l.custo_estimado_usd)}
+                            {(() => {
+                              // Parte já cobrada de verdade nesta linha. Só aparece
+                              // quando há mistura — se tudo é medido, o rótulo da
+                              // coluna já disse isso e repetir por linha é ruído.
+                              const medidoLinha = numeroDe(l, CHAVES_CUSTO_MEDIDO);
+                              if (medidoLinha === null || tudoMedido) return null;
+                              const totalLinha = Number(l.custo_estimado_usd) || 0;
+                              if (medidoLinha > totalLinha * 1.0001 + 1e-9) return null;
+                              return (
+                                <span className="block text-[10px] font-normal text-[var(--admin-text-tertiary)]">
+                                  {dinheiro(medidoLinha)} medido
+                                </span>
+                              );
+                            })()}
+                          </td>
                           <td className={`${td} text-right ${Number(l.erros) > 0 ? 'text-red-500 font-bold' : 'text-[var(--admin-text-tertiary)]'}`}>
                             {numero(l.erros)}
                           </td>
@@ -424,7 +553,7 @@ export const ManagerChatReport: React.FC<{ onFechar: () => void }> = ({ onFechar
                           <td className={`${td} text-right font-bold`}>{numero(totais.input_tokens)}</td>
                           <td className={`${td} text-right font-bold`}>{numero(totais.output_tokens)}</td>
                           <td className={`${td} text-right font-bold`}>{numero(totais.cache_read_tokens)}</td>
-                          <td className={`${td} text-right font-bold`}>{dinheiro(totais.custo_estimado_usd)}</td>
+                          <td className={`${td} text-right font-bold`}>{dinheiro(custoTotal)}</td>
                           <td className={`${td} text-right font-bold`}>{numero(totais.erros)}</td>
                           <td className={td}></td>
                         </tr>

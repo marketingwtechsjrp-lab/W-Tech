@@ -1,5 +1,24 @@
 [
   {
+    "version": "3.38.0",
+    "date": "2026-08-26",
+    "title": "Chat da Gerencia pelo OpenRouter e treinamento so para admin",
+    "changes": [
+      "O Chat da Gerencia passa a usar a chave do OpenRouter ja cadastrada em Configuracoes - GPT e Gemini, sem precisar de conta nova na Anthropic",
+      "o Claude sai pelo mesmo preco e o Sonnet 5 sai mais barato pelo OpenRouter (US 2 e 10 por milhao) do que na Anthropic direta (US 3 e 15)",
+      "Se existir ANTHROPIC_API_KEY no ambiente do servidor ela continua funcionando como alternativa - a escolha e automatica e o chat mostra na tela qual provedor esta ativo",
+      "Os botoes de Treinamento e Relatorio agora aparecem SOMENTE para o admin do sistema: as permissoes manager_chat_train e manager_chat_audit sairam do catalogo (mesmo mecanismo dos Assistentes de IA), entao nenhum cargo consegue liga-las em Equipe e Acesso, e o servidor exige admin_access",
+      "A action training-get tambem entrou no gate de super admin - antes quem so tinha manager_chat_view conseguia ler persona, base de conhecimento e regras chamando a rota direto",
+      "O relatorio agora soma o custo REAL em dolar que o OpenRouter informa por chamada, em vez de estimar por tabela de preco, e declara quantas respostas ainda foram estimadas",
+      "O campo Esforco passou a valer no OpenRouter via reasoning.effort - medido: low custou US 0.000076 e high US 0.000256 na mesma pergunta",
+      "Cache de prompt confirmado pelo OpenRouter com 92 por cento de economia na repeticao",
+      "Fix: erro do OpenRouter dizia ao gerente que a Anthropic tinha falhado",
+      "Fix: um ID de modelo fora da lista era reescrito em silencio para o mais caro do catalogo",
+      "Banco: coluna cost_usd em SITE_ManagerChatMessages e o modelo migrado para o formato do OpenRouter"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.37.0",
     "date": "2026-08-26",
     "title": "Chat de IA da Gerencia (Claude Opus 5)",

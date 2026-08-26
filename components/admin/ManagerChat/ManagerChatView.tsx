@@ -11,16 +11,14 @@ import {
   ShieldCheck,
   Pencil,
   Check,
+  Cpu,
 } from 'lucide-react';
 import {
   managerChatApi,
-  PERM_TREINAR,
-  PERM_AUDITAR,
   type ManagerChatThread,
   type ManagerChatMessage,
   type ManagerChatStatus,
 } from '../../../lib/managerChat';
-import { createHasPermission } from '../../../lib/permissions';
 import { PageHeader } from '../ui/PageHeader';
 import { ThreadList } from './ThreadList';
 import { ChatMessages } from './ChatMessages';
@@ -29,8 +27,13 @@ import { ManagerTrainingPanel } from './ManagerTrainingPanel';
 import { ManagerChatReport } from './ManagerChatReport';
 
 interface ManagerChatViewProps {
-  user: any;
-  permissions: any;
+  /**
+   * Recebidos do roteador do admin e mantidos por compatibilidade, mas esta
+   * tela NÃO os usa para decidir o que aparece: quem decide é o servidor
+   * (ver `podeTreinar` / `podeAuditar` abaixo).
+   */
+  user?: any;
+  permissions?: any;
 }
 
 /** Perguntas de partida, escritas para quem gerencia a equipe da W-Tech. */
@@ -70,9 +73,7 @@ function ordenarThreads(lista: ManagerChatThread[]): ManagerChatThread[] {
   );
 }
 
-export const ManagerChatView: React.FC<ManagerChatViewProps> = ({ user, permissions }) => {
-  const has = createHasPermission(user, permissions);
-
+export const ManagerChatView: React.FC<ManagerChatViewProps> = () => {
   const [status, setStatus] = useState<ManagerChatStatus | null>(null);
   const [threads, setThreads] = useState<ManagerChatThread[]>([]);
   const [ativa, setAtiva] = useState<string | null>(null);
@@ -90,10 +91,31 @@ export const ManagerChatView: React.FC<ManagerChatViewProps> = ({ user, permissi
   const [editandoTitulo, setEditandoTitulo] = useState(false);
   const [rascunhoTitulo, setRascunhoTitulo] = useState('');
 
-  // O servidor é a autoridade sobre permissão; a checagem local evita piscar botão.
-  const podeTreinar = has(PERM_TREINAR) || !!status?.pode_treinar;
-  const podeAuditar = has(PERM_AUDITAR) || !!status?.pode_auditar;
+  // Treinamento e Relatório são de SUPER ADMIN. Esta tela não recalcula nada:
+  // obedece ao que o servidor respondeu em `status` (ele deriva de admin_access).
+  // Um segundo critério local só criaria divergência — botão visível para quem o
+  // endpoint recusa, ou escondido para quem ele aceita.
+  //
+  // A comparação estrita com `true` também resolve o piscar: enquanto `status`
+  // é `null` (resposta ainda não chegou) nenhum dos dois é verdadeiro, então os
+  // botões não aparecem antes da hora nem para quem não deveria vê-los.
+  //
+  // E, para não restar dúvida: esconder botão NUNCA foi proteção. O gate de
+  // verdade está em /api/manager-chat, que recusa as actions de treinamento e
+  // de auditoria para quem não é super admin.
+  const podeTreinar = status?.pode_treinar === true;
+  const podeAuditar = status?.pode_auditar === true;
   const iaDesligada = status !== null && status.ia_configurada === false;
+
+  // De onde vem a inteligência — ou seja, qual conta está pagando a conversa.
+  // Provedor ausente não vira suposição: a tela declara que não foi informado.
+  const provedorRotulo =
+    status?.provedor === 'openrouter'
+      ? 'OpenRouter'
+      : status?.provedor === 'anthropic'
+        ? 'Anthropic'
+        : 'provedor não informado';
+  const modeloRotulo = status?.modelo_padrao?.trim() || 'modelo não informado';
 
   // ─── Carga inicial ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -313,6 +335,20 @@ export const ManagerChatView: React.FC<ManagerChatViewProps> = ({ user, permissi
           Conversas
         </button>
 
+        {/* Quem está pagando a conversa. Discreto, mas sempre visível: o dono
+            precisa saber de qual conta sai o custo sem abrir o código. */}
+        {status !== null && status.ia_configurada === true && (
+          <span
+            title={`Respostas geradas via ${provedorRotulo} usando o modelo ${modeloRotulo}.`}
+            className="inline-flex items-center gap-1.5 h-10 max-w-[46vw] md:max-w-none px-3 rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-1)] text-[11px] font-semibold text-[var(--admin-text-tertiary)]"
+          >
+            <Cpu size={13} className="shrink-0" />
+            <span className="truncate">
+              via {provedorRotulo} · <span className="font-mono">{modeloRotulo}</span>
+            </span>
+          </span>
+        )}
+
         {podeTreinar && (
           <button
             type="button"
@@ -336,15 +372,21 @@ export const ManagerChatView: React.FC<ManagerChatViewProps> = ({ user, permissi
         )}
       </PageHeader>
 
-      {/* Aviso permanente: chave da Anthropic ausente no servidor. */}
+      {/* Aviso permanente: nenhuma chave utilizável — nem OpenRouter, nem Anthropic. */}
       {iaDesligada && (
         <div className="mb-3 flex items-start gap-3 rounded-2xl border border-[var(--admin-warning)]/30 bg-[var(--admin-warning-muted)] p-4">
           <AlertTriangle size={18} className="text-[var(--admin-warning)] shrink-0 mt-0.5" />
           <div className="text-sm text-[var(--admin-text-primary)]">
             <p className="font-bold">A inteligência ainda não foi ligada.</p>
             <p className="text-[var(--admin-text-secondary)] mt-0.5 leading-relaxed">
-              Falta cadastrar a <code className="font-mono text-xs">ANTHROPIC_API_KEY</code> no servidor. Até lá o chat
-              abre normalmente e guarda todo o histórico, mas as perguntas ficam sem resposta.
+              Cadastre a <strong className="text-[var(--admin-text-primary)]">chave do OpenRouter</strong> em{' '}
+              <strong className="text-[var(--admin-text-primary)]">Configurações → GPT &amp; Gemini</strong>. É o
+              caminho principal: a mesma chave que o resto do sistema já usa.
+            </p>
+            <p className="text-[var(--admin-text-secondary)] mt-1 leading-relaxed">
+              Como alternativa, a <code className="font-mono text-xs">ANTHROPIC_API_KEY</code> no ambiente do servidor
+              continua funcionando. Até uma das duas existir, o chat abre normalmente e guarda todo o histórico, mas as
+              perguntas ficam sem resposta.
             </p>
           </div>
         </div>
