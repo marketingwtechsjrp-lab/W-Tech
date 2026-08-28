@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { triggerWebhook } from './webhooks';
 import { getLeadTrackingFields } from './tracking';
+import { findExistingLead, preserveWonStatus } from './leadMatch';
 
 /**
  * Atendentes que recebem leads no rodizio automatico.
@@ -42,7 +43,8 @@ interface LeadPayload {
 
 /**
  * Handles Lead Creation or Update (Upsert Logic)
- * - If phone exists: Updates status to 'New', updates context/tags, BUT KEEPS 'assigned_to'.
+ * - Se a pessoa ja existe: atualiza contexto/tags, MANTEM 'assigned_to' e
+ *   MANTEM o status quando o lead ja esta ganho (Converted/Matriculated).
  * - If new: Inserts with provided or distributed 'assigned_to'.
  */
 export const handleLeadUpsert = async (payload: LeadPayload) => {
@@ -50,29 +52,16 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
         // 0. Atribuição de tráfego (LEI 10): UTMs capturadas no navegador.
         const tracking = getLeadTrackingFields();
 
-        // 1. Sanitize Phone (digits only for search)
-        const phoneDigits = payload.phone.replace(/\D/g, '');
-        
-        // 2. Search for existing lead by phone directly in DB
-        // Note: This relies on phone being stored reasonably consistent.
-        // For better accuracy, we search using a "contains" or exact match on cleaned version if possible, 
-        // but typically leads are stored as they come. Let's try exact match on phone column first.
-        
-        let { data: existingLead } = await supabase
-            .from('SITE_Leads')
-            .select('*')
-            .eq('phone', payload.phone) // Try exact match first
-            .single();
-
-        if (!existingLead) {
-             // Try searching by email if phone failed
-             const { data: existingLeadEmail } = await supabase
-                .from('SITE_Leads')
-                .select('*')
-                .eq('email', payload.email)
-                .single();
-             existingLead = existingLeadEmail;
-        }
+        // 1. Localiza a ficha existente da pessoa.
+        //    Antes isto usava .eq('phone', ...) com o telefone CRU do formulario
+        //    e .single(). Duas falhas: formatos diferentes nunca casavam, e
+        //    .single() devolve null quando ha MAIS DE UMA linha — ou seja, quem
+        //    ja tinha duplicata nunca mais era encontrado e ganhava outra ficha
+        //    a cada cadastro. Agora a busca e tolerante (ver lib/leadMatch.ts).
+        const existingLead = await findExistingLead<any>(supabase, {
+            email: payload.email,
+            phone: payload.phone
+        });
 
         if (existingLead) {
             console.log(`[LeadUpsert] Found existing lead ${existingLead.id}. Updating...`);
@@ -88,7 +77,10 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
             const updatePayload = {
                 ...payload,
                 ...trackingToFill,
-                status: 'New', // FORCE RESET STATUS TO NEW
+                // Recadastro NAO pode desfazer uma venda: quem ja esta ganho
+                // permanece ganho. Os demais voltam para 'Novo' para o
+                // atendente retrabalhar.
+                status: preserveWonStatus(existingLead.status, 'New'),
                 // params to PRESERVE from existing:
                 assigned_to: existingLead.assigned_to, // KEEP ORIGINAL OWNER
                 id: existingLead.id,

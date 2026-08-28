@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.38.1 (2026-08-28) - Correcao: lead ganho voltando como lead novo no CRM
+- Nova regra unica de identificacao de lead (lib/leadMatch.ts): e-mail sem diferenciar maiusculas e telefone pelos ultimos 8 digitos, tolerando mascara e DDI
+- Recadastro em landing page, quiz ou waitlist nao rebaixa mais lead ja ganho — o FORCE RESET de status para Novo agora respeita Converted/Matriculated
+- Matricula deixou de criar ficha duplicada do aluno: a busca exata por e-mail falhava com maiuscula e a de telefone falhava com mascara (28 das 214 matriculas duplicavam)
+- Corrigido erro 22P02 que fazia a sincronizacao de matricula falhar por completo ao gravar nome do atendente em assigned_to (coluna UUID) — 119 matriculas nunca sincronizaram por isso
+- Checkout do Mercado Pago nao reseta mais status de quem ja e cliente e parou de gravar 'Automatico' em assigned_to
+- Dados de conversao gravados pelos webhooks de pagamento nao sao mais sobrescritos, e o valor fixo de R$ 380 deixou de mascarar o preco real do curso
+- Recuperacao de checkout passou a usar a mesma busca tolerante e a proteger tambem o status Matriculated
+
 ## v3.38.0 (2026-08-26) - Chat da Gerencia pelo OpenRouter e treinamento so para admin
 - O Chat da Gerencia passa a usar a chave do OpenRouter ja cadastrada em Configuracoes - GPT e Gemini, sem precisar de conta nova na Anthropic
 - o Claude sai pelo mesmo preco e o Sonnet 5 sai mais barato pelo OpenRouter (US 2 e 10 por milhao) do que na Anthropic direta (US 3 e 15)

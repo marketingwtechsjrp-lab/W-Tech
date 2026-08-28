@@ -101,22 +101,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://w-techbrasil.com.br/lp/curso-suspensao-w-tech</loc>
-    <lastmod>2026-01-12</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-so-jos-do-rio-preto</loc>
-    <lastmod>2026-01-15</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-fortaleza</loc>
-    <lastmod>2026-01-15</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://w-techbrasil.com.br/lp/cusro-de-experience-w-tech-em-so-jos-do-rio-preto</loc>
+    <lastmod>2026-01-15</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-belo-horizonte</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
@@ -131,18 +121,51 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://w-techbrasil.com.br/lp/curso-de-suspensao-w-tech-em-sao-paulo</loc>
+    <lastmod>2026-01-15</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://w-techbrasil.com.br/lp/curso-suspensao-w-tech</loc>
+    <lastmod>2026-01-12</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-fortaleza</loc>
+    <lastmod>2026-01-15</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://w-techbrasil.com.br/lp/cusro-de-experience-w-tech-em-so-jos-do-rio-preto---sede</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://w-techbrasil.com.br/lp/cusro-de-suspenso-w-tech-em-belo-horizonte</loc>
+    <loc>https://w-techbrasil.com.br/lp/texa-2026-conference</loc>
+    <lastmod>2026-07-27</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://w-techbrasil.com.br/lp/curso-de-suspensao-w-tech-em-sao-jose-do-rio-preto-2026-08-29</loc>
     <lastmod>2026-01-15</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://w-techbrasil.com.br/lp/curso-de-suspensao-w-tech-em-sao-paulo</loc>
-    <lastmod>2026-01-15</lastmod>
-    <priority>0.7</priority>
+    <loc>https://w-techbrasil.com.br/glossario/rebound-retorno</loc>
+    <lastmod>2026-07-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://w-techbrasil.com.br/glossario/compression-compressao</loc>
+    <lastmod>2026-07-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://w-techbrasil.com.br/glossario/preload-pre-carga</loc>
+    <lastmod>2026-07-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

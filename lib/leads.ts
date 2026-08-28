@@ -1,10 +1,21 @@
 import { supabase } from './supabaseClient';
 import { fetchStaffDirectory } from './staffDirectory';
+import { findExistingLead, isWonStatus, preserveWonStatus } from './leadMatch';
 import { Enrollment } from '../types';
 
 /**
- * Syncs a student (enrollment) to the unified SITE_Leads table.
- * This ensures students appear in unified search and can be used in orders.
+ * Sincroniza um aluno (matrícula) com a tabela unificada SITE_Leads.
+ *
+ * Garante que o aluno apareça na busca unificada e possa ser usado em pedidos.
+ * Se já existir ficha da pessoa, ATUALIZA; só cria uma nova quando realmente
+ * não há ninguém correspondente (ver lib/leadMatch.ts).
+ *
+ * Invariantes:
+ *  - nunca rebaixa um lead já ganho (Converted/Matriculated);
+ *  - nunca sobrescreve dados de conversão reais já gravados pelos webhooks
+ *    de pagamento (Mercado Pago / Stripe);
+ *  - nunca grava nome de atendente em assigned_to (a coluna é UUID; gravar
+ *    texto ali fazia o INSERT/UPDATE inteiro falhar com erro 22P02).
  */
 export async function syncStudentToLeads(enrollment: any) {
     const email = enrollment.studentEmail || enrollment.student_email;
@@ -13,16 +24,9 @@ export async function syncStudentToLeads(enrollment: any) {
     if (!email && !phone) return null;
 
     try {
-        // 1. Try to find existing lead by email or phone
-        let query = supabase.from('SITE_Leads').select('*');
-        if (email) {
-            query = query.eq('email', email);
-        } else {
-            query = query.eq('phone', phone);
-        }
-
-        const { data: existingLeads } = await query;
-        const existing = existingLeads?.[0];
+        // 1. Localiza a ficha existente (e-mail sem case-sensitive OU últimos 8
+        //    dígitos do telefone). Match exato aqui era a causa das duplicatas.
+        const existing = await findExistingLead<any>(supabase, { email, phone });
 
         // Support both camelCase and snake_case properties
         const name = enrollment.studentName || enrollment.student_name;
@@ -51,10 +55,9 @@ export async function syncStudentToLeads(enrollment: any) {
 
         const leadData: any = {
             name: name,
-            email: email,
-            phone: phone,
             type: 'Course_Registration',
-            status: isPaid ? 'Converted' : 'Qualified',
+            // Matrícula nunca rebaixa quem já está ganho no funil.
+            status: preserveWonStatus(existing?.status, isPaid ? 'Converted' : 'Qualified'),
             zip_code: zipCode,
             address_street: address,
             address_number: addressNumber,
@@ -63,10 +66,6 @@ export async function syncStudentToLeads(enrollment: any) {
             address_state: state,
             cpf: cpf,
             t_shirt_size: tShirtSize,
-            conversion_value: totalAmount || 380,
-            conversion_summary: 'Matrícula Confirmada via Checkout',
-            conversion_type: 'Course_Registration',
-            ...(enrolledByName && { assigned_to: enrolledByName }),
             workshop_details: {
                 name: workshopName || '',
                 address: workshopAddress || '',
@@ -86,6 +85,21 @@ export async function syncStudentToLeads(enrollment: any) {
 - Tempo na área: ${experienceYears || 'N/A'}`
         };
 
+        // Contato só é sobrescrito quando temos valor — não apaga o que o lead já tem.
+        if (email) leadData.email = email;
+        if (phone) leadData.phone = phone;
+
+        // Dados de conversão: preserva o que os webhooks de pagamento gravaram.
+        // Só escreve quando a ficha ainda não tem valor real registrado.
+        const hasRealConversion = isWonStatus(existing?.status) && Number(existing?.conversion_value) > 0;
+        if (!hasRealConversion) {
+            if (Number(totalAmount) > 0) leadData.conversion_value = Number(totalAmount);
+            leadData.conversion_type = 'Course_Registration';
+            leadData.conversion_summary = enrolledByName
+                ? `Matrícula registrada por ${enrolledByName}`
+                : 'Matrícula Confirmada via Checkout';
+        }
+
         if (existing) {
             // Update
             const { data, error } = await supabase
@@ -94,7 +108,7 @@ export async function syncStudentToLeads(enrollment: any) {
                 .eq('id', existing.id)
                 .select()
                 .single();
-            
+
             if (error) console.error('Error updating lead from student:', error);
             return data;
         } else {
@@ -141,17 +155,9 @@ export async function createLeadFromContact(
     if (!digits) return { success: false, existed: false, error: 'Telefone inválido.' };
     if (!input.name?.trim()) return { success: false, existed: false, error: 'Nome obrigatório.' };
 
-    const last8 = digits.slice(-8);
-
     try {
-        // Procura lead existente pelo final do telefone (tolera formatos diferentes).
-        const { data: matches } = await supabase
-            .from('SITE_Leads')
-            .select('id, name, assigned_to')
-            .ilike('phone', `%${last8}%`)
-            .limit(1);
-
-        const existing = matches?.[0];
+        // Procura lead existente (mesma regra usada em todo o sistema).
+        const existing = await findExistingLead<any>(supabase, { phone: digits });
 
         if (existing) {
             const patch: Record<string, any> = {};

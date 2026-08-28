@@ -5,6 +5,8 @@
  * Arquivos com prefixo "_" dentro de /api não viram rotas na Vercel.
  */
 
+import { findExistingLead, isWonStatus, preserveWonStatus } from '../lib/leadMatch.js';
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const RECOVERY_TAGS = ['recuperacao_checkout', 'pagamento_nao_concluido'];
@@ -71,16 +73,12 @@ export async function recoverLeadToRoulette(
     return { recovered: false, detail: 'enrollment has no email/phone to locate lead' };
   }
 
-  const orFilter = [email && `email.eq.${email}`, phone && `phone.eq.${phone}`].filter(Boolean).join(',');
-  const { data: lead } = await supabase
-    .from('SITE_Leads')
-    .select('id, status, assigned_to, tags, notes')
-    .or(orFilter)
-    .limit(1)
-    .maybeSingle();
+  // Busca tolerante: o match exato de antes errava contra leads gravados com
+  // máscara pelas landing pages e a recuperação acabava INSERINDO ficha nova.
+  const lead = await findExistingLead<any>(supabase, { email, phone });
 
-  if (lead?.status === 'Converted') {
-    return { recovered: false, detail: 'lead already Converted — not downgrading' };
+  if (isWonStatus(lead?.status)) {
+    return { recovered: false, detail: `lead already ${lead.status} — not downgrading` };
   }
 
   const existingTags: string[] = lead?.tags || [];
@@ -97,7 +95,7 @@ export async function recoverLeadToRoulette(
   const recoveryNote = `[Recuperação de Checkout] ${new Date().toISOString()} — ${reason}`;
 
   const leadPayload: any = {
-    status: 'New',
+    status: preserveWonStatus(lead?.status, 'New'),
     assigned_to: attendant?.id || null,
     tags: mergedTags,
     notes: lead?.notes ? `${lead.notes}\n${recoveryNote}` : recoveryNote,

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { findExistingLead, preserveWonStatus } from '../lib/leadMatch.js';
 
 /**
  * Vercel Serverless Function — Mercado Pago Create Preference
@@ -75,40 +76,41 @@ export default async function handler(req: any, res: any) {
 
     const enrollmentId = enrollment.id;
 
-    // 3. Garante a criação/atualização do lead com status 'New' e atribuído ao robô
+    // 3. Garante a ficha do lead no CRM (sem duplicar e sem rebaixar quem já é cliente)
     let finalLeadId = leadId;
     const cleanEmail = customer.email.trim().toLowerCase();
     const cleanPhone = customer.phone.replace(/\D/g, '');
 
+    // Busca tolerante (e-mail sem case-sensitive / últimos 8 dígitos do telefone).
+    // O match exato de antes errava sempre que o lead tinha sido gravado com
+    // máscara pela landing page, e o checkout criava uma ficha duplicada.
+    let existingLead: any = null;
     if (!finalLeadId) {
-      const { data: foundLead } = await supabase
+      existingLead = await findExistingLead<any>(supabase, { email: cleanEmail, phone: cleanPhone });
+      if (existingLead) finalLeadId = existingLead.id;
+    } else {
+      const { data } = await supabase
         .from('SITE_Leads')
-        .select('id')
-        .or(`email.eq.${cleanEmail},phone.eq.${cleanPhone}`)
-        .limit(1)
+        .select('id, status, tags')
+        .eq('id', finalLeadId)
         .maybeSingle();
-      if (foundLead) {
-        finalLeadId = foundLead.id;
-      }
+      existingLead = data;
     }
 
     const leadPayload: any = {
       name: customer.name.trim(),
       email: cleanEmail,
       phone: cleanPhone,
-      status: 'New', // Sempre reseta como Novo no preenchimento do checkout
-      assigned_to: 'Automático', // Atribuído ao Robô
+      // Abrir um checkout não desfaz uma venda anterior: quem já está ganho
+      // permanece ganho. NÃO gravar nome em assigned_to — a coluna é UUID e
+      // gravar texto ali fazia o INSERT/UPDATE inteiro falhar (erro 22P02),
+      // por isso este bloco nunca chegava a criar/atualizar lead nenhum.
+      status: preserveWonStatus(existingLead?.status, 'New'),
       origin: 'Checkout Automatizado',
       updated_at: new Date().toISOString()
     };
 
     if (finalLeadId) {
-      const { data: existingLead } = await supabase
-        .from('SITE_Leads')
-        .select('tags')
-        .eq('id', finalLeadId)
-        .single();
-      
       const existingTags = existingLead?.tags || [];
       const mergedTags = Array.from(new Set([...existingTags, 'checkout_automatico', 'checkout_direto']));
       
