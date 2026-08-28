@@ -1,7 +1,16 @@
 import { supabase } from './supabaseClient';
-import { getGlobalWhatsAppConfig } from './whatsapp';
 import { generateContent } from './ai';
-import { publicApiUrl, isOwnWebhookUrl } from './publicUrl';
+import {
+    EvolutionStaffError,
+    evolutionCheckAttendantWebhook,
+    evolutionConnect,
+    evolutionCreate,
+    evolutionDelete,
+    evolutionInstanceInfo,
+    evolutionLogout,
+    evolutionRegisterAttendantWebhook,
+    evolutionStatus,
+} from './evolutionStaff';
 
 /**
  * Atendentes WhatsApp — espelho de conversas + análise por IA.
@@ -15,11 +24,9 @@ import { publicApiUrl, isOwnWebhookUrl } from './publicUrl';
  *   4. gera o relatório de qualidade de atendimento com a IA (lib/ai.ts).
  *
  * A IA NUNCA envia nada no WhatsApp — é análise passiva, sob demanda.
- * (Gestão de instância no navegador segue o padrão atual do admin — ver nota
- * de segurança em lib/whatsapp.ts.)
+ * A gestão das instâncias passa pelo boundary staff do servidor; URL e chave
+ * da Evolution nunca chegam ao navegador.
  */
-
-const WEBHOOK_TOKEN_KEY = 'wa_atendentes_webhook_token';
 
 export const ATENDENTE_SLOTS = [1, 2, 3, 4, 5] as const;
 export const defaultInstanceName = (slot: number) => `w-tech-atendente-${slot}`;
@@ -68,34 +75,19 @@ export interface WaAnalise {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Evolution API — ciclo de vida da instância do atendente
+// Evolution API — ciclo de vida via boundary staff autenticado
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface EvoConfig { serverUrl: string; apiKey: string }
-
-async function getEvoConfig(): Promise<EvoConfig | null> {
-    const config = await getGlobalWhatsAppConfig();
-    if (!config?.serverUrl || !config?.apiKey) return null;
-    return config;
-}
-
-/** Garante que o token do webhook existe em SITE_Config (gera na primeira vez). */
-export async function ensureWebhookToken(): Promise<string> {
-    const { data } = await supabase
-        .from('SITE_Config')
-        .select('value')
-        .eq('key', WEBHOOK_TOKEN_KEY)
-        .maybeSingle();
-
-    const existing = (data?.value || '').trim();
-    if (existing) return existing;
-
-    const token = crypto.randomUUID().replace(/-/g, '');
-    const { error } = await supabase
-        .from('SITE_Config')
-        .upsert({ key: WEBHOOK_TOKEN_KEY, value: token }, { onConflict: 'key' });
-    if (error) throw new Error('Falha ao salvar o token do webhook: ' + error.message);
-    return token;
+function evolutionError(error: unknown, fallback: string): string {
+    if (!(error instanceof EvolutionStaffError)) return fallback;
+    if (error.code === 'evolution_not_configured') {
+        return 'Servidor Evolution não configurado (Configurações → Integrações).';
+    }
+    if (error.code === 'network_error') return 'Não foi possível acessar o servidor do sistema.';
+    if (error.code === 'evolution_timeout') return 'O servidor Evolution demorou demais para responder.';
+    if (error.code === 'invalid_instance') return 'O nome da instância é inválido.';
+    if (error.status === 401 || error.status === 403) return 'Você não tem permissão para gerenciar esta instância.';
+    return fallback;
 }
 
 /**
@@ -104,133 +96,51 @@ export async function ensureWebhookToken(): Promise<string> {
  * chave) e `groupsIgnore:false` (senão mensagens de grupo somem).
  */
 export async function registerAtendenteWebhook(instanceName: string): Promise<{ ok: boolean; error?: string }> {
-    const evo = await getEvoConfig();
-    if (!evo) return { ok: false, error: 'Servidor Evolution não configurado (Configurações → Integrações).' };
-
-    let token: string;
     try {
-        token = await ensureWebhookToken();
-    } catch (e: any) {
-        return { ok: false, error: e?.message || 'Falha ao gerar token do webhook.' };
+        const result = await evolutionRegisterAttendantWebhook(instanceName);
+        return result.pointsHere
+            ? { ok: true }
+            : { ok: false, error: 'O webhook não pôde ser confirmado nesta instância.' };
+    } catch (error) {
+        return { ok: false, error: evolutionError(error, 'Falha ao registrar webhook.') };
     }
-
-    // O webhook é servido pelo próprio site (Express em /api). URL absoluta e
-    // CANÔNICA: quem chama é a Evolution API (serviço externo), não o navegador —
-    // window.location.origin gravaria aqui o domínio de onde o admin foi aberto.
-    const url = publicApiUrl(`/api/wa-atendentes-webhook?token=${token}`);
-
-    try {
-        const res = await fetch(`${evo.serverUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: evo.apiKey },
-            body: JSON.stringify({
-                webhook: {
-                    enabled: true,
-                    url,
-                    webhookByEvents: false,
-                    base64: false,
-                    events: ['MESSAGES_UPSERT', 'SEND_MESSAGE', 'CONNECTION_UPDATE'],
-                },
-            }),
-        });
-        if (!res.ok) {
-            const body = await res.json().catch(() => null);
-            const msg = body?.response?.message || body?.message || body?.error || `HTTP ${res.status}`;
-            return { ok: false, error: 'Falha ao registrar webhook: ' + (Array.isArray(msg) ? msg.join('; ') : String(msg)) };
-        }
-    } catch (e: any) {
-        return { ok: false, error: 'Falha ao registrar webhook: ' + e?.message };
-    }
-
-    // Settings da instância — espelho 100% passivo (não marca como lida, não muda
-    // presença, não rejeita chamada, não puxa histórico completo). O formato varia
-    // entre versões da Evolution; falha aqui não bloqueia a conexão.
-    try {
-        await fetch(`${evo.serverUrl}/settings/set/${encodeURIComponent(instanceName)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: evo.apiKey },
-            body: JSON.stringify({
-                rejectCall: false,
-                groupsIgnore: false,
-                alwaysOnline: false,
-                readMessages: false,
-                readStatus: false,
-                syncFullHistory: false,
-            }),
-        });
-    } catch {
-        // best-effort
-    }
-
-    return { ok: true };
 }
 
 /** Cria a instância na Evolution (ou reaproveita se já existir) e registra o webhook. */
 export async function createAtendenteInstance(instanceName: string): Promise<{ ok: boolean; qr?: string | null; error?: string }> {
-    const evo = await getEvoConfig();
-    if (!evo) return { ok: false, error: 'Servidor Evolution não configurado (Configurações → Integrações).' };
-
     try {
-        const res = await fetch(`${evo.serverUrl}/instance/create`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: evo.apiKey },
-            body: JSON.stringify({
-                instanceName,
-                token: evo.apiKey,
-                qrcode: true,
-                integration: 'WHATSAPP-BAILEYS',
-            }),
-        });
-        const data = await res.json().catch(() => ({}));
-
-        const created = !!(data.instance || data.hash);
-        const alreadyExists = JSON.stringify(data).includes('already');
-        if (!created && !alreadyExists) {
-            const msg = data?.response?.message || data?.message || data?.error || JSON.stringify(data).slice(0, 200);
-            return { ok: false, error: 'Erro ao criar instância: ' + (Array.isArray(msg) ? msg.join('; ') : String(msg)) };
-        }
+        const created = await evolutionCreate('attendant', instanceName);
 
         const webhook = await registerAtendenteWebhook(instanceName);
         if (!webhook.ok) return { ok: false, error: webhook.error };
 
-        return { ok: true, qr: data.qrcode?.base64 || null };
-    } catch (e: any) {
-        return { ok: false, error: 'Erro de requisição: ' + e?.message };
+        return { ok: true, qr: created.qr || null };
+    } catch (error) {
+        return { ok: false, error: evolutionError(error, 'Erro ao criar instância.') };
     }
 }
 
 /** Busca o QR Code de conexão (re-registrando o webhook — auto-heal). */
 export async function connectAtendenteInstance(instanceName: string): Promise<{ ok: boolean; qr?: string | null; state?: string; error?: string }> {
-    const evo = await getEvoConfig();
-    if (!evo) return { ok: false, error: 'Servidor Evolution não configurado.' };
-
+    // Auto-heal best-effort, como antes: uma falha de webhook não impede que o
+    // operador recupere o QR e reconecte a instância.
     await registerAtendenteWebhook(instanceName);
 
     try {
-        const res = await fetch(`${evo.serverUrl}/instance/connect/${encodeURIComponent(instanceName)}`, {
-            method: 'GET',
-            headers: { apikey: evo.apiKey },
-        });
-        const data = await res.json().catch(() => ({}));
-        if (data.base64) return { ok: true, qr: data.base64 };
-        if (data.instance?.state === 'open') return { ok: true, qr: null, state: 'open' };
+        const connected = await evolutionConnect('attendant', instanceName);
+        if (connected.qr) return { ok: true, qr: connected.qr };
+        if (connected.state === 'open') return { ok: true, qr: null, state: 'open' };
         return { ok: false, error: 'Não foi possível obter o QR Code. Crie a instância primeiro.' };
-    } catch (e: any) {
-        return { ok: false, error: 'Erro: ' + e?.message };
+    } catch (error) {
+        return { ok: false, error: evolutionError(error, 'Não foi possível obter o QR Code.') };
     }
 }
 
 /** Estado real da instância na Evolution (normalizado). */
 export async function getAtendenteConnectionState(instanceName: string): Promise<string> {
-    const evo = await getEvoConfig();
-    if (!evo) return 'error';
     try {
-        const res = await fetch(`${evo.serverUrl}/instance/connectionState/${encodeURIComponent(instanceName)}`, {
-            method: 'GET',
-            headers: { apikey: evo.apiKey },
-        });
-        const data = await res.json().catch(() => ({}));
-        return data?.instance?.state || data?.state || data?.connectionStatus?.state || 'disconnected';
+        const result = await evolutionStatus('attendant', instanceName);
+        return result.state;
     } catch {
         return 'error';
     }
@@ -244,16 +154,10 @@ export async function getAtendenteConnectionState(instanceName: string): Promise
  * Retorna null quando não dá para checar (sem config / falha de rede).
  */
 export async function checkAtendenteWebhook(instanceName: string): Promise<{ url: string | null; aponta_para_ca: boolean } | null> {
-    const evo = await getEvoConfig();
-    if (!evo) return null;
     try {
-        const res = await fetch(`${evo.serverUrl}/webhook/find/${encodeURIComponent(instanceName)}`, {
-            method: 'GET',
-            headers: { apikey: evo.apiKey },
-        });
-        const data = await res.json().catch(() => null);
-        const url: string | null = data?.url || data?.webhook?.url || null;
-        return { url, aponta_para_ca: isOwnWebhookUrl(url) };
+        const result = await evolutionCheckAttendantWebhook(instanceName);
+        // A URL contém o token do webhook e, por isso, não volta ao navegador.
+        return { url: null, aponta_para_ca: result.pointsHere };
     } catch {
         return null;
     }
@@ -261,20 +165,9 @@ export async function checkAtendenteWebhook(instanceName: string): Promise<{ url
 
 /** Número (ownerJid) da instância conectada — para exibir qual WhatsApp está pareado. */
 export async function fetchAtendentePhone(instanceName: string): Promise<string | null> {
-    const evo = await getEvoConfig();
-    if (!evo) return null;
     try {
-        const res = await fetch(`${evo.serverUrl}/instance/fetchInstances?instanceName=${encodeURIComponent(instanceName)}`, {
-            method: 'GET',
-            headers: { apikey: evo.apiKey },
-        });
-        const data = await res.json().catch(() => null);
-        const list = Array.isArray(data) ? data : data?.instances || [];
-        const found = list.find((i: any) =>
-            (i?.instance?.instanceName || i?.instanceName || i?.name) === instanceName) || list[0];
-        const owner = found?.instance?.owner || found?.owner || found?.ownerJid || '';
-        const phone = String(owner).split('@')[0].trim();
-        return phone || null;
+        const result = await evolutionInstanceInfo('attendant', instanceName);
+        return result.phone;
     } catch {
         return null;
     }
@@ -282,31 +175,21 @@ export async function fetchAtendentePhone(instanceName: string): Promise<string 
 
 /** Desconecta o WhatsApp (mantém a instância — dá para reconectar com novo QR). */
 export async function logoutAtendenteInstance(instanceName: string): Promise<{ ok: boolean; error?: string }> {
-    const evo = await getEvoConfig();
-    if (!evo) return { ok: false, error: 'Servidor Evolution não configurado.' };
     try {
-        await fetch(`${evo.serverUrl}/instance/logout/${encodeURIComponent(instanceName)}`, {
-            method: 'DELETE',
-            headers: { apikey: evo.apiKey },
-        });
+        await evolutionLogout('attendant', instanceName);
         return { ok: true };
-    } catch (e: any) {
-        return { ok: false, error: e?.message };
+    } catch (error) {
+        return { ok: false, error: evolutionError(error, 'Não foi possível desconectar a instância.') };
     }
 }
 
 /** Apaga a instância do servidor Evolution (as mensagens já espelhadas ficam no banco). */
 export async function deleteAtendenteInstance(instanceName: string): Promise<{ ok: boolean; error?: string }> {
-    const evo = await getEvoConfig();
-    if (!evo) return { ok: false, error: 'Servidor Evolution não configurado.' };
     try {
-        await fetch(`${evo.serverUrl}/instance/delete/${encodeURIComponent(instanceName)}`, {
-            method: 'DELETE',
-            headers: { apikey: evo.apiKey },
-        });
+        await evolutionDelete('attendant', instanceName);
         return { ok: true };
-    } catch (e: any) {
-        return { ok: false, error: e?.message };
+    } catch (error) {
+        return { ok: false, error: evolutionError(error, 'Não foi possível apagar a instância.') };
     }
 }
 

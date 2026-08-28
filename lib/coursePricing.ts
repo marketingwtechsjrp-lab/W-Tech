@@ -1,5 +1,8 @@
 import type { LPLanguage } from './lpErgonomiaTranslations';
 import { detectBrowserLandingLanguage, fetchGeoLookup } from './geoLanguage';
+import { normalizeHotmartCheckoutUrl } from './hotmartCheckout';
+
+export { normalizeHotmartCheckoutUrl } from './hotmartCheckout';
 
 /**
  * Fonte única de verdade do preço e do checkout do Curso Online de Suspensão.
@@ -23,21 +26,13 @@ export type BillingRegion = 'br' | 'intl';
 export const KIWIFY_CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
 
 /**
- * ⚠️ PREENCHER quando a conta Hotmart estiver criada e o curso migrado.
- *
- * Enquanto estiver vazio, o público internacional continua caindo no checkout
- * do Kiwify — que cobra em real e exige CPF/CNPJ. Por isso, e só enquanto isso
- * for verdade, o preço em euro aparece acompanhado de `chargedNotice`. No
- * momento em que esta constante receber a URL da Hotmart, o aviso some sozinho,
- * o schema.org passa a declarar EUR e o europeu paga em euro de fato. Nenhuma
- * outra linha do projeto precisa mudar.
+ * O link Hotmart vem da chave pública `hotmart_checkout_url` em SITE_Config.
+ * Ausência, falha de leitura ou valor inválido preservam o fallback Kiwify.
  */
-export const HOTMART_CHECKOUT_URL = '';
-
-const internationalCheckoutReady = HOTMART_CHECKOUT_URL.trim().length > 0;
-
-export const getCheckoutUrl = (region: BillingRegion): string =>
-    region === 'intl' && internationalCheckoutReady ? HOTMART_CHECKOUT_URL : KIWIFY_CHECKOUT_URL;
+export const getCheckoutUrl = (region: BillingRegion, hotmartCheckoutUrl?: unknown): string => {
+    const validatedHotmartUrl = normalizeHotmartCheckoutUrl(hotmartCheckoutUrl);
+    return region === 'intl' && validatedHotmartUrl ? validatedHotmartUrl : KIWIFY_CHECKOUT_URL;
+};
 
 /** Base legada para chamadas que ainda não conhecem região. */
 export const COURSE_CHECKOUT_URL = KIWIFY_CHECKOUT_URL;
@@ -135,7 +130,7 @@ const FALLBACK_NOTICE: Record<LPLanguage, string> = {
     en: 'Reference amount. Payment is charged in Brazilian reais (R$ 347.00) at the Kiwify checkout.',
 };
 
-const eur = (language: LPLanguage): CoursePrice => ({
+const eur = (language: LPLanguage, internationalCheckoutReady: boolean): CoursePrice => ({
     currency: 'EUR',
     symbol: '€',
     integer: '59',
@@ -154,9 +149,19 @@ const eur = (language: LPLanguage): CoursePrice => ({
     schemaCurrency: internationalCheckoutReady ? 'EUR' : 'BRL',
 });
 
-/** `region` manda na moeda; `language` só escolhe o idioma dos avisos. */
-export const getCoursePrice = (region: BillingRegion, language: LPLanguage): CoursePrice =>
-    region === 'intl' ? eur(language) : brl(language);
+/**
+ * `region` manda na moeda; `language` só escolhe o idioma dos avisos. O mesmo
+ * link validado que define o CTA define a moeda estruturada, evitando que preço
+ * e destino entrem em estados diferentes durante a leitura assíncrona.
+ */
+export const getCoursePrice = (
+    region: BillingRegion,
+    language: LPLanguage,
+    hotmartCheckoutUrl?: unknown,
+): CoursePrice => {
+    if (region === 'br') return brl(language);
+    return eur(language, normalizeHotmartCheckoutUrl(hotmartCheckoutUrl) !== null);
+};
 
 export const regionFromCountry = (country?: string | null): BillingRegion =>
     country?.trim().toUpperCase() === 'BR' ? 'br' : 'intl';

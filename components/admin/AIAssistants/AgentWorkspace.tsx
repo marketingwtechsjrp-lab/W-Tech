@@ -6,6 +6,7 @@ import {
     type LeoStats, type BiaStats, type RitaStats, type SofiaStats,
 } from '../../../lib/aiAgentsData';
 import { AI_AGENT_BY_ID, DEFAULT_AGENT_PROMPTS, type AIAgentId } from '../../../lib/aiAgentDefaults';
+import { saveAiGroupSiteConfig } from '../../../lib/staffConfig';
 import CourseInsightsPanel from './CourseInsightsPanel';
 
 export type AgentId = AIAgentId;
@@ -215,10 +216,7 @@ const PromptEditor: React.FC<{ agent: AgentId }> = ({ agent }) => {
     const save = async (value: string) => {
         setSaving(true);
         try {
-            const { error } = await supabase
-                .from('SITE_Config')
-                .upsert({ key: meta.promptKey, value }, { onConflict: 'key' });
-            if (error) throw error;
+            await saveAiGroupSiteConfig({ key: meta.promptKey, value });
             setPrompt(value);
             setSavedAt(Date.now());
         } catch (e: any) {

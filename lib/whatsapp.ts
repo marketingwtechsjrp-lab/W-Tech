@@ -1,42 +1,5 @@
 import { supabase } from './supabaseClient';
 
-interface WhatsAppConfig {
-    serverUrl: string;
-    apiKey: string;
-    instanceName: string;
-}
-
-/**
- * Config global do Evolution (URL + chave) lida de SITE_Config.
- *
- * ATENÇÃO (segurança): esta função ainda lê `evolution_api_key` no navegador.
- * O ENVIO de mensagens já foi movido para o servidor (/api/whatsapp-send); o que
- * resta aqui é o uso pelas telas de ADMIN de gestão de instância/QR
- * (AdminIntegrations, UserWhatsAppConnection, GroupBotPanel). Enquanto esses
- * fluxos não forem movidos ao servidor, NÃO aplicar o lock de RLS sobre
- * `evolution_api_key` (senão a conexão/QR do admin quebra). Ver plano, Fase 3.
- */
-export const getGlobalWhatsAppConfig = async (): Promise<Omit<WhatsAppConfig, 'instanceName'> | null> => {
-     try {
-        const { data } = await supabase.from('SITE_Config').select('*');
-        if (!data) return null;
-
-        const map: Record<string, string> = {};
-        data.forEach((c: any) => map[c.key] = c.value);
-
-        // Chave/URL ausentes (ex.: leitura bloqueada por RLS) → null, sem TypeError.
-        if (!map['evolution_api_url'] || !map['evolution_api_key']) return null;
-
-        return {
-            serverUrl: map['evolution_api_url'].replace(/\/$/, ''),
-            apiKey: map['evolution_api_key'].trim(),
-        };
-    } catch (error) {
-        console.error('Error fetching Global WhatsApp config:', error);
-        return null;
-    }
-};
-
 /**
  * Instância Evolution configurada para uma rota de saída (Admin → Integrações →
  * Motor de Envio). Vazio/erro = null (o chamador cai no comportamento padrão).

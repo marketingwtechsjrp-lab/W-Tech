@@ -35,33 +35,18 @@ const RegistrationForm = () => {
 
             if (dbError) throw dbError;
 
-            // WhatsApp Dispatch - Direct Evolution API call using NoemiMarketing instance
+            // Disparo server-side: a chave da Evolution nunca vai para o bundle.
             try {
-                const instanceName = 'NoemiMarketing';
-                const apiKey = 'F33D9C5524C6-4231-97A8-47CCFD2364A2';
-                const evolutionUrl = 'https://api.2b.app.br';
+                const result = await sendWhatsAppMessage(
+                    formData.phone,
+                    `Olá ${formData.name}! Tudo bem? Aqui é da equipe da W-Tech. Vi que você demonstrou interesse na Imersão Pronello que vai acontecer no dia 10 de Abril. O evento é 100% gratuito, mas as nossas vagas são limitadas. Gostaria de entender um pouco mais sobre você, podemos seguir por aqui para confirmar o seu lugar?`,
+                    'NoemiMarketing',
+                );
 
-                let formattedPhone = formData.phone.replace(/\D/g, '');
-                if (!formattedPhone.startsWith('55')) {
-                    formattedPhone = '55' + formattedPhone;
-                }
-
-                const response = await fetch(`${evolutionUrl}/message/sendText/${instanceName}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': apiKey
-                    },
-                    body: JSON.stringify({
-                        number: formattedPhone,
-                        text: `Olá ${formData.name}! Tudo bem? Aqui é da equipe da W-Tech. Vi que você demonstrou interesse na Imersão Pronello que vai acontecer no dia 10 de Abril. O evento é 100% gratuito, mas as nossas vagas são limitadas. Gostaria de entender um pouco mais sobre você, podemos seguir por aqui para confirmar o seu lugar?`
-                    })
-                });
-                
-                if (response.ok) {
+                if (result.success) {
                     console.log('WhatsApp message sent successfully via NoemiMarketing API.');
                 } else {
-                    console.error('Failed to send WhatsApp message via Evolution API', await response.text());
+                    console.error('Failed to send WhatsApp message via server API.');
                 }
             } catch (whatsappErr) {
                 console.error('Erro ao disparar WhatsApp:', whatsappErr);

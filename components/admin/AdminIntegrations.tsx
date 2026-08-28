@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { upsertSiteConfig } from '../../lib/siteConfig';
+import { saveGlobalSiteConfig } from '../../lib/staffConfig';
 import { useAuth } from '../../context/AuthContext';
 import { createHasPermission } from '../../lib/permissions';
 import { Save, Server, AlertTriangle, Send, Image as ImageIcon, Smartphone, Banknote, CreditCard, BarChart3, Globe, ToggleLeft, ToggleRight, ShoppingCart, FlaskConical, ExternalLink, CheckCircle2, RefreshCw, Trash2, Loader2, XCircle, Bot, QrCode } from 'lucide-react';
-import { getGlobalWhatsAppConfig, sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
+import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../lib/whatsapp';
+import {
+    evolutionConnect,
+    evolutionCreate,
+    evolutionDelete,
+    evolutionGroups,
+    evolutionStatus,
+} from '../../lib/evolutionStaff';
 import { getStripeConfig } from '../../lib/stripe';
 import { createMercadoPagoPreference } from '../../lib/mercadopago';
 
@@ -12,6 +19,49 @@ interface AdminIntegrationsProps {
     /** Permite ao cabeçalho do Admin (botão Salvar) disparar o salvamento desta aba. */
     registerSave?: (fn: () => void) => void;
 }
+
+interface HotmartSettingsResponse {
+    success: true;
+    checkoutUrl: string;
+    productId: string;
+    evolutionApiUrl: string;
+    courseWhatsAppInstance: string;
+    automationEnabled: boolean;
+    courseSalesEnabled: boolean;
+    webhookTokenConfigured: boolean;
+    clientIdConfigured: boolean;
+    clientSecretConfigured: boolean;
+    evolutionApiKeyConfigured: boolean;
+}
+
+interface HotmartSettingsErrorResponse {
+    success?: false;
+    error?: string;
+}
+
+type HotmartSettingsApiResponse = HotmartSettingsResponse | HotmartSettingsErrorResponse;
+
+interface HotmartSettingsStatus {
+    loaded: boolean;
+    error: string | null;
+    webhookTokenConfigured: boolean;
+    clientIdConfigured: boolean;
+    clientSecretConfigured: boolean;
+    evolutionApiKeyConfigured: boolean;
+}
+
+const HOTMART_SITE_CONFIG_FILTER = [
+    'hotmart_checkout_url',
+    'hotmart_product_id',
+    'hotmart_webhook_token',
+    'hotmart_client_id',
+    'hotmart_client_secret',
+    'evolution_api_url',
+    'evolution_api_key',
+    'wa_instance_curso_online',
+    'wa_automation_enabled',
+    'wa_enabled_course_sales',
+].map(key => `"${key}"`).join(',');
 
 const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     const { user } = useAuth();
@@ -38,6 +88,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         kiwifyClientSecret: '',
         kiwifyAccountId: '',
         hotmartCheckoutUrl: '',
+        hotmartProductId: '',
         hotmartWebhookToken: '',
         hotmartClientId: '',
         hotmartClientSecret: '',
@@ -88,6 +139,17 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [globalConfigLoaded, setGlobalConfigLoaded] = useState(false);
+    const [hotmartSettingsStatus, setHotmartSettingsStatus] = useState<HotmartSettingsStatus>({
+        loaded: false,
+        error: null,
+        webhookTokenConfigured: false,
+        clientIdConfigured: false,
+        clientSecretConfigured: false,
+        evolutionApiKeyConfigured: false,
+    });
+    const evolutionConfigReady = Boolean(globalConfig.serverUrl.trim())
+        && hotmartSettingsStatus.evolutionApiKeyConfigured;
 
     // MP Integration Test State
     const [mpTest, setMpTest] = useState<{
@@ -163,24 +225,15 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
     /** Lista os grupos das instâncias usadas pelos setores do POP — o admin ESCOLHE o grupo. */
     const handleLoadPopGroups = async () => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!evolutionConfigReady) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
         const instances = [...new Set(popConfigs.map(c => (c.instance_name || '').trim()).filter(Boolean))];
         if (instances.length === 0) return alert('Nenhum setor configurado no POP.');
         setIsLoadingPopGroups(true);
         try {
-            const all: Array<{ jid: string; subject: string }> = [];
-            for (const inst of instances) {
-                const response = await fetch(
-                    `${globalConfig.serverUrl}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=false`,
-                    { headers: { apikey: globalConfig.apiKey } }
-                );
-                const data = await response.json();
-                const raw = Array.isArray(data) ? data : (Array.isArray(data?.groups) ? data.groups : []);
-                raw.forEach((g: { id?: string; jid?: string; subject?: string; name?: string }) => {
-                    const jid = g.id || g.jid || '';
-                    if (jid && !all.some(x => x.jid === jid)) all.push({ jid, subject: g.subject || g.name || jid });
-                });
-            }
+            const results = await Promise.all(instances.map(inst => evolutionGroups('admin', inst)));
+            const uniqueGroups = new Map<string, { jid: string; subject: string }>();
+            results.forEach(({ groups }) => groups.forEach(group => uniqueGroups.set(group.jid, group)));
+            const all = [...uniqueGroups.values()];
             all.sort((a, b) => a.subject.localeCompare(b.subject));
             setPopGroups(all);
             if (all.length === 0) alert('Nenhum grupo encontrado — o chip da instância precisa participar dos grupos.');
@@ -239,7 +292,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
     useEffect(() => {
         fetchGlobalConfig();
-    }, [user]);
+    }, [user?.id]);
 
     // Registra (a cada render, para capturar o estado atual) o salvamento
     // desta aba no botão "Salvar" do cabeçalho do Admin.
@@ -250,14 +303,55 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     // --- Global Config Logic ---
 
     const fetchGlobalConfig = async () => {
-        const { data: configs } = await supabase.from('SITE_Config').select('*');
-        
-        if (configs) {
-            const configMap = configs.reduce((acc: any, cfg: any) => ({ ...acc, [cfg.key]: cfg.value }), {});
+        setGlobalConfigLoaded(false);
+        const [siteConfigResult, hotmartResult] = await Promise.all([
+            // A configuração Hotmart é excluída desta leitura anônima; ela só
+            // passa pela rota staff autenticada abaixo.
+            supabase
+                .from('SITE_Config')
+                .select('key, value')
+                .not('key', 'in', `(${HOTMART_SITE_CONFIG_FILTER})`),
+            fetch('/api/staff/hotmart-settings', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' },
+            }).then(async response => ({
+                response,
+                payload: await response.json().catch(() => null) as HotmartSettingsApiResponse | null,
+            })).catch(() => null),
+        ]);
+
+        const configs = siteConfigResult.data || [];
+        const configMap = configs.reduce((acc: Record<string, string>, cfg: { key: string; value: string | null }) => {
+            acc[cfg.key] = cfg.value || '';
+            return acc;
+        }, {});
+        const hotmartSettings = hotmartResult?.response.ok && hotmartResult.payload?.success === true
+            ? hotmartResult.payload as HotmartSettingsResponse
+            : null;
+        const siteConfigLoaded = !siteConfigResult.error;
+
+        setHotmartSettingsStatus({
+            loaded: Boolean(hotmartSettings),
+            error: hotmartSettings && siteConfigLoaded
+                ? null
+                : !siteConfigLoaded
+                    ? 'Não foi possível carregar as configurações atuais. Nada será salvo até recarregar a página.'
+                : (hotmartResult?.payload && 'error' in hotmartResult.payload
+                    ? hotmartResult.payload.error || 'Não foi possível carregar a configuração segura da Hotmart.'
+                    : 'Não foi possível carregar a configuração segura da Hotmart.'),
+            webhookTokenConfigured: hotmartSettings?.webhookTokenConfigured || false,
+            clientIdConfigured: hotmartSettings?.clientIdConfigured || false,
+            clientSecretConfigured: hotmartSettings?.clientSecretConfigured || false,
+            evolutionApiKeyConfigured: hotmartSettings?.evolutionApiKeyConfigured || false,
+        });
+
+        if (!hotmartSettings || !siteConfigLoaded) return;
+        setGlobalConfigLoaded(true);
             
-            setGlobalConfig({
-                serverUrl: configMap['evolution_api_url'] || '',
-                apiKey: configMap['evolution_api_key'] || '',
+        setGlobalConfig({
+                serverUrl: hotmartSettings.evolutionApiUrl,
+                apiKey: '',
                 automationInstance: configMap['automation_whatsapp_instance'] || '',
                 fallbackInstance: configMap['evolution_instance_name'] || '',
                 saldoRemindersEnabled: configMap['saldo_reminders_enabled'] !== 'false',
@@ -275,10 +369,12 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 kiwifyClientId: configMap['kiwify_client_id'] || '',
                 kiwifyClientSecret: configMap['kiwify_client_secret'] || '',
                 kiwifyAccountId: configMap['kiwify_account_id'] || '',
-                hotmartCheckoutUrl: configMap['hotmart_checkout_url'] || '',
-                hotmartWebhookToken: configMap['hotmart_webhook_token'] || '',
-                hotmartClientId: configMap['hotmart_client_id'] || '',
-                hotmartClientSecret: configMap['hotmart_client_secret'] || '',
+                hotmartCheckoutUrl: hotmartSettings?.checkoutUrl || '',
+                hotmartProductId: hotmartSettings?.productId || '',
+                // Segredos nunca voltam da API; vazio significa “preservar ao salvar”.
+                hotmartWebhookToken: '',
+                hotmartClientId: '',
+                hotmartClientSecret: '',
                 affiliatesDriveUrl: configMap['affiliates_drive_url'] || '',
                 brevoEnabled: configMap['brevo_enabled'] === 'true',
                 brevoSmtpHost: configMap['brevo_smtp_host'] || 'smtp-relay.brevo.com',
@@ -302,8 +398,8 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 waEngineSchedule: configMap['wa_engine_schedule'] === 'evolution' ? 'evolution' : 'cloud',
                 waEngineReport: configMap['wa_engine_report'] === 'cloud' ? 'cloud' : 'evolution',
                 // Ausente = ligado (comportamento atual); só 'false' desliga.
-                waAutomationEnabled: configMap['wa_automation_enabled'] !== 'false',
-                waEnabledCourseSales: configMap['wa_enabled_course_sales'] !== 'false',
+                waAutomationEnabled: hotmartSettings.automationEnabled,
+                waEnabledCourseSales: hotmartSettings.courseSalesEnabled,
                 waEnabledBilling: configMap['wa_enabled_billing'] !== 'false',
                 waEnabledSchedule: configMap['wa_enabled_schedule'] !== 'false',
                 waEnabledReport: configMap['wa_enabled_report'] !== 'false',
@@ -314,26 +410,25 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 waInstanceCampaign: configMap['wa_instance_campaign'] || '',
                 waInstanceCrm: configMap['wa_instance_crm'] || '',
                 waInstanceRecovery: configMap['wa_instance_recovery'] || '',
-                waInstanceCursoOnline: configMap['wa_instance_curso_online'] || '',
+                waInstanceCursoOnline: hotmartSettings.courseWhatsAppInstance,
                 waInstanceAiGroup: configMap['ai_group_bot_instance'] || '',
                 waReportEnabled: configMap['wa_report_enabled'] === 'true',
                 waReportGroupJid: configMap['wa_report_group_jid'] || '',
                 waReportGroupName: configMap['wa_report_group_name'] || ''
-            });
+        });
 
-            // Registro de instâncias adicionais (JSON defensivo)
-            try {
-                const parsed = JSON.parse(configMap['evolution_managed_instances'] || '[]');
-                if (Array.isArray(parsed)) {
-                    setManagedInstances(
-                        parsed
-                            .filter((i: any) => i && typeof i.name === 'string' && i.name.trim())
-                            .map((i: any) => ({ name: String(i.name).trim(), label: String(i.label || i.name).trim() }))
-                    );
-                }
-            } catch {
-                setManagedInstances([]);
+        // Registro de instâncias adicionais (JSON defensivo)
+        try {
+            const parsed = JSON.parse(configMap['evolution_managed_instances'] || '[]');
+            if (Array.isArray(parsed)) {
+                setManagedInstances(
+                    parsed
+                        .filter((i: any) => i && typeof i.name === 'string' && i.name.trim())
+                        .map((i: any) => ({ name: String(i.name).trim(), label: String(i.label || i.name).trim() }))
+                );
             }
+        } catch {
+            setManagedInstances([]);
         }
     };
 
@@ -455,14 +550,9 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     /** Consulta o estado real da instância de automação na Evolution. */
     const checkAutomationState = async (instanceOverride?: string) => {
         const instance = (instanceOverride ?? globalConfig.automationInstance).trim();
-        if (!globalConfig.serverUrl || !globalConfig.apiKey || !instance) return;
+        if (!evolutionConfigReady || !instance) return;
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/connectionState/${instance}`, {
-                method: 'GET',
-                headers: { apikey: globalConfig.apiKey }
-            });
-            const data = await response.json();
-            const state = data?.instance?.state || data?.state || data?.connectionStatus?.state || 'disconnected';
+            const { state } = await evolutionStatus('admin', instance);
             setAutomationStatus(state);
             if (state === 'open') setAutomationQr(null);
         } catch {
@@ -473,30 +563,19 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     /** Cria a instância do robô na Evolution e abre o QR Code para escanear. */
     const handleCreateAutomationInstance = async () => {
         const instance = globalConfig.automationInstance.trim();
-        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!evolutionConfigReady) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
         if (!instance) return alert('Digite um nome para a instância de automação (ex: automacao-wtech).');
         setIsManagingAutomation(true);
         setAutomationQr(null);
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', apikey: globalConfig.apiKey },
-                body: JSON.stringify({ instanceName: instance, token: globalConfig.apiKey, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
-            });
-            const data = await response.json();
-
-            const created = !!(data.instance || data.hash);
-            const alreadyExists = JSON.stringify(data).includes('already');
-            if (!created && !alreadyExists) {
-                return alert('Erro ao criar instância: ' + JSON.stringify(data).slice(0, 300));
-            }
+            const result = await evolutionCreate('admin', instance);
 
             // Persiste o nome para o robô do servidor usar imediatamente
-            await upsertSiteConfig({ key: 'automation_whatsapp_instance', value: instance });
+            await saveGlobalSiteConfig({ key: 'automation_whatsapp_instance', value: instance });
 
             // QR pode vir direto do create; senão, busca no connect
-            if (data.qrcode?.base64) {
-                setAutomationQr(data.qrcode.base64);
+            if (result.qr) {
+                setAutomationQr(result.qr);
                 setAutomationStatus('connecting');
             } else {
                 await handleConnectAutomationInstance(instance);
@@ -511,18 +590,14 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     /** Busca o QR Code de conexão da instância (ou detecta que já está conectada). */
     const handleConnectAutomationInstance = async (instanceOverride?: string) => {
         const instance = (instanceOverride ?? globalConfig.automationInstance).trim();
-        if (!globalConfig.serverUrl || !globalConfig.apiKey || !instance) return;
+        if (!evolutionConfigReady || !instance) return;
         setIsManagingAutomation(true);
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/connect/${instance}`, {
-                method: 'GET',
-                headers: { apikey: globalConfig.apiKey }
-            });
-            const data = await response.json();
-            if (data.base64) {
-                setAutomationQr(data.base64);
+            const result = await evolutionConnect('admin', instance);
+            if (result.qr) {
+                setAutomationQr(result.qr);
                 setAutomationStatus('connecting');
-            } else if (data.instance?.state === 'open') {
+            } else if (result.state === 'open') {
                 setAutomationStatus('open');
                 setAutomationQr(null);
                 alert('Esta instância já está conectada!');
@@ -543,10 +618,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         if (!confirm(`ATENÇÃO: isso desconecta e APAGA a instância "${instance}" do servidor Evolution. As automações (cobranças/remarketing) param de enviar até reconectar. Continuar?`)) return;
         setIsManagingAutomation(true);
         try {
-            await fetch(`${globalConfig.serverUrl}/instance/delete/${instance}`, {
-                method: 'DELETE',
-                headers: { apikey: globalConfig.apiKey }
-            });
+            await evolutionDelete('admin', instance);
             setAutomationStatus('disconnected');
             setAutomationQr(null);
             alert('Instância de automação removida do servidor.');
@@ -562,7 +634,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         if (!automationQr) return;
         const timer = setInterval(() => checkAutomationState(), 5000);
         return () => clearInterval(timer);
-    }, [automationQr, globalConfig.automationInstance, globalConfig.serverUrl, globalConfig.apiKey]);
+    }, [automationQr, globalConfig.automationInstance, evolutionConfigReady]);
 
     const handleTestAutomationInstance = async () => {
         if (!automationTestPhone.trim()) return alert('Informe um telefone (DDD + número) para o teste.');
@@ -589,7 +661,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
     /** Persiste o registro de instâncias adicionais no SITE_Config (JSON). */
     const persistManagedInstances = async (list: Array<{ name: string; label: string }>) => {
         try {
-            await upsertSiteConfig({ key: 'evolution_managed_instances', value: JSON.stringify(list) });
+            await saveGlobalSiteConfig({ key: 'evolution_managed_instances', value: JSON.stringify(list) });
         } catch (e: any) {
             alert('Erro ao salvar lista de instâncias: ' + e.message);
         }
@@ -597,14 +669,9 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
     /** Consulta o estado de uma instância adicional na Evolution. */
     const checkManagedState = async (name: string) => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey || !name) return;
+        if (!evolutionConfigReady || !name) return;
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/connectionState/${encodeURIComponent(name)}`, {
-                method: 'GET',
-                headers: { apikey: globalConfig.apiKey }
-            });
-            const data = await response.json();
-            const state = data?.instance?.state || data?.state || data?.connectionStatus?.state || 'disconnected';
+            const { state } = await evolutionStatus('admin', name);
             setInstanceStatuses(prev => ({ ...prev, [name]: state }));
             if (state === 'open') setActiveQr(prev => (prev?.instance === name ? null : prev));
         } catch {
@@ -614,18 +681,14 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
     /** Busca o QR Code de conexão de uma instância adicional (ou detecta que já conectou). */
     const handleConnectManagedInstance = async (name: string) => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey || !name) return;
+        if (!evolutionConfigReady || !name) return;
         setBusyInstance(name);
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/connect/${encodeURIComponent(name)}`, {
-                method: 'GET',
-                headers: { apikey: globalConfig.apiKey }
-            });
-            const data = await response.json();
-            if (data.base64) {
-                setActiveQr({ instance: name, base64: data.base64 });
+            const result = await evolutionConnect('admin', name);
+            if (result.qr) {
+                setActiveQr({ instance: name, base64: result.qr });
                 setInstanceStatuses(prev => ({ ...prev, [name]: 'connecting' }));
-            } else if (data.instance?.state === 'open') {
+            } else if (result.state === 'open') {
                 setInstanceStatuses(prev => ({ ...prev, [name]: 'open' }));
                 setActiveQr(prev => (prev?.instance === name ? null : prev));
                 alert(`A instância "${name}" já está conectada!`);
@@ -641,25 +704,13 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
     /** Cria a instância adicional na Evolution e abre o QR Code. */
     const handleCreateManagedInstance = async (name: string) => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!evolutionConfigReady) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
         setBusyInstance(name);
         setActiveQr(null);
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', apikey: globalConfig.apiKey },
-                body: JSON.stringify({ instanceName: name, token: globalConfig.apiKey, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
-            });
-            const data = await response.json();
-
-            const created = !!(data.instance || data.hash);
-            const alreadyExists = JSON.stringify(data).includes('already');
-            if (!created && !alreadyExists) {
-                return alert('Erro ao criar instância: ' + JSON.stringify(data).slice(0, 300));
-            }
-
-            if (data.qrcode?.base64) {
-                setActiveQr({ instance: name, base64: data.qrcode.base64 });
+            const result = await evolutionCreate('admin', name);
+            if (result.qr) {
+                setActiveQr({ instance: name, base64: result.qr });
                 setInstanceStatuses(prev => ({ ...prev, [name]: 'connecting' }));
             } else {
                 await handleConnectManagedInstance(name);
@@ -673,7 +724,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
 
     /** Cadastra uma nova instância no registro e já cria/conecta na Evolution. */
     const handleAddManagedInstance = async () => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!evolutionConfigReady) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
         const name = newInstName.trim().toLowerCase().replace(/\s+/g, '-');
         if (!name) return alert('Digite o nome da instância (ex: wtech-marketing).');
         const reserved = [globalConfig.automationInstance.trim(), globalConfig.fallbackInstance.trim()].filter(Boolean);
@@ -701,10 +752,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         setBusyInstance(name);
         try {
             if (deleteOnServer) {
-                await fetch(`${globalConfig.serverUrl}/instance/delete/${encodeURIComponent(name)}`, {
-                    method: 'DELETE',
-                    headers: { apikey: globalConfig.apiKey }
-                });
+                await evolutionDelete('admin', name);
             }
             const next = managedInstances.filter(i => i.name !== name);
             setManagedInstances(next);
@@ -745,32 +793,23 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         if (!activeQr) return;
         const timer = setInterval(() => checkManagedState(activeQr.instance), 5000);
         return () => clearInterval(timer);
-    }, [activeQr, globalConfig.serverUrl, globalConfig.apiKey]);
+    }, [activeQr, evolutionConfigReady]);
 
     // Ao carregar o registro (ou a config do servidor), atualiza o status de cada instância
     useEffect(() => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey || managedInstances.length === 0) return;
+        if (!evolutionConfigReady || managedInstances.length === 0) return;
         managedInstances.forEach(i => { checkManagedState(i.name); });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [managedInstances.length, globalConfig.serverUrl, globalConfig.apiKey]);
+    }, [managedInstances.length, evolutionConfigReady]);
 
     /** Lista os grupos da instância do relatório — o admin ESCOLHE o grupo (padrão MotoFix). */
     const handleLoadReportGroups = async () => {
         const instance = (globalConfig.waInstanceReport || globalConfig.automationInstance || globalConfig.fallbackInstance).trim();
-        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
+        if (!evolutionConfigReady) return alert('Preencha e salve a Server URL e a Global API Key primeiro.');
         if (!instance) return alert('Configure a instância do relatório (ou a instância de automação) antes de listar os grupos.');
         setIsLoadingGroups(true);
         try {
-            const response = await fetch(
-                `${globalConfig.serverUrl}/group/fetchAllGroups/${encodeURIComponent(instance)}?getParticipants=false`,
-                { headers: { apikey: globalConfig.apiKey } }
-            );
-            const data = await response.json();
-            // Payload defensivo: a Evolution devolve array direto ou { groups: [...] }
-            const raw = Array.isArray(data) ? data : (Array.isArray(data?.groups) ? data.groups : []);
-            const groups = raw
-                .map((g: any) => ({ jid: g.id || g.jid || '', subject: g.subject || g.name || g.id || 'Grupo sem nome' }))
-                .filter((g: any) => g.jid);
+            const { groups } = await evolutionGroups('admin', instance);
             setReportGroups(groups);
             if (groups.length === 0) {
                 alert(`Nenhum grupo encontrado na instância "${instance}". O número conectado precisa participar do grupo (crie o grupo no WhatsApp e adicione o chip da automação).`);
@@ -825,12 +864,46 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         }
     };
 
+    const saveHotmartSettings = async (): Promise<HotmartSettingsResponse> => {
+        const response = await fetch('/api/staff/hotmart-settings', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                checkoutUrl: globalConfig.hotmartCheckoutUrl.trim(),
+                productId: globalConfig.hotmartProductId.trim(),
+                // Vazios são intencionais: a rota os interpreta como “preservar”.
+                webhookToken: globalConfig.hotmartWebhookToken.trim(),
+                clientId: globalConfig.hotmartClientId.trim(),
+                clientSecret: globalConfig.hotmartClientSecret.trim(),
+                evolutionApiUrl: globalConfig.serverUrl.trim(),
+                evolutionApiKey: globalConfig.apiKey.trim(),
+                courseWhatsAppInstance: globalConfig.waInstanceCursoOnline.trim(),
+                automationEnabled: globalConfig.waAutomationEnabled,
+                courseSalesEnabled: globalConfig.waEnabledCourseSales,
+            }),
+        });
+        const payload = await response.json().catch(() => null) as HotmartSettingsApiResponse | null;
+        if (!response.ok || payload?.success !== true) {
+            const message = payload && 'error' in payload && payload.error
+                ? payload.error
+                : `Falha ao salvar a Hotmart (HTTP ${response.status}).`;
+            throw new Error(message);
+        }
+        return payload;
+    };
+
     const handleSaveGlobalConfig = async () => {
+        if (!globalConfigLoaded || !hotmartSettingsStatus.loaded) {
+            alert('As configurações atuais não foram carregadas com segurança. Recarregue a página antes de salvar.');
+            return;
+        }
         setLoading(true);
         try {
             const updates = [
-                { key: 'evolution_api_url', value: globalConfig.serverUrl },
-                { key: 'evolution_api_key', value: globalConfig.apiKey },
                 { key: 'automation_whatsapp_instance', value: globalConfig.automationInstance.trim() },
                 { key: 'saldo_reminders_enabled', value: String(globalConfig.saldoRemindersEnabled) },
                 { key: 'saldo_reminders_scope', value: globalConfig.saldoRemindersScope },
@@ -848,10 +921,6 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 { key: 'kiwify_client_id', value: globalConfig.kiwifyClientId },
                 { key: 'kiwify_client_secret', value: globalConfig.kiwifyClientSecret },
                 { key: 'kiwify_account_id', value: globalConfig.kiwifyAccountId },
-                { key: 'hotmart_checkout_url', value: globalConfig.hotmartCheckoutUrl },
-                { key: 'hotmart_webhook_token', value: globalConfig.hotmartWebhookToken },
-                { key: 'hotmart_client_id', value: globalConfig.hotmartClientId },
-                { key: 'hotmart_client_secret', value: globalConfig.hotmartClientSecret },
                 { key: 'affiliates_drive_url', value: globalConfig.affiliatesDriveUrl },
                 { key: 'brevo_enabled', value: String(globalConfig.brevoEnabled) },
                 { key: 'brevo_smtp_host', value: globalConfig.brevoSmtpHost },
@@ -874,8 +943,6 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 { key: 'wa_engine_billing', value: globalConfig.waEngineBilling },
                 { key: 'wa_engine_schedule', value: globalConfig.waEngineSchedule },
                 { key: 'wa_engine_report', value: globalConfig.waEngineReport },
-                { key: 'wa_automation_enabled', value: String(globalConfig.waAutomationEnabled) },
-                { key: 'wa_enabled_course_sales', value: String(globalConfig.waEnabledCourseSales) },
                 { key: 'wa_enabled_billing', value: String(globalConfig.waEnabledBilling) },
                 { key: 'wa_enabled_schedule', value: String(globalConfig.waEnabledSchedule) },
                 { key: 'wa_enabled_report', value: String(globalConfig.waEnabledReport) },
@@ -887,7 +954,6 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 { key: 'wa_instance_campaign', value: globalConfig.waInstanceCampaign.trim() },
                 { key: 'wa_instance_crm', value: globalConfig.waInstanceCrm.trim() },
                 { key: 'wa_instance_recovery', value: globalConfig.waInstanceRecovery.trim() },
-                { key: 'wa_instance_curso_online', value: globalConfig.waInstanceCursoOnline.trim() },
                 { key: 'ai_group_bot_instance', value: globalConfig.waInstanceAiGroup.trim() },
                 // Relatório diário do sistema (grupo do dono)
                 { key: 'wa_report_enabled', value: String(globalConfig.waReportEnabled) },
@@ -895,15 +961,31 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                 { key: 'wa_report_group_name', value: globalConfig.waReportGroupName.trim() }
             ];
 
-            // Grava tudo de uma vez via RPC (SECURITY DEFINER) — o upsert direto na
-            // tabela é barrado pela policy de leitura nas chaves secretas. Segredos
-            // com campo vazio são descartados pelo helper (não sobrescreve nada).
-            const refused = await upsertSiteConfig(updates);
-            alert(
-                refused.length
-                    ? `Configurações salvas.\n\nNÃO gravadas — o servidor só aceita estas chaves definidas nele mesmo (variáveis de ambiente):\n${refused.join(', ')}`
-                    : 'Configurações do Servidor salvas!'
-            );
+            // Todas as gravações passam pelas rotas staff com allowlist e
+            // service role; campos secretos vazios preservam o valor atual.
+            const [, hotmartSettings] = await Promise.all([
+                saveGlobalSiteConfig(updates),
+                saveHotmartSettings(),
+            ]);
+            setHotmartSettingsStatus({
+                loaded: true,
+                error: null,
+                webhookTokenConfigured: hotmartSettings.webhookTokenConfigured,
+                clientIdConfigured: hotmartSettings.clientIdConfigured,
+                clientSecretConfigured: hotmartSettings.clientSecretConfigured,
+                evolutionApiKeyConfigured: hotmartSettings.evolutionApiKeyConfigured,
+            });
+            // Remove os valores sensíveis do estado assim que o servidor confirma.
+            setGlobalConfig(prev => ({
+                ...prev,
+                apiKey: '',
+                hotmartCheckoutUrl: hotmartSettings.checkoutUrl,
+                hotmartProductId: hotmartSettings.productId,
+                hotmartWebhookToken: '',
+                hotmartClientId: '',
+                hotmartClientSecret: '',
+            }));
+            alert('Configurações do Servidor salvas!');
         } catch (error: any) {
             alert('Erro ao salvar: ' + error.message);
         } finally {
@@ -915,7 +997,7 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
         const newValue = !globalConfig.checkoutDiretoEnabled;
         setGlobalConfig(prev => ({ ...prev, checkoutDiretoEnabled: newValue }));
         try {
-            await upsertSiteConfig({ key: 'checkout_direto_habilitado', value: String(newValue) });
+            await saveGlobalSiteConfig({ key: 'checkout_direto_habilitado', value: String(newValue) });
         } catch (e: any) {
             alert('Erro ao salvar: ' + e.message);
         }
@@ -1036,13 +1118,24 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-[var(--admin-text-secondary)] uppercase mb-1">Global API Key</label>
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                            <label htmlFor="evolution-global-api-key" className="text-xs font-bold text-[var(--admin-text-secondary)] uppercase">Global API Key</label>
+                            {hotmartSettingsStatus.loaded && (
+                                <span className={`text-[10px] font-black uppercase ${hotmartSettingsStatus.evolutionApiKeyConfigured ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                    {hotmartSettingsStatus.evolutionApiKeyConfigured ? 'Configurada ✓' : 'Não configurada'}
+                                </span>
+                            )}
+                        </div>
                         <input
+                            id="evolution-global-api-key"
                             className="w-full border border-[var(--admin-border)] rounded p-2 text-sm bg-[var(--admin-surface-2)] font-mono dark:focus:border-wtech-gold/50 transition-colors outline-none"
                             type="password"
+                            autoComplete="off"
                             value={globalConfig.apiKey}
                             onChange={e => setGlobalConfig({ ...globalConfig, apiKey: e.target.value })}
+                            placeholder={hotmartSettingsStatus.evolutionApiKeyConfigured ? 'Configurada — digite apenas para substituir' : ''}
                         />
+                        <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">Deixe vazio para manter a chave atual.</p>
                     </div>
                 </div>
 
@@ -2015,13 +2108,22 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                     alguém de forjar uma venda e disparar mensagem em nome da W-Tech.
                 </p>
 
+                {hotmartSettingsStatus.error && (
+                    <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                        <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+                        <span>{hotmartSettingsStatus.error}</span>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2">
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Link do Checkout em Euro</label>
+                        <label htmlFor="hotmart-checkout-url" className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Link do Checkout em Euro</label>
                         <input
+                            id="hotmart-checkout-url"
+                            type="url"
                             className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
                             value={globalConfig.hotmartCheckoutUrl}
-                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartCheckoutUrl: e.target.value })}
+                            onChange={e => setGlobalConfig(prev => ({ ...prev, hotmartCheckoutUrl: e.target.value }))}
                             placeholder="https://pay.hotmart.com/..."
                         />
                         <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
@@ -2029,36 +2131,81 @@ const AdminIntegrations = ({ registerSave }: AdminIntegrationsProps) => {
                         </p>
                     </div>
                     <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Hottok (token do webhook)</label>
+                        <label htmlFor="hotmart-product-id" className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">ID do produto Hotmart</label>
                         <input
+                            id="hotmart-product-id"
                             className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
-                            type="password"
-                            value={globalConfig.hotmartWebhookToken}
-                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartWebhookToken: e.target.value })}
-                            placeholder="hottok exibido ao cadastrar o webhook"
+                            value={globalConfig.hotmartProductId}
+                            onChange={e => setGlobalConfig(prev => ({ ...prev, hotmartProductId: e.target.value }))}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            placeholder="8355309"
                         />
                         <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
-                            É o que prova que a chamada veio mesmo da Hotmart. Sem ele, qualquer um poderia liberar acesso.
+                            Identifica o curso exato e impede que vendas de outro produto acionem esta automação.
                         </p>
                     </div>
                     <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Hotmart Client ID</label>
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                            <label htmlFor="hotmart-webhook-token" className="text-xs font-black text-gray-400 uppercase tracking-widest">Hottok (token do webhook)</label>
+                            {hotmartSettingsStatus.loaded && (
+                                <span className={`text-[10px] font-black uppercase ${hotmartSettingsStatus.webhookTokenConfigured ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                    {hotmartSettingsStatus.webhookTokenConfigured ? 'Configurado ✓' : 'Não configurado'}
+                                </span>
+                            )}
+                        </div>
                         <input
-                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
-                            value={globalConfig.hotmartClientId}
-                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartClientId: e.target.value })}
-                            placeholder="Ferramentas -> Credenciais na Hotmart"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase mb-1 tracking-widest">Hotmart Client Secret</label>
-                        <input
+                            id="hotmart-webhook-token"
                             className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
                             type="password"
-                            value={globalConfig.hotmartClientSecret}
-                            onChange={e => setGlobalConfig({ ...globalConfig, hotmartClientSecret: e.target.value })}
-                            placeholder="client_secret da Hotmart"
+                            autoComplete="off"
+                            value={globalConfig.hotmartWebhookToken}
+                            onChange={e => setGlobalConfig(prev => ({ ...prev, hotmartWebhookToken: e.target.value }))}
+                            placeholder={hotmartSettingsStatus.webhookTokenConfigured ? 'Configurado — digite apenas para substituir' : 'hottok exibido ao cadastrar o webhook'}
                         />
+                        <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">
+                            É o que prova que a chamada veio mesmo da Hotmart. Deixe vazio para manter o valor atual.
+                        </p>
+                    </div>
+                    <div>
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                            <label htmlFor="hotmart-client-id" className="text-xs font-black text-gray-400 uppercase tracking-widest">Hotmart Client ID</label>
+                            {hotmartSettingsStatus.loaded && (
+                                <span className={`text-[10px] font-black uppercase ${hotmartSettingsStatus.clientIdConfigured ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                    {hotmartSettingsStatus.clientIdConfigured ? 'Configurado ✓' : 'Não configurado'}
+                                </span>
+                            )}
+                        </div>
+                        <input
+                            id="hotmart-client-id"
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            autoComplete="off"
+                            value={globalConfig.hotmartClientId}
+                            onChange={e => setGlobalConfig(prev => ({ ...prev, hotmartClientId: e.target.value }))}
+                            placeholder={hotmartSettingsStatus.clientIdConfigured ? 'Configurado — digite apenas para substituir' : 'Ferramentas → Credenciais na Hotmart'}
+                        />
+                        <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">Deixe vazio para manter o valor atual.</p>
+                    </div>
+                    <div>
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                            <label htmlFor="hotmart-client-secret" className="text-xs font-black text-gray-400 uppercase tracking-widest">Hotmart Client Secret</label>
+                            {hotmartSettingsStatus.loaded && (
+                                <span className={`text-[10px] font-black uppercase ${hotmartSettingsStatus.clientSecretConfigured ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                    {hotmartSettingsStatus.clientSecretConfigured ? 'Configurado ✓' : 'Não configurado'}
+                                </span>
+                            )}
+                        </div>
+                        <input
+                            id="hotmart-client-secret"
+                            className="w-full border border-[var(--admin-border)] rounded-lg p-3 text-sm bg-gray-50/50 bg-[var(--admin-surface-2)] focus:bg-white dark:focus:bg-[#1A1A1A] outline-none transition-all font-mono"
+                            type="password"
+                            autoComplete="off"
+                            value={globalConfig.hotmartClientSecret}
+                            onChange={e => setGlobalConfig(prev => ({ ...prev, hotmartClientSecret: e.target.value }))}
+                            placeholder={hotmartSettingsStatus.clientSecretConfigured ? 'Configurado — digite apenas para substituir' : 'client_secret da Hotmart'}
+                        />
+                        <p className="mt-1 text-xs text-[var(--admin-text-secondary)]">Deixe vazio para manter o valor atual.</p>
                     </div>
                 </div>
             </div>

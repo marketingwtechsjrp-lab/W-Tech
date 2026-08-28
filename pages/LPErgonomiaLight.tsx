@@ -28,6 +28,7 @@ import {
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL as COURSE_VIDEO } from '../lib/vslVideo';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -136,19 +137,23 @@ const LPErgonomiaLight: React.FC = () => {
     const { currentLang } = useLanguage();
     const t = lpTranslations[currentLang];
     const billingRegion = useBillingRegion();
-    const price = getCoursePrice(billingRegion, currentLang);
+    const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
+    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const checkoutUrl = useMemo(
+        () => buildCheckoutUrl(checkoutBaseUrl),
+        [checkoutBaseUrl],
+    );
     const ui = lightUi[currentLang];
     const funnel = useMemo(() => readSuspensionFunnelContext('light'), []);
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const funnelEventLabel = suspensionFunnelEventLabel(funnel);
-    const [checkoutUrl, setCheckoutUrl] = useState(() => getCheckoutUrl(billingRegion));
     const [videoActivated, setVideoActivated] = useState(false);
     const [videoPlaying, setVideoPlaying] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
         captureTrackingParams();
-        setCheckoutUrl(buildCheckoutUrl(getCheckoutUrl(billingRegion)));
         trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
 
         const previousTitle = document.title;
@@ -173,7 +178,7 @@ const LPErgonomiaLight: React.FC = () => {
                 robots.content = previousRobots;
             }
         };
-    }, [funnel.personalized, funnelCopy.label, funnelEventLabel, billingRegion]);
+    }, [funnel.personalized, funnelCopy.label, funnelEventLabel]);
 
     const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 

@@ -12,8 +12,6 @@ export interface BrevoConfig {
 
 /**
  * Lê a configuração do Brevo de SITE_Config.
- * Segue o padrão de getGlobalWhatsAppConfig (lib/whatsapp.ts).
- *
  * Pode receber um client Supabase específico (ex.: service role no
  * servidor). Sem argumento, usa o client padrão do projeto.
  */

@@ -40,6 +40,9 @@ import { approvalsRouter } from './approvals.js';
 import { marketingRouter } from './marketing.js';
 // ── Identidade e sessão do painel admin (cookie httpOnly — ver api/_auth.ts) ─
 import { staffAuthRouter } from './staffAuth.js';
+import { hotmartSettingsRouter } from './hotmartSettings.js';
+import { staffConfigRouter } from './staffConfig.js';
+import { evolutionStaffRouter } from './evolutionStaff.js';
 import { isLoopbackHostname } from '../api/_auth.js';
 import { countryToLandingLanguage } from '../lib/geoLanguage.js';
 
@@ -213,6 +216,9 @@ app.use('/api/approvals', approvalsRouter);
 app.use('/api/marketing', marketingRouter);
 
 // ── Identidade/sessão do painel admin (login, /me, logout, CRUD de equipe) ───
+app.use('/api/staff/hotmart-settings', hotmartSettingsRouter);
+app.use('/api/staff/config', staffConfigRouter);
+app.use('/api/staff/evolution', evolutionStaffRouter);
 app.use('/api/staff', staffAuthRouter);
 
 // ── Rewrites herdados do vercel.json (URLs antigas continuam funcionando) ────

@@ -6,6 +6,7 @@ import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL } from '../lib/vslVideo';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
@@ -202,7 +203,13 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
     const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];
     const billingRegion = useBillingRegion();
-    const price = getCoursePrice(billingRegion, currentLang);
+    const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
+    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const checkoutUrl = useMemo(
+        () => buildCheckoutUrl(checkoutBaseUrl),
+        [checkoutBaseUrl],
+    );
     const funnel = useMemo(() => readSuspensionFunnelContext('dark'), []);
     const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const funnelEventLabel = suspensionFunnelEventLabel(funnel);
@@ -210,14 +217,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     const { shouldAnimate } = useMotionConfig();
     const v = shouldAnimate ? fadeUp : fadeUpReduced;
 
-    const [checkoutUrl, setCheckoutUrl] = useState(() => getCheckoutUrl(billingRegion));
-
     useEffect(() => {
-        // Persiste as UTMs/IDs de clique da campanha e monta o link com toda a atribuição.
+        // Persiste as UTMs/IDs de clique; o link é derivado no mesmo render do preço.
         captureTrackingParams();
-        setCheckoutUrl(buildCheckoutUrl(getCheckoutUrl(billingRegion)));
         trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
-    }, [funnelEventLabel, billingRegion]);
+    }, [funnelEventLabel]);
 
     const scrollTo = (id: string) => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });

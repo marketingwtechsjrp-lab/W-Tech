@@ -2,16 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { QrCode, RefreshCw, Send, Smartphone, Trash2, Image as ImageIcon, Upload } from 'lucide-react';
-import { sendWhatsAppMessage, sendWhatsAppMedia, getGlobalWhatsAppConfig } from '../../../lib/whatsapp';
+import { sendWhatsAppMessage, sendWhatsAppMedia } from '../../../lib/whatsapp';
+import {
+    EvolutionStaffError,
+    evolutionConnect,
+    evolutionCreate,
+    evolutionDelete,
+    evolutionInstanceInfo,
+    evolutionStatus,
+} from '../../../lib/evolutionStaff';
+
+const INSTANCE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+function defaultSelfInstance(user: { id: string; name?: string | null }): string {
+    const name = String(user.name || 'usuario')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 24) || 'usuario';
+    const suffix = String(user.id).replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toLowerCase() || 'self';
+    return `wtech-${name}-${suffix}`.slice(0, 64);
+}
+
+/** O backend inclui a instância resolvida nas respostas do escopo self. */
+function responseInstance(result: object, fallback: string): string {
+    const candidate = (result as { instance?: unknown }).instance;
+    return typeof candidate === 'string' && INSTANCE_RE.test(candidate) ? candidate : fallback;
+}
+
+function selfEvolutionError(error: unknown): string {
+    if (!(error instanceof EvolutionStaffError)) return 'Não foi possível concluir a operação.';
+    if (error.code === 'evolution_not_configured') return 'O Administrador ainda não configurou o Servidor WhatsApp.';
+    if (error.code === 'network_error') return 'Não foi possível acessar o servidor do sistema.';
+    if (error.code === 'evolution_timeout') return 'O servidor WhatsApp demorou demais para responder.';
+    if (error.code === 'self_instance_not_allowed') return 'A instância vinculada ao seu usuário não pôde ser confirmada.';
+    if (error.status === 401 || error.status === 403) return 'Sua sessão não permite gerenciar esta conexão.';
+    return 'O servidor WhatsApp recusou a operação.';
+}
 
 const UserWhatsAppConnection = () => {
     const { user } = useAuth();
-    
-    // Global Config State (To know where to connect)
-    const [globalConfig, setGlobalConfig] = useState({
-        serverUrl: '',
-        apiKey: ''
-    });
 
     // User Instance State
     const [userInstance, setUserInstance] = useState({
@@ -21,6 +53,7 @@ const UserWhatsAppConnection = () => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [evolutionAvailable, setEvolutionAvailable] = useState<boolean | null>(null);
     
     // Test Message State
     const [testPhone, setTestPhone] = useState('');
@@ -28,165 +61,112 @@ const UserWhatsAppConnection = () => {
     const [testImageUrl, setTestImageUrl] = useState('');
 
     useEffect(() => {
-        fetchGlobalConfig();
-        if (user) fetchUserInstance();
-    }, [user]);
-
-    const fetchGlobalConfig = async () => {
-        const config = await getGlobalWhatsAppConfig();
-        if (config) {
-            setGlobalConfig({
-                serverUrl: config.serverUrl,
-                apiKey: config.apiKey
-            });
+        if (!user) {
+            setEvolutionAvailable(null);
+            setUserInstance({ instanceName: '', status: 'disconnected', qrCode: null });
+            return;
         }
-    };
 
-    const fetchUserInstance = async () => {
-        if (!user) return;
-        const { data } = await supabase
-            .from('SITE_UserIntegrations')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
+        let cancelled = false;
+        const fallbackInstance = defaultSelfInstance(user);
+        setUserInstance(prev => ({ ...prev, instanceName: fallbackInstance }));
 
-        if (data) {
-            setUserInstance(prev => ({ 
-                ...prev, 
-                instanceName: data.instance_name, 
-                status: data.instance_status 
-            }));
-            // If we have an instance, check its real status
-            if (globalConfig.serverUrl && globalConfig.apiKey) {
-                checkConnectionState(globalConfig.serverUrl, globalConfig.apiKey, data.instance_name);
+        void (async () => {
+            try {
+                const result = await evolutionInstanceInfo('self');
+                if (cancelled) return;
+                setEvolutionAvailable(true);
+                setUserInstance({
+                    instanceName: responseInstance(result, fallbackInstance),
+                    status: result.state,
+                    qrCode: null,
+                });
+            } catch (error) {
+                if (cancelled) return;
+                setEvolutionAvailable(
+                    error instanceof EvolutionStaffError && error.code === 'evolution_not_configured'
+                        ? false
+                        : true,
+                );
+                setUserInstance(prev => ({ ...prev, status: 'disconnected' }));
             }
-        } else {
-             // Default instance name suggestion: user_ID (shortened or sanitized name)
-             const sanitizedName = user.name?.replace(/\s+/g, '').toLowerCase().substring(0, 10) || 'user';
-             setUserInstance(prev => ({ ...prev, instanceName: `${sanitizedName}_${user.id.substring(0,4)}` }));
-        }
-    };
+        })();
 
-    const checkConnectionState = async (url: string, key: string, instance: string) => {
-        if (!url || !key || !instance) return;
+        return () => { cancelled = true; };
+    }, [user?.id, user?.name]);
+
+    const checkConnectionState = async () => {
+        if (!user) return;
         try {
-            const response = await fetch(`${url}/instance/connectionState/${instance}`, {
-                method: 'GET',
-                headers: { 'apikey': key }
-            });
-            const data = await response.json();
-
-            let state = 'disconnected';
-            if (data?.instance?.state) state = data.instance.state;
-            else if (data?.state) state = data.state;
-            else if (data?.connectionStatus?.state) state = data.connectionStatus.state;
-
-            // Update local state and DB
-            setUserInstance(prev => ({ ...prev, status: state }));
-            await supabase.from('SITE_UserIntegrations').upsert({ 
-                user_id: user?.id, 
-                instance_name: instance,
-                instance_status: state,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' });
-
-        } catch (e) {
-            console.error(e);
+            const result = await evolutionStatus('self');
+            setEvolutionAvailable(true);
+            setUserInstance(prev => ({
+                ...prev,
+                instanceName: responseInstance(result, prev.instanceName || defaultSelfInstance(user)),
+                status: result.state,
+            }));
+        } catch (error) {
+            if (error instanceof EvolutionStaffError && error.code === 'evolution_not_configured') {
+                setEvolutionAvailable(false);
+            }
             setUserInstance(prev => ({ ...prev, status: 'error' }));
         }
     };
 
     const handleDeleteInstance = async () => {
          if (!confirm('ATENÇÃO: Isso irá desconectar e apagar sua instância do servidor. Deseja continuar?')) return;
-         if (!globalConfig.serverUrl || !globalConfig.apiKey) return;
+         if (!user) return;
          setLoading(true);
          try {
-             // 1. Delete on Evolution API
-             await fetch(`${globalConfig.serverUrl}/instance/delete/${userInstance.instanceName}`, {
-                 method: 'DELETE',
-                 headers: { 'apikey': globalConfig.apiKey }
-             });
-             
-             // 2. Update DB - Reset status
-             await supabase.from('SITE_UserIntegrations').update({ 
-                 instance_status: 'disconnected',
-                 instance_token: null
-             }).eq('user_id', user?.id);
-
-             setUserInstance(prev => ({ ...prev, status: 'disconnected', qrCode: null }));
+             const result = await evolutionDelete('self');
+             setEvolutionAvailable(true);
+             setUserInstance(prev => ({
+                 instanceName: responseInstance(result, prev.instanceName || defaultSelfInstance(user)),
+                 status: result.state,
+                 qrCode: null,
+             }));
              alert('Instância desconectada e removida com sucesso.');
-         } catch (e: any) {
-             console.error(e);
-             alert('Erro ao apagar: ' + e.message);
+         } catch (error) {
+             alert('Erro ao apagar: ' + selfEvolutionError(error));
          } finally {
              setLoading(false);
          }
     };
 
     const handleCreateUserInstance = async () => {
-        if (!globalConfig.serverUrl || !globalConfig.apiKey) return alert('O Administrador ainda não configurou o Servidor WhatsApp.');
+        if (!user) return;
+        if (evolutionAvailable === false) return alert('O Administrador ainda não configurou o Servidor WhatsApp.');
         setLoading(true);
         try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/create`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'apikey': globalConfig.apiKey 
-                },
-                body: JSON.stringify({
-                    instanceName: userInstance.instanceName,
-                    token: globalConfig.apiKey,
-                    qrcode: true,
-                    integration: 'WHATSAPP-BAILEYS'
-                })
-            });
-            const data = await response.json();
-            
-            if (data.instance || data.hash) {
+            const created = await evolutionCreate('self');
+            setEvolutionAvailable(true);
+            const instanceName = responseInstance(created, userInstance.instanceName || defaultSelfInstance(user));
+            if (created.qr) {
+                setUserInstance({ instanceName, status: 'connecting', qrCode: created.qr });
                 alert('Instância criada!');
-                // Save to DB
-                 await supabase.from('SITE_UserIntegrations').upsert({ 
-                    user_id: user?.id, 
-                    instance_name: userInstance.instanceName,
-                    instance_status: 'connecting'
-                }, { onConflict: 'user_id' });
-                
-                handleConnect(userInstance.instanceName);
-            } else {
-                 // Check if already exists
-                 if (JSON.stringify(data).includes('already exists')) {
-                     alert('Instância já existe, tentando conectar...');
-                     handleConnect(userInstance.instanceName);
-                 } else {
-                    alert('Erro ao criar instância: ' + JSON.stringify(data));
-                 }
+                return;
             }
-        } catch (e: any) {
-            alert('Erro de requisição: ' + e.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleConnect = async (instanceName: string) => {
-        setLoading(true);
-        setUserInstance(prev => ({ ...prev, qrCode: null }));
-        try {
-            const response = await fetch(`${globalConfig.serverUrl}/instance/connect/${instanceName}`, {
-                method: 'GET',
-                headers: { 'apikey': globalConfig.apiKey }
-            });
-            const data = await response.json();
-            if (data.base64) {
-                setUserInstance(prev => ({ ...prev, qrCode: data.base64 }));
-            } else if (data.instance?.state === 'open') {
+            if (created.state === 'open') {
+                setUserInstance({ instanceName, status: 'open', qrCode: null });
                 alert('Já está conectado!');
-                checkConnectionState(globalConfig.serverUrl, globalConfig.apiKey, instanceName);
-            } else {
-                 alert('Não foi possível obter o QR Code.');
+                return;
             }
-        } catch (e: any) {
-            alert('Erro: ' + e.message);
+
+            const connected = await evolutionConnect('self');
+            const connectedInstance = responseInstance(connected, instanceName);
+            if (connected.qr) {
+                setUserInstance({ instanceName: connectedInstance, status: 'connecting', qrCode: connected.qr });
+            } else if (connected.state === 'open') {
+                setUserInstance({ instanceName: connectedInstance, status: 'open', qrCode: null });
+                alert('Já está conectado!');
+            } else {
+                alert('Não foi possível obter o QR Code.');
+            }
+        } catch (error) {
+            if (error instanceof EvolutionStaffError && error.code === 'evolution_not_configured') {
+                setEvolutionAvailable(false);
+            }
+            alert('Erro de requisição: ' + selfEvolutionError(error));
         } finally {
             setLoading(false);
         }
@@ -270,7 +250,8 @@ const UserWhatsAppConnection = () => {
                             {userInstance.status === 'open' ? 'Conectado' : userInstance.status}
                         </span>
                         <button 
-                            onClick={() => checkConnectionState(globalConfig.serverUrl, globalConfig.apiKey, userInstance.instanceName)} 
+                            onClick={() => { void checkConnectionState(); }}
+                            disabled={loading || evolutionAvailable !== true}
                             className="p-2 hover:bg-gray-100 rounded-full" 
                             title="Atualizar Status"
                         >
@@ -279,6 +260,7 @@ const UserWhatsAppConnection = () => {
                         {userInstance.instanceName && (
                             <button 
                                 onClick={handleDeleteInstance} 
+                                disabled={loading || evolutionAvailable !== true}
                                 className="p-2 hover:bg-red-50 text-red-500 rounded-full" 
                                 title="Desconectar e Apagar Instância"
                             >
@@ -294,21 +276,22 @@ const UserWhatsAppConnection = () => {
                         <input 
                             className="flex-1 border border-gray-300 rounded p-2 text-sm bg-gray-50" 
                             value={userInstance.instanceName}
-                            onChange={e => setUserInstance(prev => ({...prev, instanceName: e.target.value}))}
+                            readOnly
+                            title="Identificador definido automaticamente para seu usuário"
                         />
-                        <button onClick={handleCreateUserInstance} disabled={loading || !globalConfig.serverUrl || userInstance.status === 'open'} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:bg-gray-300">
+                        <button onClick={handleCreateUserInstance} disabled={loading || evolutionAvailable !== true || userInstance.status === 'open'} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:bg-gray-300">
                             <QrCode size={16} /> {userInstance.status === 'open' ? 'Conectado' : 'Conectar / Gerar QR'}
                         </button>
                         <button 
                             onClick={handleDeleteInstance}
-                            disabled={loading}
+                            disabled={loading || evolutionAvailable !== true}
                             className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold hover:bg-red-700 disabled:opacity-50"
                             title="Excluir Instância e Tentar Novamente"
                         >
                             <Trash2 size={16} />
                         </button>
                     </div>
-                    {!globalConfig.serverUrl && <p className="text-xs text-red-500 mt-1">Servidor não configurado pelo Admin.</p>}
+                    {evolutionAvailable === false && <p className="text-xs text-red-500 mt-1">Servidor não configurado pelo Admin.</p>}
                 </div>
 
                 {userInstance.qrCode && (

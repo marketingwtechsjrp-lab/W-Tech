@@ -17,6 +17,7 @@ import { getCheckoutUrl } from '../lib/coursePricing';
 import { VSL_VIDEO_URL as VIDEO_URL } from '../lib/vslVideo';
 import { useVslProgress } from '../hooks/useVslProgress';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
@@ -215,6 +216,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const isLight = theme === 'light';
     const { currentLang } = useLanguage();
     const billingRegion = useBillingRegion();
+    const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
     const t = lpTranslations[currentLang];
     const ui = vslUi[currentLang];
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -239,8 +241,8 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     // A VSL é o último passo antes do pagamento: nunca devolve para uma landing
     // page, sempre entrega no checkout.
     const landingUrl = useMemo(
-        () => buildCheckoutUrl(getCheckoutUrl(billingRegion)),
-        [billingRegion],
+        () => buildCheckoutUrl(getCheckoutUrl(billingRegion, hotmartCheckoutUrl)),
+        [billingRegion, hotmartCheckoutUrl],
     );
 
     const enrollmentAction = ui.checkoutAction;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { sendWhatsAppMessage } from '../../../lib/whatsapp';
+import { evolutionLinkedInstances } from '../../../lib/evolutionStaff';
 import { 
     Upload, MessageSquare, CheckCircle2, AlertTriangle, Play, Search, 
     FileText, User, CreditCard, Sparkles, RefreshCw, Send, Smartphone, Check, HelpCircle
@@ -64,19 +65,14 @@ const SalesRecoveryView = () => {
                 // Instância padrão da rota de recuperação (Admin → Integrações)
                 const recoveryInstance = (cfg['wa_instance_recovery'] || '').trim();
 
-                const { data: userInts } = await supabase
-                    .from('SITE_UserIntegrations')
-                    .select('instance_name')
-                    .not('instance_name', 'is', null);
+                const linkedInstances = await evolutionLinkedInstances()
+                    .then((result) => result.instances)
+                    .catch(() => [] as string[]);
 
                 const foundInstances = new Set<string>();
                 if (recoveryInstance) foundInstances.add(recoveryInstance);
                 if (globalInstance) foundInstances.add(globalInstance);
-                if (userInts) {
-                    userInts.forEach((ui: any) => {
-                        if (ui.instance_name) foundInstances.add(ui.instance_name.trim());
-                    });
-                }
+                linkedInstances.forEach((instanceName) => foundInstances.add(instanceName));
 
                 // Add Support instance if not present
                 foundInstances.add("suporte técnico");

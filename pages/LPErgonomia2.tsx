@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Navigate, useLocation } from 'react-router-dom';
 import {
@@ -32,6 +32,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
+import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL as VSL_URL } from '../lib/vslVideo';
 
 
@@ -337,15 +338,18 @@ const FAQItem: React.FC<{ question: string; answer: string; index: number }> = (
 const LPErgonomia2: React.FC = () => {
     const { currentLang } = useLanguage();
     const billingRegion = useBillingRegion();
-    const price = getCoursePrice(billingRegion, currentLang);
-    const checkoutBaseUrl = getCheckoutUrl(billingRegion);
+    const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
+    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const checkoutUrl = useMemo(
+        () => buildCheckoutUrl(checkoutBaseUrl),
+        [checkoutBaseUrl],
+    );
     const location = useLocation();
-    const [checkoutUrl, setCheckoutUrl] = useState(checkoutBaseUrl);
 
     useEffect(() => {
         captureTrackingParams();
-        setCheckoutUrl(buildCheckoutUrl(checkoutBaseUrl));
-    }, [checkoutBaseUrl]);
+    }, []);
 
     useEffect(() => {
         const previousTitle = document.title;
@@ -464,7 +468,7 @@ const LPErgonomia2: React.FC = () => {
             });
             schema.remove();
         };
-    }, []);
+    }, [checkoutBaseUrl, price.schemaCurrency, price.schemaPrice]);
 
     if (currentLang !== 'pt-BR') {
         const params = new URLSearchParams(location.search);

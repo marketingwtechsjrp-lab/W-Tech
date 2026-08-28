@@ -38,6 +38,45 @@ interface GroupBotConfig {
     prompts: Record<AIAgentId, string>;
 }
 
+const EVOLUTION_INSTANCE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/**
+ * A instância escolhida para o bot só é aceita quando também aparece no
+ * cadastro administrativo da Evolution. Isso mantém configurações legadas ou
+ * manipuladas fora do caminho efetivo de envio.
+ */
+export function resolveAllowedAiGroupInstance(map: Record<string, string>): string | undefined {
+    const approved = new Set<string>();
+    const fallbacks: string[] = [];
+    const add = (raw: unknown, fallback = false) => {
+        const value = typeof raw === 'string' ? raw.trim() : '';
+        if (!EVOLUTION_INSTANCE_RE.test(value)) return;
+        approved.add(value);
+        if (fallback) fallbacks.push(value);
+    };
+
+    add(map['wa_instance_report'], true);
+    add(map['automation_whatsapp_instance'], true);
+    add(map['evolution_instance_name'], true);
+
+    try {
+        const managed = JSON.parse(map['evolution_managed_instances'] || '[]');
+        if (Array.isArray(managed)) {
+            for (const candidate of managed.slice(0, 500)) {
+                if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+                    add((candidate as Record<string, unknown>).name, true);
+                }
+            }
+        }
+    } catch {
+        // Cadastro inválido nunca amplia a lista de instâncias permitidas.
+    }
+
+    const selected = (map[CFG_GROUP_BOT_INSTANCE] || '').trim();
+    if (approved.has(selected)) return selected;
+    return fallbacks[0];
+}
+
 export interface GroupAnswer {
     agent: AIAgentId | 'silencio';
     answer: string | null;
@@ -56,6 +95,7 @@ async function loadGroupBotConfig(supabase: SupabaseClient): Promise<GroupBotCon
     const keys = [
         CFG_GROUP_BOT_ENABLED, CFG_GROUP_BOT_GROUP_JID, CFG_GROUP_BOT_INSTANCE, CFG_GROUP_WEBHOOK_TOKEN,
         'wa_report_group_jid', 'wa_instance_report', 'automation_whatsapp_instance',
+        'evolution_instance_name', 'evolution_managed_instances',
         ...AI_AGENTS.map((a) => a.promptKey),
     ];
     const { data } = await supabase.from('SITE_Config').select('key, value').in('key', keys);
@@ -70,11 +110,7 @@ async function loadGroupBotConfig(supabase: SupabaseClient): Promise<GroupBotCon
     return {
         enabled: map[CFG_GROUP_BOT_ENABLED] === 'true',
         groupJid: (map[CFG_GROUP_BOT_GROUP_JID] || map['wa_report_group_jid'] || '').trim(),
-        instance:
-            (map[CFG_GROUP_BOT_INSTANCE] || '').trim() ||
-            (map['wa_instance_report'] || '').trim() ||
-            (map['automation_whatsapp_instance'] || '').trim() ||
-            undefined,
+        instance: resolveAllowedAiGroupInstance(map),
         webhookToken: (map[CFG_GROUP_WEBHOOK_TOKEN] || '').trim(),
         prompts,
     };

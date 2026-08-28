@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Bot, Loader2, RefreshCw, Send, Webhook, MessageSquareText, History } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
-import { upsertSiteConfig } from '../../../lib/siteConfig';
-import { publicApiUrl } from '../../../lib/publicUrl';
-import { useAuth } from '../../../context/AuthContext';
+import { saveAiGroupSiteConfig } from '../../../lib/staffConfig';
+import { evolutionGroups, evolutionRegisterAiWebhook } from '../../../lib/evolutionStaff';
 import {
     AI_AGENT_BY_ID,
     CFG_GROUP_BOT_ENABLED,
     CFG_GROUP_BOT_GROUP_JID,
     CFG_GROUP_BOT_GROUP_NAME,
     CFG_GROUP_BOT_INSTANCE,
-    CFG_GROUP_WEBHOOK_TOKEN,
     type AIAgentId,
 } from '../../../lib/aiAgentDefaults';
 
@@ -36,14 +34,12 @@ interface LogRow {
 
 const cfgKeys = [
     CFG_GROUP_BOT_ENABLED, CFG_GROUP_BOT_GROUP_JID, CFG_GROUP_BOT_GROUP_NAME,
-    CFG_GROUP_BOT_INSTANCE, CFG_GROUP_WEBHOOK_TOKEN,
-    'evolution_api_url', 'evolution_api_key',
+    CFG_GROUP_BOT_INSTANCE,
     'wa_report_group_jid', 'wa_report_group_name',
     'wa_instance_report', 'automation_whatsapp_instance', 'evolution_instance_name',
 ];
 
 const GroupBotPanel: React.FC = () => {
-    const { user } = useAuth();
     const [cfg, setCfg] = useState<Record<string, string>>({});
     const [loaded, setLoaded] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -88,16 +84,10 @@ const GroupBotPanel: React.FC = () => {
     const saveCfg = async (updates: Record<string, string>) => {
         setSaving(true);
         try {
-            // RPC SECURITY DEFINER: upsert direto na tabela é barrado pela policy
-            // de leitura quando a chave é secreta (ex.: ai_group_webhook_token).
-            const refused = await upsertSiteConfig(Object.entries(updates).map(([key, value]) => ({ key, value })));
-            // Só reflete na tela o que realmente foi gravado — senão o painel
-            // mostraria como salvo um valor que o servidor recusou.
-            const saved = Object.entries(updates).filter(([key]) => !refused.includes(key));
-            setCfg((prev) => ({ ...prev, ...Object.fromEntries(saved) }));
-            if (refused.length) {
-                alert(`Estas chaves só podem ser definidas no servidor e não foram gravadas:\n${refused.join(', ')}`);
-            }
+            await saveAiGroupSiteConfig(
+                Object.entries(updates).map(([key, value]) => ({ key, value })),
+            );
+            setCfg((prev) => ({ ...prev, ...updates }));
         } catch (e: any) {
             alert('Erro ao salvar configuração: ' + e.message);
         } finally {
@@ -107,21 +97,10 @@ const GroupBotPanel: React.FC = () => {
 
     /** Lista os grupos da instância (mesmo padrão do relatório em Integrações). */
     const loadGroups = async () => {
-        const serverUrl = (cfg['evolution_api_url'] || '').trim().replace(/\/$/, '');
-        const apiKey = (cfg['evolution_api_key'] || '').trim();
-        if (!serverUrl || !apiKey) return alert('Configure a Evolution API (Server URL e API Key) em Admin → Integrações primeiro.');
         if (!instance) return alert('Configure a instância do relatório/automação em Admin → Integrações primeiro.');
         setLoadingGroups(true);
         try {
-            const response = await fetch(
-                `${serverUrl}/group/fetchAllGroups/${encodeURIComponent(instance)}?getParticipants=false`,
-                { headers: { apikey: apiKey } }
-            );
-            const data = await response.json();
-            const raw = Array.isArray(data) ? data : Array.isArray(data?.groups) ? data.groups : [];
-            const list = raw
-                .map((g: any) => ({ jid: g.id || g.jid || '', subject: g.subject || g.name || g.id || 'Grupo sem nome' }))
-                .filter((g: GroupOption) => g.jid);
+            const { groups: list } = await evolutionGroups('ai', instance);
             setGroups(list);
             if (list.length === 0) alert(`Nenhum grupo encontrado na instância "${instance}". O número conectado precisa participar do grupo.`);
         } catch (e: any) {
@@ -133,44 +112,13 @@ const GroupBotPanel: React.FC = () => {
 
     /** Registra o webhook da Evolution apontando para o sistema (v2 com fallback v1). */
     const registerWebhook = async () => {
-        const serverUrl = (cfg['evolution_api_url'] || '').trim().replace(/\/$/, '');
-        const apiKey = (cfg['evolution_api_key'] || '').trim();
-        if (!serverUrl || !apiKey) return alert('Configure a Evolution API em Admin → Integrações primeiro.');
         if (!instance) return alert('Configure a instância antes de registrar o webhook.');
 
         setRegistering(true);
         setWebhookOk(null);
         try {
-            let token = (cfg[CFG_GROUP_WEBHOOK_TOKEN] || '').trim();
-            if (!token) {
-                token = crypto.randomUUID();
-                await saveCfg({ [CFG_GROUP_WEBHOOK_TOKEN]: token });
-            }
-            // Domínio canônico, nunca a origem do navegador: site.w-techbrasil.com.br
-            // responde 308 e webhook não segue redirect — a entrega falharia calada.
-            const url = publicApiUrl(`/api/whatsapp-cloud-webhook?source=evolution&token=${token}`);
-
-            // Evolution v2
-            let res = await fetch(`${serverUrl}/webhook/set/${encodeURIComponent(instance)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', apikey: apiKey },
-                body: JSON.stringify({
-                    webhook: { enabled: true, url, events: ['MESSAGES_UPSERT'], webhookByEvents: false, base64: false },
-                }),
-            });
-            if (!res.ok) {
-                // Fallback shape v1
-                res = await fetch(`${serverUrl}/webhook/set/${encodeURIComponent(instance)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', apikey: apiKey },
-                    body: JSON.stringify({ enabled: true, url, events: ['MESSAGES_UPSERT'], webhook_by_events: false }),
-                });
-            }
-            if (!res.ok) {
-                const body = await res.text().catch(() => '');
-                throw new Error(`Evolution ${res.status}: ${body.slice(0, 160)}`);
-            }
-            setWebhookOk(url);
+            const result = await evolutionRegisterAiWebhook(instance);
+            setWebhookOk(result.pointsHere ? 'Webhook registrado com segurança.' : 'Webhook enviado ao servidor.');
         } catch (e: any) {
             alert('Falha ao registrar webhook: ' + e.message);
         } finally {
@@ -301,7 +249,7 @@ const GroupBotPanel: React.FC = () => {
                         Ativar webhook no WhatsApp
                     </button>
                     {webhookOk && (
-                        <div className="text-[10px] text-emerald-500 font-mono break-all">✓ Webhook registrado: {webhookOk}</div>
+                        <div className="text-[10px] text-emerald-500 font-mono break-all">✓ {webhookOk}</div>
                     )}
                 </div>
             </div>
