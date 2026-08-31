@@ -54,6 +54,44 @@ test.describe('LP Curso de Suspensão para Pilotos V2', () => {
         await expect(video.locator('source')).toHaveAttribute('src', VSL_VIDEO_URL);
     });
 
+    test('exibe euros e Hotmart na oferta internacional', async ({ page }) => {
+        await page.goto(`${PAGE_PATH}&regiao=intl&lang=pt-BR`);
+
+        const offer = page.locator('#oferta');
+        await offer.scrollIntoViewIfNeeded();
+        const offerText = await offer.innerText();
+
+        expect(offerText).toContain('59');
+        expect(offerText).toContain('Pagamento único · sem renovação');
+        expect(offerText).toContain('Pagamento processado com segurança pela Hotmart');
+        expect(offerText).not.toContain('R$');
+        expect(offerText).not.toMatch(/12x|parcela/i);
+
+        await expect(offer.getByRole('link', { name: 'Quero começar agora' })).toHaveAttribute(
+            'href',
+            /pay\.hotmart\.com\/Q107251292B\?off=l2pjqk7m&.*utm_source=playwright/,
+        );
+    });
+
+    test('mantém 59 euros após redirecionar o visitante europeu para a landing completa', async ({ page }) => {
+        await page.goto(`${PAGE_PATH}&regiao=intl&lang=pt-PT`);
+        await expect(page).toHaveURL(/\/curso-suspensao-piloto-completa\?/);
+
+        const offer = page.locator('#cta-final');
+        await offer.scrollIntoViewIfNeeded();
+        const offerText = await offer.innerText();
+
+        expect(offerText).toContain('59 €');
+        expect(offerText).toContain('Pagamento único de 59 € · sem renovação');
+        expect(offerText).not.toContain('R$');
+        expect(offerText).not.toMatch(/12x|parcela/i);
+
+        await expect(offer.getByRole('link', { name: 'Quero Regular Minha Suspensão Agora' })).toHaveAttribute(
+            'href',
+            /pay\.hotmart\.com\/Q107251292B\?off=l2pjqk7m&.*utm_source=playwright/,
+        );
+    });
+
     test('abre respostas do FAQ com semântica acessível', async ({ page }) => {
         await page.goto(PAGE_PATH);
 

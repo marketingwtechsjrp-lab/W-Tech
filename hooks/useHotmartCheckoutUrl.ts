@@ -49,7 +49,7 @@ const loadHotmartCheckoutUrl = (): Promise<HotmartCheckoutUrl> => {
  * Lê o checkout internacional uma única vez por carregamento da aplicação.
  * A consulta só começa para região internacional; visitantes do Brasil não
  * pagam esse custo. Enquanto a leitura resolve, o chamador recebe `undefined`
- * e mantém o fallback coerente da Kiwify.
+ * e mantém o fallback oficial da Hotmart para a oferta de cobrança única.
  */
 export const useHotmartCheckoutUrl = (enabled: boolean): HotmartCheckoutState => {
     const [checkoutUrl, setCheckoutUrl] = useState<HotmartCheckoutState>(

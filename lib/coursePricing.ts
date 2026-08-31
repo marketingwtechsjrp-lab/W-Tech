@@ -24,14 +24,25 @@ export { normalizeHotmartCheckoutUrl } from './hotmartCheckout';
 export type BillingRegion = 'br' | 'intl';
 
 export const KIWIFY_CHECKOUT_URL = 'https://pay.kiwify.com.br/19v4nIa';
+export const HOTMART_CHECKOUT_FALLBACK_URL = 'https://pay.hotmart.com/Q107251292B?off=l2pjqk7m';
+const LEGACY_HOTMART_ANNUAL_CHECKOUT_URL = 'https://pay.hotmart.com/Q107251292B';
 
 /**
  * O link Hotmart vem da chave pública `hotmart_checkout_url` em SITE_Config.
- * Ausência, falha de leitura ou valor inválido preservam o fallback Kiwify.
+ * O checkout oficial conhecido fica como fallback público para que um visitante
+ * internacional nunca seja enviado à oferta brasileira enquanto a leitura
+ * assíncrona da configuração termina ou falha.
  */
 export const getCheckoutUrl = (region: BillingRegion, hotmartCheckoutUrl?: unknown): string => {
+    if (region === 'br') return KIWIFY_CHECKOUT_URL;
     const validatedHotmartUrl = normalizeHotmartCheckoutUrl(hotmartCheckoutUrl);
-    return region === 'intl' && validatedHotmartUrl ? validatedHotmartUrl : KIWIFY_CHECKOUT_URL;
+    // Migração defensiva: a configuração antiga aponta para uma assinatura
+    // anual renovável. Mesmo que o cache do banco ainda a devolva, visitantes
+    // internacionais seguem para a nova oferta de cobrança única.
+    if (validatedHotmartUrl === LEGACY_HOTMART_ANNUAL_CHECKOUT_URL) {
+        return HOTMART_CHECKOUT_FALLBACK_URL;
+    }
+    return validatedHotmartUrl || HOTMART_CHECKOUT_FALLBACK_URL;
 };
 
 /** Base legada para chamadas que ainda não conhecem região. */
@@ -55,11 +66,10 @@ export interface CoursePrice {
     /** Valor riscado de cada item do material bônus, na ordem em que a página os
      *  lista (SAG, PSI, Óleos, Molas). A soma bate com `bonusValue`. */
     bonusItems: [string, string, string, string];
-    /** Parcelamento por extenso, exatamente como o checkout cobra — ex.:
-     *  '12x de R$ 35,89 no cartão'. O total parcelado é maior que o à vista
-     *  porque o Kiwify aplica juros; anunciar 347/12 seria propaganda enganosa. */
+    /** Condição de pagamento por extenso. No Brasil descreve o parcelamento;
+     *  no internacional deixa explícito que são 59 € uma única vez. */
     installments: string;
-    /** Parcelamento compacto para barra fixa — ex.: '12x R$ 35,89'. */
+    /** Condição compacta para destaques e barra fixa — ex.: '12x R$ 35,89'. */
     installmentsShort: string;
     /** 'De R$ 997,00 por' / 'De 179 € por' — texto no idioma, número na região. */
     strikeLabel: string;
@@ -99,68 +109,78 @@ const brl = (language: LPLanguage): CoursePrice => ({
  * valor que entra nela. É a separação que impede um português lendo em pt-BR de
  * ver "12x R$ 35,89" ao lado de bônus em euro.
  */
-const LABELS: Record<LPLanguage, { strike: (v: string) => string; cash: (v: string) => string; bonusSub: (v: string) => string }> = {
+const LABELS: Record<LPLanguage, {
+    strike: (v: string) => string;
+    cash: (v: string) => string;
+    singlePayment: (v: string) => string;
+    singlePaymentShort: string;
+    bonusSub: (v: string) => string;
+}> = {
     'pt-BR': {
         strike: (v) => `De ${v} por`,
         cash: (v) => `ou apenas ${v} à vista`,
+        singlePayment: (v) => `Pagamento único de ${v} · sem renovação`,
+        singlePaymentShort: 'Pagamento único · sem renovação',
         bonusSub: (v) => `Mais de ${v} em Planilhas e Material Complementar Grátis.`,
     },
     'pt-PT': {
         strike: (v) => `De ${v} por`,
         cash: (v) => `ou apenas ${v} a pronto`,
+        singlePayment: (v) => `Pagamento único de ${v} · sem renovação`,
+        singlePaymentShort: 'Pagamento único · sem renovação',
         bonusSub: (v) => `Mais de ${v} em Planilhas e Material Complementar Grátis.`,
     },
     es: {
         strike: (v) => `De ${v} por`,
         cash: (v) => `o solo ${v} pago único`,
+        singlePayment: (v) => `Pago único de ${v} · sin renovación`,
+        singlePaymentShort: 'Pago único · sin renovación',
         bonusSub: (v) => `Más de ${v} en Materiales Complementarios Gratis.`,
     },
     en: {
         strike: (v) => `Regular price ${v}`,
         cash: (v) => `or a single payment of ${v}`,
+        singlePayment: (v) => `One-time payment of ${v} · no renewal`,
+        singlePaymentShort: 'One-time payment · no renewal',
         bonusSub: (v) => `Over ${v} in Free Worksheets and Complementary Tools.`,
     },
 };
 
-/** Aviso exibido só enquanto o checkout internacional ainda for o Kiwify. */
-const FALLBACK_NOTICE: Record<LPLanguage, string> = {
-    'pt-BR': 'Valor de referência. A cobrança é processada em reais (R$ 347,00) pelo checkout Kiwify.',
-    'pt-PT': 'Valor de referência. A cobrança é processada em reais (R$ 347,00) pelo checkout Kiwify.',
-    es: 'Importe de referencia. El cobro se procesa en reales (R$ 347,00) en el checkout de Kiwify.',
-    en: 'Reference amount. Payment is charged in Brazilian reais (R$ 347.00) at the Kiwify checkout.',
+const eur = (language: LPLanguage): CoursePrice => {
+    const labels = LABELS[language] || LABELS.en;
+
+    return {
+        currency: 'EUR',
+        symbol: '€',
+        integer: '59',
+        cents: ',00',
+        full: '59 €',
+        anchor: '179 €',
+        bonusValue: '150 €',
+        bonusItems: ['60 €', '39 €', '30 €', '21 €'],
+        installments: labels.singlePaymentShort,
+        installmentsShort: '59 €',
+        strikeLabel: labels.strike('179 €'),
+        cashLabel: labels.singlePayment('59 €'),
+        bonusSubLabel: labels.bonusSub('150 €'),
+        chargedNotice: null,
+        schemaPrice: '59.00',
+        schemaCurrency: 'EUR',
+    };
 };
 
-const eur = (language: LPLanguage, internationalCheckoutReady: boolean): CoursePrice => ({
-    currency: 'EUR',
-    symbol: '€',
-    integer: '59',
-    cents: ',00',
-    full: '59 €',
-    anchor: '179 €',
-    bonusValue: '150 €',
-    bonusItems: ['60 €', '39 €', '30 €', '21 €'],
-    installments: '12x de 5,90 € no cartão',
-    installmentsShort: '12x 5,90 €',
-    strikeLabel: (LABELS[language] || LABELS.en).strike('179 €'),
-    cashLabel: (LABELS[language] || LABELS.en).cash('59 €'),
-    bonusSubLabel: (LABELS[language] || LABELS.en).bonusSub('150 €'),
-    chargedNotice: internationalCheckoutReady ? null : (FALLBACK_NOTICE[language] || FALLBACK_NOTICE.en),
-    schemaPrice: internationalCheckoutReady ? '59.00' : '347.00',
-    schemaCurrency: internationalCheckoutReady ? 'EUR' : 'BRL',
-});
-
 /**
- * `region` manda na moeda; `language` só escolhe o idioma dos avisos. O mesmo
- * link validado que define o CTA define a moeda estruturada, evitando que preço
- * e destino entrem em estados diferentes durante a leitura assíncrona.
+ * `region` manda na moeda; `language` só escolhe o idioma dos textos. O checkout
+ * internacional tem um fallback oficial da Hotmart, então preço e destino já
+ * nascem em euro mesmo durante a leitura assíncrona da configuração.
  */
 export const getCoursePrice = (
     region: BillingRegion,
     language: LPLanguage,
-    hotmartCheckoutUrl?: unknown,
+    _hotmartCheckoutUrl?: unknown,
 ): CoursePrice => {
     if (region === 'br') return brl(language);
-    return eur(language, normalizeHotmartCheckoutUrl(hotmartCheckoutUrl) !== null);
+    return eur(language);
 };
 
 export const regionFromCountry = (country?: string | null): BillingRegion =>

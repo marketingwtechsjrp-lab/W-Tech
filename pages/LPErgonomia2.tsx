@@ -341,6 +341,7 @@ const LPErgonomia2: React.FC = () => {
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
     const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
     const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const checkoutProvider = billingRegion === 'intl' ? 'Hotmart' : 'Kiwify';
     const checkoutUrl = useMemo(
         () => buildCheckoutUrl(checkoutBaseUrl),
         [checkoutBaseUrl],
@@ -580,7 +581,9 @@ const LPErgonomia2: React.FC = () => {
                         </div>
 
                         <p className="mt-5 text-sm font-semibold text-[#6d6863]">
-                            {price.full} à vista ou {price.installmentsShort} · garantia de 7 dias
+                            {billingRegion === 'intl'
+                                ? `${price.full} · ${price.installments} · garantia de 7 dias`
+                                : `${price.full} à vista ou ${price.installmentsShort} · garantia de 7 dias`}
                         </p>
                     </motion.div>
 
@@ -1129,7 +1132,7 @@ const LPErgonomia2: React.FC = () => {
                                 <span className="mt-3 font-display text-2xl font-bold">{price.cents}</span>
                             </div>
                             <p className="mt-3 text-sm font-semibold text-[#69635e]">
-                                ou {price.installments}
+                                {billingRegion === 'intl' ? price.installments : `ou ${price.installments}`}
                             </p>
                             {price.chargedNotice && (
                                 <p className="mt-2 text-xs font-medium text-[#7b746e]">
@@ -1146,7 +1149,7 @@ const LPErgonomia2: React.FC = () => {
 
                             <div className="mt-5 flex items-center justify-center gap-2 text-xs font-semibold text-[#77716a]">
                                 <LockKeyhole size={15} aria-hidden="true" />
-                                Pagamento processado com segurança pela Kiwify
+                                Pagamento processado com segurança pela {checkoutProvider}
                             </div>
 
                             <WhatsAppLeadCapture

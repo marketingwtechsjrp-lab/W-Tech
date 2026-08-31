@@ -62,6 +62,29 @@ test.describe('Landing page clara VSL', () => {
     await expect(page.getByRole('button', { name: 'Assistir depoimento: Guilherme' })).toHaveCount(0);
   });
 
+  test('mostra somente euros e pagamento único na oferta internacional', async ({ page }) => {
+    await page.goto('/curso-suspensao-piloto-clara?regiao=intl&lang=pt-PT&utm_source=teste');
+
+    const offer = page.locator('#oferta');
+    await offer.scrollIntoViewIfNeeded();
+    await expect(offer).toBeVisible();
+    const offerText = await offer.innerText();
+
+    expect(offerText).toContain('59 €');
+    expect(offerText).toContain('Pagamento único de 59 € · sem renovação');
+    expect(offerText).toContain('60 €');
+    expect(offerText).toContain('39 €');
+    expect(offerText).toContain('30 €');
+    expect(offerText).toContain('21 €');
+    expect(offerText).not.toContain('R$');
+    expect(offerText).not.toMatch(/12x|parcela/i);
+
+    await expect(offer.getByRole('link', { name: 'Quero a Minha Vaga Agora' })).toHaveAttribute(
+      'href',
+      /pay\.hotmart\.com\/Q107251292B\?off=l2pjqk7m&.*utm_source=teste/,
+    );
+  });
+
   test('oferece uma VSL isolada clara e encaminha direto para o checkout', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/curso-suspensao-piloto-vsl-clara?utm_source=teste');

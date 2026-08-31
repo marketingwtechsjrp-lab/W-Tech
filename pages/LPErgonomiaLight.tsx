@@ -210,10 +210,10 @@ const LPErgonomiaLight: React.FC = () => {
     ];
 
     const bonuses = [
-        { title: 'Planilha de Regulagem de SAG', value: 'R$ 397' },
-        { title: 'Planilha de Pressão e PSI', value: 'R$ 257' },
-        { title: 'Comparativo de Óleos', value: 'R$ 197' },
-        { title: 'Comparativo de Molas', value: 'R$ 146' },
+        { title: 'Planilha de Regulagem de SAG', value: price.bonusItems[0] },
+        { title: 'Planilha de Pressão e PSI', value: price.bonusItems[1] },
+        { title: 'Comparativo de Óleos', value: price.bonusItems[2] },
+        { title: 'Comparativo de Molas', value: price.bonusItems[3] },
     ];
 
     const conceptImages = [
