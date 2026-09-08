@@ -30,9 +30,20 @@ Disallow: /obrigado-suspensao
 # Campanhas de captura: variações quase idênticas da mesma oferta
 Disallow: /captura/
 
-# Parâmetros de rastreamento não criam páginas novas
-Disallow: /*?utm_
-Disallow: /*?fbclid=
-Disallow: /*?gclid=
+# Parâmetros de rastreamento: LIBERADOS de propósito.
+#
+# Bloqueá-los saiu pela culatra. O Search Console lista 7 páginas "indexadas,
+# mas bloqueadas pelo robots.txt", e todas são páginas reais decoradas pelo
+# GTM — /mapa, /cursos, /blog, /molas, /privacidade e /cancelamento com
+# ?utm_source=direto&sck=<id da sessão> na ponta.
+#
+# O mecanismo é o descrito no topo deste arquivo: cada uma dessas URLs já traz
+# um <link rel="canonical"> apontando para a versão limpa, que consolidaria as
+# duas. Só que o Disallow impedia o robô de BUSCAR a página — e sem buscar, ele
+# não lê o canonical. Resultado: a URL com parâmetro entra no índice sozinha,
+# sem conteúdo, competindo com a página de verdade.
+#
+# Com o rastreamento liberado, o canonical faz o trabalho e as versões com
+# parâmetro somem do índice.
 
 Sitemap: https://w-techbrasil.com.br/sitemap.xml
