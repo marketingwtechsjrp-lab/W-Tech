@@ -27,9 +27,21 @@ export const generateSitemapXml = async () => {
         });
     };
 
-    const { data: lpData } = await supabase.from('SITE_LandingPages').select('slug');
-    const { data: courseData } = await supabase.from('SITE_Courses').select('id, slug').eq('status', 'Published');
-    const { data: blogData } = await supabase.from('SITE_BlogPosts').select('slug').eq('status', 'Published');
+    // Erro de consulta não pode virar silêncio: no gerador do build, uma coluna
+    // inexistente derrubou 312 posts do sitemap sem nenhum aviso. Aqui a prévia
+    // avisa em vez de mostrar uma lista incompleta como se estivesse certa.
+    const consultar = async <T,>(rotulo: string, query: any): Promise<T[]> => {
+        const { data, error } = await query;
+        if (error) {
+            console.error(`[sitemap] consulta "${rotulo}" falhou: ${error.message}`);
+            throw new Error(`Não foi possível ler ${rotulo}: ${error.message}`);
+        }
+        return (data ?? []) as T[];
+    };
+
+    const lpData = await consultar<{ slug: string }>('SITE_LandingPages', supabase.from('SITE_LandingPages').select('slug'));
+    const courseData = await consultar<{ id: string; slug: string }>('SITE_Courses', supabase.from('SITE_Courses').select('id, slug').eq('status', 'Published'));
+    const blogData = await consultar<{ slug: string }>('SITE_BlogPosts', supabase.from('SITE_BlogPosts').select('slug').eq('status', 'Published'));
 
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     

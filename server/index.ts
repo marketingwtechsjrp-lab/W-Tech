@@ -45,6 +45,9 @@ import { staffConfigRouter } from './staffConfig.js';
 import { evolutionStaffRouter } from './evolutionStaff.js';
 import { isLoopbackHostname } from '../api/_auth.js';
 import { countryToLandingLanguage } from '../lib/geoLanguage.js';
+// ── Indexação: quais URLs públicas existem, e o que fazer com as do site antigo ─
+import { caminhoPublicoExiste } from './publicRoutes.js';
+import { destinoLegado, ehRemocaoPermanente } from './legacyRedirects.js';
 
 /**
  * Gate de startup — só em produção. Falha ANTES de `app.listen()` se a config
@@ -276,12 +279,39 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Fallback SPA: qualquer GET não-/api devolve o index.html (BrowserRouter).
-app.use((req: Request, res: Response, next: NextFunction) => {
+// ── Sitemaps do WordPress antigo ────────────────────────────────────────────
+// Não são arquivos em dist/: caíam no fallback e devolviam HTML com status 200 e
+// content-type text/html. É exatamente o "1 erro" que o Search Console acusa em
+// /sitemap_index.xml — que ainda é o único sitemap enviado na propriedade.
+app.get(['/sitemap_index.xml', '/sitemap-index.xml', '/wp-sitemap.xml'], (_req: Request, res: Response) => {
+  res.redirect(301, '/sitemap.xml');
+});
+
+// ── Fallback: SPA com 200, ou 404/410 real ──────────────────────────────────
+// Antes daqui, qualquer GET não-/api recebia index.html com 200 — inclusive URLs
+// que nunca existiram. O Google classificou 3.924 delas como soft 404. Agora a
+// casca da SPA só sai com 200 quando a rota realmente existe; o resto recebe
+// status de erro de verdade, que é o que remove a URL do índice.
+app.use(async (req: Request, res: Response, next: NextFunction) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return next();
-  res.sendFile(indexHtml, (err) => {
-    if (err) next(err);
-  });
+
+  const enviarCasca = (status: number) =>
+    res.status(status).sendFile(indexHtml, (err) => {
+      if (err) next(err);
+    });
+
+  try {
+    if (await caminhoPublicoExiste(req.path)) return enviarCasca(200);
+
+    // Post do WordPress que vivia na raiz do domínio e hoje está sob /blog/.
+    // A query string segue junto para não perder UTMs de campanha antiga.
+    const destino = await destinoLegado(req.path);
+    if (destino) return res.redirect(301, destino + req.url.slice(req.path.length));
+
+    return enviarCasca(ehRemocaoPermanente(req.path) ? 410 : 404);
+  } catch (err) {
+    return next(err);
+  }
 });
 
 const port = Number(process.env.PORT) || 3000;

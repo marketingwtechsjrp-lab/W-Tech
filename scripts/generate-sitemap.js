@@ -61,20 +61,45 @@ async function generateSitemap() {
     'curso-suspensao-piloto'
   ];
 
-  const { data: lpData } = await supabase.from('SITE_LandingPages').select('slug, updated_at');
-  const { data: courseData } = await supabase.from('SITE_Courses').select('id, slug, type, date, updated_at').eq('status', 'Published');
-  const { data: blogData } = await supabase.from('SITE_BlogPosts').select('slug, updated_at').eq('status', 'Published');
-  const { data: glossaryData, error: glossaryError } = await supabase
-    .from('SITE_GlossaryTerms')
-    .select('slug, updated_at')
-    .eq('published', true);
+  // Toda consulta abaixo TEM que checar `error`. A versão anterior desestruturava
+  // só `data`: quando o PostgREST recusava a query (coluna inexistente → 400), o
+  // erro sumia, `data` vinha null, o forEach virava no-op e o build imprimia
+  // "sitemap atualizado com sucesso" com 312 posts de blog faltando. Como o
+  // prerender monta as rotas a partir DESTE arquivo, essas páginas também
+  // deixavam de ser prerenderizadas e passavam a servir a casca vazia da SPA.
+  //
+  // `42P01` = tabela não existe. É o único erro tolerado, porque a primeira build
+  // pode rodar antes da migração; qualquer outro derruba o build.
+  const consultar = async (rotulo, query) => {
+    const { data, error } = await query;
+    if (error) {
+      if (error.code === '42P01') {
+        console.warn(`⚠️ ${rotulo}: tabela ainda não existe — ignorado nesta build.`);
+        return [];
+      }
+      throw new Error(`Consulta "${rotulo}" falhou (${error.code}): ${error.message}`);
+    }
+    return data ?? [];
+  };
 
-  // A primeira build pode ocorrer antes da migração do glossário. Nesse caso,
-  // mantém o sitemap estático e passa a incluir os verbetes automaticamente
-  // assim que a tabela estiver disponível.
-  if (glossaryError && glossaryError.code !== '42P01') {
-    console.warn('⚠️ Glossário não incluído no sitemap:', glossaryError.message);
-  }
+  const lpData = await consultar(
+    'SITE_LandingPages',
+    supabase.from('SITE_LandingPages').select('slug, updated_at'),
+  );
+  const courseData = await consultar(
+    'SITE_Courses',
+    supabase.from('SITE_Courses').select('id, slug, type, date, updated_at').eq('status', 'Published'),
+  );
+  // SITE_BlogPosts não tem `updated_at` (ver fix_blog_schema.sql): as colunas de
+  // tempo são `created_at` e `date`. Pedir updated_at aqui era o 400 silencioso.
+  const blogData = await consultar(
+    'SITE_BlogPosts',
+    supabase.from('SITE_BlogPosts').select('slug, date, created_at').eq('status', 'Published'),
+  );
+  const glossaryData = await consultar(
+    'SITE_GlossaryTerms',
+    supabase.from('SITE_GlossaryTerms').select('slug, updated_at').eq('published', true),
+  );
 
   const escapeXml = (unsafe) => {
     if (!unsafe) return '';
@@ -115,7 +140,7 @@ async function generateSitemap() {
   slugsSeen.add('proriders-lisboa');
   slugsSeen.add('curso-suspensao-piloto');
 
-  lpData?.forEach(lp => {
+  lpData.forEach(lp => {
     if (lp.slug && !slugsSeen.has(lp.slug)) {
       const lastmod = formatDate(lp.updated_at);
       sitemap += `  <url>\n    <loc>${baseUrl}/lp/${escapeXml(lp.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.7</priority>\n  </url>\n`;
@@ -124,7 +149,7 @@ async function generateSitemap() {
   });
 
   // Courses
-  courseData?.forEach(c => {
+  courseData.forEach(c => {
     const identifier = c.slug || c.id;
     if (identifier && !slugsSeen.has(identifier)) {
       const lastmod = formatDate(c.updated_at || c.date);
@@ -134,15 +159,16 @@ async function generateSitemap() {
   });
 
   // Blog Posts
-  blogData?.forEach(b => {
-    if (b.slug) {
-      const lastmod = formatDate(b.updated_at);
+  blogData.forEach(b => {
+    if (b.slug && !slugsSeen.has(`blog/${b.slug}`)) {
+      slugsSeen.add(`blog/${b.slug}`);
+      const lastmod = formatDate(b.date || b.created_at);
       sitemap += `  <url>\n    <loc>${baseUrl}/blog/${escapeXml(b.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.6</priority>\n  </url>\n`;
     }
   });
 
   // Glossary Terms
-  glossaryData?.forEach(term => {
+  glossaryData.forEach(term => {
     if (term.slug) {
       const lastmod = formatDate(term.updated_at);
       sitemap += `  <url>\n    <loc>${baseUrl}/glossario/${escapeXml(term.slug)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
@@ -181,6 +207,12 @@ async function generateSitemap() {
   const withLastmod = (sitemap.match(/<lastmod>/g) || []).length;
   console.log(`✅ Sitemap updated successfully!`);
   console.log(`📊 ${locs.length} URLs (${withLastmod} com lastmod) em ${baseUrl}`);
+  // Contagem por tipo: um zero aqui denuncia consulta vazia antes do deploy — foi
+  // exatamente assim que 312 posts sumiram do sitemap sem ninguém perceber.
+  console.log(
+    `   estáticas ${staticPages.length} · landing pages ${lpData.length} · cursos ${courseData.length} ` +
+    `· blog ${blogData.length} · glossário ${glossaryData.length}`,
+  );
   console.log(`📍 Public: ${publicPath}`);
   console.log(`📍 Root: ${rootPath}`);
 }

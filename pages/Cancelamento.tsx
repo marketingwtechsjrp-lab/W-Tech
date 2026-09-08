@@ -2,10 +2,15 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 const Cancelamento = () => {
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+            <SEO
+                title="Política de Cancelamento e Reembolso"
+                description="Regras de cancelamento, remarcação e reembolso de cursos, inscrições e pedidos de peças da W-Tech Brasil."
+            />
              <div className="bg-wtech-black text-white py-6">
                 <div className="container mx-auto px-6 flex items-center gap-4">
                     <Link to="/" className="hover:text-wtech-gold transition-colors"><ArrowLeft /></Link>

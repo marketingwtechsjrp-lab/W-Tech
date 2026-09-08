@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Course, LandingPage } from '../types';
+import { slugify } from '../lib/slug';
 import { DEFAULT_COURSE_TESTIMONIALS, filterBlockedTestimonials, getYouTubeId } from '../lib/testimonials';
 import { DEFAULT_SCHEDULE_MODULES, scheduleModulesToText, ScheduleModule } from '../lib/schedule';
 import { LP_SECTIONS, DEFAULT_SECTION_ORDER, resolveSectionOrder, LPSectionConfig } from '../lib/lpSections';
@@ -80,7 +81,7 @@ export const LandingPageEditor: React.FC<LandingPageEditorProps> = ({ course, on
         courseId: course.id,
         title: course.title,
         subtitle: 'Domine a arte da suspensão de motos com a metodologia W-Tech.',
-        slug: course.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+        slug: slugify(course.title),
         heroImage: course.image || '',
         heroSecondaryImage: 'https://lp.w-techbrasil.com.br/wp-content/webp-express/webp-images/uploads/2025/09/boas-vindas-2.png.webp',
         benefits: [

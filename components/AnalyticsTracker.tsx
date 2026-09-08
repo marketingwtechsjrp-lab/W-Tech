@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { captureTrackingParams, stripAutoDirectTracking } from '../lib/tracking';
 import { trackGoogleEvent } from '../lib/googleTracking';
 import { trackMetaNavigationPageView } from '../lib/metaPixel';
+import { pushPageView } from '../lib/dataLayer';
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -72,6 +73,12 @@ export const AnalyticsTracker = () => {
     // Page View Tracking
     useEffect(() => {
         if (shouldCleanAutoTracking) return;
+
+        // Pageview da SPA para o GTM/GA4. Vai FORA do requestIdleCallback abaixo:
+        // aquele bloco é o registro interno no Supabase e pode esperar, este não —
+        // um pageview atrasado corre o risco de sair depois da próxima navegação e
+        // ser atribuído à página errada.
+        pushPageView(location.pathname, location.search);
 
         const trackPageView = async () => {
             try {

@@ -2,29 +2,49 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { BlogPost } from '../types';
-import { Clock, ChevronRight, Search, Calendar, User, ArrowRight } from 'lucide-react';
+import { ChevronRight, Search, Calendar, User, ArrowRight } from 'lucide-react';
 import SEO from '../components/SEO';
 import { formatDateLocal } from '../lib/utils';
 import { resolveBlogImage } from '../lib/blogImages';
+
+/** Cartões exibidos por vez na grade, além do post em destaque. */
+const POSTS_POR_PAGINA = 12;
+
+/**
+ * Colunas da LISTAGEM. `content` fica de fora de propósito: são 312 posts
+ * publicados, e trazer o texto completo de todos gerava 938 KB de HTML e um JSON
+ * muito maior — a página reprovava em Core Web Vitals no celular (14 URLs
+ * inválidas, 0 adequadas). O corpo do artigo é carregado em /blog/:slug.
+ */
+const COLUNAS_LISTAGEM = 'id, slug, title, excerpt, category, date, author, image, keywords, seo_score';
 
 const Blog: React.FC = () => {
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [visiveis, setVisiveis] = useState(POSTS_POR_PAGINA);
 
     useEffect(() => {
         fetchPosts();
     }, []);
 
+    // Busca nova recomeça a paginação: senão o usuário filtra e continua vendo
+    // a contagem da navegação anterior.
+    useEffect(() => {
+        setVisiveis(POSTS_POR_PAGINA);
+    }, [searchTerm]);
+
     const fetchPosts = async () => {
         setLoading(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('SITE_BlogPosts')
-            .select('*')
+            .select(COLUNAS_LISTAGEM)
             .eq('status', 'Published')
             .order('date', { ascending: false });
 
-        if (data) {
+        if (error) {
+            console.error('[blog] falha ao carregar posts:', error.message);
+        } else if (data) {
             setPosts(data.map((p: any) => ({
                 ...p,
                 seoScore: p.seo_score || 0
@@ -33,19 +53,14 @@ const Blog: React.FC = () => {
         setLoading(false);
     };
 
-    const calculateReadTime = (content: string) => {
-        const text = content.replace(/<[^>]*>/g, ''); // Strip HTML
-        const words = text.trim().split(/\s+/).length;
-        return Math.ceil(words / 200); // 200 wpm
-    };
-
     const filteredPosts = posts.filter(p =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const featuredPost = filteredPosts[0];
-    const gridPosts = filteredPosts.slice(1);
+    const gridPosts = filteredPosts.slice(1, 1 + visiveis);
+    const restantes = Math.max(0, filteredPosts.length - 1 - gridPosts.length);
 
     return (
         <div className="bg-gray-50 min-h-screen">
@@ -98,7 +113,7 @@ const Blog: React.FC = () => {
                                 <div className="relative z-10 p-8 md:p-12 w-full max-w-4xl">
                                     <div className="flex items-center gap-4 mb-4 text-xs font-bold uppercase tracking-wider text-wtech-gold">
                                         <span className="bg-wtech-gold text-black px-2 py-1 rounded">{featuredPost.category}</span>
-                                        <span className="flex items-center gap-1 text-white/80"><Clock size={14} /> {calculateReadTime(featuredPost.content)} min leitura</span>
+                                        <span className="flex items-center gap-1 text-white/80"><Calendar size={14} /> {formatDateLocal(featuredPost.date)}</span>
                                     </div>
                                     <Link to={`/blog/${featuredPost.slug || featuredPost.id}`}>
                                         <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 hover:text-wtech-gold transition-colors leading-tight">
@@ -135,7 +150,6 @@ const Blog: React.FC = () => {
                                     <div className="p-6 flex flex-col flex-grow">
                                         <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
                                             <span className="flex items-center gap-1"><Calendar size={12} /> {formatDateLocal(post.date)}</span>
-                                            <span className="flex items-center gap-1"><Clock size={12} /> {calculateReadTime(post.content)} min</span>
                                         </div>
                                         <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-wtech-gold transition-colors">
                                             {post.title}
@@ -158,6 +172,43 @@ const Blog: React.FC = () => {
                                 </Link>
                             ))}
                         </div>
+
+                        {restantes > 0 && (
+                            <div className="flex justify-center mt-12">
+                                <button
+                                    type="button"
+                                    onClick={() => setVisiveis(v => v + POSTS_POR_PAGINA)}
+                                    className="bg-wtech-black text-white px-8 py-4 rounded font-bold hover:bg-wtech-gold hover:text-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wtech-gold"
+                                >
+                                    Carregar mais artigos ({restantes})
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Índice completo em links de texto.
+                            A grade acima passou a ser paginada para a página parar de
+                            pesar 938 KB — mas eram aqueles 312 cartões que davam ao
+                            Google o caminho até cada artigo. Esta lista devolve o
+                            link de todos por um custo de marcação desprezível. */}
+                        {filteredPosts.length > 1 && (
+                            <nav aria-labelledby="indice-artigos" className="mt-20 pt-10 border-t border-gray-200">
+                                <h2 id="indice-artigos" className="text-lg font-bold text-gray-900 mb-6">
+                                    Todos os artigos ({filteredPosts.length})
+                                </h2>
+                                <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
+                                    {filteredPosts.map(post => (
+                                        <li key={`indice-${post.id}`}>
+                                            <Link
+                                                to={`/blog/${post.slug || post.id}`}
+                                                className="text-sm text-gray-600 hover:text-wtech-gold hover:underline transition-colors"
+                                            >
+                                                {post.title}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </nav>
+                        )}
                     </>
                 )}
             </div>

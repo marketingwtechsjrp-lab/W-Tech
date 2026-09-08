@@ -33,11 +33,20 @@ const loadLeaflet = (): Promise<void> => {
   return leafletPromise;
 };
 
+/** Cartões de credenciado renderizados por vez na lista lateral. */
+const CREDENCIADOS_POR_PAGINA = 30;
+
 const MechanicsMap: React.FC = () => {
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMech, setSelectedMech] = useState<Mechanic | null>(null);
+  const [visiveis, setVisiveis] = useState(CREDENCIADOS_POR_PAGINA);
+
+  // Busca nova recomeça a lista do início.
+  useEffect(() => {
+    setVisiveis(CREDENCIADOS_POR_PAGINA);
+  }, [searchTerm]);
   const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +137,12 @@ const MechanicsMap: React.FC = () => {
     (m.specialty && m.specialty.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
+  // Todos os credenciados continuam no MAPA (os marcadores são baratos); o que
+  // era caro é o cartão completo de cada um na lista lateral — a base inteira
+  // gerava 999 KB de HTML nesta rota, a mais pesada do site.
+  const listaVisivel = filteredMechanics.slice(0, visiveis);
+  const restantes = filteredMechanics.length - listaVisivel.length;
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       <SEO
@@ -161,7 +176,7 @@ const MechanicsMap: React.FC = () => {
             <div className="p-10 text-center"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-wtech-gold"></div></div>
           ) : filteredMechanics.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {filteredMechanics.map(mech => (
+              {listaVisivel.map(mech => (
                 <div
                   key={mech.id}
                   onClick={() => handleSelect(mech)}
@@ -200,6 +215,18 @@ const MechanicsMap: React.FC = () => {
                   </div>
                 </div>
               ))}
+
+              {restantes > 0 && (
+                <div className="p-6">
+                  <button
+                    type="button"
+                    onClick={() => setVisiveis(v => v + CREDENCIADOS_POR_PAGINA)}
+                    className="w-full bg-wtech-black text-white py-3 rounded font-bold text-sm hover:bg-wtech-gold hover:text-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wtech-gold"
+                  >
+                    Mostrar mais credenciados ({restantes})
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-10 text-center text-gray-500">

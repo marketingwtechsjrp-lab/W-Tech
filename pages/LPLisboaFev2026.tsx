@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
@@ -73,6 +74,10 @@ const LPLisboaFev2026: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
+            <SEO
+                title="A Manutenção Invisível — Suspensão em Lisboa, Fev/2026"
+                description="Turma de fevereiro de 2026 em Lisboa: o que ninguém revisa na suspensão da sua moto e como diagnosticar. Curso presencial W-Tech Brasil."
+            />
             
             {/* STICKY CTA MOBILE */}
             <div className="md:hidden fixed bottom-6 left-6 right-6 z-50">

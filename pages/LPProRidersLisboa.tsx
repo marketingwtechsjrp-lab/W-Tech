@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
@@ -84,6 +85,10 @@ const LPProRidersLisboa: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
+            <SEO
+                title="Curso Avançado BMW GS e Suspensões Premium — Lisboa"
+                description="Pro-Riders e W-Tech em Lisboa: curso avançado de suspensão para BMW GS e sistemas premium, com prática guiada e vagas limitadas."
+            />
 
             {/* TOP BAR */}
             <div className="bg-wtech-red text-white text-[10px] md:text-xs font-black uppercase tracking-widest text-center py-2 px-4">

@@ -1,3 +1,4 @@
+import SEO from '../components/SEO';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
@@ -104,6 +105,10 @@ const WTechLisboa: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
+            <SEO
+                title="W-Tech Europa — Curso de Suspensão em Lisboa 2026"
+                description="Formação técnica em suspensão de motos da W-Tech Brasil em Lisboa: prática em bancada, turmas reduzidas e certificação. Vagas limitadas."
+            />
             
             {/* TOP BAR */}
             <div className="bg-wtech-red text-white text-[10px] md:text-xs font-black uppercase tracking-widest text-center py-2 px-4">

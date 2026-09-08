@@ -10,6 +10,7 @@ import { resolveScheduleModules } from '../lib/schedule';
 import { ScheduleTimeline } from '../components/ScheduleTimeline';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
+import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 import {
@@ -254,7 +255,19 @@ const LandingPageViewer: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans bg-[#050505] text-white selection:bg-wtech-gold selection:text-black overflow-x-hidden">
-        
+
+        {/* Sem isto, as 10 landing pages de curso do sitemap serviam todas o mesmo
+            título e a mesma description da home — o nome do curso e a cidade, que
+            são justamente o que alguém pesquisa, não apareciam em lugar nenhum. */}
+        <SEO
+            title={lp.title}
+            description={
+                lp.subtitle
+                || `Curso presencial da W-Tech Brasil${lp.course?.city ? ` em ${lp.course.city}` : ''}: suspensão de motos com prática em bancada. Vagas limitadas.`
+            }
+            image={lp.heroImage}
+        />
+
         {lp.fakeAlertsEnabled && <FakeSignupAlert courseName={lp.title} />}
 
         {/* Navbar */}

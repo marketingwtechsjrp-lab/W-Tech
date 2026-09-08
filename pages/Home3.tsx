@@ -195,7 +195,7 @@ const Home3 = () => {
     return (
         <div className="bg-wtech-light min-h-screen font-sans text-gray-900 selection:bg-wtech-gold selection:text-white overflow-x-hidden">
             <SEO
-                title="Peças - Ferramentas - Cursos"
+                title="Suspensão de Motos: Cursos, Peças e Ferramentas"
                 description="Especialistas em Suspensão de Motocross, Enduro e Street. Cursos técnicos, peças especiais e a maior rede de oficinas credenciadas do Brasil."
                 schema={{
                     "@context": "https://schema.org",

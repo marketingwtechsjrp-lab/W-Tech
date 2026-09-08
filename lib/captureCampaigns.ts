@@ -278,14 +278,9 @@ export async function sendCaptureLeadsToCrm(campaign: CaptureCampaign, leads: Ca
 
 // ─── Utilidades ──────────────────────────────────────────────────────────────
 
-export function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
+// Reexportado de lib/slug.ts: a mesma regra vale para campanhas de captura,
+// landing pages e posts do blog. Cada c\u00f3pia que existia divergia em algum ponto.
+export { slugify } from './slug';
 
 export function campaignPublicPath(campaign: Pick<CaptureCampaign, 'slug'>): string {
     return `/captura/${campaign.slug}`;

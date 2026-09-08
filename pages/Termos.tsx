@@ -2,10 +2,15 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 const Termos = () => {
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+            <SEO
+                title="Termos de Uso"
+                description="Termos e condições de uso do site, dos cursos e dos serviços da W-Tech Brasil, incluindo compra de peças e acesso à rede de oficinas credenciadas."
+            />
              {/* Header Simples */}
              <div className="bg-wtech-black text-white py-6">
                 <div className="container mx-auto px-6 flex items-center gap-4">

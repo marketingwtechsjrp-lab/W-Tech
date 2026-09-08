@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { useAuth } from '../../../context/AuthContext';
 import { generateBlogPost } from '../../../lib/ai';
 import { generateSitemapXml } from '../../../lib/sitemapUtils';
+import { slugify } from '../../../lib/slug';
 import {
     BLOG_IMAGE_LIBRARY,
     getBlogImage,
@@ -132,7 +133,7 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
         setAiGenerating(true);
         try {
             const aiPost = await generateBlogPost(aiTopic, []);
-            const generatedSlug = aiPost.slug || aiPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const generatedSlug = aiPost.slug || slugify(aiPost.title);
 
             setFormData({
                 ...formData,
@@ -206,7 +207,7 @@ const BlogManagerView = ({ permissions }: { permissions?: any }) => {
                 const aiPost = await generateBlogPost(topic, keywordList);
                 const coverImage = getBlogImage(`${aiPost.title} ${topic} ${aiPost.image_prompt || ''}`);
 
-                const generatedSlug = aiPost.slug || aiPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substr(2, 5);
+                const generatedSlug = aiPost.slug || `${slugify(aiPost.title)}-${Math.random().toString(36).substr(2, 5)}`;
 
                 await supabase.from('SITE_BlogPosts').insert([{
                     title: aiPost.title,

@@ -107,7 +107,10 @@ const SEO: React.FC<SEOProps> = ({ title, description, image, url, keywords, rob
             }
             script.textContent = JSON.stringify(schema);
         } else if (pageSchema) {
-            pageSchema.textContent = '';
+            // Esvaziar o textContent deixava um <script type="application/ld+json">
+            // vazio no HTML — o que o prerender congelava em /cursos, /mapa, /blog e
+            // /sou-mecanico. Bloco vazio não é schema, é lixo: remove a tag inteira.
+            pageSchema.remove();
         }
 
     }, [fullTitle, metaDescription, metaImage, currentUrl, metaKeywords, metaRobots, siteName, type, schema, settings]);

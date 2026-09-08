@@ -6,6 +6,7 @@ import {
     BadgeCheck,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import SEO from '../components/SEO';
 
 interface BioLink {
     id: string;
@@ -160,6 +161,11 @@ const BioPage = () => {
         );
     }
 
+    // `config.title` vem do painel e hoje está vazio em produção: o <h1> da página
+    // saía sem texto nenhum no HTML prerenderizado. Título é obrigatório na página,
+    // então cai no nome da marca quando o painel não define um.
+    const tituloBio = (config.title || '').trim() || 'W-TECH Brasil';
+
     // Helper to get background style
     const getBackgroundStyle = () => {
         if (config.background_type === 'image') {
@@ -188,6 +194,11 @@ const BioPage = () => {
             className="min-h-screen flex flex-col items-center px-4 pb-8 overflow-hidden relative bg-[#050505] selection:bg-wtech-red selection:text-white"
             style={{ color: config.text_color }}
         >
+            <SEO
+                title={tituloBio}
+                description="Canais oficiais da W-Tech Brasil em um só lugar: cursos de suspensão, loja de peças, rede de oficinas credenciadas e atendimento."
+            />
+
             <div className="fixed inset-x-0 top-0 z-30 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
 
             <div className="absolute inset-0 z-0 overflow-hidden bg-[#050505] pointer-events-none" aria-hidden="true">
@@ -287,7 +298,7 @@ const BioPage = () => {
                         <BadgeCheck size={12} className="text-white/45" />
                         <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-white/50">W-Tech Brasil · Oficial</span>
                     </div>
-                    <h1 className="max-w-sm font-display text-xl font-bold leading-tight tracking-[-0.02em] text-white/90">{normalizeBioTitle(config.title)}</h1>
+                    <h1 className="max-w-sm font-display text-xl font-bold leading-tight tracking-[-0.02em] text-white/90">{normalizeBioTitle(tituloBio)}</h1>
                     {config.description && <p className="mt-3 max-w-xs text-sm font-medium leading-relaxed text-white/60">{config.description}</p>}
                 </motion.div>
 

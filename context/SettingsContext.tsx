@@ -46,7 +46,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 setSettings(config);
 
                 // Apply Global Styles/Meta
-                if (config.site_title) document.title = config.site_title;
+                //
+                // `document.title` NÃO é escrito aqui. Este contexto resolve depois do
+                // primeiro render, então gravar o site_title do banco sobrescrevia o
+                // título que o componente SEO tinha acabado de definir. Nas páginas sem
+                // <SEO> ele ficava de pé — e foi assim que 23 das 33 URLs do sitemap
+                // passaram a servir o mesmo título. O título tem um dono só: SEO.tsx;
+                // quem não o usa herda o do index.html, que é um título de marca válido.
                 const root = document.documentElement;
                 if (config.primary_color) root.style.setProperty('--color-primary', config.primary_color);
                 if (config.secondary_color) root.style.setProperty('--color-secondary', config.secondary_color);

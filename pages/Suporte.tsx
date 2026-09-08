@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowLeft, Mail, Phone, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../context/SettingsContext';
+import SEO from '../components/SEO';
 
 const Suporte = () => {
     const { get } = useSettings();
@@ -11,6 +12,10 @@ const Suporte = () => {
     const phone = get('phone_main', '(11) 99999-9999');
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+            <SEO
+                title="Central de Suporte"
+                description="Canais de atendimento da W-Tech Brasil: dúvidas sobre cursos, pedidos de peças, rastreio de entrega e suporte técnico em suspensão."
+            />
              <div className="bg-wtech-black text-white py-6">
                 <div className="container mx-auto px-6 flex items-center gap-4">
                     <Link to="/" className="hover:text-wtech-gold transition-colors"><ArrowLeft /></Link>

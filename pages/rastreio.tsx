@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Search, Package, CheckCircle, Truck, MapPin, Clock } from 'lucide-react';
+import SEO from '../components/SEO';
 
 export default function OrderTracking() {
     const [code, setCode] = useState('');
@@ -52,7 +53,11 @@ export default function OrderTracking() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-            
+            <SEO
+                title="Rastreie seu Pedido"
+                description="Acompanhe a entrega do seu pedido de peças e ferramentas W-Tech Brasil informando o código de rastreio."
+            />
+
             <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
                 <div className="bg-gradient-to-r from-[#C29D52] to-[#A37B2E] p-8 text-center text-white">
                     <Package size={48} className="mx-auto mb-4 opacity-90" />

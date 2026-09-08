@@ -1,12 +1,17 @@
 import React from 'react';
 import SpringSelector from '../components/ui/SpringSelector';
 import { useLanguage } from '../context/LanguageContext';
+import SEO from '../components/SEO';
 
 const MolasCalculator: React.FC = () => {
   const { t } = useLanguage();
 
   return (
     <div className="bg-gray-50 dark:bg-black min-h-screen md:min-h-[calc(100vh-80px)] pt-6 pb-32 md:py-6 px-3 sm:px-4 flex flex-col md:justify-center transition-colors duration-300 mt-16 md:mt-20">
+      <SEO
+        title="Calculadora de Molas de Suspensão"
+        description="Calcule a mola ideal para a suspensão da sua moto a partir do peso do piloto, do modelo e do tipo de uso. Ferramenta gratuita da W-Tech Brasil."
+      />
       <div className="max-w-6xl mx-auto w-full space-y-4 flex flex-col">
 
         {/* Intro Section */}
