@@ -485,11 +485,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
 
                         {/* VSL Main Headline */}
                         <motion.h1 initial="hidden" animate="visible" variants={v} className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] mb-4 text-white drop-shadow-2xl max-w-3xl">
-                            {funnel.personalized ? funnelCopy.titlePart1 : t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{funnel.personalized ? funnelCopy.titleHighlight : t.hero.titleHighlight}</span>
+                            {t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{t.hero.titleHighlight}</span>
                         </motion.h1>
 
                         <motion.p initial="hidden" animate="visible" variants={v} className="text-sm sm:text-lg text-gray-300 mb-8 max-w-2xl font-medium">
-                            {funnel.personalized ? funnelCopy.subtitle : t.hero.subtitle}
+                            {t.hero.subtitle}
                         </motion.p>
 
                         {/* VSL VIDEO PLAYER CONTAINER (DOMINANT CENTRAL FOCUS) */}
@@ -691,10 +691,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                             <div className="w-14 h-14 flex items-center justify-center text-white mb-5 border border-white/30 rounded-2xl bg-white/10 backdrop-blur shadow-inner relative z-10 group-hover:scale-110 transition-transform duration-200">
                                 <Settings size={28} />
                             </div>
-                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">{localize("Diferencial Competitivo")}</div>
-                            <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">{localize("Dono de Oficina")}</h3>
+                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">{t.profiles.items[3].tag}</div>
+                            <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">{t.profiles.items[3].title}</h3>
                             <p className="text-gray-300 text-sm md:text-base leading-relaxed relative z-10">
-                                {localize("Seus clientes pedem ajustes de cliques que a equipe não sabe resolver,")} <strong className="text-white">{localize("perdendo serviço e fidelidade")}</strong> {localize("para oficinas especializadas de Off-Road. Dê esse diferencial à sua equipe.")}
+                                {t.profiles.items[3].pain}
                             </p>
                         </motion.div>
                     </motion.div>
@@ -780,7 +780,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                             11 Módulos +<br className="hidden md:block" /> <span className="text-wtech-gold">{localize("Bônus Exclusivo")}</span>
                         </motion.h2>
                         <motion.p variants={v} className="text-gray-400 max-w-2xl mx-auto text-base">
-                            {localize("Tudo o que você precisa saber sobre suspensão Off-Road, do SAG ao clique, em aulas gravadas em estúdio com qualidade W-Tech.")}
+                            {currentLang === 'pt-PT'
+                                ? 'Do SAG aos cliques, das molas à ergonomia: compreende como cada ajuste influencia a mota e aprende a combiná-los para o peso do piloto, a sua condução e o terreno.'
+                                : currentLang === 'pt-BR'
+                                    ? 'Do SAG aos cliques, das molas à ergonomia: entenda como cada ajuste influencia a moto e aprenda a combinar tudo para o peso do piloto, seu jeito de pilotar e o terreno.'
+                                    : localize("Tudo o que você precisa saber sobre suspensão Off-Road, do SAG ao clique, em aulas gravadas em estúdio com qualidade W-Tech.")}
                         </motion.p>
                     </motion.div>
 

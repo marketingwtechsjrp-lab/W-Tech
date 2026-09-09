@@ -87,22 +87,53 @@ export const localizePilotCopy = (language: LPLanguage, text: string): string =>
 
 export const getPilotLandingTranslation = (language: LPLanguage): LPTranslation => {
     const base = lpTranslations[language];
+    if (language === 'pt-BR') return {
+        ...base,
+        hero: {
+            ...base.hero,
+            titlePart1: 'O único curso que você precisa para',
+            titleHighlight: 'acertar a suspensão da sua moto.',
+            subtitle: 'Aprenda acerto, regulagem, SAG e ergonomia para ajustar a moto ao piloto e ao terreno. Autonomia para pilotar com mais controle — e conhecimento para entregar um acerto personalizado na oficina.',
+        },
+        profiles: {
+            ...base.profiles,
+            label: 'Um método. Duas formas de transformar a pilotagem.',
+            titlePart1: 'Autonomia para o piloto.',
+            titleHighlight: 'Diferencial para a oficina.',
+            desc: 'O melhor ajuste começa por quem pilota: peso, posição na moto, nível de experiência e terreno. Aprenda a combinar esses fatores em um acerto feito para cada pessoa.',
+            items: [
+                { tag: 'A sua moto, do seu jeito', title: 'Piloto', pain: 'Entenda o que ajustar, por que ajustar e como avaliar a diferença. Regule o SAG, os cliques e a ergonomia para o seu peso e sua forma de pilotar, com autonomia para evoluir o acerto da sua moto.' },
+                { tag: 'O terreno muda. O acerto acompanha.', title: 'Trilha / Off-Road', pain: 'Areia, pedras, lama, trilha ou pista: aprenda a interpretar o comportamento da moto e adaptar a regulagem às condições de cada terreno, dentro dos recursos da sua suspensão.' },
+                { tag: 'Acerto personalizado', title: 'Mecânico / Preparador', pain: 'Cada piloto tem um peso, uma postura e uma necessidade. Aprenda a combinar suspensão, SAG e ergonomia para entregar a moto regulada para aquele cliente — e explicar o que foi ajustado e por quê.' },
+                { tag: 'Uma entrega que faz diferença', title: 'Dono de Oficina', pain: 'Transforme o acerto personalizado em parte da entrega da sua oficina. Avalie o perfil do cliente, o terreno em que ele pilota e o uso da moto para oferecer uma regulagem orientada à pessoa que vai pilotar.' },
+            ],
+        },
+        offer: { ...base.offer, title: 'O curso completo de acerto da sua moto + bônus' },
+    };
     if (language !== 'pt-PT') return base;
     return {
         ...base,
         hero: {
             ...base.hero,
-            titlePart1: 'Aprende a afinar a suspensão.',
-            titleHighlight: 'Sente a diferença na tua mota.',
-            subtitle: 'Mais controlo nos trilhos, menos fadiga aos comandos. Aprende a afinar SAG, molas, cliques e ergonomia com aulas online e demonstrações na mota.',
+            titlePart1: 'O único curso de que precisas para',
+            titleHighlight: 'acertar a suspensão da tua mota.',
+            subtitle: 'Aprende afinação de suspensões, SAG e ergonomia para adaptar a mota ao piloto e ao terreno. Autonomia para conduzir com mais controlo — e conhecimento para entregar uma afinação personalizada na oficina.',
         },
         profiles: {
             ...base.profiles,
-            titleHighlight: 'estás a começar',
-            items: base.profiles.items.map((item, index) => index === 1 ? { ...item, tag: 'Trilhos e Enduro' } : item),
+            label: 'Um método. Duas formas de transformar a condução.',
+            titlePart1: 'Autonomia para o piloto.',
+            titleHighlight: 'Especialização para a oficina.',
+            desc: 'A afinação começa por quem conduz: peso, posição na mota, experiência e terreno. Aprende a combinar estes fatores numa afinação feita para cada pessoa.',
+            items: [
+                { tag: 'A tua mota, à tua medida', title: 'Piloto', pain: 'Compreende o que afinar, porquê e como avaliar a diferença. Ajusta o SAG, os cliques e a ergonomia ao teu peso e à tua forma de conduzir, com autonomia para evoluir a afinação da tua mota.' },
+                { tag: 'O terreno muda. A afinação acompanha.', title: 'Trilhos / Off-Road', pain: 'Areia, pedras, lama, trilhos ou pista: aprende a interpretar o comportamento da mota e a adaptar a afinação às condições de cada terreno, dentro das possibilidades da tua suspensão.' },
+                { tag: 'Afinação personalizada', title: 'Mecânico / Preparador', pain: 'Cada piloto tem um peso, uma postura e necessidades próprias. Aprende a combinar suspensão, SAG e ergonomia para entregar a mota afinada à medida daquele cliente — e explicar cada ajuste.' },
+                { tag: 'Uma entrega que faz a diferença', title: 'Responsável de oficina', pain: 'Integra a afinação personalizada na entrega da tua oficina. Avalia o perfil do cliente, o terreno onde conduz e a utilização da mota para oferecer uma afinação orientada à pessoa que a vai conduzir.' },
+            ],
         },
         modules: { ...base.modules, cta: 'Conhecer as condições de inscrição' },
-        offer: { ...base.offer, badge: 'Formação online', title: 'A formação completa + bónus' },
+        offer: { ...base.offer, badge: 'Formação online', title: 'A formação completa de afinação da tua mota + bónus' },
         faq: {
             ...base.faq,
             items: [

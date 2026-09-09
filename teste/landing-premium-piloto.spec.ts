@@ -103,7 +103,7 @@ test('Portugal por geolocalização: português europeu, euros e Hotmart', async
     }));
     await page.goto('/curso-suspensao-piloto?utm_source=anuncio-portugal');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-PT');
-    await expect(page.locator('h1')).toContainText('Sente a diferença na tua mota');
+    await expect(page.locator('h1')).toContainText('acertar a suspensão da tua mota');
     await expect(page).toHaveTitle(/Aprende a Afinar a Tua Mota/);
     await expect(page.locator('#cta-final')).toContainText('59 €');
     await expect(page.locator('#cta-final')).toContainText('Pagamento único de 59 € · sem renovação');

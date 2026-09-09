@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.39.1",
+    "date": "2026-09-09",
+    "title": "Copy focada em acerto personalizado da moto",
+    "changes": [
+      "Reforca o curso completo de acerto de suspensao, regulagem, SAG e ergonomia para Brasil e Portugal.",
+      "Destaca autonomia do piloto para ajustar a moto ao terreno e entrega personalizada por mecanicos e oficinas."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.39.0",
     "date": "2026-09-09",
     "title": "Landing premium para Brasil e Portugal",

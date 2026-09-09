@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.39.1 (2026-09-09) - Copy focada em acerto personalizado da moto
+- Reforca o curso completo de acerto de suspensao, regulagem, SAG e ergonomia para Brasil e Portugal.
+- Destaca autonomia do piloto para ajustar a moto ao terreno e entrega personalizada por mecanicos e oficinas.
+
 ## v3.39.0 (2026-09-09) - Landing premium para Brasil e Portugal
 - Libera a pagina completa sem assistir a VSL e concentra preco e checkout na secao de inscricao.
 - Substitui depoimentos genericos por videos reais de formacoes W-Tech, incluindo Lisboa, e prepara a faixa de prints autorizados.
