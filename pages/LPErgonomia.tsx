@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, Suspense, lazy, useMemo } from 'react';
 import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
+import { CourseTestimonials } from '../components/lp/CourseTestimonials';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
@@ -8,16 +9,18 @@ import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL } from '../lib/vslVideo';
+import { getPilotLandingTranslation, localizePilotCopy } from '../lib/pilotLandingPortugal';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
     getSuspensionFunnelCopy,
     readSuspensionFunnelContext,
     suspensionFunnelEventLabel,
 } from '../lib/suspensionFunnel';
-import { Globe, Flame } from 'lucide-react';
+import { Globe } from 'lucide-react';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
 import {
@@ -43,7 +46,6 @@ import {
     Wrench,
     Mountain,
     Star,
-    Quote,
     Crosshair,
     Activity,
     Gauge,
@@ -51,10 +53,6 @@ import {
     CircleDot,
     Disc,
     BookOpen,
-    Lock,
-    Unlock,
-    Sparkles,
-    X,
     Infinity,
     Clock4,
     CalendarDays,
@@ -194,14 +192,15 @@ const Reveal: React.FC<{
 };
 
 /* ─── Main Component ─── */
-const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullContent = false }) => {
+const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
     const { currentLang, setLanguage } = useLanguage();
 
     const handleLanguageChange = (lang: LPLanguage) => {
         setLanguage(lang);
     };
 
-    const t = lpTranslations[currentLang] || lpTranslations['pt-PT'];
+    const t = getPilotLandingTranslation(currentLang);
+    const localize = (text: string) => localizePilotCopy(currentLang, text);
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
     const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
@@ -221,30 +220,21 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         // Persiste as UTMs/IDs de clique; o link é derivado no mesmo render do preço.
         captureTrackingParams();
         trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
+        trackMetaStandardEvent('ViewContent', courseContentParams('lp_dark'), {
+            onceKey: `course-view-content:lp-dark:${window.location.pathname}`,
+        });
     }, [funnelEventLabel]);
 
     const scrollTo = (id: string) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById(id)?.scrollIntoView({ behavior: shouldAnimate ? 'smooth' : 'auto' });
+        if (id === 'cta-final') trackEvent('Funil Suspensão', 'offer_section_click', funnelEventLabel);
     };
 
-    /* ─── VSL SALES FUNNEL HOOKS ─── */
-    const PITCH_DELAY_SECONDS = 150; // 2 minutos e 30 segundos
+    /* Apresentação opcional: todas as seções ficam disponíveis desde a entrada. */
     const [videoPlaying, setVideoPlaying] = useState(false);
     const [videoActivated, setVideoActivated] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
     const [videoProgress, setVideoProgress] = useState(0);
-    const [videoCurrentTime, setVideoCurrentTime] = useState(0);
-    const [isPitchRevealed, setIsPitchRevealed] = useState<boolean>(() => {
-        if (forceFullContent) return true;
-        if (typeof window === 'undefined') return false;
-        const sp = new URLSearchParams(window.location.search);
-        if (sp.get('reveal') === 'true' || sp.get('reveal') === '1' || sp.get('preview') === 'true') return true;
-        return false; // Sempre obriga a passar pela VSL por padrão
-    });
-
-    const [showExitIntent, setShowExitIntent] = useState(false);
-    const [exitIntentDismissed, setExitIntentDismissed] = useState(false);
-
     const videoRef = useRef<HTMLVideoElement>(null);
     const milestonesRef = useRef<Set<number>>(new Set());
 
@@ -252,19 +242,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     const ctaRef = useRef<HTMLElement>(null);
     const ctaInView = useInView(ctaRef, { once: true, margin: '300px' });
 
-    const forceRevealPitch = () => {
-        setIsPitchRevealed(true);
-        try {
-            localStorage.setItem('wtech_vsl_pitch_revealed', 'true');
-        } catch {}
-        trackEvent('VSL', 'pitch_force_reveal', 'Curso Piloto');
-    };
-
     const handlePlayVideo = () => {
         setVideoActivated(true);
         requestAnimationFrame(() => {
             if (videoRef.current) {
-                videoRef.current.load();
+                if (!videoRef.current.currentSrc) videoRef.current.load();
                 videoRef.current.muted = isMuted;
                 videoRef.current.play().catch(() => {});
                 setVideoPlaying(true);
@@ -292,17 +274,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         if (!videoRef.current) return;
         const current = videoRef.current.currentTime;
         const duration = videoRef.current.duration || 1;
-        setVideoCurrentTime(current);
         const progressPercent = Math.floor((current / duration) * 100);
         setVideoProgress(progressPercent);
-
-        if (!isPitchRevealed && (current >= PITCH_DELAY_SECONDS || current >= duration * 0.5)) {
-            setIsPitchRevealed(true);
-            try {
-                localStorage.setItem('wtech_vsl_pitch_revealed', 'true');
-            } catch {}
-            trackEvent('VSL', 'pitch_reveal', 'Curso Piloto');
-        }
 
         if (progressPercent >= 25 && !milestonesRef.current.has(25)) {
             milestonesRef.current.add(25);
@@ -322,60 +295,6 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         }
     };
 
-    // Exit Intent Handler
-    useEffect(() => {
-        const handleMouseLeave = (e: MouseEvent) => {
-            if (e.clientY <= 0 && !showExitIntent && !exitIntentDismissed) {
-                setShowExitIntent(true);
-                trackEvent('VSL', 'exit_intent_trigger', 'Curso Piloto');
-            }
-        };
-        document.addEventListener('mouseleave', handleMouseLeave);
-        return () => document.removeEventListener('mouseleave', handleMouseLeave);
-    }, [showExitIntent, exitIntentDismissed]);
-
-    const [timeLeft, setTimeLeft] = useState(7 * 60); // 7 minutes in seconds
-    const [showBuyer, setShowBuyer] = useState(false);
-    const [currentBuyer, setCurrentBuyer] = useState<{ name: string, role: string, city: string } | null>(null);
-
-    // Countdown Timer logic
-    useEffect(() => {
-        if (timeLeft <= 0) return;
-        const timer = setInterval(() => {
-            setTimeLeft(prev => prev - 1);
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [timeLeft]);
-
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-
-    // Fake Buyers Notification Logic (Men, amateur pilots, and mechanics only)
-    const buyers = [
-        { name: 'Roberto S.', role: 'Piloto Amador', city: 'São Paulo, SP' },
-        { name: 'Daniel M.', role: 'Mecânico', city: 'Belo Horizonte, MG' },
-        { name: 'Thiago F.', role: 'Piloto de Trilha', city: 'Curitiba, PR' },
-        { name: 'Lucas A.', role: 'Dono de Oficina', city: 'Goiânia, GO' },
-        { name: 'Marcelo K.', role: 'Piloto de Enduro', city: 'Caxias do Sul, RS' },
-        { name: 'Fábio J.', role: 'Mecânico Preparador', city: 'Ribeirão Preto, SP' },
-    ];
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const buyersList = t.buyers || buyers;
-            const randomBuyer = buyersList[Math.floor(Math.random() * buyersList.length)];
-            setCurrentBuyer(randomBuyer);
-            setShowBuyer(true);
-
-            // Hide after 5 seconds
-            setTimeout(() => {
-                setShowBuyer(false);
-            }, 5000);
-        }, 18000); // 18 seconds between each popup
-
-        return () => clearInterval(interval);
-    }, []);
-
     /* ─── SEO: canonical próprio + Open Graph específicos do curso ─── */
     /* (SPA: Google executa JS e lê isto; para preview garantido no WhatsApp seria
         necessário SSR/prerender — mantemos as tags corretas mesmo assim.) */
@@ -385,7 +304,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         const COURSE_URL = `${PUBLIC_BASE_URL}/curso-suspensao-piloto`;
         const OG_IMAGE = `${PUBLIC_BASE_URL}/hero-desktop-alex.webp`;
         const prevTitle = document.title;
-        document.title = 'Curso de Suspensão Off-Road | Regule a Suspensão da Sua Moto — W-Tech';
+        document.title = localize("Curso de Suspensão Off-Road | Regule a Suspensão da Sua Moto — W-Tech");
 
         const upsertMeta = (selector: string, attr: string, key: string, content: string) => {
             let el = document.head.querySelector<HTMLMetaElement>(selector);
@@ -399,12 +318,12 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         };
 
         const prevCanonical = setCanonical(COURSE_URL);
-        upsertMeta('meta[name="description"]', 'name', 'description', 'Curso online de regulagem de suspensão Off-Road: SAG, molas, cliques, óleo e ergonomia. Do zero ao acerto, com prática real na moto. Acesso por 12 meses + bônus.');
-        upsertMeta('meta[property="og:title"]', 'property', 'og:title', 'Curso de Suspensão Off-Road — W-Tech Brasil');
-        upsertMeta('meta[property="og:description"]', 'property', 'og:description', 'Aprenda a regular a suspensão da sua moto do zero: SAG, molas, cliques e ergonomia, com prática real. 11 módulos + bônus Paschoalin.');
+        upsertMeta('meta[name="description"]', 'name', 'description', localize("Curso online de regulagem de suspensão Off-Road: SAG, molas, cliques, óleo e ergonomia. Do zero ao acerto, com prática real na moto. Acesso por 12 meses + bônus."));
+        upsertMeta('meta[property="og:title"]', 'property', 'og:title', localize("Curso de Suspensão Off-Road — W-Tech Brasil"));
+        upsertMeta('meta[property="og:description"]', 'property', 'og:description', localize("Aprenda a regular a suspensão da sua moto do zero: SAG, molas, cliques e ergonomia, com prática real. 11 módulos + bônus Paschoalin."));
         upsertMeta('meta[property="og:url"]', 'property', 'og:url', COURSE_URL);
         upsertMeta('meta[property="og:image"]', 'property', 'og:image', OG_IMAGE);
-        upsertMeta('meta[property="twitter:title"]', 'property', 'twitter:title', 'Curso de Suspensão Off-Road — W-Tech Brasil');
+        upsertMeta('meta[property="twitter:title"]', 'property', 'twitter:title', localize("Curso de Suspensão Off-Road — W-Tech Brasil"));
         upsertMeta('meta[property="twitter:url"]', 'property', 'twitter:url', COURSE_URL);
         upsertMeta('meta[property="twitter:image"]', 'property', 'twitter:image', OG_IMAGE);
 
@@ -412,7 +331,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
             document.title = prevTitle;
             setCanonical(prevCanonical || 'https://w-techbrasil.com.br/');
         };
-    }, []);
+    }, [currentLang]);
 
     /* ━━━ SECTION DATA ━━━ */
 
@@ -437,8 +356,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
         },
         {
             icon: <Settings size={28} />,
-            tag: 'Diferencial Competitivo',
-            title: 'Dono de Oficina',
+            tag: localize("Diferencial Competitivo"),
+            title: localize("Dono de Oficina"),
             pain: 'Seus clientes pedem ajustes de cliques que sua equipe não sabe resolver, perdendo serviço — e fidelidade — para oficinas especializadas. Mostre aos seus clientes como regular a ergonomia e dê dicas de suspensão que os farão voltar sempre.',
         },
     ];
@@ -453,37 +372,23 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     const paschoalinLessons = [
         'Apresentação: Quem é Rafa Paschoalin',
         'Introdução ao módulo prático',
-        'Ergonomia com Paschoalin (na moto real)',
-        'Ajuste do guidão na prática',
-        'Ajuste das manetes no campo',
-        'Ajuste preciso do freio',
-        'Ajuste e posicionamento do câmbio',
-        'Check Down: verificação completa',
-        'Desregulando a moto (para sentir a diferença)',
-        'Moto regulada — Teste e comparação final',
+        localize("Ergonomia com Paschoalin (na moto real)"),
+        localize("Ajuste do guidão na prática"),
+        localize("Ajuste das manetes no campo"),
+        localize("Ajuste preciso do freio"),
+        localize("Ajuste e posicionamento do câmbio"),
+        localize("Check Down: verificação completa"),
+        localize("Desregulando a moto (para sentir a diferença)"),
+        localize("Moto regulada — Teste e comparação final"),
     ];
 
     const benefits = [
-        { icon: <ShieldCheck size={22} />, text: 'Menos dor e fadiga na pilotagem' },
-        { icon: <Crosshair size={22} />, text: 'Mais controle e precisão nas manobras' },
+        { icon: <ShieldCheck size={22} />, text: localize("Menos dor e fadiga na pilotagem") },
+        { icon: <Crosshair size={22} />, text: localize("Mais controle e precisão nas manobras") },
         { icon: <Zap size={22} />, text: 'Mais confiança em qualquer terreno' },
-        { icon: <Target size={22} />, text: 'Maior segurança para você e sua moto' },
+        { icon: <Target size={22} />, text: localize("Maior segurança para você e sua moto") },
         { icon: <Gauge size={22} />, text: 'Performance real sem forçar o corpo' },
         { icon: <Award size={22} />, text: 'Conhecimento técnico aplicável imediatamente' },
-    ];
-
-    const testimonials = [
-        { name: 'Ricardo F.', role: 'Piloto Amador — SP', text: 'Depois do curso, finalmente ajustei os cliques e o SAG para o meu peso. Chega de tomar solavanco e ceder nas trilhas. Moto grudada no chão!' },
-        { name: 'Marcos S.', role: 'Mecânico — MG', text: 'Comecei a oferecer regulagem e setup de suspensão na oficina. Ganhei novos clientes que antes iam buscar fora. O retorno foi imenso.' },
-        { name: 'Tiago L.', role: 'Piloto de Enduro — PR', text: 'As ladeiras com cavas não são mais um problema. A dianteira da roda da moto agora me dá confiança nas curvas abertas e a tração é constante.' },
-        { name: 'Juliana M.', role: 'Pilota Hard Enduro — RJ', text: 'Eu achava minhas molas macias demais, mas na verdade a hidráulica estava zerada. Entender esse casamento através do curso virou a chave da minha tocada.' },
-    ];
-
-    const stats = [
-        { value: '3.000+', label: 'Profissionais treinados' },
-        { value: '15+', label: 'Anos de experiência' },
-        { value: '100%', label: 'Online e prático' },
-        { value: '4.9★', label: 'Nota dos alunos' },
     ];
 
     const faqData = [
@@ -497,27 +402,16 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
     ];
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden">
-
-            {/* ═══════════════════════════════════════════ */}
-            {/* 0 · BANNER DE ESCASSEZ                     */}
-            {/* ═══════════════════════════════════════════ */}
-            {/* Mecanismo único de escassez: vagas do lote (sem misturar com "preço sobe") */}
-            <div className="bg-gradient-to-r from-wtech-red to-red-900 text-white py-2.5 px-4 text-center sticky top-0 z-50 shadow-md">
-                <div className="container mx-auto flex items-center justify-center gap-2 md:gap-3 text-xs md:text-sm font-bold uppercase tracking-widest">
-                    <Zap size={16} className="text-yellow-300 animate-pulse shrink-0" />
-                    <span>Últimas vagas do lote atual</span>
-                </div>
-            </div>
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden pb-24">
 
             {/* ── STICKY BARRA DE OFERTA E IDIOMA ── */}
             <div className="sticky top-0 z-[100] bg-black/90 backdrop-blur-md border-b border-wtech-gold/20 py-2.5 px-4 text-center">
                 <div className="container mx-auto flex flex-wrap items-center justify-between gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-wtech-gold">
                     <div className="flex items-center gap-2">
-                        <Flame size={14} className="text-orange-500 animate-pulse" />
-                        <span>{t.topBanner.badge}</span>
+                        <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-6 w-auto mr-2" />
+                        <span>FORMAÇÃO ONLINE</span>
                         <span className="hidden md:inline text-white/30">•</span>
-                        <span className="text-gray-300 hidden sm:inline">{t.topBanner.text}</span>
+                        <span className="text-gray-300 hidden sm:inline">Suspensão & ergonomia Off-Road</span>
                     </div>
 
                     {/* Interactive Language Selector */}
@@ -562,7 +456,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             <source media="(min-width: 768px)" srcSet="/hero-desktop-alex.webp" type="image/webp" />
                             <img
                                 src="/hero-mobile-alex.webp"
-                                alt="Alex Crepaldi ajustando a suspensão de uma moto Off-Road"
+                                alt={localize("Alex Crepaldi ajustando a suspensão de uma moto Off-Road")}
                                 fetchPriority="high"
                                 decoding="async"
                                 width={1920}
@@ -585,7 +479,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     ? funnelCopy.continuity
                                     : funnel.personalized
                                         ? funnelCopy.label
-                                        : 'APRESENTAÇÃO EXCLUSIVA PARA PILOTOS & MECÂNICOS'}
+                                        : localize("APRESENTAÇÃO EXCLUSIVA PARA PILOTOS & MECÂNICOS")}
                             </span>
                         </motion.div>
 
@@ -595,7 +489,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                         </motion.h1>
 
                         <motion.p initial="hidden" animate="visible" variants={v} className="text-sm sm:text-lg text-gray-300 mb-8 max-w-2xl font-medium">
-                            {funnel.personalized ? funnelCopy.subtitle : `${t.hero.subtitle} — Assista ao vídeo curto abaixo para entender como eliminar o cansaço nos braços e dominar qualquer terreno.`}
+                            {funnel.personalized ? funnelCopy.subtitle : t.hero.subtitle}
                         </motion.p>
 
                         {/* VSL VIDEO PLAYER CONTAINER (DOMINANT CENTRAL FOCUS) */}
@@ -617,11 +511,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                 <div className="flex items-center gap-3">
                                     {isMuted ? (
                                         <button onClick={handleUnmuteAudio} className="flex items-center gap-1 text-[10px] text-amber-400 font-bold hover:underline cursor-pointer">
-                                            <VolumeX size={14} /> Ativar Som
+                                            <VolumeX size={14} /> {localize("Ativar Som")}
                                         </button>
                                     ) : (
                                         <button onClick={() => setIsMuted(true)} className="flex items-center gap-1 text-[10px] text-gray-400 font-bold hover:underline cursor-pointer">
-                                            <Volume2 size={14} className="text-wtech-gold" /> Áudio Ligado
+                                            <Volume2 size={14} className="text-wtech-gold" /> {localize("Áudio Ligado")}
                                         </button>
                                     )}
                                 </div>
@@ -634,7 +528,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     className="absolute top-12 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-red-600 to-amber-600 text-white font-black text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-2 animate-bounce cursor-pointer hover:scale-105 transition-transform border border-white/30"
                                 >
                                     <VolumeX size={18} />
-                                    <span>SEU ÁUDIO ESTÁ DESLIGADO — CLIQUE PARA OUVIR</span>
+                                    <span>{localize("SEU ÁUDIO ESTÁ DESLIGADO — CLIQUE PARA OUVIR")}</span>
                                 </div>
                             )}
 
@@ -642,13 +536,13 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             <video
                                 ref={videoRef}
                                 poster="/images/vsl-thumbnail.webp"
-                                controls={videoPlaying}
+                                controls={videoActivated}
                                 playsInline
-                                preload="metadata"
+                                preload="none"
+                                muted={isMuted}
                                 onTimeUpdate={handleTimeUpdate}
                                 onEnded={() => {
                                     setVideoPlaying(false);
-                                    setIsPitchRevealed(true);
                                 }}
                                 className="w-full h-full object-cover pt-8 sm:pt-0"
                                 onPlay={() => setVideoPlaying(true)}
@@ -657,12 +551,14 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                 {videoActivated && (
                                     <source src={VSL_VIDEO_URL} type="video/mp4" />
                                 )}
-                                Seu navegador não suporta vídeos.
+                                {localize("Seu navegador não suporta vídeos.")}
                             </video>
 
                             {/* Initial Play Overlay */}
-                            {!videoPlaying && (
-                                <div
+                            {!videoActivated && (
+                                <button
+                                    type="button"
+                                    aria-label={localize("Assistir à apresentação do curso")}
                                     onClick={handlePlayVideo}
                                     className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 group-hover:bg-black/40 transition-colors z-20 cursor-pointer pt-6"
                                 >
@@ -673,9 +569,9 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                         </div>
                                     </div>
                                     <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-white drop-shadow-md bg-black/60 px-4 py-1.5 rounded-full border border-wtech-gold/40">
-                                        CLIQUE PARA INICIAR A VSL
+                                        {localize("CONHEÇA O MÉTODO W-TECH")}
                                     </span>
-                                </div>
+                                </button>
                             )}
 
                             {/* Progress bar at the bottom */}
@@ -687,77 +583,31 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             </div>
                         </motion.div>
 
-                        {/* PITCH REVEAL / OFFER SECTION BELOW VSL */}
-                        <div className="w-full mt-6">
-                            {isPitchRevealed ? (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5 }}
-                                    className="flex flex-col items-center gap-4 bg-gradient-to-b from-zinc-900/90 to-black p-6 sm:p-8 rounded-2xl border-2 border-wtech-gold/50 shadow-[0_0_50px_rgba(212,175,55,0.3)] backdrop-blur-xl"
-                                >
-                                    <div className="inline-flex items-center gap-2 text-wtech-gold font-extrabold text-xs uppercase tracking-widest bg-wtech-gold/10 px-4 py-1 rounded-full border border-wtech-gold/30">
-                                        <Unlock size={14} /> PLANO PREMIUM · OFERTA ESPECIAL REVELADA
-                                    </div>
-
-                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
-                                        <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Investimento com desconto:</span>
-                                        <div className="text-3xl sm:text-4xl font-black text-wtech-gold tracking-tight">
-                                            {price.installmentsShort}
-                                        </div>
-                                        <span className="text-xs text-gray-400 font-semibold">(Acesso por 12 meses + Bônus)</span>
-                                    </div>
-
-                                    <a
-                                        href={checkoutUrl}
-                                        onClick={() => trackEvent('Funil Suspensão', 'checkout_click_hero', funnelEventLabel)}
-                                        className="bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 text-black px-8 py-5 rounded-xl font-black text-base sm:text-xl uppercase tracking-[0.15em] transition-all shadow-[0_0_50px_rgba(212,175,55,0.5)] flex items-center justify-center gap-3 w-full max-w-lg hover:brightness-110 hover:scale-[1.02] active:scale-95 relative overflow-hidden group cursor-pointer"
-                                    >
-                                        <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                                        <span className="relative z-10 flex items-center gap-3">
-                                            {t.hero.ctaPrimary} <ArrowRight strokeWidth={3} size={22} />
-                                        </span>
-                                    </a>
-
-                                    <div className="flex flex-wrap items-center justify-center gap-4 text-gray-300 text-xs font-bold pt-2">
-                                        <span className="inline-flex items-center gap-1.5"><ShieldCheck size={16} className="text-wtech-gold" /> Garantia Incondicional de 7 Dias</span>
-                                        <span className="inline-flex items-center gap-1.5"><CheckCircle size={16} className="text-wtech-gold" /> Acesso Imediato</span>
-                                        <span className="inline-flex items-center gap-1.5"><Award size={16} className="text-wtech-gold" /> Certificado Incluso</span>
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="flex flex-col items-center gap-3 p-5 rounded-xl bg-zinc-900/60 border border-white/10 text-center backdrop-blur-md"
-                                >
-                                    <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm font-semibold">
-                                        <Lock size={16} className="text-wtech-gold" />
-                                        <span>A oferta exclusiva e a liberação de vagas serão apresentadas no vídeo acima.</span>
-                                    </div>
-
-                                    <button
-                                        onClick={forceRevealPitch}
-                                        className="text-[11px] text-gray-400 hover:text-wtech-gold underline transition-colors cursor-pointer"
-                                    >
-                                        Já assistiu? Clique aqui para ver a oferta imediatamente
-                                    </button>
-                                </motion.div>
-                            )}
+                        <div className="w-full mt-8 flex flex-col items-center gap-5">
+                            <button
+                                type="button"
+                                data-offer-cta="hero"
+                                onClick={() => scrollTo('cta-final')}
+                                className="w-full max-w-lg min-h-14 bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 text-black px-7 py-5 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider shadow-[0_12px_40px_rgba(212,175,55,0.18)] hover:brightness-110 transition flex items-center justify-center gap-3"
+                            >
+                                {localize("Quero dominar os ajustes da minha moto")} <ArrowRight size={20} className="shrink-0" />
+                            </button>
+                            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-gray-300 text-xs">
+                                <span className="inline-flex items-center gap-1.5"><Clock size={15} className="text-wtech-gold" /> 12 meses de acesso</span>
+                                <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15} className="text-wtech-gold" /> Garantia de 7 dias</span>
+                                <span className="inline-flex items-center gap-1.5"><Award size={15} className="text-wtech-gold" /> {localize("Certificado incluso")}</span>
+                            </div>
+                            <a href="#conteudo" className="min-h-11 inline-flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors">
+                                {localize("Explore o curso no seu ritmo")} <ArrowDown size={14} />
+                            </a>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* ═══════════════════════════════════════════ */}
-            {/* CONTEÚDO REVELADO APÓS A VSL (SEÇÕES 2 A 10) */}
-            {/* ═══════════════════════════════════════════ */}
-            {isPitchRevealed && (
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                >
+            {/* Conteúdo completo, independente da reprodução do vídeo. */}
+            <div id="conteudo" className="scroll-mt-24">
 
             {/* ═══════════════════════════════════════════ */}
             {/* 2 · PARA QUEM É (BENTO GRID)              */}
@@ -841,10 +691,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             <div className="w-14 h-14 flex items-center justify-center text-white mb-5 border border-white/30 rounded-2xl bg-white/10 backdrop-blur shadow-inner relative z-10 group-hover:scale-110 transition-transform duration-200">
                                 <Settings size={28} />
                             </div>
-                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">Diferencial Competitivo</div>
-                            <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">Dono de Oficina</h3>
+                            <div className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-400 border border-white/10 px-2 py-1 rounded mb-3 relative z-10">{localize("Diferencial Competitivo")}</div>
+                            <h3 className="text-2xl lg:text-3xl font-black uppercase text-white mb-4 tracking-tight relative z-10">{localize("Dono de Oficina")}</h3>
                             <p className="text-gray-300 text-sm md:text-base leading-relaxed relative z-10">
-                                Seus clientes pedem ajustes de cliques que a equipe não sabe resolver, <strong className="text-white">perdendo serviço e fidelidade</strong> para oficinas especializadas de Off-Road. Dê esse diferencial à sua equipe.
+                                {localize("Seus clientes pedem ajustes de cliques que a equipe não sabe resolver,")} <strong className="text-white">{localize("perdendo serviço e fidelidade")}</strong> {localize("para oficinas especializadas de Off-Road. Dê esse diferencial à sua equipe.")}
                             </p>
                         </motion.div>
                     </motion.div>
@@ -858,7 +708,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             whileTap={shouldAnimate ? ctaTap : undefined}
                             className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                         >
-                            Quero Garantir Minha Vaga <ArrowRight strokeWidth={3} size={18} />
+                            {localize("Quero Garantir Minha Vaga")} <ArrowRight strokeWidth={3} size={18} />
                         </motion.button>
                     </motion.div>
                 </div>
@@ -874,16 +724,15 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         {/* Text */}
                         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger}>
-                            <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Entenda o conceito</motion.span>
+                            <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{localize("Entenda o conceito")}</motion.span>
                             <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-8 tracking-tighter">
-                                Qual o Segredo do <span className="text-wtech-gold">Acerto Perfeito</span>?
+                                {localize("Qual o Segredo do")} <span className="text-wtech-gold">{localize("Acerto Perfeito")}</span>?
                             </motion.h2>
                             <motion.p variants={v} className="text-gray-300 text-lg leading-relaxed mb-4">
-                                Não importa o quanto o motor da sua moto é forte se a suspensão não consegue colocar a potência no chão.
+                                {localize("Não importa o quanto o motor da sua moto é forte se a suspensão não consegue colocar a potência no chão.")}
                             </motion.p>
                             <motion.p variants={v} className="text-gray-500 leading-relaxed mb-8">
-                                Quando molas, óleo, cliques (retorno/compressão), SAG e pneus estão finamente ajustados para o <strong className="text-white">seu nível e modalidade Off-Road</strong>, tudo muda:
-                                a moto não espalha, a tração é constante nas subidas e os impactos param de moer os seus braços e sua lombar.
+                                {localize("Quando molas, óleo, cliques (retorno/compressão), SAG e pneus estão finamente ajustados para o")} <strong className="text-white">{localize("seu nível e modalidade Off-Road")}</strong>{localize(", tudo muda: a moto não espalha, a tração é constante nas subidas e os impactos param de moer os seus braços e sua lombar.")}
                             </motion.p>
                             <motion.div
                                 variants={v}
@@ -891,7 +740,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                 className="inline-flex items-center gap-3 bg-wtech-gold/10 border border-wtech-gold/20 px-5 py-3 rounded-lg transition-colors"
                             >
                                 <Zap size={18} className="text-wtech-gold flex-shrink-0" />
-                                <span className="text-sm font-bold text-wtech-gold">O acerto da suspensão muda a moto da água para o vinho. É investimento em performance e segurança.</span>
+                                <span className="text-sm font-bold text-wtech-gold">{localize("O acerto da suspensão muda a moto da água para o vinho. É investimento em performance e segurança.")}</span>
                             </motion.div>
                         </motion.div>
 
@@ -926,12 +775,12 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-wtech-red/40 to-transparent" />
                 <div className="container mx-auto px-6 relative z-10 mb-12">
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-8">
-                        <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Conteúdo Completo</motion.span>
+                        <motion.span variants={v} className="text-wtech-red font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">{localize("Conteúdo Completo")}</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
-                            11 Módulos +<br className="hidden md:block" /> <span className="text-wtech-gold">Bônus Exclusivo</span>
+                            11 Módulos +<br className="hidden md:block" /> <span className="text-wtech-gold">{localize("Bônus Exclusivo")}</span>
                         </motion.h2>
                         <motion.p variants={v} className="text-gray-400 max-w-2xl mx-auto text-base">
-                            Tudo o que você precisa saber sobre suspensão Off-Road, do SAG ao clique, em aulas gravadas em estúdio com qualidade W-Tech.
+                            {localize("Tudo o que você precisa saber sobre suspensão Off-Road, do SAG ao clique, em aulas gravadas em estúdio com qualidade W-Tech.")}
                         </motion.p>
                     </motion.div>
 
@@ -1039,16 +888,16 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-12">
                         <motion.div variants={v} className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 px-5 py-2 rounded-full mb-6">
                             <Star size={14} className="text-purple-400 fill-purple-400" />
-                            <span className="text-purple-300 font-black uppercase tracking-widest text-[10px] md:text-xs">Módulo Bônus Exclusivo</span>
+                            <span className="text-purple-300 font-black uppercase tracking-widest text-[10px] md:text-xs">{localize("Módulo Bônus Exclusivo")}</span>
                         </motion.div>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-2 mb-4 tracking-tighter">
                             Rafa <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-500">Paschoalin</span>
                         </motion.h2>
                         <motion.h3 variants={v} className="text-xl md:text-2xl font-black text-gray-300 mb-6 uppercase tracking-tight">
-                            O Piloto Que Testou Tudo Na Prática — Para Você Ver A Diferença
+                            {localize("O Piloto Que Testou Tudo Na Prática — Para Você Ver A Diferença")}
                         </motion.h3>
                         <motion.p variants={v} className="text-gray-400 max-w-3xl mx-auto text-base leading-relaxed">
-                            Não basta entender a teoria. Rafa Paschoalin — piloto de alta performance — pegou a moto, <strong className="text-white">desregulou e regulou cada componente ao vivo</strong>, para que você veja, na prática, o que muda com cada ajuste. Este é o tipo de conteúdo que você não encontra em nenhum outro lugar.
+                            {localize("Não basta entender a teoria. Rafa Paschoalin — piloto de alta performance — pegou a moto,")} <strong className="text-white">{localize("desregulou e regulou cada componente ao vivo")}</strong>{localize(", para que você veja, na prática, o que muda com cada ajuste. Este é o tipo de conteúdo que você não encontra em nenhum outro lugar.")}
                         </motion.p>
                     </motion.div>
 
@@ -1103,7 +952,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                                     <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
                                         <p className="text-sm font-bold text-purple-300 leading-relaxed">
-                                            Rafa pega a moto regulada, <strong className="text-white">desregula ela ao vivo</strong> — e você sente a diferença. Isso é o que transforma conhecimento em resultado real.
+                                            {localize("Rafa pega a moto regulada,")} <strong className="text-white">{localize("desregula ela ao vivo")}</strong> {localize("— e você sente a diferença. Isso é o que transforma conhecimento em resultado real.")}
                                         </p>
                                     </div>
                                 </div>
@@ -1121,7 +970,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
                         <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Autoridade Técnica</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">
-                            Seus <span className="text-wtech-gold">Instrutores</span>
+                            {localize("Seus")} <span className="text-wtech-gold">Instrutores</span>
                         </motion.h2>
                     </motion.div>
 
@@ -1146,10 +995,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     <h3 className="text-2xl font-black uppercase text-white mb-1">Alex Crepaldi</h3>
                                     <p className="text-wtech-gold text-sm font-medium mb-4">Fundador W-Tech Suspensões</p>
                                     <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                                        Referência nacional no acerto, preparação e revalvulação de <strong className="text-white">suspensões Off-Road</strong>. Mais de <strong className="text-white">3.000 mecânicos e pilotos capacitados</strong> pela escola técnica W-Tech em cursos online e presenciais.
+                                        {localize("Referência nacional no acerto, preparação e revalvulação de")} <strong className="text-white">suspensões Off-Road</strong>. Mais de <strong className="text-white">{localize("3.000 mecânicos e pilotos capacitados")}</strong> pela escola técnica W-Tech em cursos online e presenciais.
                                     </p>
                                     <div className="p-4 bg-black/50 border-l-4 border-wtech-gold text-sm text-gray-400 rounded-r-lg">
-                                        👉 Domínio técnico em suspensão: da simples manutenção à personalização profunda com shims, fluídos e kits de revalvulação.
+                                        {localize("👉 Domínio técnico em suspensão: da simples manutenção à personalização profunda com shims, fluídos e kits de revalvulação.")}
                                     </div>
                                 </div>
                             </motion.div>
@@ -1176,7 +1025,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     <h3 className="text-2xl font-black uppercase text-white mb-1">Paschoalin</h3>
                                     <p className="text-wtech-red text-sm font-medium mb-4">Piloto de Alta Performance</p>
                                     <p className="text-gray-400 text-sm leading-relaxed mb-6">
-                                        Piloto com vasta experiência em competições e provas de alto nível. Traz a <strong className="text-white">validação prática da pilotagem</strong> da teoria para as trilhas de performance e exigência máxima.
+                                        Piloto com vasta experiência em competições e provas de alto nível. Traz a <strong className="text-white">validação prática da pilotagem</strong> {localize("da teoria para as trilhas de performance e exigência máxima.")}
                                     </p>
                                     <div className="p-4 bg-black/50 border-l-4 border-wtech-red text-sm text-gray-400 rounded-r-lg">
                                         👉 Foco: a reação do motor e suspensão quando exigidos ao extremo.
@@ -1204,7 +1053,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             whileTap={shouldAnimate ? ctaTap : undefined}
                             className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
                         >
-                            Quero Aprender com os Melhores <ArrowRight strokeWidth={3} size={18} />
+                            {localize("Quero Aprender com os Melhores")} <ArrowRight strokeWidth={3} size={18} />
                         </motion.button>
                     </motion.div>
                 </div>
@@ -1223,19 +1072,19 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
                         <motion.span variants={v} className="text-[#E6241D] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Material de Apoio Oficial</motion.span>
                         <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
-                            Mais de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E6241D] to-orange-500">{price.bonusValue}</span> em Bônus
+                            {localize("Da aula para")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E6241D] to-orange-500">{localize("a sua moto")}</span>
                         </motion.h2>
                         <motion.p variants={v} className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-                            Ao garantir sua vaga agora, você leva ferramentas complementares que nossa própria equipe usa.
+                            {localize("Ao garantir sua vaga agora, você leva ferramentas complementares que nossa própria equipe usa.")}
                         </motion.p>
                     </motion.div>
 
                     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
                         {[
-                            { title: 'Planilha de Regulagem de SAG', value: price.bonusItems[0], icon: <Activity size={24} /> },
-                            { title: 'Planilha de Regulagem de PSI', value: price.bonusItems[1], icon: <Gauge size={24} /> },
-                            { title: 'Comparativo de Óleos', value: price.bonusItems[2], icon: <Move size={24} /> },
-                            { title: 'Comparativo de Molas', value: price.bonusItems[3], icon: <CheckCircle size={24} /> },
+                            { title: localize("Planilha de Regulagem de SAG"), icon: <Activity size={24} /> },
+                            { title: localize("Planilha de Regulagem de PSI"), icon: <Gauge size={24} /> },
+                            { title: localize("Comparativo de Óleos"), icon: <Move size={24} /> },
+                            { title: localize("Comparativo de Molas"), icon: <CheckCircle size={24} /> },
                         ].map((bonus, i) => (
                             <motion.div
                                 key={i}
@@ -1253,11 +1102,9 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     <h3 className="font-black text-white text-lg md:text-xl uppercase tracking-wide leading-snug">{bonus.title}</h3>
                                 </div>
                                 <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-2 relative z-10 mt-2">
-                                    <span className="text-gray-400 font-black text-lg tracking-tight line-through decoration-red-500/60 decoration-2">
-                                        {bonus.value}
-                                    </span>
+                                    <span className="text-gray-400 text-xs">Material de consulta</span>
                                     <span className="inline-flex items-center gap-1.5 bg-wtech-gold/15 border border-wtech-gold/40 text-wtech-gold font-black uppercase text-[11px] tracking-widest px-3 py-1.5 rounded-lg">
-                                        <CheckCircle size={13} /> Incluso hoje
+                                        <CheckCircle size={13} /> {localize("Incluso no curso")}
                                     </span>
                                 </div>
                             </motion.div>
@@ -1269,78 +1116,12 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
             {/* ═══════════════════════════════════════════ */}
             {/* 7 · DEPOIMENTOS / PROVAS                   */}
             {/* ═══════════════════════════════════════════ */}
-            <section className="py-24 bg-black">
-                <div className="container mx-auto px-6">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-wtech-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Prova Social</motion.span>
-                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 tracking-tighter">
-                            O Que Dizem <span className="text-wtech-gold">Nossos Alunos</span>
-                        </motion.h2>
-                    </motion.div>
-
-                    {/* Stats */}
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-16">
-                        {stats.map((s, i) => (
-                            <motion.div
-                                key={i}
-                                variants={scaleIn}
-                                whileHover={shouldAnimate ? { y: -4, boxShadow: '0 12px 32px rgba(0,0,0,0.3)' } : undefined}
-                                className="text-center p-6 bg-zinc-900/50 border border-white/5 rounded-xl cursor-default"
-                            >
-                                <div className="text-3xl md:text-4xl font-black text-wtech-gold mb-1">{s.value}</div>
-                                <div className="text-xs font-bold uppercase tracking-widest text-gray-500">{s.label}</div>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-
-                    {/* Testimonials */}
-                    <div className="w-full max-w-6xl mx-auto relative cursor-grab active:cursor-grabbing">
-                        <Marquee speed={40} className="py-4">
-                            {testimonials.map((item, i) => (
-                                <div
-                                    key={i}
-                                    className="bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl p-8 relative w-[300px] md:w-[400px] shrink-0 hover:bg-zinc-800/50 transition-colors"
-                                >
-                                    <Quote size={32} className="text-wtech-gold/10 absolute top-6 right-6" />
-                                    <div className="flex items-center gap-1 mb-4">
-                                        {[...Array(5)].map((_, j) => (
-                                            <Star key={j} size={14} className="text-wtech-gold fill-wtech-gold" />
-                                        ))}
-                                    </div>
-                                    <p className="text-gray-300 text-sm leading-relaxed mb-6 italic whitespace-normal">"{item.text}"</p>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-wtech-gold/10 flex items-center justify-center text-wtech-gold font-black text-sm shrink-0">
-                                            {item.name[0]}
-                                        </div>
-                                        <div className="whitespace-normal">
-                                            <p className="font-bold text-white text-sm">{item.name}</p>
-                                            <p className="text-gray-400 text-xs">{item.role}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </Marquee>
-                    </div>
-
-                    {/* CTA Intermediário 4 */}
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="flex justify-center mt-12 pb-6">
-                        <motion.button
-                            onClick={() => scrollTo('cta-final')}
-                            variants={v}
-                            whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 30px rgba(230,36,29,0.4)' } : undefined}
-                            whileTap={shouldAnimate ? ctaTap : undefined}
-                            className="bg-gradient-to-r from-[#ba1d18] to-[#E6241D] text-white px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest hover:from-[#d1221c] hover:to-[#ff2820] transition-all shadow-[0_0_20px_rgba(230,36,29,0.3)] flex items-center justify-center gap-3"
-                        >
-                            Quero Ser o Próximo <ArrowRight strokeWidth={3} size={18} />
-                        </motion.button>
-                    </motion.div>
-                </div>
-            </section>
+            <CourseTestimonials language={currentLang} onOfferClick={() => scrollTo('cta-final')} onMediaOpen={() => videoRef.current?.pause()} />
 
             {/* ═══════════════════════════════════════════ */}
             {/* 8 · OFERTA IRRECUSÁVEL E CTA FINAL         */}
             {/* ═══════════════════════════════════════════ */}
-            <section ref={ctaRef} id="cta-final" className="py-24 md:py-32 relative overflow-hidden bg-black flex items-center justify-center min-h-[90vh]">
+            <section ref={ctaRef} id="cta-final" className="scroll-mt-20 py-24 md:py-32 relative overflow-hidden bg-black flex items-center justify-center min-h-[90vh]">
                 {ctaInView && (
                     <Suspense fallback={null}>
                         <AnimatedShaderBackground />
@@ -1369,7 +1150,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             {t.offer.title}
                         </h2>
                         <p className="text-gray-400 text-sm mb-8 max-w-lg mx-auto">
-                            {price.bonusSubLabel}
+                            {currentLang === 'pt-PT' ? `Mais de ${price.bonusValue} em folhas de cálculo e materiais de apoio incluídos.` : price.bonusSubLabel}
                         </p>
 
                         <div className="text-gray-400 font-bold uppercase text-xs md:text-sm tracking-[0.15em] mb-2 line-through decoration-red-500/70 decoration-2">
@@ -1388,25 +1169,8 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             </div>
                         )}
 
-                        {/* Real Timer */}
-                        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-8">
-                            <div className="flex flex-col items-center">
-                                <div className="bg-[#111] border border-[#E6241D]/30 rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-3xl font-black text-[#E6241D] shadow-[inset_0_0_15px_rgba(230,36,29,0.2)]">
-                                    {String(minutes).padStart(2, '0')}
-                                </div>
-                                <span className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-2 font-bold">Minutos</span>
-                            </div>
-                            <span className="text-xl sm:text-2xl font-black text-[#E6241D]/50 -mt-6 animate-pulse">:</span>
-                            <div className="flex flex-col items-center">
-                                <div className="bg-[#111] border border-[#E6241D]/30 rounded-xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-3xl font-black text-[#E6241D] shadow-[inset_0_0_15px_rgba(230,36,29,0.2)]">
-                                    {String(seconds).padStart(2, '0')}
-                                </div>
-                                <span className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest mt-2 font-bold">Segundos</span>
-                            </div>
-                        </div>
-
-                        <p className="text-gray-400 text-sm md:text-base mb-10 max-w-xl mx-auto leading-relaxed">
-                            Ao finalizar o contador acima as matrículas da turma atual podem encerrar. Oportunidade com 1 Ano de acesso e bônus inclusos.
+                        <p className="text-gray-400 text-sm md:text-base mt-6 mb-10 max-w-xl mx-auto leading-relaxed">
+                            {localize("Um ano para assistir, revisar e aplicar cada ajuste. Aulas em vídeo, materiais de apoio e certificado em uma única formação.")}
                         </p>
 
                         <div className="grid sm:grid-cols-2 gap-y-5 gap-x-2 max-w-2xl mx-auto mb-12 text-left">
@@ -1424,15 +1188,15 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             </div>
                             <div className="flex items-center gap-3">
                                 <CheckCircle size={16} className="text-[#E6241D] shrink-0" />
-                                <span className="text-gray-300 text-xs sm:text-sm font-medium">Suporte Técnico na Plataforma</span>
+                                <span className="text-gray-300 text-xs sm:text-sm font-medium">{localize("Suporte Técnico na Plataforma")}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <CheckCircle size={16} className="text-wtech-gold shrink-0" />
-                                <span className="text-gray-300 text-xs sm:text-sm font-bold shadow-wtech-gold/20">BÔNUS: Planilha de Regulagem de SAG</span>
+                                <span className="text-gray-300 text-xs sm:text-sm font-bold shadow-wtech-gold/20">{localize("BÔNUS: Planilha de Regulagem de SAG")}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <CheckCircle size={16} className="text-wtech-gold shrink-0" />
-                                <span className="text-gray-300 text-xs sm:text-sm font-bold shadow-wtech-gold/20">BÔNUS: Planilha de Regulagem de PSI</span>
+                                <span className="text-gray-300 text-xs sm:text-sm font-bold shadow-wtech-gold/20">{localize("BÔNUS: Planilha de Regulagem de PSI")}</span>
                             </div>
                         </div>
 
@@ -1451,9 +1215,17 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                             className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"
                         >
                             <div className="absolute inset-0 w-full h-full bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                            <span className="relative z-10">Quero Regular Minha Suspensão Agora</span>
+                            <span className="relative z-10">{localize("Quero Regular Minha Suspensão Agora")}</span>
                         </motion.a>
-                        <p className="text-gray-600 text-xs mb-8">Acesso imediato após a confirmação do pagamento</p>
+                        <p className="text-gray-400 text-xs mb-5">Acesso imediato após a confirmação do pagamento</p>
+                        <WhatsAppLeadCapture
+                            language={currentLang}
+                            ariaLabel={currentLang === 'pt-PT' ? 'Falar com a equipa no WhatsApp' : undefined}
+                            pageLabel="Landing completa escura · Curso Online de Suspensão"
+                            className="mx-auto inline-flex min-h-11 items-center justify-center gap-2 text-sm text-gray-300 underline underline-offset-4 hover:text-white"
+                        >
+                            {localize("Tenho uma dúvida. Falar com a equipe")}
+                        </WhatsAppLeadCapture>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-10 pt-8 border-t border-white/5">
                             <div className="flex items-center gap-2 text-gray-500 text-[11px] font-semibold uppercase tracking-wider">
@@ -1465,7 +1237,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     <div className="w-5 h-5 rounded-full bg-zinc-600 border border-[#0a0a0a]" />
                                     <div className="w-5 h-5 rounded-full bg-zinc-500 border border-[#0a0a0a]" />
                                 </div>
-                                Vagas sujeitas à disponibilidade
+                                {localize("Vagas sujeitas à disponibilidade")}
                             </div>
                         </div>
                     </div>
@@ -1514,19 +1286,19 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                                     Reconhecido como uma das maiores autoridades brasileiras em mecânica e diagnóstico de <strong className="text-white">suspensões de alta performance</strong>, especialmente para a linha Off-Road e street.
                                 </p>
                                 <p>
-                                    Mas sua maior conquista não foi apenas o conhecimento técnico, foi a criação da <strong className="text-white">W-Tech Brasil</strong>, onde aplica um método de imersão de excelência e formação presencial sem igual.
+                                    {localize("Mas sua maior conquista não foi apenas o conhecimento técnico, foi a criação da")} <strong className="text-white">W-Tech Brasil</strong>, onde aplica um método de imersão de excelência e formação presencial sem igual.
                                 </p>
                                 <p>
-                                    Hoje, como instrutor e especialista, Alex usa o método que desenvolveu trabalhando nos bastidores das corridas para forjar mecânicos autônomos e pilotos que buscam a mais pura precisão.
+                                    {localize("Hoje, como instrutor e especialista, Alex usa o método que desenvolveu trabalhando nos bastidores das corridas para forjar mecânicos autônomos e pilotos que buscam a mais pura precisão.")}
                                 </p>
                             </div>
 
                             <motion.div variants={stagger} className="space-y-4 mb-12">
                                 {[
                                     { icon: <Wrench size={18} />, text: 'Especialista em Suspensões' },
-                                    { icon: <Users size={18} />, text: 'Instrutor de +3.000 Alunos' },
+                                    { icon: <Users size={18} />, text: localize("Instrutor de +3.000 Alunos") },
                                     { icon: <ShieldCheck size={18} />, text: 'Consultor Técnico W-Tech' },
-                                    { icon: <Star size={18} />, text: 'Referência Nacional em Customização' },
+                                    { icon: <Star size={18} />, text: localize("Referência Nacional em Customização") },
                                 ].map((item, i) => (
                                     <motion.div variants={v} key={i} className="flex items-center gap-4">
                                         <div className="text-wtech-gold">{item.icon}</div>
@@ -1537,10 +1309,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
 
                             <motion.a
                                 variants={v}
-                                href="#comprar"
+                                href="#cta-final"
                                 className="inline-flex items-center gap-2 text-white font-black text-[11px] md:text-xs tracking-[0.15em] uppercase transition-colors group"
                             >
-                                <span className="group-hover:text-wtech-red transition-colors duration-300">Conheça a história</span>
+                                <span className="group-hover:text-wtech-red transition-colors duration-300">{localize("Conheça a história")}</span>
                                 <ChevronRight size={14} className="group-hover:translate-x-1 group-hover:text-wtech-red transition-all duration-300" />
                             </motion.a>
                         </motion.div>
@@ -1591,123 +1363,26 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = ({ forceFullConten
                     </p>
                 </div>
             </footer>
-            </motion.div>
-            )}
+            </div>
 
-            {/* ═══════════════════════════════════════════ */}
-            {/* BUYERS POPUP FLOAT COMPONENT                 */}
-            {/* ═══════════════════════════════════════════ */}
-            <motion.div
-                initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                animate={{ opacity: showBuyer ? 1 : 0, y: showBuyer ? 0 : 50, scale: showBuyer ? 1 : 0.9 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="fixed bottom-6 left-6 z-[100] bg-zinc-900 border border-wtech-gold/30 rounded-xl shadow-2xl p-4 flex items-center gap-4 max-w-sm pointer-events-none"
-            >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#E6241D] to-orange-500 flex items-center justify-center text-white shrink-0 shadow-lg">
-                    <CheckCircle size={20} strokeWidth={2.5} />
-                </div>
-                <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Nova inscrição confirmada</p>
-                    <p className="text-sm font-bold text-white leading-tight">
-                        {currentBuyer?.name} <span className="font-normal text-wtech-gold">({currentBuyer?.role})</span>
-                    </p>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">de {currentBuyer?.city}</p>
-                </div>
-            </motion.div>
-
-            {/* ═══════════════════════════════════════════ */}
-            {/* STICKY BOTTOM CTA BAR (AFTER PITCH REVEAL)  */}
-            {/* ═══════════════════════════════════════════ */}
-            {isPitchRevealed && (
-                <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="fixed bottom-0 left-0 right-0 z-[90] bg-zinc-950/95 backdrop-blur-xl border-t border-wtech-gold/40 px-4 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
-                >
-                    <div className="container mx-auto max-w-5xl flex items-center justify-between gap-4">
-                        <div className="hidden sm:flex flex-col">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Curso Online de Suspensão</span>
-                            <span className="text-sm font-black text-white">Do Zero ao Acerto com Alex Crepaldi</span>
-                        </div>
-
-                        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                            <div className="flex flex-col text-left sm:text-right">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase">{price.strikeLabel}</span>
-                                <span className="text-lg sm:text-xl font-black text-wtech-gold leading-none">{price.installmentsShort}</span>
-                            </div>
-
-                            <a
-                                href={checkoutUrl}
-                                onClick={() => trackEvent('Funil Suspensão', 'checkout_click_sticky', funnelEventLabel)}
-                                className="bg-gradient-to-r from-wtech-gold to-amber-600 text-black px-5 py-3 rounded-lg font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
-                            >
-                                <span>GARANTIR VAGA</span>
-                                <ArrowRight size={16} strokeWidth={3} />
-                            </a>
-                        </div>
+            <div className="fixed bottom-0 inset-x-0 z-[90] border-t border-wtech-gold/20 bg-zinc-950/95 backdrop-blur-xl px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+                <div className="mx-auto max-w-5xl flex items-center justify-between gap-4">
+                    <div className="hidden sm:block">
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-wtech-gold">Curso Online de Suspensão</p>
+                        <p className="text-sm font-semibold text-white mt-1">{localize("O próximo ajuste começa com você.")}</p>
                     </div>
-                </motion.div>
-            )}
-
-            {/* ═══════════════════════════════════════════ */}
-            {/* EXIT INTENT RETENTION MODAL                */}
-            {/* ═══════════════════════════════════════════ */}
-            {showExitIntent && (
-                <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-                    <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="bg-zinc-900 border-2 border-wtech-gold/60 rounded-2xl p-6 sm:p-8 max-w-lg w-full relative shadow-[0_0_80px_rgba(212,175,55,0.4)] text-center"
+                    <button
+                        type="button"
+                        data-offer-cta="sticky"
+                        onClick={() => scrollTo('cta-final')}
+                        className="w-full sm:w-auto min-h-12 flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-wtech-gold to-amber-600 px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-black hover:brightness-110 transition"
                     >
-                        <button
-                            onClick={() => {
-                                setShowExitIntent(false);
-                                setExitIntentDismissed(true);
-                            }}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-full bg-white/5 cursor-pointer"
-                        >
-                            <X size={20} />
-                        </button>
-
-                        <div className="w-14 h-14 bg-wtech-gold/20 border border-wtech-gold rounded-full flex items-center justify-center text-wtech-gold mx-auto mb-4 animate-pulse">
-                            <Sparkles size={28} />
-                        </div>
-
-                        <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mb-2">
-                            ESPERA! NÃO SAIA SEM VER ISSO
-                        </h3>
-
-                        <p className="text-gray-300 text-sm mb-6 leading-relaxed">
-                            Você quer mesmo continuar andando com a moto dura, braços cansados e sem tração nas trilhas e pistas?
-                        </p>
-
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowExitIntent(false);
-                                    setExitIntentDismissed(true);
-                                    forceRevealPitch();
-                                    scrollTo('cta-final');
-                                }}
-                                className="w-full bg-gradient-to-r from-wtech-gold to-amber-600 text-black py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:brightness-110 cursor-pointer"
-                            >
-                                QUERO VER A OFERTA AGORA
-                            </button>
-
-                            <a
-                                href="/quiz-suspensao"
-                                onClick={() => trackEvent('VSL', 'exit_intent_quiz_click', 'Curso Piloto')}
-                                className="w-full bg-zinc-800 hover:bg-zinc-700 text-gray-200 border border-white/10 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
-                            >
-                                Fazer Quiz de Diagnóstico da Minha Moto
-                            </a>
-                        </div>
-                    </motion.div>
+                        Conhecer a formação <ArrowRight size={17} />
+                    </button>
                 </div>
-            )}
+            </div>
 
-            <WhatsAppLeadCapture pageLabel="Landing completa escura · Curso Online de Suspensão" floating />
+
 
         </div >
     );

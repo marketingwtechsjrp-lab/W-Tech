@@ -12,6 +12,10 @@ import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
+import {
+    trackConfiguredLandingPageRegistration,
+    trackConfiguredLandingPageView,
+} from '../lib/metaPixel';
 
 const LandingPageViewerV4: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -36,6 +40,10 @@ const LandingPageViewerV4: React.FC = () => {
     const [spotsLeft, setSpotsLeft] = useState<number>(5); // Default simulated scarcity
     const [activeVideo, setActiveVideo] = useState<string | null>(null);
     const [showFloatingCTA, setShowFloatingCTA] = useState(false);
+
+    useEffect(() => {
+        if (lp) trackConfiguredLandingPageView(lp);
+    }, [lp]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -196,6 +204,7 @@ const LandingPageViewerV4: React.FC = () => {
         };
 
         const leadResult = await handleLeadUpsert(payload);
+        if (leadResult?.id) trackConfiguredLandingPageRegistration(lp);
 
         // Redireciona ao checkout se: habilitado + curso nacional + tem course_id
         const courseIdForCheckout = (lp as any).courseId || (lp as any).course_id;

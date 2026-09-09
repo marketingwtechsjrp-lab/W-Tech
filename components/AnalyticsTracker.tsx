@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { useSettings } from '../context/SettingsContext';
 import { captureTrackingParams, stripAutoDirectTracking } from '../lib/tracking';
+import { trackGoogleEvent } from '../lib/googleTracking';
+import { trackMetaNavigationPageView } from '../lib/metaPixel';
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -10,10 +11,17 @@ const generateId = () => Math.random().toString(36).substring(2) + Date.now().to
 export const AnalyticsTracker = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { get } = useSettings();
-    const gaId = get('ga_id');
     const cleanSearch = useMemo(() => stripAutoDirectTracking(location.search), [location.search]);
     const shouldCleanAutoTracking = cleanSearch !== location.search;
+    const routePath = location.pathname + cleanSearch;
+    const lastMetaRoute = useRef(routePath);
+
+    useEffect(() => {
+        if (shouldCleanAutoTracking || lastMetaRoute.current === routePath) return;
+        const previousRoute = lastMetaRoute.current;
+        lastMetaRoute.current = routePath;
+        trackMetaNavigationPageView(previousRoute, routePath);
+    }, [routePath, shouldCleanAutoTracking]);
 
     // O GTM decora visitas diretas antes do React iniciar. Guardamos os dados
     // para o checkout e retiramos somente a decoração automática da URL pública.
@@ -40,25 +48,9 @@ export const AnalyticsTracker = () => {
         return () => timers.forEach((timer) => window.clearTimeout(timer));
     }, [cleanSearch, location.hash, location.pathname, navigate, shouldCleanAutoTracking]);
 
-    // GA Intection & Global Click Listener
+    // Global Click Listener. O SDK/contêiner é carregado uma única vez pelo
+    // Custom Loader no index.html; este componente não reinjeta fornecedores.
     useEffect(() => {
-        // 1. GA Injection
-        if (gaId && !window.hasInjectedScripts) {
-            const script = document.createElement('script');
-            script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
-            script.async = true;
-            document.head.appendChild(script);
-
-            (window as any).dataLayer = (window as any).dataLayer || [];
-            function gtag() { (window as any).dataLayer.push(arguments); }
-            (window as any).gtag = gtag;
-            (window as any).gtag('js', new Date());
-            (window as any).gtag('config', gaId);
-
-            window.hasInjectedScripts = true;
-        }
-
-        // 2. Global Click Listener for data-track attributes
         const handleGlobalClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const trackable = target.closest('[data-track]');
@@ -75,7 +67,7 @@ export const AnalyticsTracker = () => {
         document.addEventListener('click', handleGlobalClick);
         return () => document.removeEventListener('click', handleGlobalClick);
 
-    }, [gaId]);
+    }, []);
 
     // Page View Tracking
     useEffect(() => {
@@ -83,12 +75,8 @@ export const AnalyticsTracker = () => {
 
         const trackPageView = async () => {
             try {
-                // GA Pageview
-                if (gaId && (window as any).gtag) {
-                    (window as any).gtag('config', gaId, {
-                        page_path: location.pathname + location.search
-                    });
-                }
+                // A PageView do fornecedor pertence ao GTM. Aqui registramos
+                // somente a visita no painel interno, sem reenviar config/SDK.
 
                 // 1. Get/Set Visitor ID (Persistent)
                 let visitorId = localStorage.getItem('wtech_visitor_id');
@@ -134,13 +122,15 @@ export const AnalyticsTracker = () => {
             const t = setTimeout(trackPageView, 1500);
             return () => clearTimeout(t);
         }
-    }, [location, gaId, shouldCleanAutoTracking]);
+    }, [location, shouldCleanAutoTracking]);
 
     return null;
 };
 
 // Exportable Event Tracker
 export const trackEvent = async (category: string, action: string, label?: string) => {
+    // Independente do banco: atraso/falha no painel nao deve perder o evento GA4.
+    trackGoogleEvent(action, { event_category: category, event_label: label });
     try {
         const visitorId = localStorage.getItem('wtech_visitor_id');
         const sessionId = sessionStorage.getItem('wtech_session_id');
@@ -155,13 +145,6 @@ export const trackEvent = async (category: string, action: string, label?: strin
             session_id: sessionId
         });
 
-        // 2. Send to GA4 (if available)
-        if ((window as any).gtag) {
-            (window as any).gtag('event', action, {
-                'event_category': category,
-                'event_label': label
-            });
-        }
     } catch (e) {
         console.error("Event Track Error", e);
     }

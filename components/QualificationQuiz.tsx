@@ -4,6 +4,7 @@ import { ArrowRight, Check, ShieldCheck, Thermometer } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead, handleLeadUpsert } from '../lib/leadDistribution';
+import { landingPagePixelId, trackMetaStandardEvent } from '../lib/metaPixel';
 
 interface QuizProps {
     lp: any;
@@ -92,6 +93,15 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
             };
 
             const result = await handleLeadUpsert(initialPayload);
+            if (result?.id) {
+                trackMetaStandardEvent('Lead', {
+                    content_name: lp.title,
+                    content_category: 'Qualification Quiz',
+                }, {
+                    pixelId: landingPagePixelId(lp.pixelId),
+                    onceKey: `qualification-lead:${lp.slug}:${result.id}`,
+                });
+            }
             
             if (result && result.id) setLeadId(result.id);
             
@@ -143,13 +153,18 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
             };
 
             let effectiveLeadId = leadId;
+            let quizSaved = false;
             if (leadId) {
                 // UPDATE existing lead
                 // Note: RLS must allow UPDATE for anon or we need a secure RPC.
                 // Using update logic from upsert is tricky here because we have ID.
                 // Simple update is fine if we have ID.
-                await supabase.from('SITE_Leads').update(resultPayload).eq('id', leadId);
-                await triggerWebhook('webhook_lead_completed', { ...resultPayload, id: leadId });
+                const { data: updatedLead, error: updateError } = await supabase
+                    .from('SITE_Leads').update(resultPayload).eq('id', leadId).select('id').maybeSingle();
+                quizSaved = !updateError && !!updatedLead?.id;
+                if (quizSaved) {
+                    await triggerWebhook('webhook_lead_completed', { ...resultPayload, id: leadId });
+                }
             } else {
                  // FALLBACK INSERT
                  const fallbackPayload = {
@@ -161,7 +176,21 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
                     ...resultPayload
                  };
                  const fb = await handleLeadUpsert(fallbackPayload);
-                 if (fb && fb.id) effectiveLeadId = fb.id;
+                 if (fb && fb.id) {
+                     effectiveLeadId = fb.id;
+                     quizSaved = true;
+                 }
+            }
+
+            if (effectiveLeadId && quizSaved) {
+                trackMetaStandardEvent('CompleteRegistration', {
+                    content_name: lp.title,
+                    content_category: 'Qualification Quiz',
+                    status: temperature,
+                }, {
+                    pixelId: landingPagePixelId(lp.pixelId),
+                    onceKey: `qualification-complete:${lp.slug}:${effectiveLeadId}`,
+                });
             }
 
             // Checkout automatizado: após qualificar, leva o lead direto para a

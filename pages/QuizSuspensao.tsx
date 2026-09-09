@@ -30,6 +30,7 @@ import { captureTrackingParams, getLeadTrackingFields } from '../lib/tracking';
 import { distributeLead } from '../lib/leadDistribution';
 import { supabase } from '../lib/supabaseClient';
 import { triggerWebhook } from '../lib/webhooks';
+import { trackMetaCustomEvent, trackMetaStandardEvent } from '../lib/metaPixel';
 
 type QuizTheme = 'dark' | 'light';
 type Profile = 'equilibrio' | 'tracao' | 'dianteira' | 'ergonomia';
@@ -687,10 +688,21 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
 
     useEffect(() => {
         trackEvent('Quiz Off-Road', 'view', theme);
+        trackMetaStandardEvent('ViewContent', {
+            content_name: 'Diagnostico Off-Road de Suspensao e Ergonomia',
+            content_category: 'Quiz do Curso Online',
+            content_type: 'product',
+            quiz_theme: theme,
+        }, {
+            onceKey: `quiz-view-content:${theme}:${window.location.pathname}`,
+        });
     }, [theme]);
 
     const start = () => {
         trackEvent('Quiz Off-Road', 'start', theme);
+        trackMetaCustomEvent('QuizStart', { quiz_theme: theme }, {
+            onceKey: `quiz-start:${theme}:${window.location.pathname}`,
+        });
         setPhase('question');
         window.scrollTo({ top: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
     };
@@ -708,6 +720,10 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                 if (index >= copy.steps.length - 1) {
                     const resultProfile = getProfile(nextAnswers);
                     trackEvent('Quiz Off-Road', 'result_view', resultProfile);
+                    trackMetaCustomEvent('QuizCompleted', {
+                        quiz_theme: theme,
+                        quiz_profile: resultProfile,
+                    });
                     setPhase('result');
                 } else {
                     setIndex((value) => value + 1);
@@ -779,6 +795,14 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
 
             await triggerWebhook('webhook_lead', payload).catch(() => undefined);
             trackEvent('Quiz Off-Road', 'lead_captured', `${theme}_${profile}`);
+            trackMetaStandardEvent('Lead', {
+                content_name: 'Diagnostico Off-Road de Suspensao e Ergonomia',
+                content_category: 'Quiz do Curso Online',
+                quiz_theme: theme,
+                quiz_profile: profile,
+            }, {
+                onceKey: `quiz-lead:${theme}:${profile}`,
+            });
         } catch (submitError) {
             console.error('Falha ao registrar lead do quiz:', submitError);
             trackEvent('Quiz Off-Road', 'lead_failed', `${theme}_${profile}`);

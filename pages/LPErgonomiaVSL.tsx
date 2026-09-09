@@ -22,6 +22,7 @@ import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
     getSuspensionFunnelCopy,
@@ -255,6 +256,9 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     useEffect(() => {
         captureTrackingParams();
         trackEvent('Funil Suspensão', 'vsl_view', eventLabel);
+        trackMetaStandardEvent('ViewContent', courseContentParams(isLight ? 'vsl_light' : 'vsl_dark'), {
+            onceKey: `course-view-content:vsl-${theme}:${window.location.pathname}`,
+        });
         try {
             setIsUnlocked(sessionStorage.getItem(UNLOCK_KEY) === 'true');
         } catch {

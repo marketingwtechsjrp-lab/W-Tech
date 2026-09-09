@@ -154,6 +154,10 @@ async function main() {
     extraHTTPHeaders: { 'accept-language': `${PRERENDER_LOCALE},${PRERENDER_LOCALE.split('-')[0]};q=0.9` },
   });
 
+  // Build nao e visita: nao envia eventos e nao incorpora SDKs injetados no HTML.
+  // O snippet original do index.html permanece para o visitante real.
+  await context.route(/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|facebook\.com\/tr|\/rest\/v1\/SITE_Analytics_)/, route => route.abort());
+
   const results = [];
   for (const route of routes) {
     const page = await context.newPage();
@@ -174,7 +178,17 @@ async function main() {
       await scrollThrough(page);
       await page.waitForTimeout(SETTLE_MS);
 
-      const html = await page.evaluate(() => `<!DOCTYPE html>\n${document.documentElement.outerHTML}`);
+      const html = await page.evaluate(() => {
+        const snapshot = document.documentElement.cloneNode(true);
+        // Mesmo bloqueado, o loader cria um <script src>. Nao o duplicar ao servir
+        // o snapshot: o snippet original insere esse elemento no navegador real.
+        for (const script of snapshot.querySelectorAll('script[src]')) {
+          if (/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net)/.test(script.src)) {
+            script.remove();
+          }
+        }
+        return `<!DOCTYPE html>\n${snapshot.outerHTML}`;
+      });
       const h1 = await page.evaluate(() => document.querySelector('h1')?.textContent?.trim() ?? null);
       const title = await page.title();
 

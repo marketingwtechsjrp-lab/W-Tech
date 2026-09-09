@@ -5,11 +5,13 @@ import { supabase } from '../lib/supabaseClient';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { trackEvent } from './AnalyticsTracker';
+import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 
 const DEFAULT_PHONE = '5512982976468';
 
 interface WhatsAppLeadCaptureProps {
     pageLabel: string;
+    language?: string;
     className?: string;
     children?: React.ReactNode;
     floating?: boolean;
@@ -18,11 +20,13 @@ interface WhatsAppLeadCaptureProps {
 
 export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
     pageLabel,
+    language = 'pt-BR',
     className = '',
     children,
     floating = false,
     ariaLabel = 'Falar com a equipe no WhatsApp',
 }) => {
+    const isPortugal = language === 'pt-PT';
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState({ name: '', phone: '', email: '' });
     const [loading, setLoading] = useState(false);
@@ -47,7 +51,7 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
         event.preventDefault();
         const phone = form.phone.replace(/\D/g, '');
         if (phone.length < 10) {
-            setError('Informe um WhatsApp válido com DDD.');
+            setError(isPortugal ? 'Indica um número de WhatsApp com o indicativo do país (ex.: +351).' : 'Informe um WhatsApp válido com DDD.');
             return;
         }
 
@@ -72,14 +76,21 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
             const { error: insertError } = await supabase.from('SITE_Leads').insert([payload]);
             if (insertError) throw insertError;
 
+            trackMetaStandardEvent('Lead', {
+                ...courseContentParams(pageLabel),
+                contact_channel: 'whatsapp',
+            }, { onceKey: `whatsapp-lead:${window.location.pathname}` });
+
             await triggerWebhook('webhook_lead', payload).catch(() => undefined);
             trackEvent('WhatsApp', 'lead_captured', pageLabel);
 
-            const message = `Olá! Meu nome é ${form.name.trim()}. Vim da página do Curso Online de Suspensão e gostaria de tirar uma dúvida.`;
+            const message = isPortugal
+                ? `Olá! Chamo-me ${form.name.trim()}. Vi a formação online de suspensões e gostaria de esclarecer uma dúvida.`
+                : `Olá! Meu nome é ${form.name.trim()}. Vim da página do Curso Online de Suspensão e gostaria de tirar uma dúvida.`;
             window.location.href = `https://wa.me/${DEFAULT_PHONE}?text=${encodeURIComponent(message)}`;
         } catch (submitError) {
             console.error('Falha ao captar lead antes do WhatsApp:', submitError);
-            setError('Não foi possível iniciar o atendimento. Confira os dados e tente novamente.');
+            setError(isPortugal ? 'Não foi possível iniciar a conversa. Confirma os dados e tenta novamente.' : 'Não foi possível iniciar o atendimento. Confira os dados e tente novamente.');
             setLoading(false);
         }
     };
@@ -117,7 +128,7 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                         <div className="bg-[#075e54] px-6 py-7 text-center text-white">
                             <MessageCircle size={42} className="mx-auto mb-2" aria-hidden="true" />
                             <h2 id="whatsapp-lead-title" className="text-xl font-black">Falar com a W-Tech</h2>
-                            <p className="mt-1 text-sm text-white/80">Preencha seus dados para iniciar o atendimento.</p>
+                            <p className="mt-1 text-sm text-white/80">{isPortugal ? 'Preenche os teus dados para falar com a equipa.' : 'Preencha seus dados para iniciar o atendimento.'}</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 p-6">
@@ -130,12 +141,12 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                                     value={form.name}
                                     onChange={(event) => setForm({ ...form, name: event.target.value })}
                                     className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 bg-[#faf9f7] px-4 text-base font-medium normal-case tracking-normal text-[#24211f] outline-none transition focus:border-[#25D366] focus:ring-2 focus:ring-[#25D366]/20"
-                                    placeholder="Seu nome"
+                                    placeholder={isPortugal ? 'O teu nome' : 'Seu nome'}
                                 />
                             </label>
 
                             <label className="block text-xs font-black uppercase tracking-[0.08em] text-[#625e59]">
-                                WhatsApp com DDD
+                                {isPortugal ? 'WhatsApp com indicativo do país' : 'WhatsApp com DDD'}
                                 <input
                                     required
                                     inputMode="tel"
@@ -143,7 +154,7 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                                     value={form.phone}
                                     onChange={(event) => setForm({ ...form, phone: event.target.value })}
                                     className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 bg-[#faf9f7] px-4 text-base font-medium normal-case tracking-normal text-[#24211f] outline-none transition focus:border-[#25D366] focus:ring-2 focus:ring-[#25D366]/20"
-                                    placeholder="(12) 99999-9999"
+                                    placeholder={isPortugal ? '+351 912 345 678' : '(12) 99999-9999'}
                                 />
                             </label>
 
@@ -155,7 +166,7 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                                     value={form.email}
                                     onChange={(event) => setForm({ ...form, email: event.target.value })}
                                     className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 bg-[#faf9f7] px-4 text-base font-medium normal-case tracking-normal text-[#24211f] outline-none transition focus:border-[#25D366] focus:ring-2 focus:ring-[#25D366]/20"
-                                    placeholder="voce@email.com"
+                                    placeholder={isPortugal ? 'nome@exemplo.pt' : 'voce@email.com'}
                                 />
                             </label>
 
@@ -166,11 +177,11 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                                 disabled={loading}
                                 className="flex min-h-13 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 font-black text-white shadow-lg transition hover:bg-[#1ebd5a] disabled:cursor-wait disabled:opacity-70"
                             >
-                                {loading ? 'Salvando seus dados...' : 'Continuar para o WhatsApp'}
+                                {loading ? (isPortugal ? 'A guardar os teus dados...' : 'Salvando seus dados...') : 'Continuar para o WhatsApp'}
                                 {!loading && <Send size={18} aria-hidden="true" />}
                             </button>
                             <p className="text-center text-[11px] leading-4 text-[#817b75]">
-                                Seus dados serão usados pela W-Tech para dar continuidade ao atendimento.
+                                {isPortugal ? 'Os teus dados serão utilizados pela W-Tech para dar seguimento ao teu contacto.' : 'Seus dados serão usados pela W-Tech para dar continuidade ao atendimento.'}
                             </p>
                         </form>
                     </div>

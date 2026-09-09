@@ -5,6 +5,10 @@ import { handleLeadUpsert } from '../lib/leadDistribution';
 import { resolveCourseTestimonials } from '../lib/testimonials';
 import { resolveScheduleModules } from '../lib/schedule';
 import { LandingPage, Course } from '../types';
+import {
+    trackConfiguredLandingPageRegistration,
+    trackConfiguredLandingPageView,
+} from '../lib/metaPixel';
 
 /**
  * Hook compartilhado dos viewers de Landing Page (V5+).
@@ -43,6 +47,10 @@ export function useLandingPage(ownTemplate: string) {
     const [form, setForm] = useState({ name: '', email: '', phone: '' });
     const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
     const [submitted, setSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (lp) trackConfiguredLandingPageView(lp);
+    }, [lp]);
     const [showFloatingCTA, setShowFloatingCTA] = useState(false);
 
     // Floating CTA após 400px de scroll
@@ -194,6 +202,7 @@ export function useLandingPage(ownTemplate: string) {
             };
 
             const leadResult = await handleLeadUpsert(payload);
+            if (leadResult?.id) trackConfiguredLandingPageRegistration(lp);
 
             const courseIdForCheckout = lp.courseId || (lp as any).course_id;
             if (checkoutAtivo && courseIdForCheckout && leadResult?.id) {

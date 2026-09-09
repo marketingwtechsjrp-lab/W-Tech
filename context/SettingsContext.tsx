@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { PUBLIC_BASE_URL, ORGANIZATION_ID, canonicalUrl } from '../lib/publicUrl';
+import { configureSitePixel } from '../lib/metaPixel';
+import { configureGoogleTracking } from '../lib/googleTracking';
 
 interface SettingsContextType {
     settings: any;
@@ -136,53 +138,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     schemaScript.textContent = JSON.stringify(orgNode);
                 }
 
-                // Inject Analytics (Facebook Pixel)
-                if (config.pixel_id && !window.hasInjectedScripts) {
-                    const script = document.createElement('script');
-                    script.innerHTML = `
-                        !function(f,b,e,v,n,t,s)
-                        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-                        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-                        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-                        n.queue=[];t=b.createElement(e);t.async=!0;
-                        t.src=v;s=b.getElementsByTagName(e)[0];
-                        s.parentNode.insertBefore(t,s)}(window, document,'script',
-                        'https://connect.facebook.net/en_US/fbevents.js');
-                        fbq('init', '${config.pixel_id}');
-                        fbq('track', 'PageView');
-                    `;
-                    document.head.appendChild(script);
-                }
-
-                // Inject GA4
-                if (config.ga_id && !window.hasInjectedScripts) {
-                    const scriptSrc = document.createElement('script');
-                    scriptSrc.async = true;
-                    scriptSrc.src = `https://www.googletagmanager.com/gtag/js?id=${config.ga_id}`;
-                    document.head.appendChild(scriptSrc);
-
-                    const scriptInline = document.createElement('script');
-                    scriptInline.innerHTML = `
-                        window.dataLayer = window.dataLayer || [];
-                        function gtag(){dataLayer.push(arguments);}
-                        gtag('js', new Date());
-                        gtag('config', '${config.ga_id}');
-                    `;
-                    document.head.appendChild(scriptInline);
-                }
-
-                // Inject GTM
-                if (config.gtm_id && !window.hasInjectedScripts) {
-                    const script = document.createElement('script');
-                    script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-                    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-                    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-                    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-                    })(window,document,'script','dataLayer','${config.gtm_id}');`;
-                    document.head.appendChild(script);
-                }
-
-                window.hasInjectedScripts = true;
+                // Analytics tem uma unica origem: o Custom Loader Stape/GTM no
+                // index.html. Reinjetar Pixel, GA4 ou GTM depois de carregar as
+                // configuracoes duplicava PageView e fragmentava as conversoes
+                // entre dois pixels. Os eventos da aplicacao sao enviados pelo
+                // AnalyticsTracker e pelo helper lib/metaPixel.ts.
+                configureSitePixel(config.pixel_id);
+                configureGoogleTracking(config.ga_id);
             }
         } catch (e) {
             console.error("Error loading settings:", e);

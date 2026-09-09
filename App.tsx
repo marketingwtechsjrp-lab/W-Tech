@@ -78,13 +78,6 @@ const PageLoader = () => (
   </div>
 );
 
-// Extend Window interface to add hasInjectedScripts property
-declare global {
-  interface Window {
-    hasInjectedScripts?: boolean;
-  }
-}
-
 import { ThemeProvider } from 'next-themes';
 
 import { LanguageProvider } from './context/LanguageContext';

@@ -1,5 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.39.0 (2026-09-09) - Landing premium para Brasil e Portugal
+- Libera a pagina completa sem assistir a VSL e concentra preco e checkout na secao de inscricao.
+- Substitui depoimentos genericos por videos reais de formacoes W-Tech, incluindo Lisboa, e prepara a faixa de prints autorizados.
+- Adapta textos, perguntas frequentes e contacto por WhatsApp para Portugal, preservando a oferta internacional de 59 euros.
+- Remove avisos simulados de compras e contador reiniciado por visita.
+- Versiona os ajustes de rastreamento Meta e Google ja presentes na VPS.
+
 
 ## v3.38.1 (2026-08-28) - Correcao: lead ganho voltando como lead novo no CRM
 - Nova regra unica de identificacao de lead (lib/leadMatch.ts): e-mail sem diferenciar maiusculas e telefone pelos ultimos 8 digitos, tolerando mascara e DDI

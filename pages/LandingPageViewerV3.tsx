@@ -12,6 +12,10 @@ import { formatDateLocal } from '../lib/utils';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import {
+  trackConfiguredLandingPageRegistration,
+  trackConfiguredLandingPageView,
+} from '../lib/metaPixel';
+import {
   MapPin, Calendar, Clock, Users, Star, CheckCircle, ArrowRight,
   ChevronDown, Award, Shield, Target, TrendingUp, Zap, Wrench,
   BookOpen, GraduationCap, Trophy, MessageCircle, Quote, Phone,
@@ -147,6 +151,10 @@ const LandingPageViewerV3: React.FC = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (lp) trackConfiguredLandingPageView(lp);
+  }, [lp]);
   const [submitting, setSubmitting] = useState(false);
   const [openModule, setOpenModule] = useState<number | null>(null);
 
@@ -250,6 +258,7 @@ const LandingPageViewerV3: React.FC = () => {
         tags: ['landing_page_v3', lp.slug || 'virtual', checkoutAtivo ? 'checkout_direto' : ''].filter(Boolean),
         origin: window.location.href, assigned_to: null,
       });
+      if (result?.id) trackConfiguredLandingPageRegistration(lp);
       const courseId = (lp as any).courseId || (lp as any).course_id;
       if (checkoutAtivo && courseId && result?.id) {
         const searchParams = new URLSearchParams(window.location.search);

@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.39.0",
+    "date": "2026-09-09",
+    "title": "Landing premium para Brasil e Portugal",
+    "changes": [
+      "Libera a pagina completa sem assistir a VSL e concentra preco e checkout na secao de inscricao.",
+      "Substitui depoimentos genericos por videos reais de formacoes W-Tech, incluindo Lisboa, e prepara a faixa de prints autorizados.",
+      "Adapta textos, perguntas frequentes e contacto por WhatsApp para Portugal, preservando a oferta internacional de 59 euros.",
+      "Remove avisos simulados de compras e contador reiniciado por visita.",
+      "Versiona os ajustes de rastreamento Meta e Google ja presentes na VPS."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.38.1",
     "date": "2026-08-28",
     "title": "Correcao: lead ganho voltando como lead novo no CRM",

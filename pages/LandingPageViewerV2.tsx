@@ -12,6 +12,10 @@ import { formatDateLocal } from '../lib/utils';
 import { QualificationQuiz } from '../components/QualificationQuiz';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import {
+  trackConfiguredLandingPageRegistration,
+  trackConfiguredLandingPageView,
+} from '../lib/metaPixel';
+import {
   MapPin, Calendar, Clock, Users, Star, CheckCircle, ArrowRight,
   ChevronDown, ChevronUp, Award, Zap, Shield, Target, TrendingUp,
   Phone, Mail, MessageCircle, Play, Quote, X, Menu, Flame,
@@ -185,6 +189,10 @@ const LandingPageViewerV2: React.FC = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (lp) trackConfiguredLandingPageView(lp);
+  }, [lp]);
   const [submitting, setSubmitting] = useState(false);
   const [spotsLeft, setSpotsLeft] = useState(5);
 
@@ -297,6 +305,7 @@ const LandingPageViewerV2: React.FC = () => {
         assigned_to: null,
       };
       const result = await handleLeadUpsert(payload);
+      if (result?.id) trackConfiguredLandingPageRegistration(lp);
       const courseId = (lp as any).courseId || (lp as any).course_id;
       if (checkoutAtivo && courseId && result?.id) {
         const searchParams = new URLSearchParams(window.location.search);

@@ -32,6 +32,7 @@ import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL as COURSE_VIDEO } from '../lib/vslVideo';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
     getSuspensionFunnelCopy,
@@ -155,6 +156,9 @@ const LPErgonomiaLight: React.FC = () => {
     useEffect(() => {
         captureTrackingParams();
         trackEvent('Funil Suspensão', 'lp_view', funnelEventLabel);
+        trackMetaStandardEvent('ViewContent', courseContentParams('lp_light'), {
+            onceKey: `course-view-content:lp-light:${window.location.pathname}`,
+        });
 
         const previousTitle = document.title;
         document.title = funnel.personalized

@@ -34,6 +34,7 @@ import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL as VSL_URL } from '../lib/vslVideo';
+import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 
 
 const COURSE_URL = 'https://w-techbrasil.com.br/curso-suspensao-piloto-v2';
@@ -350,7 +351,13 @@ const LPErgonomia2: React.FC = () => {
 
     useEffect(() => {
         captureTrackingParams();
-    }, []);
+        // Idiomas internacionais exibem a LP completa, nao esta variante.
+        // O destino mede ViewContent; a rota de redirecionamento nao o duplica.
+        if (currentLang !== 'pt-BR') return;
+        trackMetaStandardEvent('ViewContent', courseContentParams('lp_v2'), {
+            onceKey: `course-view-content:lp-v2:${window.location.pathname}`,
+        });
+    }, [currentLang]);
 
     useEffect(() => {
         const previousTitle = document.title;
