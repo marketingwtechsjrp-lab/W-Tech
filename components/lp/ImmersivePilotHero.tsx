@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useInView, useReducedMotion } from 'framer-motion';
-import { ArrowDown, ArrowRight, ChevronDown, Globe, Pause, Play, ShieldCheck, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, ChevronDown, Globe, Pause, Play, ShieldCheck } from 'lucide-react';
 import { trackEvent } from '../AnalyticsTracker';
 import { VSL_VIDEO_URL } from '../../lib/vslVideo';
 import { lpTranslations, type LPLanguage } from '../../lib/lpErgonomiaTranslations';
@@ -85,13 +85,14 @@ export const ImmersivePilotHero: React.FC<{
     const t = copy[language];
     const heroRef = useRef<HTMLElement>(null);
     const loopRef = useRef<HTMLVideoElement>(null);
-    const dialogRef = useRef<HTMLDialogElement>(null);
+    const presentationRef = useRef<HTMLVideoElement>(null);
     const milestones = useRef(new Set<number>());
     const inView = useInView(heroRef);
     const reducedMotion = useReducedMotion();
     const [source, setSource] = useState<string>();
     const [paused, setPaused] = useState(false);
-    const [presentationOpen, setPresentationOpen] = useState(false);
+    const [presentationPlaying, setPresentationPlaying] = useState(false);
+    const [presentationStarted, setPresentationStarted] = useState(false);
 
     useEffect(() => {
         const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
@@ -110,26 +111,18 @@ export const ImmersivePilotHero: React.FC<{
         const video = loopRef.current;
         if (!video) return;
         const sync = () => {
-            if (!source || !inView || paused || presentationOpen || document.hidden) video.pause();
+            if (!source || !inView || paused || presentationPlaying || document.hidden) video.pause();
             else video.play().catch(() => undefined);
         };
         sync();
         document.addEventListener('visibilitychange', sync);
         return () => document.removeEventListener('visibilitychange', sync);
-    }, [source, inView, paused, presentationOpen]);
+    }, [source, inView, paused, presentationPlaying]);
 
-    useEffect(() => {
-        const dialog = dialogRef.current;
-        if (!dialog || !presentationOpen) return;
-        dialog.showModal();
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        trackEvent('VSL', 'vsl_play', 'Curso Piloto');
-        return () => {
-            dialog.close();
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [presentationOpen]);
+    const playPresentation = () => {
+        presentationRef.current?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'center' });
+        presentationRef.current?.play().catch(() => undefined);
+    };
 
     return (
         <>
@@ -163,7 +156,7 @@ export const ImmersivePilotHero: React.FC<{
                         <button ref={primaryCtaRef} type="button" data-offer-cta="hero" className="pilot-hero-cta" onClick={onOfferClick}>
                             <span>{t.cta}</span><ArrowRight size={20} aria-hidden="true" />
                         </button>
-                        <button type="button" data-open-presentation className="pilot-hero-watch" onClick={() => setPresentationOpen(true)}>
+                        <button type="button" data-open-presentation className="pilot-hero-watch" onClick={playPresentation}>
                             <span><Play size={13} fill="currentColor" /></span>{t.watch}
                         </button>
                     </div>
@@ -173,6 +166,21 @@ export const ImmersivePilotHero: React.FC<{
                 {source && <button type="button" className="pilot-motion-toggle" onClick={() => setPaused(!paused)} aria-label={paused ? t.resume : t.pause} aria-pressed={paused}>{paused ? <Play size={15} /> : <Pause size={15} />}</button>}
                 <a href="#metodo-piloto" className="pilot-hero-explore">{t.explore}<ArrowDown size={15} /></a>
                 <div className="pilot-hero-index" aria-hidden="true"><span>01 / W-TECH</span><span>SAG · CLICKS · SETUP</span></div>
+            </section>
+
+            <section id="apresentacao-piloto" className="pilot-inline-presentation" aria-labelledby="pilot-presentation-title">
+                <div className="pilot-inline-heading"><p className="pilot-eyebrow">{t.presentation}</p><h2 id="pilot-presentation-title">{t.watch}</h2></div>
+                <div className="pilot-inline-player">
+                    <video ref={presentationRef} data-course-presentation aria-label={t.presentation} src={VSL_VIDEO_URL} poster="/images/vsl-thumbnail.webp" controls={presentationStarted} playsInline preload="none" onPlay={() => { setPresentationStarted(true); setPresentationPlaying(true); trackEvent('VSL', 'vsl_play', 'Curso Piloto'); }} onPause={() => setPresentationPlaying(false)} onEnded={() => setPresentationPlaying(false)} onTimeUpdate={(event) => {
+                        const video = event.currentTarget;
+                        if (!(video.duration > 0)) return;
+                        const percent = video.currentTime / video.duration * 100;
+                        for (const milestone of [25, 50, 75, 100]) {
+                            if (percent >= milestone && !milestones.current.has(milestone)) { milestones.current.add(milestone); trackEvent('VSL', `vsl_${milestone}`, 'Curso Piloto'); }
+                        }
+                    }} />
+                    {!presentationStarted && <button type="button" className="pilot-inline-play" aria-label={t.watch} onClick={playPresentation}><span><Play size={32} fill="currentColor" /></span><strong>{t.watch}</strong></button>}
+                </div>
             </section>
 
             <section id="metodo-piloto" className="pilot-method" aria-labelledby="pilot-method-title">
@@ -190,19 +198,7 @@ export const ImmersivePilotHero: React.FC<{
                 <div className="pilot-workshop-note"><p className="pilot-eyebrow">{t.workshopLabel}</p><h3>{t.workshopTitle}</h3><p>{t.workshopText}</p></div>
             </section>
 
-            <dialog ref={dialogRef} className="pilot-presentation" aria-label={t.presentation} onCancel={() => setPresentationOpen(false)} onClose={() => setPresentationOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setPresentationOpen(false); }}>
-                {presentationOpen && <div className="pilot-presentation-inner">
-                    <div className="pilot-presentation-header"><span>{t.presentation}</span><button type="button" autoFocus aria-label={t.close} onClick={() => setPresentationOpen(false)}><X size={22} /></button></div>
-                    <video data-course-presentation src={VSL_VIDEO_URL} poster="/images/vsl-thumbnail.webp" controls autoPlay playsInline preload="metadata" onTimeUpdate={(event) => {
-                        const video = event.currentTarget;
-                        if (!(video.duration > 0)) return;
-                        const percent = video.currentTime / video.duration * 100;
-                        for (const milestone of [25, 50, 75, 100]) {
-                            if (percent >= milestone && !milestones.current.has(milestone)) { milestones.current.add(milestone); trackEvent('VSL', `vsl_${milestone}`, 'Curso Piloto'); }
-                        }
-                    }} />
-                </div>}
-            </dialog>
+
         </>
     );
 };

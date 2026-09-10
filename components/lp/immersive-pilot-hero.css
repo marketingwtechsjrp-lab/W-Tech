@@ -44,12 +44,15 @@
 .pilot-workshop-note { border-top: 1px solid #ffffff20; margin: 65px auto 0; padding-top: 36px; max-width: 1180px; }
 .pilot-workshop-note h3 { max-width: 800px; font-size: clamp(25px,3vw,37px); line-height: 1.2; font-weight: 700; margin-top: 15px; }
 .pilot-workshop-note > p:last-child { max-width: 630px; font-size: 14px; line-height: 1.7; color: #a7afa3; margin-top: 16px; }
-.pilot-presentation { border: 0; margin: auto; background: transparent; padding: 16px; width: min(1100px,100vw); max-width: 100vw; max-height: 100dvh; color: #fff; }
-.pilot-presentation::backdrop { background: #000e; backdrop-filter: blur(12px); }
-.pilot-presentation-inner { border: 1px solid #ffffff30; background: #090c0a; border-radius: 12px; overflow: hidden; }
-.pilot-presentation-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px 8px 20px; font-size: 12px; }
-.pilot-presentation-header button { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
-.pilot-presentation video { width: 100%; max-height: 76dvh; aspect-ratio: 16/9; background: black; }
+.pilot-inline-presentation { padding: 52px 5% 60px; background: #090c0a; scroll-margin-top: 24px; }
+.pilot-inline-heading { max-width: 1000px; margin: 0 auto 24px; }
+.pilot-inline-heading h2 { font-size: clamp(28px,3.5vw,44px); font-weight: 800; margin-top: 12px; line-height: 1.1; }
+.pilot-inline-player { position: relative; max-width: 1000px; margin: auto; border: 1px solid #e6bd5550; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 15px 65px #0006; }
+.pilot-inline-player video { display: block; width: 100%; aspect-ratio: 16/9; }
+.pilot-inline-play { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; background: #0004; }
+.pilot-inline-play > span { display: grid; place-items: center; width: clamp(64px,8vw,96px); height: clamp(64px,8vw,96px); border-radius: 50%; background: #e6bd55; color: #090c0a; box-shadow: 0 0 45px #e6bd5540; }
+.pilot-inline-play strong { border-radius: 30px; padding: 8px 18px; background: #090c0adb; color: #fff; font-size: clamp(12px,1.5vw,17px); }
+.pilot-inline-play:hover > span { background: #f4cc70; }
 @media (max-width: 767px) {
     .pilot-hero { min-height: 100svh; }
     .pilot-hero-header { height: 64px; padding: 0 20px; }

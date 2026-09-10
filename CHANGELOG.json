@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.40.1",
+    "date": "2026-09-09",
+    "title": "VSL visivel na landing de suspensao",
+    "changes": [
+      "Exibe a VSL diretamente na pagina, com capa e reproducao no proprio player, logo apos a abertura.",
+      "Mantem o video opcional e a rolagem livre para Brasil e Portugal."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.40.0",
     "date": "2026-09-09",
     "title": "Abertura imersiva da landing de suspensao",

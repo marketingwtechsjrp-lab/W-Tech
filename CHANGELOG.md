@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.40.1 (2026-09-09) - VSL visivel na landing de suspensao
+- Exibe a VSL diretamente na pagina, com capa e reproducao no proprio player, logo apos a abertura.
+- Mantem o video opcional e a rolagem livre para Brasil e Portugal.
+
 ## v3.40.0 (2026-09-09) - Abertura imersiva da landing de suspensao
 - Apresenta cenas reais de pilotagem e regulagem em uma abertura cinematografica adaptada ao celular.
 - Reforca a promessa de acerto personalizado com textos para Brasil e Portugal e uma sequencia visual do metodo.

@@ -17,7 +17,7 @@ for (const region of ['br', 'intl']) {
         await expect(page.locator('h1')).toBeVisible();
         await expect(page.locator('#conteudo')).toBeAttached();
         await expect(page.locator('#cta-final')).toBeAttached();
-        await expect(page.locator('[data-course-presentation]')).toHaveCount(0);
+        await expect(page.locator('[data-course-presentation]')).toHaveCount(1);
 
         const monetaryTextOutsideOffer = await page.evaluate(() => {
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -155,23 +155,22 @@ test('abertura com movimento silencioso e CTA fixo somente depois do principal',
     await expect(page.locator('[data-offer-cta="sticky"]')).toHaveCount(0);
 });
 
-test('apresentação opcional abre com foco, reproduz e fecha sem travar a página', async ({ page }) => {
-    await page.route('**/vsl/vsl-suspensao-2026.mp4', async (route) => route.fulfill({
-        contentType: 'video/mp4',
-        body: await readFile('public/videos/hero-piloto/acerto-mobile.mp4'),
-    }));
+test('VSL está visível na página e reproduz sem modal ou bloqueio', async ({ page }) => {
+    await page.route('**/vsl/vsl-suspensao-2026.mp4', async route => route.fulfill({ contentType: 'video/mp4', body: await readFile('public/videos/hero-piloto/acerto-mobile.mp4') }));
     await page.goto('/curso-suspensao-piloto?lang=pt-BR&regiao=br');
-    const opener = page.getByRole('button', { name: 'Ver o método na prática' });
-    await opener.click();
-    const dialog = page.getByRole('dialog', { name: 'Apresentação do curso' });
-    await expect(dialog).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Fechar apresentação' })).toBeFocused();
-    await expect.poll(() => dialog.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0);
-    await expect.poll(() => page.locator('[data-hero-loop]').evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
-    await page.keyboard.press('Escape');
-    await expect(dialog).not.toBeVisible();
-    await expect(opener).toBeFocused();
+    const video = page.locator('[data-course-presentation]');
+    await expect(video).toBeAttached();
+    await expect(video).toHaveAttribute('preload', 'none');
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+    await page.locator('#apresentacao-piloto').scrollIntoViewIfNeeded();
+    await expect(video).toBeVisible();
+    await page.locator('.pilot-inline-play').click();
+    await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0);
+    await expect(video).toHaveAttribute('controls', '');
+    await expect(page.locator('.pilot-inline-play')).toHaveCount(0);
     expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+    await page.locator('#metodo-piloto').scrollIntoViewIfNeeded();
+    await expect(page.locator('#pilot-method-title')).toBeVisible();
 });
 
 test('economia de dados e movimento reduzido usam imagem sem baixar vídeo', async ({ page }) => {
