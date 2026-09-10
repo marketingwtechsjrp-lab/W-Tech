@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
     // Exercita a página sem enviar eventos de QA aos serviços de produção.
@@ -16,7 +17,7 @@ for (const region of ['br', 'intl']) {
         await expect(page.locator('h1')).toBeVisible();
         await expect(page.locator('#conteudo')).toBeAttached();
         await expect(page.locator('#cta-final')).toBeAttached();
-        expect(await page.locator('video').first().evaluate((video: HTMLVideoElement) => video.currentSrc)).toBe('');
+        await expect(page.locator('[data-course-presentation]')).toHaveCount(0);
 
         const monetaryTextOutsideOffer = await page.evaluate(() => {
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -103,7 +104,7 @@ test('Portugal por geolocalização: português europeu, euros e Hotmart', async
     }));
     await page.goto('/curso-suspensao-piloto?utm_source=anuncio-portugal');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-PT');
-    await expect(page.locator('h1')).toContainText('acertar a suspensão da tua mota');
+    await expect(page.locator('[data-course-promise]')).toContainText('acertar a suspensão da tua mota');
     await expect(page).toHaveTitle(/Aprende a Afinar a Tua Mota/);
     await expect(page.locator('#cta-final')).toContainText('59 €');
     await expect(page.locator('#cta-final')).toContainText('Pagamento único de 59 € · sem renovação');
@@ -120,17 +121,67 @@ test('Portugal por geolocalização: português europeu, euros e Hotmart', async
 test('Portugal no telemóvel: CTA, contacto internacional e mudança para Brasil', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/curso-suspensao-piloto?lang=pt-PT&regiao=intl');
-    await expect(page.locator('[data-offer-cta="hero"]')).toHaveText(/afinar a minha mota/);
+    await expect(page.locator('[data-offer-cta="hero"]')).toHaveText(/afinação da minha mota/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.locator('[data-offer-cta="sticky"]').click();
+    await expect(page.locator('[data-offer-cta="sticky"]')).toHaveCount(0);
+    await page.locator('[data-offer-cta="hero"]').click();
     await page.getByRole('button', { name: 'Falar com a equipa no WhatsApp' }).click();
     const dialog = page.getByRole('dialog', { name: 'Falar com a W-Tech' });
     await expect(dialog).toContainText('Preenche os teus dados');
     await expect(dialog.getByPlaceholder('+351 912 345 678')).toBeVisible();
     await expect(dialog.getByPlaceholder('O teu nome')).toBeVisible();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: '🇧🇷 BR' }).click();
-    await expect(page.locator('[data-offer-cta="hero"]')).toHaveText(/ajustes da minha moto/);
+    await page.getByRole('combobox', { name: 'Idioma da página' }).selectOption('pt-BR');
+    await expect(page.locator('[data-offer-cta="hero"]')).toHaveText(/acerto da minha moto/);
     // Idioma de leitura não altera a região de cobrança.
     await expect(page.locator('#cta-final')).toContainText('59 €');
+});
+
+test('abertura com movimento silencioso e CTA fixo somente depois do principal', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/curso-suspensao-piloto?lang=pt-BR&regiao=br');
+    await expect(page.locator('h1')).toHaveText('Sua moto.Acertada.');
+    await expect(page.locator('[data-course-promise]')).toContainText('O único curso');
+    await expect(page.locator('[data-offer-cta="sticky"]')).toHaveCount(0);
+    const loop = page.locator('[data-hero-loop]');
+    await expect(loop).toHaveAttribute('src', /acerto-mobile.mp4/);
+    await expect.poll(() => loop.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0);
+    expect(await loop.evaluate((v: HTMLVideoElement) => v.muted)).toBe(true);
+    await page.getByRole('button', { name: 'Pausar movimento' }).click();
+    await expect.poll(() => loop.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+    await page.locator('#metodo-piloto').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-offer-cta="sticky"]')).toBeVisible();
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect(page.locator('[data-offer-cta="sticky"]')).toHaveCount(0);
+});
+
+test('apresentação opcional abre com foco, reproduz e fecha sem travar a página', async ({ page }) => {
+    await page.route('**/vsl/vsl-suspensao-2026.mp4', async (route) => route.fulfill({
+        contentType: 'video/mp4',
+        body: await readFile('public/videos/hero-piloto/acerto-mobile.mp4'),
+    }));
+    await page.goto('/curso-suspensao-piloto?lang=pt-BR&regiao=br');
+    const opener = page.getByRole('button', { name: 'Ver o método na prática' });
+    await opener.click();
+    const dialog = page.getByRole('dialog', { name: 'Apresentação do curso' });
+    await expect(dialog).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Fechar apresentação' })).toBeFocused();
+    await expect.poll(() => dialog.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0);
+    await expect.poll(() => page.locator('[data-hero-loop]').evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+    await expect(opener).toBeFocused();
+    expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+});
+
+test('economia de dados e movimento reduzido usam imagem sem baixar vídeo', async ({ page }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+    await page.goto('/curso-suspensao-piloto?lang=pt-BR&regiao=br');
+    await expect(page.locator('.pilot-hero-poster')).toBeVisible();
+    await expect(page.locator('[data-hero-loop]')).toHaveCount(0);
+    await expect(page.locator('[data-open-presentation]')).toBeEnabled();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('[data-hero-loop]')).toHaveCount(0);
+    await page.locator('[data-offer-cta="hero"]').click();
+    await expect(page.locator('#kiwify-checkout-btn-lp-ergonomia')).toBeVisible();
 });

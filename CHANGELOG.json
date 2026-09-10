@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.40.0",
+    "date": "2026-09-09",
+    "title": "Abertura imersiva da landing de suspensao",
+    "changes": [
+      "Apresenta cenas reais de pilotagem e regulagem em uma abertura cinematografica adaptada ao celular.",
+      "Reforca a promessa de acerto personalizado com textos para Brasil e Portugal e uma sequencia visual do metodo.",
+      "Mantem a apresentacao opcional e exibe o botao fixo somente depois que o principal sai da tela.",
+      "Reduz o peso do video de abertura e respeita economia de dados e preferencia por movimento reduzido."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.39.1",
     "date": "2026-09-09",
     "title": "Copy focada em acerto personalizado da moto",

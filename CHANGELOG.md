@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.40.0 (2026-09-09) - Abertura imersiva da landing de suspensao
+- Apresenta cenas reais de pilotagem e regulagem em uma abertura cinematografica adaptada ao celular.
+- Reforca a promessa de acerto personalizado com textos para Brasil e Portugal e uma sequencia visual do metodo.
+- Mantem a apresentacao opcional e exibe o botao fixo somente depois que o principal sai da tela.
+- Reduz o peso do video de abertura e respeita economia de dados e preferencia por movimento reduzido.
+
 ## v3.39.1 (2026-09-09) - Copy focada em acerto personalizado da moto
 - Reforca o curso completo de acerto de suspensao, regulagem, SAG e ergonomia para Brasil e Portugal.
 - Destaca autonomia do piloto para ajustar a moto ao terreno e entrega personalizada por mecanicos e oficinas.

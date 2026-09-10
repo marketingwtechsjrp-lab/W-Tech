@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, Suspense, lazy, useMemo } from 'react';
 import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
+import { ImmersivePilotHero } from '../components/lp/ImmersivePilotHero';
 import { CourseTestimonials } from '../components/lp/CourseTestimonials';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
@@ -8,7 +9,6 @@ import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
-import { VSL_VIDEO_URL } from '../lib/vslVideo';
 import { getPilotLandingTranslation, localizePilotCopy } from '../lib/pilotLandingPortugal';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
@@ -16,11 +16,9 @@ import { trackEvent } from '../components/AnalyticsTracker';
 import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import {
-    getSuspensionFunnelCopy,
     readSuspensionFunnelContext,
     suspensionFunnelEventLabel,
 } from '../lib/suspensionFunnel';
-import { Globe } from 'lucide-react';
 // Shader pesado (~124KB gzip): carregado sob demanda só quando o CTA final entra em tela
 const AnimatedShaderBackground = lazy(() => import('../components/ui/animated-shader-background'));
 import {
@@ -210,7 +208,6 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
         [checkoutBaseUrl],
     );
     const funnel = useMemo(() => readSuspensionFunnelContext('dark'), []);
-    const funnelCopy = getSuspensionFunnelCopy(currentLang, funnel.angle);
     const funnelEventLabel = suspensionFunnelEventLabel(funnel);
 
     const { shouldAnimate } = useMotionConfig();
@@ -230,70 +227,21 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
         if (id === 'cta-final') trackEvent('Funil Suspensão', 'offer_section_click', funnelEventLabel);
     };
 
-    /* Apresentação opcional: todas as seções ficam disponíveis desde a entrada. */
-    const [videoPlaying, setVideoPlaying] = useState(false);
-    const [videoActivated, setVideoActivated] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
-    const [videoProgress, setVideoProgress] = useState(0);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const milestonesRef = useRef<Set<number>>(new Set());
-
-    // CTA final: só monta o shader pesado quando a seção se aproxima da viewport
+    const primaryCtaRef = useRef<HTMLButtonElement>(null);
+    const [showStickyOffer, setShowStickyOffer] = useState(false);
     const ctaRef = useRef<HTMLElement>(null);
     const ctaInView = useInView(ctaRef, { once: true, margin: '300px' });
 
-    const handlePlayVideo = () => {
-        setVideoActivated(true);
-        requestAnimationFrame(() => {
-            if (videoRef.current) {
-                if (!videoRef.current.currentSrc) videoRef.current.load();
-                videoRef.current.muted = isMuted;
-                videoRef.current.play().catch(() => {});
-                setVideoPlaying(true);
-                trackEvent('VSL', 'vsl_play', 'Curso Piloto');
-            }
+    useEffect(() => {
+        const primary = primaryCtaRef.current;
+        if (!primary) return;
+        const observer = new IntersectionObserver(([entry]) => {
+            // Never compete with the main CTA, including when it starts below the fold.
+            setShowStickyOffer(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0);
         });
-    };
-
-    const handleUnmuteAudio = () => {
-        setIsMuted(false);
-        if (!videoActivated) {
-            setVideoActivated(true);
-        }
-        requestAnimationFrame(() => {
-            if (videoRef.current) {
-                videoRef.current.muted = false;
-                videoRef.current.play().catch(() => {});
-                setVideoPlaying(true);
-                trackEvent('VSL', 'vsl_unmute', 'Curso Piloto');
-            }
-        });
-    };
-
-    const handleTimeUpdate = () => {
-        if (!videoRef.current) return;
-        const current = videoRef.current.currentTime;
-        const duration = videoRef.current.duration || 1;
-        const progressPercent = Math.floor((current / duration) * 100);
-        setVideoProgress(progressPercent);
-
-        if (progressPercent >= 25 && !milestonesRef.current.has(25)) {
-            milestonesRef.current.add(25);
-            trackEvent('VSL', 'vsl_25', 'Curso Piloto');
-        }
-        if (progressPercent >= 50 && !milestonesRef.current.has(50)) {
-            milestonesRef.current.add(50);
-            trackEvent('VSL', 'vsl_50', 'Curso Piloto');
-        }
-        if (progressPercent >= 75 && !milestonesRef.current.has(75)) {
-            milestonesRef.current.add(75);
-            trackEvent('VSL', 'vsl_75', 'Curso Piloto');
-        }
-        if (progressPercent >= 100 && !milestonesRef.current.has(100)) {
-            milestonesRef.current.add(100);
-            trackEvent('VSL', 'vsl_100', 'Curso Piloto');
-        }
-    };
+        observer.observe(primary);
+        return () => observer.disconnect();
+    }, []);
 
     /* ─── SEO: canonical próprio + Open Graph específicos do curso ─── */
     /* (SPA: Google executa JS e lê isto; para preview garantido no WhatsApp seria
@@ -404,206 +352,13 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden pb-24">
 
-            {/* ── STICKY BARRA DE OFERTA E IDIOMA ── */}
-            <div className="sticky top-0 z-[100] bg-black/90 backdrop-blur-md border-b border-wtech-gold/20 py-2.5 px-4 text-center">
-                <div className="container mx-auto flex flex-wrap items-center justify-between gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-wtech-gold">
-                    <div className="flex items-center gap-2">
-                        <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-6 w-auto mr-2" />
-                        <span>FORMAÇÃO ONLINE</span>
-                        <span className="hidden md:inline text-white/30">•</span>
-                        <span className="text-gray-300 hidden sm:inline">Suspensão & ergonomia Off-Road</span>
-                    </div>
-
-                    {/* Interactive Language Selector */}
-                    <div className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-full border border-wtech-gold/30">
-                        <Globe size={13} className="text-wtech-gold ml-1.5 shrink-0" />
-                        {(['pt-PT', 'es', 'en', 'pt-BR'] as LPLanguage[]).map((langKey) => {
-                            const item = lpTranslations[langKey];
-                            const active = currentLang === langKey;
-                            return (
-                                <button
-                                    key={langKey}
-                                    onClick={() => handleLanguageChange(langKey)}
-                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                                        active
-                                            ? 'bg-gradient-to-r from-wtech-gold to-amber-600 text-black font-extrabold shadow-sm'
-                                            : 'text-gray-400 hover:text-white hover:bg-white/10'
-                                    }`}
-                                    title={item.langName}
-                                >
-                                    <span>{item.flag}</span>
-                                    <span>{langKey === 'pt-PT' ? 'PT' : langKey === 'pt-BR' ? 'BR' : langKey.toUpperCase()}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-
-            {/* ═══════════════════════════════════════════ */}
-            {/* 1 · HERO COMPLETO COM VSL VENDAS          */}
-            {/* ═══════════════════════════════════════════ */}
-            <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-12 md:pt-6 pb-16">
-                {/* BG */}
-                <div className="absolute inset-0 z-0">
-                    <motion.div
-                        initial={{ scale: 1.05 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: shouldAnimate ? 1.2 : 0, ease: 'easeOut' }}
-                        className="absolute inset-0"
-                    >
-                        <picture>
-                            <source media="(min-width: 768px)" srcSet="/hero-desktop-alex.webp" type="image/webp" />
-                            <img
-                                src="/hero-mobile-alex.webp"
-                                alt={localize("Alex Crepaldi ajustando a suspensão de uma moto Off-Road")}
-                                fetchPriority="high"
-                                decoding="async"
-                                width={1920}
-                                height={1280}
-                                className="absolute inset-0 w-full h-full object-cover object-top lg:object-center opacity-40 blur-sm scale-105"
-                            />
-                        </picture>
-                    </motion.div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/90 to-black/80 z-10" />
-                </div>
-
-                <div className="container mx-auto px-4 sm:px-6 relative z-20 pt-6 pb-12">
-                    <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
-
-                        {/* Top Badge */}
-                        <motion.div initial="hidden" animate="visible" variants={v} className="inline-flex items-center gap-2 border border-wtech-gold/40 bg-wtech-gold/10 backdrop-blur-md px-4 py-1.5 rounded-full mb-6">
-                            <Zap size={14} className="text-wtech-gold animate-pulse" />
-                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-wtech-gold">
-                                {funnel.flow === 'vsl_lp'
-                                    ? funnelCopy.continuity
-                                    : funnel.personalized
-                                        ? funnelCopy.label
-                                        : localize("APRESENTAÇÃO EXCLUSIVA PARA PILOTOS & MECÂNICOS")}
-                            </span>
-                        </motion.div>
-
-                        {/* VSL Main Headline */}
-                        <motion.h1 initial="hidden" animate="visible" variants={v} className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-[0.95] mb-4 text-white drop-shadow-2xl max-w-3xl">
-                            {t.hero.titlePart1} <span className="text-transparent bg-clip-text bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600">{t.hero.titleHighlight}</span>
-                        </motion.h1>
-
-                        <motion.p initial="hidden" animate="visible" variants={v} className="text-sm sm:text-lg text-gray-300 mb-8 max-w-2xl font-medium">
-                            {t.hero.subtitle}
-                        </motion.p>
-
-                        {/* VSL VIDEO PLAYER CONTAINER (DOMINANT CENTRAL FOCUS) */}
-                        <motion.div
-                            initial="hidden"
-                            animate="visible"
-                            variants={scaleIn}
-                            className="relative w-full aspect-video rounded-2xl overflow-hidden border-2 border-wtech-gold/30 shadow-[0_0_80px_rgba(212,175,55,0.25)] bg-black group my-2"
-                        >
-                            {/* Status Header Bar */}
-                            <div className="absolute top-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-white/10">
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-2.5 w-2.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
-                                    </span>
-                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-200">APRESENTAÇÃO DO MÉTODO W-TECH</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {isMuted ? (
-                                        <button onClick={handleUnmuteAudio} className="flex items-center gap-1 text-[10px] text-amber-400 font-bold hover:underline cursor-pointer">
-                                            <VolumeX size={14} /> {localize("Ativar Som")}
-                                        </button>
-                                    ) : (
-                                        <button onClick={() => setIsMuted(true)} className="flex items-center gap-1 text-[10px] text-gray-400 font-bold hover:underline cursor-pointer">
-                                            <Volume2 size={14} className="text-wtech-gold" /> {localize("Áudio Ligado")}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Unmute Alert Overlay (If muted or paused) */}
-                            {isMuted && videoPlaying && (
-                                <div
-                                    onClick={handleUnmuteAudio}
-                                    className="absolute top-12 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-red-600 to-amber-600 text-white font-black text-xs sm:text-sm px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-2 animate-bounce cursor-pointer hover:scale-105 transition-transform border border-white/30"
-                                >
-                                    <VolumeX size={18} />
-                                    <span>{localize("SEU ÁUDIO ESTÁ DESLIGADO — CLIQUE PARA OUVIR")}</span>
-                                </div>
-                            )}
-
-                            {/* Video Element */}
-                            <video
-                                ref={videoRef}
-                                poster="/images/vsl-thumbnail.webp"
-                                controls={videoActivated}
-                                playsInline
-                                preload="none"
-                                muted={isMuted}
-                                onTimeUpdate={handleTimeUpdate}
-                                onEnded={() => {
-                                    setVideoPlaying(false);
-                                }}
-                                className="w-full h-full object-cover pt-8 sm:pt-0"
-                                onPlay={() => setVideoPlaying(true)}
-                                onPause={() => setVideoPlaying(false)}
-                            >
-                                {videoActivated && (
-                                    <source src={VSL_VIDEO_URL} type="video/mp4" />
-                                )}
-                                {localize("Seu navegador não suporta vídeos.")}
-                            </video>
-
-                            {/* Initial Play Overlay */}
-                            {!videoActivated && (
-                                <button
-                                    type="button"
-                                    aria-label={localize("Assistir à apresentação do curso")}
-                                    onClick={handlePlayVideo}
-                                    className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 group-hover:bg-black/40 transition-colors z-20 cursor-pointer pt-6"
-                                >
-                                    <div className="relative mb-3">
-                                        <div className="absolute inset-0 bg-wtech-gold/40 rounded-full animate-ping scale-150 opacity-30" />
-                                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-tr from-wtech-gold to-yellow-400 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(212,175,55,0.8)] group-hover:scale-110 transition-transform">
-                                            <Play fill="black" size={36} className="text-black ml-1" />
-                                        </div>
-                                    </div>
-                                    <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-white drop-shadow-md bg-black/60 px-4 py-1.5 rounded-full border border-wtech-gold/40">
-                                        {localize("CONHEÇA O MÉTODO W-TECH")}
-                                    </span>
-                                </button>
-                            )}
-
-                            {/* Progress bar at the bottom */}
-                            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-800 z-30">
-                                <div
-                                    className="h-full bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-500 transition-all duration-300"
-                                    style={{ width: `${videoProgress}%` }}
-                                />
-                            </div>
-                        </motion.div>
-
-                        <div className="w-full mt-8 flex flex-col items-center gap-5">
-                            <button
-                                type="button"
-                                data-offer-cta="hero"
-                                onClick={() => scrollTo('cta-final')}
-                                className="w-full max-w-lg min-h-14 bg-gradient-to-r from-wtech-gold via-yellow-400 to-amber-600 text-black px-7 py-5 rounded-xl font-black text-sm sm:text-base uppercase tracking-wider shadow-[0_12px_40px_rgba(212,175,55,0.18)] hover:brightness-110 transition flex items-center justify-center gap-3"
-                            >
-                                {localize("Quero dominar os ajustes da minha moto")} <ArrowRight size={20} className="shrink-0" />
-                            </button>
-                            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-gray-300 text-xs">
-                                <span className="inline-flex items-center gap-1.5"><Clock size={15} className="text-wtech-gold" /> 12 meses de acesso</span>
-                                <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15} className="text-wtech-gold" /> Garantia de 7 dias</span>
-                                <span className="inline-flex items-center gap-1.5"><Award size={15} className="text-wtech-gold" /> {localize("Certificado incluso")}</span>
-                            </div>
-                            <a href="#conteudo" className="min-h-11 inline-flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors">
-                                {localize("Explore o curso no seu ritmo")} <ArrowDown size={14} />
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <ImmersivePilotHero
+                language={currentLang}
+                onLanguageChange={handleLanguageChange}
+                onOfferClick={() => scrollTo('cta-final')}
+                primaryCtaRef={primaryCtaRef}
+                promise={`${t.hero.titlePart1} ${t.hero.titleHighlight}`}
+            />
 
             {/* ═══════════════════════════════════════════ */}
             {/* Conteúdo completo, independente da reprodução do vídeo. */}
@@ -1120,7 +875,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
             {/* ═══════════════════════════════════════════ */}
             {/* 7 · DEPOIMENTOS / PROVAS                   */}
             {/* ═══════════════════════════════════════════ */}
-            <CourseTestimonials language={currentLang} onOfferClick={() => scrollTo('cta-final')} onMediaOpen={() => videoRef.current?.pause()} />
+            <CourseTestimonials language={currentLang} onOfferClick={() => scrollTo('cta-final')} />
 
             {/* ═══════════════════════════════════════════ */}
             {/* 8 · OFERTA IRRECUSÁVEL E CTA FINAL         */}
@@ -1369,7 +1124,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
             </footer>
             </div>
 
-            <div className="fixed bottom-0 inset-x-0 z-[90] border-t border-wtech-gold/20 bg-zinc-950/95 backdrop-blur-xl px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+            {showStickyOffer && <div data-sticky-offer className="fixed bottom-0 inset-x-0 z-[90] border-t border-wtech-gold/20 bg-zinc-950/95 backdrop-blur-xl px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
                 <div className="mx-auto max-w-5xl flex items-center justify-between gap-4">
                     <div className="hidden sm:block">
                         <p className="text-[10px] uppercase tracking-[0.18em] text-wtech-gold">Curso Online de Suspensão</p>
@@ -1384,7 +1139,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                         Conhecer a formação <ArrowRight size={17} />
                     </button>
                 </div>
-            </div>
+            </div>}
 
 
 
