@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.41.0",
+    "date": "2026-09-09",
+    "title": "Mockups e destaque dos materiais incluidos no curso",
+    "changes": [
+      "Apresenta mockups ilustrativos dos quatro materiais de apoio na landing de suspensao.",
+      "Destaca valores atribuidos aos bonus e custo adicional zero, com precos regionais para Brasil e Portugal."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.40.1",
     "date": "2026-09-09",
     "title": "VSL visivel na landing de suspensao",

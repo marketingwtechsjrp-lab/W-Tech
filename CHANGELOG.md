@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.41.0 (2026-09-09) - Mockups e destaque dos materiais incluidos no curso
+- Apresenta mockups ilustrativos dos quatro materiais de apoio na landing de suspensao.
+- Destaca valores atribuidos aos bonus e custo adicional zero, com precos regionais para Brasil e Portugal.
+
 ## v3.40.1 (2026-09-09) - VSL visivel na landing de suspensao
 - Exibe a VSL diretamente na pagina, com capa e reproducao no proprio player, logo apos a abertura.
 - Mantem o video opcional e a rolagem livre para Brasil e Portugal.

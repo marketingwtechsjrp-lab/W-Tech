@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Suspense, lazy, useMemo } from 'rea
 import { motion, useReducedMotion, useInView } from 'framer-motion';
 import { Marquee } from '../components/ui/marquee';
 import { ImmersivePilotHero } from '../components/lp/ImmersivePilotHero';
+import { CourseBonusMaterials } from '../components/lp/CourseBonusMaterials';
 import { CourseTestimonials } from '../components/lp/CourseTestimonials';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
@@ -823,54 +824,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
             {/* ═══════════════════════════════════════════ */}
             {/* 6 · BÔNUS / EMPILHAMENTO DE VALOR           */}
             {/* ═══════════════════════════════════════════ */}
-            <section className="py-24 bg-[#0a0202] relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#E6241D]/40 to-transparent" />
-                <div className="absolute -left-[20%] top-[20%] w-[50%] h-[50%] bg-[#E6241D]/10 blur-[120px] rounded-full z-0 pointer-events-none" />
-
-                <div className="container mx-auto px-6 relative z-10">
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }} variants={stagger} className="text-center mb-16">
-                        <motion.span variants={v} className="text-[#E6241D] font-black uppercase tracking-[0.3em] text-[10px] md:text-xs">Material de Apoio Oficial</motion.span>
-                        <motion.h2 variants={v} className="text-4xl md:text-6xl font-black uppercase mt-4 mb-6 tracking-tighter">
-                            {localize("Da aula para")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E6241D] to-orange-500">{localize("a sua moto")}</span>
-                        </motion.h2>
-                        <motion.p variants={v} className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
-                            {localize("Ao garantir sua vaga agora, você leva ferramentas complementares que nossa própria equipe usa.")}
-                        </motion.p>
-                    </motion.div>
-
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} variants={stagger} className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
-                        {[
-                            { title: localize("Planilha de Regulagem de SAG"), icon: <Activity size={24} /> },
-                            { title: localize("Planilha de Regulagem de PSI"), icon: <Gauge size={24} /> },
-                            { title: localize("Comparativo de Óleos"), icon: <Move size={24} /> },
-                            { title: localize("Comparativo de Molas"), icon: <CheckCircle size={24} /> },
-                        ].map((bonus, i) => (
-                            <motion.div
-                                key={i}
-                                variants={v}
-                                custom={i}
-                                whileHover={shouldAnimate ? { y: -5, boxShadow: '0 15px 40px rgba(230,36,29,0.2)' } : undefined}
-                                className="flex flex-col gap-4 p-8 bg-zinc-950/80 border border-white/5 hover:border-[#E6241D]/30 rounded-2xl transition-all cursor-default relative overflow-hidden group shadow-lg"
-                            >
-                                <div className="absolute right-0 top-0 w-32 h-32 bg-[#E6241D]/10 rounded-full blur-[30px] group-hover:bg-[#E6241D]/20 transition-colors" />
-
-                                <div className="flex items-center gap-4 mb-2 relative z-10">
-                                    <div className="w-14 h-14 rounded-xl bg-[#E6241D]/10 flex items-center justify-center text-[#E6241D] shrink-0 border border-[#E6241D]/20 group-hover:scale-110 transition-transform">
-                                        {bonus.icon}
-                                    </div>
-                                    <h3 className="font-black text-white text-lg md:text-xl uppercase tracking-wide leading-snug">{bonus.title}</h3>
-                                </div>
-                                <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-2 relative z-10 mt-2">
-                                    <span className="text-gray-400 text-xs">Material de consulta</span>
-                                    <span className="inline-flex items-center gap-1.5 bg-wtech-gold/15 border border-wtech-gold/40 text-wtech-gold font-black uppercase text-[11px] tracking-widest px-3 py-1.5 rounded-lg">
-                                        <CheckCircle size={13} /> {localize("Incluso no curso")}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                </div>
-            </section>
+            <CourseBonusMaterials language={currentLang} price={price} onOfferClick={() => scrollTo('cta-final')} />
 
             {/* ═══════════════════════════════════════════ */}
             {/* 7 · DEPOIMENTOS / PROVAS                   */}

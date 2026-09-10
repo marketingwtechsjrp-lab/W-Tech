@@ -24,7 +24,7 @@ for (const region of ['br', 'intl']) {
             const matches: string[] = [];
             while (walker.nextNode()) {
                 const node = walker.currentNode;
-                if (!node.parentElement?.closest('#cta-final, script, style') && /R\$|€/.test(node.textContent || '')) matches.push(node.textContent!);
+                if (!node.parentElement?.closest('#cta-final, #materiais-inclusos, script, style') && /R\$|€/.test(node.textContent || '')) matches.push(node.textContent!);
             }
             return matches;
         });
@@ -184,3 +184,19 @@ test('economia de dados e movimento reduzido usam imagem sem baixar vídeo', asy
     await page.locator('[data-offer-cta="hero"]').click();
     await expect(page.locator('#kiwify-checkout-btn-lp-ergonomia')).toBeVisible();
 });
+
+for (const market of [{lang:'pt-BR',region:'br',total:'R$ 997,00',zero:'R$ 0'}, {lang:'pt-PT',region:'intl',total:'150 €',zero:'0 €'}]) {
+    test(`bônus ilustrados com valor e custo adicional zero (${market.lang})`, async ({ page }) => {
+        await page.setViewportSize({width:390,height:844});
+        await page.goto(`/curso-suspensao-piloto?lang=${market.lang}&regiao=${market.region}`);
+        const bonuses=page.locator('#materiais-inclusos');
+        await bonuses.scrollIntoViewIfNeeded();
+        await expect(bonuses.locator('article')).toHaveCount(4);
+        await expect(bonuses.locator('.course-bonus-total s')).toHaveText(market.total);
+        await expect(bonuses.locator('.course-bonus-total-zero strong')).toHaveText(market.zero);
+        await expect(bonuses.locator('.course-bonus-disclosure')).toContainText('ilustrativos');
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        await bonuses.getByRole('button').click();
+        await expect(page.locator('#kiwify-checkout-btn-lp-ergonomia')).toBeVisible();
+    });
+}
