@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.41.3 (2026-09-14) - Nova identidade visual da pagina de bio
+- Renova a bio com botoes vermelhos, fundo animado uniforme com cenas de motos e marca-d'agua W-Tech.
+- Mantem os cards de cursos com imagens, periodos e locais corretos em uma composicao otimizada para celular.
+
 ## v3.41.2 (2026-09-14) - Corrige o topo da landing de Lisboa
 - Posiciona os logos da W-Tech e Liqui Moly dentro do hero, sempre abaixo da faixa de vagas limitadas.
 - Elimina a sobreposicao no navegador interno do Instagram e preserva o espacamento correto no desktop.

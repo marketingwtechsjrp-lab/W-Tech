@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.41.3",
+    "date": "2026-09-14",
+    "title": "Nova identidade visual da pagina de bio",
+    "changes": [
+      "Renova a bio com botoes vermelhos, fundo animado uniforme com cenas de motos e marca-d'agua W-Tech.",
+      "Mantem os cards de cursos com imagens, periodos e locais corretos em uma composicao otimizada para celular."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.41.2",
     "date": "2026-09-14",
     "title": "Corrige o topo da landing de Lisboa",
