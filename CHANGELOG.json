@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.41.2",
+    "date": "2026-09-14",
+    "title": "Corrige o topo da landing de Lisboa",
+    "changes": [
+      "Posiciona os logos da W-Tech e Liqui Moly dentro do hero, sempre abaixo da faixa de vagas limitadas.",
+      "Elimina a sobreposicao no navegador interno do Instagram e preserva o espacamento correto no desktop."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.41.1",
     "date": "2026-09-14",
     "title": "Datas e imagens dos cursos na pagina de bio",

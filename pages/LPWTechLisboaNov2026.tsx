@@ -266,16 +266,17 @@ const LPWTechLisboaNov2026: React.FC = () => {
                 🔥 VAGAS LIMITADAS: GARANTA SUA RESERVA DE VAGA PARA A 2ª EDIÇÃO (LISBOA – 23, 24 E 25 DE OUTUBRO)
             </div>
 
-            {/* NAVIGATION / LOGOS */}
-            <nav className="absolute top-12 left-0 w-full z-40">
-                <div className="container mx-auto px-6 flex justify-between items-center">
-                    <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-8 md:h-12 object-contain" />
-                    <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-8 md:h-12 object-contain bg-white p-1 rounded shadow-lg" />
-                </div>
-            </nav>
-
             {/* HERO SECTION */}
-            <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+            <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-24 md:pt-32">
+                {/* Os logos pertencem ao hero. Assim o topo sempre começa abaixo da
+                    faixa de urgência, inclusive quando ela quebra linha no mobile. */}
+                <nav className="absolute inset-x-0 top-0 z-40 py-5 md:py-7" aria-label="Marcas parceiras">
+                    <div className="container mx-auto px-6 flex justify-between items-center">
+                        <img src="https://w-techstore.com.br/wp-content/uploads/2025/11/logo-w-tech-branca.png" alt="W-Tech" className="h-8 md:h-12 object-contain" />
+                        <img src="https://liquimoly.cloudimg.io/v7/https://www.liqui-moly.com/static/version1765819485/frontend/limo/base/default/images/logo.svg" alt="Liqui Moly" className="h-8 md:h-12 object-contain bg-white p-1 rounded shadow-lg" />
+                    </div>
+                </nav>
+
                 {/* Background Video/Image Overlay */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/40 to-[#050505] z-10"></div>
