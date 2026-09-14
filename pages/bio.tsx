@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Instagram, Facebook, Linkedin, MessageCircle, GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
+import { Instagram, Facebook, Linkedin, MessageCircle, GraduationCap, ArrowRight, Loader2, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BioLink {
@@ -29,6 +29,41 @@ interface BioConfig {
     text_color: string;
 }
 
+interface BioCourse {
+    id: string;
+    title: string;
+    slug?: string | null;
+    date: string;
+    date_end?: string | null;
+    location?: string | null;
+    image?: string | null;
+    custom_link?: string | null;
+}
+
+const courseDateFormatter = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    timeZone: 'UTC',
+});
+
+const formatCourseDate = (date: string) => courseDateFormatter.format(new Date(date));
+
+const formatCourseDateRange = (course: BioCourse) => {
+    const start = formatCourseDate(course.date);
+    if (!course.date_end || course.date_end.split('T')[0] === course.date.split('T')[0]) return start;
+
+    const startDate = new Date(course.date);
+    const endDate = new Date(course.date_end);
+    const sameMonth = startDate.getUTCMonth() === endDate.getUTCMonth()
+        && startDate.getUTCFullYear() === endDate.getUTCFullYear();
+
+    return sameMonth
+        ? `${String(startDate.getUTCDate()).padStart(2, '0')} a ${formatCourseDate(course.date_end)}`
+        : `${start} a ${formatCourseDate(course.date_end)}`;
+};
+
+const getCourseHref = (course: BioCourse) => course.custom_link || `/lp/${course.slug || course.id}`;
+
 const BioPage = () => {
     // Helper to extract YouTube ID
     const getYouTubeId = (url: string) => {
@@ -39,7 +74,7 @@ const BioPage = () => {
     };
 
     const [config, setConfig] = useState<BioConfig | null>(null);
-    const [courses, setCourses] = useState<any[]>([]);
+    const [courses, setCourses] = useState<BioCourse[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -62,11 +97,13 @@ const BioPage = () => {
 
         // 2. Fetch Courses if needed
         if (parsedConfig?.show_latest_courses) {
+            const today = new Date();
+            const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             const { data: coursesData } = await supabase
                 .from('SITE_Courses')
-                .select('*')
+                .select('id, title, slug, date, date_end, location, image, custom_link')
                 .eq('status', 'Published')
-                .gte('date', new Date().toISOString())
+                .gte('date', localDate)
                 .order('date', { ascending: true })
                 .limit(3);
             if (coursesData) setCourses(coursesData);
@@ -233,24 +270,39 @@ const BioPage = () => {
                         animate={{ opacity: 1 }}
                         className="w-full space-y-4 mb-10"
                     >
-                        <h3 className="text-xs font-black uppercase tracking-widest opacity-50 mb-2 border-b border-white/10 pb-2">⚠️ Próximos Treinamentos</h3>
+                        <h3 className="text-xs font-black uppercase tracking-widest opacity-60 mb-2 border-b border-white/10 pb-2">Próximos Treinamentos</h3>
                         {courses.map((course, idx) => (
                             <motion.a
                                 key={course.id}
-                                href={`/lp/${course.slug || course.id}`}
-                                className="block w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all group"
+                                href={getCourseHref(course)}
+                                className="block w-full overflow-hidden bg-black/35 backdrop-blur-md border border-white/15 rounded-2xl hover:bg-black/50 hover:border-wtech-gold/50 transition-all group shadow-lg"
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-wtech-gold/20 flex items-center justify-center text-wtech-gold">
+                                <div className="flex min-h-[92px] items-stretch">
+                                    <div className="relative w-24 shrink-0 bg-wtech-gold/15 flex items-center justify-center text-wtech-gold overflow-hidden">
                                         <GraduationCap size={24} />
+                                        {course.image && (
+                                            <img
+                                                src={course.image}
+                                                alt={`Imagem do ${course.title}`}
+                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                loading={idx === 0 ? 'eager' : 'lazy'}
+                                                onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                                            />
+                                        )}
                                     </div>
-                                    <div className="flex-grow">
-                                        <h4 className="text-sm font-bold leading-tight mb-1">{course.title}</h4>
-                                        <p className="text-[10px] opacity-60 font-medium">
-                                            {new Date(course.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })} • {course.location}
-                                        </p>
+                                    <div className="flex min-w-0 flex-grow items-center gap-3 p-4">
+                                        <div className="min-w-0 flex-grow">
+                                            <h4 className="text-sm font-bold leading-tight mb-2">{course.title}</h4>
+                                            <p className="text-[11px] text-wtech-gold font-bold">
+                                                {formatCourseDateRange(course)}
+                                            </p>
+                                            <p className="mt-1 flex items-center gap-1 text-[10px] opacity-65 font-medium">
+                                                <MapPin size={10} className="shrink-0" />
+                                                <span className="truncate">{course.location || 'Local a definir'}</span>
+                                            </p>
+                                        </div>
+                                        <ArrowRight size={17} className="shrink-0 text-wtech-gold transition-transform group-hover:translate-x-1" />
                                     </div>
-                                    <ArrowRight size={16} className="text-wtech-gold opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
                             </motion.a>
                         ))}

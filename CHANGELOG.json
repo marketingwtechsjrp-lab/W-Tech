@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.41.1",
+    "date": "2026-09-14",
+    "title": "Datas e imagens dos cursos na pagina de bio",
+    "changes": [
+      "Corrige o recuo de um dia nas datas dos proximos treinamentos causado pela conversao de fuso horario.",
+      "Exibe o periodo completo, a imagem oficial e o local de cada curso nos cards da pagina de bio."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.41.0",
     "date": "2026-09-09",
     "title": "Mockups e destaque dos materiais incluidos no curso",

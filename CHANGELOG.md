@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.41.1 (2026-09-14) - Datas e imagens dos cursos na pagina de bio
+- Corrige o recuo de um dia nas datas dos proximos treinamentos causado pela conversao de fuso horario.
+- Exibe o periodo completo, a imagem oficial e o local de cada curso nos cards da pagina de bio.
+
 ## v3.41.0 (2026-09-09) - Mockups e destaque dos materiais incluidos no curso
 - Apresenta mockups ilustrativos dos quatro materiais de apoio na landing de suspensao.
 - Destaca valores atribuidos aos bonus e custo adicional zero, com precos regionais para Brasil e Portugal.
