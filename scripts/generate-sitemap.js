@@ -88,13 +88,14 @@ async function generateSitemap() {
   );
   const courseData = await consultar(
     'SITE_Courses',
-    supabase.from('SITE_Courses').select('id, slug, type, date, updated_at').eq('status', 'Published'),
+    // SITE_Courses não tem `updated_at` (só created_at, date e date_end).
+    supabase.from('SITE_Courses').select('id, slug, type, date, created_at').eq('status', 'Published'),
   );
-  // SITE_BlogPosts não tem `updated_at` (ver fix_blog_schema.sql): as colunas de
-  // tempo são `created_at` e `date`. Pedir updated_at aqui era o 400 silencioso.
+  // SITE_BlogPosts não tem `updated_at` nem `created_at` (ver fix_blog_schema.sql):
+  // a única coluna de tempo é `date`. Pedir outra aqui era o 400 silencioso.
   const blogData = await consultar(
     'SITE_BlogPosts',
-    supabase.from('SITE_BlogPosts').select('slug, date, created_at').eq('status', 'Published'),
+    supabase.from('SITE_BlogPosts').select('slug, date').eq('status', 'Published'),
   );
   const glossaryData = await consultar(
     'SITE_GlossaryTerms',
@@ -152,7 +153,7 @@ async function generateSitemap() {
   courseData.forEach(c => {
     const identifier = c.slug || c.id;
     if (identifier && !slugsSeen.has(identifier)) {
-      const lastmod = formatDate(c.updated_at || c.date);
+      const lastmod = formatDate(c.date || c.created_at);
       sitemap += `  <url>\n    <loc>${baseUrl}/lp/${escapeXml(identifier)}</loc>\n    ${lastmod ? `<lastmod>${lastmod}</lastmod>\n    ` : ''}<priority>0.7</priority>\n  </url>\n`;
       slugsSeen.add(identifier);
     }
