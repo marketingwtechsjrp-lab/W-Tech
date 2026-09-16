@@ -1,5 +1,19 @@
 [
   {
+    "version": "3.42.0",
+    "date": "2026-09-16",
+    "title": "Rastreamento Google Ads/GA4 (conversoes, click IDs no CRM) e correcoes de SEO/404",
+    "changes": [
+      "Conversoes padronizadas generate_lead, begin_checkout e purchase publicadas no dataLayer para os funis do curso online, presencial Brasil e Lisboa (Google Ads, GA4 e Meta via GTM), com dados para Enhanced Conversions",
+      "Leads passam a gravar gclid/gbraid/wbraid/fbclid/gad_source, pagina de entrada e referrer (SITE_Leads)",
+      "Webhook da Kiwify marca o comprador do curso online como lead ganho no CRM",
+      "Pageview de navegacao interna (spa_page_view) enviado ao GTM sem duplicar o primeiro carregamento",
+      "Servidor devolve 404/410 reais para URLs inexistentes e sitemap completo",
+      "robots.txt libera URLs com parametros para o Google ler a canonical"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.41.3",
     "date": "2026-09-14",
     "title": "Nova identidade visual da pagina de bio",

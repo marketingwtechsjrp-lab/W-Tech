@@ -1,5 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
+
+## v3.42.0 (2026-09-16) - Rastreamento Google Ads/GA4 (conversoes, click IDs no CRM) e correcoes de SEO/404
+- Conversoes padronizadas generate_lead, begin_checkout e purchase publicadas no dataLayer para os funis do curso online, presencial Brasil e Lisboa (Google Ads, GA4 e Meta via GTM), com dados para Enhanced Conversions
+- Leads passam a gravar gclid/gbraid/wbraid/fbclid/gad_source, pagina de entrada e referrer (SITE_Leads)
+- Webhook da Kiwify marca o comprador do curso online como lead ganho no CRM
+- Pageview de navegacao interna (spa_page_view) enviado ao GTM sem duplicar o primeiro carregamento
+- Servidor devolve 404/410 reais para URLs inexistentes e sitemap completo
+- robots.txt libera URLs com parametros para o Google ler a canonical
 ## v3.41.3 (2026-09-14) - Nova identidade visual da pagina de bio
 - Renova a bio com botoes vermelhos, fundo animado uniforme com cenas de motos e marca-d'agua W-Tech.
 - Mantem os cards de cursos com imagens, periodos e locais corretos em uma composicao otimizada para celular.
