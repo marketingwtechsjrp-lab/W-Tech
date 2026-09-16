@@ -18,7 +18,10 @@ export const AnalyticsTracker = () => {
     const lastMetaRoute = useRef(routePath);
     // A primeira tela já é medida pela tag de configuração do GA4 no GTM;
     // `spa_page_view` só representa navegação interna, para não contar em dobro.
-    const isFirstPageView = useRef(true);
+    // Guardamos o pathname, não o location inteiro: o decorador do GTM acrescenta
+    // `sck`/`src` à URL logo após o carregamento e o `navigate(replace)` que limpa
+    // isso muda só a query — não é uma página nova.
+    const lastPageViewPath = useRef(location.pathname);
 
     useEffect(() => {
         if (shouldCleanAutoTracking || lastMetaRoute.current === routePath) return;
@@ -85,9 +88,8 @@ export const AnalyticsTracker = () => {
         // document.title antes de o pageview sair — senão o GA4 recebe o título
         // da página anterior.
         let pageViewTimer: number | undefined;
-        if (isFirstPageView.current) {
-            isFirstPageView.current = false;
-        } else {
+        if (location.pathname !== lastPageViewPath.current) {
+            lastPageViewPath.current = location.pathname;
             const { pathname, search } = location;
             pageViewTimer = window.setTimeout(() => pushPageView(pathname, search), 0);
         }
