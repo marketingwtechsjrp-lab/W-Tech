@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Request, Response } from 'express';
+import { findExistingLead } from '../../lib/leadMatch.js';
 
 /**
  * Rota Express — Webhook da Kiwify (portada da Supabase Edge Function
@@ -229,6 +230,71 @@ async function sendPixRecovery(
   return okVideo && okQr && okCode;
 }
 
+/**
+ * Compra aprovada na Kiwify → lead GANHO no CRM.
+ *
+ * Antes, o comprador do curso online nunca virava "Converted": o webhook só
+ * alimentava a fila de WhatsApp, e o lead do quiz/WhatsApp ficava "Novo" para
+ * sempre — o funil de vendas não fechava. Agora a ficha é localizada por
+ * e-mail/telefone (tolerante a formato) e marcada como ganha; se a pessoa
+ * comprou sem passar por LP nenhuma, nasce uma ficha já convertida. Nunca lança.
+ */
+async function marcarCompraKiwifyNoCrm(
+  supabase: SupabaseClient,
+  orderData: any,
+  customer: any,
+  orderId: string,
+): Promise<void> {
+  try {
+    const email = String(customer.email || '').trim().toLowerCase() || null;
+    const phone = String(customer.mobile || customer.phone || '').trim() || null;
+    if (!email && !phone) return;
+
+    const productName = orderData.Product?.product_name || orderData.product_name || 'Curso Online de Suspensão';
+    const centavos = Number(orderData.Commissions?.charge_amount ?? orderData.charge_amount ?? 0);
+    const valor = centavos > 0 ? centavos / 100 : 347;
+    const nome = customer.full_name || [customer.first_name, customer.last_name].filter(Boolean).join(' ') || 'Comprador Kiwify';
+    const tagsVenda = ['curso_online_suspensao', 'venda_kiwify', 'checkout_automatico', 'sem_comissao'];
+    const resumo = `Compra aprovada na Kiwify — ${productName} (pedido ${orderId}).`;
+
+    const existente = await findExistingLead<any>(supabase, { email, phone });
+    if (existente) {
+      const tags = Array.from(new Set([...(existente.tags || []), ...tagsVenda]));
+      await supabase
+        .from('SITE_Leads')
+        .update({
+          status: 'Converted',
+          tags,
+          conversion_value: valor,
+          conversion_summary: resumo,
+          conversion_type: 'Course_Purchase',
+          ...(email && !existente.email ? { email } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existente.id);
+      console.log(`[Kiwify Webhook] Lead ${existente.id} marcado como Converted (pedido ${orderId}).`);
+      return;
+    }
+
+    await supabase.from('SITE_Leads').insert([{
+      name: nome,
+      email,
+      phone,
+      type: 'Course_Purchase',
+      status: 'Converted',
+      context_id: 'Curso Online de Suspensão (compra Kiwify)',
+      origin: 'Kiwify',
+      tags: tagsVenda,
+      conversion_value: valor,
+      conversion_summary: resumo,
+      conversion_type: 'Course_Purchase',
+    }]);
+    console.log(`[Kiwify Webhook] Comprador sem ficha: lead criado já convertido (pedido ${orderId}).`);
+  } catch (err) {
+    console.error('[Kiwify Webhook] Não-fatal: falha ao marcar compra no CRM:', err);
+  }
+}
+
 export default async function kiwifyWebhookHandler(req: Request, res: Response) {
   try {
     if (req.method !== 'POST') {
@@ -404,6 +470,9 @@ export default async function kiwifyWebhookHandler(req: Request, res: Response) 
 
       // Send welcome video immediately
       success = await sendWhatsAppVideo(phone, VIDEOS.welcome, CAPTIONS.welcome(name), config);
+
+      // Fecha o funil no CRM: comprador vira lead ganho (idempotente por status).
+      await marcarCompraKiwifyNoCrm(supabase, orderData, customer, String(orderId));
     }
 
     // 3. Logic for Manual Abandonment (Kiwify direct) — com pix manda QR+copia e cola, senão vídeo + link

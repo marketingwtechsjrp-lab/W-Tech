@@ -257,7 +257,7 @@ const LandingPageViewerV3: React.FC = () => {
         context_id: `LP V3: ${lp.title} (${lp.slug})`,
         tags: ['landing_page_v3', lp.slug || 'virtual', checkoutAtivo ? 'checkout_direto' : ''].filter(Boolean),
         origin: window.location.href, assigned_to: null,
-      });
+      }, { itemName: lp.title });
       if (result?.id) trackConfiguredLandingPageRegistration(lp);
       const courseId = (lp as any).courseId || (lp as any).course_id;
       if (checkoutAtivo && courseId && result?.id) {

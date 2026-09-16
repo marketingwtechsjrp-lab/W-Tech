@@ -11,6 +11,7 @@ import { distributeLead } from '../lib/leadDistribution';
 import { createStripePaymentLink } from '../lib/stripe';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
+import { pushBeginCheckout, pushLead } from '../lib/dataLayer';
 import { formatDateLocal } from '../lib/utils';
 import { LISBOA_COURSE_ID, LISBOA_DEPOSIT_PRICE, LISBOA_FULL_PRICE } from '../lib/lisboaOffer';
 
@@ -184,6 +185,16 @@ const CheckoutLisboa: React.FC = () => {
                         .select()
                         .single();
                     leadId = newLead?.id || null;
+                    // Lead nasceu aqui (não veio da LP): conta como conversão de lead.
+                    if (leadId) {
+                        pushLead({
+                            funnel: 'presencial_lisboa',
+                            method: 'checkout',
+                            item_name: 'Curso Presencial W-Tech Lisboa',
+                            lead_id: leadId,
+                            user: { email: emailLc, phone: fone, name: nome },
+                        });
+                    }
                 }
             }
 
@@ -220,6 +231,17 @@ const CheckoutLisboa: React.FC = () => {
             if (!stripeResult.success || !stripeResult.url) {
                 throw new Error(stripeResult.error || 'Erro ao gerar o link de pagamento.');
             }
+
+            // Saída para o Stripe: begin_checkout com o valor escolhido (sinal ou integral).
+            pushBeginCheckout({
+                funnel: 'presencial_lisboa',
+                provider: 'stripe',
+                item_name: 'Curso Presencial W-Tech Lisboa',
+                value: selectedPrice,
+                currency: 'EUR',
+                lead_id: leadId,
+                user: { email: emailLc, phone: fone, name: nome },
+            });
 
             setRedirecting(true);
             setTimeout(() => { window.location.href = stripeResult.url!; }, 700);

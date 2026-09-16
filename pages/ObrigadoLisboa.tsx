@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { syncStudentToLeads } from '../lib/leads';
+import { pushPurchase } from '../lib/dataLayer';
 import { CheckCircle, ArrowRight, Instagram, Globe, MessageCircle } from 'lucide-react';
 
 // Curso Lisboa II — Outubro 2026 (mesmo COURSE_ID usado no CheckoutLisboa).
@@ -43,6 +44,7 @@ const ObrigadoLisboa: React.FC = () => {
     // alimentam mais nada nesta página — o que vale é o que o webhook gravou no banco.
     const enrollmentId = searchParams.get('eid');
     const leadId = searchParams.get('lid');
+    const stripeSessionId = searchParams.get('session_id');
 
     useEffect(() => {
         let cancelled = false;
@@ -168,6 +170,23 @@ const ObrigadoLisboa: React.FC = () => {
                 //    (server/edge/stripe-webhook.ts), que valida a assinatura HMAC e usa
                 //    o amount_total real da sessão — nunca um valor vindo da URL.
                 setStatus(enr.status === 'Confirmed' ? 'success' : 'pending');
+
+                // Conversão de compra (Google Ads/GA4/Meta via GTM) — só com o pagamento
+                // confirmado pelo webhook, com o valor que o Stripe realmente cobrou.
+                // transaction_id = sessão do Stripe (ou payment_id/eid): recarregar a
+                // página não conta de novo.
+                if (enr.status === 'Confirmed') {
+                    pushPurchase({
+                        funnel: 'presencial_lisboa',
+                        provider: 'stripe',
+                        transaction_id: stripeSessionId || enr.payment_id || enr.id,
+                        item_name: enr.SITE_Courses?.title || 'Curso Presencial W-Tech Lisboa',
+                        value: Number(enr.amount_paid || 0),
+                        currency: 'EUR',
+                        lead_id: leadId,
+                        user: { email: enr.student_email, phone: enr.student_phone, name: enr.student_name },
+                    });
+                }
             } catch (err) {
                 console.error('Error confirming payment:', err);
                 setStatus('error');
@@ -176,7 +195,7 @@ const ObrigadoLisboa: React.FC = () => {
 
         confirmPayment();
         return () => { cancelled = true; };
-    }, [enrollmentId, leadId]);
+    }, [enrollmentId, leadId, stripeSessionId]);
 
     const handleQSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

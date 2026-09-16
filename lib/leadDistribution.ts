@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { triggerWebhook } from './webhooks';
 import { getLeadTrackingFields } from './tracking';
 import { findExistingLead, preserveWonStatus } from './leadMatch';
+import { pushLead, type ConversionFunnel } from './dataLayer';
 
 /**
  * Atendentes que recebem leads no rodizio automatico.
@@ -41,13 +42,41 @@ interface LeadPayload {
     [key: string]: any;
 }
 
+interface LeadUpsertOptions {
+    /**
+     * Conversão para GTM/Google Ads. Padrão: presencial Brasil (LPs dinâmicas
+     * do painel). Quem chama de outro funil informa o próprio.
+     */
+    funnel?: ConversionFunnel;
+    method?: 'form' | 'quiz' | 'whatsapp' | 'checkout';
+    itemName?: string;
+    /** `false` quando o chamador já publica o evento por conta própria. */
+    trackConversion?: boolean;
+}
+
+/** Publica `generate_lead` para o GTM. Nunca lança — telemetria não trava o cadastro. */
+const publicarLead = (payload: LeadPayload, leadId: string, options: LeadUpsertOptions) => {
+    if (options.trackConversion === false) return;
+    try {
+        pushLead({
+            funnel: options.funnel ?? 'presencial_brasil',
+            method: options.method ?? 'form',
+            item_name: options.itemName ?? payload.context_id ?? 'Lead',
+            lead_id: leadId,
+            user: { email: payload.email, phone: payload.phone, name: payload.name },
+        });
+    } catch (err) {
+        console.error('[LeadUpsert] generate_lead não publicado (não-fatal):', err);
+    }
+};
+
 /**
  * Handles Lead Creation or Update (Upsert Logic)
  * - Se a pessoa ja existe: atualiza contexto/tags, MANTEM 'assigned_to' e
  *   MANTEM o status quando o lead ja esta ganho (Converted/Matriculated).
  * - If new: Inserts with provided or distributed 'assigned_to'.
  */
-export const handleLeadUpsert = async (payload: LeadPayload) => {
+export const handleLeadUpsert = async (payload: LeadPayload, options: LeadUpsertOptions = {}) => {
     try {
         // 0. Atribuição de tráfego (LEI 10): UTMs capturadas no navegador.
         const tracking = getLeadTrackingFields();
@@ -103,7 +132,11 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
             
             // Trigger Webhook for "Re-conversion"
             await triggerWebhook('webhook_lead', updatePayload);
-            
+
+            // Recadastro também é conversão de mídia: o clique pago que trouxe a
+            // pessoa de volta precisa aparecer no Google Ads/GA4.
+            publicarLead(payload, existingLead.id, options);
+
             return { action: 'updated', id: existingLead.id, assigned_to: existingLead.assigned_to };
 
         } else {
@@ -126,6 +159,8 @@ export const handleLeadUpsert = async (payload: LeadPayload) => {
             if (insertError) throw insertError;
 
             await triggerWebhook('webhook_lead', insertPayload);
+
+            publicarLead(payload, newLead.id, options);
 
             // Automação: inscreve o lead NOVO nos fluxos de boas-vindas
             // (gatilho NovoCadastro). Não-fatal e fire-and-forget — nunca

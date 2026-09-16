@@ -42,7 +42,7 @@ const RegistrationForm = () => {
                 context_id: 'LP_Waitlist_Suspension_Course',
                 tags: ['Suspension_Waitlist', 'Scarcity', 'Instagram_Fomentation'],
                 assigned_to: noemiId
-            });
+            }, { funnel: 'curso_online_piloto', method: 'form', itemName: 'Curso Online de Suspensão (fila de espera)' });
 
             // 2. WhatsApp Dispatch - Secured via active connected instance NoemiMarketing
             const message = `Olá, ${formData.name}! Tudo bem?\n\nAqui é a Noemi da equipe oficial da W-Tech. 🛠️🏁\n\nSua inscrição na FILA DE ESPERA para o *Curso de Regulagem de Suspensão Para Piloto* foi confirmada com sucesso!\n\nE trago uma excelente notícia: por ter entrado na fila hoje, a sua *PROMOÇÃO EXCLUSIVA de R$ 997,00 por apenas R$ 347,00 está 100% GARANTIDA*!\n\nPara receber o link de matrícula com antecedência de 24h e garantir os seus bônus exclusivos, entre agora mesmo no nosso grupo VIP de alunos:\n👉 https://chat.whatsapp.com/BBB7IXWMr2r8H6rQ7T5qNy 🚀\n\nAcelere com a gente!`;

@@ -30,7 +30,7 @@ import {
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { useLanguage } from '../context/LanguageContext';
 import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
-import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
+import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL as VSL_URL } from '../lib/vslVideo';
@@ -142,9 +142,12 @@ const CheckoutButton: React.FC<{
     compact?: boolean;
     className?: string;
     scrollToOffer?: boolean;
-}> = ({ checkoutUrl, label, trackingLabel, compact = false, className = '', scrollToOffer = false }) => (
+    /** Disparado só quando o clique sai para o checkout (não no scroll até a oferta). */
+    onCheckout?: () => void;
+}> = ({ checkoutUrl, label, trackingLabel, compact = false, className = '', scrollToOffer = false, onCheckout }) => (
     <a
         href={scrollToOffer ? '#oferta' : checkoutUrl}
+        onClick={scrollToOffer ? undefined : onCheckout}
         data-track={scrollToOffer ? 'offer_scroll' : 'checkout_click'}
         data-track-label={`${trackingLabel} - Curso Suspensão Piloto V2`}
         data-track-category="LP Curso Suspensão V2"
@@ -341,6 +344,7 @@ const LPErgonomia2: React.FC = () => {
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
     const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
+    const startCheckoutConversion = () => trackCourseCheckoutStart(billingRegion, currentLang);
     const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
     const checkoutProvider = billingRegion === 'intl' ? 'Hotmart' : 'Kiwify';
     const checkoutUrl = useMemo(
@@ -508,6 +512,7 @@ const LPErgonomia2: React.FC = () => {
                         </span>
                         <CheckoutButton
                             checkoutUrl={checkoutUrl}
+                            onCheckout={startCheckoutConversion}
                             label="Quero começar"
                             trackingLabel="Header"
                             compact
@@ -574,6 +579,7 @@ const LPErgonomia2: React.FC = () => {
                         <div className="mt-9 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
                             <CheckoutButton
                                 checkoutUrl={checkoutUrl}
+                                onCheckout={startCheckoutConversion}
                                 label="Quero acertar minha moto"
                                 trackingLabel="Hero"
                                 scrollToOffer
@@ -907,6 +913,7 @@ const LPErgonomia2: React.FC = () => {
                     <Reveal className="mt-9 flex justify-center">
                         <CheckoutButton
                             checkoutUrl={checkoutUrl}
+                            onCheckout={startCheckoutConversion}
                             label="Quero aprender esse método"
                             trackingLabel="Método"
                             scrollToOffer
@@ -998,6 +1005,7 @@ const LPErgonomia2: React.FC = () => {
                     <Reveal className="mt-9 flex justify-center">
                         <CheckoutButton
                             checkoutUrl={checkoutUrl}
+                            onCheckout={startCheckoutConversion}
                             label="Quero acesso aos 11 módulos"
                             trackingLabel="Conteúdo"
                             scrollToOffer
@@ -1149,6 +1157,7 @@ const LPErgonomia2: React.FC = () => {
 
                             <CheckoutButton
                                 checkoutUrl={checkoutUrl}
+                                onCheckout={startCheckoutConversion}
                                 label="Quero começar agora"
                                 trackingLabel="Oferta"
                                 className="mt-8 sm:w-full"
@@ -1251,6 +1260,7 @@ const LPErgonomia2: React.FC = () => {
                     </div>
                     <CheckoutButton
                         checkoutUrl={checkoutUrl}
+                        onCheckout={startCheckoutConversion}
                         label="Quero começar"
                         trackingLabel="Mobile"
                         compact

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { distributeLead } from '../lib/leadDistribution';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
+import { pushLead } from '../lib/dataLayer';
 import {
     CheckCircle,
     ArrowRight,
@@ -205,6 +206,15 @@ const WTechLisboaNov2026: React.FC = () => {
 
             // 2. Dispara Webhook de lead
             await triggerWebhook('webhook_lead', { lead_id: leadData.id, name: form.name, email: form.email, phone: form.phone });
+
+            // Conversão de lead (Google Ads/GA4 via GTM) — antes do redirect para o checkout.
+            pushLead({
+                funnel: 'presencial_lisboa',
+                method: 'form',
+                item_name: 'Curso Presencial W-Tech Lisboa',
+                lead_id: leadData.id,
+                user: { email: form.email, phone: form.phone, name: form.name },
+            });
 
             // 3. Segue para o checkout (escolha de valor + pagamento Stripe), preservando as UTMs da URL
             const params = new URLSearchParams(window.location.search);

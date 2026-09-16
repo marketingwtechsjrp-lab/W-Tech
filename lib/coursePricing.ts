@@ -1,6 +1,7 @@
 import type { LPLanguage } from './lpErgonomiaTranslations';
 import { detectBrowserLandingLanguage, fetchGeoLookup } from './geoLanguage';
 import { normalizeHotmartCheckoutUrl } from './hotmartCheckout';
+import { pushBeginCheckout } from './dataLayer';
 
 export { normalizeHotmartCheckoutUrl } from './hotmartCheckout';
 
@@ -182,6 +183,35 @@ export const getCoursePrice = (
     if (region === 'br') return brl(language);
     return eur(language);
 };
+
+/** Nome do produto nos eventos de conversão (GA4 `item_name`, Google Ads, Meta). */
+export const COURSE_CONVERSION_ITEM = 'Curso Online de Suspensão para Piloto';
+
+/**
+ * Publica `begin_checkout` no dataLayer ao sair para o Kiwify/Hotmart. Uma única
+ * função para as cinco variantes da LP e para a VSL — valor e moeda saem da
+ * mesma tabela de preço que a página exibe, nunca de um número cravado no JSX.
+ */
+export const trackCourseCheckoutStart = (region: BillingRegion, language: LPLanguage = 'pt-BR'): void => {
+    const price = getCoursePrice(region, language);
+    const provider = region === 'br' ? 'kiwify' : 'hotmart';
+    pushBeginCheckout({
+        funnel: 'curso_online_piloto',
+        item_name: COURSE_CONVERSION_ITEM,
+        value: Number(price.schemaPrice),
+        currency: price.schemaCurrency,
+        provider,
+    });
+    // A página de obrigado (/obrigado-suspensao) só conta a compra se a sessão
+    // passou por aqui — visita direta ou robô não vira conversão.
+    try {
+        sessionStorage.setItem(COURSE_CHECKOUT_FLAG, provider);
+    } catch {
+        /* sem storage: a página de obrigado ainda aceita o referrer do checkout */
+    }
+};
+
+export const COURSE_CHECKOUT_FLAG = 'wtech_course_checkout_started';
 
 export const regionFromCountry = (country?: string | null): BillingRegion =>
     country?.trim().toUpperCase() === 'BR' ? 'br' : 'intl';

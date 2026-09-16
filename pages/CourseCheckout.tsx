@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabaseClient';
 import { createMercadoPagoPreference } from '../lib/mercadopago';
 import { formatDateLocal } from '../lib/utils';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { pushBeginCheckout } from '../lib/dataLayer';
 import { useSettings } from '../context/SettingsContext';
 
 interface CourseData {
@@ -178,6 +179,15 @@ const CourseCheckout: React.FC = () => {
             }
 
             trackEvent('Checkout', 'redirected_to_mp', course.title);
+            pushBeginCheckout({
+                funnel: 'presencial_brasil',
+                provider: 'mercadopago',
+                item_name: course.title,
+                value: paymentType === 'deposit' ? depositPrice : Number(course.price) || undefined,
+                currency: 'BRL',
+                lead_id: lid || undefined,
+                user: { email: form.email, phone: form.phone, name: form.name },
+            });
             setRedirecting(true);
 
             // Breve delay para mostrar o estado de redirect antes de sair

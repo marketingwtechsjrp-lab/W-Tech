@@ -6,6 +6,7 @@ import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { trackEvent } from './AnalyticsTracker';
 import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
+import { pushLead } from '../lib/dataLayer';
 
 const DEFAULT_PHONE = '5512982976468';
 
@@ -73,8 +74,17 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                 ...getLeadTrackingFields(),
             };
 
-            const { error: insertError } = await supabase.from('SITE_Leads').insert([payload]);
+            const { data: novoLead, error: insertError } = await supabase.from('SITE_Leads').insert([payload]).select('id').single();
             if (insertError) throw insertError;
+
+            // Conversão de lead para Google Ads/GA4 (via GTM), com dados para Enhanced Conversions.
+            pushLead({
+                funnel: 'curso_online_piloto',
+                method: 'whatsapp',
+                item_name: 'Curso Online de Suspensão',
+                lead_id: novoLead?.id,
+                user: { email: payload.email, phone, name: payload.name },
+            });
 
             trackMetaStandardEvent('Lead', {
                 ...courseContentParams(pageLabel),

@@ -92,7 +92,7 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
                 assigned_to: null // handleLeadUpsert handles logic
             };
 
-            const result = await handleLeadUpsert(initialPayload);
+            const result = await handleLeadUpsert(initialPayload, { funnel: 'presencial_brasil', method: 'quiz', itemName: lp.title });
             if (result?.id) {
                 trackMetaStandardEvent('Lead', {
                     content_name: lp.title,
@@ -175,7 +175,7 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
                     origin: window.location.href,
                     ...resultPayload
                  };
-                 const fb = await handleLeadUpsert(fallbackPayload);
+                 const fb = await handleLeadUpsert(fallbackPayload, { trackConversion: false });
                  if (fb && fb.id) {
                      effectiveLeadId = fb.id;
                      quizSaved = true;

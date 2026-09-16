@@ -304,7 +304,7 @@ const LandingPageViewerV2: React.FC = () => {
         origin: window.location.href,
         assigned_to: null,
       };
-      const result = await handleLeadUpsert(payload);
+      const result = await handleLeadUpsert(payload, { itemName: lp.title });
       if (result?.id) trackConfiguredLandingPageRegistration(lp);
       const courseId = (lp as any).courseId || (lp as any).course_id;
       if (checkoutAtivo && courseId && result?.id) {

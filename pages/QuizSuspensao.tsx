@@ -23,6 +23,7 @@ import type { LucideIcon } from 'lucide-react';
 import SEO from '../components/SEO';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { trackEvent } from '../components/AnalyticsTracker';
+import { pushLead } from '../lib/dataLayer';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { useLanguage } from '../context/LanguageContext';
 import type { SiteLanguage } from '../lib/siteTranslations';
@@ -790,11 +791,18 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                 ...getLeadTrackingFields(),
             };
 
-            const { error: insertError } = await supabase.from('SITE_Leads').insert([payload]);
+            const { data: novoLead, error: insertError } = await supabase.from('SITE_Leads').insert([payload]).select('id').single();
             if (insertError) throw insertError;
 
             await triggerWebhook('webhook_lead', payload).catch(() => undefined);
             trackEvent('Quiz Off-Road', 'lead_captured', `${theme}_${profile}`);
+            pushLead({
+                funnel: 'curso_online_piloto',
+                method: 'quiz',
+                item_name: 'Curso Online de Suspensão',
+                lead_id: novoLead?.id,
+                user: { phone, name },
+            });
             trackMetaStandardEvent('Lead', {
                 content_name: 'Diagnostico Off-Road de Suspensao e Ergonomia',
                 content_category: 'Quiz do Curso Online',

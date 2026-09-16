@@ -201,7 +201,7 @@ export function useLandingPage(ownTemplate: string) {
                 assigned_to: null
             };
 
-            const leadResult = await handleLeadUpsert(payload);
+            const leadResult = await handleLeadUpsert(payload, { itemName: lp.title });
             if (leadResult?.id) trackConfiguredLandingPageRegistration(lp);
 
             const courseIdForCheckout = lp.courseId || (lp as any).course_id;

@@ -7,7 +7,7 @@ import { CourseTestimonials } from '../components/lp/CourseTestimonials';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
-import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
+import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { getPilotLandingTranslation, localizePilotCopy } from '../lib/pilotLandingPortugal';
@@ -922,7 +922,10 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                         <motion.a
                             href={checkoutUrl}
                             id="kiwify-checkout-btn-lp-ergonomia"
-                            onClick={() => trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel)}
+                            onClick={() => {
+                                trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel);
+                                trackCourseCheckoutStart(billingRegion, currentLang);
+                            }}
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}
                             className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"

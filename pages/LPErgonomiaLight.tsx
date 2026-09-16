@@ -26,7 +26,7 @@ import {
     Zap,
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
-import { getCheckoutUrl, getCoursePrice } from '../lib/coursePricing';
+import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { VSL_VIDEO_URL as COURSE_VIDEO } from '../lib/vslVideo';
@@ -732,7 +732,10 @@ const LPErgonomiaLight: React.FC = () => {
                                 <a
                                     href={checkoutUrl}
                                     id="kiwify-checkout-btn-lp-ergonomia-light"
-                                    onClick={() => trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel)}
+                                    onClick={() => {
+                                        trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel);
+                                        trackCourseCheckoutStart(billingRegion, currentLang);
+                                    }}
                                     className="mt-8 flex min-h-16 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d39f32] px-6 text-center text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_18px_45px_rgba(215,173,79,.2)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
                                     {t.offer.cta}

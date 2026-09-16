@@ -203,7 +203,7 @@ const LandingPageViewerV4: React.FC = () => {
             assigned_to: null
         };
 
-        const leadResult = await handleLeadUpsert(payload);
+        const leadResult = await handleLeadUpsert(payload, { itemName: lp.title });
         if (leadResult?.id) trackConfiguredLandingPageRegistration(lp);
 
         // Redireciona ao checkout se: habilitado + curso nacional + tem course_id

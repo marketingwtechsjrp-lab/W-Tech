@@ -16,6 +16,8 @@
  */
 
 const STORAGE_KEY = 'wtech_tracking_params';
+/** Contexto da sessão (página de entrada e referrer) — separado dos params para não vazar ao checkout. */
+const SESSION_CONTEXT_KEY = 'wtech_session_context';
 
 /** Parâmetros de atribuição que queremos preservar e repassar. */
 const TRACKED_KEYS = [
@@ -125,18 +127,55 @@ export function captureTrackingParams(): TrackingParams {
   } catch {
     /* sessionStorage indisponível (modo privado, etc.) — segue sem persistir */
   }
+  captureSessionContext();
   return merged;
+}
+
+interface SessionContext {
+  landing_page?: string;
+  referrer?: string;
+}
+
+/**
+ * Guarda a PRIMEIRA página vista na sessão e o referrer externo. Só grava uma
+ * vez: navegação interna da SPA não reescreve a entrada original. Serve para o
+ * CRM saber por onde o lead entrou mesmo quando não há UTM nenhuma.
+ */
+function captureSessionContext(): SessionContext {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_CONTEXT_KEY);
+    if (raw) return JSON.parse(raw) as SessionContext;
+    const referrer = document.referrer && !document.referrer.startsWith(window.location.origin)
+      ? document.referrer.slice(0, 500)
+      : '';
+    const context: SessionContext = {
+      landing_page: `${window.location.origin}${window.location.pathname}${stripAutoDirectTracking(window.location.search)}`.slice(0, 500),
+      ...(referrer ? { referrer } : {}),
+    };
+    window.sessionStorage.setItem(SESSION_CONTEXT_KEY, JSON.stringify(context));
+    return context;
+  } catch {
+    return {};
+  }
 }
 
 /** Chaves de UTM persistidas no próprio lead (tabela SITE_Leads). */
 const LEAD_UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
-export type LeadTrackingFields = Partial<Record<(typeof LEAD_UTM_KEYS)[number], string>>;
+/**
+ * IDs de clique gravados no lead (colunas criadas em add_lead_click_ids.sql).
+ * O gclid é o que permite importar conversões offline no Google Ads — quando o
+ * atendente marca o lead como ganho no CRM, dá para devolver isso ao Google.
+ */
+const LEAD_CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'gad_source'] as const;
+
+export type LeadTrackingFields = Partial<Record<(typeof LEAD_UTM_KEYS)[number] | (typeof LEAD_CLICK_ID_KEYS)[number] | 'landing_page' | 'referrer', string>>;
 
 /**
- * Retorna os campos de UTM para gravar no lead, mesclando o que foi persistido na
- * sessão (captureTrackingParams) com os params atuais do URL. Pensado para ser
- * espalhado direto no payload do insert em SITE_Leads:
+ * Retorna os campos de atribuição para gravar no lead, mesclando o que foi
+ * persistido na sessão (captureTrackingParams) com os params atuais do URL.
+ * Pensado para ser espalhado direto no payload do insert em SITE_Leads:
  *
  *   const payload = { name, email, ...getLeadTrackingFields() };
  *
@@ -151,6 +190,13 @@ export function getLeadTrackingFields(): LeadTrackingFields {
     const value = collected[key];
     if (value) fields[key] = value;
   }
+  for (const key of LEAD_CLICK_ID_KEYS) {
+    const value = collected[key];
+    if (value) fields[key] = value.slice(0, 200);
+  }
+  const context = captureSessionContext();
+  if (context.landing_page) fields.landing_page = context.landing_page;
+  if (context.referrer) fields.referrer = context.referrer;
   return fields;
 }
 

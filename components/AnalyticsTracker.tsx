@@ -16,6 +16,9 @@ export const AnalyticsTracker = () => {
     const shouldCleanAutoTracking = cleanSearch !== location.search;
     const routePath = location.pathname + cleanSearch;
     const lastMetaRoute = useRef(routePath);
+    // A primeira tela já é medida pela tag de configuração do GA4 no GTM;
+    // `spa_page_view` só representa navegação interna, para não contar em dobro.
+    const isFirstPageView = useRef(true);
 
     useEffect(() => {
         if (shouldCleanAutoTracking || lastMetaRoute.current === routePath) return;
@@ -78,7 +81,16 @@ export const AnalyticsTracker = () => {
         // aquele bloco é o registro interno no Supabase e pode esperar, este não —
         // um pageview atrasado corre o risco de sair depois da próxima navegação e
         // ser atribuído à página errada.
-        pushPageView(location.pathname, location.search);
+        // O adiamento de um tick deixa o componente <SEO> da nova página gravar o
+        // document.title antes de o pageview sair — senão o GA4 recebe o título
+        // da página anterior.
+        let pageViewTimer: number | undefined;
+        if (isFirstPageView.current) {
+            isFirstPageView.current = false;
+        } else {
+            const { pathname, search } = location;
+            pageViewTimer = window.setTimeout(() => pushPageView(pathname, search), 0);
+        }
 
         const trackPageView = async () => {
             try {
@@ -124,10 +136,16 @@ export const AnalyticsTracker = () => {
         const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, opts?: any) => number);
         if (ric) {
             const id = ric(() => trackPageView(), { timeout: 4000 });
-            return () => (window as any).cancelIdleCallback?.(id);
+            return () => {
+                (window as any).cancelIdleCallback?.(id);
+                if (pageViewTimer !== undefined) window.clearTimeout(pageViewTimer);
+            };
         } else {
             const t = setTimeout(trackPageView, 1500);
-            return () => clearTimeout(t);
+            return () => {
+                clearTimeout(t);
+                if (pageViewTimer !== undefined) window.clearTimeout(pageViewTimer);
+            };
         }
     }, [location, shouldCleanAutoTracking]);
 

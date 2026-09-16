@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
     CheckCircle2, 
@@ -13,9 +13,52 @@ import {
     Wrench
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { pushPurchase } from '../lib/dataLayer';
+import { COURSE_CHECKOUT_FLAG, COURSE_CONVERSION_ITEM, getCoursePrice } from '../lib/coursePricing';
+
+/**
+ * A Kiwify/Hotmart redirecionam para cá após pagamento aprovado, mas não há
+ * webhook consultável no navegador. Regras para contar a compra:
+ *  - só quando a sessão saiu pelo nosso botão de checkout (flag em sessionStorage),
+ *    ou o referrer é o checkout, ou a URL traz um id de pedido — visita direta não conta;
+ *  - transaction_id = id do pedido quando vem na URL; senão um id por navegador/dia,
+ *    para que recarregar a página não duplique.
+ */
+const registrarCompraCursoOnline = () => {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const orderId = ['order_id', 'orderId', 'transaction_id', 'transaction', 'pedido', 'purchase_id', 'id']
+            .map((k) => params.get(k))
+            .find((v) => v && v.trim());
+        const referrer = (document.referrer || '').toLowerCase();
+        let flag: string | null = null;
+        try { flag = sessionStorage.getItem(COURSE_CHECKOUT_FLAG); } catch { flag = null; }
+
+        const veioDoCheckout = Boolean(orderId) || Boolean(flag) || referrer.includes('kiwify') || referrer.includes('hotmart');
+        if (!veioDoCheckout) return;
+
+        const provider = flag === 'hotmart' || referrer.includes('hotmart') ? 'hotmart' : 'kiwify';
+        const price = getCoursePrice(provider === 'hotmart' ? 'intl' : 'br', 'pt-BR');
+        const diaAtual = new Date().toISOString().slice(0, 10);
+        pushPurchase({
+            funnel: 'curso_online_piloto',
+            provider,
+            transaction_id: orderId ? `${provider}_${orderId.trim()}` : `${provider}_${diaAtual}_${flag ? 'sessao' : 'referrer'}`,
+            item_name: COURSE_CONVERSION_ITEM,
+            value: Number(price.schemaPrice),
+            currency: price.schemaCurrency,
+            user: { email: params.get('email'), phone: params.get('phone'), name: params.get('name') },
+        });
+        try { sessionStorage.removeItem(COURSE_CHECKOUT_FLAG); } catch { /* ignora */ }
+    } catch (err) {
+        console.error('[ObrigadoSuspensao] purchase não publicado (não-fatal):', err);
+    }
+};
 
 const ObrigadoSuspensao: React.FC = () => {
     const { get } = useSettings();
+
+    useEffect(() => { registrarCompraCursoOnline(); }, []);
     
     // Load technical support number dynamically from database (fallback to original default if empty)
     const supportPhone = get('whatsapp_suporte', '5512982976468');

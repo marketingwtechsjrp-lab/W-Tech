@@ -4,6 +4,7 @@ import { CheckCircle, Calendar, MapPin, Download, ArrowRight, Loader2, Clock, Ma
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { formatDateLocal } from '../lib/utils';
+import { pushPurchase } from '../lib/dataLayer';
 
 interface EnrollmentData {
     id: string;
@@ -145,6 +146,22 @@ const InscricaoConfirmada: React.FC = () => {
 
         return () => clearInterval(interval);
     }, [enrollment?.status, pollCount]);
+
+    // Conversão de compra (Google Ads/GA4/Meta via GTM): só quando o banco diz
+    // Confirmed — o `status=approved` da URL não basta. transaction_id = payment_id
+    // do Mercado Pago (ou a inscrição), então recarregar não conta de novo.
+    useEffect(() => {
+        if (!enrollment || enrollment.status !== 'Confirmed') return;
+        pushPurchase({
+            funnel: 'presencial_brasil',
+            provider: 'mercadopago',
+            transaction_id: paymentId || enrollment.id,
+            item_name: enrollment.SITE_Courses?.title || 'Curso Presencial W-Tech',
+            value: Number(enrollment.amount_paid || 0),
+            currency: (enrollment.SITE_Courses?.currency || enrollment.currency) === 'EUR' ? 'EUR' : 'BRL',
+            user: { email: enrollment.student_email, phone: enrollment.student_phone, name: enrollment.student_name },
+        });
+    }, [enrollment?.status, enrollment?.id, paymentId]);
 
     // Sincronização direta no carregamento (se houver paymentId do checkout)
     useEffect(() => {

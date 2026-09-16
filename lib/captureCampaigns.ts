@@ -252,7 +252,7 @@ export async function sendCaptureLeadsToCrm(campaign: CaptureCampaign, leads: Ca
                 utm_campaign: lead.utm_campaign || undefined,
                 utm_content: lead.utm_content || undefined,
                 utm_term: lead.utm_term || undefined,
-            });
+            }, { trackConversion: false });
 
             const { error: markError } = await supabase
                 .from('SITE_CaptureLeads')

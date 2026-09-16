@@ -13,7 +13,7 @@ import {
     Volume2,
 } from 'lucide-react';
 import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
-import { getCheckoutUrl } from '../lib/coursePricing';
+import { getCheckoutUrl, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { VSL_VIDEO_URL as VIDEO_URL } from '../lib/vslVideo';
 import { useVslProgress } from '../hooks/useVslProgress';
 import { useBillingRegion } from '../hooks/useBillingRegion';
@@ -555,7 +555,10 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     href={landingUrl}
                                     target={funnel.isQuiz ? '_blank' : undefined}
                                     rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
-                                    onClick={() => trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click' : 'landing_click', eventLabel)}
+                                    onClick={() => {
+                                        trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click' : 'landing_click', eventLabel);
+                                        trackCourseCheckoutStart(billingRegion, currentLang);
+                                    }}
                                     className="mx-auto flex min-h-14 w-full max-w-xl items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_16px_45px_rgba(215,173,79,.22)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
                                     {enrollmentAction}
@@ -600,7 +603,10 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         href={landingUrl}
                         target={funnel.isQuiz ? '_blank' : undefined}
                         rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
-                        onClick={() => trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click_mobile' : 'landing_click_mobile', eventLabel)}
+                        onClick={() => {
+                            trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click_mobile' : 'landing_click_mobile', eventLabel);
+                            trackCourseCheckoutStart(billingRegion, currentLang);
+                        }}
                         className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-5 text-xs font-black uppercase tracking-[0.11em] text-black shadow-[0_12px_35px_rgba(215,173,79,.25)]"
                     >
                         {releasedAction}
