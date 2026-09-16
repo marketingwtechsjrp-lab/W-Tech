@@ -1,0 +1,1731 @@
+{
+ "exportFormatVersion": 2,
+ "exportTime": "2026-09-16 20:14:20",
+ "containerVersion": {
+  "path": "accounts/6360554222/containers/255316368/versions/0",
+  "accountId": "6360554222",
+  "containerId": "255316368",
+  "containerVersionId": "0",
+  "container": {
+   "path": "accounts/6360554222/containers/255316368",
+   "accountId": "6360554222",
+   "containerId": "255316368",
+   "name": "[WEB] - Track",
+   "publicId": "GTM-56HND3GQ",
+   "usageContext": [
+    "WEB"
+   ],
+   "fingerprint": "1781268005639",
+   "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6360554222/containers/255316368/workspaces?apiLink=container",
+   "features": {
+    "supportUserPermissions": true,
+    "supportEnvironments": true,
+    "supportWorkspaces": true,
+    "supportGtagConfigs": false,
+    "supportBuiltInVariables": true,
+    "supportClients": false,
+    "supportFolders": true,
+    "supportTags": true,
+    "supportTemplates": true,
+    "supportTriggers": true,
+    "supportVariables": true,
+    "supportVersions": true,
+    "supportZones": true,
+    "supportTransformations": false
+   },
+   "tagIds": [
+    "GTM-56HND3GQ"
+   ]
+  },
+  "tag": [
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "90",
+    "name": "0 | Vinculador de conversões (Google Ads)",
+    "type": "gclidw",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "enableCrossDomain",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableUrlPassthrough",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableCookieOverrides",
+      "value": "false"
+     }
+    ],
+    "firingTriggerId": [
+     "2147479573"
+    ],
+    "parentFolderId": "70",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "91",
+    "name": "03 | ADS | Compra",
+    "type": "awct",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "enableNewCustomerReporting",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableConversionLinker",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableProductReporting",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableShippingData",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "conversionId",
+      "value": "16893688628"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "conversionLabel",
+      "value": "dYFQCJyRkPocELT2xPc-"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "rdp",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "conversionValue",
+      "value": "{{DL - value}}"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "currencyCode",
+      "value": "{{DL - currency}}"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "orderId",
+      "value": "{{DL - transaction_id}}"
+     }
+    ],
+    "firingTriggerId": [
+     "61"
+    ],
+    "parentFolderId": "70",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "92",
+    "name": "03 | ADS | Inicio de checkout",
+    "type": "awct",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "enableNewCustomerReporting",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableConversionLinker",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableProductReporting",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableShippingData",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "conversionId",
+      "value": "16893688628"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "conversionLabel",
+      "value": "-q3_CJ-RkPocELT2xPc-"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "rdp",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "conversionValue",
+      "value": "{{DL - value}}"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "currencyCode",
+      "value": "{{DL - currency}}"
+     }
+    ],
+    "firingTriggerId": [
+     "60"
+    ],
+    "parentFolderId": "70",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "93",
+    "name": "03 | API | generate_lead",
+    "type": "gaawe",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "sendEcommerceData",
+      "value": "false"
+     },
+     {
+      "type": "LIST",
+      "key": "eventSettingsTable",
+      "list": [
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "event_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{event_id}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "funnel"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - funnel}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "method"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - method}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "lead_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - lead_id}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "value"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - value}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "currency"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - currency}}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "generate_lead"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "measurementIdOverride",
+      "value": "{{0 | GA4 - ID da Métrica}}"
+     }
+    ],
+    "firingTriggerId": [
+     "40"
+    ],
+    "parentFolderId": "18",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "94",
+    "name": "04 | API | purchase",
+    "type": "gaawe",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "sendEcommerceData",
+      "value": "true"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "getEcommerceDataFrom",
+      "value": "dataLayer"
+     },
+     {
+      "type": "LIST",
+      "key": "eventSettingsTable",
+      "list": [
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "event_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{event_id}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "funnel"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - funnel}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "provider"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - provider}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "lead_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - lead_id}}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "purchase"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "measurementIdOverride",
+      "value": "{{0 | GA4 - ID da Métrica}}"
+     }
+    ],
+    "firingTriggerId": [
+     "61"
+    ],
+    "parentFolderId": "18",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "95",
+    "name": "01 | API | page_view (SPA)",
+    "type": "gaawe",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "sendEcommerceData",
+      "value": "false"
+     },
+     {
+      "type": "LIST",
+      "key": "eventSettingsTable",
+      "list": [
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "event_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{event_id}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "page_location"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - page_location}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "page_title"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - page_title}}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "page_view"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "measurementIdOverride",
+      "value": "{{0 | GA4 - ID da Métrica}}"
+     }
+    ],
+    "firingTriggerId": [
+     "62"
+    ],
+    "parentFolderId": "18",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "96",
+    "name": "03 | API | contact (WhatsApp)",
+    "type": "gaawe",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "sendEcommerceData",
+      "value": "false"
+     },
+     {
+      "type": "LIST",
+      "key": "eventSettingsTable",
+      "list": [
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "event_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{event_id}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "method"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "whatsapp"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "link_url"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{Click URL}}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "contact"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "measurementIdOverride",
+      "value": "{{0 | GA4 - ID da Métrica}}"
+     }
+    ],
+    "firingTriggerId": [
+     "64"
+    ],
+    "parentFolderId": "18",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "97",
+    "name": "03 | FB | Lead (Lisboa)",
+    "type": "cvt_KFNBV",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "disablePushState",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventId",
+      "value": "{{event_id}}"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventNameStandard",
+      "value": "Lead"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "dataLayerEventPush",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "pixelIds",
+      "value": "{{0 | FB - Pixel}}"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "objectPropertiesFromVariable",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "consent",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableDataLayerMapping",
+      "value": "true"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "inheritEventName",
+      "value": "override"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "disableAutoConfig",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "runInitOnce",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableCurrentDataLayerOnly",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableConsentMode",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableParamBuilderSdk",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableEdvancedMatching",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "dpoLDU",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "standard"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "userDataFromVariable",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableEventEnhancement",
+      "value": "false"
+     }
+    ],
+    "firingTriggerId": [
+     "63"
+    ],
+    "parentFolderId": "16",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "98",
+    "name": "04 | FB | Purchase",
+    "type": "cvt_KFNBV",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "disablePushState",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventId",
+      "value": "{{event_id}}"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventNameStandard",
+      "value": "Purchase"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "dataLayerEventPush",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "pixelIds",
+      "value": "{{0 | FB - Pixel}}"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "objectPropertiesFromVariable",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "consent",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableDataLayerMapping",
+      "value": "true"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "inheritEventName",
+      "value": "override"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "disableAutoConfig",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "runInitOnce",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableCurrentDataLayerOnly",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableConsentMode",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableParamBuilderSdk",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableEdvancedMatching",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "dpoLDU",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "standard"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "userDataFromVariable",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableEventEnhancement",
+      "value": "false"
+     }
+    ],
+    "firingTriggerId": [
+     "61"
+    ],
+    "parentFolderId": "16",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "35",
+    "name": "02 | API | begin_checkout",
+    "type": "gaawe",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "sendEcommerceData",
+      "value": "true"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "getEcommerceDataFrom",
+      "value": "dataLayer"
+     },
+     {
+      "type": "LIST",
+      "key": "eventSettingsTable",
+      "list": [
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "event_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{event_id}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "sck"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{Cookie - index}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "funnel"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - funnel}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "provider"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - provider}}"
+         }
+        ]
+       },
+       {
+        "type": "MAP",
+        "map": [
+         {
+          "type": "TEMPLATE",
+          "key": "parameter",
+          "value": "lead_id"
+         },
+         {
+          "type": "TEMPLATE",
+          "key": "parameterValue",
+          "value": "{{DL - lead_id}}"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "begin_checkout"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "measurementIdOverride",
+      "value": "{{0 | GA4 - ID da Métrica}}"
+     }
+    ],
+    "firingTriggerId": [
+     "60"
+    ],
+    "parentFolderId": "18",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "tagId": "36",
+    "name": "02 | FB | InitiateCheckout",
+    "type": "cvt_KFNBV",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "disablePushState",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventId",
+      "value": "{{event_id}}"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventNameStandard",
+      "value": "InitiateCheckout"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "dataLayerEventPush",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "pixelIds",
+      "value": "{{0 | FB - Pixel}}"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "objectPropertiesFromVariable",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "consent",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableDataLayerMapping",
+      "value": "true"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "inheritEventName",
+      "value": "override"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "disableAutoConfig",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "runInitOnce",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableCurrentDataLayerOnly",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableConsentMode",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableParamBuilderSdk",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableEdvancedMatching",
+      "value": "true"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "dpoLDU",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "eventName",
+      "value": "standard"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "userDataFromVariable",
+      "value": "false"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "enableEventEnhancement",
+      "value": "false"
+     }
+    ],
+    "firingTriggerId": [
+     "60"
+    ],
+    "parentFolderId": "16",
+    "tagFiringOption": "ONCE_PER_EVENT",
+    "monitoringMetadata": {
+     "type": "MAP"
+    },
+    "consentSettings": {
+     "consentStatus": "NOT_SET"
+    }
+   }
+  ],
+  "trigger": [
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "triggerId": "60",
+    "name": "CE - begin_checkout",
+    "type": "CUSTOM_EVENT",
+    "customEventFilter": [
+     {
+      "type": "EQUALS",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{_event}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "begin_checkout"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "triggerId": "61",
+    "name": "CE - purchase",
+    "type": "CUSTOM_EVENT",
+    "customEventFilter": [
+     {
+      "type": "EQUALS",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{_event}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "purchase"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "triggerId": "62",
+    "name": "CE - spa_page_view",
+    "type": "CUSTOM_EVENT",
+    "customEventFilter": [
+     {
+      "type": "EQUALS",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{_event}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "spa_page_view"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "triggerId": "63",
+    "name": "CE - generate_lead (Lisboa)",
+    "type": "CUSTOM_EVENT",
+    "customEventFilter": [
+     {
+      "type": "EQUALS",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{_event}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "generate_lead"
+       }
+      ]
+     }
+    ],
+    "filter": [
+     {
+      "type": "EQUALS",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{DL - funnel}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "presencial_lisboa"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "triggerId": "64",
+    "name": "Click - WhatsApp (wa.me)",
+    "type": "LINK_CLICK",
+    "filter": [
+     {
+      "type": "MATCH_REGEX",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{Click URL}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "wa\\.me|api\\.whatsapp\\.com|whatsapp://"
+       }
+      ]
+     }
+    ],
+    "waitForTags": {
+     "type": "BOOLEAN",
+     "value": "false"
+    },
+    "checkValidation": {
+     "type": "BOOLEAN",
+     "value": "false"
+    },
+    "waitForTagsTimeout": {
+     "type": "TEMPLATE",
+     "value": "2000"
+    },
+    "uniqueTriggerId": {
+     "type": "TEMPLATE"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "triggerId": "40",
+    "name": "CE - generate_lead",
+    "type": "CUSTOM_EVENT",
+    "customEventFilter": [
+     {
+      "type": "EQUALS",
+      "parameter": [
+       {
+        "type": "TEMPLATE",
+        "key": "arg0",
+        "value": "{{_event}}"
+       },
+       {
+        "type": "TEMPLATE",
+        "key": "arg1",
+        "value": "generate_lead"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "variable": [
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "80",
+    "name": "DL - value",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "value"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "81",
+    "name": "DL - currency",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "currency"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "82",
+    "name": "DL - transaction_id",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "transaction_id"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "83",
+    "name": "DL - funnel",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "funnel"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "84",
+    "name": "DL - lead_id",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "lead_id"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "85",
+    "name": "DL - method",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "method"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "86",
+    "name": "DL - provider",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "provider"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "87",
+    "name": "DL - page_location",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "page_location"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "88",
+    "name": "DL - page_title",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "page_title"
+     }
+    ],
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "23",
+    "name": "0 | GA4 - ID da Métrica",
+    "type": "c",
+    "parameter": [
+     {
+      "type": "TEMPLATE",
+      "key": "value",
+      "value": "G-T4WSVZ57J0"
+     }
+    ],
+    "fingerprint": "1781555231782",
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "24",
+    "name": "Cookie - index",
+    "type": "k",
+    "parameter": [
+     {
+      "type": "BOOLEAN",
+      "key": "decodeCookie",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "index"
+     }
+    ],
+    "fingerprint": "1781555139556",
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "27",
+    "name": "event_id",
+    "type": "cvt_255316368_11",
+    "fingerprint": "1781555139556",
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "28",
+    "name": "0 | FB - Pixel",
+    "type": "c",
+    "parameter": [
+     {
+      "type": "TEMPLATE",
+      "key": "value",
+      "value": "1287422246429098"
+     }
+    ],
+    "fingerprint": "1781555221391",
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "38",
+    "name": "DL - user_data",
+    "type": "v",
+    "parameter": [
+     {
+      "type": "INTEGER",
+      "key": "dataLayerVersion",
+      "value": "2"
+     },
+     {
+      "type": "BOOLEAN",
+      "key": "setDefaultValue",
+      "value": "false"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "name",
+      "value": "user_data"
+     }
+    ],
+    "fingerprint": "1789589413656",
+    "formatValue": {}
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "variableId": "39",
+    "name": "Dados do usuario (Enhanced Conversions)",
+    "type": "awec",
+    "parameter": [
+     {
+      "type": "TEMPLATE",
+      "key": "mode",
+      "value": "CODE"
+     },
+     {
+      "type": "TEMPLATE",
+      "key": "dataSource",
+      "value": "{{DL - user_data}}"
+     }
+    ],
+    "fingerprint": "1789589424285",
+    "formatValue": {}
+   }
+  ],
+  "folder": [
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "folderId": "6",
+    "name": "🔨 Tools"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "folderId": "16",
+    "name": "🟦 FB"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "folderId": "18",
+    "name": "🧠 API"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "folderId": "70",
+    "name": "🎯 Google Ads"
+   }
+  ],
+  "builtInVariable": [
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "PAGE_URL",
+    "name": "Page URL"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "PAGE_PATH",
+    "name": "Page Path"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "EVENT",
+    "name": "Event"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "CLICK_ELEMENT",
+    "name": "Click Element"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "CLICK_CLASSES",
+    "name": "Click Classes"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "CLICK_ID",
+    "name": "Click ID"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "CLICK_TARGET",
+    "name": "Click Target"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "CLICK_URL",
+    "name": "Click URL"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "CLICK_TEXT",
+    "name": "Click Text"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "FORM_CLASSES",
+    "name": "Form Classes"
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "type": "VIDEO_URL",
+    "name": "Video URL"
+   }
+  ],
+  "fingerprint": "1789589660137",
+  "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/6360554222/containers/255316368/versions/0?apiLink=version",
+  "customTemplate": [
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "templateId": "11",
+    "name": "Unique Event ID",
+    "fingerprint": "1781272472166",
+    "templateData": "___TERMS_OF_SERVICE___\n\nBy creating or modifying this file you agree to Google Tag Manager's Community\nTemplate Gallery Developer Terms of Service available at\nhttps://developers.google.com/tag-manager/gallery-tos (or such other URL as\nGoogle may provide), as modified from time to time.\n\n\n___INFO___\n\n{\n  \"type\": \"MACRO\",\n  \"id\": \"cvt_temp_public_id\",\n  \"version\": 1,\n  \"securityGroups\": [],\n  \"displayName\": \"Unique Event ID\",\n  \"description\": \"Generates unique event id\",\n  \"categories\": [\n    \"UTILITY\"\n  ],\n  \"containerContexts\": [\n    \"WEB\"\n  ],\n  \"brand\": {\n    \"displayName\": \"stape-io\",\n    \"id\": \"github.com_stape-io\"\n  }\n}\n\n\n___TEMPLATE_PARAMETERS___\n\n[]\n\n\n___SANDBOXED_JS_FOR_WEB_TEMPLATE___\n\nconst copyFromDataLayer = require('copyFromDataLayer');\nconst setInWindow = require('setInWindow');\nconst copyFromWindow = require('copyFromWindow');\nconst getTimestampMillis = require('getTimestampMillis');\nconst generateRandom = require('generateRandom');\n\n\nreturn getBrowserId() + '_' + getPageLoadId() + getGtmUniqueEventId();\n\nfunction getGtmUniqueEventId() {\n    let gtmId = copyFromDataLayer('gtm.uniqueEventId')  || 0;\n    return gtmId >= 0 ? gtmId : '00';\n}\n\nfunction getBrowserId() {\n    let gtmBrowserId =  copyFromWindow('gtmBrowserId');\n\n    if (!gtmBrowserId) {\n        gtmBrowserId = getTimestampMillis() + generateRandom(100000, 999999);\n        setInWindow('gtmBrowserId', gtmBrowserId, false);\n    }\n\n    return gtmBrowserId;\n}\n\nfunction getPageLoadId() {\n  let eventId = copyFromWindow('gtmPageLoadId');\n\n  if (!eventId) {\n    eventId = getTimestampMillis() + generateRandom(100000, 999999);\n    setInWindow('gtmPageLoadId', eventId, false);\n  }\n\n  return eventId;\n}\n\n\n___WEB_PERMISSIONS___\n\n[\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"read_data_layer\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"allowedKeys\",\n          \"value\": {\n            \"type\": 1,\n            \"string\": \"specific\"\n          }\n        },\n        {\n          \"key\": \"keyPatterns\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 1,\n                \"string\": \"gtm.uniqueEventId\"\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  },\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"access_globals\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"keys\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"gtmPageLoadId\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"gtmBrowserId\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  }\n]\n\n\n___TESTS___\n\nscenarios: []\n\n\n___NOTES___\n\nCreated on 11/03/2021, 11:05:32\n\n\n",
+    "galleryReference": {
+     "host": "github.com",
+     "owner": "stape-io",
+     "repository": "unique-event-id-variable",
+     "version": "76498f16f1954b0286640d19eb6a1ddf2909e183",
+     "signature": "5db6da902483d707bdbc159bd82985f8d41e38d1f6f2609d774407279284a8d8"
+    }
+   },
+   {
+    "accountId": "6360554222",
+    "containerId": "255316368",
+    "templateId": "30",
+    "name": "Facebook Pixel by Stape",
+    "fingerprint": "1781555139556",
+    "templateData": "___TERMS_OF_SERVICE___\n\nBy creating or modifying this file you agree to Google Tag Manager's Community\nTemplate Gallery Developer Terms of Service available at\nhttps://developers.google.com/tag-manager/gallery-tos (or such other URL as\nGoogle may provide), as modified from time to time.\n\n\n___INFO___\n\n{\n  \"type\": \"TAG\",\n  \"id\": \"cvt_KFNBV\",\n  \"version\": 1,\n  \"displayName\": \"Facebook Pixel by Stape\",\n  \"categories\": [\n    \"ADVERTISING\",\n    \"ANALYTICS\",\n    \"CONVERSIONS\",\n    \"MARKETING\",\n    \"REMARKETING\"\n  ],\n  \"brand\": {\n    \"id\": \"github.com_stape-io\",\n    \"displayName\": \"stape-io\",\n    \"thumbnail\": \"data:image/png;base64,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MYEFAJCYwAIASExgAQAkJrAAABITWAAAiQksAIDEBBYAQGICCwAgMYEFAJDYZAAwMucXi/jM/1iOO6/rxB1Hu3HrNd3YPxOxazpiotOJNlteKWJ+OWKu/D145lwRT54p4v8+3Y/zC0VA2wgsgBFaKAPjC7+//MLn+8q4OrqvG0f3Rhwpn4/srT7vxLXl46ZD5eNgd/XjXeW79XT5mJkq37i79QmxomyjXhlOCysRi+V/1mIv4szFIo7NFvHU2X48Vz6fvlDE8fMRJ+b65aOIk+fLH98LaDWBBTBGc4vVox/fO1V91l/3x1RRdXCmEwd3d+LArogDu7txeE/EofLzQ+XzwfLzQ7vLWCu/b890p4y2TuwtJ2Izq1HWid3l81T1mIio0qxbTsomJ9b+2b1+Ef3yX1s+xXL5vPR8JC2uBlOx+uu7uFSsTt4ulh+fK6dNZ+eLODcfcboMqTNlPFVBVU2hqm+bLX9cbyUgewILoOaqydDxMnaOz106SusHUG+W3AEAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBITGABACQmsAAAEhNYAACJCSwAgMQEFgBAYgILACAxgQUAkJjAAgBI7M8AEVZ9YYB+7i0AAAAASUVORK5CYII\\u003d\"\n  },\n  \"description\": \"Integrates the Facebook/Meta Pixel into the page and allows easy event tracking.\",\n  \"containerContexts\": [\n    \"WEB\"\n  ]\n}\n\n\n___TEMPLATE_PARAMETERS___\n\n[\n  {\n    \"type\": \"GROUP\",\n    \"name\": \"baseConfigurationGroup\",\n    \"subParams\": [\n      {\n        \"type\": \"TEXT\",\n        \"name\": \"pixelIds\",\n        \"displayName\": \"Facebook Pixel ID(s)\",\n        \"simpleValueType\": true,\n        \"valueValidators\": [\n          {\n            \"type\": \"NON_EMPTY\"\n          },\n          {\n            \"type\": \"REGEX\",\n            \"args\": [\n              \"^[0-9,]+$\"\n            ]\n          }\n        ],\n        \"help\": \"Array, single item string or comma separated string of Pixel IDs.\",\n        \"alwaysInSummary\": true,\n        \"valueHint\": \"1234...,9876...\"\n      },\n      {\n        \"type\": \"SELECT\",\n        \"name\": \"inheritEventName\",\n        \"displayName\": \"Event Name Setup Method\",\n        \"selectItems\": [\n          {\n            \"value\": \"inherit\",\n            \"displayValue\": \"Inherit from DataLayer\"\n          },\n          {\n            \"value\": \"override\",\n            \"displayValue\": \"Override\"\n          }\n        ],\n        \"simpleValueType\": true,\n        \"subParams\": [\n          {\n            \"type\": \"RADIO\",\n            \"name\": \"eventName\",\n            \"radioItems\": [\n              {\n                \"value\": \"standard\",\n                \"displayValue\": \"Standard\",\n                \"subParams\": [\n                  {\n                    \"type\": \"SELECT\",\n                    \"name\": \"eventNameStandard\",\n                    \"macrosInSelect\": false,\n                    \"selectItems\": [\n                      {\n                        \"value\": \"PageView\",\n                        \"displayValue\": \"PageView\"\n                      },\n                      {\n                        \"value\": \"AddPaymentInfo\",\n                        \"displayValue\": \"AddPaymentInfo\"\n                      },\n                      {\n                        \"value\": \"AddToCart\",\n                        \"displayValue\": \"AddToCart\"\n                      },\n                      {\n                        \"value\": \"AddToWishlist\",\n                        \"displayValue\": \"AddToWishlist\"\n                      },\n                      {\n                        \"value\": \"CompleteRegistration\",\n                        \"displayValue\": \"CompleteRegistration\"\n                      },\n                      {\n                        \"value\": \"Contact\",\n                        \"displayValue\": \"Contact\"\n                      },\n                      {\n                        \"value\": \"CustomizeProduct\",\n                        \"displayValue\": \"CustomizeProduct\"\n                      },\n                      {\n                        \"value\": \"Donate\",\n                        \"displayValue\": \"Donate\"\n                      },\n                      {\n                        \"value\": \"FindLocation\",\n                        \"displayValue\": \"FindLocation\"\n                      },\n                      {\n                        \"value\": \"InitiateCheckout\",\n                        \"displayValue\": \"InitiateCheckout\"\n                      },\n                      {\n                        \"value\": \"Lead\",\n                        \"displayValue\": \"Lead\"\n                      },\n                      {\n                        \"value\": \"Purchase\",\n                        \"displayValue\": \"Purchase\"\n                      },\n                      {\n                        \"value\": \"Schedule\",\n                        \"displayValue\": \"Schedule\"\n                      },\n                      {\n                        \"value\": \"Search\",\n                        \"displayValue\": \"Search\"\n                      },\n                      {\n                        \"value\": \"StartTrial\",\n                        \"displayValue\": \"StartTrial\"\n                      },\n                      {\n                        \"value\": \"SubmitApplication\",\n                        \"displayValue\": \"SubmitApplication\"\n                      },\n                      {\n                        \"value\": \"Subscribe\",\n                        \"displayValue\": \"Subscribe\"\n                      },\n                      {\n                        \"value\": \"ViewContent\",\n                        \"displayValue\": \"ViewContent\"\n                      }\n                    ],\n                    \"simpleValueType\": true,\n                    \"displayName\": \"Event Name\",\n                    \"defaultValue\": \"PageView\"\n                  }\n                ]\n              },\n              {\n                \"value\": \"custom\",\n                \"displayValue\": \"Custom\",\n                \"subParams\": [\n                  {\n                    \"type\": \"TEXT\",\n                    \"name\": \"eventNameCustom\",\n                    \"simpleValueType\": true,\n                    \"displayName\": \"Event Name\",\n                    \"valueValidators\": [\n                      {\n                        \"type\": \"NON_EMPTY\"\n                      }\n                    ]\n                  }\n                ]\n              }\n            ],\n            \"simpleValueType\": true,\n            \"enablingConditions\": [\n              {\n                \"paramName\": \"inheritEventName\",\n                \"paramValue\": \"override\",\n                \"type\": \"EQUALS\"\n              }\n            ],\n            \"displayName\": \"Event Type\"\n          }\n        ],\n        \"defaultValue\": \"override\",\n        \"alwaysInSummary\": true\n      },\n      {\n        \"type\": \"CHECKBOX\",\n        \"name\": \"enableDataLayerMapping\",\n        \"checkboxText\": \"Enable automatic User Data and Event Parameters mapping from the Data Layer\",\n        \"simpleValueType\": true,\n        \"help\": \"If you check this, then the Facebook tag will populate standard Object Properties and User Data automatically from the DataLayer. The tag parses Universal Analytics,  \\u003ca target\\u003d\\\"_blank\\\" href\\u003d\\\"https://developers.google.com/analytics/devguides/collection/ga4/ecommerce\\\"\\u003eGA4\\u003c/a\\u003e and \\u003ca target\\u003d\\\"_blank\\\" href\\u003d\\\"https://developers.google.com/tag-platform/tag-manager/server-side/common-event-data\\\"\\u003eCommon Event Data\\u003c/a\\u003e formats.\",\n        \"defaultValue\": true,\n        \"alwaysInSummary\": true,\n        \"subParams\": [\n          {\n            \"type\": \"CHECKBOX\",\n            \"name\": \"enableCurrentDataLayerOnly\",\n            \"checkboxText\": \"Use data only from the most recent Data Layer event where the data can be found (ignore recursive merges)\",\n            \"simpleValueType\": true,\n            \"help\": \"If enabled, the tag will take data only from the most recent Data Layer event where the data can be found. \\n\\u003cbr/\\u003e\\u003cbr/\\u003e\\nIn other words, the tag will ignore recursive merges for Data Layer variables and take only the most recent value of the data. \\u003ca href\\u003d\\\"https://www.simoahava.com/gtm-tips/data-layer-variable-versions-explained/\\\"\\u003eLearn more\\u003c/a\\u003e.\\n\\u003cbr/\\u003e\\nThat\\u0027s how it worked in the old Facebook pixel tag.\",\n            \"defaultValue\": false,\n            \"enablingConditions\": [\n              {\n                \"paramName\": \"enableDataLayerMapping\",\n                \"paramValue\": true,\n                \"type\": \"EQUALS\"\n              }\n            ],\n            \"alwaysInSummary\": true\n          }\n        ]\n      },\n      {\n        \"type\": \"CHECKBOX\",\n        \"name\": \"enableEdvancedMatching\",\n        \"checkboxText\": \"Enable Advanced Matching\",\n        \"simpleValueType\": true,\n        \"help\": \"Enable sending of user personal information such as email addresses, names, etc. to Meta.\\n\\u003cbr/\\u003e\\nMore information can be found \\u003ca target\\u003d\\\"_blank\\\" href\\u003d\\\"https://developers.facebook.com/docs/meta-pixel/advanced/advanced-matching/\\\"\\u003ehere\\u003c/a\\u003e.\",\n        \"subParams\": [\n          {\n            \"type\": \"GROUP\",\n            \"name\": \"advancedMatchingGroup\",\n            \"subParams\": [\n              {\n                \"type\": \"CHECKBOX\",\n                \"name\": \"enableEventEnhancement\",\n                \"checkboxText\": \"Enable Event Enhancement\",\n                \"simpleValueType\": true,\n                \"help\": \"Enable the use of \\u003ci\\u003elocalStorage\\u003c/i\\u003e to store data for enhanced event tracking.\\n\\u003cbr/\\u003e\\u003cbr/\\u003e\\nNote: If the \\u003ci\\u003eEnable automatic data population from the Data Layer\\u003c/i\\u003e option is selected, all User Data it finds in the Data Layer will be stored, not just the fields explicitly defined in the User Data section.\",\n                \"subParams\": [\n                  {\n                    \"type\": \"CHECKBOX\",\n                    \"name\": \"storeUserDataHashed\",\n                    \"checkboxText\": \"Store User Data hashed\",\n                    \"simpleValueType\": true,\n                    \"help\": \"The User Data will be stored hashed in \\u003ci\\u003elocalStorage\\u003c/i\\u003e.\",\n                    \"enablingConditions\": [\n                      {\n                        \"paramName\": \"enableEventEnhancement\",\n                        \"paramValue\": true,\n                        \"type\": \"EQUALS\"\n                      }\n                    ]\n                  }\n                ]\n              },\n              {\n                \"type\": \"CHECKBOX\",\n                \"name\": \"runInitOnce\",\n                \"checkboxText\": \"Run the \\u0027init\\u0027 command only once\",\n                \"simpleValueType\": true,\n                \"help\": \"When Advanced Matching is enabled, the tag runs the \\u003ci\\u003einit\\u003c/i\\u003e command with each event to send user information that becomes available after page load.\\n\\u003cbr/\\u003e\\u003cbr/\\u003e\\nThis causes the following message in the Console from the fbevents.js file:\\n\\u003ci\\u003e[Meta Pixel] - Duplicate Pixel ID: {Pixel ID}.\\u003c/i\\u003e\\n\\u003cbr/\\u003e\\u003cbr/\\u003e\\nEnable this option to skip repeated \\u003ci\\u003einit\\u003c/i\\u003e calls and suppress the Console message. Note that Advanced Matching data found after the first call won’t be sent.\"\n              }\n            ],\n            \"enablingConditions\": [\n              {\n                \"paramName\": \"enableEdvancedMatching\",\n                \"paramValue\": true,\n                \"type\": \"EQUALS\"\n              }\n            ]\n          }\n        ],\n        \"defaultValue\": true,\n        \"alwaysInSummary\": true\n      }\n    ]\n  },\n  {\n    \"type\": \"GROUP\",\n    \"name\": \"complianceGroup\",\n    \"displayName\": \"Compliance\",\n    \"groupStyle\": \"ZIPPY_OPEN\",\n    \"subParams\": [\n      {\n        \"type\": \"SELECT\",\n        \"name\": \"consent\",\n        \"displayName\": \"Consent Granted\",\n        \"macrosInSelect\": true,\n        \"selectItems\": [\n          {\n            \"value\": true,\n            \"displayValue\": \"True\"\n          },\n          {\n            \"value\": false,\n            \"displayValue\": \"False\"\n          }\n        ],\n        \"simpleValueType\": true,\n        \"help\": \"Setting Consent Granted to \\u003cstrong\\u003efalse\\u003c/strong\\u003e will prevent the pixel from sending hits until tag fired with Consent Granted \\u003cstrong\\u003etrue\\u003c/strong\\u003e.\\n\\u003cbr/\\u003e\\n\\u003ca href\\u003d\\\"https://developers.facebook.com/docs/meta-pixel/implementation/gdpr\\\"\\u003eLearn more\\u003c/a\\u003e.\",\n        \"enablingConditions\": [\n          {\n            \"paramName\": \"enableConsentMode\",\n            \"paramValue\": false,\n            \"type\": \"EQUALS\"\n          }\n        ]\n      },\n      {\n        \"type\": \"CHECKBOX\",\n        \"name\": \"enableConsentMode\",\n        \"checkboxText\": \"Enable GTM consent mode support\",\n        \"simpleValueType\": true,\n        \"help\": \"When enabled, this tag checks for the Google Consent Mode \\u003ci\\u003ead_storage\\u003c/i\\u003e consent.\\n\\u003cbr/\\u003e\\nIf consent is not granted, the Facebook Pixel consent is set as revoked. \\n\\u003cbr/\\u003e\\nIf consent is granted (initially or later), the pixel consent is automatically granted.\"\n      },\n      {\n        \"type\": \"CHECKBOX\",\n        \"name\": \"dpoLDU\",\n        \"checkboxText\": \"Limited Data Use (LDU)\",\n        \"simpleValueType\": true,\n        \"help\": \"Limited Data Use is a data processing option that gives you more control over how your data is used in the system receiving the data. \\u003ca target\\u003d\\\"_blank\\\" href\\u003d\\\"https://developers.facebook.com/docs/meta-pixel/implementation/data-processing-options\\\"\\u003eLearn more\\u003c/a\\u003e.\"\n      },\n      {\n        \"type\": \"TEXT\",\n        \"name\": \"dpoCountry\",\n        \"displayName\": \"Country\",\n        \"simpleValueType\": true,\n        \"defaultValue\": 0,\n        \"enablingConditions\": [\n          {\n            \"paramName\": \"dpoLDU\",\n            \"paramValue\": true,\n            \"type\": \"EQUALS\"\n          }\n        ],\n        \"valueValidators\": [\n          {\n            \"type\": \"NUMBER\"\n          }\n        ]\n      },\n      {\n        \"type\": \"TEXT\",\n        \"name\": \"dpoState\",\n        \"displayName\": \"State\",\n        \"simpleValueType\": true,\n        \"defaultValue\": 0,\n        \"enablingConditions\": [\n          {\n            \"paramName\": \"dpoLDU\",\n            \"paramValue\": true,\n            \"type\": \"EQUALS\"\n          }\n        ],\n        \"valueValidators\": [\n          {\n            \"type\": \"NUMBER\"\n          }\n        ]\n      }\n    ]\n  },\n  {\n    \"displayName\": \"User Data\",\n    \"name\": \"userDataListGroup\",\n    \"groupStyle\": \"ZIPPY_CLOSED\",\n    \"type\": \"GROUP\",\n    \"subParams\": [\n      {\n        \"type\": \"LABEL\",\n        \"name\": \"userDataLabel\",\n        \"displayName\": \"User Data Properties that you can send to Meta can be found \\u003ca target\\u003d\\\"_blank\\\" href\\u003d\\\"https://developers.facebook.com/docs/meta-pixel/advanced/advanced-matching\\\"\\u003ehere\\u003c/a\\u003e.\\u003cbr\\u003e\\u003cbr\\u003e\"\n      },\n      {\n        \"type\": \"SELECT\",\n        \"name\": \"userDataFromVariable\",\n        \"displayName\": \"Load Properties From Variable\",\n        \"macrosInSelect\": true,\n        \"selectItems\": [\n          {\n            \"value\": false,\n            \"displayValue\": \"False\"\n          }\n        ],\n        \"simpleValueType\": true,\n        \"help\": \"You can use a standard User-Provided Data variable or create a variable that returns a JavaScript object with the desired user data properties. This object will merge with additional properties from the table below, with any conflicts resolved in favor of the table entries.\"\n      },\n      {\n        \"name\": \"userDataList\",\n        \"simpleTableColumns\": [\n          {\n            \"valueValidators\": [\n              {\n                \"type\": \"NON_EMPTY\"\n              }\n            ],\n            \"defaultValue\": \"em\",\n            \"displayName\": \"Property Name\",\n            \"name\": \"name\",\n            \"isUnique\": true,\n            \"type\": \"SELECT\",\n            \"selectItems\": [\n              {\n                \"value\": \"em\",\n                \"displayValue\": \"Email\"\n              },\n              {\n                \"value\": \"ph\",\n                \"displayValue\": \"Phone\"\n              },\n              {\n                \"value\": \"ge\",\n                \"displayValue\": \"Gender\"\n              },\n              {\n                \"value\": \"db\",\n                \"displayValue\": \"Date of Birth\"\n              },\n              {\n                \"value\": \"ln\",\n                \"displayValue\": \"Last Name\"\n              },\n              {\n                \"value\": \"fn\",\n                \"displayValue\": \"First Name\"\n              },\n              {\n                \"value\": \"ct\",\n                \"displayValue\": \"City\"\n              },\n              {\n                \"value\": \"st\",\n                \"displayValue\": \"State\"\n              },\n              {\n                \"value\": \"zp\",\n                \"displayValue\": \"Zip\"\n              },\n              {\n                \"value\": \"country\",\n                \"displayValue\": \"Country\"\n              },\n              {\n                \"value\": \"external_id\",\n                \"displayValue\": \"External ID\"\n              }\n            ]\n          },\n          {\n            \"defaultValue\": \"\",\n            \"displayName\": \"Property Value\",\n            \"name\": \"value\",\n            \"type\": \"TEXT\"\n          }\n        ],\n        \"type\": \"SIMPLE_TABLE\",\n        \"newRowButtonText\": \"Add property\"\n      }\n    ],\n    \"enablingConditions\": [\n      {\n        \"paramName\": \"enableEdvancedMatching\",\n        \"paramValue\": true,\n        \"type\": \"EQUALS\"\n      }\n    ]\n  },\n  {\n    \"displayName\": \"Object Properties\",\n    \"name\": \"objectPropertiesGroup\",\n    \"groupStyle\": \"ZIPPY_CLOSED\",\n    \"type\": \"GROUP\",\n    \"subParams\": [\n      {\n        \"type\": \"LABEL\",\n        \"name\": \"objectPropertiesLabel\",\n        \"displayName\": \"Standard Object Properties that you can send to Meta can be found \\u003ca target\\u003d\\\"_blank\\\" href\\u003d\\\"https://developers.facebook.com/docs/meta-pixel/reference#object-properties\\\"\\u003ehere\\u003c/a\\u003e.\\u003cbr\\u003e\\u003cbr\\u003e\"\n      },\n      {\n        \"type\": \"SELECT\",\n        \"name\": \"objectPropertiesFromVariable\",\n        \"displayName\": \"Load Properties From Variable\",\n        \"macrosInSelect\": true,\n        \"selectItems\": [\n          {\n            \"value\": false,\n            \"displayValue\": \"False\"\n          }\n        ],\n        \"simpleValueType\": true,\n        \"help\": \"You can create a variable that returns a JavaScript object with the desired properties. This object will merge with additional properties from the table below, with any conflicts resolved in favor of the table entries.\"\n      },\n      {\n        \"name\": \"objectPropertiesList\",\n        \"simpleTableColumns\": [\n          {\n            \"valueValidators\": [],\n            \"defaultValue\": \"\",\n            \"displayName\": \"Property Name\",\n            \"name\": \"name\",\n            \"isUnique\": true,\n            \"type\": \"TEXT\"\n          },\n          {\n            \"defaultValue\": \"\",\n            \"displayName\": \"Property Value\",\n            \"name\": \"value\",\n            \"type\": \"TEXT\"\n          }\n        ],\n        \"type\": \"SIMPLE_TABLE\",\n        \"newRowButtonText\": \"Add property\"\n      }\n    ]\n  },\n  {\n    \"type\": \"GROUP\",\n    \"name\": \"serverGroup\",\n    \"displayName\": \"Server Side Tracking\",\n    \"groupStyle\": \"ZIPPY_CLOSED\",\n    \"subParams\": [\n      {\n        \"type\": \"TEXT\",\n        \"name\": \"eventId\",\n        \"displayName\": \"Event ID\",\n        \"simpleValueType\": true,\n        \"help\": \"Set the Event ID parameter in case you are tracking the same event via server-side using the Meta Conversions API.\\n\\u003cbr/\\u003e\\nThe Event ID can be used to deduplicate the same event if sent from multiple sources. \\n\\u003cbr/\\u003e\\n\\u003ca href\\u003d\\\"https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events/\\\"\\u003eLearn more\\u003c/a\\u003e.\"\n      },\n      {\n        \"type\": \"GROUP\",\n        \"name\": \"advancedSettingsGroup\",\n        \"displayName\": \"Advanced Settings\",\n        \"groupStyle\": \"ZIPPY_OPEN_ON_PARAM\",\n        \"subParams\": [\n          {\n            \"type\": \"CHECKBOX\",\n            \"name\": \"dataLayerEventPush\",\n            \"checkboxText\": \"Push event to DataLayer with this Event ID\",\n            \"simpleValueType\": true,\n            \"help\": \"Helpful for easier events deduplication.\",\n            \"defaultValue\": false\n          },\n          {\n            \"type\": \"TEXT\",\n            \"name\": \"dataLayerEventName\",\n            \"displayName\": \"DataLayer Event Name\",\n            \"simpleValueType\": true,\n            \"enablingConditions\": [\n              {\n                \"paramName\": \"dataLayerEventPush\",\n                \"paramValue\": true,\n                \"type\": \"EQUALS\"\n              }\n            ],\n            \"valueValidators\": [\n              {\n                \"type\": \"NON_EMPTY\"\n              }\n            ],\n            \"valueHint\": \"page_view_unique\"\n          },\n          {\n            \"type\": \"TEXT\",\n            \"name\": \"dataLayerVariableName\",\n            \"displayName\": \"DataLayer Object Name\",\n            \"simpleValueType\": true,\n            \"enablingConditions\": [\n              {\n                \"paramName\": \"dataLayerEventPush\",\n                \"paramValue\": true,\n                \"type\": \"EQUALS\"\n              }\n            ],\n            \"valueValidators\": [\n              {\n                \"type\": \"NON_EMPTY\"\n              }\n            ],\n            \"defaultValue\": \"dataLayer\",\n            \"help\": \"Use dataLayer by default. Modify only if you renamed dataLayer object name.\"\n          }\n        ]\n      }\n    ]\n  },\n  {\n    \"type\": \"GROUP\",\n    \"name\": \"otherSettingsGroup\",\n    \"displayName\": \"Other Settings\",\n    \"groupStyle\": \"ZIPPY_CLOSED\",\n    \"subParams\": [\n      {\n        \"help\": \"Facebook automatically collects metadata and user interactions (e.g., clicks). Check this box to disable this functionality.\",\n        \"simpleValueType\": true,\n        \"name\": \"disableAutoConfig\",\n        \"checkboxText\": \"Disable Automatic Configuration\",\n        \"type\": \"CHECKBOX\"\n      },\n      {\n        \"type\": \"CHECKBOX\",\n        \"name\": \"disablePushState\",\n        \"checkboxText\": \"Disable History Event Tracking\",\n        \"simpleValueType\": true,\n        \"help\": \"The Facebook Pixel automatically tracks history events (pushState and replaceState) as PageViews. Check this box to disable this automatic tracking.\"\n      },\n      {\n        \"type\": \"CHECKBOX\",\n        \"name\": \"enableParamBuilderSdk\",\n        \"checkboxText\": \"Increase Browser ID and Click ID Cookies Coverage\",\n        \"simpleValueType\": true,\n        \"defaultValue\": true,\n        \"help\": \"When enabled, the Parameter Builder SDK library will be loaded. This library helps retrieving and saving the Browser ID (\\u003ci\\u003e_fbp\\u003c/i\\u003e cookie) and Click ID (\\u003ci\\u003e_fbc\\u003c/i\\u003e cookie) values into cookies, and it also tries to retrieve a backup Click ID from in-app-browser when feasible.\\n\\u003cbr/\\u003e\\u003cbr/\\u003e\\n\\u003ca href\\u003d\\\"https://developers.facebook.com/docs/marketing-api/conversions-api/parameter-builder-library\\\"\\u003eLearn more\\u003c/a\\u003e.\",\n        \"alwaysInSummary\": true\n      }\n    ]\n  }\n]\n\n\n___SANDBOXED_JS_FOR_WEB_TEMPLATE___\n\nconst addConsentListener = require('addConsentListener');\nconst aliasInWindow = require('aliasInWindow');\nconst callInWindow = require('callInWindow');\nconst copyFromDataLayer = require('copyFromDataLayer');\nconst copyFromWindow = require('copyFromWindow');\nconst createQueue = require('createQueue');\nconst getType = require('getType');\nconst injectScript = require('injectScript');\nconst isConsentGranted = require('isConsentGranted');\nconst JSON = require('JSON');\nconst localStorage = require('localStorage');\nconst makeNumber = require('makeNumber');\nconst makeString = require('makeString');\nconst makeTableMap = require('makeTableMap');\nconst math = require('Math');\nconst Object = require('Object');\nconst setInWindow = require('setInWindow');\nconst sha256 = require('sha256');\nconst templateStorage = require('templateStorage');\n\n// Call-once methods.\nlet gtmOnSuccess = () => {\n  gtmOnSuccess = () => {};\n  return data.gtmOnSuccess();\n};\n\nlet gtmOnFailure = () => {\n  gtmOnFailure = () => {};\n  return data.gtmOnFailure();\n};\n\n/*==============================================================================\n==============================================================================*/\n\nconst queueName = 'fbq';\nconst queue = getQueue(queueName);\nconst isConsentRevoked = data.enableConsentMode ? !isConsentGranted('ad_storage') : data.consent === false;\nconst isParamBuilderSdkEnabled = data.hasOwnProperty('enableParamBuilderSdk') ? data.enableParamBuilderSdk : true;\nconst PARTNER_NAME = 'stape-gtm-1.2.0' + (isParamBuilderSdkEnabled ? '-pb' : '');\n\nsetConsent(isConsentRevoked);\nsendEvent(isConsentRevoked);\nsendDataLayerPush();\nrunOnConsentGranted('ad_storage', isConsentRevoked, () => {\n  loadScripts(isParamBuilderSdkEnabled);\n});\n\nif (isConsentRevoked) {\n  // If consent is revoked, call gtmOnSuccess to avoid 'Still running' status.\n  return gtmOnSuccess();\n}\n\n/*==============================================================================\n  Vendor related functions\n==============================================================================*/\n\nfunction getQueue(queueName) {\n  const q = copyFromWindow(queueName);\n  if (q) return q;\n\n  setInWindow(queueName, function () {\n    const callMethod = copyFromWindow(queueName + '.callMethod.apply');\n    if (callMethod) callInWindow(queueName + '.callMethod.apply', null, arguments);\n    else callInWindow(queueName + '.queue.push', arguments);\n  });\n\n  aliasInWindow('_' + queueName, queueName);\n  createQueue(queueName + '.queue');\n\n  return copyFromWindow(queueName);\n}\n\nfunction setFbqConsent(command) {\n  const queue = getQueue(queueName);\n  if (command === 'revoke') {\n    // Allows only one 'revoke' command at a time in the queue to avoid it being locked indefinitely.\n    const queueHasRevokeCommand = (queue.queue || []).some((item) => item[0] === 'consent' && item[1] === 'revoke');\n    if (queueHasRevokeCommand) return;\n  }\n  queue('consent', command);\n}\n\nfunction runOnConsentGranted(consentType, isConsentRevoked, callback) {\n  if (data.enableConsentMode) {\n    if (isConsentRevoked) {\n      const callbacksKey = 'fbq_consent_callbacks_' + consentType;\n      const callbacks = templateStorage.getItem(callbacksKey) || [];\n      callbacks.push(callback);\n      templateStorage.setItem(callbacksKey, callbacks);\n\n      const listenerAddedKey = 'fbq_consent_listener_added_' + consentType;\n      if (!templateStorage.getItem(listenerAddedKey)) {\n        templateStorage.setItem(listenerAddedKey, true);\n        addConsentListener(consentType, (type, granted) => {\n          if (type !== consentType || !granted) return;\n          const queuedCallbacks = templateStorage.getItem(callbacksKey) || [];\n          templateStorage.setItem(callbacksKey, []);\n          queuedCallbacks.forEach((cb) => cb());\n        });\n      }\n    } else {\n      callback();\n    }\n    return;\n  }\n\n  // Manual consent\n  if (!isConsentRevoked) callback();\n}\n\nfunction setConsent(isConsentRevoked) {\n  if (data.dpoLDU) {\n    queue('dataProcessingOptions', ['LDU'], makeNumber(data.dpoCountry), makeNumber(data.dpoState));\n  }\n\n  if (isConsentRevoked) setFbqConsent('revoke');\n\n  runOnConsentGranted('ad_storage', isConsentRevoked, () => {\n    setFbqConsent('grant');\n  });\n}\n\nfunction setSettings(pixelId) {\n  if (data.disableAutoConfig) {\n    queue('set', 'autoConfig', false, pixelId);\n  }\n\n  if (data.disablePushState) {\n    setInWindow(queueName + '.disablePushState', true);\n  }\n}\n\nfunction sendEvent(isConsentRevoked) {\n  const initIds = copyFromWindow('_meta_gtm_ids') || [];\n  const pixelIds = data.pixelIds;\n  const eventName = getEventName();\n  const command = getCommand(eventName);\n  const eventData = getEventData(eventName);\n  const userData = getUserData(isConsentRevoked);\n\n  pixelIds.split(',').forEach((pixelId) => {\n    const isNotInitialized = initIds.indexOf(pixelId) === -1;\n\n    if (isNotInitialized) {\n      initIds.push(pixelId);\n      setInWindow('_meta_gtm_ids', initIds, true);\n      setSettings(pixelId);\n    }\n\n    if (isNotInitialized || (data.enableEdvancedMatching && !data.runInitOnce)) queue('init', pixelId, userData);\n    queue('set', 'agent', PARTNER_NAME, pixelId);\n    queue(command, pixelId, eventName, eventData, data.eventId ? { eventID: data.eventId } : undefined);\n  });\n}\n\nfunction getEventName() {\n  if (data.inheritEventName === 'inherit') {\n    let eventName = copyFromDataLayer('event');\n\n    if (!eventName) {\n      const ecommerceDataLayer = copyFromDataLayer('ecommerce', 1);\n      if (ecommerceDataLayer.detail) eventName = 'ViewContent';\n      else if (ecommerceDataLayer.add) eventName = 'AddToCart';\n      else if (ecommerceDataLayer.checkout) eventName = 'InitiateCheckout';\n      else if (ecommerceDataLayer.purchase) eventName = 'Purchase';\n    }\n\n    const mapFacebookEventName = {\n      page_view: 'PageView',\n      'gtm.dom': 'PageView',\n      add_payment_info: 'AddPaymentInfo',\n      add_to_cart: 'AddToCart',\n      add_to_wishlist: 'AddToWishlist',\n      sign_up: 'CompleteRegistration',\n      begin_checkout: 'InitiateCheckout',\n      generate_lead: 'Lead',\n      purchase: 'Purchase',\n      search: 'Search',\n      view_item: 'ViewContent',\n\n      contact: 'Contact',\n      customize_product: 'CustomizeProduct',\n      donate: 'Donate',\n      find_location: 'FindLocation',\n      schedule: 'Schedule',\n      start_trial: 'StartTrial',\n      submit_application: 'SubmitApplication',\n      subscribe: 'Subscribe',\n\n      page_view_stape: 'PageView',\n      add_payment_info_stape: 'AddPaymentInfo',\n      add_to_cart_stape: 'AddToCart',\n      sign_up_stape: 'CompleteRegistration',\n      begin_checkout_stape: 'InitiateCheckout',\n      purchase_stape: 'Purchase',\n      view_item_stape: 'ViewContent',\n\n      'gtm4wp.addProductToCartEEC': 'AddToCart',\n      'gtm4wp.productClickEEC': 'ViewContent',\n      'gtm4wp.checkoutOptionEEC': 'InitiateCheckout',\n      'gtm4wp.checkoutStepEEC': 'AddPaymentInfo',\n      'gtm4wp.orderCompletedEEC': 'Purchase'\n    };\n\n    if (!mapFacebookEventName[eventName]) {\n      return eventName;\n    }\n\n    return mapFacebookEventName[eventName];\n  }\n\n  return data.eventName === 'standard' ? data.eventNameStandard : data.eventNameCustom;\n}\n\nfunction getCommand(eventName) {\n  return [\n    'AddPaymentInfo',\n    'AddToCart',\n    'AddToWishlist',\n    'CompleteRegistration',\n    'Contact',\n    'CustomizeProduct',\n    'Donate',\n    'FindLocation',\n    'InitiateCheckout',\n    'Lead',\n    'PageView',\n    'Purchase',\n    'Schedule',\n    'Search',\n    'StartTrial',\n    'SubmitApplication',\n    'Subscribe',\n    'ViewContent'\n  ].indexOf(eventName) === -1\n    ? 'trackSingleCustom'\n    : 'trackSingle';\n}\n\nfunction getUserData(isConsentRevoked) {\n  if (!data.enableEdvancedMatching) {\n    return;\n  }\n\n  let userData = {};\n\n  if (data.enableEventEnhancement) {\n    userData = getEventEnhancement(isConsentRevoked);\n  }\n\n  if (data.enableDataLayerMapping) {\n    let userDataFromDataLayer = getDL('user_data');\n\n    if (getType(userDataFromDataLayer) === 'object') {\n      parseUserData(userData, userDataFromDataLayer, true);\n    }\n  }\n\n  if (getType(data.userDataFromVariable) === 'object') {\n    parseUserData(userData, data.userDataFromVariable, false);\n  }\n\n  if (data.userDataList && data.userDataList.length) {\n    userData = mergeObjects(userData, makeTableMap(data.userDataList, 'name', 'value'));\n  }\n\n  if (objIsEmptyOrContainsOnlyFalsyValues(userData)) {\n    return;\n  }\n\n  if (data.enableEventEnhancement) {\n    storeEventEnhancement(isConsentRevoked, userData);\n  }\n\n  return userData;\n}\n\nfunction getEventData(eventName) {\n  let objectProperties = {};\n\n  if (data.enableDataLayerMapping) {\n    let ecommerce = getDL('ecommerce');\n    if (getType(ecommerce) !== 'object') {\n      ecommerce = {};\n    }\n\n    objectProperties = getUAEventData(eventName, objectProperties, ecommerce);\n\n    if (!objectProperties.content_type) {\n      objectProperties = getGA4EventData(eventName, objectProperties, ecommerce);\n    }\n  }\n\n  if (getType(data.objectPropertiesFromVariable) === 'object') {\n    mergeObjects(objectProperties, data.objectPropertiesFromVariable);\n  }\n\n  if (data.objectPropertiesList && data.objectPropertiesList.length) {\n    objectProperties = mergeObjects(objectProperties, makeTableMap(data.objectPropertiesList, 'name', 'value'));\n  }\n\n  return objectProperties;\n}\n\nfunction getEventEnhancement(isConsentRevoked) {\n  if (!isConsentRevoked && localStorage) {\n    const gtmeec = localStorage.getItem('gtmeec');\n\n    if (gtmeec) {\n      const gtmeecParsed = JSON.parse(gtmeec);\n\n      if (getType(gtmeecParsed) === 'object') {\n        return gtmeecParsed;\n      }\n    }\n  }\n\n  return {};\n}\n\nfunction normalizeBasedOnSchemaKey(schemaKey, identifier) {\n  if (schemaKey === 'ph') return normalizePhoneNumber(identifier);\n  else if (schemaKey === 'ct' || schemaKey === 'st' || schemaKey === 'zp') {\n    return removeWhiteSpace(identifier);\n  } else return identifier;\n}\n\nfunction hashUserDataFields(userData, storeUserDataInLocalStorage) {\n  const canUseHashSync = getType(copyFromWindow('dataTag256')) === 'function';\n  const hashAsyncHelpers = {\n    pendingHashs: 0,\n    maybeFinish: (userDataHashed) => {\n      if (hashAsyncHelpers.pendingHashs === 0) storeUserDataInLocalStorage(userDataHashed);\n    }\n  };\n\n  const userDataHashed = {};\n\n  const fieldNames = Object.keys(userData);\n  fieldNames.forEach((fieldName) => {\n    const value = userData[fieldName];\n\n    if (value === undefined || value === null || value === '') return;\n    if (isHashed(value)) {\n      userDataHashed[fieldName] = value;\n      return;\n    }\n\n    const normalizedValue = makeString(normalizeBasedOnSchemaKey(fieldName, value)).toLowerCase().trim();\n    if (canUseHashSync) userDataHashed[fieldName] = callInWindow('dataTag256', normalizedValue, 'HEX');\n    else {\n      hashAsyncHelpers.pendingHashs++;\n      sha256(\n        normalizedValue,\n        (digest) => {\n          userDataHashed[fieldName] = digest;\n          hashAsyncHelpers.pendingHashs--;\n          hashAsyncHelpers.maybeFinish(userDataHashed);\n        },\n        () => {\n          hashAsyncHelpers.pendingHashs--;\n        },\n        { outputEncoding: 'hex' }\n      );\n    }\n  });\n\n  if (canUseHashSync) {\n    storeUserDataInLocalStorage(userDataHashed);\n    return userDataHashed;\n  } else {\n    hashAsyncHelpers.maybeFinish(userDataHashed);\n    return;\n  }\n}\n\nfunction storeUserDataInLocalStorage(userData) {\n  if (!objHasProps(userData)) return;\n  const gtmeec = JSON.stringify(userData);\n  localStorage.setItem('gtmeec', gtmeec);\n}\n\nfunction storeEventEnhancement(isConsentRevoked, userData) {\n  if (!isConsentRevoked && localStorage && objHasProps(userData)) {\n    if (!data.storeUserDataHashed) storeUserDataInLocalStorage(userData);\n    else hashUserDataFields(userData, storeUserDataInLocalStorage);\n  }\n}\n\nfunction sendDataLayerPush() {\n  if (data.dataLayerEventPush) {\n    const dataLayerQueueName = data.dataLayerVariableName || 'dataLayer';\n    const dataLayerPush = createQueue(dataLayerQueueName);\n\n    dataLayerPush({ eventId: data.eventId, event: data.dataLayerEventName || 'DefaultTagEvent' });\n  }\n}\n\nfunction parseUserData(userData, userDataFrom, useDL) {\n  let email = userDataFrom.email || userDataFrom.sha256_email_address || userDataFrom.email_address || userDataFrom.em;\n  const emailType = getType(email);\n  if (emailType === 'array' || emailType === 'object') email = email[0];\n  if (email) userData.em = email;\n\n  let phone = userDataFrom.phone || userDataFrom.sha256_phone_number || userDataFrom.phone_number || userDataFrom.ph;\n  const phoneType = getType(phone);\n  if (phoneType === 'array' || phoneType === 'object') phone = phone[0];\n  if (phone) userData.ph = phone;\n\n  if (userDataFrom.firstName) userData.fn = userDataFrom.firstName;\n  else if (userDataFrom.nameFirst) userData.fn = userDataFrom.nameFirst;\n  else if (userDataFrom.first_name) userData.fn = userDataFrom.first_name;\n  else if (userDataFrom.fn) userData.fn = userDataFrom.fn;\n  else if (userDataFrom.address && userDataFrom.address.sha256_first_name) userData.fn = userDataFrom.address.sha256_first_name;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].sha256_first_name) userData.fn = userDataFrom.address[0].sha256_first_name;\n  else if (userDataFrom.address && userDataFrom.address.first_name) userData.fn = userDataFrom.address.first_name;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].first_name) userData.fn = userDataFrom.address[0].first_name;\n\n  if (userDataFrom.lastName) userData.ln = userDataFrom.lastName;\n  else if (userDataFrom.nameLast) userData.ln = userDataFrom.nameLast;\n  else if (userDataFrom.last_name) userData.ln = userDataFrom.last_name;\n  else if (userDataFrom.ln) userData.ln = userDataFrom.ln;\n  else if (userDataFrom.address && userDataFrom.address.sha256_last_name) userData.ln = userDataFrom.address.sha256_last_name;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].sha256_last_name) userData.ln = userDataFrom.address[0].sha256_last_name;\n  else if (userDataFrom.address && userDataFrom.address.last_name) userData.ln = userDataFrom.address.last_name;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].last_name) userData.ln = userDataFrom.address[0].last_name;\n\n  if (userDataFrom.ge) userData.ge = userDataFrom.ge;\n  if (userDataFrom.db) userData.db = userDataFrom.db;\n\n  if (userDataFrom.city) userData.ct = userDataFrom.city;\n  else if (userDataFrom.ct) userData.ct = userDataFrom.ct;\n  else if (userDataFrom.address && userDataFrom.address.city) userData.ct = userDataFrom.address.city;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].city) userData.ct = userDataFrom.address[0].city;\n\n  if (userDataFrom.state) userData.st = userDataFrom.state;\n  else if (userDataFrom.region) userData.st = userDataFrom.region;\n  else if (userDataFrom.st) userData.st = userDataFrom.st;\n  else if (userDataFrom.address && userDataFrom.address.state) userData.st = userDataFrom.address.state;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].state) userData.st = userDataFrom.address[0].state;\n  else if (userDataFrom.address && userDataFrom.address.region) userData.st = userDataFrom.address.region;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].region) userData.st = userDataFrom.address[0].region;\n\n  if (userDataFrom.zip) userData.zp = userDataFrom.zip;\n  else if (userDataFrom.postal_code) userData.zp = userDataFrom.postal_code;\n  else if (userDataFrom.zp) userData.zp = userDataFrom.zp;\n  else if (userDataFrom.address && userDataFrom.address.postal_code) userData.zp = userDataFrom.address.postal_code;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].postal_code) userData.zp = userDataFrom.address[0].postal_code;\n  else if (userDataFrom.address && userDataFrom.address.zip) userData.zp = userDataFrom.address.zip;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].zip) userData.zp = userDataFrom.address[0].zip;\n\n  if (userDataFrom.country) userData.country = userDataFrom.country;\n  else if (userDataFrom.address && userDataFrom.address.country) userData.country = userDataFrom.address.country;\n  else if (userDataFrom.address && userDataFrom.address[0] && userDataFrom.address[0].country) userData.country = userDataFrom.address[0].country;\n\n  if (userDataFrom.external_id) userData.external_id = userDataFrom.external_id;\n  else if (userDataFrom.user_id) userData.external_id = userDataFrom.user_id;\n  else if (userDataFrom.userId) userData.external_id = userDataFrom.userId;\n  else if (useDL && getDL('external_id')) userData.external_id = getDL('external_id');\n  else if (useDL && getDL('user_id')) userData.external_id = getDL('user_id');\n  else if (useDL && getDL('userId')) userData.external_id = getDL('userId');\n\n  return userData;\n}\n\nfunction getUAEventData(eventName, objectProperties, ecommerce) {\n  const eventActionMap = {\n    ViewContent: 'detail',\n    AddToCart: 'add',\n    InitiateCheckout: 'checkout',\n    Purchase: 'purchase'\n  };\n\n  if (eventActionMap[eventName]) {\n    const action = eventActionMap[eventName];\n\n    if (ecommerce[action] && ecommerce[action].products && getType(ecommerce[action].products) === 'array') {\n      objectProperties = {\n        content_type: 'product',\n        contents: ecommerce[action].products.map((prod) => ({\n          id: prod.id,\n          quantity: makeNumber(prod.quantity) || 1,\n          item_price: makeNumber(prod.price)\n        })),\n        content_ids: ecommerce[action].products.map((prod) => prod.id),\n        value: ecommerce[action].products.reduce((acc, cur) => {\n          const curVal = math.round(makeNumber(cur.price || 0) * (cur.quantity || 1) * 100) / 100;\n          return acc + curVal;\n        }, 0.0),\n        currency: ecommerce.currencyCode || 'USD'\n      };\n\n      if (['InitiateCheckout', 'Purchase'].indexOf(eventName) > -1)\n        objectProperties.num_items = ecommerce[action].products.reduce((acc, cur) => {\n          return acc + makeNumber(cur.quantity || 1);\n        }, 0);\n    }\n  }\n\n  return objectProperties;\n}\n\nfunction getGA4EventData(eventName, objectProperties, ecommerce) {\n  const items = getDL('items') || ecommerce.items;\n  let currencyFromItems = '';\n  let valueFromItems = 0;\n\n  if (items && items[0]) {\n    objectProperties.contents = [];\n    objectProperties.content_ids = [];\n    objectProperties.content_type = 'product';\n    if (['InitiateCheckout', 'Purchase'].indexOf(eventName) > -1) {\n      objectProperties.num_items = 0;\n    }\n    currencyFromItems = items[0].currency;\n\n    if (!items[1]) {\n      if (items[0].item_name) objectProperties.content_name = items[0].item_name;\n      if (items[0].item_category) objectProperties.content_category = items[0].item_category;\n      if (items[0].price) objectProperties.value = items[0].quantity ? items[0].quantity * items[0].price : items[0].price;\n    }\n\n    items.forEach((d) => {\n      const content = {};\n      if (d.item_id) content.id = d.item_id;\n      content.quantity = makeNumber(d.quantity) || 1;\n\n      if (d.price) {\n        const item_price = makeNumber(d.price);\n        valueFromItems += d.quantity ? d.quantity * item_price : item_price;\n        content.item_price = item_price;\n      }\n\n      objectProperties.contents.push(content);\n      objectProperties.content_ids.push(content.id);\n      if (['InitiateCheckout', 'Purchase'].indexOf(eventName) > -1) {\n        objectProperties.num_items = objectProperties.num_items + content.quantity || 1;\n      }\n    });\n  }\n\n  const value = ecommerce.value || valueFromItems || getDL('value');\n  if (value) objectProperties.value = value;\n\n  const currency = ecommerce.currency || currencyFromItems || getDL('currency');\n  if (currency) objectProperties.currency = currency;\n\n  const searchTerm = getDL('search_term');\n  if (searchTerm) objectProperties.search_string = searchTerm;\n\n  if (eventName === 'Purchase') {\n    if (!objectProperties.currency) objectProperties.currency = 'USD';\n    if (!objectProperties.value) objectProperties.value = valueFromItems ? valueFromItems : 0;\n  }\n\n  return objectProperties;\n}\n\nfunction getDL(name) {\n  const dataLayerVersion = data.enableCurrentDataLayerOnly ? 1 : 2;\n  return copyFromDataLayer(name, dataLayerVersion);\n}\n\nfunction loadScripts(isParamBuilderSdkEnabled) {\n  injectScript(\n    'https://connect.facebook.net/en_US/fbevents.js',\n    () => {\n      setFbqConsent('grant'); // It needs to be called to unlock the queue after the SDK loads.\n      return gtmOnSuccess();\n    },\n    gtmOnFailure,\n    'metaPixel'\n  );\n\n  if (isParamBuilderSdkEnabled) {\n    injectScript(\n      'https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js',\n      () => {\n        if (copyFromWindow('clientParamBuilder.processAndCollectAllParams')) {\n          callInWindow('clientParamBuilder.processAndCollectAllParams');\n        } else if (copyFromWindow('clientParamBuilder.processAndCollectParams')) {\n          callInWindow('clientParamBuilder.processAndCollectParams');\n        }\n      },\n      () => {},\n      'metaParamBuilderSdk'\n    );\n  }\n}\n\n/*==============================================================================\n  Helpers\n==============================================================================*/\n\nfunction mergeObjects(obj1, obj2) {\n  Object.keys(obj2).forEach((key) => {\n    obj1[key] = obj2[key];\n  });\n\n  return obj1;\n}\n\nfunction objHasProps(obj) {\n  return getType(obj) === 'object' && Object.keys(obj).length > 0;\n}\n\nfunction objIsEmptyOrContainsOnlyFalsyValues(obj) {\n  if (getType(obj) !== 'object') return;\n  const objValues = Object.values(obj);\n  if (objValues.length === 0 || objValues.every((v) => !v)) return true;\n}\n\nfunction isHashed(value) {\n  if (!value) return false;\n  return makeString(value).match('^[A-Fa-f0-9]{64}$') !== null;\n}\n\nfunction normalizePhoneNumber(phoneNumber) {\n  if (!phoneNumber) return phoneNumber;\n  return phoneNumber.split('+').join('').split(' ').join('').split('-').join('').split('(').join('').split(')').join('');\n}\n\nfunction removeWhiteSpace(input) {\n  if (!input) return input;\n  return input.split(' ').join('');\n}\n\n\n___WEB_PERMISSIONS___\n\n[\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"access_globals\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"keys\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"fbq\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"_meta_gtm_ids\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"_fbq\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"fbq.callMethod.apply\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"fbq.queue.push\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"fbq.queue\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"fbq.disablePushState\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"dataLayer\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"dataTag256\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"clientParamBuilder.processAndCollectAllParams\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              },\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"execute\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"clientParamBuilder.processAndCollectParams\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  },\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"read_data_layer\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"allowedKeys\",\n          \"value\": {\n            \"type\": 1,\n            \"string\": \"any\"\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  },\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"inject_script\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"urls\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 1,\n                \"string\": \"https://connect.facebook.net/en_US/fbevents.js\"\n              },\n              {\n                \"type\": 1,\n                \"string\": \"https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js\"\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  },\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"access_local_storage\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"keys\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"key\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"gtmeec\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  }\n                ]\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  },\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"access_consent\",\n        \"versionId\": \"1\"\n      },\n      \"param\": [\n        {\n          \"key\": \"consentTypes\",\n          \"value\": {\n            \"type\": 2,\n            \"listItem\": [\n              {\n                \"type\": 3,\n                \"mapKey\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"consentType\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"read\"\n                  },\n                  {\n                    \"type\": 1,\n                    \"string\": \"write\"\n                  }\n                ],\n                \"mapValue\": [\n                  {\n                    \"type\": 1,\n                    \"string\": \"ad_storage\"\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": true\n                  },\n                  {\n                    \"type\": 8,\n                    \"boolean\": false\n                  }\n                ]\n              }\n            ]\n          }\n        }\n      ]\n    },\n    \"clientAnnotations\": {\n      \"isEditedByUser\": true\n    },\n    \"isRequired\": true\n  },\n  {\n    \"instance\": {\n      \"key\": {\n        \"publicId\": \"access_template_storage\",\n        \"versionId\": \"1\"\n      },\n      \"param\": []\n    },\n    \"isRequired\": true\n  }\n]\n\n\n___TESTS___\n\nscenarios:\n- name: '[Happy Path] PageView fires init, agent, trackSingle and injects both scripts'\n  code: |-\n    runCode(mockData);\n\n    const consentGrants = fbqCalls.filter((c) => c[0] === 'consent' && c[1] === 'grant');\n    assertThat(consentGrants.length).isGreaterThan(0);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    assertThat(initCalls.length).isEqualTo(1);\n    assertThat(initCalls[0][1]).isEqualTo('123456789');\n\n    const agentCalls = fbqCalls.filter((c) => c[0] === 'set' && c[1] === 'agent');\n    assertThat(agentCalls.length).isEqualTo(1);\n    assertThat(agentCalls[0][2]).isEqualTo(PARTNER_AGENT_VERSION + '-pb');\n    assertThat(agentCalls[0][3]).isEqualTo('123456789');\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n    assertThat(trackCalls[0][1]).isEqualTo('123456789');\n    assertThat(trackCalls[0][2]).isEqualTo('PageView');\n\n    assertThat(injectScriptCalls.length).isEqualTo(2);\n    assertThat(injectScriptCalls[0].url).isEqualTo('https://connect.facebook.net/en_US/fbevents.js');\n    assertThat(injectScriptCalls[1].url).isEqualTo('https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Multiple Pixels] Each pixel gets separate init, agent, and track calls'\n  code: |-\n    mockData.pixelIds = '111,222,333';\n\n    runCode(mockData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    assertThat(initCalls.length).isEqualTo(3);\n    assertThat(initCalls[0][1]).isEqualTo('111');\n    assertThat(initCalls[1][1]).isEqualTo('222');\n    assertThat(initCalls[2][1]).isEqualTo('333');\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(3);\n    assertThat(trackCalls[0][1]).isEqualTo('111');\n    assertThat(trackCalls[1][1]).isEqualTo('222');\n    assertThat(trackCalls[2][1]).isEqualTo('333');\n\n    const agentCalls = fbqCalls.filter((c) => c[0] === 'set' && c[1] === 'agent');\n    assertThat(agentCalls.length).isEqualTo(3);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Consent] Manual consent=false revokes fbq and calls gtmOnSuccess without\n    scripts'\n  code: |-\n    mockData.consent = false;\n\n    runCode(mockData);\n\n    const revokeCalls = fbqCalls.filter((c) => c[0] === 'consent' && c[1] === 'revoke');\n    assertThat(revokeCalls.length).isEqualTo(1);\n\n    const grantCalls = fbqCalls.filter((c) => c[0] === 'consent' && c[1] === 'grant');\n    assertThat(grantCalls.length).isEqualTo(0);\n\n    assertThat(injectScriptCalls.length).isEqualTo(0);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Consent] GTM consent mode denied revokes and calls gtmOnSuccess without\n    scripts'\n  code: |-\n    mockData.enableConsentMode = true;\n    mock('isConsentGranted', () => false);\n\n    runCode(mockData);\n\n    const revokeCalls = fbqCalls.filter((c) => c[0] === 'consent' && c[1] === 'revoke');\n    assertThat(revokeCalls.length).isEqualTo(1);\n\n    assertThat(injectScriptCalls.length).isEqualTo(0);\n\n    assertApi('addConsentListener').wasCalled();\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Consent] Listener fires queued callbacks when consent is later granted'\n  code: |-\n    mockData.enableConsentMode = true;\n    mock('isConsentGranted', () => false);\n\n    let consentListenerCallback;\n    mock('addConsentListener', (type, callback) => {\n      consentListenerCallback = callback;\n    });\n\n    runCode(mockData);\n\n    assertThat(injectScriptCalls.length).isEqualTo(0);\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n\n    consentListenerCallback('ad_storage', true);\n\n    assertThat(injectScriptCalls.length).isEqualTo(2);\n    assertThat(injectScriptCalls[0].url).isEqualTo('https://connect.facebook.net/en_US/fbevents.js');\n\n    const grantCalls = fbqCalls.filter((c) => c[0] === 'consent' && c[1] === 'grant');\n    assertThat(grantCalls.length).isGreaterThan(0);\n- name: '[Consent] setFbqConsent skips duplicate revoke when one is already queued'\n  code: |-\n    const mockFbqWithQueue = function() {\n      const args = [];\n      for (let i = 0; i < arguments.length; i++) {\n        args.push(arguments[i]);\n      }\n      fbqCalls.push(args);\n    };\n    mockFbqWithQueue.queue = [['consent', 'revoke']];\n\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbqWithQueue;\n      return undefined;\n    });\n\n    mockData.consent = false;\n\n    runCode(mockData);\n\n    const revokeCalls = fbqCalls.filter((c) => c[0] === 'consent' && c[1] === 'revoke');\n    assertThat(revokeCalls.length).isEqualTo(0);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Consent] LDU sets dataProcessingOptions with country and state'\n  code: |-\n    mockData.dpoLDU = true;\n    mockData.dpoCountry = '1';\n    mockData.dpoState = '1000';\n\n    runCode(mockData);\n\n    const dpoCalls = fbqCalls.filter((c) => c[0] === 'dataProcessingOptions');\n    assertThat(dpoCalls.length).isEqualTo(1);\n    assertThat(dpoCalls[0][1]).isEqualTo(['LDU']);\n    assertThat(dpoCalls[0][2]).isEqualTo(1);\n    assertThat(dpoCalls[0][3]).isEqualTo(1000);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Name] Maps GA4, stape, and gtm4wp events from DataLayer'\n  code: |-\n    [\n      { dlEvent: 'page_view', expected: 'PageView' },\n      { dlEvent: 'add_to_cart', expected: 'AddToCart' },\n      { dlEvent: 'purchase', expected: 'Purchase' },\n      { dlEvent: 'begin_checkout', expected: 'InitiateCheckout' },\n      { dlEvent: 'view_item', expected: 'ViewContent' },\n      { dlEvent: 'sign_up', expected: 'CompleteRegistration' },\n      { dlEvent: 'generate_lead', expected: 'Lead' },\n      { dlEvent: 'search', expected: 'Search' },\n      { dlEvent: 'add_to_wishlist', expected: 'AddToWishlist' },\n      { dlEvent: 'contact', expected: 'Contact' },\n      { dlEvent: 'subscribe', expected: 'Subscribe' },\n      { dlEvent: 'page_view_stape', expected: 'PageView' },\n      { dlEvent: 'purchase_stape', expected: 'Purchase' },\n      { dlEvent: 'add_to_cart_stape', expected: 'AddToCart' },\n      { dlEvent: 'gtm4wp.orderCompletedEEC', expected: 'Purchase' },\n      { dlEvent: 'gtm4wp.addProductToCartEEC', expected: 'AddToCart' },\n      { dlEvent: 'gtm4wp.productClickEEC', expected: 'ViewContent' }\n    ].forEach((scenario) => {\n      fbqCalls = [];\n      injectScriptCalls = [];\n\n      const testData = assign(assign({}, mockData), { inheritEventName: 'inherit' });\n\n      mock('copyFromDataLayer', (key) => {\n        if (key === 'event') return scenario.dlEvent;\n        return undefined;\n      });\n\n      mock('injectScript', (url, onsuccess) => {\n        injectScriptCalls.push({ url: url });\n        onsuccess();\n      });\n\n      runCode(testData);\n\n      const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle' || c[0] === 'trackSingleCustom');\n      assertThat(trackCalls.length).isEqualTo(1);\n      assertThat(trackCalls[0][2]).isEqualTo(scenario.expected);\n\n      assertApi('gtmOnSuccess').wasCalled();\n      assertApi('gtmOnFailure').wasNotCalled();\n    });\n- name: '[Event Name] Unmapped event from DataLayer passes through as-is'\n  code: |-\n    mockData.inheritEventName = 'inherit';\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'event') return 'my_custom_dl_event';\n      return undefined;\n    });\n\n    runCode(mockData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingleCustom');\n    assertThat(trackCalls.length).isEqualTo(1);\n    assertThat(trackCalls[0][2]).isEqualTo('my_custom_dl_event');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Name] UA ecommerce fallback when no DL event name'\n  code: |-\n    [\n      { ecommerceKey: 'detail', expected: 'ViewContent' },\n      { ecommerceKey: 'add', expected: 'AddToCart' },\n      { ecommerceKey: 'checkout', expected: 'InitiateCheckout' },\n      { ecommerceKey: 'purchase', expected: 'Purchase' }\n    ].forEach((scenario) => {\n      fbqCalls = [];\n      injectScriptCalls = [];\n\n      const testData = assign(assign({}, mockData), { inheritEventName: 'inherit' });\n      const ecommerceData = {};\n      ecommerceData[scenario.ecommerceKey] = true;\n\n      mock('copyFromDataLayer', (key, version) => {\n        if (key === 'event') return undefined;\n        if (key === 'ecommerce' && version === 1) return ecommerceData;\n        return undefined;\n      });\n\n      mock('injectScript', (url, onsuccess) => {\n        injectScriptCalls.push({ url: url });\n        onsuccess();\n      });\n\n      runCode(testData);\n\n      const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n      assertThat(trackCalls.length).isEqualTo(1);\n      assertThat(trackCalls[0][2]).isEqualTo(scenario.expected);\n\n      assertApi('gtmOnSuccess').wasCalled();\n      assertApi('gtmOnFailure').wasNotCalled();\n    });\n- name: '[Event Name] Override with standard and custom event types'\n  code: |-\n    const testData1 = assign(assign({}, mockData), {\n      inheritEventName: 'override',\n      eventName: 'standard',\n      eventNameStandard: 'AddToCart'\n    });\n\n    runCode(testData1);\n\n    let trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n    assertThat(trackCalls[0][2]).isEqualTo('AddToCart');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n\n    fbqCalls = [];\n    injectScriptCalls = [];\n\n    const testData2 = assign(assign({}, mockData), {\n      inheritEventName: 'override',\n      eventName: 'custom',\n      eventNameCustom: 'MyCustomEvent'\n    });\n\n    mock('injectScript', (url, onsuccess) => {\n      injectScriptCalls.push({ url: url });\n      onsuccess();\n    });\n\n    runCode(testData2);\n\n    trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingleCustom');\n    assertThat(trackCalls.length).isEqualTo(1);\n    assertThat(trackCalls[0][2]).isEqualTo('MyCustomEvent');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Pixel Init] Already initialized pixel skips re-init and settings'\n  code: |-\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      if (key === '_meta_gtm_ids') return ['123456789'];\n      return undefined;\n    });\n\n    runCode(mockData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    assertThat(initCalls.length).isEqualTo(0);\n\n    const autoConfigCalls = fbqCalls.filter((c) => c[0] === 'set' && c[1] === 'autoConfig');\n    assertThat(autoConfigCalls.length).isEqualTo(0);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Advanced Matching] User data from variable and table merged into init'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      userDataFromVariable: { email: 'test@example.com', phone: '+1234567890' },\n      userDataList: [{ name: 'fn', value: 'John' }, { name: 'ln', value: 'Doe' }]\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    assertThat(initCalls.length).isEqualTo(1);\n\n    const userData = initCalls[0][2];\n    assertThat(userData.em).isEqualTo('test@example.com');\n    assertThat(userData.ph).isEqualTo('+1234567890');\n    assertThat(userData.fn).isEqualTo('John');\n    assertThat(userData.ln).isEqualTo('Doe');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Advanced Matching] runInitOnce prevents re-init for initialized pixel'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      runInitOnce: true,\n      userDataFromVariable: { email: 'test@example.com' }\n    });\n\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      if (key === '_meta_gtm_ids') return ['123456789'];\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    assertThat(initCalls.length).isEqualTo(0);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[User Data] Parses all fields from DataLayer user_data object'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'user_data') return {\n        email: 'dl@example.com',\n        phone: '+1555000000',\n        firstName: 'Jane',\n        lastName: 'Smith',\n        city: 'New York',\n        state: 'NY',\n        zip: '10001',\n        country: 'US',\n        external_id: 'ext123',\n        ge: 'f',\n        db: '19900101'\n      };\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    const userData = initCalls[0][2];\n    assertThat(userData.em).isEqualTo('dl@example.com');\n    assertThat(userData.ph).isEqualTo('+1555000000');\n    assertThat(userData.fn).isEqualTo('Jane');\n    assertThat(userData.ln).isEqualTo('Smith');\n    assertThat(userData.ct).isEqualTo('New York');\n    assertThat(userData.st).isEqualTo('NY');\n    assertThat(userData.zp).isEqualTo('10001');\n    assertThat(userData.country).isEqualTo('US');\n    assertThat(userData.external_id).isEqualTo('ext123');\n    assertThat(userData.ge).isEqualTo('f');\n    assertThat(userData.db).isEqualTo('19900101');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[User Data] Array email and phone values take the first element'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      userDataFromVariable: {\n        email: ['first@example.com', 'second@example.com'],\n        phone: ['+111', '+222']\n      }\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    const userData = initCalls[0][2];\n    assertThat(userData.em).isEqualTo('first@example.com');\n    assertThat(userData.ph).isEqualTo('+111');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[User Data] Address-nested fields are parsed correctly'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      userDataFromVariable: {\n        address: {\n          first_name: 'Nested',\n          last_name: 'User',\n          city: 'Boston',\n          state: 'MA',\n          postal_code: '02101',\n          country: 'US'\n        }\n      }\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    const userData = initCalls[0][2];\n    assertThat(userData.fn).isEqualTo('Nested');\n    assertThat(userData.ln).isEqualTo('User');\n    assertThat(userData.ct).isEqualTo('Boston');\n    assertThat(userData.st).isEqualTo('MA');\n    assertThat(userData.zp).isEqualTo('02101');\n    assertThat(userData.country).isEqualTo('US');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[User Data] Empty or all-falsy user data returns undefined'\n  code: |-\n    [\n      { description: 'empty object', userData: {} },\n      { description: 'all-falsy values', userData: { email: '', phone: null } }\n    ].forEach((scenario) => {\n      fbqCalls = [];\n      const testData = assign(assign({}, mockData), {\n        enableEdvancedMatching: true,\n        userDataFromVariable: scenario.userData\n      });\n\n      runCode(testData);\n\n      const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n      assertThat(initCalls.length).isEqualTo(1);\n      assertThat(initCalls[0][2]).isUndefined();\n\n      assertApi('gtmOnSuccess').wasCalled();\n      assertApi('gtmOnFailure').wasNotCalled();\n    });\n- name: '[User Data] External ID falls back to DataLayer when useDL is true'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'user_data') return { email: 'test@example.com' };\n      if (key === 'external_id') return 'dl-ext-id';\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    const userData = initCalls[0][2];\n    assertThat(userData.external_id).isEqualTo('dl-ext-id');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Data] GA4 Purchase with multiple items builds correct properties'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      eventNameStandard: 'Purchase',\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'items') return [\n        { item_id: 'SKU1', item_name: 'Product 1', price: 10, quantity: 2, currency: 'EUR' },\n        { item_id: 'SKU2', item_name: 'Product 2', price: 25, quantity: 1 }\n      ];\n      if (key === 'value') return 45;\n      if (key === 'currency') return 'EUR';\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n\n    const eventData = trackCalls[0][3];\n    assertThat(eventData.content_type).isEqualTo('product');\n    assertThat(eventData.content_ids).isEqualTo(['SKU1', 'SKU2']);\n    assertThat(eventData.contents.length).isEqualTo(2);\n    assertThat(eventData.contents[0].id).isEqualTo('SKU1');\n    assertThat(eventData.contents[0].quantity).isEqualTo(2);\n    assertThat(eventData.contents[1].id).isEqualTo('SKU2');\n    assertThat(eventData.contents[1].quantity).isEqualTo(1);\n    assertThat(eventData.value).isEqualTo(45);\n    assertThat(eventData.currency).isEqualTo('EUR');\n    assertThat(eventData.num_items).isDefined();\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Data] GA4 single item includes content_name and content_category'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      eventNameStandard: 'ViewContent',\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'items') return [\n        { item_id: 'SINGLE1', item_name: 'My Product', item_category: 'Electronics', price: 99, quantity: 1 }\n      ];\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    const eventData = trackCalls[0][3];\n    assertThat(eventData.content_name).isEqualTo('My Product');\n    assertThat(eventData.content_category).isEqualTo('Electronics');\n    assertThat(eventData.content_type).isEqualTo('product');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Data] UA Purchase with products builds correct properties'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      eventNameStandard: 'Purchase',\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'ecommerce') return {\n        currencyCode: 'GBP',\n        purchase: {\n          products: [\n            { id: 'P1', price: '15.99', quantity: '3' },\n            { id: 'P2', price: '8.50', quantity: '1' }\n          ]\n        }\n      };\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n\n    const eventData = trackCalls[0][3];\n    assertThat(eventData.content_type).isEqualTo('product');\n    assertThat(eventData.content_ids).isEqualTo(['P1', 'P2']);\n    assertThat(eventData.currency).isEqualTo('GBP');\n    assertThat(eventData.contents.length).isEqualTo(2);\n    assertThat(eventData.num_items).isDefined();\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Data] Properties from variable and table list merge correctly'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      objectPropertiesFromVariable: { content_name: 'My Product', value: 99 },\n      objectPropertiesList: [\n        { name: 'currency', value: 'USD' },\n        { name: 'content_type', value: 'product' }\n      ]\n    });\n\n    runCode(testData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    const eventData = trackCalls[0][3];\n    assertThat(eventData.content_name).isEqualTo('My Product');\n    assertThat(eventData.value).isEqualTo(99);\n    assertThat(eventData.currency).isEqualTo('USD');\n    assertThat(eventData.content_type).isEqualTo('product');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Data] GA4 Search event includes search_string'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      eventNameStandard: 'Search',\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', (key) => {\n      if (key === 'search_term') return 'blue shoes';\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    const eventData = trackCalls[0][3];\n    assertThat(eventData.search_string).isEqualTo('blue shoes');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Data] GA4 Purchase defaults currency to USD and value to 0'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      eventNameStandard: 'Purchase',\n      enableDataLayerMapping: true\n    });\n\n    mock('copyFromDataLayer', () => undefined);\n\n    runCode(testData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    const eventData = trackCalls[0][3];\n    assertThat(eventData.currency).isEqualTo('USD');\n    assertThat(eventData.value).isEqualTo(0);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Settings] disableAutoConfig and disablePushState are applied correctly'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      disableAutoConfig: true,\n      disablePushState: true\n    });\n\n    runCode(testData);\n\n    const autoConfigCalls = fbqCalls.filter((c) => c[0] === 'set' && c[1] === 'autoConfig');\n    assertThat(autoConfigCalls.length).isEqualTo(1);\n    assertThat(autoConfigCalls[0][2]).isFalse();\n    assertThat(autoConfigCalls[0][3]).isEqualTo('123456789');\n\n    const pushStateCalls = setInWindowCalls.filter((c) => c[0] === 'fbq.disablePushState');\n    assertThat(pushStateCalls.length).isEqualTo(1);\n    assertThat(pushStateCalls[0][1]).isTrue();\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[DataLayer Push] Pushes event with custom and default settings'\n  code: |-\n    [\n      {\n        desc: 'custom name and layer',\n        dataLayerEventName: 'fb_pageview',\n        dataLayerVariableName: 'myDataLayer',\n        eventId: 'evt-123',\n        expectedLayer: 'myDataLayer',\n        expectedEvent: 'fb_pageview'\n      },\n      {\n        desc: 'defaults when not specified',\n        dataLayerEventName: undefined,\n        dataLayerVariableName: undefined,\n        eventId: 'evt-456',\n        expectedLayer: 'dataLayer',\n        expectedEvent: 'DefaultTagEvent'\n      }\n    ].forEach((scenario) => {\n      createQueueItems = [];\n      const testData = assign(assign({}, mockData), {\n        dataLayerEventPush: true,\n        dataLayerEventName: scenario.dataLayerEventName,\n        dataLayerVariableName: scenario.dataLayerVariableName,\n        eventId: scenario.eventId\n      });\n\n      runCode(testData);\n\n      const dlPushes = createQueueItems.filter((c) => c[0] === scenario.expectedLayer);\n      assertThat(dlPushes.length).isEqualTo(1);\n      assertThat(dlPushes[0][1].event).isEqualTo(scenario.expectedEvent);\n      assertThat(dlPushes[0][1].eventId).isEqualTo(scenario.eventId);\n\n      assertApi('gtmOnSuccess').wasCalled();\n      assertApi('gtmOnFailure').wasNotCalled();\n    });\n- name: '[Scripts] Param builder calls processAndCollectAllParams when available'\n  code: |-\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      if (key === 'clientParamBuilder.processAndCollectAllParams') return function() {};\n      return undefined;\n    });\n\n    runCode(mockData);\n\n    assertThat(injectScriptCalls.length).isEqualTo(2);\n    assertApi('callInWindow').wasCalledWith('clientParamBuilder.processAndCollectAllParams');\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Scripts] Param builder falls back to processAndCollectParams'\n  code: |-\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      if (key === 'clientParamBuilder.processAndCollectAllParams') return undefined;\n      if (key === 'clientParamBuilder.processAndCollectParams') return function() {};\n      return undefined;\n    });\n\n    runCode(mockData);\n\n    assertThat(injectScriptCalls.length).isEqualTo(2);\n    assertApi('callInWindow').wasCalledWith('clientParamBuilder.processAndCollectParams');\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Scripts] Param builder disabled injects only fbevents and removes -pb suffix'\n  code: |-\n    const testData = assign(assign({}, mockData), { enableParamBuilderSdk: false });\n\n    runCode(testData);\n\n    assertThat(injectScriptCalls.length).isEqualTo(1);\n    assertThat(injectScriptCalls[0].url).isEqualTo('https://connect.facebook.net/en_US/fbevents.js');\n\n    const agentCalls = fbqCalls.filter((c) => c[0] === 'set' && c[1] === 'agent');\n    assertThat(agentCalls[0][2]).isEqualTo(PARTNER_AGENT_VERSION);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Scripts] fbevents failure calls gtmOnFailure'\n  code: |-\n    mock('injectScript', (url, onsuccess, onfailure) => {\n      if (url === 'https://connect.facebook.net/en_US/fbevents.js') {\n        onfailure();\n      }\n    });\n\n    runCode(mockData);\n\n    assertApi('gtmOnSuccess').wasNotCalled();\n    assertApi('gtmOnFailure').wasCalled();\n- name: '[Event Enhancement] Reads stored data from localStorage and writes back'\n  code: |-\n    localStorageData.gtmeec = '{\"em\":\"stored@example.com\"}';\n\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      enableEventEnhancement: true,\n      userDataFromVariable: { ph: '+1999999999' }\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    const userData = initCalls[0][2];\n    assertThat(userData.em).isEqualTo('stored@example.com');\n    assertThat(userData.ph).isEqualTo('+1999999999');\n\n    assertThat(localStorageData.gtmeec).isDefined();\n    const stored = JSON.parse(localStorageData.gtmeec);\n    assertThat(stored.em).isEqualTo('stored@example.com');\n    assertThat(stored.ph).isEqualTo('+1999999999');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Enhancement] Skips localStorage read and write when consent is revoked'\n  code: |-\n    let getItemCalled = false;\n    let setItemCalled = false;\n    mockObject('localStorage', {\n      getItem: (key) => { getItemCalled = true; return localStorageData[key]; },\n      setItem: (key, value) => { setItemCalled = true; localStorageData[key] = value; }\n    });\n\n    localStorageData.gtmeec = '{\"em\":\"stored@example.com\"}';\n\n    const testData = assign(assign({}, mockData), {\n      consent: false,\n      enableEdvancedMatching: true,\n      enableEventEnhancement: true,\n      userDataFromVariable: { ph: '+1999999999' }\n    });\n\n    runCode(testData);\n\n    assertThat(getItemCalled).isFalse();\n    assertThat(setItemCalled).isFalse();\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    const userData = initCalls[0][2];\n    assertThat(userData.em).isUndefined();\n    assertThat(userData.ph).isEqualTo('+1999999999');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Enhancement] Hashed storage calls hashUserDataFields with sync hash'\n  code: |-\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      if (key === 'dataTag256') return function() { return 'abc123hash'; };\n      return undefined;\n    });\n\n    mock('callInWindow', (key) => {\n      if (key === 'dataTag256') return 'abc123hash';\n      return undefined;\n    });\n\n\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      enableEventEnhancement: true,\n      storeUserDataHashed: true,\n      userDataFromVariable: { email: 'test@example.com' }\n    });\n\n    runCode(testData);\n\n    assertThat(localStorageData.gtmeec).isDefined();\n    const stored = JSON.parse(localStorageData.gtmeec);\n    assertThat(stored.em).isEqualTo('abc123hash');\n\n    assertApi('callInWindow').wasCalledWith('dataTag256', 'test@example.com', 'HEX');\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event Enhancement] Hashed storage with async sha256 stores hashed data'\n  code: |-\n    mock('sha256', (input, successCb, errorCb, options) => {\n      successCb('async_hashed_' + input);\n    });\n\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      return undefined;\n    });\n\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      enableEventEnhancement: true,\n      storeUserDataHashed: true,\n      userDataFromVariable: { email: 'test@example.com' }\n    });\n\n    runCode(testData);\n\n    assertThat(localStorageData.gtmeec).isDefined();\n    const stored = JSON.parse(localStorageData.gtmeec);\n    assertThat(stored.em).isEqualTo('async_hashed_test@example.com');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Event ID] Passes eventID option in track call'\n  code: |-\n    mockData.eventId = 'evt-abc-123';\n\n    runCode(mockData);\n\n    const trackCalls = fbqCalls.filter((c) => c[0] === 'trackSingle');\n    assertThat(trackCalls.length).isEqualTo(1);\n    assertThat(trackCalls[0][4]).isEqualTo({ eventID: 'evt-abc-123' });\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[Advanced Matching] Re-inits initialized pixel when runInitOnce is false'\n  code: |-\n    const testData = assign(assign({}, mockData), {\n      enableEdvancedMatching: true,\n      runInitOnce: false,\n      userDataFromVariable: { email: 'test@example.com' }\n    });\n\n    mock('copyFromWindow', (key) => {\n      if (key === 'fbq') return mockFbq;\n      if (key === '_meta_gtm_ids') return ['123456789'];\n      return undefined;\n    });\n\n    runCode(testData);\n\n    const initCalls = fbqCalls.filter((c) => c[0] === 'init');\n    assertThat(initCalls.length).isEqualTo(1);\n    assertThat(initCalls[0][2].em).isEqualTo('test@example.com');\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\n- name: '[DL Version] enableCurrentDataLayerOnly uses DL version 1'\n  code: |-\n    let capturedVersion;\n    mock('copyFromDataLayer', (key, version) => {\n      if (key === 'search_term') {\n        capturedVersion = version;\n        return 'test query';\n      }\n      return undefined;\n    });\n\n    const testData = assign(assign({}, mockData), {\n      enableDataLayerMapping: true,\n      enableCurrentDataLayerOnly: true,\n      eventNameStandard: 'Search'\n    });\n\n    runCode(testData);\n\n    assertThat(capturedVersion).isEqualTo(1);\n\n    assertApi('gtmOnSuccess').wasCalled();\n    assertApi('gtmOnFailure').wasNotCalled();\nsetup: |-\n  const JSON = require('JSON');\n  const Object = require('Object');\n\n  const PARTNER_AGENT_VERSION = 'stape-gtm-1.2.0';\n\n  const assign = (target, source) => {\n    if (!source) return target;\n    Object.keys(source).forEach((key) => { target[key] = source[key]; });\n    return target;\n  };\n\n  let fbqCalls = [];\n  const mockFbq = function() {\n    const args = [];\n    for (let i = 0; i < arguments.length; i++) {\n      args.push(arguments[i]);\n    }\n    fbqCalls.push(args);\n  };\n  mockFbq.queue = [];\n\n  let setInWindowCalls = [];\n  mock('setInWindow', (key, value, override) => {\n    setInWindowCalls.push([key, value, override]);\n  });\n\n  let injectScriptCalls = [];\n  mock('injectScript', (url, onsuccess, onfailure, cacheToken) => {\n    injectScriptCalls.push({ url: url, onsuccess: onsuccess, onfailure: onfailure, cacheToken: cacheToken });\n    onsuccess();\n  });\n\n  mock('copyFromWindow', (key) => {\n    if (key === 'fbq') return mockFbq;\n    return undefined;\n  });\n\n  mock('aliasInWindow', () => true);\n\n  let createQueueItems = [];\n  mock('createQueue', (name) => {\n    return (item) => { createQueueItems.push([name, item]); };\n  });\n\n  mock('copyFromDataLayer', () => undefined);\n  mock('isConsentGranted', () => true);\n  mock('addConsentListener', () => {});\n\n  let templateStorageData = {};\n  mockObject('templateStorage', {\n    getItem: (key) => templateStorageData[key],\n    setItem: (key, value) => { templateStorageData[key] = value; }\n  });\n\n  let localStorageData = {};\n  mockObject('localStorage', {\n    getItem: (key) => localStorageData[key],\n    setItem: (key, value) => { localStorageData[key] = value; }\n  });\n\n  const mockData = {\n    pixelIds: '123456789',\n    consent: true,\n    enableConsentMode: false,\n    inheritEventName: 'override',\n    eventName: 'standard',\n    eventNameStandard: 'PageView',\n    enableDataLayerMapping: false,\n    enableEdvancedMatching: false,\n    enableParamBuilderSdk: true,\n    dpoLDU: false,\n    disableAutoConfig: false,\n    disablePushState: false,\n    dataLayerEventPush: false,\n    enableEventEnhancement: false,\n    storeUserDataHashed: false,\n    runInitOnce: false,\n    enableCurrentDataLayerOnly: false\n  };\n\n\n___NOTES___\n\n2026-04-09 - Change Notes:\n  - Add optional Meta Parameter Builder SDK integration (enabled by default) to improve _fbp and _fbc cookie coverage, including backup Click ID retrieval from in-app browsers\n  - Add consent-aware event enhancement: user data is now only read from/written to localStorage when consent is granted\n  - Bump version to stape-gtm-1.2.0 (with -pb suffix when Param Builder SDK is active)\n\nCreated on 08/15/2025, 08:58:45 AM\n\n\n",
+    "galleryReference": {
+     "host": "github.com",
+     "owner": "stape-io",
+     "repository": "fb-tag",
+     "version": "c94461ee086c1a458cd43d0135d24d41485b8ec3",
+     "signature": "a7d870c213c53a23233b80a169c65a294cffb0b07d24b4f34e08b93459ae3b50",
+     "galleryTemplateId": "KFNBV"
+    }
+   }
+  ]
+ }
+}
