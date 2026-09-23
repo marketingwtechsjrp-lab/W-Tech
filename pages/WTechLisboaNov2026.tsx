@@ -476,7 +476,7 @@ const WTechLisboaNov2026: React.FC = () => {
                     <div className="text-center mb-16">
                         <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-xs">Sucesso da 1ª Edição</span>
                         <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">Como Foi a <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">1ª Edição em Lisboa</span></h2>
-                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação técnica e da prática real no nosso primeiro treinamento.</p>
+                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação e do aprofundamento técnico do nosso primeiro treinamento.</p>
                     </div>
 
                     <div className="mb-28">

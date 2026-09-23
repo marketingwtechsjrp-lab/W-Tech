@@ -358,7 +358,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         <div className="flex flex-col items-center gap-2">
                             <Calendar className="text-wtech-red mb-2" size={32} />
                             <span className="text-2xl font-black uppercase tracking-tighter">3 Dias de Imersão</span>
-                            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Teoria e Prática Intensiva</span>
+                            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Conteúdo Técnico Intensivo</span>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <MapPin className="text-wtech-red mb-2" size={32} />
@@ -429,7 +429,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                     <div className="text-center mb-16">
                         <span className="text-wtech-red font-black uppercase tracking-[0.3em] text-xs">Sucesso da 1ª Edição</span>
                         <h2 className="text-4xl md:text-6xl font-black uppercase mt-4">Como Foi a <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">1ª Edição em Lisboa</span></h2>
-                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação técnica e da prática real no nosso primeiro treinamento.</p>
+                        <p className="text-gray-500 mt-4 text-lg max-w-xl mx-auto">Confira um resumo da energia, da dedicação e do aprofundamento técnico do nosso primeiro treinamento.</p>
                     </div>
 
                     <div className="mb-28">
@@ -510,7 +510,7 @@ const LPWTechLisboaNov2026: React.FC = () => {
                             <div className="relative z-10">
                                 <h3 className="text-2xl font-black uppercase text-white mb-6">Localização Premium</h3>
                                 <p className="text-gray-400 mb-8 leading-relaxed">
-                                    A Art on Wheels Garage oferece a infraestrutura perfeita para uma formação de alto nível: ambiente profissional, equipamento real de oficina e o clima certo para a prática.
+                                    A Art on Wheels Garage oferece a infraestrutura perfeita para uma formação de alto nível: ambiente profissional, equipamento real de oficina e o clima certo para o aprendizado técnico.
                                 </p>
                                 <div className="space-y-4 mb-10">
                                     <div className="flex items-center gap-4 text-gray-300">
@@ -689,26 +689,26 @@ const LPWTechLisboaNov2026: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* DIA 03 — PRÁTICA INTENSIVA */}
+                    {/* DIA 03 — REVISÃO TÉCNICA */}
                     <div className="mt-16 max-w-6xl mx-auto">
                         <div className="mb-8 text-center">
                             <span className="text-wtech-gold text-[11px] font-black uppercase tracking-[0.3em]">Dia 03 · Domingo</span>
-                            <h3 className="text-2xl md:text-3xl font-black uppercase text-white tracking-tighter italic">Prática Intensiva & Certificação</h3>
-                            <p className="text-gray-500 text-sm mt-2 max-w-2xl mx-auto">O dia extra da 2ª edição: mão na massa na bancada, revisão completa guiada e casos reais até a certificação.</p>
+                            <h3 className="text-2xl md:text-3xl font-black uppercase text-white tracking-tighter italic">Revisão Técnica & Certificação</h3>
+                            <p className="text-gray-500 text-sm mt-2 max-w-2xl mx-auto">O dia extra da 2ª edição: revisão completa guiada, análise de componentes e casos reais até a certificação.</p>
                         </div>
                         <div className="grid md:grid-cols-3 gap-6">
                             {[
                                 {
                                     num: "07",
-                                    title: "Bancada & Desmontagem",
-                                    subtitle: "Mão na Massa",
-                                    desc: "Prática guiada de abertura, inspeção e leitura de componentes internos passo a passo, com acompanhamento direto do instrutor."
+                                    title: "Análise de Componentes",
+                                    subtitle: "Leitura Técnica",
+                                    desc: "Demonstração guiada de abertura, inspeção e leitura de componentes internos, conduzida passo a passo pelo instrutor."
                                 },
                                 {
                                     num: "08",
                                     title: "Revisão Completa (Rebuild)",
                                     subtitle: "Do Zero ao Setup",
-                                    desc: "Montagem, sangria, carga de óleo e regulagem final aplicando toda a teoria dos dias anteriores em uma suspensão real."
+                                    desc: "Estudo técnico do processo de montagem, sangria, carga de óleo e regulagem final, consolidando a teoria dos dias anteriores."
                                 },
                                 {
                                     num: "09",

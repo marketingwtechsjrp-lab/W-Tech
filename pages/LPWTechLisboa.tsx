@@ -93,7 +93,7 @@ const LPWTechLisboa: React.FC = () => {
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
             <SEO
                 title="W-Tech Europa — Formação em Suspensão de Motos"
-                description="A metodologia W-Tech Brasil de regulagem e manutenção de suspensão chega a Portugal. Curso presencial com prática em bancada."
+                description="A metodologia W-Tech Brasil de regulagem e manutenção de suspensão chega a Portugal em uma formação técnica presencial e intensiva."
             />
             
             {/* TOP BAR / URGENCY */}
@@ -178,7 +178,7 @@ const LPWTechLisboa: React.FC = () => {
                         <div className="flex flex-col items-center gap-2">
                             <Calendar className="text-wtech-red mb-2" size={32} />
                             <span className="text-2xl font-black uppercase tracking-tighter">2 Dias de Imersão</span>
-                            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Teoria e Prática Intensiva</span>
+                            <span className="text-xs text-gray-500 uppercase font-bold tracking-widest text-center">Conteúdo Técnico Intensivo</span>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <MapPin className="text-wtech-red mb-2" size={32} />

@@ -107,7 +107,7 @@ const WTechLisboa: React.FC = () => {
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-red selection:text-white font-sans overflow-x-hidden">
             <SEO
                 title="W-Tech Europa — Curso de Suspensão em Lisboa 2026"
-                description="Formação técnica em suspensão de motos da W-Tech Brasil em Lisboa: prática em bancada, turmas reduzidas e certificação. Vagas limitadas."
+                description="Formação técnica presencial em suspensão de motos da W-Tech Brasil em Lisboa, com turmas reduzidas e certificação. Vagas limitadas."
             />
             
             {/* TOP BAR */}
@@ -382,7 +382,7 @@ const WTechLisboa: React.FC = () => {
 
                      <div className="mt-12 text-center">
                         <p className="inline-block bg-white/5 border border-white/10 px-8 py-4 rounded-full text-xs font-black uppercase tracking-[0.3em] text-gray-400">
-                             💡 Esqueça a teoria superficial. Aqui o conhecimento é aplicado na prática.
+                             💡 Esqueça a teoria superficial. Aqui o conhecimento é aprofundado com método e aplicação técnica.
                         </p>
                      </div>
                 </div>
@@ -544,7 +544,7 @@ const WTechLisboa: React.FC = () => {
                              <p className="text-wtech-gold text-sm mb-8 font-black uppercase tracking-[0.2em] italic">Fundador W-Tech Suspensões</p>
                              
                              <p className="text-gray-400 italic font-medium text-lg leading-relaxed mb-8 border-l-2 border-white/10 pl-8">
-                                Responsável direto pelo desenvolvimento de sistemas, metodologias e soluções técnicas W-Tech. Todo o conteúdo teórico e prático será ministrado pelo Alex.
+                                Responsável direto pelo desenvolvimento de sistemas, metodologias e soluções técnicas W-Tech. Todo o conteúdo técnico será ministrado pelo Alex.
                              </p>
 
                              <div className="grid grid-cols-2 gap-6 text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">
@@ -565,7 +565,7 @@ const WTechLisboa: React.FC = () => {
                              <h3 className="text-3xl md:text-4xl font-black uppercase text-white mb-2 italic tracking-tighter">Fernando Macedo</h3>
                              <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-6">Fundador ProRiders</p>
                              <p className="text-gray-400 text-base leading-relaxed italic font-medium">
-                                 Estará presente para elevar a experiência, trazendo a visão prática da pilotagem profissional e a aplicação real dos ajustes de suspensão no comportamento dinâmico da mota.
+                                 Estará presente para elevar a formação, trazendo a visão da pilotagem profissional e a análise dos ajustes de suspensão no comportamento dinâmico da mota.
                              </p>
                          </div>
                     </div>
