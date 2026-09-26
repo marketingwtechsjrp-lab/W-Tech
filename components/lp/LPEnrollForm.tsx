@@ -23,12 +23,13 @@ type Props = {
     setSubmitted: (v: boolean) => void;
     handleSubmit: (e: React.FormEvent) => void;
     whatsappGlobal?: string;
+    submitting?: boolean;
 };
 
 export const LPEnrollForm: React.FC<Props> = ({
     lp, theme, checkoutAtivo, isFullOrDone,
     form, setForm, paymentType, setPaymentType,
-    submitted, setSubmitted, handleSubmit, whatsappGlobal
+    submitted, setSubmitted, handleSubmit, whatsappGlobal, submitting = false
 }) => {
     const dark = theme === 'dark';
 
@@ -58,29 +59,29 @@ export const LPEnrollForm: React.FC<Props> = ({
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-                <label className={labelCls}>Nome Completo</label>
+                <label htmlFor="lp-enroll-name" className={labelCls}>Nome Completo</label>
                 <div className="relative">
                     <User className={`absolute left-4 top-3.5 ${dark ? 'text-white/30' : 'text-gray-400'}`} size={20} />
-                    <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inputCls} placeholder="Digite seu nome" />
+                    <input id="lp-enroll-name" autoComplete="name" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={inputCls} placeholder="Digite seu nome" />
                 </div>
             </div>
             <div>
-                <label className={labelCls}>WhatsApp</label>
+                <label htmlFor="lp-enroll-phone" className={labelCls}>WhatsApp</label>
                 <div className="relative">
-                    <span className={`absolute left-4 top-4 font-bold text-xs ${dark ? 'text-white/30' : 'text-gray-400'}`}>BR</span>
-                    <input required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className={inputCls} placeholder="(00) 00000-0000" />
+                    <span className={`absolute left-4 top-4 font-bold text-xs ${dark ? 'text-white/30' : 'text-gray-400'}`}>+</span>
+                    <input id="lp-enroll-phone" type="tel" autoComplete="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className={inputCls} placeholder={lp.course?.isInternational || lp.course?.currency === 'EUR' ? '+351 912 345 678' : '(00) 00000-0000'} />
                 </div>
             </div>
             <div>
-                <label className={labelCls}>E-mail</label>
+                <label htmlFor="lp-enroll-email" className={labelCls}>E-mail</label>
                 <div className="relative">
                     <span className={`absolute left-4 top-4 ${dark ? 'text-white/30' : 'text-gray-400'}`}>@</span>
-                    <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={inputCls} placeholder="Digite seu e-mail" />
+                    <input id="lp-enroll-email" autoComplete="email" required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={inputCls} placeholder="Digite seu e-mail" />
                 </div>
             </div>
 
-            <button type="submit" className="w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black py-4 rounded-xl font-black text-lg uppercase tracking-wider hover:shadow-[0_10px_20px_rgba(212,175,55,0.35)] hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
-                {isFullOrDone ? 'Entrar na Lista de Espera' : 'Quero Garantir Minha Vaga'} <ArrowRight size={20} strokeWidth={3} />
+            <button type="submit" disabled={submitting} aria-busy={submitting} className="w-full bg-gradient-to-r from-wtech-gold to-yellow-600 text-black py-4 rounded-xl font-black text-lg uppercase tracking-wider hover:shadow-[0_10px_20px_rgba(212,175,55,0.35)] hover:scale-[1.01] transition-all flex items-center justify-center gap-2">
+                {submitting ? 'Enviando…' : isFullOrDone ? 'Entrar na Lista de Espera' : checkoutAtivo ? 'Continuar para inscrição' : 'Quero receber informações'} <ArrowRight size={20} strokeWidth={3} />
             </button>
 
             <div className={`flex items-center justify-center gap-4 pt-4 border-t text-xs font-bold uppercase ${dark ? 'border-white/10 text-white/40' : 'border-gray-100 text-gray-400'}`}>

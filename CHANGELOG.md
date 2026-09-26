@@ -1,5 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.43.0 (2026-09-26) - Landing pages por curso e editor por blocos
+- Organização inspirada no painel Pecon, com modelo em uso e links separados por curso.
+- Catálogo com os 12 modelos, incluindo W-Tech Cinema, Signature e Performance.
+- Editor em quatro etapas: Modelo, Conteúdo, Prévia e Revisão, com suporte a tema escuro e celular.
+- Retrato e fotos originais W-Tech, vídeo na hero e seções de autoridade, programa e inscrição.
+- Trocar o visual preserva o conteúdo e não sobrescreve o cronograma do curso.
+
 
 ## v3.42.0 (2026-09-16) - Rastreamento Google Ads/GA4 (conversoes, click IDs no CRM) e correcoes de SEO/404
 - Conversoes padronizadas generate_lead, begin_checkout e purchase publicadas no dataLayer para os funis do curso online, presencial Brasil e Lisboa (Google Ads, GA4 e Meta via GTM), com dados para Enhanced Conversions

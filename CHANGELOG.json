@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.43.0",
+    "date": "2026-09-26",
+    "title": "Landing pages por curso, editor por blocos e coleção premium W-Tech",
+    "changes": [
+      "Organização inspirada no painel Pecon: uma página por curso, modelo em uso, links e prévias separados.",
+      "Os 12 modelos ficam acessíveis, incluindo os nove anteriores e os novos W-Tech Cinema, Signature e Performance.",
+      "Editor com quatro etapas: modelo, conteúdo por blocos, prévia desktop/celular e revisão antes de salvar.",
+      "Modelos premium com retrato original do Alex, vídeo na hero, programa, autoridade e imagens do acervo W-Tech.",
+      "Troca de modelo preserva conteúdo e não regrava o cronograma do curso sem edição."
+    ],
+    "author": "W-Tech"
+  },
+  {
     "version": "3.42.0",
     "date": "2026-09-16",
     "title": "Rastreamento Google Ads/GA4 (conversoes, click IDs no CRM) e correcoes de SEO/404",

@@ -1,3 +1,4 @@
+import { lpPathForTemplate } from '../lib/landingTemplates';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
@@ -122,6 +123,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 const LandingPageViewerV3: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
   const { get } = useSettings();
   const systemLogo = get('logo_url');
   const siteTitle = get('site_title', 'W-TECH');
@@ -153,7 +155,7 @@ const LandingPageViewerV3: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    if (lp) trackConfiguredLandingPageView(lp);
+    if (lp && !isPreview) trackConfiguredLandingPageView(lp);
   }, [lp]);
   const [submitting, setSubmitting] = useState(false);
   const [openModule, setOpenModule] = useState<number | null>(null);
@@ -197,6 +199,11 @@ const LandingPageViewerV3: React.FC = () => {
       }
 
       if (lpData) {
+        const savedTemplate = lpData.template || 'v3';
+        if (!isPreview && savedTemplate !== 'v3') {
+          navigate(`${lpPathForTemplate(savedTemplate)}/${slug}${window.location.search}${window.location.hash}`, { replace: true });
+          return;
+        }
         const rawCourse = (lpData as any).course;
         const mappedCourse = rawCourse ? {
           ...rawCourse,
@@ -225,7 +232,7 @@ const LandingPageViewerV3: React.FC = () => {
           whatsappNumber: (lpData as any).whatsapp_number,
           pixelId: (lpData as any).pixel_id,
           heroSecondaryImage: (lpData as any).hero_secondary_image,
-          quizEnabled: (lpData as any).quiz_enabled,
+          quizEnabled: isPreview ? false : (lpData as any).quiz_enabled,
           fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
           handsOnEnabled: (lpData as any).hands_on_enabled !== false,
           testimonials: resolveCourseTestimonials((lpData as any).testimonials),
@@ -246,6 +253,7 @@ const LandingPageViewerV3: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPreview) return;
     if (!lp || submitting) return;
     setSubmitting(true);
     try {

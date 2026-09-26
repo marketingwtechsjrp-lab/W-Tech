@@ -1,3 +1,4 @@
+import { lpPathForTemplate } from '../lib/landingTemplates';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView, AnimatePresence, useMotionValue, animate } from 'framer-motion';
@@ -160,6 +161,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 const LandingPageViewerV2: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
   const { get } = useSettings();
   const systemLogo = get('logo_url');
   const siteTitle = get('site_title', 'W-TECH');
@@ -191,7 +193,7 @@ const LandingPageViewerV2: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    if (lp) trackConfiguredLandingPageView(lp);
+    if (lp && !isPreview) trackConfiguredLandingPageView(lp);
   }, [lp]);
   const [submitting, setSubmitting] = useState(false);
   const [spotsLeft, setSpotsLeft] = useState(5);
@@ -241,6 +243,11 @@ const LandingPageViewerV2: React.FC = () => {
       }
 
       if (lpData) {
+        const savedTemplate = lpData.template || 'v2';
+        if (!isPreview && savedTemplate !== 'v2') {
+          navigate(`${lpPathForTemplate(savedTemplate)}/${slug}${window.location.search}${window.location.hash}`, { replace: true });
+          return;
+        }
         const rawCourse = (lpData as any).course;
         const mappedCourse = rawCourse ? {
           ...rawCourse,
@@ -267,7 +274,7 @@ const LandingPageViewerV2: React.FC = () => {
           whatsappNumber: (lpData as any).whatsapp_number,
           pixelId: (lpData as any).pixel_id,
           heroSecondaryImage: (lpData as any).hero_secondary_image,
-          quizEnabled: (lpData as any).quiz_enabled,
+          quizEnabled: isPreview ? false : (lpData as any).quiz_enabled,
           fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
           handsOnEnabled: (lpData as any).hands_on_enabled !== false,
           testimonials: resolveCourseTestimonials((lpData as any).testimonials),
@@ -290,6 +297,7 @@ const LandingPageViewerV2: React.FC = () => {
   // ── Form Submit ───────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPreview) return;
     if (!lp || submitting) return;
     setSubmitting(true);
     try {

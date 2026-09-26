@@ -35,6 +35,7 @@ const ROTAS_EXATAS = new Set<string>([
   '/contato',
   '/blog',
   '/lp/europa',
+  '/lp-preview',
   '/lp-lisboa-fev-2026',
   '/lp-wtech-lisboa',
   '/wtech-lisboa',
@@ -152,7 +153,7 @@ const VERIFICADORES: Array<{ padrao: RegExp; verificar: Verificador }> = [
   {
     // LandingPageViewer resolve o parâmetro por três caminhos distintos: slug da
     // landing page, course_id da landing page, ou id do curso direto.
-    padrao: /^\/lp[2-9]?\/([^/]+)$/,
+    padrao: /^\/lp(?:[2-9]|1[0-2])?\/([^/]+)$/,
     verificar: async (slug) =>
       (await algumConfirma([
         existeLinha('SITE_LandingPages', 'slug', slug),

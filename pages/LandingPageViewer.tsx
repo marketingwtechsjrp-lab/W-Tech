@@ -1,3 +1,4 @@
+import { lpPathForTemplate } from '../lib/landingTemplates';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
@@ -21,6 +22,7 @@ import {
 const LandingPageViewer: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
+  const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
     const { get } = useSettings();
     const systemLogo = get('logo_url');
     const siteTitle = get('site_title', 'W-TECH');
@@ -43,7 +45,7 @@ const LandingPageViewer: React.FC = () => {
     const [showFloatingCTA, setShowFloatingCTA] = useState(false);
 
     useEffect(() => {
-        if (lp) trackConfiguredLandingPageView(lp);
+        if (lp && !isPreview) trackConfiguredLandingPageView(lp);
     }, [lp]);
 
     useEffect(() => {
@@ -146,7 +148,7 @@ const LandingPageViewer: React.FC = () => {
             pixelId: (lpData as any).pixel_id,
             modules: lpData.modules,
             heroSecondaryImage: (lpData as any).hero_secondary_image,
-            quizEnabled: (lpData as any).quiz_enabled,
+            quizEnabled: isPreview ? false : (lpData as any).quiz_enabled,
             fakeAlertsEnabled: (lpData as any).fake_alerts_enabled,
             handsOnEnabled: (lpData as any).hands_on_enabled !== false,
             testimonials: resolveCourseTestimonials((lpData as any).testimonials),
@@ -156,8 +158,8 @@ const LandingPageViewer: React.FC = () => {
         };
         // Auto-redirect para o viewer do template salvo no admin (v2..v8)
         const savedTemplate = (lpData as any).template;
-        if (savedTemplate && savedTemplate !== 'v1') {
-            navigate(`/lp${String(savedTemplate).replace('v', '')}/${slug}`, { replace: true });
+        if (savedTemplate && savedTemplate !== 'v1' && !isPreview) {
+            navigate(`${lpPathForTemplate(savedTemplate)}/${slug}${window.location.search}${window.location.hash}`, { replace: true });
             return;
         }
 
@@ -180,6 +182,7 @@ const LandingPageViewer: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPreview) return;
     if (!lp) return;
 
     try {
