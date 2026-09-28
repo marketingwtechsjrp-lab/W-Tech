@@ -109,7 +109,7 @@ export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {
         anchor: 'R$ 347,00',
         validUntil: '2026-10-31',
         label: 'Condição especial de retorno',
-        billingNote: 'Primeiro ano por R$ 97,00. Depois o plano renova por R$ 347,00/ano. Cancele quando quiser. Pague no cartão em até 12x ou no Pix Automático.',
+        billingNote: 'Primeiro ano por R$ 97,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
     },
 };
 

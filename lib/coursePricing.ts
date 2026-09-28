@@ -89,7 +89,7 @@ export interface CoursePrice {
     /** 'Mais de R$ 997,00 em Planilhas e Material Complementar Grátis.' */
     bonusSubLabel: string;
     /** Aviso de cobrança recorrente, logo abaixo do preço. No Brasil o curso é
-     *  um plano anual do Kiwify que renova sozinho, e quem compra precisa saber
+     *  um plano anual do Kiwify que renova todo ano, e quem compra precisa saber
      *  disso na página — não descobrir o "/ano" só na tela do checkout. `null`
      *  no internacional: lá `installments`/`cashLabel` já dizem que são 59 € uma
      *  única vez, sem renovação. */
@@ -158,7 +158,9 @@ const LABELS: Record<LPLanguage, {
     singlePayment: (v: string) => string;
     singlePaymentShort: string;
     bonusSub: (v: string) => string;
-    /** Aviso do plano anual renovável do Kiwify — só existe na cobrança em real. */
+    /** Aviso do plano anual renovável do Kiwify — só existe na cobrança em real.
+     *  Sem "renovação automática": desde 28/09/2026 o Pix Automático está
+     *  desligado no produto, e quem paga por Pix renova com um novo pagamento. */
     annualPlan: string;
 }> = {
     'pt-BR': {
@@ -167,7 +169,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `Pagamento único de ${v} · sem renovação`,
         singlePaymentShort: 'Pagamento único · sem renovação',
         bonusSub: (v) => `Mais de ${v} em Planilhas e Material Complementar Grátis.`,
-        annualPlan: 'Plano anual com renovação automática. Cancele quando quiser. Pague no cartão em até 12x ou no Pix Automático.',
+        annualPlan: 'Plano anual: renova todo ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
     },
     'pt-PT': {
         strike: (v) => `De ${v} por`,
@@ -175,7 +177,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `Pagamento único de ${v} · sem renovação`,
         singlePaymentShort: 'Pagamento único · sem renovação',
         bonusSub: (v) => `Mais de ${v} em Planilhas e Material Complementar Grátis.`,
-        annualPlan: 'Plano anual com renovação automática. Cancele quando quiser. Pague com cartão em até 12x ou com Pix Automático.',
+        annualPlan: 'Plano anual: renova todos os anos até cancelar. Pague com cartão em até 12x ou com Pix.',
     },
     es: {
         strike: (v) => `De ${v} por`,
@@ -183,7 +185,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `Pago único de ${v} · sin renovación`,
         singlePaymentShort: 'Pago único · sin renovación',
         bonusSub: (v) => `Más de ${v} en Materiales Complementarios Gratis.`,
-        annualPlan: 'Plan anual con renovación automática. Cancela cuando quieras. Paga con tarjeta en hasta 12 cuotas o con Pix Automático.',
+        annualPlan: 'Plan anual: se renueva cada año hasta que lo canceles. Paga con tarjeta en hasta 12 cuotas o con Pix.',
     },
     en: {
         strike: (v) => `Regular price ${v}`,
@@ -191,7 +193,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `One-time payment of ${v} · no renewal`,
         singlePaymentShort: 'One-time payment · no renewal',
         bonusSub: (v) => `Over ${v} in Free Worksheets and Complementary Tools.`,
-        annualPlan: 'Annual plan with automatic renewal. Cancel anytime. Pay by card in up to 12 installments or with Pix Automático.',
+        annualPlan: 'Annual plan: renews every year until you cancel. Pay by card in up to 12 installments or with Pix.',
     },
 };
 

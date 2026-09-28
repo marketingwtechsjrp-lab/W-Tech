@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.44.1 (2026-09-28) - Aviso do curso online cita Pix comum
+- O Pix Automático foi desligado no produto da Kiwify: o checkout volta a aceitar Pix comum, com recuperação pelo WhatsApp.
+- O aviso abaixo do preço passa a dizer "Plano anual: renova todo ano até você cancelar. Pague no cartão em até 12x ou no Pix." (e o equivalente na condição de R$ 97).
+
 ## v3.44.0 (2026-09-28) - Aviso de plano anual e condição especial de retorno no curso online
 - A página do curso online diz, logo abaixo do preço, que é plano anual com renovação automática, com cartão em até 12x ou Pix Automático.
 - Condição especial por link (?oferta=retorno) para remarketing: primeiro ano por R$ 97 no checkout próprio da Kiwify, renovação por R$ 347/ano, válida até 31/10/2026.

@@ -55,7 +55,7 @@ const OFFER = Object.freeze({
 const OFFERS = { retorno197: OFFER };
 const NOW = new Date('2026-10-01T12:00:00-03:00');
 const brasilia = (localTime) => new Date(`${localTime}-03:00`);
-const ANNUAL_PT_BR = 'Plano anual com renovação automática. Cancele quando quiser. Pague no cartão em até 12x ou no Pix Automático.';
+const ANNUAL_PT_BR = 'Plano anual: renova todo ano até você cancelar. Pague no cartão em até 12x ou no Pix.';
 
 const { api } = load();
 const resolve = (offers, now = NOW, slug = 'retorno197', region = 'br') =>
@@ -201,7 +201,10 @@ test('condicao com primeira cobranca diferente troca o aviso do plano pelo dela'
 test('aviso de plano anual no real, em todos os idiomas, e nenhum no euro', () => {
   assert.equal(api.getCoursePrice('br', 'pt-BR').billingNote, ANNUAL_PT_BR);
   for (const language of ['pt-BR', 'pt-PT', 'es', 'en']) {
-    assert.match(api.getCoursePrice('br', language).billingNote, /(renovação|renovación|renewal).*Pix Automático/, language);
+    const note = api.getCoursePrice('br', language).billingNote;
+    assert.match(note, /(renova|renueva|renews).*\bPix\b/, language);
+    // O Pix Automático foi desligado na Kiwify em 28/09/2026: a página não pode prometê-lo.
+    assert.doesNotMatch(note, /Pix Automático|automátic|automatic/i, language);
     assert.equal(api.getCoursePrice('intl', language).billingNote, null, language);
   }
 });
@@ -263,6 +266,7 @@ test('condicoes publicadas estao bem formadas (vale para cada entrada nova)', ()
     assert.ok(offer.full.includes(`${offer.integer}${offer.cents}`), `"${slug}": full diverge de integer + cents`);
     if (offer.billingNote !== undefined) {
       assert.ok(offer.billingNote.includes(offer.full), `"${slug}": billingNote não cita o valor ${offer.full}`);
+      assert.doesNotMatch(offer.billingNote, /Pix Automático/i, `"${slug}": o Pix Automático está desligado na Kiwify`);
     }
   }
 });
