@@ -42,6 +42,7 @@ import { KIWIFY_CHECKOUT_URL, schemaPriceFromParts, type BillingRegion } from '.
  *           installmentsShort: '12x R$ XX,XX',
  *           validUntil: '2026-10-31',                  // opcional
  *           label: 'Condição especial de retorno',     // opcional
+ *           billingNote: 'Primeiro ano por R$ 197,00. Depois...', // se a 1ª cobrança for diferente
  *       },
  *
  *  3. Rode `node --test teste/course-offers-unit.test.mjs` (confere slug, link,
@@ -81,10 +82,36 @@ export interface CourseSpecialOffer {
     validUntil?: string;
     /** Selo curto exibido acima do preço — ex.: 'Condição especial de retorno'. */
     label?: string;
+    /** Aviso de cobrança no lugar do texto padrão do plano anual. Obrigatório
+     *  na prática quando o plano da Kiwify tem "preço diferente na primeira
+     *  cobrança": quem paga R$ 97 hoje precisa ler na página que a renovação
+     *  sai pelo preço cheio. Deve citar o `full` desta condição (o teste confere). */
+    billingNote?: string;
 }
 
-/** Condições ativas, por slug. Publicada vazia de propósito — ver acima. */
-export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {};
+/**
+ * Condições ativas, por slug. Sem entrada, ninguém vê preço diferente.
+ *
+ * `retorno` — remarketing aberto em 28/09/2026: plano "Condição Especial" do
+ * produto na Kiwify, com 1ª cobrança de R$ 97 e renovação anual de R$ 347 (o
+ * mesmo formato do plano "Alunos-Presencial", R$ 277 → R$ 347). O slug não
+ * leva o preço: se o valor mudar, basta trocar esta entrada e os anúncios
+ * continuam com o mesmo link.
+ */
+export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {
+    retorno: {
+        checkoutUrl: 'https://pay.kiwify.com.br/S88gmdK',
+        integer: '97',
+        cents: ',00',
+        full: 'R$ 97,00',
+        installments: '12x de R$ 10,03 no cartão',
+        installmentsShort: '12x R$ 10,03',
+        anchor: 'R$ 347,00',
+        validUntil: '2026-10-31',
+        label: 'Condição especial de retorno',
+        billingNote: 'Primeiro ano por R$ 97,00. Depois o plano renova por R$ 347,00/ano. Cancele quando quiser. Pague no cartão em até 12x ou no Pix Automático.',
+    },
+};
 
 const KIWIFY_CHECKOUT_HOST = 'pay.kiwify.com.br';
 

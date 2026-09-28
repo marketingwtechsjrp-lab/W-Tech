@@ -186,6 +186,18 @@ test('com condicao, preco e checkout trocam juntos; bonus e aviso anual ficam', 
   assert.equal(withAnchor.bonusValue, 'R$ 997,00');
 });
 
+test('condicao com primeira cobranca diferente troca o aviso do plano pelo dela', () => {
+  const note = 'Primeiro ano por R$ 197,00. Depois o plano renova por R$ 347,00/ano. Cancele quando quiser.';
+  const price = api.getCoursePrice('br', 'pt-BR', undefined, { ...OFFER, billingNote: note });
+  assert.equal(price.billingNote, note);
+  assert.equal(price.full, 'R$ 197,00');
+  // Sem billingNote na condição, vale o aviso padrão; sem condição também.
+  assert.equal(api.getCoursePrice('br', 'pt-BR', undefined, OFFER).billingNote, ANNUAL_PT_BR);
+  assert.equal(api.getCoursePrice('br', 'pt-BR').billingNote, ANNUAL_PT_BR);
+  // O internacional nunca recebe o aviso da condição.
+  assert.equal(api.getCoursePrice('intl', 'pt-BR', undefined, { ...OFFER, billingNote: note }).billingNote, null);
+});
+
 test('aviso de plano anual no real, em todos os idiomas, e nenhum no euro', () => {
   assert.equal(api.getCoursePrice('br', 'pt-BR').billingNote, ANNUAL_PT_BR);
   for (const language of ['pt-BR', 'pt-PT', 'es', 'en']) {
@@ -249,5 +261,8 @@ test('condicoes publicadas estao bem formadas (vale para cada entrada nova)', ()
       `"${slug}": link Kiwify, valor ou validUntil inválido`,
     );
     assert.ok(offer.full.includes(`${offer.integer}${offer.cents}`), `"${slug}": full diverge de integer + cents`);
+    if (offer.billingNote !== undefined) {
+      assert.ok(offer.billingNote.includes(offer.full), `"${slug}": billingNote não cita o valor ${offer.full}`);
+    }
   }
 });

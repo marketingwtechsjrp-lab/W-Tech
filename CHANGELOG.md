@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.44.0 (2026-09-28) - Aviso de plano anual e condição especial de retorno no curso online
+- A página do curso online diz, logo abaixo do preço, que é plano anual com renovação automática, com cartão em até 12x ou Pix Automático.
+- Condição especial por link (?oferta=retorno) para remarketing: primeiro ano por R$ 97 no checkout próprio da Kiwify, renovação por R$ 347/ano, válida até 31/10/2026.
+- Preço exibido, botão de compra e valor enviado ao GA4, Google Ads e Meta trocam juntos; visitante internacional continua com 59 € na Hotmart.
+- O parâmetro oferta fica fora da URL canônica, para o preço com desconto não ser indexado.
+
 ## v3.43.0 (2026-09-26) - Landing pages por curso e editor por blocos
 - Organização inspirada no painel Pecon, com modelo em uso e links separados por curso.
 - Catálogo com os 12 modelos, incluindo W-Tech Cinema, Signature e Performance.

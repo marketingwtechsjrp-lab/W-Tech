@@ -116,8 +116,10 @@ export const schemaPriceFromParts = (integer: string, cents: string): string => 
 /**
  * Preço em real. Com uma condição especial de remarketing (courseOffers.ts),
  * mudam só os números que o visitante paga agora — valor, parcelamento e, se a
- * condição definir, o preço riscado. Bônus e aviso do plano anual continuam os
- * do produto: o checkout especial vende o mesmo plano, por menos.
+ * condição definir, o preço riscado. Bônus continuam os do produto: o checkout
+ * especial vende o mesmo curso, por menos. O aviso do plano anual só muda se a
+ * condição trouxer o próprio `billingNote` (1ª cobrança com desconto e
+ * renovação pelo preço cheio precisa dizer isso na página).
  */
 const brl = (language: LPLanguage, offer?: CourseSpecialOffer | null): CoursePrice => {
     const labels = LABELS[language] || LABELS['pt-BR'];
@@ -138,7 +140,7 @@ const brl = (language: LPLanguage, offer?: CourseSpecialOffer | null): CoursePri
         strikeLabel: labels.strike(anchor),
         cashLabel: labels.cash(full),
         bonusSubLabel: labels.bonusSub('R$ 997,00'),
-        billingNote: labels.annualPlan,
+        billingNote: offer?.billingNote ?? labels.annualPlan,
         chargedNotice: null,
         schemaPrice: offer ? schemaPriceFromParts(offer.integer, offer.cents) : '347.00',
         schemaCurrency: 'BRL',
