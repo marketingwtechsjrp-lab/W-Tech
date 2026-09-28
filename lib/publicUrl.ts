@@ -26,12 +26,14 @@ export const WEBSITE_ID = `${PUBLIC_BASE_URL}/#website`;
 
 /**
  * Parâmetros de campanha e de clique nunca entram no canonical: cada variação de UTM
- * criaria uma "página" diferente aos olhos do mecanismo de busca.
+ * criaria uma "página" diferente aos olhos do mecanismo de busca. `oferta` é o
+ * preço de remarketing (lib/courseOffers.ts): indexado, um link vazado levaria
+ * tráfego orgânico ao preço com desconto.
  */
 const TRACKING_PARAMS = [
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
     'fbclid', 'gclid', 'gad_source', 'gbraid', 'wbraid', 'src', 'sck',
-    'fbp', 'fbc', '_ga', 'ref',
+    'fbp', 'fbc', '_ga', 'ref', 'oferta',
 ];
 
 /**

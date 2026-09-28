@@ -33,6 +33,7 @@ import { WhatsAppLeadCapture } from '../components/WhatsAppLeadCapture';
 import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
+import { useCourseSpecialOffer } from '../hooks/useCourseSpecialOffer';
 import { VSL_VIDEO_URL as VSL_URL } from '../lib/vslVideo';
 import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
 
@@ -343,9 +344,10 @@ const LPErgonomia2: React.FC = () => {
     const { currentLang } = useLanguage();
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
-    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
-    const startCheckoutConversion = () => trackCourseCheckoutStart(billingRegion, currentLang);
-    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const specialOffer = useCourseSpecialOffer(billingRegion);
+    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl, specialOffer);
+    const startCheckoutConversion = () => trackCourseCheckoutStart(billingRegion, currentLang, specialOffer);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl, specialOffer);
     const checkoutProvider = billingRegion === 'intl' ? 'Hotmart' : 'Kiwify';
     const checkoutUrl = useMemo(
         () => buildCheckoutUrl(checkoutBaseUrl),
@@ -1136,6 +1138,11 @@ const LPErgonomia2: React.FC = () => {
                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#b9201d]">
                                 Plano Premium · inscrição online
                             </p>
+                            {specialOffer?.label && (
+                                <p className="mt-3 w-fit rounded-full bg-red-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#b9201d]">
+                                    {specialOffer.label}
+                                </p>
+                            )}
                             <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-[#7b746e]">
                                 À vista
                             </p>
@@ -1149,6 +1156,11 @@ const LPErgonomia2: React.FC = () => {
                             <p className="mt-3 text-sm font-semibold text-[#69635e]">
                                 {billingRegion === 'intl' ? price.installments : `ou ${price.installments}`}
                             </p>
+                            {price.billingNote && (
+                                <p className="mt-2 text-xs font-medium leading-5 text-[#7b746e]">
+                                    {price.billingNote}
+                                </p>
+                            )}
                             {price.chargedNotice && (
                                 <p className="mt-2 text-xs font-medium text-[#7b746e]">
                                     {price.chargedNotice}

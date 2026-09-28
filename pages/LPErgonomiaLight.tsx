@@ -29,6 +29,7 @@ import { buildCheckoutUrl, captureTrackingParams } from '../lib/tracking';
 import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
+import { useCourseSpecialOffer } from '../hooks/useCourseSpecialOffer';
 import { VSL_VIDEO_URL as COURSE_VIDEO } from '../lib/vslVideo';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -139,8 +140,9 @@ const LPErgonomiaLight: React.FC = () => {
     const t = lpTranslations[currentLang];
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
-    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
-    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const specialOffer = useCourseSpecialOffer(billingRegion);
+    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl, specialOffer);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl, specialOffer);
     const checkoutUrl = useMemo(
         () => buildCheckoutUrl(checkoutBaseUrl),
         [checkoutBaseUrl],
@@ -720,11 +722,17 @@ const LPErgonomiaLight: React.FC = () => {
 
                                 <div className="my-8 h-px bg-white/10" />
 
+                                {specialOffer?.label && (
+                                    <p className="mb-3 text-[11px] font-black uppercase tracking-[0.16em] text-[#e4c46d]">{specialOffer.label}</p>
+                                )}
                                 <p className="text-sm font-bold text-zinc-500 line-through">{price.strikeLabel}</p>
                                 <div className="mt-2 flex items-end gap-3">
                                     <span className="text-5xl font-black tracking-[-0.045em] text-white sm:text-6xl">{price.installmentsShort}</span>
                                 </div>
                                 <p className="mt-2 text-sm font-bold text-[#e4c46d]">{price.cashLabel}</p>
+                                {price.billingNote && (
+                                    <p className="mt-2 text-xs font-medium leading-relaxed text-zinc-400">{price.billingNote}</p>
+                                )}
                                 {price.chargedNotice && (
                                     <p className="mt-2 text-xs font-medium text-zinc-400">{price.chargedNotice}</p>
                                 )}
@@ -734,7 +742,7 @@ const LPErgonomiaLight: React.FC = () => {
                                     id="kiwify-checkout-btn-lp-ergonomia-light"
                                     onClick={() => {
                                         trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel);
-                                        trackCourseCheckoutStart(billingRegion, currentLang);
+                                        trackCourseCheckoutStart(billingRegion, currentLang, specialOffer);
                                     }}
                                     className="mt-8 flex min-h-16 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d39f32] px-6 text-center text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_18px_45px_rgba(215,173,79,.2)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >

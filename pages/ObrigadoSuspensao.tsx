@@ -15,6 +15,7 @@ import {
 import { useSettings } from '../context/SettingsContext';
 import { pushPurchase } from '../lib/dataLayer';
 import { COURSE_CHECKOUT_FLAG, COURSE_CONVERSION_ITEM, getCoursePrice } from '../lib/coursePricing';
+import { COURSE_SPECIAL_OFFERS, readCourseOfferSlug, resolveCourseSpecialOffer } from '../lib/courseOffers';
 
 /**
  * A Kiwify/Hotmart redirecionam para cá após pagamento aprovado, mas não há
@@ -22,7 +23,9 @@ import { COURSE_CHECKOUT_FLAG, COURSE_CONVERSION_ITEM, getCoursePrice } from '..
  *  - só quando a sessão saiu pelo nosso botão de checkout (flag em sessionStorage),
  *    ou o referrer é o checkout, ou a URL traz um id de pedido — visita direta não conta;
  *  - transaction_id = id do pedido quando vem na URL; senão um id por navegador/dia,
- *    para que recarregar a página não duplique.
+ *    para que recarregar a página não duplique;
+ *  - valor = o da condição especial de remarketing quando ela está ativa na
+ *    sessão (a LP mandou para o checkout dela), senão o preço normal.
  */
 const registrarCompraCursoOnline = () => {
     try {
@@ -38,7 +41,9 @@ const registrarCompraCursoOnline = () => {
         if (!veioDoCheckout) return;
 
         const provider = flag === 'hotmart' || referrer.includes('hotmart') ? 'hotmart' : 'kiwify';
-        const price = getCoursePrice(provider === 'hotmart' ? 'intl' : 'br', 'pt-BR');
+        const region = provider === 'hotmart' ? 'intl' : 'br';
+        const offer = resolveCourseSpecialOffer(readCourseOfferSlug(), region, COURSE_SPECIAL_OFFERS, new Date());
+        const price = getCoursePrice(region, 'pt-BR', undefined, offer);
         const diaAtual = new Date().toISOString().slice(0, 10);
         pushPurchase({
             funnel: 'curso_online_piloto',

@@ -18,6 +18,7 @@ import { VSL_VIDEO_URL as VIDEO_URL } from '../lib/vslVideo';
 import { useVslProgress } from '../hooks/useVslProgress';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
+import { useCourseSpecialOffer } from '../hooks/useCourseSpecialOffer';
 import { lpTranslations } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
@@ -218,6 +219,9 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     const { currentLang } = useLanguage();
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
+    // A VSL não mostra preço, mas leva direto ao checkout: com condição especial
+    // na sessão, o botão tem de abrir o checkout dela, não o do preço cheio.
+    const specialOffer = useCourseSpecialOffer(billingRegion);
     const t = lpTranslations[currentLang];
     const ui = vslUi[currentLang];
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -242,8 +246,8 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
     // A VSL é o último passo antes do pagamento: nunca devolve para uma landing
     // page, sempre entrega no checkout.
     const landingUrl = useMemo(
-        () => buildCheckoutUrl(getCheckoutUrl(billingRegion, hotmartCheckoutUrl)),
-        [billingRegion, hotmartCheckoutUrl],
+        () => buildCheckoutUrl(getCheckoutUrl(billingRegion, hotmartCheckoutUrl, specialOffer)),
+        [billingRegion, hotmartCheckoutUrl, specialOffer],
     );
 
     const enrollmentAction = ui.checkoutAction;
@@ -557,7 +561,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                                     rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
                                     onClick={() => {
                                         trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click' : 'landing_click', eventLabel);
-                                        trackCourseCheckoutStart(billingRegion, currentLang);
+                                        trackCourseCheckoutStart(billingRegion, currentLang, specialOffer);
                                     }}
                                     className="mx-auto flex min-h-14 w-full max-w-xl items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-6 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_16px_45px_rgba(215,173,79,.22)] transition-transform hover:scale-[1.015] sm:text-base"
                                 >
@@ -605,7 +609,7 @@ const LPErgonomiaVSL: React.FC<{ theme?: 'dark' | 'light' }> = ({ theme = 'dark'
                         rel={funnel.isQuiz ? 'noopener noreferrer' : undefined}
                         onClick={() => {
                             trackEvent('Funil Suspensão', funnel.isQuiz ? 'checkout_click_mobile' : 'landing_click_mobile', eventLabel);
-                            trackCourseCheckoutStart(billingRegion, currentLang);
+                            trackCourseCheckoutStart(billingRegion, currentLang, specialOffer);
                         }}
                         className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#f0ce6f] to-[#d7ad4f] px-5 text-xs font-black uppercase tracking-[0.11em] text-black shadow-[0_12px_35px_rgba(215,173,79,.25)]"
                     >

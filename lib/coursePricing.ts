@@ -1,4 +1,5 @@
 import type { LPLanguage } from './lpErgonomiaTranslations';
+import type { CourseSpecialOffer } from './courseOffers';
 import { detectBrowserLandingLanguage, fetchGeoLookup } from './geoLanguage';
 import { normalizeHotmartCheckoutUrl } from './hotmartCheckout';
 import { pushBeginCheckout } from './dataLayer';
@@ -33,9 +34,18 @@ const LEGACY_HOTMART_ANNUAL_CHECKOUT_URL = 'https://pay.hotmart.com/Q107251292B'
  * O checkout oficial conhecido fica como fallback público para que um visitante
  * internacional nunca seja enviado à oferta brasileira enquanto a leitura
  * assíncrona da configuração termina ou falha.
+ *
+ * `offer` é a condição especial de remarketing já validada por
+ * `resolveCourseSpecialOffer` (ver courseOffers.ts). Ela troca só o checkout do
+ * Brasil — e precisa ser a MESMA passada a `getCoursePrice`, para o botão levar
+ * ao preço que a página anuncia.
  */
-export const getCheckoutUrl = (region: BillingRegion, hotmartCheckoutUrl?: unknown): string => {
-    if (region === 'br') return KIWIFY_CHECKOUT_URL;
+export const getCheckoutUrl = (
+    region: BillingRegion,
+    hotmartCheckoutUrl?: unknown,
+    offer?: CourseSpecialOffer | null,
+): string => {
+    if (region === 'br') return offer ? offer.checkoutUrl : KIWIFY_CHECKOUT_URL;
     const validatedHotmartUrl = normalizeHotmartCheckoutUrl(hotmartCheckoutUrl);
     // Migração defensiva: a configuração antiga aponta para uma assinatura
     // anual renovável. Mesmo que o cache do banco ainda a devolva, visitantes
@@ -78,6 +88,12 @@ export interface CoursePrice {
     cashLabel: string;
     /** 'Mais de R$ 997,00 em Planilhas e Material Complementar Grátis.' */
     bonusSubLabel: string;
+    /** Aviso de cobrança recorrente, logo abaixo do preço. No Brasil o curso é
+     *  um plano anual do Kiwify que renova sozinho, e quem compra precisa saber
+     *  disso na página — não descobrir o "/ano" só na tela do checkout. `null`
+     *  no internacional: lá `installments`/`cashLabel` já dizem que são 59 € uma
+     *  única vez, sem renovação. */
+    billingNote: string | null;
     /** Aviso de que a cobrança sai em outra moeda. `null` quando exibição e
      *  cobrança coincidem — inclusive assim que a Hotmart entrar no ar. */
     chargedNotice: string | null;
@@ -86,24 +102,48 @@ export interface CoursePrice {
     schemaCurrency: 'BRL' | 'EUR';
 }
 
-const brl = (language: LPLanguage): CoursePrice => ({
-    currency: 'BRL',
-    symbol: 'R$',
-    integer: '347',
-    cents: ',00',
-    full: 'R$ 347,00',
-    anchor: 'R$ 997,00',
-    bonusValue: 'R$ 997,00',
-    bonusItems: ['R$ 397,00', 'R$ 257,00', 'R$ 197,00', 'R$ 146,00'],
-    installments: '12x de R$ 35,89 no cartão',
-    installmentsShort: '12x R$ 35,89',
-    strikeLabel: (LABELS[language] || LABELS['pt-BR']).strike('R$ 997,00'),
-    cashLabel: (LABELS[language] || LABELS['pt-BR']).cash('R$ 347,00'),
-    bonusSubLabel: (LABELS[language] || LABELS['pt-BR']).bonusSub('R$ 997,00'),
-    chargedNotice: null,
-    schemaPrice: '347.00',
-    schemaCurrency: 'BRL',
-});
+/**
+ * Valor cru (schema.org e eventos de conversão) a partir das partes exibidas:
+ * '197' + ',00' → '197.00'. Ponto de milhar some ('1.297' → '1297.00') e
+ * centavos ausentes viram '00'.
+ */
+export const schemaPriceFromParts = (integer: string, cents: string): string => {
+    const reais = integer.replace(/\D/g, '') || '0';
+    const centavos = cents.replace(/\D/g, '').padEnd(2, '0').slice(0, 2);
+    return `${reais}.${centavos}`;
+};
+
+/**
+ * Preço em real. Com uma condição especial de remarketing (courseOffers.ts),
+ * mudam só os números que o visitante paga agora — valor, parcelamento e, se a
+ * condição definir, o preço riscado. Bônus e aviso do plano anual continuam os
+ * do produto: o checkout especial vende o mesmo plano, por menos.
+ */
+const brl = (language: LPLanguage, offer?: CourseSpecialOffer | null): CoursePrice => {
+    const labels = LABELS[language] || LABELS['pt-BR'];
+    const full = offer ? offer.full : 'R$ 347,00';
+    const anchor = offer?.anchor ?? 'R$ 997,00';
+
+    return {
+        currency: 'BRL',
+        symbol: 'R$',
+        integer: offer ? offer.integer : '347',
+        cents: offer ? offer.cents : ',00',
+        full,
+        anchor,
+        bonusValue: 'R$ 997,00',
+        bonusItems: ['R$ 397,00', 'R$ 257,00', 'R$ 197,00', 'R$ 146,00'],
+        installments: offer ? offer.installments : '12x de R$ 35,89 no cartão',
+        installmentsShort: offer ? offer.installmentsShort : '12x R$ 35,89',
+        strikeLabel: labels.strike(anchor),
+        cashLabel: labels.cash(full),
+        bonusSubLabel: labels.bonusSub('R$ 997,00'),
+        billingNote: labels.annualPlan,
+        chargedNotice: null,
+        schemaPrice: offer ? schemaPriceFromParts(offer.integer, offer.cents) : '347.00',
+        schemaCurrency: 'BRL',
+    };
+};
 
 /**
  * Textos que emolduram os números. O idioma escolhe a frase; a região escolhe o
@@ -116,6 +156,8 @@ const LABELS: Record<LPLanguage, {
     singlePayment: (v: string) => string;
     singlePaymentShort: string;
     bonusSub: (v: string) => string;
+    /** Aviso do plano anual renovável do Kiwify — só existe na cobrança em real. */
+    annualPlan: string;
 }> = {
     'pt-BR': {
         strike: (v) => `De ${v} por`,
@@ -123,6 +165,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `Pagamento único de ${v} · sem renovação`,
         singlePaymentShort: 'Pagamento único · sem renovação',
         bonusSub: (v) => `Mais de ${v} em Planilhas e Material Complementar Grátis.`,
+        annualPlan: 'Plano anual com renovação automática. Cancele quando quiser. Pague no cartão em até 12x ou no Pix Automático.',
     },
     'pt-PT': {
         strike: (v) => `De ${v} por`,
@@ -130,6 +173,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `Pagamento único de ${v} · sem renovação`,
         singlePaymentShort: 'Pagamento único · sem renovação',
         bonusSub: (v) => `Mais de ${v} em Planilhas e Material Complementar Grátis.`,
+        annualPlan: 'Plano anual com renovação automática. Cancele quando quiser. Pague com cartão em até 12x ou com Pix Automático.',
     },
     es: {
         strike: (v) => `De ${v} por`,
@@ -137,6 +181,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `Pago único de ${v} · sin renovación`,
         singlePaymentShort: 'Pago único · sin renovación',
         bonusSub: (v) => `Más de ${v} en Materiales Complementarios Gratis.`,
+        annualPlan: 'Plan anual con renovación automática. Cancela cuando quieras. Paga con tarjeta en hasta 12 cuotas o con Pix Automático.',
     },
     en: {
         strike: (v) => `Regular price ${v}`,
@@ -144,6 +189,7 @@ const LABELS: Record<LPLanguage, {
         singlePayment: (v) => `One-time payment of ${v} · no renewal`,
         singlePaymentShort: 'One-time payment · no renewal',
         bonusSub: (v) => `Over ${v} in Free Worksheets and Complementary Tools.`,
+        annualPlan: 'Annual plan with automatic renewal. Cancel anytime. Pay by card in up to 12 installments or with Pix Automático.',
     },
 };
 
@@ -164,6 +210,7 @@ const eur = (language: LPLanguage): CoursePrice => {
         strikeLabel: labels.strike('179 €'),
         cashLabel: labels.singlePayment('59 €'),
         bonusSubLabel: labels.bonusSub('150 €'),
+        billingNote: null,
         chargedNotice: null,
         schemaPrice: '59.00',
         schemaCurrency: 'EUR',
@@ -174,13 +221,17 @@ const eur = (language: LPLanguage): CoursePrice => {
  * `region` manda na moeda; `language` só escolhe o idioma dos textos. O checkout
  * internacional tem um fallback oficial da Hotmart, então preço e destino já
  * nascem em euro mesmo durante a leitura assíncrona da configuração.
+ *
+ * `offer` (condição especial validada, ver courseOffers.ts) só afeta o real: um
+ * visitante internacional continua vendo 59 € mesmo com `?oferta=` na URL.
  */
 export const getCoursePrice = (
     region: BillingRegion,
     language: LPLanguage,
     _hotmartCheckoutUrl?: unknown,
+    offer?: CourseSpecialOffer | null,
 ): CoursePrice => {
-    if (region === 'br') return brl(language);
+    if (region === 'br') return brl(language, offer);
     return eur(language);
 };
 
@@ -191,9 +242,15 @@ export const COURSE_CONVERSION_ITEM = 'Curso Online de Suspensão para Piloto';
  * Publica `begin_checkout` no dataLayer ao sair para o Kiwify/Hotmart. Uma única
  * função para as cinco variantes da LP e para a VSL — valor e moeda saem da
  * mesma tabela de preço que a página exibe, nunca de um número cravado no JSX.
+ * Com condição especial ativa, o valor é o da condição: é o que o checkout vai
+ * cobrar, e é esse número que segue para GA4, Google Ads e Meta.
  */
-export const trackCourseCheckoutStart = (region: BillingRegion, language: LPLanguage = 'pt-BR'): void => {
-    const price = getCoursePrice(region, language);
+export const trackCourseCheckoutStart = (
+    region: BillingRegion,
+    language: LPLanguage = 'pt-BR',
+    offer?: CourseSpecialOffer | null,
+): void => {
+    const price = getCoursePrice(region, language, undefined, offer);
     const provider = region === 'br' ? 'kiwify' : 'hotmart';
     pushBeginCheckout({
         funnel: 'curso_online_piloto',

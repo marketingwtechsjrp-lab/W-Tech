@@ -10,6 +10,7 @@ import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
+import { useCourseSpecialOffer } from '../hooks/useCourseSpecialOffer';
 import { getPilotLandingTranslation, localizePilotCopy } from '../lib/pilotLandingPortugal';
 import { lpTranslations, LPLanguage } from '../lib/lpErgonomiaTranslations';
 import { useLanguage } from '../context/LanguageContext';
@@ -202,8 +203,9 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
     const localize = (text: string) => localizePilotCopy(currentLang, text);
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
-    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl);
-    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl);
+    const specialOffer = useCourseSpecialOffer(billingRegion);
+    const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl, specialOffer);
+    const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl, specialOffer);
     const checkoutUrl = useMemo(
         () => buildCheckoutUrl(checkoutBaseUrl),
         [checkoutBaseUrl],
@@ -866,6 +868,12 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                             {currentLang === 'pt-PT' ? `Mais de ${price.bonusValue} em folhas de cálculo e materiais de apoio incluídos.` : price.bonusSubLabel}
                         </p>
 
+                        {specialOffer?.label && (
+                            <span className="mb-4 inline-flex items-center rounded-full border border-wtech-gold/40 bg-wtech-gold/10 px-4 py-1.5 text-[10px] md:text-xs font-black uppercase tracking-[0.18em] text-wtech-gold">
+                                {specialOffer.label}
+                            </span>
+                        )}
+
                         <div className="text-gray-400 font-bold uppercase text-xs md:text-sm tracking-[0.15em] mb-2 line-through decoration-red-500/70 decoration-2">
                             {price.strikeLabel}
                         </div>
@@ -876,6 +884,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                         <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-2">
                             {price.cashLabel}
                         </div>
+                        {price.billingNote && (
+                            <p className="mx-auto mb-2 max-w-md text-[11px] md:text-xs font-medium leading-relaxed text-zinc-400">
+                                {price.billingNote}
+                            </p>
+                        )}
                         {price.chargedNotice && (
                             <div className="mb-8 max-w-md text-[11px] font-medium text-zinc-400">
                                 {price.chargedNotice}
@@ -924,7 +937,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                             id="kiwify-checkout-btn-lp-ergonomia"
                             onClick={() => {
                                 trackEvent('Funil Suspensão', 'checkout_click_offer', funnelEventLabel);
-                                trackCourseCheckoutStart(billingRegion, currentLang);
+                                trackCourseCheckoutStart(billingRegion, currentLang, specialOffer);
                             }}
                             whileHover={shouldAnimate ? { scale: 1.02, boxShadow: '0 0 40px rgba(230,36,29,0.5)' } : undefined}
                             whileTap={shouldAnimate ? { scale: 0.98 } : undefined}
