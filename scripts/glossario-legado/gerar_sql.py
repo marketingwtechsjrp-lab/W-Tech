@@ -90,7 +90,9 @@ def main():
             continue
         vistos.add(r["slug"])
         nome = termo(r.get("titulo"), r["slug"])
-        cat = categoria(r["slug"])
+        # O tema da revisão (quem leu o texto) vale mais que o slug: "válvula de
+        # compressão" é da suspensão, mas o slug cai em Motor por causa de "valvula".
+        cat = "Suspensão" if r.get("tema") == "suspensao" else categoria(r["slug"])
         resumo = (r.get("descricao") or "").strip()[:300] or f"Entenda {nome} no glossário técnico da W-Tech Brasil."
         seo = (r.get("titulo") or nome).strip()[:70]
         criado = r.get("publicado") or "2025-01-19T00:00:00-03:00"
@@ -116,7 +118,7 @@ def main():
     (pasta / "glossario_legado.sql").write_text("\n".join(sql) + "\n", encoding="utf-8")
     por_cat = {}
     for r in registros:
-        c = categoria(r["slug"])
+        c = "Suspensão" if r.get("tema") == "suspensao" else categoria(r["slug"])
         por_cat[c] = por_cat.get(c, 0) + 1
     print(f"{len(linhas)} verbetes de {entrada.name} · publicados={publicar} · por categoria: {por_cat}")
 

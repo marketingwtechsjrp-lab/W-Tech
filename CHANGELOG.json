@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.47.0",
+    "date": "2026-09-29",
+    "title": "Molas por modelo e glossário ampliado",
+    "changes": [
+      "Molas: uma página por modelo do catálogo de molas da W-Tech (/molas/<modelo>), 338 ao todo, com a mola da bengala e a do amortecedor por peso do piloto equipado, a mola de fábrica, perguntas frequentes e links para os outros anos. O texto é montado só a partir do catálogo, sem IA.",
+      "A calculadora de /molas ganha a lista de todos os modelos em HTML: antes o catálogo só aparecia depois de escolher modelo e peso, e robô de busca e de IA não chegava a ele.",
+      "Glossário: 87 verbetes reescritos nos endereços antigos que tinham busca mas não tinham texto aproveitável, e 21 verbetes novos com os termos de suspensão que o piloto busca (SAG, bengala, óleo de bengala, cliques, retentor, mousse, Tubliss e outros). Todos passaram por revisão técnica independente antes de publicar e aparecem no painel com a origem \"IA · Claude\".",
+      "Dez verbetes antigos de suspensão (braço oscilante, válvulas de retorno, batente hidráulico e outros) que estavam como Motor ou Mecânica geral passam a levar a chamada do curso de suspensão.",
+      "Sitemap gerado antes do build: na 3.46.0 o sitemap publicado era o velho do repositório (350 URLs em vez de 811) e foi corrigido no ar.",
+      "Prerender com três páginas por vez, para o build acompanhar o sitemap maior."
+    ]
+  },
+  {
     "version": "3.46.0",
     "date": "2026-09-29",
     "title": "Glossário antigo de volta, revisado",

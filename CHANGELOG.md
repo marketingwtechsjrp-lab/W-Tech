@@ -1,5 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.47.0 (2026-09-29) - Molas por modelo e glossário ampliado
+- Molas: uma página por modelo do catálogo de molas da W-Tech (/molas/<modelo>), 338 ao todo, com a mola da bengala e a do amortecedor por peso do piloto equipado, a mola de fábrica, perguntas frequentes e links para os outros anos. O texto é montado só a partir do catálogo, sem IA.
+- A calculadora de /molas ganha a lista de todos os modelos em HTML: antes o catálogo só aparecia depois de escolher modelo e peso, e robô de busca e de IA não chegava a ele.
+- Glossário: 87 verbetes reescritos nos endereços antigos que tinham busca mas não tinham texto aproveitável, e 21 verbetes novos com os termos de suspensão que o piloto busca (SAG, bengala, óleo de bengala, cliques, retentor, mousse, Tubliss e outros). Todos passaram por revisão técnica independente antes de publicar e aparecem no painel com a origem "IA · Claude".
+- Dez verbetes antigos de suspensão (braço oscilante, válvulas de retorno, batente hidráulico e outros) que estavam como Motor ou Mecânica geral passam a levar a chamada do curso de suspensão.
+- Sitemap gerado antes do build: na 3.46.0 o sitemap publicado era o velho do repositório (350 URLs em vez de 811) e foi corrigido no ar.
+- Prerender com três páginas por vez, para o build acompanhar o sitemap maior.
+
 ## v3.46.0 (2026-09-29) - Glossário antigo de volta, revisado
 - Glossário: 461 verbetes do glossário antigo do WordPress voltam nos mesmos endereços (/glossario/o-que-e-…), recuperados das cópias do Internet Archive. Até a migração de abril eles traziam três quartos dos cliques do Google, e os 461 somam 96% dos cliques dos verbetes que tinham tráfego.
 - Antes de voltar, o texto (gerado por IA no WordPress) passou por revisão: 270 correções em 150 verbetes. Saíram as menções falsas à W-Tech como fabricante de motos, os preços sem fonte, erros técnicos (garfo invertido descrito ao contrário, mistura enriquecida na altitude) e orientações perigosas. Os 18 verbetes fora do tema ou errados do começo ao fim continuam fora do ar (410).
