@@ -27,7 +27,7 @@ type GlossaryTermRow = {
   seo_title: string | null;
   image: string | null;
   author: string;
-  origin: 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT';
+  origin: 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT' | 'WORDPRESS_LEGADO';
   published: boolean;
   reviewed: boolean;
   views: number;
@@ -56,6 +56,7 @@ function originLabel(origin: GlossaryTermRow['origin']) {
   if (origin === 'AI_OPENAI') return 'IA · OpenAI';
   if (origin === 'AI_OPENROUTER') return 'IA · OpenRouter';
   if (origin === 'CSV_IMPORT') return 'CSV';
+  if (origin === 'WORDPRESS_LEGADO') return 'WordPress (legado)';
   return 'Manual';
 }
 

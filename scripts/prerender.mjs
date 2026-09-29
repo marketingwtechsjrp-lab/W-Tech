@@ -167,8 +167,19 @@ async function main() {
   // O snippet original do index.html permanece para o visitante real.
   await context.route(/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|facebook\.com\/tr|\/rest\/v1\/SITE_Analytics_)/, route => route.abort());
 
+  // Páginas em paralelo: em sequência eram ~6 s por rota (350 rotas = 36 min de
+  // build). Com o glossário antigo de volta o sitemap passa de 900 rotas.
+  // A VPS tem 4 núcleos e serve o site durante o build: 2 páginas por vez é o equilíbrio.
+  const CONCORRENCIA = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 2);
   const results = [];
-  for (const route of routes) {
+  const fila = [...routes];
+  const trabalhador = async () => {
+    while (fila.length) {
+      const route = fila.shift();
+      await prerenderRoute(route);
+    }
+  };
+  const prerenderRoute = async (route) => {
     const page = await context.newPage();
     try {
       // `networkidle` não serve como critério de navegação: páginas com vídeo em loop
@@ -213,7 +224,11 @@ async function main() {
     } finally {
       await page.close();
     }
-  }
+  };
+  await Promise.all(Array.from({ length: CONCORRENCIA }, trabalhador));
+  // A ordem do manifesto segue o sitemap, não a ordem em que as páginas terminaram.
+  const ordem = new Map(routes.map((r, i) => [r, i]));
+  results.sort((a, b) => ordem.get(a.route) - ordem.get(b.route));
 
   await browser.close();
   server.close();

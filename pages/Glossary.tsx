@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BookOpen, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Search } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { MOCK_GLOSSARY } from '../constants';
@@ -7,8 +7,37 @@ import { supabase } from '../lib/supabaseClient';
 import { PUBLIC_BASE_URL, ORGANIZATION_ID } from '../lib/publicUrl';
 import { sanitizeHtml } from '../lib/utils';
 import type { GlossaryTerm } from '../types';
+import { COURSE_NAME } from '../lib/courseSchema';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+// Colunas da listagem: sem `content`. Com o glossário antigo de volta são
+// centenas de verbetes; baixar o texto de todos a cada visita pesaria megabytes.
+const LIST_COLUMNS = 'id, term, slug, letter, category, summary, niche, published';
+
+/** Limite de verbetes no JSON-LD da listagem (o schema não precisa repetir a página inteira). */
+const SCHEMA_LIST_LIMIT = 100;
+
+/** Verbetes de suspensão levam o curso online; os de motor e mecânica, os cursos da W-Tech. */
+function ctaFor(term: GlossaryTerm) {
+  const texto = `${term.category || ''} ${term.term} ${term.slug || ''}`.toLowerCase();
+  if (/suspens|amortec|mola|sag|pr[eé]-?carga|bengala|garfo|kyb|showa|wp\b|retorno|compress/.test(texto)) {
+    return {
+      eyebrow: 'Curso online',
+      title: 'Aprenda a regular a suspensão da sua moto',
+      text: `No ${COURSE_NAME} você aprende, do zero, a medir o SAG e a acertar molas, óleo e cliques na sua própria moto.`,
+      href: '/curso-suspensao-piloto',
+      label: 'Conhecer o curso',
+    };
+  }
+  return {
+    eyebrow: 'Cursos W-Tech',
+    title: 'Quer dominar a mecânica da sua moto?',
+    text: 'A W-Tech forma pilotos e mecânicos em cursos presenciais e online de suspensão.',
+    href: '/cursos',
+    label: 'Ver os cursos',
+  };
+}
 
 function mapRow(row: any): GlossaryTerm {
   return {
@@ -55,6 +84,8 @@ const Glossary: React.FC = () => {
   const [query, setQuery] = useState('');
   const [letter, setLetter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<GlossaryTerm | undefined>(undefined);
+  const [loadingTerm, setLoadingTerm] = useState(Boolean(slug));
 
   useEffect(() => {
     let active = true;
@@ -62,7 +93,7 @@ const Glossary: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('SITE_GlossaryTerms')
-        .select('*')
+        .select(LIST_COLUMNS)
         .eq('published', true)
         .order('term', { ascending: true });
 
@@ -80,7 +111,36 @@ const Glossary: React.FC = () => {
     return () => { active = false; };
   }, []);
 
-  const selected = slug ? terms.find((item) => item.slug === slug) : undefined;
+  // O verbete aberto vem sozinho, com o texto completo.
+  useEffect(() => {
+    if (!slug) { setSelected(undefined); setLoadingTerm(false); return; }
+    let active = true;
+    setLoadingTerm(true);
+    supabase
+      .from('SITE_GlossaryTerms')
+      .select('*')
+      .eq('slug', slug)
+      .eq('published', true)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error || !data) {
+          setSelected(fallbackTerms().find((item) => item.slug === slug));
+        } else {
+          setSelected(mapRow(data));
+        }
+        setLoadingTerm(false);
+      });
+    return () => { active = false; };
+  }, [slug]);
+
+  // Relacionados: mesma categoria, para o leitor (e o robô) seguirem pelo glossário.
+  const related = useMemo(() => {
+    if (!selected) return [];
+    return terms
+      .filter((item) => item.slug !== selected.slug && item.category && item.category === selected.category)
+      .slice(0, 8);
+  }, [selected, terms]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -98,7 +158,7 @@ const Glossary: React.FC = () => {
   }, [letter, query, terms]);
 
   if (slug) {
-    if (loading) {
+    if (loadingTerm) {
       return <div className="container mx-auto px-4 py-20 text-center text-gray-500">Carregando verbete…</div>;
     }
 
@@ -122,9 +182,10 @@ const Glossary: React.FC = () => {
       name: selected.term,
       description,
       url: canonical,
+      inLanguage: 'pt-BR',
       inDefinedTermSet: { '@id': termSetId },
-      publisher: { '@id': ORGANIZATION_ID },
     };
+    const cta = ctaFor(selected);
 
     return (
       <>
@@ -158,7 +219,31 @@ const Glossary: React.FC = () => {
                 className="prose prose-lg max-w-none px-7 py-10 lg:px-14 lg:py-14 prose-headings:font-black prose-headings:text-gray-900 prose-h2:border-l-4 prose-h2:border-wtech-gold prose-h2:pl-4 prose-a:text-wtech-red"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(selected.content || `<p>${description}</p>`) }}
               />
+              <aside className="mx-7 mb-10 lg:mx-14 lg:mb-14 rounded-2xl bg-wtech-black text-white p-6 lg:p-8 flex flex-col md:flex-row md:items-center gap-5 md:justify-between">
+                <div>
+                  <span className="text-xs font-black text-wtech-gold uppercase tracking-[0.25em]">{cta.eyebrow}</span>
+                  <p className="text-xl lg:text-2xl font-black mt-2">{cta.title}</p>
+                  <p className="text-gray-300 mt-2 max-w-2xl">{cta.text}</p>
+                </div>
+                <Link to={cta.href} className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-wtech-red px-5 py-3 font-black text-white hover:brightness-110">
+                  {cta.label} <ArrowRight size={18} />
+                </Link>
+              </aside>
             </article>
+            {related.length > 0 && (
+              <nav aria-label="Verbetes relacionados" className="mt-10">
+                <h2 className="text-lg font-black text-gray-900 mb-4">Veja também</h2>
+                <ul className="grid sm:grid-cols-2 gap-3">
+                  {related.map((item) => (
+                    <li key={item.id}>
+                      <Link to={`/glossario/${item.slug}`} className="block bg-white rounded-xl border border-gray-100 px-4 py-3 font-bold text-gray-800 hover:text-wtech-red hover:border-wtech-gold">
+                        {item.term}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
           </div>
         </main>
       </>
@@ -180,7 +265,7 @@ const Glossary: React.FC = () => {
           inLanguage: 'pt-BR',
           publisher: { '@id': ORGANIZATION_ID },
           // Só os termos realmente listados na tela — schema tem que espelhar o visível.
-          hasDefinedTerm: filtered.map((item) => ({
+          hasDefinedTerm: filtered.slice(0, SCHEMA_LIST_LIMIT).map((item) => ({
             '@type': 'DefinedTerm',
             '@id': `${PUBLIC_BASE_URL}/glossario/${item.slug}#term`,
             name: item.term,

@@ -117,6 +117,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Verbetes do glossário antigo (WordPress) tinham endereço com barra no fim, e é
+// assim que estão no Google e nos links de fora. O canonical é sem a barra: o 301
+// leva o histórico de cada verbete para o endereço certo.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if ((req.method === 'GET' || req.method === 'HEAD') && /^\/glossario\/[^/]+\/$/.test(req.path)) {
+    return res.redirect(301, req.path.slice(0, -1) + req.url.slice(req.path.length));
+  }
+  next();
+});
+
 // CSP DESLIGADO de propósito: o index.html injeta scripts inline do GTM/Stape
 // (tracking — LEI 10). Um CSP restritivo quebraria a atribuição de campanhas.
 app.use(helmet({
