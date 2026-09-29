@@ -13,6 +13,9 @@ export interface TranslationDictionary {
         blog: string;
         contact: string;
         admin: string;
+        /** Link do rodapé para a página do curso online (link interno sitewide). */
+        onlineCourse: string;
+        glossary: string;
     };
     header: {
         login: string;
@@ -145,6 +148,8 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             blog: 'Blog',
             contact: 'Contacto',
             admin: 'Painel Admin',
+            onlineCourse: 'Formação online de suspensões',
+            glossary: 'Glossário',
         },
         header: {
             login: 'Entrar',
@@ -275,6 +280,8 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             blog: 'Blog',
             contact: 'Contacto',
             admin: 'Panel Admin',
+            onlineCourse: 'Curso online de suspensión',
+            glossary: 'Glosario',
         },
         header: {
             login: 'Acceder',
@@ -405,6 +412,8 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             blog: 'Blog',
             contact: 'Contact',
             admin: 'Admin Panel',
+            onlineCourse: 'Online suspension course',
+            glossary: 'Glossary',
         },
         header: {
             login: 'Login',
@@ -535,6 +544,8 @@ export const siteTranslations: Record<SiteLanguage, TranslationDictionary> = {
             blog: 'Blog',
             contact: 'Contato',
             admin: 'Painel Admin',
+            onlineCourse: 'Curso online de suspensão',
+            glossary: 'Glossário',
         },
         header: {
             login: 'Entrar',

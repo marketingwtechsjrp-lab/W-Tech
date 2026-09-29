@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
+import compression from 'compression';
 
 // ── Handlers Vercel existentes (formato export default handler(req, res)) ────
 // Os paths /api/<nome> ficam IDÊNTICOS aos da Vercel — há webhooks externos
@@ -45,9 +46,10 @@ import { staffConfigRouter } from './staffConfig.js';
 import { evolutionStaffRouter } from './evolutionStaff.js';
 import { isLoopbackHostname } from '../api/_auth.js';
 import { countryToLandingLanguage } from '../lib/geoLanguage.js';
+import { PUBLIC_BASE_URL } from '../lib/publicUrl.js';
 // ── Indexação: quais URLs públicas existem, e o que fazer com as do site antigo ─
 import { caminhoPublicoExiste } from './publicRoutes.js';
-import { destinoLegado, ehRemocaoPermanente } from './legacyRedirects.js';
+import { destinoFixo, destinoLegado, ehRemocaoPermanente } from './legacyRedirects.js';
 
 /**
  * Gate de startup — só em produção. Falha ANTES de `app.listen()` se a config
@@ -103,6 +105,18 @@ validateProductionConfig();
 const app = express();
 app.disable('x-powered-by');
 
+// ── Host canônico ────────────────────────────────────────────────────────────
+// www.w-techbrasil.com.br respondia 200 com o mesmo conteúdo do domínio principal.
+// O canonical segurava o Google, mas robôs de IA e outros buscadores seguem
+// canonical com menos rigor. (site.* já sai com redirect no proxy.)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const host = (req.headers.host || '').toLowerCase();
+  if (host.startsWith('www.') && (req.method === 'GET' || req.method === 'HEAD') && !req.path.startsWith('/api/')) {
+    return res.redirect(301, `${PUBLIC_BASE_URL}${req.originalUrl}`);
+  }
+  next();
+});
+
 // CSP DESLIGADO de propósito: o index.html injeta scripts inline do GTM/Stape
 // (tracking — LEI 10). Um CSP restritivo quebraria a atribuição de campanhas.
 app.use(helmet({
@@ -110,6 +124,13 @@ app.use(helmet({
   // 'no-referrer' (default do helmet) quebra embeds do YouTube (erro 153) —
   // o player exige Referer. Mesmo valor que a Vercel usava.
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+
+// Compressão (brotli/gzip) das páginas e dos assets: nada saía comprimido e a página
+// do curso baixava 1,9 MB de JS cru. Fica fora de /api para não mexer em webhook,
+// assinatura HMAC nem resposta em streaming.
+app.use(compression({
+  filter: (req, res) => !req.path.startsWith('/api/') && compression.filter(req, res),
 }));
 
 type VercelStyleHandler = (req: Request, res: Response) => unknown | Promise<unknown>;
@@ -257,7 +278,28 @@ const indexHtml = existsSync(appShell) ? appShell : path.join(distDir, 'index.ht
 
 // `redirect: false` evita o 301 de /cursos para /cursos/ que o express.static faz ao
 // encontrar o diretório do prerender — um salto a mais em toda URL do sitemap.
-app.use(express.static(distDir, { index: false, redirect: false }));
+//
+// Cache: os arquivos de /assets têm hash no nome (Vite), então podem ficar um ano no
+// navegador; antes tudo saía com max-age=0. HTML revalida sempre. Arquivos de build
+// que não são página (casca da SPA e manifesto do prerender) não entram no índice.
+const ARQUIVOS_DE_BUILD = new Set(['app-shell.html', 'prerender-manifest.json', 'index.html']);
+app.use(express.static(distDir, {
+  index: false,
+  redirect: false,
+  setHeaders: (res, arquivo) => {
+    const nome = path.basename(arquivo);
+    if (arquivo.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (nome.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (/\.(xml|txt|json)$/.test(nome)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+    if (ARQUIVOS_DE_BUILD.has(nome)) res.setHeader('X-Robots-Tag', 'noindex');
+  },
+}));
 
 // ── HTML prerenderizado (scripts/prerender.mjs) ─────────────────────────────
 // Tem que vir ANTES do fallback: dist/<rota>/index.html contém o DOM já renderizado,
@@ -302,6 +344,10 @@ app.use(async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     if (await caminhoPublicoExiste(req.path)) return enviarCasca(200);
+
+    // Páginas do site antigo com destino conhecido (ex.: a URL velha do curso).
+    const fixo = destinoFixo(req.path);
+    if (fixo) return res.redirect(301, fixo + req.url.slice(req.path.length));
 
     // Post do WordPress que vivia na raiz do domínio e hoje está sob /blog/.
     // A query string segue junto para não perder UTMs de campanha antiga.

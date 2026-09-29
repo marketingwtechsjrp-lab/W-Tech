@@ -8,7 +8,7 @@ import './immersive-pilot-hero.css';
 
 const copy = {
     'pt-BR': {
-        eyebrow: 'Suspensão. SAG. Ergonomia.', title: 'Sua moto.', highlight: 'Acertada.', tagline: 'Para você. Para o terreno.',
+        eyebrow: 'Curso online de regulagem de suspensão para pilotos', title: 'Sua moto.', highlight: 'Acertada.', tagline: 'Para você. Para o terreno.',
         description: 'Domine SAG, cliques e ergonomia para adaptar a regulagem ao seu peso, à sua pilotagem e ao próximo terreno.',
         cta: 'Quero dominar o acerto da minha moto', watch: 'Ver o método na prática', presentation: 'Apresentação do curso',
         access: '12 meses de acesso', guarantee: 'Garantia de 7 dias', explore: 'Sinta o que muda com cada ajuste',
@@ -24,7 +24,7 @@ const copy = {
         workshopText: 'Transforme peso, postura e tipo de uso em uma entrega personalizada. Uma moto regulada para o cliente que vai pilotar.',
     },
     'pt-PT': {
-        eyebrow: 'Suspensão. SAG. Ergonomia.', title: 'A tua mota.', highlight: 'Afinada.', tagline: 'Para ti. Para o terreno.',
+        eyebrow: 'Formação online de afinação de suspensões para pilotos', title: 'A tua mota.', highlight: 'Afinada.', tagline: 'Para ti. Para o terreno.',
         description: 'Domina o SAG, os cliques e a ergonomia para adaptar a afinação ao teu peso, à tua condução e ao próximo terreno.',
         cta: 'Quero dominar a afinação da minha mota', watch: 'Ver o método na prática', presentation: 'Apresentação da formação',
         access: '12 meses de acesso', guarantee: 'Garantia de 7 dias', explore: 'Sente o que muda com cada ajuste',
@@ -40,7 +40,7 @@ const copy = {
         workshopText: 'Transforma peso, postura e utilização numa entrega personalizada. Uma mota afinada para o cliente que a vai conduzir.',
     },
     es: {
-        eyebrow: 'Suspensión. SAG. Ergonomía.', title: 'Tu moto.', highlight: 'Ajustada.', tagline: 'Para ti. Para el terreno.',
+        eyebrow: 'Curso online de reglaje de suspensión para pilotos', title: 'Tu moto.', highlight: 'Ajustada.', tagline: 'Para ti. Para el terreno.',
         description: 'Domina SAG, clics y ergonomía para adaptar los ajustes a tu peso, tu pilotaje y el próximo terreno.',
         cta: 'Quiero dominar el ajuste de mi moto', watch: 'Ver el método en acción', presentation: 'Presentación del curso',
         access: '12 meses de acceso', guarantee: 'Garantía de 7 días', explore: 'Siente lo que cambia con cada ajuste',
@@ -56,7 +56,7 @@ const copy = {
         workshopText: 'Ten en cuenta el peso, la postura y el uso para entregar una moto ajustada a cada cliente.',
     },
     en: {
-        eyebrow: 'Suspension. SAG. Ergonomics.', title: 'Your bike.', highlight: 'Dialed in.', tagline: 'For you. For the terrain.',
+        eyebrow: 'Online suspension setup course for riders', title: 'Your bike.', highlight: 'Dialed in.', tagline: 'For you. For the terrain.',
         description: 'Master SAG, clickers and ergonomics to adapt your setup to your weight, riding style and the terrain ahead.',
         cta: 'I want to master my bike’s setup', watch: 'See the method in action', presentation: 'Course presentation',
         access: '12-month access', guarantee: '7-day guarantee', explore: 'Feel what each adjustment changes',
@@ -126,7 +126,7 @@ export const ImmersivePilotHero: React.FC<{
 
     return (
         <>
-            <section ref={heroRef} className="pilot-hero" aria-labelledby="pilot-hero-title">
+            <section ref={heroRef} className="pilot-hero" aria-labelledby="pilot-hero-heading">
                 <div className="pilot-hero-scene" aria-hidden="true">
                     <img src="/images/hero-piloto/poster.webp" alt="" width={1440} height={630} fetchPriority="high" className="pilot-hero-poster" />
                     {source && <video ref={loopRef} data-hero-loop src={source} muted loop playsInline preload="none" className="pilot-hero-film" tabIndex={-1} onError={() => setSource(undefined)} />}
@@ -147,8 +147,11 @@ export const ImmersivePilotHero: React.FC<{
                 </header>
 
                 <div className="pilot-hero-content">
-                    <p className="pilot-eyebrow"><span />{t.eyebrow}</p>
-                    <h1 id="pilot-hero-title">{t.title}<br /><span>{t.highlight}</span></h1>
+                    {/* O H1 diz o que a página é (a busca e os robôs de IA leem daqui); o
+                        slogan continua com o mesmo visual, como parágrafo. O espaço antes
+                        do <br /> evita "Sua moto.Acertada." no texto extraído. */}
+                    <h1 id="pilot-hero-heading" className="pilot-eyebrow"><span />{t.eyebrow}</h1>
+                    <p id="pilot-hero-title" className="pilot-hero-title">{t.title}{' '}<br /><span>{t.highlight}</span></p>
                     <p className="pilot-hero-tagline">{t.tagline}</p>
                     <p className="pilot-hero-promise" data-course-promise>{promise}</p>
                     <p className="pilot-hero-description">{t.description}</p>

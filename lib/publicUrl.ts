@@ -19,6 +19,11 @@ export function publicApiUrl(path: string): string {
     return `${PUBLIC_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+/** URL absoluta de uma página ou imagem do site (schema.org e og:image pedem absoluta). */
+export function absoluteUrl(path: string): string {
+    return `${PUBLIC_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 /** @id da organização no grafo schema.org. Definido no index.html e referenciado
  *  pelo JSON-LD das páginas — se mudar aqui, o grafo se parte em duas entidades. */
 export const ORGANIZATION_ID = `${PUBLIC_BASE_URL}/#organization`;

@@ -12,8 +12,8 @@
 .pilot-hero-content { padding: clamp(48px,7vh,90px) 5% 116px; max-width: 800px; position: relative; z-index: 1; }
 .pilot-eyebrow { font-size: 10px; line-height: 1.5; font-weight: 700; letter-spacing: .25em; text-transform: uppercase; color: #d2b46b; display: flex; align-items: center; gap: 10px; }
 .pilot-eyebrow > span { width: 22px; height: 1px; background: #d2b46b; }
-.pilot-hero h1 { margin: 24px 0 8px; font-size: clamp(76px,7.4vw,116px); font-weight: 900; line-height: .88; letter-spacing: -.045em; text-transform: uppercase; }
-.pilot-hero h1 > span { color: #e6bd55; }
+.pilot-hero .pilot-hero-title { margin: 24px 0 8px; font-size: clamp(76px,7.4vw,116px); font-weight: 900; line-height: .88; letter-spacing: -.045em; text-transform: uppercase; }
+.pilot-hero .pilot-hero-title > span { color: #e6bd55; }
 .pilot-hero-tagline { font-size: clamp(20px,2vw,29px); line-height: 1.4; font-weight: 600; letter-spacing: -.025em; margin-top: 20px; }
 .pilot-hero-promise { max-width: 480px; margin-top: 25px; font-size: 16px; font-weight: 600; line-height: 1.5; color: #eeeae1; }
 .pilot-hero-description { max-width: 475px; margin-top: 12px; color: #bfc3bb; font-size: 14px; line-height: 1.65; }
@@ -64,7 +64,7 @@
     .pilot-hero-shade { background: linear-gradient(0deg,#070a09 0%,#070a09 36%,#070a09e8 50%,#070a0940 70%,#070a0905 90%); }
     .pilot-hero-content { padding: clamp(185px,26svh,255px) 22px 94px; }
     .pilot-eyebrow { font-size: 9px; letter-spacing: .2em; }
-    .pilot-hero h1 { font-size: clamp(60px,17vw,86px); margin-top: 18px; }
+    .pilot-hero .pilot-hero-title { font-size: clamp(60px,17vw,86px); margin-top: 18px; }
     .pilot-hero-tagline { font-size: 20px; margin-top: 16px; }
     .pilot-hero-promise { font-size: 14px; margin-top: 20px; max-width: 340px; }
     .pilot-hero-description { font-size: 12px; margin-top: 10px; line-height: 1.65; }

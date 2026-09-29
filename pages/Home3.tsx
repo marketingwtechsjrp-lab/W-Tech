@@ -4,7 +4,6 @@ import { getLeadTrackingFields } from '../lib/tracking';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Calendar as CalendarIcon, ArrowRight, Star, CheckCircle, Search, Play, Instagram, Award, Menu, X, Phone, Mail, Clock, Volume2, VolumeX, Send } from 'lucide-react';
 import { Calendar as BentoCalendar } from '../components/ui/calendar';
-import { generateAgendaPDF } from '../lib/pdfGenerator';
 
 import { triggerWebhook } from '../lib/webhooks';
 import { useNavigate, Link } from 'react-router-dom';
@@ -12,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { Mechanic } from '../types';
 
 import SEO from '../components/SEO';
+import { ORGANIZATION_ID } from '../lib/publicUrl';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -189,6 +189,9 @@ const Home3 = () => {
     const downloadCourseList = async () => {
         const siteTitle = get('site_title', 'W-TECH BRASIL');
         const logoUrl = get('logo_url', '');
+        // jsPDF (~410 KB) só no clique: importado no topo, entrava no pacote da home
+        // e virava modulepreload em todas as páginas prerenderizadas.
+        const { generateAgendaPDF } = await import('../lib/pdfGenerator');
         await generateAgendaPDF(siteTitle, logoUrl);
     };
 
@@ -200,10 +203,15 @@ const Home3 = () => {
                 schema={{
                     "@context": "https://schema.org",
                     "@type": "EducationalOrganization",
+                    // Mesmo @id do grafo estático do index.html: completa a entidade
+                    // W-Tech em vez de criar uma segunda organização sem identificador.
+                    "@id": ORGANIZATION_ID,
                     "name": "W-TECH Brasil",
                     "alternateName": "W-Tech Treinamentos",
                     "url": "https://w-techbrasil.com.br",
-                    "logo": get('logo_url', 'https://w-techbrasil.com.br/logo.png'),
+                    // Logo servido pelo próprio site (o logo_url do banco aponta para o
+                    // projeto antigo do Supabase cloud).
+                    "logo": "https://w-techbrasil.com.br/logo-wtech-letreiro.png",
                     "address": {
                         "@type": "PostalAddress",
                         "streetAddress": "R. Zumbi dos Palmares, 410 - Jd. Paulista",

@@ -10,6 +10,8 @@ import { PUBLIC_BASE_URL, canonicalUrl } from '../lib/publicUrl';
  * descartar as páginas internas. O cálculo vive em lib/publicUrl.ts porque
  * SettingsContext também escreve a tag canonical e precisa do mesmo valor.
  */
+const BRAND_SUFFIX = 'W-Tech Brasil';
+
 interface SEOProps {
     title: string;
     description?: string;
@@ -29,8 +31,10 @@ const SEO: React.FC<SEOProps> = ({ title, description, image, url, keywords, rob
     const { settings } = useSettings();
     const location = useLocation();
 
-    const siteTitle = settings.seo_title || settings.site_title || 'W-TECH Brasil';
-    const fullTitle = `${title} | ${siteTitle}`;
+    // Sufixo curto e fixo. O seo_title do banco ("W-TECH Brasil | Suspensões Off-Road -
+    // Onroad", 44 caracteres) empurrava 346 de 350 títulos para mais de 60 caracteres e
+    // saía em dobro quando a página já citava a marca ("W-TECH Brasil | W-TECH Brasil…").
+    const fullTitle = /w-?tech/i.test(title) ? title : `${title} | ${BRAND_SUFFIX}`;
     const currentUrl = url || canonicalUrl(location.pathname, location.search);
     const metaDescription = description || settings.seo_description || 'W-TECH - Treinamento Automotivo Especializado e Rede de Oficinas Credenciadas.';
     const metaImage = image || settings.seo_og_image || settings.logo_url || `${PUBLIC_BASE_URL}/og-cover.jpg`;

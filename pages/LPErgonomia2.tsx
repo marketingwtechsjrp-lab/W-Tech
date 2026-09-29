@@ -36,9 +36,13 @@ import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { useCourseSpecialOffer } from '../hooks/useCourseSpecialOffer';
 import { VSL_VIDEO_URL as VSL_URL } from '../lib/vslVideo';
 import { courseContentParams, trackMetaStandardEvent } from '../lib/metaPixel';
+import { COURSE_PAGE_URL } from '../lib/courseSchema';
 
 
-const COURSE_URL = 'https://w-techbrasil.com.br/curso-suspensao-piloto-v2';
+// Variante de anúncio e do /bio. Canonical, og:url e twitter:url apontam para a
+// página oficial e a variante sai do índice (noindex): as duas competiam pela
+// mesma busca, e só a oficial recebe o schema do curso (lib/courseSchema.ts).
+const COURSE_URL = COURSE_PAGE_URL;
 const OG_IMAGE = 'https://w-techbrasil.com.br/hero-desktop-alex.webp';
 
 const TESTIMONIALS = [
@@ -378,6 +382,12 @@ const LPErgonomia2: React.FC = () => {
 
         const metaUpdates = [
             {
+                selector: 'meta[name="robots"]',
+                attribute: 'name',
+                key: 'robots',
+                content: 'noindex, follow',
+            },
+            {
                 selector: 'meta[name="description"]',
                 attribute: 'name',
                 key: 'description',
@@ -446,30 +456,6 @@ const LPErgonomia2: React.FC = () => {
             return { element, previousContent, created: !existing };
         });
 
-        const schema = document.createElement('script');
-        schema.id = 'lp-v2-course-schema';
-        schema.type = 'application/ld+json';
-        schema.text = JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Course',
-            name: 'Regulagem de Suspensão para Pilotos',
-            description:
-                'Curso online W-Tech sobre SAG, molas, óleo, cliques, ergonomia, pneus e tração para motos Off-Road.',
-            provider: {
-                '@type': 'Organization',
-                name: 'W-Tech Brasil',
-                sameAs: 'https://w-techbrasil.com.br/',
-            },
-            offers: {
-                '@type': 'Offer',
-                price: price.schemaPrice,
-                priceCurrency: price.schemaCurrency,
-                url: checkoutBaseUrl,
-                availability: 'https://schema.org/InStock',
-            },
-        });
-        document.head.querySelector('#lp-v2-course-schema')?.remove();
-        document.head.appendChild(schema);
 
         return () => {
             document.title = previousTitle;
@@ -480,9 +466,8 @@ const LPErgonomia2: React.FC = () => {
                 if (created) element.remove();
                 else if (previousContent !== null) element.setAttribute('content', previousContent);
             });
-            schema.remove();
         };
-    }, [checkoutBaseUrl, price.schemaCurrency, price.schemaPrice]);
+    }, []);
 
     if (currentLang !== 'pt-BR') {
         const params = new URLSearchParams(location.search);

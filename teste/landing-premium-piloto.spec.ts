@@ -105,7 +105,7 @@ test('Portugal por geolocalização: português europeu, euros e Hotmart', async
     await page.goto('/curso-suspensao-piloto?utm_source=anuncio-portugal');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-PT');
     await expect(page.locator('[data-course-promise]')).toContainText('acertar a suspensão da tua mota');
-    await expect(page).toHaveTitle(/Aprende a Afinar a Tua Mota/);
+    await expect(page).toHaveTitle(/Formação Online de Afinação de Suspensões para Pilotos/);
     await expect(page.locator('#cta-final')).toContainText('59 €');
     await expect(page.locator('#cta-final')).toContainText('Pagamento único de 59 € · sem renovação');
     await expect(page.locator('#kiwify-checkout-btn-lp-ergonomia')).toHaveAttribute('href', /pay.hotmart.com/);
@@ -140,7 +140,9 @@ test('Portugal no telemóvel: CTA, contacto internacional e mudança para Brasil
 test('abertura com movimento silencioso e CTA fixo somente depois do principal', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/curso-suspensao-piloto?lang=pt-BR&regiao=br');
-    await expect(page.locator('h1')).toHaveText('Sua moto.Acertada.');
+    // O H1 é o nome do curso (busca e robôs de IA); o slogan segue logo abaixo.
+    await expect(page.locator('h1')).toHaveText('Curso online de regulagem de suspensão para pilotos');
+    await expect(page.locator('#pilot-hero-title')).toHaveText('Sua moto. Acertada.');
     await expect(page.locator('[data-course-promise]')).toContainText('O único curso');
     await expect(page.locator('[data-offer-cta="sticky"]')).toHaveCount(0);
     const loop = page.locator('[data-hero-loop]');

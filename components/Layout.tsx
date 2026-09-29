@@ -80,6 +80,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <h3 className="text-white font-bold uppercase mb-4">{t.footer.quickLinks}</h3>
             <ul className="space-y-2 text-sm">
               <li><Link to="/cursos" className="hover:text-wtech-gold">{t.nav.courses}</Link></li>
+              {/* Link sitewide para a página que vende: antes só /cursos apontava para ela. */}
+              <li><Link to="/curso-suspensao-piloto" className="hover:text-wtech-gold">{t.nav.onlineCourse}</Link></li>
+              <li><Link to="/glossario" className="hover:text-wtech-gold">{t.nav.glossary}</Link></li>
+              <li><Link to="/blog" className="hover:text-wtech-gold">{t.nav.blog}</Link></li>
               <li><Link to="/mapa" className="hover:text-wtech-gold">{t.nav.mechanics}</Link></li>
               <li><Link to="/molas" className="hover:text-wtech-gold">{t.nav.springs}</Link></li>
               <li><Link to="/oleo" className="hover:text-wtech-gold">{t.nav.oil}</Link></li>

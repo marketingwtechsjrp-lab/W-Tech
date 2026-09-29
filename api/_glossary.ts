@@ -264,7 +264,10 @@ Retorne estritamente:
       summary: summary.slice(0, 160) || `Entenda ${term.term} no glossário técnico da W-Tech Brasil.`,
       seo_title: seoTitle.slice(0, 70) || `${term.term} — Glossário W-Tech`,
       origin: originForProvider(keys.provider),
-      published: true,
+      // Definição gerada nasce como RASCUNHO. Publicar em lote o que a IA escreveu,
+      // sem ninguém ler, é o padrão de "conteúdo em escala" que já pesa contra o
+      // domínio no blog. Quem clica em publicar no painel é quem revisou.
+      published: false,
       reviewed: false,
     })
     .eq('id', id)
@@ -289,6 +292,8 @@ async function updateTerm(supabase: any, body: any) {
   for (const key of ['published', 'reviewed']) {
     if (Object.prototype.hasOwnProperty.call(body, key)) updates[key] = Boolean(body[key]);
   }
+  // Publicar é a revisão humana: o verbete publicado fica marcado como revisado.
+  if (updates.published === true) updates.reviewed = true;
 
   if (Object.prototype.hasOwnProperty.call(body, 'term')) {
     const term = String(body.term || '').trim();

@@ -176,7 +176,7 @@ REGRAS OBRIGATÓRIAS:
 2. Meta Description: máximo 155 caracteres, com CTA implícito, linguagem persuasiva
 3. Keywords: 8-12 termos relevantes, long-tail incluídos, separados por vírgula
 4. OG Image: manter a URL existente se fornecida (não inventar)
-5. Schema: preencher dados realistas baseados no contexto do site
+5. Schema: NUNCA invente telefone, e-mail ou endereço; dados de contato vêm só do cadastro real da empresa
 6. Meta Robots: sempre "index, follow" (a menos que haja razão contrária)
 7. Use português brasileiro natural e profissional
 8. Foque em E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness)
@@ -192,12 +192,13 @@ Retorne APENAS um JSON válido (sem markdown code blocks) com EXATAMENTE estas c
   "seo_site_name": "...",
   "seo_robots": "index, follow",
   "seo_schema_name": "...",
-  "seo_schema_type": "EducationalOrganization",
-  "seo_schema_phone": "...",
-  "seo_schema_email": "...",
-  "seo_schema_address": "..."
+  "seo_schema_type": "EducationalOrganization"
 }
     `;
+    // Telefone, e-mail e endereço saíram do JSON pedido: com a instrução de "dados
+    // realistas", a IA inventou "Rua da Inovação, 123" e "+55 11 98765-4321", que
+    // foram parar no schema de todas as páginas. O painel só aplica as chaves que
+    // voltam, então os campos de contato ficam como estão no cadastro.
 
     const prompt = `
 Analise o seguinte site e gere as configurações SEO otimizadas:

@@ -1,40 +1,44 @@
 # W-Tech Brasil
 
-> Escola especializada em suspensão de motocicletas — cursos presenciais, online e banco de dados técnico de molas calibradas.
+> Escola de suspensão de motocicletas off-road e on-road de São José do Rio Preto (SP): cursos presenciais para mecânicos e pilotos, curso online de regulagem de suspensão para pilotos, rede de oficinas credenciadas e banco de dados de molas por modelo de moto e peso do piloto.
 
-A W-Tech Brasil é referência nacional em treinamento de mecânicos e pilotos para regulagem, manutenção e calibração de suspensões de motocicletas. Sediada em São José do Rio Preto (SP), realiza cursos presenciais em todo o Brasil e Portugal, além de oferecer o Curso Online de Suspensão para Piloto diretamente pela plataforma Kiwify.
+A W-Tech Brasil foi fundada por Alex Crepaldi, instrutor principal, que já treinou mais de 3.000 alunos em cursos presenciais. A escola realiza turmas no Brasil e em Portugal, e a sede fica na R. Zumbi dos Palmares, 410, Jd. Paulista, São José do Rio Preto (SP).
 
-O fundador e instrutor principal é Alex Crepaldi, com mais de 20 anos de experiência em suspensão de motos de competição e estrada.
+## Curso online
 
-## Principais Páginas
+- [Curso Online de Regulagem de Suspensão para Pilotos](https://w-techbrasil.com.br/curso-suspensao-piloto): ensina o piloto a regular, do zero, a suspensão da própria moto off-road, sem precisar de experiência anterior. São 11 módulos: boas-vindas, ergonomia (guidão, manetes, pedal e câmbio), equilíbrio, molas, SAG (medição e ajuste), óleo e viscosidade, cliques de compressão e retorno, eixo dianteiro, pneus e tração (pressão em PSI), relação e corrente, e kits e ferramentas. Instrutor: Alex Crepaldi.
+  - Acesso: 12 meses, pelo celular ou computador, liberado assim que o pagamento no cartão ou no Pix é aprovado (o link chega por e-mail).
+  - Preço no Brasil: plano anual de R$ 347,00, em até 12x de R$ 35,89 no cartão, ou Pix; renova todo ano até o aluno cancelar. Garantia incondicional de 7 dias.
+  - Inclui certificado de conclusão da W-Tech e bônus com planilhas e material complementar.
+  - Serve para motos off-road nacionais e importadas, antigas ou novas.
 
-- [Início](https://w-techbrasil.com.br/): Apresentação da escola, próximos cursos, mapa de mecânicos certificados e blog.
-- [Cursos Presenciais](https://w-techbrasil.com.br/cursos): Calendário de cursos presenciais em todo o Brasil — datas, cidades e inscrições.
-- [Banco de Dados de Molas (/molas)](https://w-techbrasil.com.br/molas): Catálogo técnico de molas calibradas (dianteira e traseira) por peso do piloto e modelo de motocicleta, com constantes elásticas seguindo tabelas de referência internacional.
-- [Calculadora de Óleo (/oleo)](https://w-techbrasil.com.br/oleo): Referência de volume e viscosidade de óleo de suspensão por modelo de motocicleta.
-- [Mapa de Mecânicos](https://w-techbrasil.com.br/mapa): Diretório geolocalizado de mecânicos certificados pela W-Tech em todo o Brasil.
-- [Blog](https://w-techbrasil.com.br/blog): Artigos técnicos sobre suspensão de motos, SAG, regulagem de garfo e amortecedor.
-- [Glossário](https://w-techbrasil.com.br/glossario): Definições dos principais termos técnicos de suspensão de motocicletas.
-- [Contato](https://w-techbrasil.com.br/contato): Formulário de contato, telefone e endereço da sede (São José do Rio Preto - SP).
+## Principais páginas
 
-## Cursos
+- [Início](https://w-techbrasil.com.br/): apresentação da escola, agenda de cursos e rede de credenciados.
+- [Cursos presenciais](https://w-techbrasil.com.br/cursos): calendário de turmas no Brasil, com datas, cidades e inscrição.
+- [Banco de molas](https://w-techbrasil.com.br/molas): recomendação de mola dianteira e traseira por marca, modelo da moto e faixa de peso do piloto.
+- [Rede de credenciados](https://w-techbrasil.com.br/mapa): oficinas credenciadas pela W-Tech no Brasil.
+- [Cadastro de oficina (Sou mecânico)](https://w-techbrasil.com.br/sou-mecanico): cadastro para oficinas que querem entrar na rede de credenciados.
+- [Glossário](https://w-techbrasil.com.br/glossario): termos técnicos de suspensão de motocicletas.
+- [Blog](https://w-techbrasil.com.br/blog): artigos sobre suspensão, manutenção e pilotagem off-road.
+- [Contato](https://w-techbrasil.com.br/contato): telefone, e-mail e endereço da sede.
 
-- [Curso Online de Suspensão para Piloto](https://w-techbrasil.com.br/curso-suspensao-piloto): Curso online focado em pilotos de moto — ensina a regular a suspensão pelo próprio piloto sem necessidade de mecânico.
-- [Sou Mecânico](https://w-techbrasil.com.br/sou-mecanico): Área dedicada a profissionais — formação técnica para mecânicos especializados em suspensão.
-- [Cursos em Portugal (Lisboa)](https://w-techbrasil.com.br/wtech-lisboa): Informações sobre os cursos W-Tech realizados em Lisboa, Portugal.
+## Portugal
 
-## Políticas e Suporte
+- [W-Tech Lisboa](https://w-techbrasil.com.br/wtech-lisboa-nov): próxima turma presencial em Lisboa.
+- O curso online também é vendido para Portugal e outros países, em euro, pela Hotmart.
 
-- [Termos de Uso](https://w-techbrasil.com.br/termos): Termos e condições gerais da plataforma.
-- [Política de Privacidade](https://w-techbrasil.com.br/privacidade): Política de tratamento de dados pessoais (LGPD).
-- [Política de Cancelamento](https://w-techbrasil.com.br/cancelamento): Regras de cancelamento e reembolso de inscrições em cursos.
-- [Suporte](https://w-techbrasil.com.br/suporte): Central de atendimento e dúvidas frequentes.
-- [Rastreio de Pedido](https://w-techbrasil.com.br/rastreio): Consulta de status de pedidos de peças e materiais.
+## Políticas e suporte
 
-## Informações de Contato
+- [Termos de uso](https://w-techbrasil.com.br/termos)
+- [Política de privacidade (LGPD)](https://w-techbrasil.com.br/privacidade)
+- [Política de cancelamento](https://w-techbrasil.com.br/cancelamento)
+- [Suporte](https://w-techbrasil.com.br/suporte)
 
-- **Sede:** R. Zumbi dos Palmares, 410 — Jd. Paulista, CEP 15060-190 — São José do Rio Preto, SP, Brasil
-- **Telefone:** (17) 3231-2858
-- **E-mail:** contato@w-techbrasil.com.br
-- **Horário de Atendimento:** Segunda a Sexta, 08h às 18h
-- **Instagram:** @wtechbrasil
+## Contato
+
+- Sede: R. Zumbi dos Palmares, 410, Jd. Paulista, CEP 15060-190, São José do Rio Preto (SP), Brasil
+- Telefone: (17) 3231-2858
+- E-mail: contato@w-techbrasil.com.br
+- Atendimento: segunda a sexta, das 8h às 18h
+- Instagram: @wtechbrasil · YouTube: @wtechbrasil

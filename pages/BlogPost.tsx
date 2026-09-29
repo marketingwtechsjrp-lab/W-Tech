@@ -10,6 +10,10 @@ import { motion, useScroll, useSpring } from 'framer-motion';
 import SEO from '../components/SEO';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 import { normalizeBlogContentImages, resolveBlogImage } from '../lib/blogImages';
+import { ORGANIZATION_ID, absoluteUrl } from '../lib/publicUrl';
+
+// Rótulos de importação/geração não são autor: viram a própria W-Tech no schema.
+const AUTORES_DE_SISTEMA = /^(importado wp|w-tech ai|ai generator)$/i;
 
 const BlogPostReader: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -159,29 +163,37 @@ const BlogPostReader: React.FC = () => {
 
   const coverImage = resolveBlogImage(post);
   const articleContent = normalizeBlogContentImages(post.content, post);
+  // Schema e og:image pedem URL absoluta; a capa vinha relativa (/images/blog/…).
+  const coverImageUrl = /^https?:\/\//.test(coverImage) ? coverImage : absoluteUrl(coverImage);
+  const postUrl = absoluteUrl(`/blog/${post.slug}`);
+  const autorReal = post.author && !AUTORES_DE_SISTEMA.test(post.author.trim());
 
   return (
     <div className="bg-white min-h-screen relative">
       <SEO
         title={post.title}
         description={post.excerpt}
-        image={coverImage}
+        image={coverImageUrl}
         type="article"
         schema={{
           "@context": "https://schema.org",
           "@type": "BlogPosting",
+          "@id": `${postUrl}#post`,
+          "mainEntityOfPage": postUrl,
           "headline": post.title,
-          "image": coverImage,
-          "author": {
-            "@type": "Person",
-            "name": post.author
-          },
+          "image": coverImageUrl,
+          "inLanguage": "pt-BR",
+          "author": autorReal
+            ? { "@type": "Person", "name": post.author }
+            : { "@id": ORGANIZATION_ID },
           "publisher": {
+            "@id": ORGANIZATION_ID,
             "@type": "Organization",
             "name": "W-TECH Brasil",
             "logo": {
               "@type": "ImageObject",
-              "url": "https://w-techbrasil.com.br/logo.png"
+              // /logo.png dava 404; este é o mesmo logo do grafo do index.html.
+              "url": "https://w-techbrasil.com.br/logo-wtech-letreiro.png"
             }
           },
           "datePublished": post.date,

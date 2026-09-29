@@ -129,6 +129,17 @@ async function existeLinha(
   return (count ?? 0) > 0;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Coluna uuid só é consultada com valor em formato de uuid. Com texto qualquer o
+ * Postgres responde erro 22P02, a checagem virava "indecisa" e o `?? true` servia
+ * 200: `/lp/qualquer-coisa` e `/cursos/qualquer-coisa` viravam página indexável vazia.
+ */
+function seUuid(valor: string, checagem: () => Promise<boolean | null>): Promise<boolean | null> {
+  return UUID_RE.test(valor) ? checagem() : Promise.resolve(false);
+}
+
 /** Qualquer verificador que responda `true` basta; `null` de todos ⇒ indeciso. */
 async function algumConfirma(checagens: Array<Promise<boolean | null>>): Promise<boolean | null> {
   const respostas = await Promise.all(checagens);
@@ -157,15 +168,15 @@ const VERIFICADORES: Array<{ padrao: RegExp; verificar: Verificador }> = [
     verificar: async (slug) =>
       (await algumConfirma([
         existeLinha('SITE_LandingPages', 'slug', slug),
-        existeLinha('SITE_LandingPages', 'course_id', slug),
-        existeLinha('SITE_Courses', 'id', slug),
+        seUuid(slug, () => existeLinha('SITE_LandingPages', 'course_id', slug)),
+        seUuid(slug, () => existeLinha('SITE_Courses', 'id', slug)),
       ])) ?? true,
   },
   {
     padrao: /^\/cursos\/([^/]+)$/,
     verificar: async (slug) =>
       (await algumConfirma([
-        existeLinha('SITE_Courses', 'id', slug),
+        seUuid(slug, () => existeLinha('SITE_Courses', 'id', slug)),
         existeLinha('SITE_Courses', 'slug', slug),
       ])) ?? true,
   },

@@ -75,10 +75,10 @@ const portugalCopy: Record<string, string> = {
     "Maior segurança para você e sua moto": "Maior segurança para ti e para a tua mota",
     "Instrutor de +3.000 Alunos": "Formador de mais de 3.000 alunos",
     "Referência Nacional em Customização": "Referência no Brasil em personalização",
-    "Curso de Suspensão Off-Road | Regule a Suspensão da Sua Moto — W-Tech": "Curso de Suspensões Online | Aprende a Afinar a Tua Mota — W-Tech",
+    "Curso Online de Regulagem de Suspensão para Pilotos | W-Tech": "Formação Online de Afinação de Suspensões para Pilotos | W-Tech",
     "Curso online de regulagem de suspensão Off-Road: SAG, molas, cliques, óleo e ergonomia. Do zero ao acerto, com prática real na moto. Acesso por 12 meses + bônus.": "Formação online de suspensões Off-Road: SAG, molas, cliques e ergonomia. Aprende a afinar a tua mota ao teu ritmo, com 12 meses de acesso e materiais incluídos.",
     "Aprenda a regular a suspensão da sua moto do zero: SAG, molas, cliques e ergonomia, com prática real. 11 módulos + bônus Paschoalin.": "Aprende a afinar a suspensão da tua mota: SAG, molas, cliques e ergonomia. Aulas online e demonstrações práticas com Alex Crepaldi e Rafa Paschoalin.",
-    "Curso de Suspensão Off-Road — W-Tech Brasil": "Formação Online de Suspensões Off-Road — W-Tech",
+    "Curso Online de Regulagem de Suspensão para Pilotos — W-Tech Brasil": "Formação Online de Afinação de Suspensões para Pilotos — W-Tech",
     "Alex Crepaldi ajustando a suspensão de uma moto Off-Road": "Alex Crepaldi a afinar a suspensão de uma mota Off-Road"
 };
 

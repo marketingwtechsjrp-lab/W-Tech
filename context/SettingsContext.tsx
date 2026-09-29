@@ -1,9 +1,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { PUBLIC_BASE_URL, ORGANIZATION_ID, canonicalUrl } from '../lib/publicUrl';
+import { canonicalUrl } from '../lib/publicUrl';
 import { configureSitePixel } from '../lib/metaPixel';
 import { configureGoogleTracking } from '../lib/googleTracking';
+import { isVerificationToken } from '../lib/seoVerification';
 
 interface SettingsContextType {
     settings: any;
@@ -111,38 +112,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 }
 
                 // Google / Bing Verification
-                if (config.seo_google_verification) setMeta('name', 'google-site-verification', config.seo_google_verification);
-                if (config.seo_bing_verification) setMeta('name', 'msvalidate.01', config.seo_bing_verification);
+                // Só entra valor com cara de token. O banco guardava
+                // `"vc-domain-verify=site.w-techbrasil.com.br,…"` (de outro serviço, com
+                // aspas) e o prerender congelava isso nas 350 páginas no lugar do token
+                // real do index.html — o que derruba a verificação por meta tag.
+                if (isVerificationToken(config.seo_google_verification)) setMeta('name', 'google-site-verification', config.seo_google_verification);
+                if (isVerificationToken(config.seo_bing_verification)) setMeta('name', 'msvalidate.01', config.seo_bing_verification);
 
-                // JSON-LD Organization Schema
-                if (config.seo_schema_name || config.site_title) {
-                    let schemaScript: HTMLScriptElement | null = document.querySelector('#global-org-schema');
-                    if (!schemaScript) {
-                        schemaScript = document.createElement('script');
-                        schemaScript.id = 'global-org-schema';
-                        schemaScript.type = 'application/ld+json';
-                        document.head.appendChild(schemaScript);
-                    }
-                    // O @id é o mesmo do grafo estático do index.html, então os dois blocos
-                    // descrevem UMA entidade em vez de duas Organizations concorrentes.
-                    // Campos vazios são removidos: schema com string vazia é pior que ausente.
-                    const orgNode: Record<string, unknown> = {
-                        "@context": "https://schema.org",
-                        "@type": config.seo_schema_type || "EducationalOrganization",
-                        "@id": ORGANIZATION_ID,
-                        "name": config.seo_schema_name || config.site_title || "W-TECH Brasil",
-                        "url": PUBLIC_BASE_URL,
-                        "logo": config.seo_schema_logo || config.logo_url,
-                        "telephone": config.seo_schema_phone,
-                        "email": config.seo_schema_email,
-                        "address": config.seo_schema_address,
-                        "sameAs": [config.instagram, config.facebook, config.linkedin].filter(Boolean),
-                    };
-                    for (const [k, v] of Object.entries(orgNode)) {
-                        if (!v || (Array.isArray(v) && !v.length)) delete orgNode[k];
-                    }
-                    schemaScript.textContent = JSON.stringify(orgNode);
-                }
+                // Organization: a fonte única é o grafo estático do index.html (endereço
+                // real em São José do Rio Preto, logo e redes). O bloco que era montado
+                // aqui a partir do banco usava o MESMO @id e trazia telefone, endereço e
+                // logo gerados por IA ("Rua da Inovação, 123"), então Google e Bing
+                // fundiam a entidade com dados falsos. Não é mais injetado; o que sobrou
+                // de uma versão antiga em cache sai daqui.
+                document.querySelector('#global-org-schema')?.remove();
 
                 // Analytics tem uma unica origem: o Custom Loader Stape/GTM no
                 // index.html. Reinjetar Pixel, GA4 ou GTM depois de carregar as

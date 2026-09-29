@@ -8,6 +8,7 @@ import { GridVignetteBackground } from '../components/ui/vignette-grid-backgroun
 import { captureTrackingParams, buildCheckoutUrl } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { getCheckoutUrl, getCoursePrice, trackCourseCheckoutStart } from '../lib/coursePricing';
+import { buildCourseSchema } from '../lib/courseSchema';
 import { useBillingRegion } from '../hooks/useBillingRegion';
 import { useHotmartCheckoutUrl } from '../hooks/useHotmartCheckoutUrl';
 import { useCourseSpecialOffer } from '../hooks/useCourseSpecialOffer';
@@ -255,7 +256,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
         const COURSE_URL = `${PUBLIC_BASE_URL}/curso-suspensao-piloto`;
         const OG_IMAGE = `${PUBLIC_BASE_URL}/hero-desktop-alex.webp`;
         const prevTitle = document.title;
-        document.title = localize("Curso de Suspensão Off-Road | Regule a Suspensão da Sua Moto — W-Tech");
+        document.title = localize("Curso Online de Regulagem de Suspensão para Pilotos | W-Tech");
 
         const upsertMeta = (selector: string, attr: string, key: string, content: string) => {
             let el = document.head.querySelector<HTMLMetaElement>(selector);
@@ -270,17 +271,30 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
 
         const prevCanonical = setCanonical(COURSE_URL);
         upsertMeta('meta[name="description"]', 'name', 'description', localize("Curso online de regulagem de suspensão Off-Road: SAG, molas, cliques, óleo e ergonomia. Do zero ao acerto, com prática real na moto. Acesso por 12 meses + bônus."));
-        upsertMeta('meta[property="og:title"]', 'property', 'og:title', localize("Curso de Suspensão Off-Road — W-Tech Brasil"));
+        upsertMeta('meta[property="og:title"]', 'property', 'og:title', localize("Curso Online de Regulagem de Suspensão para Pilotos — W-Tech Brasil"));
         upsertMeta('meta[property="og:description"]', 'property', 'og:description', localize("Aprenda a regular a suspensão da sua moto do zero: SAG, molas, cliques e ergonomia, com prática real. 11 módulos + bônus Paschoalin."));
         upsertMeta('meta[property="og:url"]', 'property', 'og:url', COURSE_URL);
         upsertMeta('meta[property="og:image"]', 'property', 'og:image', OG_IMAGE);
-        upsertMeta('meta[property="twitter:title"]', 'property', 'twitter:title', localize("Curso de Suspensão Off-Road — W-Tech Brasil"));
+        upsertMeta('meta[property="twitter:title"]', 'property', 'twitter:title', localize("Curso Online de Regulagem de Suspensão para Pilotos — W-Tech Brasil"));
         upsertMeta('meta[property="twitter:url"]', 'property', 'twitter:url', COURSE_URL);
         upsertMeta('meta[property="twitter:image"]', 'property', 'twitter:image', OG_IMAGE);
+
+        // Course + FAQPage + BreadcrumbList só na versão canônica (pt-BR, a que o
+        // prerender grava). Com o seletor em outro idioma, a mesma URL passaria a
+        // descrever o curso em pt-PT/es/en, e o FAQ do schema tem que ser o visível.
+        document.head.querySelector('#course-schema')?.remove();
+        if (currentLang === 'pt-BR') {
+            const schema = document.createElement('script');
+            schema.id = 'course-schema';
+            schema.type = 'application/ld+json';
+            schema.text = JSON.stringify(buildCourseSchema(t.faq.items));
+            document.head.appendChild(schema);
+        }
 
         return () => {
             document.title = prevTitle;
             setCanonical(prevCanonical || 'https://w-techbrasil.com.br/');
+            document.head.querySelector('#course-schema')?.remove();
         };
     }, [currentLang]);
 

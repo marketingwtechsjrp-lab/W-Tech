@@ -190,7 +190,7 @@ const GlossaryManagerView: React.FC = () => {
         model: ai.model || undefined,
       });
       if (!quiet) {
-        setNotice({ type: 'success', text: `Definição de “${term.term}” gerada e publicada.` });
+        setNotice({ type: 'success', text: `Definição de “${term.term}” gerada como rascunho. Revise e publique.` });
         await loadTerms();
       }
       return true;
@@ -203,9 +203,11 @@ const GlossaryManagerView: React.FC = () => {
   }
 
   async function generateSelected() {
-    const selected = terms.filter((term) => selectedIds.includes(term.id) && !term.published);
+    // Rascunho que já tem texto fica de fora do lote: pode estar em revisão, e gerar
+    // de novo apagaria a edição. Para refazer um verbete, use o botão dele.
+    const selected = terms.filter((term) => selectedIds.includes(term.id) && !term.published && !term.content);
     if (!selected.length) {
-      setNotice({ type: 'info', text: 'Selecione ao menos um rascunho para gerar.' });
+      setNotice({ type: 'info', text: 'Selecione ao menos um rascunho ainda sem definição para gerar.' });
       return;
     }
 
@@ -219,7 +221,7 @@ const GlossaryManagerView: React.FC = () => {
     setSelectedIds([]);
     setNotice({
       type: success === selected.length ? 'success' : 'info',
-      text: `Geração em lote concluída: ${success} de ${selected.length} verbetes publicados.`,
+      text: `Geração em lote concluída: ${success} de ${selected.length} rascunhos prontos para revisão.`,
     });
     await loadTerms();
   }

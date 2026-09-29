@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
-import { generateAgendaPDF } from '../lib/pdfGenerator';
 import { Download } from 'lucide-react';
 
 const Courses: React.FC = () => {
@@ -23,6 +22,8 @@ const Courses: React.FC = () => {
     const handleDownloadPDF = async () => {
         const siteTitle = get('site_title', 'W-TECH BRASIL');
         const logoUrl = get('logo_url', '');
+        // jsPDF só no clique, para não pesar no carregamento de /cursos.
+        const { generateAgendaPDF } = await import('../lib/pdfGenerator');
         await generateAgendaPDF(siteTitle, logoUrl);
     };
     const [filterType, setFilterType] = useState<'All' | 'Presencial' | 'Online'>('All');

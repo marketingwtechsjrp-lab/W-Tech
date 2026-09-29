@@ -19,6 +19,23 @@ const cache = new Map<string, { destino: string | null; expiraEm: number }>();
 /** Slugs do WordPress antigo no glossário. Nunca tiveram equivalente no site novo. */
 const GLOSSARIO_WORDPRESS = /^\/glossario\/(o-que-e-|uso-de-|como-)/;
 
+/**
+ * Páginas do site antigo com equivalente certo no site novo. 45 posts ainda linkam
+ * `/curso-de-suspensoes/`, que dava 404 e jogava fora a autoridade da URL antiga.
+ */
+const DESTINOS_FIXOS: Record<string, string> = {
+  '/curso-de-suspensoes': '/curso-suspensao-piloto',
+  '/curso-de-suspensao': '/curso-suspensao-piloto',
+  // Post antigo sobre curso online que ainda aparece na busca: intenção de compra.
+  '/cursos-online-suspensao-motos': '/curso-suspensao-piloto',
+};
+
+/** Destino de 301 para uma página antiga conhecida, ou `null`. */
+export function destinoFixo(pathname: string): string | null {
+  const caminho = pathname.length > 1 ? pathname.replace(/\/+$/, '').toLowerCase() : pathname;
+  return DESTINOS_FIXOS[caminho] ?? null;
+}
+
 /** `true` quando a URL deve sair com 410 Gone em vez de 404. */
 export function ehRemocaoPermanente(pathname: string): boolean {
   return GLOSSARIO_WORDPRESS.test(pathname);

@@ -1,5 +1,18 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.45.0 (2026-09-29) - Base de SEO e busca por IA
+- Pré-render: cada página passa a nascer da casca limpa da SPA, e não mais do HTML da home. Curso e LPs deixam de herdar o JSON-LD, as tags do Twitter, o título e o og:url da home, e as páginas param de baixar o JS da home e o jsPDF.
+- Schema: sai o nó de organização montado com dados inventados por IA (endereço "Rua da Inovação, 123" e telefone falso); vale o grafo do index.html, com o endereço real em São José do Rio Preto. A home reforça a mesma entidade pelo @id.
+- Página do curso com Course, FAQPage e BreadcrumbList, nome único do produto ("Curso Online de Regulagem de Suspensão para Pilotos") no título e no H1, e o slogan "Sua moto. Acertada." logo abaixo com o mesmo visual.
+- A variante -v2 sai do índice (noindex) e aponta canonical e og:url para a página oficial.
+- Verificação do Google: o site só grava token válido; o valor quebrado do banco não sobrescreve mais o token real.
+- Servidor: compressão brotli/gzip, cache de 1 ano nos arquivos com hash, redirect 301 de www para o domínio principal e da URL antiga /curso-de-suspensoes/ para o curso; /lp e /cursos inexistentes voltam a dar 404.
+- Títulos com sufixo curto "| W-Tech Brasil"; posts do blog com imagem e logo absolutos e autor real no schema.
+- robots.txt deixa explícita a liberação dos robôs de busca e de IA; llms.txt com os fatos do curso (módulos, acesso, preço, garantia) e descrições corrigidas.
+- IndexNow: arquivo de chave e script scripts/indexnow.mjs para avisar Bing e demais buscadores quando uma página mudar.
+- Glossário: definição gerada por IA nasce como rascunho e só vai ao ar quando alguém publica no painel.
+- Rodapé com links para o curso online, o glossário e o blog.
+
 ## v3.44.3 (2026-09-29) - Condição de retorno do curso online a R$ 167
 - A condição especial por link (?oferta=retorno) passa a ser R$ 167 no primeiro ano (12x de R$ 17,27), no checkout próprio da Kiwify, com renovação por R$ 347/ano. Substitui a 3.44.2 (R$ 197), que não chegou ao ar.
 - Vale até 04/10/2026 às 23h59, o mesmo prazo das mensagens nos grupos e do remarketing no Meta; depois a página volta sozinha ao preço normal.

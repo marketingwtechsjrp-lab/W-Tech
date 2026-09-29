@@ -59,8 +59,13 @@ function routesFromSitemap() {
 }
 
 // ── Servidor estático local com fallback SPA ────────────────────────────────
+// O fallback é a casca limpa (app-shell.html), nunca dist/index.html: a primeira
+// rota do sitemap é "/" e grava a HOME prerenderizada em dist/index.html. Servindo
+// esse arquivo, toda rota seguinte nascia do HTML da home e herdava o JSON-LD, as
+// tags do Twitter, o título e os modulepreload dela (curso e LPs saíam com o schema
+// e o og:url da home, e 349 páginas baixavam o JS da home e o jsPDF sem usar).
 function serveDist() {
-  const indexHtml = path.join(DIST, 'index.html');
+  const indexHtml = path.join(DIST, 'app-shell.html');
   const server = createServer((req, res) => {
     const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
     const candidate = path.join(DIST, path.normalize(urlPath));
@@ -124,10 +129,14 @@ async function main() {
   // A tag canonical sai da casca: ela aponta para a home e o fallback atende rotas que
   // NÃO são a home (/blog/:slug, /admin, 404). Canonical errado é pior que ausente —
   // manda o mecanismo descartar a página. O React grava a canonical certa ao montar.
+  // Pelo mesmo motivo saem og:url e twitter:url: as LPs que não usam o componente
+  // SEO ficavam com a URL da home no compartilhamento do WhatsApp e do Facebook.
   const shellSrc = path.join(DIST, 'index.html');
   const shellDst = path.join(DIST, 'app-shell.html');
   if (!existsSync(shellDst)) {
-    const shell = readFileSync(shellSrc, 'utf8').replace(/\s*<link[^>]+rel="canonical"[^>]*>/i, '');
+    const shell = readFileSync(shellSrc, 'utf8')
+      .replace(/\s*<link[^>]+rel="canonical"[^>]*>/i, '')
+      .replace(/\s*<meta[^>]+property="(?:og|twitter):url"[^>]*>/gi, '');
     writeFileSync(shellDst, shell);
   }
 
