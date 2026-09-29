@@ -92,24 +92,27 @@ export interface CourseSpecialOffer {
 /**
  * Condições ativas, por slug. Sem entrada, ninguém vê preço diferente.
  *
- * `retorno` — remarketing aberto em 28/09/2026: plano "Condição Especial" do
- * produto na Kiwify, com 1ª cobrança de R$ 97 e renovação anual de R$ 347 (o
- * mesmo formato do plano "Alunos-Presencial", R$ 277 → R$ 347). O slug não
- * leva o preço: se o valor mudar, basta trocar esta entrada e os anúncios
- * continuam com o mesmo link.
+ * `retorno` — condição de retorno de 01 a 04/10/2026 (grupos de WhatsApp,
+ * mensagens individuais e remarketing no Meta, todos com o mesmo prazo):
+ * plano "Condição de Retorno" do produto na Kiwify, com 1ª cobrança de R$ 197
+ * e renovação anual de R$ 347 (o mesmo formato do plano "Alunos-Presencial",
+ * R$ 277 → R$ 347). Substituiu a primeira versão, de R$ 97, que nunca chegou
+ * a ser divulgada. O slug não leva o preço: se o valor mudar, basta trocar
+ * esta entrada e os anúncios continuam com o mesmo link. Depois do prazo a
+ * página volta sozinha para o preço normal.
  */
 export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {
     retorno: {
-        checkoutUrl: 'https://pay.kiwify.com.br/S88gmdK',
-        integer: '97',
+        checkoutUrl: 'https://pay.kiwify.com.br/KThONer',
+        integer: '197',
         cents: ',00',
-        full: 'R$ 97,00',
-        installments: '12x de R$ 10,03 no cartão',
-        installmentsShort: '12x R$ 10,03',
+        full: 'R$ 197,00',
+        installments: '12x de R$ 20,37 no cartão',
+        installmentsShort: '12x R$ 20,37',
         anchor: 'R$ 347,00',
-        validUntil: '2026-10-31',
+        validUntil: '2026-10-04',
         label: 'Condição especial de retorno',
-        billingNote: 'Primeiro ano por R$ 97,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
+        billingNote: 'Primeiro ano por R$ 197,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
     },
 };
 
