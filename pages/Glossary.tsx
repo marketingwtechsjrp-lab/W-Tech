@@ -18,10 +18,18 @@ const LIST_COLUMNS = 'id, term, slug, letter, category, summary, niche, publishe
 /** Limite de verbetes no JSON-LD da listagem (o schema não precisa repetir a página inteira). */
 const SCHEMA_LIST_LIMIT = 100;
 
+const SUSPENSAO_RE = /suspens|amortec|mola|sag|pr[eé]-?carga|bengala|garfo|kyb|showa|wp\b|retorno|compress/;
+
+function ehSuspensao(term: GlossaryTerm) {
+  // O glossário antigo já vem com a categoria certa (gerar_sql.py separa "mola de
+  // válvula" e "compressão do motor" da suspensão), então nele a categoria manda.
+  if (term.origin === 'WORDPRESS_LEGADO') return term.category === 'Suspensão';
+  return SUSPENSAO_RE.test(`${term.category || ''} ${term.term} ${term.slug || ''}`.toLowerCase());
+}
+
 /** Verbetes de suspensão levam o curso online; os de motor e mecânica, os cursos da W-Tech. */
 function ctaFor(term: GlossaryTerm) {
-  const texto = `${term.category || ''} ${term.term} ${term.slug || ''}`.toLowerCase();
-  if (/suspens|amortec|mola|sag|pr[eé]-?carga|bengala|garfo|kyb|showa|wp\b|retorno|compress/.test(texto)) {
+  if (ehSuspensao(term)) {
     return {
       eyebrow: 'Curso online',
       title: 'Aprenda a regular a suspensão da sua moto',
@@ -134,12 +142,17 @@ const Glossary: React.FC = () => {
     return () => { active = false; };
   }, [slug]);
 
-  // Relacionados: mesma categoria, para o leitor (e o robô) seguirem pelo glossário.
+  // Relacionados: os próximos da mesma categoria em ordem alfabética, dando a volta.
+  // Assim cada verbete recebe link dos anteriores, em vez de os 8 primeiros da
+  // categoria levarem todos os links do glossário.
   const related = useMemo(() => {
-    if (!selected) return [];
-    return terms
-      .filter((item) => item.slug !== selected.slug && item.category && item.category === selected.category)
-      .slice(0, 8);
+    if (!selected?.category) return [];
+    const mesmaCategoria = terms.filter((item) => item.category === selected.category);
+    const posicao = mesmaCategoria.findIndex((item) => item.slug === selected.slug);
+    const seguintes = posicao < 0
+      ? mesmaCategoria
+      : [...mesmaCategoria.slice(posicao + 1), ...mesmaCategoria.slice(0, posicao)];
+    return seguintes.slice(0, 8);
   }, [selected, terms]);
 
   const filtered = useMemo(() => {
@@ -253,8 +266,8 @@ const Glossary: React.FC = () => {
   return (
     <>
       <SEO
-        title="Glossário Técnico de Suspensão"
-        description="Consulte definições sobre suspensão de motocicletas, ajustes, componentes, preparação e diagnóstico técnico."
+        title="Glossário Técnico de Motos: Suspensão, Motor e Freios"
+        description="Termos de mecânica de motos explicados: suspensão, amortecedor, bengala, SAG, motor, freios, transmissão e elétrica. Glossário técnico da W-Tech Brasil."
         url={`${PUBLIC_BASE_URL}/glossario`}
         schema={{
           '@context': 'https://schema.org',
@@ -280,7 +293,7 @@ const Glossary: React.FC = () => {
             <span className="text-wtech-gold text-xs font-black uppercase tracking-[0.3em]">Base de conhecimento W-Tech</span>
             <h1 className="text-4xl lg:text-6xl font-display font-black mt-3">Glossário Técnico</h1>
             <p className="text-gray-300 mt-4 max-w-2xl text-lg">
-              Entenda os termos utilizados na engenharia, preparação e manutenção de suspensões de motocicletas.
+              Entenda os termos de suspensão, motor, freios, transmissão e manutenção de motocicletas.
             </p>
           </div>
         </section>

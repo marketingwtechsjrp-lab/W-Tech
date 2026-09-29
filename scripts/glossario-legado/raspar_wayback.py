@@ -9,8 +9,9 @@ nada é publicado aqui.
   direto em /web/20260420000000id_/<url>, que o archive.org redireciona para a
   cópia mais próxima; só se ela não tiver o verbete (cópia já do site novo) é que
   a lista de cópias (CDX) é consultada.
-- Educado com o archive.org: 3 downloads por vez, pausa entre eles, leitura
-  interrompida em </article> e novas tentativas com espera crescente.
+- Educado com o archive.org: 2 downloads por vez (com 3 ele passa a recusar
+  conexões), pausa entre eles, leitura interrompida em </article> e novas
+  tentativas com espera crescente.
 - Retomável: quem já está em verbetes.jsonl não é baixado de novo; as falhas
   voltam na passada seguinte.
 """

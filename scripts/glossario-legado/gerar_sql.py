@@ -2,14 +2,17 @@
 """
 Gera o SQL que devolve o glossário antigo (WordPress) ao SITE_GlossaryTerms.
 
-Entrada: verbetes.jsonl gerado por raspar_wayback.py (mesma pasta de trabalho).
+Entrada: verbetes_revisados.jsonl (aplicar_revisao.py) ou, sem ele, o verbetes.jsonl
+         cru do raspar_wayback.py — mesma pasta de trabalho.
 Saída:   glossario_legado.sql, com upsert por slug. Nada é aplicado aqui.
 
     python3 gerar_sql.py <pasta-de-trabalho> [--publicar]
 
 Sem --publicar os verbetes entram como rascunho (published = false), para
 revisão no painel. Com --publicar saem direto no ar: é o que se usa depois do
-OK, porque são páginas que já existiam e o Google já mostrava.
+OK, porque são páginas que já existiam e o Google já mostrava. Só texto revisado
+vai direto ao ar: o original, gerado por IA no WordPress, dizia que a W-Tech
+fabrica motos e citava preços sem fonte (ver aplicar_revisao.py).
 
 Os slugs são os mesmos do WordPress (o-que-e-…), para cada verbete recuperar o
 histórico da URL antiga. Verbetes manuais já existentes não são tocados: o
@@ -73,7 +76,11 @@ def dolar(texto):
 def main():
     pasta = Path(sys.argv[1])
     publicar = "--publicar" in sys.argv
-    registros = [json.loads(l) for l in (pasta / "verbetes.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    revisados = pasta / "verbetes_revisados.jsonl"
+    entrada = revisados if revisados.exists() else pasta / "verbetes.jsonl"
+    registros = [json.loads(l) for l in entrada.read_text(encoding="utf-8").splitlines() if l.strip()]
+    if publicar and not all(r.get("revisado") for r in registros):
+        sys.exit(f"{entrada.name} tem verbete sem revisão: --publicar só depois do aplicar_revisao.py")
     vistos, linhas = set(), []
     for r in registros:
         if r["slug"] in vistos:
@@ -108,7 +115,7 @@ def main():
     for r in registros:
         c = categoria(r["slug"])
         por_cat[c] = por_cat.get(c, 0) + 1
-    print(f"{len(linhas)} verbetes · publicados={publicar} · por categoria: {por_cat}")
+    print(f"{len(linhas)} verbetes de {entrada.name} · publicados={publicar} · por categoria: {por_cat}")
 
 
 if __name__ == "__main__":
