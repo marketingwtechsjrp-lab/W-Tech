@@ -1,5 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.46.0 (2026-09-29) - Glossário antigo de volta, revisado
+- Glossário: 461 verbetes do glossário antigo do WordPress voltam nos mesmos endereços (/glossario/o-que-e-…), recuperados das cópias do Internet Archive. Até a migração de abril eles traziam três quartos dos cliques do Google, e os 461 somam 96% dos cliques dos verbetes que tinham tráfego.
+- Antes de voltar, o texto (gerado por IA no WordPress) passou por revisão: 270 correções em 150 verbetes. Saíram as menções falsas à W-Tech como fabricante de motos, os preços sem fonte, erros técnicos (garfo invertido descrito ao contrário, mistura enriquecida na altitude) e orientações perigosas. Os 18 verbetes fora do tema ou errados do começo ao fim continuam fora do ar (410).
+- O endereço antigo, com barra no fim, leva 301 para o endereço sem barra.
+- Página do glossário: a listagem não baixa mais o texto de todos os verbetes, os relacionados seguem a ordem da categoria (cada verbete recebe link) e a chamada para o curso de suspensão segue a categoria do verbete.
+- Pré-render com duas páginas em paralelo, para o build não dobrar de tempo com as páginas novas.
+- Painel: verbetes recuperados aparecem com a origem "WordPress (legado)".
+
 ## v3.45.0 (2026-09-29) - Base de SEO e busca por IA
 - Pré-render: cada página passa a nascer da casca limpa da SPA, e não mais do HTML da home. Curso e LPs deixam de herdar o JSON-LD, as tags do Twitter, o título e o og:url da home, e as páginas param de baixar o JS da home e o jsPDF.
 - Schema: sai o nó de organização montado com dados inventados por IA (endereço "Rua da Inovação, 123" e telefone falso); vale o grafo do index.html, com o endereço real em São José do Rio Preto. A home reforça a mesma entidade pelo @id.

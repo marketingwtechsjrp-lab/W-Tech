@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.46.0",
+    "date": "2026-09-29",
+    "title": "Glossário antigo de volta, revisado",
+    "changes": [
+      "Glossário: 461 verbetes do glossário antigo do WordPress voltam nos mesmos endereços (/glossario/o-que-e-…), recuperados das cópias do Internet Archive. Até a migração de abril eles traziam três quartos dos cliques do Google, e os 461 somam 96% dos cliques dos verbetes que tinham tráfego.",
+      "Antes de voltar, o texto (gerado por IA no WordPress) passou por revisão: 270 correções em 150 verbetes. Saíram as menções falsas à W-Tech como fabricante de motos, os preços sem fonte, erros técnicos (garfo invertido descrito ao contrário, mistura enriquecida na altitude) e orientações perigosas. Os 18 verbetes fora do tema ou errados do começo ao fim continuam fora do ar (410).",
+      "O endereço antigo, com barra no fim, leva 301 para o endereço sem barra.",
+      "Página do glossário: a listagem não baixa mais o texto de todos os verbetes, os relacionados seguem a ordem da categoria (cada verbete recebe link) e a chamada para o curso de suspensão segue a categoria do verbete.",
+      "Pré-render com duas páginas em paralelo, para o build não dobrar de tempo com as páginas novas.",
+      "Painel: verbetes recuperados aparecem com a origem \"WordPress (legado)\"."
+    ]
+  },
+  {
     "version": "3.45.0",
     "date": "2026-09-29",
     "title": "Base de SEO e busca por IA",
