@@ -1,5 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.44.3 (2026-09-29) - Condição de retorno do curso online a R$ 167
+- A condição especial por link (?oferta=retorno) passa a ser R$ 167 no primeiro ano (12x de R$ 17,27), no checkout próprio da Kiwify, com renovação por R$ 347/ano. Substitui a 3.44.2 (R$ 197), que não chegou ao ar.
+- Vale até 04/10/2026 às 23h59, o mesmo prazo das mensagens nos grupos e do remarketing no Meta; depois a página volta sozinha ao preço normal.
+
 ## v3.44.2 (2026-09-29) - Condição de retorno do curso online a R$ 197
 - A condição especial por link (?oferta=retorno) passa a ser R$ 197 no primeiro ano (12x de R$ 20,37), no checkout próprio da Kiwify, com renovação por R$ 347/ano.
 - Vale até 04/10/2026 às 23h59, o mesmo prazo das mensagens nos grupos e do remarketing no Meta; depois a página volta sozinha ao preço normal.

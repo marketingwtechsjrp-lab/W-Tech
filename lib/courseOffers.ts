@@ -94,25 +94,25 @@ export interface CourseSpecialOffer {
  *
  * `retorno` — condição de retorno de 01 a 04/10/2026 (grupos de WhatsApp,
  * mensagens individuais e remarketing no Meta, todos com o mesmo prazo):
- * plano "Condição de Retorno" do produto na Kiwify, com 1ª cobrança de R$ 197
- * e renovação anual de R$ 347 (o mesmo formato do plano "Alunos-Presencial",
- * R$ 277 → R$ 347). Substituiu a primeira versão, de R$ 97, que nunca chegou
- * a ser divulgada. O slug não leva o preço: se o valor mudar, basta trocar
- * esta entrada e os anúncios continuam com o mesmo link. Depois do prazo a
- * página volta sozinha para o preço normal.
+ * plano "Condição de Retorno 167" do produto na Kiwify, com 1ª cobrança de
+ * R$ 167 e renovação anual de R$ 347 (o mesmo formato do plano
+ * "Alunos-Presencial", R$ 277 → R$ 347). Substituiu as versões de R$ 97 e
+ * R$ 197, que nunca chegaram a ser divulgadas. O slug não leva o preço: se o
+ * valor mudar, basta trocar esta entrada e os anúncios continuam com o mesmo
+ * link. Depois do prazo a página volta sozinha para o preço normal.
  */
 export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {
     retorno: {
-        checkoutUrl: 'https://pay.kiwify.com.br/KThONer',
-        integer: '197',
+        checkoutUrl: 'https://pay.kiwify.com.br/VlPY2o6',
+        integer: '167',
         cents: ',00',
-        full: 'R$ 197,00',
-        installments: '12x de R$ 20,37 no cartão',
-        installmentsShort: '12x R$ 20,37',
+        full: 'R$ 167,00',
+        installments: '12x de R$ 17,27 no cartão',
+        installmentsShort: '12x R$ 17,27',
         anchor: 'R$ 347,00',
         validUntil: '2026-10-04',
         label: 'Condição especial de retorno',
-        billingNote: 'Primeiro ano por R$ 197,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
+        billingNote: 'Primeiro ano por R$ 167,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
     },
 };
 
