@@ -294,7 +294,7 @@ export interface GlossaryTerm {
   category?: string;
   image?: string;
   author?: string;
-  origin?: 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT' | 'WORDPRESS_LEGADO';
+  origin?: 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT' | 'WORDPRESS_LEGADO' | 'AI_CLAUDE';
   published?: boolean;
   reviewed?: boolean;
   views?: number;

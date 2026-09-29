@@ -157,6 +157,11 @@ const VERIFICADORES: Array<{ padrao: RegExp; verificar: Verificador }> = [
       (await existeLinha('SITE_GlossaryTerms', 'slug', slug, { coluna: 'published', valor: true })) ?? true,
   },
   {
+    // Uma página por modelo da tabela de molas (pages/SpringModel.tsx).
+    padrao: /^\/molas\/([^/]+)$/,
+    verificar: async (slug) => (await existeLinha('SITE_SpringRecommendations', 'model_slug', slug)) ?? true,
+  },
+  {
     padrao: /^\/blog\/([^/]+)$/,
     verificar: async (slug) =>
       (await existeLinha('SITE_BlogPosts', 'slug', slug, { coluna: 'status', valor: 'Published' })) ?? true,

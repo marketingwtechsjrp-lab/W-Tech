@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import SpringSelector from '../components/ui/SpringSelector';
 import { useLanguage } from '../context/LanguageContext';
 import SEO from '../components/SEO';
+import { supabase } from '../lib/supabaseClient';
+
+type ModeloDoCatalogo = { brand: string; model: string; model_slug: string };
 
 const MolasCalculator: React.FC = () => {
   const { t } = useLanguage();
+  const [modelos, setModelos] = useState<ModeloDoCatalogo[]>([]);
+
+  // Índice do catálogo em HTML: a calculadora só mostra a mola depois dos cliques,
+  // e é por estes links que o robô chega à página de cada modelo.
+  useEffect(() => {
+    let ativo = true;
+    supabase
+      .from('SITE_SpringModels')
+      .select('brand, model, model_slug')
+      .order('brand', { ascending: true })
+      .order('model', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.warn('[Molas] lista de modelos indisponível:', error.message);
+        if (ativo) setModelos((data as ModeloDoCatalogo[] | null) || []);
+      });
+    return () => { ativo = false; };
+  }, []);
+
+  const porMarca = useMemo(() => {
+    const grupos = new Map<string, ModeloDoCatalogo[]>();
+    for (const m of modelos) grupos.set(m.brand, [...(grupos.get(m.brand) || []), m]);
+    return [...grupos.entries()];
+  }, [modelos]);
 
   return (
     <div className="bg-gray-50 dark:bg-black min-h-screen md:min-h-[calc(100vh-80px)] pt-6 pb-32 md:py-6 px-3 sm:px-4 flex flex-col md:justify-center transition-colors duration-300 mt-16 md:mt-20">
@@ -53,6 +80,33 @@ const MolasCalculator: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {porMarca.length > 0 && (
+          <section aria-labelledby="molas-por-modelo" className="max-w-5xl mx-auto w-full pt-8">
+            <h2 id="molas-por-modelo" className="text-lg sm:text-xl font-black text-black dark:text-white uppercase tracking-tight">
+              Tabela de molas por modelo
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 mb-5 max-w-2xl">
+              Escolha a moto para ver a tabela completa de molas da bengala e do amortecedor por peso do piloto equipado.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {porMarca.map(([marca, lista]) => (
+                <div key={marca} className="bg-white dark:bg-[#161616] p-4 rounded-2xl border border-gray-200 dark:border-white/10">
+                  <h3 className="font-black text-xs text-black dark:text-white uppercase tracking-wider mb-2">{marca}</h3>
+                  <ul className="space-y-1">
+                    {lista.map((m) => (
+                      <li key={m.model_slug}>
+                        <Link to={`/molas/${m.model_slug}`} className="text-xs text-gray-600 dark:text-gray-300 hover:text-wtech-red">
+                          {m.model}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
       </div>
     </div>

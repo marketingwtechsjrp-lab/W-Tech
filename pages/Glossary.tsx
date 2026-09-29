@@ -21,9 +21,9 @@ const SCHEMA_LIST_LIMIT = 100;
 const SUSPENSAO_RE = /suspens|amortec|mola|sag|pr[eé]-?carga|bengala|garfo|kyb|showa|wp\b|retorno|compress/;
 
 function ehSuspensao(term: GlossaryTerm) {
-  // O glossário antigo já vem com a categoria certa (gerar_sql.py separa "mola de
-  // válvula" e "compressão do motor" da suspensão), então nele a categoria manda.
-  if (term.origin === 'WORDPRESS_LEGADO') return term.category === 'Suspensão';
+  // O glossário antigo e as reescritas vêm com a categoria certa (gerar_sql.py separa
+  // "mola de válvula" e "compressão do motor" da suspensão), então nelas a categoria manda.
+  if (term.origin === 'WORDPRESS_LEGADO' || term.origin === 'AI_CLAUDE') return term.category === 'Suspensão';
   return SUSPENSAO_RE.test(`${term.category || ''} ${term.term} ${term.slug || ''}`.toLowerCase());
 }
 

@@ -170,7 +170,7 @@ async function main() {
   // Páginas em paralelo: em sequência eram ~6 s por rota (350 rotas = 36 min de
   // build). Com o glossário antigo de volta o sitemap passa de 900 rotas.
   // A VPS tem 4 núcleos e serve o site durante o build: 2 páginas por vez é o equilíbrio.
-  const CONCORRENCIA = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 2);
+  const CONCORRENCIA = Math.max(1, Number(process.env.PRERENDER_CONCURRENCY) || 3);
   const results = [];
   const fila = [...routes];
   const trabalhador = async () => {

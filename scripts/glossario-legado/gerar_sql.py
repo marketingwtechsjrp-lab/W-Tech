@@ -6,7 +6,7 @@ Entrada: verbetes_revisados.jsonl (aplicar_revisao.py) ou, sem ele, o verbetes.j
          cru do raspar_wayback.py — mesma pasta de trabalho.
 Saída:   glossario_legado.sql, com upsert por slug. Nada é aplicado aqui.
 
-    python3 gerar_sql.py <pasta-de-trabalho> [--publicar]
+    python3 gerar_sql.py <pasta-de-trabalho> [--publicar] [--origem AI_CLAUDE]
 
 Sem --publicar os verbetes entram como rascunho (published = false), para
 revisão no painel. Com --publicar saem direto no ar: é o que se usa depois do
@@ -16,7 +16,8 @@ fabrica motos e citava preços sem fonte (ver aplicar_revisao.py).
 
 Os slugs são os mesmos do WordPress (o-que-e-…), para cada verbete recuperar o
 histórico da URL antiga. Verbetes manuais já existentes não são tocados: o
-upsert só atualiza linhas cuja origem já é WORDPRESS_LEGADO.
+upsert só atualiza linhas da mesma origem (WORDPRESS_LEGADO por padrão; AI_CLAUDE
+para os textos reescritos).
 """
 import html
 import json
@@ -76,6 +77,8 @@ def dolar(texto):
 def main():
     pasta = Path(sys.argv[1])
     publicar = "--publicar" in sys.argv
+    origem = sys.argv[sys.argv.index("--origem") + 1] if "--origem" in sys.argv else "WORDPRESS_LEGADO"
+    assert origem in {"WORDPRESS_LEGADO", "AI_CLAUDE"}, f"origem inválida: {origem}"
     revisados = pasta / "verbetes_revisados.jsonl"
     entrada = revisados if revisados.exists() else pasta / "verbetes.jsonl"
     registros = [json.loads(l) for l in entrada.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -95,7 +98,7 @@ def main():
             "(" + ", ".join([
                 dolar(nome), dolar(r["slug"]), dolar(letra(nome)), dolar(nicho(cat)), dolar(cat),
                 dolar(r["html"]), dolar(resumo), dolar(seo), dolar("Equipe W-Tech"),
-                "'WORDPRESS_LEGADO'", "true" if publicar else "false", "false", dolar(criado) + "::timestamptz",
+                f"'{origem}'", "true" if publicar else "false", "false", dolar(criado) + "::timestamptz",
             ]) + ")"
         )
     sql = [
@@ -107,7 +110,7 @@ def main():
         "  term = excluded.term, letter = excluded.letter, niche = excluded.niche, category = excluded.category,",
         "  content = excluded.content, summary = excluded.summary, seo_title = excluded.seo_title,",
         "  published = excluded.published, updated_at = now()",
-        '  where "SITE_GlossaryTerms".origin = \'WORDPRESS_LEGADO\';',
+        '  where "SITE_GlossaryTerms".origin = excluded.origin;',
         "commit;",
     ]
     (pasta / "glossario_legado.sql").write_text("\n".join(sql) + "\n", encoding="utf-8")

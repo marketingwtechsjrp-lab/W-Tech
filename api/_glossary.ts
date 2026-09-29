@@ -1,7 +1,7 @@
 import { callLLM, loadAIKeys } from './_aiReply.js';
 import { denyAuth, getServiceClient, requireStaffSession, requireSameOrigin } from './_auth.js';
 
-type GlossaryOrigin = 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT' | 'WORDPRESS_LEGADO';
+type GlossaryOrigin = 'MANUAL' | 'AI_GEMINI' | 'AI_OPENAI' | 'AI_OPENROUTER' | 'CSV_IMPORT' | 'WORDPRESS_LEGADO' | 'AI_CLAUDE';
 
 type GlossaryRow = {
   id: string;

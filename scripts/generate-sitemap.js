@@ -68,12 +68,13 @@ async function generateSitemap() {
   // prerender monta as rotas a partir DESTE arquivo, essas páginas também
   // deixavam de ser prerenderizadas e passavam a servir a casca vazia da SPA.
   //
-  // `42P01` = tabela não existe. É o único erro tolerado, porque a primeira build
-  // pode rodar antes da migração; qualquer outro derruba o build.
+  // `42P01` (Postgres) e `PGRST205` (PostgREST, fora do cache de schema) = tabela
+  // não existe. São os únicos erros tolerados, porque a primeira build pode rodar
+  // antes da migração; qualquer outro derruba o build.
   const consultar = async (rotulo, query) => {
     const { data, error } = await query;
     if (error) {
-      if (error.code === '42P01') {
+      if (error.code === '42P01' || error.code === 'PGRST205') {
         console.warn(`⚠️ ${rotulo}: tabela ainda não existe — ignorado nesta build.`);
         return [];
       }
@@ -100,6 +101,11 @@ async function generateSitemap() {
   const glossaryData = await consultar(
     'SITE_GlossaryTerms',
     supabase.from('SITE_GlossaryTerms').select('slug, updated_at').eq('published', true),
+  );
+  // Uma página por modelo do catálogo de molas (view de migrations/2026-09-29_molas_por_modelo.sql).
+  const springData = await consultar(
+    'SITE_SpringModels',
+    supabase.from('SITE_SpringModels').select('model_slug'),
   );
 
   const escapeXml = (unsafe) => {
@@ -176,6 +182,13 @@ async function generateSitemap() {
     }
   });
 
+  // Molas por modelo
+  springData.forEach(m => {
+    if (m.model_slug) {
+      sitemap += `  <url>\n    <loc>${baseUrl}/molas/${escapeXml(m.model_slug)}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+    }
+  });
+
   sitemap += `</urlset>`;
 
   // ── Validação: um sitemap inválido é pior que sitemap ausente ──────────────
@@ -212,7 +225,7 @@ async function generateSitemap() {
   // exatamente assim que 312 posts sumiram do sitemap sem ninguém perceber.
   console.log(
     `   estáticas ${staticPages.length} · landing pages ${lpData.length} · cursos ${courseData.length} ` +
-    `· blog ${blogData.length} · glossário ${glossaryData.length}`,
+    `· blog ${blogData.length} · glossário ${glossaryData.length} · molas ${springData.length}`,
   );
   console.log(`📍 Public: ${publicPath}`);
   console.log(`📍 Root: ${rootPath}`);
