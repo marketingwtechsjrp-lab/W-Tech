@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.48.0 (2026-09-29) - Glossário completo e guias de suspensão no blog
+- Glossário: mais 399 verbetes antigos do WordPress de volta nos mesmos endereços (os que tinham clique entre as posições 401 e 1.000 do Search Console) e 68 verbetes de suspensão da cauda (2 a 4 cliques), todos revisados antes de voltar: 282 correções, com menção falsa à W-Tech, erro técnico, instrução perigosa e invenção fora. 122 ficaram de fora por estarem fora do tema ou tratarem de algo que não existe.
+- Blog: 34 guias práticos de suspensão (regulagem, SAG, pré-carga, compressão e retorno, bengala vazando, retentor, óleo, barulho, suspensão dura ou mole, calibragem e mais), um por dúvida real do piloto, revisados antes de publicar, na categoria "Guias de suspensão".
+- Todo post do blog termina com a chamada do curso online de suspensão (ou dos cursos da W-Tech, nos temas de motor e mecânica): nenhum dos 312 posts antigos levava à página do curso.
+- No schema dos posts, "Equipe W-Tech" é a própria W-Tech, e não uma pessoa.
+
 ## v3.47.0 (2026-09-29) - Molas por modelo e glossário ampliado
 - Molas: uma página por modelo do catálogo de molas da W-Tech (/molas/<modelo>), 338 ao todo, com a mola da bengala e a do amortecedor por peso do piloto equipado, a mola de fábrica, perguntas frequentes e links para os outros anos. O texto é montado só a partir do catálogo, sem IA.
 - A calculadora de /molas ganha a lista de todos os modelos em HTML: antes o catálogo só aparecia depois de escolher modelo e peso, e robô de busca e de IA não chegava a ele.
