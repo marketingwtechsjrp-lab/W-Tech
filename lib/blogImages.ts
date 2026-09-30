@@ -85,7 +85,7 @@ export function getBlogImage(post: Partial<BlogPost> | string): string {
 
 export function resolveBlogImage(post: Partial<BlogPost>): string {
   const currentImage = String(post.image || '');
-  if (currentImage.startsWith('/images/blog/')) return currentImage;
+  if (Object.values(BLOG_IMAGE_LIBRARY).some(image => image.src === currentImage)) return currentImage;
   return getBlogImage(post);
 }
 
@@ -100,7 +100,7 @@ export function normalizeBlogContentImages(content: string, post: Partial<BlogPo
   const image = resolveBlogImage(post);
   return content
     .replace(/\s(?:srcset|data-src|data-lazy-src)=("[^"]*"|'[^']*')/gi, '')
-    .replace(/(<img\b[^>]*\bsrc\s*=\s*)(["'])[^"']*\2/gi, (_match, prefix, quote) => (
-      `${prefix}${quote}${image}${quote}`
+    .replace(/(<img\b[^>]*\bsrc\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, (_match, prefix) => (
+      `${prefix}"${image}"`
     ));
 }

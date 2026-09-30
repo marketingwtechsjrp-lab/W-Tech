@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import { MessageCircle, Send, X } from 'lucide-react';
 import { distributeLead } from '../lib/leadDistribution';
 import { supabase } from '../lib/supabaseClient';
@@ -17,6 +18,7 @@ interface WhatsAppLeadCaptureProps {
     children?: React.ReactNode;
     floating?: boolean;
     ariaLabel?: string;
+    initialMessage?: string;
 }
 
 export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
@@ -26,21 +28,13 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
     children,
     floating = false,
     ariaLabel = 'Falar com a equipe no WhatsApp',
+    initialMessage,
 }) => {
     const isPortugal = language === 'pt-PT';
     const [isOpen, setIsOpen] = useState(false);
     const [form, setForm] = useState({ name: '', phone: '', email: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
-    useEffect(() => {
-        if (!isOpen) return;
-        const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setIsOpen(false);
-        };
-        document.addEventListener('keydown', closeOnEscape);
-        return () => document.removeEventListener('keydown', closeOnEscape);
-    }, [isOpen]);
 
     const open = () => {
         setError('');
@@ -94,7 +88,9 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
             await triggerWebhook('webhook_lead', payload).catch(() => undefined);
             trackEvent('WhatsApp', 'lead_captured', pageLabel);
 
-            const message = isPortugal
+            const message = initialMessage
+                ? `Olá! Meu nome é ${form.name.trim()}. ${initialMessage}`
+                : isPortugal
                 ? `Olá! Chamo-me ${form.name.trim()}. Vi a formação online de suspensões e gostaria de esclarecer uma dúvida.`
                 : `Olá! Meu nome é ${form.name.trim()}. Vim da página do Curso Online de Suspensão e gostaria de tirar uma dúvida.`;
             window.location.href = `https://wa.me/${DEFAULT_PHONE}?text=${encodeURIComponent(message)}`;
@@ -110,22 +106,14 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
         : className;
 
     return (
-        <>
-            <button type="button" onClick={open} aria-label={ariaLabel} className={triggerClassName}>
+        <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
+            <Dialog.Trigger asChild><button type="button" onClick={open} aria-label={ariaLabel} className={triggerClassName}>
                 {children ?? <MessageCircle size={27} fill="currentColor" aria-hidden="true" />}
-            </button>
+            </button></Dialog.Trigger>
 
-            {isOpen && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-end justify-center bg-black/65 p-4 backdrop-blur-sm sm:items-center"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="whatsapp-lead-title"
-                    onMouseDown={(event) => {
-                        if (event.currentTarget === event.target) setIsOpen(false);
-                    }}
-                >
-                    <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white text-[#24211f] shadow-2xl">
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 z-[210] bg-black/65 backdrop-blur-sm" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 z-[211] max-h-[90dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white text-[#24211f] shadow-2xl">
                         <button
                             type="button"
                             onClick={() => setIsOpen(false)}
@@ -137,8 +125,8 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
 
                         <div className="bg-[#075e54] px-6 py-7 text-center text-white">
                             <MessageCircle size={42} className="mx-auto mb-2" aria-hidden="true" />
-                            <h2 id="whatsapp-lead-title" className="text-xl font-black">Falar com a W-Tech</h2>
-                            <p className="mt-1 text-sm text-white/80">{isPortugal ? 'Preenche os teus dados para falar com a equipa.' : 'Preencha seus dados para iniciar o atendimento.'}</p>
+                            <Dialog.Title className="text-xl font-black">Falar com a W-Tech</Dialog.Title>
+                            <Dialog.Description className="mt-1 text-sm text-white/80">{isPortugal ? 'Preenche os teus dados para falar com a equipa.' : 'Preencha seus dados para iniciar o atendimento.'}</Dialog.Description>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 p-6">
@@ -194,9 +182,8 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                                 {isPortugal ? 'Os teus dados serão utilizados pela W-Tech para dar seguimento ao teu contacto.' : 'Seus dados serão usados pela W-Tech para dar continuidade ao atendimento.'}
                             </p>
                         </form>
-                    </div>
-                </div>
-            )}
-        </>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 };

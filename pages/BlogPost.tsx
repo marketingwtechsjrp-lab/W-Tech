@@ -3,15 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { BlogPost } from '../types';
 import {
-  Clock, Calendar, User, Share2, ArrowLeft, Play, Pause,
-  Volume2, Facebook, Twitter, Linkedin, Copy, ArrowRight
+  Clock, Calendar, User, ArrowLeft, Play, Pause,
+  Facebook, Twitter, Linkedin, Copy
 } from 'lucide-react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import SEO from '../components/SEO';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 import { normalizeBlogContentImages, resolveBlogImage } from '../lib/blogImages';
 import { ORGANIZATION_ID, absoluteUrl } from '../lib/publicUrl';
-import { chamadaDoCurso, falaDeSuspensao } from '../lib/chamadaCurso';
+import { CourseCard, PostConversion } from '../components/blog/PostConversion';
+import { PostHero, PostCourseExperience } from '../components/blog/PostExperience';
 
 // Rótulos de importação/geração e a assinatura da equipe não são pessoa: viram a
 // própria W-Tech no schema.
@@ -21,6 +22,7 @@ const BlogPostReader: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   // TTS State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -39,7 +41,7 @@ const BlogPostReader: React.FC = () => {
     fetchPost();
     return () => {
       // Cleanup TTS on unmount
-      window.speechSynthesis.cancel();
+      window.speechSynthesis?.cancel();
       isPlayingRef.current = false;
     };
   }, [slug]);
@@ -47,6 +49,8 @@ const BlogPostReader: React.FC = () => {
   const fetchPost = async () => {
     if (!slug) return;
     setLoading(true);
+    setPost(null);
+    setCopied(false);
     try {
       let { data, error } = await supabase
         .from('SITE_BlogPosts')
@@ -141,7 +145,7 @@ const BlogPostReader: React.FC = () => {
 
   const toggleSpeech = () => {
     if (isPlaying) {
-      window.speechSynthesis.cancel();
+      window.speechSynthesis?.cancel();
       setIsPlaying(false);
       isPlayingRef.current = false;
     } else {
@@ -170,10 +174,10 @@ const BlogPostReader: React.FC = () => {
   const postUrl = absoluteUrl(`/blog/${post.slug}`);
   const autorReal = post.author && !AUTORES_DE_SISTEMA.test(post.author.trim());
   // Nenhum post linkava a página do curso: o fim do artigo passa a levar a ela.
-  const chamada = chamadaDoCurso(falaDeSuspensao(post.title, post.slug, post.category));
+  const shareUrl = encodeURIComponent(postUrl);
 
   return (
-    <div className="bg-white min-h-screen relative">
+    <div className="post-reader min-h-screen relative">
       <SEO
         title={post.title}
         description={post.excerpt}
@@ -210,74 +214,13 @@ const BlogPostReader: React.FC = () => {
         style={{ scaleX }}
       />
 
-      {/* Floating Audio Player */}
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="fixed bottom-6 right-6 z-40 bg-wtech-black text-white p-4 rounded-full shadow-2xl flex items-center gap-4 border border-wtech-gold/20 backdrop-blur-md"
-      >
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-wtech-gold uppercase">Ouvir Artigo</span>
-          <span className="text-xs text-gray-300">{isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}</span>
-        </div>
-        <button
-          onClick={toggleSpeech}
-          className="w-12 h-12 bg-wtech-gold rounded-full flex items-center justify-center text-black hover:scale-110 transition-transform shadow-lg"
-        >
-          {isPlaying ? <Pause fill="black" size={20} /> : <Play fill="black" size={20} className="ml-1" />}
-        </button>
-      </motion.div>
-
-      {/* Hero Header */}
-      <header className="relative h-[60vh] min-h-[400px]">
-        <div className="absolute inset-0">
-          <img src={coverImage} alt={post.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
-        </div>
-
-        <div className="absolute top-6 left-6 z-10">
-          <Link to="/blog" className="flex items-center gap-2 text-white/80 hover:text-wtech-gold transition-colors font-bold text-sm bg-black/30 px-4 py-2 rounded-full backdrop-blur">
-            <ArrowLeft size={16} /> Voltar para o Blog
-          </Link>
-        </div>
-
-        <div className="absolute bottom-0 w-full p-8 md:p-16">
-          <div className="container mx-auto max-w-4xl">
-            <div className="flex flex-wrap gap-4 mb-6 text-sm font-bold text-white/80">
-              <span className="bg-wtech-gold text-black px-3 py-1 rounded uppercase tracking-wider">{post.category}</span>
-              <span className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded backdrop-blur"><Clock size={16} className="text-wtech-gold" /> {calculateReadTime(post.content)} min de leitura</span>
-              <span className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded backdrop-blur"><Calendar size={16} className="text-wtech-gold" /> {formatDateLocal(post.date)}</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight drop-shadow-lg mb-6">
-              {post.title}
-            </h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border-2 border-wtech-gold">
-                  <User size={20} className="text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-white font-bold text-sm">Escrito por</p>
-                  <p className="text-wtech-gold text-sm">{post.author}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-12 max-w-4xl flex flex-col md:flex-row gap-12">
-        {/* Article Body */}
-        <article className="flex-grow">
-          {/* Excerpt */}
-          <p className="text-xl md:text-2xl text-gray-600 font-medium leading-relaxed mb-10 border-l-4 border-wtech-gold pl-6 italic">
-            {post.excerpt}
-          </p>
-
+      <PostHero title={post.title} excerpt={post.excerpt} category={post.category} author={autorReal ? post.author : 'Equipe W-Tech'} date={post.date} readTime={calculateReadTime(post.content)} audio={<button className="post-audio" onClick={toggleSpeech} aria-label={isPlaying ? 'Pausar leitura do artigo' : 'Ouvir artigo'}>{isPlaying ? <Pause size={16} /> : <Play size={16} />} {isPlaying ? 'Pausar leitura' : 'Ouvir artigo'}</button>} />
+      <div id="post-reading" className="post-shell"><div className="post-reading-label"><strong>Conhecimento W-Tech. Aplicação na sua moto.</strong><span>GUIA DE LEITURA · {calculateReadTime(post.content)} MIN</span></div></div>
+      <main className="post-shell post-content-grid">
+        <article>
           {/* HTML Content Injection */}
           <div
+            data-post-body
             className="prose prose-lg prose-slate max-w-none 
                 prose-headings:font-bold prose-headings:text-wtech-black 
                 prose-a:text-wtech-gold prose-a:no-underline hover:prose-a:underline
@@ -287,19 +230,10 @@ const BlogPostReader: React.FC = () => {
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(articleContent) }}
           />
 
-          <aside className="mt-12 rounded-2xl bg-wtech-black text-white p-6 lg:p-8 flex flex-col md:flex-row md:items-center gap-5 md:justify-between">
-            <div>
-              <span className="text-xs font-black text-wtech-gold uppercase tracking-[0.25em]">{chamada.eyebrow}</span>
-              <p className="text-xl lg:text-2xl font-black mt-2">{chamada.title}</p>
-              <p className="text-gray-300 mt-2 max-w-2xl">{chamada.text}</p>
-            </div>
-            <Link to={chamada.href} className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-wtech-red px-5 py-3 font-black text-white hover:brightness-110">
-              {chamada.label} <ArrowRight size={18} />
-            </Link>
-          </aside>
+          <CourseCard />
 
           {/* Tags */}
-          <div className="mt-12 pt-8 border-t border-gray-100">
+          <div className="post-tags mt-12 pt-8 border-t border-gray-100">
             <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Tópicos Relacionados</h3>
             <div className="flex flex-wrap gap-2">
               {post.keywords && post.keywords.map(tag => (
@@ -311,33 +245,22 @@ const BlogPostReader: React.FC = () => {
           </div>
         </article>
 
-        {/* Sidebar / Share */}
-        <aside className="md:w-64 flex-shrink-0 space-y-8">
-          <div className="sticky top-24">
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Share2 size={18} /> Compartilhar</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="flex items-center justify-center gap-2 bg-[#1877F2] text-white py-2 rounded text-xs font-bold hover:opacity-90"><Facebook size={16} /> Facebook</button>
-                <button className="flex items-center justify-center gap-2 bg-[#1DA1F2] text-white py-2 rounded text-xs font-bold hover:opacity-90"><Twitter size={16} /> Twitter</button>
-                <button className="flex items-center justify-center gap-2 bg-[#0A66C2] text-white py-2 rounded text-xs font-bold hover:opacity-90"><Linkedin size={16} /> LinkedIn</button>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Link copiado!'); }}
-                  className="flex items-center justify-center gap-2 bg-gray-800 text-white py-2 rounded text-xs font-bold hover:bg-black"
-                >
-                  <Copy size={16} /> Copiar
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-8 bg-wtech-black text-white p-6 rounded-xl text-center">
-              <h3 className="font-bold text-lg mb-2 text-wtech-gold">Gostou do conteúdo?</h3>
-              <p className="text-sm text-gray-400 mb-4">Inscreva-se para receber novos artigos e dicas técnicas.</p>
-              <input type="email" placeholder="Seu melhor e-mail" className="w-full bg-white/10 border border-white/20 rounded p-2 text-sm mb-2 text-white placeholder-gray-500 focus:border-wtech-gold outline-none" />
-              <button className="w-full bg-wtech-gold text-black font-bold py-2 rounded text-sm hover:bg-white transition-colors">QUERO RECEBER</button>
+        <aside className="post-sidebar">
+          <CourseCard compact />
+          <p className="post-sidebar-note">Aprenda os fundamentos, faça os ajustes e entenda como sua moto responde. Aulas online para acompanhar no seu ritmo.</p>
+          <div className="post-share">
+            <h3>Compartilhe este conhecimento</h3>
+            <div className="post-share-actions">
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no Facebook"><Facebook size={18} /></a>
+              <a href={`https://twitter.com/intent/tweet?url=${shareUrl}&text=${encodeURIComponent(post.title)}`} target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no X"><Twitter size={18} /></a>
+              <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`} target="_blank" rel="noopener noreferrer" aria-label="Compartilhar no LinkedIn"><Linkedin size={18} /></a>
+              <button onClick={async () => { try { await navigator.clipboard.writeText(postUrl); setCopied(true); } catch { setCopied(false); } }}><Copy size={16} /> {copied ? 'Copiado' : 'Copiar link'}</button>
             </div>
           </div>
         </aside>
       </main>
+      <PostCourseExperience />
+      <PostConversion key={post.slug} slug={post.slug} title={post.title} />
 
     </div>
   );

@@ -1,5 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
+## v3.49.0 (2026-09-30) - Template de posts para conversão no curso online
+- Posts com abertura em vídeo, identidade preta e dourada e oferta do curso online em destaque, usando os recursos da landing W-Tech.
+- Modos claro e escuro com preferência salva, área de leitura responsiva, apresentação do curso em vídeo, instrutores, 11 módulos, materiais de apoio e depoimentos existentes.
+- Pop-up de conversão após leitura ou intenção de saída, limitado a uma exibição automática a cada sete dias, e assistente com respostas automáticas e captura de contato no fluxo existente de CRM e WhatsApp.
+- Correção de URLs e aspas malformadas nas imagens de artigos importados, com quatro testes de regressão.
+
 ## v3.48.0 (2026-09-29) - Glossário completo e guias de suspensão no blog
 - Glossário: mais 399 verbetes antigos do WordPress de volta nos mesmos endereços (os que tinham clique entre as posições 401 e 1.000 do Search Console) e 68 verbetes de suspensão da cauda (2 a 4 cliques), todos revisados antes de voltar: 282 correções, com menção falsa à W-Tech, erro técnico, instrução perigosa e invenção fora. 122 ficaram de fora por estarem fora do tema ou tratarem de algo que não existe.
 - Blog: 34 guias práticos de suspensão (regulagem, SAG, pré-carga, compressão e retorno, bengala vazando, retentor, óleo, barulho, suspensão dura ou mole, calibragem e mais), um por dúvida real do piloto, revisados antes de publicar, na categoria "Guias de suspensão".

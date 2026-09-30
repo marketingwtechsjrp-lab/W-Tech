@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.49.0",
+    "date": "2026-09-30",
+    "title": "Template de posts para conversão no curso online",
+    "changes": [
+      "Posts com abertura em vídeo, identidade preta e dourada e oferta do curso online em destaque, usando os recursos da landing W-Tech.",
+      "Modos claro e escuro com preferência salva, área de leitura responsiva, apresentação do curso em vídeo, instrutores, 11 módulos, materiais de apoio e depoimentos existentes.",
+      "Pop-up de conversão após leitura ou intenção de saída, limitado a uma exibição automática a cada sete dias, e assistente com respostas automáticas e captura de contato no fluxo existente de CRM e WhatsApp.",
+      "Correção de URLs e aspas malformadas nas imagens de artigos importados, com quatro testes de regressão."
+    ]
+  },
+  {
     "version": "3.48.0",
     "date": "2026-09-29",
     "title": "Glossário completo e guias de suspensão no blog",
