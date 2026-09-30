@@ -4,16 +4,18 @@ import { supabase } from '../lib/supabaseClient';
 import { BlogPost } from '../types';
 import {
   Clock, Calendar, User, Share2, ArrowLeft, Play, Pause,
-  Volume2, Facebook, Twitter, Linkedin, Copy
+  Volume2, Facebook, Twitter, Linkedin, Copy, ArrowRight
 } from 'lucide-react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import SEO from '../components/SEO';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
 import { normalizeBlogContentImages, resolveBlogImage } from '../lib/blogImages';
 import { ORGANIZATION_ID, absoluteUrl } from '../lib/publicUrl';
+import { chamadaDoCurso, falaDeSuspensao } from '../lib/chamadaCurso';
 
-// Rótulos de importação/geração não são autor: viram a própria W-Tech no schema.
-const AUTORES_DE_SISTEMA = /^(importado wp|w-tech ai|ai generator)$/i;
+// Rótulos de importação/geração e a assinatura da equipe não são pessoa: viram a
+// própria W-Tech no schema.
+const AUTORES_DE_SISTEMA = /^(importado wp|w-tech ai|ai generator|equipe w-tech)$/i;
 
 const BlogPostReader: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -167,6 +169,8 @@ const BlogPostReader: React.FC = () => {
   const coverImageUrl = /^https?:\/\//.test(coverImage) ? coverImage : absoluteUrl(coverImage);
   const postUrl = absoluteUrl(`/blog/${post.slug}`);
   const autorReal = post.author && !AUTORES_DE_SISTEMA.test(post.author.trim());
+  // Nenhum post linkava a página do curso: o fim do artigo passa a levar a ela.
+  const chamada = chamadaDoCurso(falaDeSuspensao(post.title, post.slug, post.category));
 
   return (
     <div className="bg-white min-h-screen relative">
@@ -282,6 +286,17 @@ const BlogPostReader: React.FC = () => {
                 "
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(articleContent) }}
           />
+
+          <aside className="mt-12 rounded-2xl bg-wtech-black text-white p-6 lg:p-8 flex flex-col md:flex-row md:items-center gap-5 md:justify-between">
+            <div>
+              <span className="text-xs font-black text-wtech-gold uppercase tracking-[0.25em]">{chamada.eyebrow}</span>
+              <p className="text-xl lg:text-2xl font-black mt-2">{chamada.title}</p>
+              <p className="text-gray-300 mt-2 max-w-2xl">{chamada.text}</p>
+            </div>
+            <Link to={chamada.href} className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-wtech-red px-5 py-3 font-black text-white hover:brightness-110">
+              {chamada.label} <ArrowRight size={18} />
+            </Link>
+          </aside>
 
           {/* Tags */}
           <div className="mt-12 pt-8 border-t border-gray-100">

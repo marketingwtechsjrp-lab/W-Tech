@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 import { PUBLIC_BASE_URL, ORGANIZATION_ID } from '../lib/publicUrl';
 import { sanitizeHtml } from '../lib/utils';
 import type { GlossaryTerm } from '../types';
-import { COURSE_NAME } from '../lib/courseSchema';
+import { chamadaDoCurso, falaDeSuspensao } from '../lib/chamadaCurso';
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -18,34 +18,15 @@ const LIST_COLUMNS = 'id, term, slug, letter, category, summary, niche, publishe
 /** Limite de verbetes no JSON-LD da listagem (o schema não precisa repetir a página inteira). */
 const SCHEMA_LIST_LIMIT = 100;
 
-const SUSPENSAO_RE = /suspens|amortec|mola|sag|pr[eé]-?carga|bengala|garfo|kyb|showa|wp\b|retorno|compress/;
-
 function ehSuspensao(term: GlossaryTerm) {
   // O glossário antigo e as reescritas vêm com a categoria certa (gerar_sql.py separa
   // "mola de válvula" e "compressão do motor" da suspensão), então nelas a categoria manda.
   if (term.origin === 'WORDPRESS_LEGADO' || term.origin === 'AI_CLAUDE') return term.category === 'Suspensão';
-  return SUSPENSAO_RE.test(`${term.category || ''} ${term.term} ${term.slug || ''}`.toLowerCase());
+  return falaDeSuspensao(term.category, term.term, term.slug);
 }
 
 /** Verbetes de suspensão levam o curso online; os de motor e mecânica, os cursos da W-Tech. */
-function ctaFor(term: GlossaryTerm) {
-  if (ehSuspensao(term)) {
-    return {
-      eyebrow: 'Curso online',
-      title: 'Aprenda a regular a suspensão da sua moto',
-      text: `No ${COURSE_NAME} você aprende, do zero, a medir o SAG e a acertar molas, óleo e cliques na sua própria moto.`,
-      href: '/curso-suspensao-piloto',
-      label: 'Conhecer o curso',
-    };
-  }
-  return {
-    eyebrow: 'Cursos W-Tech',
-    title: 'Quer dominar a mecânica da sua moto?',
-    text: 'A W-Tech forma pilotos e mecânicos em cursos presenciais e online de suspensão.',
-    href: '/cursos',
-    label: 'Ver os cursos',
-  };
-}
+const ctaFor = (term: GlossaryTerm) => chamadaDoCurso(ehSuspensao(term));
 
 function mapRow(row: any): GlossaryTerm {
   return {
