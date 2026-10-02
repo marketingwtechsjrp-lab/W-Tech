@@ -111,7 +111,7 @@ export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {
         installmentsShort: '12x R$ 17,27',
         anchor: 'R$ 347,00',
         validUntil: '2026-10-04',
-        label: 'Condição especial de retorno',
+        label: 'Oferta promocional',
         billingNote: 'Primeiro ano por R$ 167,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
     },
 };

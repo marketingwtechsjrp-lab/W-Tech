@@ -1,5 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
+
+## v3.49.1 (2026-10-02) - Curso online com oferta promocional de 167 reais
+- Publica a oferta de R$ 167,00 a vista ou 12x de R$ 17,27 na pagina principal, com CTA para o checkout Kiwify VlPY2o6
+- Destaca o desconto de R$ 347,00 para R$ 167,00 no topo, no cartao da oferta e na barra fixa
+- Atualiza os dados estruturados para o preco e o checkout exibidos, preservando o aviso de renovacao anual
 ## v3.49.0 (2026-09-30) - Template de posts para conversão no curso online
 - Posts com abertura em vídeo, identidade preta e dourada e oferta do curso online em destaque, usando os recursos da landing W-Tech.
 - Modos claro e escuro com preferência salva, área de leitura responsiva, apresentação do curso em vídeo, instrutores, 11 módulos, materiais de apoio e depoimentos existentes.

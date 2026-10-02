@@ -204,7 +204,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
     const localize = (text: string) => localizePilotCopy(currentLang, text);
     const billingRegion = useBillingRegion();
     const hotmartCheckoutUrl = useHotmartCheckoutUrl(billingRegion === 'intl');
-    const specialOffer = useCourseSpecialOffer(billingRegion);
+    const specialOffer = useCourseSpecialOffer(billingRegion, 'retorno');
     const price = getCoursePrice(billingRegion, currentLang, hotmartCheckoutUrl, specialOffer);
     const checkoutBaseUrl = getCheckoutUrl(billingRegion, hotmartCheckoutUrl, specialOffer);
     const checkoutUrl = useMemo(
@@ -287,7 +287,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
             const schema = document.createElement('script');
             schema.id = 'course-schema';
             schema.type = 'application/ld+json';
-            schema.text = JSON.stringify(buildCourseSchema(t.faq.items));
+            schema.text = JSON.stringify(buildCourseSchema(t.faq.items, {
+                price: price.schemaPrice,
+                priceCurrency: price.schemaCurrency,
+                url: checkoutBaseUrl,
+            }));
             document.head.appendChild(schema);
         }
 
@@ -296,7 +300,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
             setCanonical(prevCanonical || 'https://w-techbrasil.com.br/');
             document.head.querySelector('#course-schema')?.remove();
         };
-    }, [currentLang]);
+    }, [currentLang, price.schemaPrice, price.schemaCurrency, checkoutBaseUrl]);
 
     /* ━━━ SECTION DATA ━━━ */
 
@@ -368,6 +372,22 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-wtech-gold selection:text-black font-sans overflow-x-hidden pb-24">
+
+            {specialOffer && (
+                <a
+                    href={checkoutUrl}
+                    data-promotion-banner
+                    onClick={() => {
+                        trackEvent('Funil Suspensão', 'checkout_click_promotion', funnelEventLabel);
+                        trackCourseCheckoutStart(billingRegion, currentLang, specialOffer);
+                    }}
+                    className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-wtech-gold/40 bg-wtech-gold/15 px-4 py-3 text-center text-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-wtech-gold"
+                >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-wtech-gold">Oferta promocional</span>
+                    <span><span className="mr-2 text-zinc-400 line-through">{price.anchor}</span><strong className="text-xl font-black text-wtech-gold">{price.full}</strong> à vista</span>
+                    <span className="font-semibold">ou {price.installmentsShort} <ArrowRight className="ml-1 inline" size={16} /></span>
+                </a>
+            )}
 
             <ImmersivePilotHero
                 language={currentLang}
@@ -892,12 +912,22 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                             {price.strikeLabel}
                         </div>
 
-                        <div className="mb-2 flex flex-col items-center justify-center">
-                            <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">{price.installmentsShort}</span>
-                        </div>
-                        <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-2">
-                            {price.cashLabel}
-                        </div>
+                        {specialOffer ? (
+                            <div data-promotional-price className="mx-auto mb-5 max-w-xl rounded-2xl border border-wtech-gold/50 bg-gradient-to-br from-wtech-gold/15 to-transparent px-4 py-7 shadow-[0_0_45px_rgba(212,175,55,0.12)]">
+                                <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-wtech-gold">Desconto promocional no primeiro ano</p>
+                                <p className="text-5xl font-black tracking-tighter text-wtech-gold sm:text-6xl md:text-8xl">{price.full}</p>
+                                <p className="mt-2 text-base font-bold text-white">à vista no Pix ou cartão</p>
+                                <p className="mt-4 text-xl font-black text-white md:text-2xl">ou {price.installments}</p>
+                                <p className="mt-2 text-xs text-zinc-400">Parcelamento com acréscimo.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="mb-2 flex flex-col items-center justify-center">
+                                    <span className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-lg">{price.installmentsShort}</span>
+                                </div>
+                                <div className="text-wtech-red/90 font-bold text-xs md:text-sm mb-2">{price.cashLabel}</div>
+                            </>
+                        )}
                         {price.billingNote && (
                             <p className="mx-auto mb-2 max-w-md text-[11px] md:text-xs font-medium leading-relaxed text-zinc-400">
                                 {price.billingNote}
@@ -958,7 +988,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                             className="w-full max-w-xl mx-auto bg-gradient-to-r from-[#ba1d18] to-[#E6241D] hover:from-[#d1221c] hover:to-[#ff2820] text-white px-8 py-5 sm:py-6 rounded-2xl font-black text-sm md:text-[15px] uppercase tracking-widest transition-all mb-4 shadow-xl relative overflow-hidden group flex justify-center items-center"
                         >
                             <div className="absolute inset-0 w-full h-full bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                            <span className="relative z-10">{localize("Quero Regular Minha Suspensão Agora")}</span>
+                            <span className="relative z-10">{specialOffer ? `Garantir promoção por ${price.full}` : localize("Quero Regular Minha Suspensão Agora")}</span>
                         </motion.a>
                         <p className="text-gray-400 text-xs mb-5">Acesso imediato após a confirmação do pagamento</p>
                         <WhatsAppLeadCapture
@@ -1110,9 +1140,11 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
 
             {showStickyOffer && <div data-sticky-offer className="fixed bottom-0 inset-x-0 z-[90] border-t border-wtech-gold/20 bg-zinc-950/95 backdrop-blur-xl px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
                 <div className="mx-auto max-w-5xl flex items-center justify-between gap-4">
-                    <div className="hidden sm:block">
+                    <div className={specialOffer ? 'shrink-0' : 'hidden sm:block'}>
                         <p className="text-[10px] uppercase tracking-[0.18em] text-wtech-gold">Curso Online de Suspensão</p>
-                        <p className="text-sm font-semibold text-white mt-1">{localize("O próximo ajuste começa com você.")}</p>
+                        {specialOffer ? (
+                            <><p className="mt-1 text-xl font-black text-wtech-gold">{price.full} <span className="text-xs font-medium text-white">à vista</span></p><p className="text-xs text-zinc-300">ou {price.installmentsShort}</p></>
+                        ) : <p className="text-sm font-semibold text-white mt-1">{localize("O próximo ajuste começa com você.")}</p>}
                     </div>
                     <button
                         type="button"
@@ -1120,7 +1152,7 @@ const LPErgonomia: React.FC<{ forceFullContent?: boolean }> = () => {
                         onClick={() => scrollTo('cta-final')}
                         className="w-full sm:w-auto min-h-12 flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-wtech-gold to-amber-600 px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-black hover:brightness-110 transition"
                     >
-                        Conhecer a formação <ArrowRight size={17} />
+                        {specialOffer ? 'Garantir promoção' : 'Conhecer a formação'} <ArrowRight size={17} />
                     </button>
                 </div>
             </div>}

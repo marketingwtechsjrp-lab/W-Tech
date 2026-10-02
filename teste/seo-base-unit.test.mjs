@@ -41,12 +41,21 @@ function porTipo(schema, tipo) {
   return schema['@graph'].find((no) => no['@type'] === tipo);
 }
 
-test('Course usa o preço público do plano anual, e não a condição por link', () => {
+test('Course usa o plano anual padrão quando a página não passa uma oferta', () => {
   const course = porTipo(lib.buildCourseSchema(FAQ), 'Course');
   const precoPadrao = lib.getCoursePrice('br', 'pt-BR', null, null);
   assert.equal(course.offers.price, precoPadrao.schemaPrice);
   assert.equal(course.offers.price, '347.00');
   assert.equal(course.offers.priceCurrency, 'BRL');
+  assert.equal(course.offers.category, 'Subscription');
+});
+
+test('Course acompanha o preço e o checkout promocionais exibidos na página', () => {
+  const offer = { price: '167.00', priceCurrency: 'BRL', url: 'https://pay.kiwify.com.br/VlPY2o6' };
+  const course = porTipo(lib.buildCourseSchema(FAQ, offer), 'Course');
+  assert.equal(course.offers.price, offer.price);
+  assert.equal(course.offers.priceCurrency, offer.priceCurrency);
+  assert.equal(course.offers.url, offer.url);
   assert.equal(course.offers.category, 'Subscription');
 });
 

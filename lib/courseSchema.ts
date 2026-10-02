@@ -29,10 +29,13 @@ export interface CourseFaqItem {
 
 /**
  * Grafo JSON-LD da página oficial do curso: Course + FAQPage + BreadcrumbList.
- * O preço é sempre o do plano anual padrão (R$ 347): condições especiais por
- * link (`?oferta=`) não são o preço público do produto.
+ * A página passa o preço e o checkout exibidos. Sem oferta explícita, vale o
+ * plano anual padrão.
  */
-export function buildCourseSchema(faq: CourseFaqItem[]): Record<string, unknown> {
+export function buildCourseSchema(
+    faq: CourseFaqItem[],
+    offer = { price: '347.00', priceCurrency: 'BRL', url: KIWIFY_CHECKOUT_URL },
+): Record<string, unknown> {
     const graph: Record<string, unknown>[] = [
         {
             '@type': 'Course',
@@ -61,9 +64,7 @@ export function buildCourseSchema(faq: CourseFaqItem[]): Record<string, unknown>
             offers: {
                 '@type': 'Offer',
                 category: 'Subscription',
-                price: '347.00',
-                priceCurrency: 'BRL',
-                url: KIWIFY_CHECKOUT_URL,
+                ...offer,
                 availability: 'https://schema.org/InStock',
             },
         },

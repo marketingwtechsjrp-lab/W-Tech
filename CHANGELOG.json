@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.49.1",
+    "date": "2026-10-02",
+    "title": "Curso online com oferta promocional de 167 reais",
+    "changes": [
+      "Publica a oferta de R$ 167,00 a vista ou 12x de R$ 17,27 na pagina principal, com CTA para o checkout Kiwify VlPY2o6",
+      "Destaca o desconto de R$ 347,00 para R$ 167,00 no topo, no cartao da oferta e na barra fixa",
+      "Atualiza os dados estruturados para o preco e o checkout exibidos, preservando o aviso de renovacao anual"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.49.0",
     "date": "2026-09-30",
     "title": "Template de posts para conversão no curso online",

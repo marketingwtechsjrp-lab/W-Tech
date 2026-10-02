@@ -9,8 +9,8 @@ import {
 } from '../lib/courseOffers';
 
 /**
- * Condição especial de remarketing (`?oferta=<slug>`) válida para este
- * visitante, ou `null` — o caso de quase todo mundo, que vê o preço normal.
+ * Condição especial válida para este visitante, ou `null`. Uma página pode
+ * fornecer um slug padrão para publicar a promoção sem parâmetro na URL.
  *
  * O slug é lido uma vez na montagem (URL primeiro, depois sessionStorage) e
  * guardado para a próxima página da aba. A região entra na resolução porque a
@@ -21,8 +21,8 @@ import {
  * `trackCourseCheckoutStart` — os três juntos, ou a página anuncia um valor e o
  * botão leva a outro.
  */
-export const useCourseSpecialOffer = (region: BillingRegion): CourseSpecialOffer | null => {
-    const [slug] = useState(readCourseOfferSlug);
+export const useCourseSpecialOffer = (region: BillingRegion, defaultSlug?: string): CourseSpecialOffer | null => {
+    const [slug] = useState(() => readCourseOfferSlug() ?? defaultSlug ?? null);
 
     useEffect(() => {
         if (slug) rememberCourseOfferSlug(slug);
