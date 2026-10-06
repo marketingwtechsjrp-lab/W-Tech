@@ -102,6 +102,14 @@ function validateProductionConfig(): void {
 }
 validateProductionConfig();
 
+// Aviso, não trava: sem o segredo o painel /admin continua funcionando com a
+// chave anônima (api/_dbToken.ts devolve 503). Mas, depois que a RLS fecha para
+// `anon` as tabelas só da equipe, o painel depende do passe — o aviso aparece no
+// boot para ninguém descobrir isso pelo painel vazio.
+if (process.env.NODE_ENV === 'production' && (process.env.SUPABASE_JWT_SECRET || '').length < 32) {
+  console.warn('[startup] SUPABASE_JWT_SECRET ausente: o painel /admin vai usar a chave anônima (sem passe da equipe).');
+}
+
 const app = express();
 app.disable('x-powered-by');
 

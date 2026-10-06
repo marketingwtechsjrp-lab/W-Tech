@@ -219,7 +219,9 @@ const CatalogManagerView = () => {
             quantity: movementData.quantity,
             origin: 'Manual',
             notes: movementData.notes,
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            // supabase.auth não existe neste app (sessão é o cookie de /api/staff)
+            // e sempre devolvia vazio; o autor vem da sessão do painel.
+            user_id: user?.id ?? null
         }]);
 
         if (moveError) {

@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.50.0 (2026-10-06) - Passe da equipe para o banco (segurança)
+- O painel /admin passa a falar com o banco com um passe da equipe (JWT de 15 minutos emitido pelo servidor em /api/staff/db-token), no lugar da chave anônima de visitante. É a base para fechar no banco o que só a equipe usa sem quebrar o painel.
+- Site público, loja e app continuam iguais: fora do /admin nada muda e nenhum pedido a mais acontece. Sem o segredo configurado, o painel segue com a chave anônima, como antes.
+- Catálogo: o movimento manual de estoque passa a registrar quem fez (antes ficava sempre vazio).
+- Banco (06/10, fora do código): visitante deixou de criar, alterar e ler usuários e cargos, de ler hash de senha, de fazer login direto no banco e de disparar as rotinas internas de WhatsApp.
+
 ## v3.49.1 (2026-10-02) - Curso online com oferta promocional de 167 reais
 - Publica a oferta de R$ 167,00 a vista ou 12x de R$ 17,27 na pagina principal, com CTA para o checkout Kiwify VlPY2o6
 - Destaca o desconto de R$ 347,00 para R$ 167,00 no topo, no cartao da oferta e na barra fixa

@@ -5,6 +5,32 @@
 tratar isto depois. Este documento existe para que a correção não dependa de
 refazer a investigação.
 
+## Atualização de 06/10/2026 — correção em andamento
+
+O dono pediu "deixe tudo seguro" e decidiu **não trocar as chaves**; então o
+que importa é parar de entregá-las. Feito até aqui:
+
+1. **Banco, etapa 1 (aplicada em 06/10 16:03):** `anon` e `authenticated`
+   perderam todo acesso a `SITE_Users` e `SITE_Roles`, exceto
+   `SITE_Users(id, role, receives_leads)` — o gatilho `auto_distribute_lead` e
+   a policy `Admins_Manage_All` de `SITE_Leads` leem essas colunas com o papel
+   do visitante (sem elas, todo lead do site e do CRM falha). Também saiu do
+   anon: `site_user_login` (login sem limite de tentativas) e as rotinas
+   `pop_wa_send`, `processar_fila_whatsapp`, `pop_*` e `update_quiz_lead`.
+   O painel já usava `/api/staff/*` para usuários e cargos desde 13/08.
+   SQL e desfazer: repositório do Gestão, `docs/seguranca-banco/`.
+2. **Passe da equipe (v3.50.0):** `/admin` troca a chave anônima por um JWT
+   `authenticated` de 15 min emitido em `GET /api/staff/db-token`
+   (`api/_dbToken.ts`, `lib/staffDbToken.ts`). Exige `SUPABASE_JWT_SECRET`
+   (= `PGRST_JWT_SECRET`) no serviço. É o "Caminho C" que faltava no §4: o
+   banco passa a distinguir equipe de visitante sem migrar o login nem
+   reescrever o painel.
+
+Próximo: com o passe no ar, fechar para `anon` as tabelas só do painel e deixar
+`SITE_SystemSettings` com leitura anônima apenas das chaves públicas
+(aparência, SEO, contato, pixel/GA, webhooks de lead). Depois, os formulários
+públicos de lead/matrícula/pedido passam por endpoint do servidor.
+
 ---
 
 ## 1. O que está exposto (verificado, não suposto)

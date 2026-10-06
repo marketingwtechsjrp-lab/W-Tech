@@ -16,6 +16,7 @@ import {
   sha256Hex,
   type StaffSessionUser,
 } from '../api/_auth.js';
+import { issueStaffDbToken } from '../api/_dbToken.js';
 
 /**
  * Rotas /api/staff — identidade e sessão do painel administrativo.
@@ -222,6 +223,19 @@ staffAuthRouter.get('/me', h(async (req, res) => {
   const staff = await requireStaffSession(req);
   if (!staff) return res.status(401).json({ success: false, error: 'Não autenticado' });
   return res.status(200).json({ success: true, user: staff });
+}));
+
+// ─── GET /api/staff/db-token — passe do painel para o banco ─────────────────
+// JWT `authenticated` de 15 min (api/_dbToken.ts) que o navegador usa no lugar
+// da chave anônima enquanto está em /admin (lib/staffDbToken.ts). 503 quando o
+// segredo não está configurado: o painel segue anônimo, sem quebrar.
+staffAuthRouter.get('/db-token', requireUser, h(async (req, res) => {
+  const staff = (req as Request & { staffUser?: StaffSessionUser }).staffUser!;
+  const issued = issueStaffDbToken(staff.id);
+  if (!issued) {
+    return res.status(503).json({ success: false, error: 'db_token_not_configured' });
+  }
+  return res.status(200).json({ success: true, token: issued.token, expiresIn: issued.expiresIn });
 }));
 
 // ─── POST /api/staff/logout ──────────────────────────────────────────────────

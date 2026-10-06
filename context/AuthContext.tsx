@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { User } from '../types';
 import { logUserActivity } from '../lib/auditLogger';
+import { resetStaffDbToken } from '../lib/supabaseClient';
 
 /**
  * Identidade do painel admin — sessão opaca httpOnly validada no servidor.
@@ -91,6 +92,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const loggedUser = mapDtoToUser(data.user);
+      // Sessão nova: o próximo acesso ao banco pede o passe desta pessoa, em vez
+      // de reaproveitar o "sem sessão" de antes do login.
+      resetStaffDbToken();
 
       await logUserActivity({
         action_type: 'ACCESS',
