@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.50.1 (2026-10-07) - Oferta de R$ 167 do curso online prorrogada até 31/10
+- A oferta promocional de R$ 167,00 (12x de R$ 17,27, checkout Kiwify VlPY2o6) volta à página do curso e vale até 31/10/2026 às 23h59 de Brasília. Tinha expirado sozinha em 04/10.
+- Depois do prazo a página volta sozinha para o preço normal (R$ 347,00/ano, checkout 19v4nIa).
+
 ## v3.50.0 (2026-10-06) - Passe da equipe para o banco (segurança)
 - O painel /admin passa a falar com o banco com um passe da equipe (JWT de 15 minutos emitido pelo servidor em /api/staff/db-token), no lugar da chave anônima de visitante. É a base para fechar no banco o que só a equipe usa sem quebrar o painel.
 - Site público, loja e app continuam iguais: fora do /admin nada muda e nenhum pedido a mais acontece. Sem o segredo configurado, o painel segue com a chave anônima, como antes.

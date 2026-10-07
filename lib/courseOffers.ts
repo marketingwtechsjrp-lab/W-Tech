@@ -92,8 +92,9 @@ export interface CourseSpecialOffer {
 /**
  * Condições ativas, por slug. Sem entrada, ninguém vê preço diferente.
  *
- * `retorno` — condição de retorno de 01 a 04/10/2026 (grupos de WhatsApp,
- * mensagens individuais e remarketing no Meta, todos com o mesmo prazo):
+ * `retorno` — condição de retorno lançada de 01 a 04/10/2026 (grupos de
+ * WhatsApp, mensagens individuais e remarketing no Meta) e prorrogada até
+ * 31/10/2026. Desde a 3.49.1 é o preço padrão da página principal do curso:
  * plano "Condição de Retorno 167" do produto na Kiwify, com 1ª cobrança de
  * R$ 167 e renovação anual de R$ 347 (o mesmo formato do plano
  * "Alunos-Presencial", R$ 277 → R$ 347). Substituiu as versões de R$ 97 e
@@ -110,7 +111,7 @@ export const COURSE_SPECIAL_OFFERS: Record<string, CourseSpecialOffer> = {
         installments: '12x de R$ 17,27 no cartão',
         installmentsShort: '12x R$ 17,27',
         anchor: 'R$ 347,00',
-        validUntil: '2026-10-04',
+        validUntil: '2026-10-31',
         label: 'Oferta promocional',
         billingNote: 'Primeiro ano por R$ 167,00. Depois o plano renova por R$ 347,00/ano até você cancelar. Pague no cartão em até 12x ou no Pix.',
     },
