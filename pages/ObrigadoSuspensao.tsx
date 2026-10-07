@@ -16,23 +16,23 @@ import { useSettings } from '../context/SettingsContext';
 import { pushPurchase } from '../lib/dataLayer';
 import { COURSE_CHECKOUT_FLAG, COURSE_CONVERSION_ITEM, getCoursePrice } from '../lib/coursePricing';
 import { COURSE_SPECIAL_OFFERS, readCourseOfferSlug, resolveCourseSpecialOffer } from '../lib/courseOffers';
+import { pedidoDaUrl } from '../lib/checkoutReturn';
 
 /**
  * A Kiwify/Hotmart redirecionam para cá após pagamento aprovado, mas não há
  * webhook consultável no navegador. Regras para contar a compra:
  *  - só quando a sessão saiu pelo nosso botão de checkout (flag em sessionStorage),
  *    ou o referrer é o checkout, ou a URL traz um id de pedido — visita direta não conta;
- *  - transaction_id = id do pedido quando vem na URL; senão um id por navegador/dia,
- *    para que recarregar a página não duplique;
+ *  - transaction_id = código do pedido quando vem na URL (a Kiwify manda
+ *    `order_code`, ver `pedidoDaUrl`); senão um id por navegador/dia, para que
+ *    recarregar a página não duplique;
  *  - valor = o da condição especial de remarketing quando ela está ativa na
  *    sessão (a LP mandou para o checkout dela), senão o preço normal.
  */
 const registrarCompraCursoOnline = () => {
     try {
         const params = new URLSearchParams(window.location.search);
-        const orderId = ['order_id', 'orderId', 'transaction_id', 'transaction', 'pedido', 'purchase_id', 'id']
-            .map((k) => params.get(k))
-            .find((v) => v && v.trim());
+        const orderId = pedidoDaUrl(window.location.search);
         const referrer = (document.referrer || '').toLowerCase();
         let flag: string | null = null;
         try { flag = sessionStorage.getItem(COURSE_CHECKOUT_FLAG); } catch { flag = null; }
@@ -48,7 +48,7 @@ const registrarCompraCursoOnline = () => {
         pushPurchase({
             funnel: 'curso_online_piloto',
             provider,
-            transaction_id: orderId ? `${provider}_${orderId.trim()}` : `${provider}_${diaAtual}_${flag ? 'sessao' : 'referrer'}`,
+            transaction_id: orderId ? `${provider}_${orderId}` : `${provider}_${diaAtual}_${flag ? 'sessao' : 'referrer'}`,
             item_name: COURSE_CONVERSION_ITEM,
             value: Number(price.schemaPrice),
             currency: price.schemaCurrency,

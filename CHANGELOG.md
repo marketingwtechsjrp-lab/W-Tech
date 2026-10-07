@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.50.2 (2026-10-07) - Página de obrigado do curso lê o pedido da Kiwify
+- A página de obrigado passa a ler o order_code que a Kiwify manda na URL. Antes caía no id genérico do dia (kiwify_<data>_sessao), e duas vendas no mesmo dia viravam a mesma transação para o Google Ads, que descartava a segunda.
+- GTM de servidor (fora do código, 07/10): o acionador purchase (nao Kiwify) estava invertido e duplicava a compra da Kiwify no Meta; corrigido e publicado como v10.
+
 ## v3.50.1 (2026-10-07) - Oferta de R$ 167 do curso online prorrogada até 31/10
 - A oferta promocional de R$ 167,00 (12x de R$ 17,27, checkout Kiwify VlPY2o6) volta à página do curso e vale até 31/10/2026 às 23h59 de Brasília. Tinha expirado sozinha em 04/10.
 - Depois do prazo a página volta sozinha para o preço normal (R$ 347,00/ano, checkout 19v4nIa).

@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.50.2",
+    "date": "2026-10-07",
+    "title": "Página de obrigado do curso lê o pedido da Kiwify",
+    "changes": [
+      "A página de obrigado passa a ler o order_code que a Kiwify manda na URL. Antes caía no id genérico do dia (kiwify_<data>_sessao), e duas vendas no mesmo dia viravam a mesma transação para o Google Ads, que descartava a segunda.",
+      "GTM de servidor (fora do código, 07/10): o acionador purchase (nao Kiwify) estava invertido e duplicava a compra da Kiwify no Meta; corrigido e publicado como v10."
+    ],
+    "author": "claude-code"
+  },
+  {
     "version": "3.50.1",
     "date": "2026-10-07",
     "title": "Oferta de R$ 167 do curso online prorrogada até 31/10",
