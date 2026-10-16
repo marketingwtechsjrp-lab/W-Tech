@@ -9,6 +9,7 @@ import { useLandingPage } from '../hooks/useLandingPage';
 import { resolveScheduleModules } from '../lib/schedule';
 import { resolveSectionOrder } from '../lib/lpSections';
 import { getYouTubeId } from '../lib/testimonials';
+import { CourseVideo, isDirectVideo, directVideoPoster } from '../components/lp/CourseVideo';
 import LPEnrollForm from '../components/lp/LPEnrollForm';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { GridVignetteBackground } from '../components/ui/vignette-grid-background';
@@ -50,6 +51,7 @@ const LandingPageViewerV9: React.FC = () => {
         handleSubmit, scrollToForm
     } = useLandingPage('v9');
     const [activeVideo, setActiveVideo] = useState<string | null>(null);
+    const [courseVideoOpen, setCourseVideoOpen] = useState(false);
     const [openFaq, setOpenFaq] = useState<number | null>(null);
 
     if (loading) {
@@ -65,6 +67,7 @@ const LandingPageViewerV9: React.FC = () => {
 
     const course = lp.course;
     const heroVideoId = lp.videoUrl ? getYouTubeId(lp.videoUrl) : '';
+    const heroVideoFile = lp.videoUrl && isDirectVideo(lp.videoUrl) ? lp.videoUrl : '';
     const dateLabel = course?.date
         ? (course.dateEnd ? `${formatDateLocal(course.date)} – ${formatDateLocal(course.dateEnd)}` : formatDateLocal(course.date))
         : 'Data a definir';
@@ -523,6 +526,20 @@ const LandingPageViewerV9: React.FC = () => {
                     ) : (
                         lp.heroImage && <img src={lp.heroImage} alt={lp.title} className="w-full h-full object-cover brightness-[0.35]" />
                     )}
+                    {/* Arquivo próprio: fundo mudo só a partir do tablet; no celular fica a foto, sem baixar o vídeo */}
+                    {heroVideoFile && (
+                        <video
+                            src={heroVideoFile}
+                            poster={directVideoPoster(heroVideoFile)}
+                            className="hidden md:block absolute inset-0 w-full h-full object-cover brightness-[0.35] pointer-events-none"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                            aria-hidden="true"
+                        />
+                    )}
                 </div>
 
                 <div className="container mx-auto px-6 relative z-20 text-center pt-24 pb-20">
@@ -565,6 +582,14 @@ const LandingPageViewerV9: React.FC = () => {
                         >
                             Ver o Conteúdo <ChevronDown size={16} />
                         </a>
+                        {(heroVideoId || heroVideoFile) && (
+                            <button
+                                onClick={() => setCourseVideoOpen(true)}
+                                className="border border-white/20 text-white px-8 py-6 rounded-sm font-bold text-sm uppercase tracking-widest transition-all flex items-center gap-2 hover:border-wtech-gold/60 hover:text-wtech-gold"
+                            >
+                                <Play size={16} /> Assistir ao Vídeo
+                            </button>
+                        )}
                     </motion.div>
                 </div>
 
@@ -710,6 +735,25 @@ const LandingPageViewerV9: React.FC = () => {
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DO VÍDEO DO CURSO (com som; o do fundo do hero é mudo) */}
+            {courseVideoOpen && lp.videoUrl && (
+                <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+                    <div className="absolute inset-0" onClick={() => setCourseVideoOpen(false)} />
+                    <div className="w-full max-w-4xl relative z-10">
+                        <button
+                            onClick={() => setCourseVideoOpen(false)}
+                            aria-label="Fechar vídeo"
+                            className="absolute -top-12 right-0 text-white hover:text-wtech-gold w-10 h-10 flex items-center justify-center"
+                        >
+                            <X size={24} />
+                        </button>
+                        <div className="bg-black aspect-video rounded-2xl overflow-hidden border border-white/10">
+                            <CourseVideo url={lp.videoUrl} title={lp.title} autoPlay />
+                        </div>
                     </div>
                 </div>
             )}

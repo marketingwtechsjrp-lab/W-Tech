@@ -8,6 +8,7 @@ import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
+import { CourseVideo } from '../components/lp/CourseVideo';
 
 /**
  * V7 — "Editorial Light" (CLARO · revista)
@@ -126,7 +127,7 @@ const LandingPageViewerV7: React.FC = () => {
                         <div className="rounded-sm overflow-hidden border border-zinc-200 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.25)]">
                             {lp.videoUrl ? (
                                 <div className="aspect-video bg-black">
-                                    <iframe src={lp.videoUrl.replace('watch?v=', 'embed/')} className="w-full h-full" title="Vídeo do curso" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                                    <CourseVideo url={lp.videoUrl} />
                                 </div>
                             ) : (
                                 <div className="aspect-video flex items-center justify-center bg-[#F4EFE6]"><Play size={48} className="text-zinc-300" /></div>

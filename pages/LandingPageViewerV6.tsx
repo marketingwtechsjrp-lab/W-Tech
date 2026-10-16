@@ -8,6 +8,7 @@ import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
+import { CourseVideo } from '../components/lp/CourseVideo';
 
 /**
  * V6 — "Carbon Racing" (DARK · cinematográfico de pista)
@@ -143,7 +144,7 @@ const LandingPageViewerV6: React.FC = () => {
                         <div className="absolute top-0 left-0 w-full h-1.5 bg-wtech-gold z-10" />
                         {lp.videoUrl ? (
                             <div className="aspect-video bg-black">
-                                <iframe src={lp.videoUrl.replace('watch?v=', 'embed/')} className="w-full h-full" title="Vídeo do curso" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                                <CourseVideo url={lp.videoUrl} />
                             </div>
                         ) : (
                             <div className="aspect-video flex items-center justify-center bg-black/60"><Play size={48} className="text-wtech-gold/40" /></div>

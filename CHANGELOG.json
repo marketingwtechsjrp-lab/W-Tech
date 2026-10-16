@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.51.0",
+    "date": "2026-10-16",
+    "title": "Vídeo das aulas práticas nas páginas de curso presencial",
+    "changes": [
+      "As landing pages passam a tocar vídeo próprio (.mp4), além do YouTube, com capa e sem baixar nada antes do play. Vale para os modelos v1 e v4 a v9 (componente components/lp/CourseVideo.tsx).",
+      "Novo vídeo das aulas práticas (estilo feira, 73 s) em /videos/wtech-aulas-praticas.mp4, para as LPs de curso presencial. O Experience fica de fora e ganha um vídeo próprio.",
+      "Curso presencial sem landing cadastrada (página gerada automaticamente, como o BMW Avançado de 27/11) mostra esse vídeo no lugar de \"Vídeo indisponível\". Online e Experience continuam sem.",
+      "Modelo v9: o vídeo próprio roda mudo no fundo do topo (só do tablet para cima; no celular fica a foto) e o botão \"Assistir ao vídeo\" abre a versão com som."
+    ],
+    "author": "claude-code"
+  },
+  {
     "version": "3.50.2",
     "date": "2026-10-07",
     "title": "Página de obrigado do curso lê o pedido da Kiwify",

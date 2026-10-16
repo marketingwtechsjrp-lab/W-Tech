@@ -8,6 +8,7 @@ import { LPInstructorPhoto } from '../components/lp/LPInstructorPhoto';
 import { FakeSignupAlert } from '../components/FakeSignupAlert';
 import { useSettings } from '../context/SettingsContext';
 import { formatDateLocal, sanitizeHtml } from '../lib/utils';
+import { CourseVideo } from '../components/lp/CourseVideo';
 
 /**
  * V5 — "Gold Brutal" (DARK · neo-brutalista)
@@ -151,7 +152,7 @@ const LandingPageViewerV5: React.FC = () => {
                     <div className={`bg-black overflow-hidden ${brutalBox}`}>
                         {lp.videoUrl ? (
                             <div className="aspect-video">
-                                <iframe src={lp.videoUrl.replace('watch?v=', 'embed/')} className="w-full h-full" title="Vídeo do curso" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                                <CourseVideo url={lp.videoUrl} />
                             </div>
                         ) : (
                             <div className="aspect-video flex items-center justify-center bg-white/5">

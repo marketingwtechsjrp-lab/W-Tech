@@ -18,6 +18,7 @@ import {
     trackConfiguredLandingPageRegistration,
     trackConfiguredLandingPageView,
 } from '../lib/metaPixel';
+import { CourseVideo, defaultCourseVideoUrl } from '../components/lp/CourseVideo';
 
 const LandingPageViewer: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -93,7 +94,7 @@ const LandingPageViewer: React.FC = () => {
                       subtitle: courseData.description ? courseData.description.substring(0, 150) + "..." : "Prepare-se para transformar sua carreira com a metodologia W-Tech.",
                       hero_image: courseData.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4",
                       hero_secondary_image: null,
-                      video_url: null,
+                      video_url: defaultCourseVideoUrl(courseData),
                       benefits: [],
                       modules: [],
                       instructor_name: courseData.instructor || 'Equipe W-Tech',
@@ -449,13 +450,7 @@ const LandingPageViewer: React.FC = () => {
                         <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-zinc-900 shadow-2xl">
                              {lp.videoUrl ? (
                                 <div className="aspect-video">
-                                     <iframe 
-                                        src={lp.videoUrl.replace('watch?v=', 'embed/')} 
-                                        className="w-full h-full" 
-                                        title="Course Video"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                        allowFullScreen
-                                     ></iframe>
+                                     <CourseVideo url={lp.videoUrl} title="Course Video" />
                                 </div>
                              ) : (
                                 <div className="aspect-video flex items-center justify-center bg-zinc-900">

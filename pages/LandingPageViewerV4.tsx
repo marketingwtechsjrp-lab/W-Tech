@@ -17,6 +17,7 @@ import {
     trackConfiguredLandingPageRegistration,
     trackConfiguredLandingPageView,
 } from '../lib/metaPixel';
+import { CourseVideo, defaultCourseVideoUrl } from '../components/lp/CourseVideo';
 
 const LandingPageViewerV4: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -92,7 +93,7 @@ const LandingPageViewerV4: React.FC = () => {
                       subtitle: courseData.description ? courseData.description.substring(0, 150) + "..." : "Prepare-se para transformar sua carreira com a metodologia W-Tech.",
                       hero_image: courseData.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4",
                       hero_secondary_image: null,
-                      video_url: null,
+                      video_url: defaultCourseVideoUrl(courseData),
                       benefits: [],
                       modules: [],
                       instructor_name: courseData.instructor || 'Equipe W-Tech',
@@ -453,13 +454,7 @@ const LandingPageViewerV4: React.FC = () => {
                         <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white shadow-xl">
                              {lp.videoUrl ? (
                                 <div className="aspect-video">
-                                     <iframe 
-                                        src={lp.videoUrl.replace('watch?v=', 'embed/')} 
-                                        className="w-full h-full" 
-                                        title="Course Video"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                        allowFullScreen
-                                     ></iframe>
+                                     <CourseVideo url={lp.videoUrl} title="Course Video" />
                                 </div>
                              ) : (
                                 <div className="aspect-video flex items-center justify-center bg-gray-50">

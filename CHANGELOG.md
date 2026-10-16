@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.51.0 (2026-10-16) - Vídeo das aulas práticas nas páginas de curso presencial
+- As landing pages passam a tocar vídeo próprio (.mp4), além do YouTube, com capa e sem baixar nada antes do play. Vale para os modelos v1 e v4 a v9 (componente components/lp/CourseVideo.tsx).
+- Novo vídeo das aulas práticas (estilo feira, 73 s) em /videos/wtech-aulas-praticas.mp4, para as LPs de curso presencial. O Experience fica de fora e ganha um vídeo próprio.
+- Curso presencial sem landing cadastrada (página gerada automaticamente, como o BMW Avançado de 27/11) mostra esse vídeo no lugar de "Vídeo indisponível". Online e Experience continuam sem.
+- Modelo v9: o vídeo próprio roda mudo no fundo do topo (só do tablet para cima; no celular fica a foto) e o botão "Assistir ao vídeo" abre a versão com som.
+
 ## v3.50.2 (2026-10-07) - Página de obrigado do curso lê o pedido da Kiwify
 - A página de obrigado passa a ler o order_code que a Kiwify manda na URL. Antes caía no id genérico do dia (kiwify_<data>_sessao), e duas vendas no mesmo dia viravam a mesma transação para o Google Ads, que descartava a segunda.
 - GTM de servidor (fora do código, 07/10): o acionador purchase (nao Kiwify) estava invertido e duplicava a compra da Kiwify no Meta; corrigido e publicado como v10.
