@@ -2,7 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
-    ClipboardCheck, Droplets, MessageCircle, Bot, BrainCircuit,
+    ClipboardCheck, Droplets, Star, MessageCircle, Bot, BrainCircuit,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -53,6 +53,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
         items: [
             { icon: ShoppingBag, label: 'Pedidos', view: 'orders', permission: 'orders_view', goKey: 'p', keywords: 'vendas loja compras' },
             { icon: GraduationCap, label: 'Cursos & Alunos', view: 'courses_manager', permission: 'courses_view', goKey: 'a', keywords: 'turmas matriculas alunos academia' },
+            { icon: Star, label: 'Avaliações de Curso', view: 'course_surveys', permission: 'courses_view', goKey: 'q', keywords: 'avaliacao feedback nps quiz satisfacao alunos turma formador liqui moly' },
             { icon: Package, label: 'Catálogo', view: 'catalog_manager', permission: 'catalog_view', goKey: 'k', keywords: 'produtos estoque' },
             { icon: Wrench, label: 'Molas & Motos', view: 'springs_manager', permission: 'springs_view', legacyPermission: 'catalog_view', goKey: 'o', keywords: 'molas motos suspensao recomendacao' },
             { icon: Droplets, label: 'Óleo & Suspensão', view: 'suspension_oil_manager', permission: 'oleo_view', legacyPermission: 'catalog_view', goKey: 'v', keywords: 'oleo nivel viscosidade suspensao garfo amortecedor wp showa kyb' },

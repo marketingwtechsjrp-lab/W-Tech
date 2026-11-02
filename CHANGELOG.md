@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.52.0 (2026-11-02) - Avaliacao de curso pelos alunos (quiz Lisboa)
+- Quiz publico em /avaliacao/lisboa-outubro-2026 para a turma W-Tech Europa (Suspensao de Alta Performance, 2a edicao): curso, formador, local, LIQUI MOLY, materias do proximo curso e sugestoes
+- Previa propria no WhatsApp (titulo e imagem 1200x630) e pagina fora do indice (noindex)
+- API /api/surveys: grava com origem do site, validacao das respostas, honeypot e limite por IP; leitura so para staff com courses_view
+- Admin > Vendas > Avaliacoes de Curso: medias, distribuicao por pergunta, sugestoes, copiar link e exportar CSV
+- Tabela SITE_SurveyResponses (service_role only) em migrations/2026-11-02_avaliacoes_cursos.sql
+
 ## v3.51.0 (2026-10-16) - Vídeo das aulas práticas nas páginas de curso presencial
 - As landing pages passam a tocar vídeo próprio (.mp4), além do YouTube, com capa e sem baixar nada antes do play. Vale para os modelos v1 e v4 a v9 (componente components/lp/CourseVideo.tsx).
 - Novo vídeo das aulas práticas (estilo feira, 73 s) em /videos/wtech-aulas-praticas.mp4, para as LPs de curso presencial. O Experience fica de fora e ganha um vídeo próprio.

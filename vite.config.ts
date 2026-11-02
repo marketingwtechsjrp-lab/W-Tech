@@ -1,6 +1,62 @@
+import fs from 'fs';
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { SURVEYS } from './lib/surveys';
+
+const SITE_URL = 'https://w-techbrasil.com.br';
+
+/**
+ * WhatsApp/Facebook leem as tags Open Graph do HTML cru (sem JS). Cada avaliação ganha
+ * a sua cópia do index.html com título, descrição e imagem próprios em
+ * dist/avaliacao/<slug>/index.html — o servidor entrega esse arquivo antes do fallback
+ * da SPA (server/index.ts), e o React monta o quiz normalmente por cima.
+ */
+function surveySharePages(): Plugin {
+  const setMeta = (html: string, key: string, value: string) =>
+    html.replace(
+      new RegExp(`(<meta\\s+(?:name|property)="${key}"\\s+content=")[^"]*(")`, 'g'),
+      `$1${value}$2`
+    );
+
+  return {
+    name: 'survey-share-pages',
+    apply: 'build',
+    closeBundle() {
+      const indexPath = path.resolve(__dirname, 'dist/index.html');
+      if (!fs.existsSync(indexPath)) return;
+      const base = fs.readFileSync(indexPath, 'utf8');
+
+      for (const survey of SURVEYS) {
+        const url = `${SITE_URL}/avaliacao/${survey.slug}`;
+        const title = 'Como foi o seu curso? · Avaliação W-Tech';
+        const description = `${survey.course} · ${survey.dates}. Avaliação rápida — menos de 1 minuto.`;
+        const imageFile = `og/avaliacao-${survey.slug}.jpg`;
+        const hasImage = fs.existsSync(path.resolve(__dirname, 'public', imageFile));
+
+        let html = base
+          .replace('<html lang="pt-BR">', '<html lang="pt-PT">')
+          .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+          .replace(/(<link[^>]+rel="canonical"[^>]+href=")[^"]*(")/, `$1${url}$2`)
+          .replace('</head>', '<meta name="robots" content="noindex, nofollow" />\n</head>');
+        for (const key of ['title', 'og:title', 'twitter:title']) html = setMeta(html, key, title);
+        for (const key of ['description', 'og:description', 'twitter:description'])
+          html = setMeta(html, key, description);
+        for (const key of ['og:url', 'twitter:url']) html = setMeta(html, key, url);
+        html = setMeta(html, 'og:locale', 'pt_PT');
+        if (hasImage) {
+          for (const key of ['og:image', 'twitter:image']) html = setMeta(html, key, `${SITE_URL}/${imageFile}`);
+          html = setMeta(html, 'og:image:width', '1200');
+          html = setMeta(html, 'og:image:height', '630');
+        }
+
+        const outDir = path.resolve(__dirname, 'dist/avaliacao', survey.slug);
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.writeFileSync(path.join(outDir, 'index.html'), html);
+      }
+    },
+  };
+}
 
 export default defineConfig(({ mode, command }) => {
     const env = loadEnv(mode, '.', '');
@@ -27,7 +83,7 @@ export default defineConfig(({ mode, command }) => {
         port: 5173,
         host: '127.0.0.1',
       },
-      plugins: [react()],
+      plugins: [react(), surveySharePages()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

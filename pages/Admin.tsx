@@ -81,6 +81,7 @@ import { Slider } from '../components/ui/slider-number-flow';
 import { ToggleTheme } from '../components/ui/toggle-theme';
 import { generateCertificatesPDF } from '../components/admin/Certificates/CertificateGenerator';
 import CertificateManagerView from '../components/admin/Certificates/CertificateManagerView';
+import SurveyResultsView from '../components/admin/Surveys/SurveyResultsView';
 import type { CertificateLayout } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -167,7 +168,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing' | 'manager_chat';
+type View = 'dashboard' | 'course_surveys' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing' | 'manager_chat';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -7767,7 +7768,7 @@ const KNOWN_ADMIN_VIEWS = new Set([
     'mechanics', 'courses_manager', 'certificates', 'lp_builder', 'blog_manager',
     'email_marketing', 'marketing_hub', 'pop_marketing', 'intelligence', 'tasks',
     'settings', 'system_logs', 'clients', 'invoices', 'sales_recovery',
-    'affiliates_manager', 'ai_assistants', 'manager_chat',
+    'affiliates_manager', 'ai_assistants', 'manager_chat', 'course_surveys',
 ]);
 
 const Admin = () => {
@@ -8271,6 +8272,7 @@ const Admin = () => {
                             />
                         )}
                         {currentView === 'certificates' && hasPermission('certificates_view') && <CertificateManagerView />}
+                        {currentView === 'course_surveys' && hasPermission('courses_view') && <SurveyResultsView />}
                         {currentView === 'lp_builder' && hasPermission('landing_pages_view') && <LandingPagesView permissions={livePermissions} />}
                         {currentView === 'blog_manager' && hasPermission('blog_view') && <BlogManagerView />}
                         {currentView === 'email_marketing' && (hasPermission('marketing_view') || hasPermission('campaigns_view')) && <CampaignsView permissions={livePermissions} />}

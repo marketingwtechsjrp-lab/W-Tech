@@ -1,4 +1,5 @@
 import { getServiceClient } from '../api/_auth.js';
+import { findSurvey } from '../lib/surveys.js';
 
 /**
  * Existe esta URL pública?
@@ -184,6 +185,11 @@ const VERIFICADORES: Array<{ padrao: RegExp; verificar: Verificador }> = [
         seUuid(slug, () => existeLinha('SITE_Courses', 'id', slug)),
         existeLinha('SITE_Courses', 'slug', slug),
       ])) ?? true,
+  },
+  {
+    // Avaliação de curso (pages/SurveyPage.tsx): os questionários vivem em lib/surveys.ts.
+    padrao: /^\/avaliacao\/([^/]+)$/,
+    verificar: async (slug) => Boolean(findSurvey(slug)),
   },
   {
     padrao: /^\/captura\/([^/]+)$/,

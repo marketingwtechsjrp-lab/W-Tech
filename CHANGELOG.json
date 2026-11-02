@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.52.0",
+    "date": "2026-11-02",
+    "title": "Avaliacao de curso pelos alunos (quiz Lisboa)",
+    "changes": [
+      "Quiz publico em /avaliacao/lisboa-outubro-2026 para a turma W-Tech Europa (Suspensao de Alta Performance, 2a edicao): curso, formador, local, LIQUI MOLY, materias do proximo curso e sugestoes",
+      "Previa propria no WhatsApp (titulo e imagem 1200x630) e pagina fora do indice (noindex)",
+      "API /api/surveys: grava com origem do site, validacao das respostas, honeypot e limite por IP; leitura so para staff com courses_view",
+      "Admin > Vendas > Avaliacoes de Curso: medias, distribuicao por pergunta, sugestoes, copiar link e exportar CSV",
+      "Tabela SITE_SurveyResponses (service_role only) em migrations/2026-11-02_avaliacoes_cursos.sql"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.51.0",
     "date": "2026-10-16",
     "title": "Vídeo das aulas práticas nas páginas de curso presencial",

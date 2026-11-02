@@ -38,6 +38,7 @@ const LPLisboaFev2026 = lazy(() => import('./pages/LPLisboaFev2026'));
 const LPWTechLisboa = lazy(() => import('./pages/LPWTechLisboa'));
 const WTechLisboa = lazy(() => import('./pages/WTechLisboa'));
 const LPWTechLisboaNov2026 = lazy(() => import('./pages/LPWTechLisboaNov2026'));
+const SurveyPage = lazy(() => import('./pages/SurveyPage'));
 const WTechLisboaNov2026 = lazy(() => import('./pages/WTechLisboaNov2026'));
 const LPProRidersLisboa = lazy(() => import('./pages/LPProRidersLisboa'));
 const ObrigadoLisboa = lazy(() => import('./pages/ObrigadoLisboa'));
@@ -133,6 +134,7 @@ const App = () => {
                     <Route path="/wtech-lisboa" element={<WTechLisboa />} />
                     <Route path="/lp-wtech-lisboa-nov" element={<LPWTechLisboaNov2026 />} />
                     <Route path="/wtech-lisboa-nov" element={<WTechLisboaNov2026 />} />
+                    <Route path="/avaliacao/:slug" element={<SurveyPage />} />
                     <Route path="/lp-proriders-lisboa" element={<LPProRidersLisboa />} />
                     <Route path="/obrigado-lisboa" element={<ObrigadoLisboa />} />
                     <Route path="/checkout-lisboa" element={<CheckoutLisboa />} />
