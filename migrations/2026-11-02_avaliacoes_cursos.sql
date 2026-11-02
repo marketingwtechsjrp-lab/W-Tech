@@ -9,7 +9,9 @@
 create table if not exists public."SITE_SurveyResponses" (
   id uuid primary key default gen_random_uuid(),
   survey text not null,
-  course_id uuid references public."SITE_Courses"(id) on delete set null,
+  -- Sem FK de propósito: uma resposta nunca pode ser recusada porque o curso foi
+  -- apagado ou o id em lib/surveys.ts diverge do banco.
+  course_id uuid,
   answers jsonb not null,
   name text,
   created_at timestamptz not null default now()
