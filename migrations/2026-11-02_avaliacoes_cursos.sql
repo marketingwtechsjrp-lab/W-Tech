@@ -24,3 +24,6 @@ alter table public."SITE_SurveyResponses" enable row level security;
 
 revoke all on public."SITE_SurveyResponses" from anon, authenticated;
 grant all on public."SITE_SurveyResponses" to service_role;
+
+-- A API (PostgREST) só enxerga a tabela nova depois de recarregar o schema.
+notify pgrst, 'reload schema';
