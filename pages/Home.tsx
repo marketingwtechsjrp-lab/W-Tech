@@ -122,17 +122,10 @@ const Home = () => {
                         city,
                         state,
                         phone,
-                        email,
-                        photo,
                         status,
                         specialty,
                         latitude,
-                        longitude,
-                        description,
-                        street,
-                        number,
-                        zipCode:zip_code,
-                        district
+                        longitude
                     `)
                     .eq('status', 'Approved');
 

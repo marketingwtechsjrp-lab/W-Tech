@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
-import { syncStudentToLeads } from '../lib/leads';
+import { fetchEnrollmentView, submitQuestionnaire, type EnrollmentRef } from '../lib/publicEnrollments';
+import { recallLeadContact } from '../lib/publicLeads';
 import { pushPurchase } from '../lib/dataLayer';
 import { CheckCircle, ArrowRight, Instagram, Globe, MessageCircle } from 'lucide-react';
 
@@ -45,6 +45,9 @@ const ObrigadoLisboa: React.FC = () => {
     const enrollmentId = searchParams.get('eid');
     const leadId = searchParams.get('lid');
     const stripeSessionId = searchParams.get('session_id');
+    const enrollmentRef: EnrollmentRef | null = enrollmentId
+        ? { id: enrollmentId }
+        : leadId ? { leadId, courseId: COURSE_ID } : null;
 
     useEffect(() => {
         let cancelled = false;
@@ -99,36 +102,19 @@ const ObrigadoLisboa: React.FC = () => {
                 //    O retry existe porque o redirect pode chegar antes do webhook.
                 let enr: any = null;
 
+                // Pelo lead o servidor não devolve contato: nome e e-mail vêm do que a
+                // própria pessoa digitou no checkout, guardado neste navegador.
+                const contatoDigitado = recallLeadContact(leadId);
                 const fetchEnrollment = async (): Promise<any | null> => {
-                    if (enrollmentId) {
-                        const { data } = await supabase
-                            .from('SITE_Enrollments')
-                            .select('*, SITE_Courses(title, currency)')
-                            .eq('id', enrollmentId)
-                            .maybeSingle();
-                        return data;
-                    }
-
-                    const { data: lead } = await supabase
-                        .from('SITE_Leads')
-                        .select('email')
-                        .eq('id', leadId)
-                        .maybeSingle();
-
-                    const leadEmail = ((lead as any)?.email || '').trim().toLowerCase();
-                    if (!leadEmail) return null;
-
-                    // ilike porque o webhook grava em minúsculas mas registros antigos
-                    // podem ter maiúsculas; `%`/`_` escapados (ilike trata como padrão).
-                    const { data } = await supabase
-                        .from('SITE_Enrollments')
-                        .select('*, SITE_Courses(title, currency)')
-                        .eq('course_id', COURSE_ID)
-                        .ilike('student_email', leadEmail.replace(/[%_\\]/g, '\\$&'))
-                        .order('created_at', { ascending: false })
-                        .limit(1);
-
-                    return data?.[0] || null;
+                    if (!enrollmentRef) return null;
+                    const view = await fetchEnrollmentView(enrollmentRef).catch(() => null);
+                    if (!view) return null;
+                    return {
+                        ...view,
+                        student_name: view.student_name ?? contatoDigitado?.name,
+                        student_email: view.student_email ?? contatoDigitado?.email,
+                        student_phone: view.student_phone ?? contatoDigitado?.phone,
+                    };
                 };
 
                 const deadline = Date.now() + POLL_TIMEOUT_MS;
@@ -152,7 +138,6 @@ const ObrigadoLisboa: React.FC = () => {
                     addressNeighborhood: enr.address_neighborhood || '',
                     city: enr.city || '',
                     state: enr.state || '',
-                    cpf: enr.student_cpf || '',
                     tShirtSize: enr.t_shirt_size || 'M',
                     hasWorkshop: enr.has_workshop ? 'yes' : 'no',
                     workshopName: enr.workshop_name || '',
@@ -161,7 +146,7 @@ const ObrigadoLisboa: React.FC = () => {
                     experienceYears: enr.experience_years || ''
                 }));
 
-                if (enr.t_shirt_size || enr.student_cpf) {
+                if (enr.t_shirt_size || enr.has_cpf) {
                     setQSubmitted(true);
                 }
 
@@ -179,7 +164,7 @@ const ObrigadoLisboa: React.FC = () => {
                     pushPurchase({
                         funnel: 'presencial_lisboa',
                         provider: 'stripe',
-                        transaction_id: stripeSessionId || enr.payment_id || enr.id,
+                        transaction_id: stripeSessionId || enr.payment_id || enr.id || leadId,
                         item_name: enr.SITE_Courses?.title || 'Curso Presencial W-Tech Lisboa',
                         value: Number(enr.amount_paid || 0),
                         currency: 'EUR',
@@ -224,35 +209,9 @@ const ObrigadoLisboa: React.FC = () => {
                 experience_years: qForm.experienceYears
             };
 
-            // 1. Update SITE_Enrollments (usa o id da inscrição resolvida — no fluxo
-            //    novo a inscrição foi criada a partir do lead, então não há eid na URL).
-            const { error: updateError } = await supabase
-                .from('SITE_Enrollments')
-                .update(payload)
-                .eq('id', enrollment?.id);
-
-            if (updateError) throw updateError;
-
-            // 2. Sync to leads in CRM
-            const updatedEnrollment = {
-                ...enrollment,
-                studentName: qForm.fullName,
-                tShirtSize: qForm.tShirtSize,
-                studentCpf: qForm.cpf,
-                zipCode: qForm.zipCode,
-                address: qForm.address,
-                addressNumber: qForm.addressNumber,
-                addressNeighborhood: qForm.addressNeighborhood,
-                city: qForm.city,
-                state: qForm.state,
-                hasWorkshop: qForm.hasWorkshop === 'yes',
-                workshopName: qForm.hasWorkshop === 'yes' ? qForm.workshopName : '',
-                worksWithSuspensions: qForm.worksWithSuspensions === 'yes',
-                tookSuspensionCourse: qForm.tookSuspensionCourse === 'yes',
-                experienceYears: qForm.experienceYears
-            };
-
-            await syncStudentToLeads(updatedEnrollment);
+            // Grava a matrícula e sincroniza o lead no CRM, tudo no servidor.
+            if (!enrollmentRef) throw new Error('Inscrição não encontrada.');
+            await submitQuestionnaire(enrollmentRef, payload);
 
             setQSubmitted(true);
             alert('Informações enviadas com sucesso! Obrigado.');
@@ -316,7 +275,7 @@ const ObrigadoLisboa: React.FC = () => {
                             transition={{ delay: 0.1 }}
                             className="text-gray-400 text-lg mb-8"
                         >
-                            Parabéns, <strong>{enrollment?.student_name}</strong>! <br/>
+                            Parabéns{enrollment?.student_name ? <>, <strong>{enrollment.student_name}</strong></> : null}! <br/>
                             Sua vaga para o <strong>W-Tech Europa em Lisboa</strong> foi assegurada e seu {isPartial ? 'sinal' : 'pagamento'} de <strong>{money(paidAmount)}</strong> foi processado com sucesso.
                         </motion.p>
 

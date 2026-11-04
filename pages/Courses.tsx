@@ -49,14 +49,14 @@ const Courses: React.FC = () => {
             setLoading(true);
             const { data } = await supabase
                 .from('SITE_Courses')
-                .select('*, SITE_Enrollments(count)')
+                .select('*, enrollment_count')
                 .in('status', ['Published', 'Full', 'Completed'])
                 .order('date', { ascending: true });
 
             const dbCourses = data ? data.map((c: any) => ({
                 ...c,
                 locationType: c.location_type,
-                registeredCount: c.SITE_Enrollments?.[0]?.count || 0,
+                registeredCount: c.enrollment_count || 0,
                 type: c.type,
                 tags: c.tags || [],
                 features: c.features || [],

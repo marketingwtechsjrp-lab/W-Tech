@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { fetchCertificate, type CertificateView } from '../lib/publicEnrollments';
 import { CheckCircle, XCircle, Award, Calendar, User, BookOpen } from 'lucide-react';
 import { formatDateLocal } from '../lib/utils'; // Assuming this utility exists
 import { useSettings } from '../context/SettingsContext';
@@ -12,7 +12,7 @@ const CertificateValidation = () => {
     const logoUrl = get('logo_dark_url');
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<'valid' | 'invalid' | 'loading'>('loading');
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<CertificateView | null>(null);
 
     useEffect(() => {
         const validate = async () => {
@@ -26,30 +26,10 @@ const CertificateValidation = () => {
             const enrollmentId = id.trim();
 
             try {
-                // Fetch enrollment with related course data
-                // We assume enrollment ID is the UUID or a partial match if we implemented shorter IDs
-                // Using exact UUID match for security first
-                const { data: enrollment, error } = await supabase
-                    .from('SITE_Enrollments')
-                    .select('*, SITE_Courses(*)')
-                    .eq('id', enrollmentId)
-                    .maybeSingle();
-
-                if (error || !enrollment) {
-                    setStatus('invalid');
-                } else {
-                     // Check if status is confirmed/checked-in to be strictly valid
-                    if (enrollment.status === 'Confirmed' || enrollment.status === 'CheckedIn') {
-                        setStatus('valid');
-                        setData(enrollment);
-                    } else {
-                        // Exists but not completed? Maybe 'Pending' shouldn't have a valid cert
-                         setStatus('invalid'); 
-                         // Or show "Pending Payment" status if you prefer
-                    }
-                }
+                // Só Confirmed/CheckedIn têm certificado; o resto volta 404 e cai em "inválido".
+                setData(await fetchCertificate(enrollmentId));
+                setStatus('valid');
             } catch (err) {
-                console.error(err);
                 setStatus('invalid');
             } finally {
                 setLoading(false);
@@ -99,7 +79,6 @@ const CertificateValidation = () => {
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase">Aluno Certificado</p>
                                 <p className="font-bold text-lg text-gray-900">{data.student_name}</p>
-                                <p className="text-sm text-gray-500">{data.student_email}</p>
                             </div>
                         </div>
 
@@ -107,8 +86,8 @@ const CertificateValidation = () => {
                             <div className="bg-gray-100 p-3 rounded-lg"><BookOpen size={20} className="text-gray-600"/></div>
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase">Curso Concluído</p>
-                                <p className="font-bold text-lg text-gray-900 leading-tight">{data.SITE_Courses?.title}</p>
-                                <p className="text-sm text-gray-500 mt-1">{data.SITE_Courses?.location} - {data.SITE_Courses?.location_type}</p>
+                                <p className="font-bold text-lg text-gray-900 leading-tight">{data.course.title}</p>
+                                <p className="text-sm text-gray-500 mt-1">{data.course.location} - {data.course.location_type}</p>
                             </div>
                         </div>
 
@@ -116,8 +95,8 @@ const CertificateValidation = () => {
                             <div className="bg-gray-100 p-3 rounded-lg"><Calendar size={20} className="text-gray-600"/></div>
                             <div>
                                 <p className="text-xs font-bold text-gray-400 uppercase">Data de Realização</p>
-                                <p className="font-bold text-lg text-gray-900">{formatDateLocal(data.SITE_Courses?.date)}</p>
-                                <p className="text-xs text-gray-400 uppercase font-bold mt-1">ID: {data.id.split('-')[0]}</p>
+                                <p className="font-bold text-lg text-gray-900">{formatDateLocal(data.course.date)}</p>
+                                <p className="text-xs text-gray-400 uppercase font-bold mt-1">ID: {data.reference}</p>
                             </div>
                         </div>
                         

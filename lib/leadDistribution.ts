@@ -1,7 +1,8 @@
 import { supabase } from './supabaseClient';
 import { triggerWebhook } from './webhooks';
 import { getLeadTrackingFields } from './tracking';
-import { findExistingLead, preserveWonStatus } from './leadMatch';
+import { upsertLead } from './leadMatch';
+import { rememberLeadContact, upsertPublicLead } from './publicLeads';
 import { pushLead, type ConversionFunnel } from './dataLayer';
 
 /**
@@ -71,97 +72,44 @@ const publicarLead = (payload: LeadPayload, leadId: string, options: LeadUpsertO
 };
 
 /**
- * Handles Lead Creation or Update (Upsert Logic)
+ * Handles Lead Creation or Update (Upsert Logic), regra em lib/leadMatch.ts.
  * - Se a pessoa ja existe: atualiza contexto/tags, MANTEM 'assigned_to' e
  *   MANTEM o status quando o lead ja esta ganho (Converted/Matriculated).
  * - If new: Inserts with provided or distributed 'assigned_to'.
+ *
+ * No painel fala direto com o banco (passe da equipe). Nas paginas publicas passa
+ * pelo servidor, porque a chave anonima nao le SITE_Leads e o dedupe precisa ler.
  */
 export const handleLeadUpsert = async (payload: LeadPayload, options: LeadUpsertOptions = {}) => {
     try {
-        // 0. Atribuição de tráfego (LEI 10): UTMs capturadas no navegador.
+        // Atribuição de tráfego (LEI 10): UTMs capturadas no navegador.
         const tracking = getLeadTrackingFields();
 
-        // 1. Localiza a ficha existente da pessoa.
-        //    Antes isto usava .eq('phone', ...) com o telefone CRU do formulario
-        //    e .single(). Duas falhas: formatos diferentes nunca casavam, e
-        //    .single() devolve null quando ha MAIS DE UMA linha — ou seja, quem
-        //    ja tinha duplicata nunca mais era encontrado e ganhava outra ficha
-        //    a cada cadastro. Agora a busca e tolerante (ver lib/leadMatch.ts).
-        const existingLead = await findExistingLead<any>(supabase, {
-            email: payload.email,
-            phone: payload.phone
-        });
+        // Se a pessoa ja tem ficha, o dono original prevalece sobre este sorteio.
+        if (!payload.assigned_to) {
+            payload.assigned_to = await distributeLead();
+        }
 
-        if (existingLead) {
-            console.log(`[LeadUpsert] Found existing lead ${existingLead.id}. Updating...`);
-            
-            // UTMs: preserva o first-touch — só grava as chaves que ainda não existem
-            // no lead. Recadastro não sobrescreve a atribuição original.
-            const trackingToFill: Record<string, string> = {};
-            for (const [k, v] of Object.entries(tracking)) {
-                if (v && !existingLead[k]) trackingToFill[k] = v;
-            }
+        const naAreaDaEquipe = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+        let action: 'created' | 'updated';
+        let id: string;
 
-            // MERGE Logic
-            const updatePayload = {
-                ...payload,
-                ...trackingToFill,
-                // Recadastro NAO pode desfazer uma venda: quem ja esta ganho
-                // permanece ganho. Os demais voltam para 'Novo' para o
-                // atendente retrabalhar.
-                status: preserveWonStatus(existingLead.status, 'New'),
-                // params to PRESERVE from existing:
-                assigned_to: existingLead.assigned_to, // KEEP ORIGINAL OWNER
-                id: existingLead.id,
-                updated_at: new Date().toISOString()
-            };
-
-            // Merge tags
-            if (payload.tags && existingLead.tags) {
-                const mergedTags = Array.from(new Set([...existingLead.tags, ...payload.tags]));
-                updatePayload.tags = mergedTags;
-            }
-
-            // Update in DB
-            const { error: updateError } = await supabase
-                .from('SITE_Leads')
-                .update(updatePayload)
-                .eq('id', existingLead.id);
-
-            if (updateError) throw updateError;
-            
-            // Trigger Webhook for "Re-conversion"
-            await triggerWebhook('webhook_lead', updatePayload);
-
-            // Recadastro também é conversão de mídia: o clique pago que trouxe a
-            // pessoa de volta precisa aparecer no Google Ads/GA4.
-            publicarLead(payload, existingLead.id, options);
-
-            return { action: 'updated', id: existingLead.id, assigned_to: existingLead.assigned_to };
-
+        if (naAreaDaEquipe) {
+            const result = await upsertLead(supabase, payload, tracking);
+            action = result.action;
+            id = result.id;
+            await triggerWebhook('webhook_lead', result.written);
         } else {
-            console.log(`[LeadUpsert] New Lead. Inserting...`);
-            
-            // Distribute if not assigned
-            if (!payload.assigned_to) {
-                payload.assigned_to = await distributeLead();
-            }
+            // O webhook de lead sai do servidor nesse caminho (api/_publicLeads.ts).
+            ({ action, id } = await upsertPublicLead({ ...tracking, ...payload }));
+            rememberLeadContact({ id, name: payload.name, email: payload.email, phone: payload.phone });
+        }
 
-            // UTMs do toque atual (last-touch) no lead novo.
-            const insertPayload = { ...tracking, ...payload };
+        // Recadastro também é conversão de mídia: o clique pago que trouxe a
+        // pessoa de volta precisa aparecer no Google Ads/GA4.
+        publicarLead(payload, id, options);
 
-            const { data: newLead, error: insertError } = await supabase
-                .from('SITE_Leads')
-                .insert([insertPayload])
-                .select()
-                .single();
-
-            if (insertError) throw insertError;
-
-            await triggerWebhook('webhook_lead', insertPayload);
-
-            publicarLead(payload, newLead.id, options);
-
+        if (action === 'created') {
             // Automação: inscreve o lead NOVO nos fluxos de boas-vindas
             // (gatilho NovoCadastro). Não-fatal e fire-and-forget — nunca
             // atrapalha a criação do lead. Recadastros não entram de novo.
@@ -170,9 +118,9 @@ export const handleLeadUpsert = async (payload: LeadPayload, options: LeadUpsert
                     enrollContactInFlowsClient({ email: payload.email, name: payload.name, triggerType: 'NovoCadastro' })
                 )
                 .catch(err => console.error('[LeadUpsert] Enroll NovoCadastro falhou (não-fatal):', err));
-
-            return { action: 'created', id: newLead.id, assigned_to: payload.assigned_to };
         }
+
+        return { action, id };
 
     } catch (error) {
         console.error("[LeadUpsert] Error:", error);

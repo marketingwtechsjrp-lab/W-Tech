@@ -8,7 +8,6 @@ import { expect, test, type Page } from '@playwright/test';
 test.skip(!process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY, 'VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY ausentes no ambiente de teste.');
 
 const CLIENTE = {
-  id: '11111111-1111-4111-8111-111111111111',
   name: 'Cliente Teste',
   email: 'cliente@teste.com',
   phone: '11999990000',
@@ -17,17 +16,14 @@ const CLIENTE = {
 };
 const PRODUTO = { id: '22222222-2222-4222-8222-222222222222', name: 'Vacuum Pump', sku: 'VP-1', sale_price: 1500.5, type: 'product' };
 
-/** Toda chamada direta ao banco falha, e as de SITE_Sales ficam registradas. */
+/** As tabelas fechadas falham e ficam registradas; o resto responde vazio. */
 async function bancoFechado(page: Page) {
   const leiturasDiretas: string[] = [];
   await page.route('**/rest/v1/**', async (route) => {
     const url = route.request().url();
-    if (/SITE_Sale(s|Items)/.test(url)) leiturasDiretas.push(`${route.request().method()} ${url}`);
-    if (url.includes('SITE_Leads')) {
-      return route.fulfill({ json: route.request().method() === 'GET' ? CLIENTE : [] });
-    }
     if (url.includes('SITE_Products')) return route.fulfill({ json: [PRODUTO] });
-    if (url.includes('SITE_Sale')) {
+    if (/SITE_(Sale|Leads|Enrollments)/.test(url)) {
+      leiturasDiretas.push(`${route.request().method()} ${url}`);
       return route.fulfill({ status: 401, json: { code: '42501', message: 'permission denied' } });
     }
     return route.fulfill({ json: [] });
@@ -88,6 +84,10 @@ test.describe('Meus pedidos', () => {
     await page.route('**/api/client-orders', (route) => {
       const corpo = route.request().postDataJSON();
       chamadas.push(corpo);
+      if (corpo.action === 'login') return route.fulfill({ json: { client: CLIENTE } });
+      if (corpo.action === 'enrollments') {
+        return route.fulfill({ json: { enrollments: [{ status: 'Confirmed', SITE_Courses: { title: 'Curso de Suspensão', date: '2026-12-01' } }] } });
+      }
       if (corpo.action !== 'list') return route.fulfill({ status: 201, json: { ok: true } });
       return route.fulfill({
         json: {
@@ -113,7 +113,8 @@ test.describe('Meus pedidos', () => {
     await expect(page.getByText('RASTREIO: AA123456789BR')).toBeVisible();
     await expect(page.getByText('Pago', { exact: true })).toBeVisible();
     await expect(page.getByText('+ R$ 30,00')).toBeVisible();
-    expect(chamadas[0]).toEqual({ code: 'CLI-12ABC', action: 'list' });
+    await expect(page.getByText('Curso de Suspensão')).toBeVisible();
+    expect(chamadas[0]).toEqual({ code: 'CLI-12ABC', action: 'login' });
 
     await page.getByRole('button', { name: 'Novo Pedido' }).first().click();
     await page.locator('div.group', { hasText: 'Vacuum Pump' }).getByRole('button').last().click();
@@ -132,8 +133,8 @@ test.describe('Meus pedidos', () => {
       items: [{ productId: PRODUTO.id, quantity: 1 }],
     });
     await expect
-      .poll(() => chamadas.slice(chamadas.findIndex((c) => c.action === 'order') + 1))
-      .toEqual([{ code: 'CLI-12ABC', action: 'list' }]);
+      .poll(() => chamadas.slice(chamadas.findIndex((c) => c.action === 'order') + 1).map((c) => c.action))
+      .toEqual(['list']);
     expect(leiturasDiretas).toEqual([]);
   });
 });

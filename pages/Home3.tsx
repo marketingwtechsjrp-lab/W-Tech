@@ -128,17 +128,10 @@ const Home3 = () => {
                         city,
                         state,
                         phone,
-                        email,
-                        photo,
                         status,
                         specialty,
                         latitude,
-                        longitude,
-                        description,
-                        street,
-                        number,
-                        zipCode:zip_code,
-                        district
+                        longitude
                     `)
                     .eq('status', 'Approved');
 

@@ -7,6 +7,7 @@ import {
     Users, Award, BadgeCheck, RotateCcw, Sparkles, FileText
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { recallLeadContact, rememberLeadContact, saveCheckoutLead } from '../lib/publicLeads';
 import { distributeLead } from '../lib/leadDistribution';
 import { createStripePaymentLink } from '../lib/stripe';
 import { getLeadTrackingFields } from '../lib/tracking';
@@ -37,7 +38,7 @@ interface CourseData {
     capacity?: number;
     start_time?: string;
     deposit_price?: number;
-    SITE_Enrollments?: { count: number }[];
+    enrollment_count?: number;
 }
 
 interface FormData {
@@ -69,27 +70,20 @@ const CheckoutLisboa: React.FC = () => {
 
             const { data: courseData } = await supabase
                 .from('SITE_Courses')
-                .select('id, title, date, date_end, city, state, location_type, price, image, capacity, start_time, deposit_price, SITE_Enrollments(count)')
+                .select('id, title, date, date_end, city, state, location_type, price, image, capacity, start_time, deposit_price, enrollment_count')
                 .eq('id', COURSE_ID)
                 .single();
 
             if (courseData) setCourse(courseData as CourseData);
 
-            if (lid) {
-                const { data: leadData } = await supabase
-                    .from('SITE_Leads')
-                    .select('name, email, phone')
-                    .eq('id', lid)
-                    .single();
-
-                if (leadData) {
-                    setForm(prev => ({
-                        ...prev,
-                        name: leadData.name || '',
-                        email: leadData.email || '',
-                        phone: leadData.phone || ''
-                    }));
-                }
+            const contato = recallLeadContact(lid);
+            if (contato) {
+                setForm(prev => ({
+                    ...prev,
+                    name: contato.name,
+                    email: contato.email,
+                    phone: contato.phone
+                }));
             }
 
             setPageLoading(false);
@@ -105,7 +99,7 @@ const CheckoutLisboa: React.FC = () => {
     const remaining = Math.max(0, fullPrice - depositPrice);
 
     const spotsLeft = course
-        ? Math.max(0, (course.capacity || 0) - (course.SITE_Enrollments?.[0]?.count || 0))
+        ? Math.max(0, (course.capacity || 0) - (course.enrollment_count || 0))
         : 0;
 
     const fmtEur = (v: number) => `€ ${v.toFixed(2).replace('.', ',')}`;
@@ -140,62 +134,28 @@ const CheckoutLisboa: React.FC = () => {
             //    Sem pagamento concluído, a pessoa fica apenas como "Novo Lead" para o
             //    atendente trabalhar. A inscrição (SITE_Enrollments) só é criada em
             //    /obrigado-lisboa, quando o pagamento é confirmado.
-            let leadId = lid;
-            if (leadId) {
-                await supabase
-                    .from('SITE_Leads')
-                    .update({ name: nome, email: emailLc, phone: fone, cpf: doc, tags: leadTags })
-                    .eq('id', leadId);
-            } else {
-                // Dedupe: reaproveita lead existente (mesmo e-mail ou telefone) antes de criar outro.
-                let existingLead: { id: string } | null = null;
-                if (emailLc) {
-                    const { data } = await supabase.from('SITE_Leads').select('id').eq('email', emailLc).limit(1);
-                    existingLead = data?.[0] || null;
-                }
-                if (!existingLead && fone) {
-                    const last8 = fone.replace(/\D/g, '').slice(-8);
-                    if (last8) {
-                        const { data } = await supabase.from('SITE_Leads').select('id').ilike('phone', `%${last8}%`).limit(1);
-                        existingLead = data?.[0] || null;
-                    }
-                }
+            const salvo = await saveCheckoutLead(lid, {
+                name: nome,
+                email: emailLc,
+                phone: fone,
+                type: 'Course_Registration',
+                context_id: 'WTECH EUROPA LISBOA OUTUBRO 2026 (CHECKOUT)',
+                tags: leadTags,
+                assigned_to: await distributeLead(), // Rodizio automatico: Christopher, Michael ou Emerson
+                ...getLeadTrackingFields()
+            }, doc);
+            const leadId = salvo.id;
+            rememberLeadContact({ id: leadId, name: nome, email: emailLc, phone: fone });
 
-                if (existingLead) {
-                    await supabase
-                        .from('SITE_Leads')
-                        .update({ name: nome, email: emailLc, phone: fone, cpf: doc, tags: leadTags })
-                        .eq('id', existingLead.id);
-                    leadId = existingLead.id;
-                } else {
-                    const { data: newLead } = await supabase
-                        .from('SITE_Leads')
-                        .insert([{
-                            name: nome,
-                            email: emailLc,
-                            phone: fone,
-                            cpf: doc,
-                            type: 'Course_Registration',
-                            status: 'New',
-                            context_id: 'WTECH EUROPA LISBOA OUTUBRO 2026 (CHECKOUT)',
-                            tags: leadTags,
-                            assigned_to: await distributeLead(), // Rodizio automatico: Christopher, Michael ou Emerson
-                            ...getLeadTrackingFields()
-                        }])
-                        .select()
-                        .single();
-                    leadId = newLead?.id || null;
-                    // Lead nasceu aqui (não veio da LP): conta como conversão de lead.
-                    if (leadId) {
-                        pushLead({
-                            funnel: 'presencial_lisboa',
-                            method: 'checkout',
-                            item_name: 'Curso Presencial W-Tech Lisboa',
-                            lead_id: leadId,
-                            user: { email: emailLc, phone: fone, name: nome },
-                        });
-                    }
-                }
+            // Lead nasceu aqui (não veio da LP): conta como conversão de lead.
+            if (salvo.created) {
+                pushLead({
+                    funnel: 'presencial_lisboa',
+                    method: 'checkout',
+                    item_name: 'Curso Presencial W-Tech Lisboa',
+                    lead_id: leadId,
+                    user: { email: emailLc, phone: fone, name: nome },
+                });
             }
 
             if (!leadId) throw new Error('Não foi possível registrar seus dados. Tente novamente.');

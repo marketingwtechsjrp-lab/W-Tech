@@ -173,11 +173,11 @@ const LandingPageViewerV3: React.FC = () => {
       let lpData: LandingPageWithCourse | null = null;
 
       if (isUUID) {
-        const { data: linkedLP } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*, SITE_Enrollments(count))').eq('course_id', slug).single();
+        const { data: linkedLP } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*, enrollment_count)').eq('course_id', slug).single();
         if (linkedLP) {
           lpData = linkedLP;
         } else {
-          const { data: courseData } = await supabase.from('SITE_Courses').select('*, SITE_Enrollments(count)').eq('id', slug).single();
+          const { data: courseData } = await supabase.from('SITE_Courses').select('*, enrollment_count').eq('id', slug).single();
           if (courseData) {
             lpData = {
               id: 'virtual', course_id: courseData.id, slug: courseData.id,
@@ -194,7 +194,7 @@ const LandingPageViewerV3: React.FC = () => {
           }
         }
       } else {
-        const { data } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*, SITE_Enrollments(count))').eq('slug', slug).single();
+        const { data } = await supabase.from('SITE_LandingPages').select('*, course:SITE_Courses(*, enrollment_count)').eq('slug', slug).single();
         lpData = data;
       }
 
@@ -208,7 +208,7 @@ const LandingPageViewerV3: React.FC = () => {
         const mappedCourse = rawCourse ? {
           ...rawCourse,
           locationType: rawCourse.location_type,
-          registeredCount: rawCourse.SITE_Enrollments?.[0]?.count || 0,
+          registeredCount: rawCourse.enrollment_count || 0,
           hotelsInfo: rawCourse.hotels_info,
           startTime: rawCourse.start_time,
           endTime: rawCourse.end_time,

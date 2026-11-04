@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, ShieldCheck, Thermometer } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { savePublicQuizResult } from '../lib/publicLeads';
 import { triggerWebhook } from '../lib/webhooks';
 import { distributeLead, handleLeadUpsert } from '../lib/leadDistribution';
 import { landingPagePixelId, trackMetaStandardEvent } from '../lib/metaPixel';
@@ -155,13 +155,8 @@ export const QualificationQuiz: React.FC<QuizProps> = ({ lp, onComplete, whatsap
             let effectiveLeadId = leadId;
             let quizSaved = false;
             if (leadId) {
-                // UPDATE existing lead
-                // Note: RLS must allow UPDATE for anon or we need a secure RPC.
-                // Using update logic from upsert is tricky here because we have ID.
-                // Simple update is fine if we have ID.
-                const { data: updatedLead, error: updateError } = await supabase
-                    .from('SITE_Leads').update(resultPayload).eq('id', leadId).select('id').maybeSingle();
-                quizSaved = !updateError && !!updatedLead?.id;
+                // UPDATE existing lead (pelo servidor: a chave anônima não altera SITE_Leads)
+                quizSaved = await savePublicQuizResult(leadId, resultPayload);
                 if (quizSaved) {
                     await triggerWebhook('webhook_lead_completed', { ...resultPayload, id: leadId });
                 }

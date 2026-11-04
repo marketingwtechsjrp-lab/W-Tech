@@ -63,7 +63,7 @@ const MechanicsMap: React.FC = () => {
 
   const fetchMechanics = async () => {
     setLoading(true);
-    const { data } = await supabase.from('SITE_Mechanics').select('*').eq('status', 'Approved');
+    const { data } = await supabase.from('SITE_Mechanics').select('id, name, workshop_name, city, state, phone, status, specialty, latitude, longitude').eq('status', 'Approved');
 
     if (data) {
       // Simulate Coordinates if missing (FOR DEMO/MVP ONLY)

@@ -79,7 +79,7 @@ export function useLandingPage(ownTemplate: string) {
             if (isUUID) {
                 const { data: linkedLP, error: linkedError } = await supabase
                     .from('SITE_LandingPages')
-                    .select('*, course:SITE_Courses(*, SITE_Enrollments(count))')
+                    .select('*, course:SITE_Courses(*, enrollment_count)')
                     .eq('course_id', slug)
                     .maybeSingle();
                 if (linkedError) throw linkedError;
@@ -89,7 +89,7 @@ export function useLandingPage(ownTemplate: string) {
                 } else {
                     const { data: courseData, error: courseError } = await supabase
                         .from('SITE_Courses')
-                        .select('*, SITE_Enrollments(count)')
+                        .select('*, enrollment_count')
                         .eq('id', slug)
                         .maybeSingle();
                     if (courseError) throw courseError;
@@ -117,7 +117,7 @@ export function useLandingPage(ownTemplate: string) {
             } else {
                 const { data, error: pageError } = await supabase
                     .from('SITE_LandingPages')
-                    .select('*, course:SITE_Courses(*, SITE_Enrollments(count))')
+                    .select('*, course:SITE_Courses(*, enrollment_count)')
                     .eq('slug', slug)
                     .maybeSingle();
                 if (pageError) throw pageError;
@@ -143,7 +143,7 @@ export function useLandingPage(ownTemplate: string) {
                 ? {
                       ...rawCourse,
                       locationType: rawCourse.location_type,
-                      registeredCount: rawCourse.SITE_Enrollments?.[0]?.count || 0,
+                      registeredCount: rawCourse.enrollment_count || 0,
                       startTime: rawCourse.start_time,
                       endTime: rawCourse.end_time,
                       dateEnd: rawCourse.date_end,

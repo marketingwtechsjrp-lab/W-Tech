@@ -29,7 +29,7 @@ import { useLanguage } from '../context/LanguageContext';
 import type { SiteLanguage } from '../lib/siteTranslations';
 import { captureTrackingParams, getLeadTrackingFields } from '../lib/tracking';
 import { distributeLead } from '../lib/leadDistribution';
-import { supabase } from '../lib/supabaseClient';
+import { createPublicLead } from '../lib/publicLeads';
 import { triggerWebhook } from '../lib/webhooks';
 import { trackMetaCustomEvent, trackMetaStandardEvent } from '../lib/metaPixel';
 
@@ -791,8 +791,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                 ...getLeadTrackingFields(),
             };
 
-            const { data: novoLead, error: insertError } = await supabase.from('SITE_Leads').insert([payload]).select('id').single();
-            if (insertError) throw insertError;
+            const novoLead = await createPublicLead(payload);
 
             await triggerWebhook('webhook_lead', payload).catch(() => undefined);
             trackEvent('Quiz Off-Road', 'lead_captured', `${theme}_${profile}`);
@@ -800,7 +799,7 @@ const QuizSuspensao: React.FC<{ theme?: QuizTheme }> = ({ theme = 'dark' }) => {
                 funnel: 'curso_online_piloto',
                 method: 'quiz',
                 item_name: 'Curso Online de Suspensão',
-                lead_id: novoLead?.id,
+                lead_id: novoLead.id,
                 user: { phone, name },
             });
             trackMetaStandardEvent('Lead', {

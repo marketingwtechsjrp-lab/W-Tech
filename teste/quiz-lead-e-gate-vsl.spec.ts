@@ -36,11 +36,12 @@ test.describe('Quiz de suspensão — captura de lead antes da VSL', () => {
 
     test('grava o lead com o diagnóstico e encaminha para a VSL do tema', async ({ page }) => {
         const gravados: Array<Record<string, unknown>> = [];
-        await page.route('**/rest/v1/SITE_Leads**', async (route) => {
-            if (route.request().method() === 'POST') {
-                gravados.push(JSON.parse(route.request().postData() || '[]')[0]);
-            }
-            await route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+        // O lead sai pelo servidor: a chave anônima não devolve o id de SITE_Leads.
+        await page.route('**/api/public-leads', async (route) => {
+            const corpo = route.request().postDataJSON();
+            expect(corpo.action).toBe('create');
+            gravados.push(corpo.lead);
+            await route.fulfill({ status: 201, json: { id: '11111111-1111-4111-8111-111111111111' } });
         });
 
         await page.goto('/quiz-suspensao?lang=pt-BR');

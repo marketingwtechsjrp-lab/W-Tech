@@ -44,6 +44,25 @@ export interface PortalOrder {
   items: PublicOrderItem[];
 }
 
+export interface PortalProfile {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  type: string | null;
+  client_code: string;
+  assigned_to: string | null;
+  address: string | null;
+  delivery_address: unknown;
+  completed_courses: unknown[];
+  cpf: string | null;
+  rg: string | null;
+}
+
+export interface PortalEnrollment {
+  status: string;
+  SITE_Courses: { title: string | null; date: string | null } | null;
+}
+
 export interface CartLine {
   productId: string;
   quantity: number;
@@ -117,6 +136,39 @@ export function toPortalOrder(row: SaleRow): PortalOrder {
   };
 }
 
+/** Documento só com o final: o código do cliente é fraco demais para abrir CPF inteiro. */
+export function maskDocument(raw: unknown): string | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+  const value = raw.trim();
+  return `${'*'.repeat(Math.max(value.length - 4, 0))}${value.slice(-4)}`;
+}
+
+/** O que a tela "Meus Dados" mostra. O e-mail e o telefone são da própria pessoa. */
+export function toPortalProfile(row: SaleRow): PortalProfile {
+  return {
+    name: toText(row.name),
+    email: toNullableText(row.email),
+    phone: toNullableText(row.phone),
+    type: toNullableText(row.type),
+    client_code: toText(row.client_code),
+    assigned_to: toNullableText(row.assigned_to),
+    address: toNullableText(row.address),
+    delivery_address: row.delivery_address ?? null,
+    completed_courses: Array.isArray(row.completed_courses) ? row.completed_courses : [],
+    cpf: maskDocument(row.cpf),
+    rg: maskDocument(row.rg),
+  };
+}
+
+/** Sem o id: ele abre as telas de matrícula, e a lista casa por contato não verificado. */
+export function toPortalEnrollment(row: SaleRow): PortalEnrollment {
+  const curso = (row.SITE_Courses ?? null) as SaleRow | null;
+  return {
+    status: toText(row.status),
+    SITE_Courses: curso && { title: toNullableText(curso.title), date: toNullableText(curso.date) },
+  };
+}
+
 export function normalizeCode(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const code = raw.trim().toUpperCase();
@@ -166,6 +218,16 @@ async function postJson<T>(url: string, body: Record<string, unknown>): Promise<
 export async function trackOrder(code: string): Promise<TrackedOrder> {
   const { order } = await postJson<{ order: TrackedOrder }>('/api/order-tracking', { code });
   return order;
+}
+
+export async function loginPortal(code: string): Promise<PortalProfile> {
+  const { client } = await postJson<{ client: PortalProfile }>('/api/client-orders', { code, action: 'login' });
+  return client;
+}
+
+export async function fetchPortalEnrollments(code: string): Promise<PortalEnrollment[]> {
+  const { enrollments } = await postJson<{ enrollments: PortalEnrollment[] }>('/api/client-orders', { code, action: 'enrollments' });
+  return enrollments;
 }
 
 export async function fetchPortalOrders(code: string): Promise<PortalOrder[]> {

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Download, Calendar, Mail, User, BookOpen, Wallet, Loader2, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
+import { fetchEnrollmentView } from '../lib/publicEnrollments';
 
 const PaymentSuccess: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -36,17 +36,11 @@ const PaymentSuccess: React.FC = () => {
         if (showLoading) setIsRefreshing(true);
 
         try {
-            const { data: enrollment, error: eError } = await supabase
-                .from('SITE_Enrollments')
-                .select('*, SITE_Courses(title, currency)')
-                .eq('id', enrollmentId)
-                .single();
-
-            if (eError) throw eError;
+            const enrollment = await fetchEnrollmentView({ id: enrollmentId });
 
             if (enrollment) {
                 setData({
-                    studentName: enrollment.student_name,
+                    studentName: enrollment.student_name || '',
                     courseTitle: enrollment.SITE_Courses?.title || 'Curso W-Tech',
                     amountPaid: enrollment.amount_paid || 0,
                     totalAmount: enrollment.total_amount || 0,

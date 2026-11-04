@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { Check, CreditCard, Lock, Smartphone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { createPublicLead } from '../lib/publicLeads';
 import { triggerWebhook } from '../lib/webhooks';
 import { trackEvent } from '../components/AnalyticsTracker';
 
@@ -31,20 +32,13 @@ const Checkout: React.FC = () => {
         trackEvent('Ecommerce', 'purchase_attempt', `Total: ${total}`);
 
         // 1. Create Lead
-        const { data: leadData, error: leadError } = await supabase
-            .from('SITE_Leads')
-            .insert([{
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                type: 'Course_Registration',
-                status: 'New',
-                context_id: items.map(i => i.title).join(', ') // Store courses of interest
-            }])
-            .select()
-            .single();
-
-        if (leadError) throw leadError;
+        const leadData = await createPublicLead({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            type: 'Course_Registration',
+            context_id: items.map(i => i.title).join(', ') // Store courses of interest
+        });
 
         // 2. Create Order
         const { data: orderData, error: orderError } = await supabase

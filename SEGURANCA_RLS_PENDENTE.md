@@ -56,21 +56,50 @@ curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Sales?
 Hoje responde 200; depois tem que responder 401 ou 403. Em seguida, abrir Pedidos no
 painel e fazer uma busca em `/rastreio`.
 
+## Atualização de 04/11/2026 — leads, matrículas e mecânicos
+
+**Status: pronto no código, NÃO aplicado.** Migrações validadas com `BEGIN; … ROLLBACK;`
+no banco da VPS. **"RLS ligada" não quer dizer fechada:** as três tabelas tinham RLS com
+policy `USING (true)`, e a `anon` lia 3.310 leads (166 com CPF), 258 matrículas e 390
+mecânicos, além de poder alterar e apagar. Publicar exatamente nesta ordem:
+
+1. `migrations/2026-11-04_contagem_matriculas_publica.sql` e reiniciar o PostgREST
+   (`docker service update --force wtechdb_suparest`). O código novo pede o campo
+   `enrollment_count`: sem ele o prerender e as páginas de curso falham.
+2. Site com `/api/public-leads`, `/api/public-enrollments` e o login do portal.
+3. Conferir o site no ar, e só então
+   `migrations/2026-11-04_fechar_leads_matriculas_mecanicos.sql` (o desfazer está no cabeçalho).
+
+O que muda para o visitante:
+
+- **Leads:** só INSERT nas colunas de formulário. `client_code` fica de fora: quem escolhesse
+  o próprio código com o e-mail de outra pessoa entraria no portal e veria os pedidos dela.
+  Dedupe, recadastro e quiz passam por `/api/public-leads`, que não devolve dado da ficha.
+- **Checkout:** o preenchimento vem do que a pessoa digitou (`sessionStorage`), não do banco.
+  Link com `?lid=` aberto em outro aparelho chega com o formulário vazio.
+- **Matrículas:** nada direto. Vagas saem de `enrollment_count`; obrigado, confirmação e
+  certificado passam por `/api/public-enrollments`. O id da matrícula também vai no QR do
+  certificado, então CPF nunca sai, contato só com questionário em aberto e antes do
+  check-in, e o certificado deixou de mostrar o e-mail do aluno.
+- **Mecânicos:** leitura das colunas do mapa, só de aprovado. E-mail, endereço e foto saíram
+  da consulta pública porque nenhuma tela os mostrava.
+- **Portal do cliente:** login pelo servidor, CPF e RG mascarados, 20 códigos errados por hora
+  travam o IP. Por e-mail só entra pedido sem dono, nunca o de outro cliente: 5 pedidos antigos,
+  cujo `client_id` aponta para um cadastro que não existe mais, deixam de aparecer no portal.
+
+Para conferir depois de aplicar:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"
+```
+
+Hoje responde 200; depois tem que responder 401 ou 403.
+
 ### Ainda aberto para `anon` (medido em 04/11/2026)
 
-**"RLS ligada" não quer dizer fechada:** estas tabelas têm RLS, mas com policy `USING (true)`.
-
-| Tabela | Leitura anônima | Observação |
-|---|---|---|
-| `SITE_Leads` | 3.309 linhas, **166 com CPF** | policy `Public Select`; `/meus-pedidos` faz o login lendo daqui |
-| `SITE_Enrollments` | 258 linhas | policy `Enable all for everyone`; tem `student_cpf` |
-| `SITE_Mechanics` | 390 linhas | policy `Enable all for everyone`; tem `cpf` e `cpf_cnpj` |
-| `SITE_Shipments`, `SITE_SupportTickets`, `SITE_Transactions` | sim | RLS desligada |
-
-O código do cliente do portal tem pouca entropia e sai junto com `SITE_Leads` hoje. Até
-o login do portal ir para o servidor e `SITE_Leads` fechar, quem lê a tabela pega o
-código de qualquer cliente e entra em `/api/client-orders` com ele. O portal também
-casa pedido por e-mail, e o e-mail do lead não é verificado: rever ao fechar `SITE_Leads`.
+`SITE_Shipments`, `SITE_SupportTickets` e `SITE_Transactions` seguem com RLS desligada.
+Os formulários simples ainda gravam lead direto com a chave anônima: fechar leitura não
+impede spam, só um endpoint com limite por IP resolve.
 
 ---
 

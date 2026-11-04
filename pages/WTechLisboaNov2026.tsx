@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
+import { createPublicLead } from '../lib/publicLeads';
 import { distributeLead } from '../lib/leadDistribution';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
@@ -201,8 +201,7 @@ const WTechLisboaNov2026: React.FC = () => {
                 ...getLeadTrackingFields()
             };
 
-            const { data: leadData, error: leadError } = await supabase.from('SITE_Leads').insert([leadPayload]).select().single();
-            if (leadError) throw leadError;
+            const leadData = await createPublicLead(leadPayload);
 
             // 2. Dispara Webhook de lead
             await triggerWebhook('webhook_lead', { lead_id: leadData.id, name: form.name, email: form.email, phone: form.phone });

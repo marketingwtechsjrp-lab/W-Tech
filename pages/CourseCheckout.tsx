@@ -7,6 +7,7 @@ import {
     Users, Award, BadgeCheck, RotateCcw, Sparkles, MessageCircle, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { recallLeadContact } from '../lib/publicLeads';
 import { createMercadoPagoPreference } from '../lib/mercadopago';
 import { formatDateLocal } from '../lib/utils';
 import { trackEvent } from '../components/AnalyticsTracker';
@@ -27,7 +28,7 @@ interface CourseData {
     capacity?: number;
     start_time?: string;
     deposit_price?: number;
-    SITE_Enrollments?: { count: number }[];
+    enrollment_count?: number;
 }
 
 interface FormData {
@@ -100,7 +101,7 @@ const CourseCheckout: React.FC = () => {
 
             const { data: courseData, error: courseError } = await supabase
                 .from('SITE_Courses')
-                .select('id, title, date, date_end, city, state, location_type, price, currency, image, capacity, start_time, deposit_price, SITE_Enrollments(count)')
+                .select('id, title, date, date_end, city, state, location_type, price, currency, image, capacity, start_time, deposit_price, enrollment_count')
                 .eq('id', courseId)
                 .single();
 
@@ -112,22 +113,15 @@ const CourseCheckout: React.FC = () => {
 
             setCourse(courseData as CourseData);
 
-            // Prefill do formulário com dados do lead (se tiver lid)
-            if (lid) {
-                const { data: leadData } = await supabase
-                    .from('SITE_Leads')
-                    .select('name, email, phone')
-                    .eq('id', lid)
-                    .single();
-
-                if (leadData) {
-                    setForm(prev => ({
-                        ...prev,
-                        name: leadData.name || '',
-                        email: leadData.email || '',
-                        phone: leadData.phone ? formatPhone(leadData.phone) : ''
-                    }));
-                }
+            // Prefill com o que a pessoa digitou na landing page (se veio de lá com ?lid=)
+            const contato = recallLeadContact(lid);
+            if (contato) {
+                setForm(prev => ({
+                    ...prev,
+                    name: contato.name,
+                    email: contato.email,
+                    phone: contato.phone ? formatPhone(contato.phone) : ''
+                }));
             }
 
             setPageLoading(false);
@@ -202,7 +196,7 @@ const CourseCheckout: React.FC = () => {
     };
 
     const spotsLeft = course
-        ? Math.max(0, (course.capacity || 0) - (course.SITE_Enrollments?.[0]?.count || 0))
+        ? Math.max(0, (course.capacity || 0) - (course.enrollment_count || 0))
         : 0;
 
     const depositPrice = course?.deposit_price != null && Number(course.deposit_price) > 0

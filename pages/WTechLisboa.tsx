@@ -1,7 +1,8 @@
 import SEO from '../components/SEO';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
+import { createPublicLead } from '../lib/publicLeads';
+import { createDirectEnrollment } from '../lib/publicEnrollments';
 import { distributeLead } from '../lib/leadDistribution';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
@@ -51,30 +52,26 @@ const WTechLisboa: React.FC = () => {
                 ...getLeadTrackingFields()
             };
 
-            const { data: leadData, error: leadError } = await supabase.from('SITE_Leads').insert([leadPayload]).select().single();
-            if (leadError) throw leadError;
-            
+            const leadData = await createPublicLead(leadPayload);
+
             // 2. Create Enrollment in SITE_Enrollments (Status Pending until payment)
-            const enrollmentPayload = {
+            const enrollmentData = await createDirectEnrollment({
+                courseId: COURSE_ID,
+                name: form.name,
+                email: form.email,
+                phone: form.phone
+            });
+
+            // 3. Trigger Webhook lead
+            await triggerWebhook('webhook_lead', {
+                ...enrollmentData,
                 course_id: COURSE_ID,
                 student_name: form.name,
                 student_email: form.email,
                 student_phone: form.phone,
                 status: 'Pending',
-                amount_paid: 0,
-                payment_method: 'Stripe'
-            };
-
-            const { data: enrollmentData, error: enrollmentError } = await supabase
-                .from('SITE_Enrollments')
-                .insert([enrollmentPayload])
-                .select()
-                .single();
-
-            if (enrollmentError) throw enrollmentError;
-
-            // 3. Trigger Webhook lead
-            await triggerWebhook('webhook_lead', { ...enrollmentData, lead_id: leadData.id });
+                lead_id: leadData.id
+            });
             
             // 4. Create Stripe Payment Link and Redirect
             const stripeResult = await createStripePaymentLink({

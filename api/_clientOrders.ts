@@ -12,7 +12,9 @@ import {
   normalizeCode,
   parseCart,
   PORTAL_COLUMNS,
+  toPortalEnrollment,
   toPortalOrder,
+  toPortalProfile,
   toTrackedOrder,
   TRACKING_COLUMNS,
   type PortalClient,
@@ -24,23 +26,30 @@ import {
  *
  * POST /api/order-tracking { code }: /rastreio, por código de rastreio ou id do pedido.
  * POST /api/client-orders { code, action }: /meus-pedidos, com o código do cliente.
+ *   action 'login'  → dados do dono do código, com CPF e RG mascarados
  *   action 'list'   → pedidos do dono do código
+ *   action 'enrollments' → matrículas do dono do código
  *   action 'order'  → novo pedido pendente { items: [{ productId, quantity }] }
  *   action 'enroll' → pedido pendente de matrícula { courseId }
  *
  * O dono, os preços e o que volta são decididos aqui (lib/clientOrders.ts): do
  * navegador só se aceita o código e o que ele quer comprar. O código tem pouca
- * entropia (3 letras do nome + 2 números + 3 letras), daí o limite curto por IP.
+ * entropia (3 letras do nome + 2 números + 3 letras), daí o limite de tentativas
+ * erradas por IP, que vale por hora e não por minuto.
  */
 
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX_PER_WINDOW = 15;
+const RATE_MAX_PER_WINDOW = 30;
+const WRONG_CODE_WINDOW_MS = 60 * 60_000;
+const WRONG_CODE_MAX_PER_WINDOW = 20;
 
 const limitadorRastreio = createIpRateLimiter({ windowMs: RATE_WINDOW_MS, maxAttempts: RATE_MAX_PER_WINDOW });
 const limitadorPortal = createIpRateLimiter({ windowMs: RATE_WINDOW_MS, maxAttempts: RATE_MAX_PER_WINDOW });
+const limitadorCodigoErrado = createIpRateLimiter({ windowMs: WRONG_CODE_WINDOW_MS, maxAttempts: WRONG_CODE_MAX_PER_WINDOW });
 
 const PEDIDO_NAO_ENCONTRADO = 'Pedido não encontrado. Verifique o código e tente novamente.';
 const CODIGO_INVALIDO = 'Código de acesso inválido. Verifique e tente novamente.';
+const MUITAS_TENTATIVAS = 'Muitas tentativas. Aguarde um minuto e tente novamente.';
 const ERRO_GENERICO = 'Não foi possível concluir agora. Tente novamente.';
 const MAX_PEDIDOS_POR_CONSULTA = 200;
 
@@ -53,7 +62,7 @@ function abrirRota(req: any, res: any, limitador: RateLimiter): SupabaseClient |
   }
   if (!requireSameOrigin(req, res)) return null;
   if (limitador.isLimited(req)) {
-    res.status(429).json({ error: 'Muitas tentativas. Aguarde um minuto e tente novamente.' });
+    res.status(429).json({ error: MUITAS_TENTATIVAS });
     return null;
   }
   const supabase = getServiceClient();
@@ -94,33 +103,35 @@ export async function orderTracking(req: any, res: any) {
   }
 }
 
-async function buscarCliente(supabase: SupabaseClient, code: string): Promise<PortalClient | null> {
+type ClienteDoBanco = PortalClient & Record<string, unknown>;
+
+async function buscarCliente(supabase: SupabaseClient, code: string): Promise<ClienteDoBanco | null> {
   for (const tabela of ['SITE_Leads', 'SITE_Mechanics']) {
     const { data, error } = await supabase
       .from(tabela)
-      .select('id, name, email, phone, assigned_to')
+      .select('*')
       .eq('client_code', code)
       .limit(2);
     if (error) throw error;
-    if (data?.length === 1) return data[0] as PortalClient;
+    if (data?.length === 1) return data[0] as ClienteDoBanco;
   }
   return null;
 }
 
 async function listarPedidos(supabase: SupabaseClient, cliente: PortalClient) {
-  const consultar = (coluna: 'client_id' | 'client_email', valor: string) =>
+  const consultar = () =>
     supabase
       .from('SITE_Sales')
       .select(PORTAL_COLUMNS)
-      .eq(coluna, valor)
       .order('created_at', { ascending: false })
       .limit(MAX_PEDIDOS_POR_CONSULTA);
 
   // Duas consultas em vez de `.or()`: o e-mail do cadastro não entra em filtro montado
-  // por texto. E-mail vazio não identifica ninguém, então nem é consultado.
+  // por texto. E-mail vazio não identifica ninguém, então nem é consultado. E o e-mail do
+  // lead não é verificado: por ele só entra pedido sem dono, nunca o de outro cliente.
   const resultados = await Promise.all([
-    consultar('client_id', cliente.id),
-    ...(cliente.email ? [consultar('client_email', cliente.email)] : []),
+    consultar().eq('client_id', cliente.id),
+    ...(cliente.email ? [consultar().eq('client_email', cliente.email).is('client_id', null)] : []),
   ]);
 
   const porId = new Map<string, ReturnType<typeof toPortalOrder>>();
@@ -132,6 +143,29 @@ async function listarPedidos(supabase: SupabaseClient, cliente: PortalClient) {
     }
   }
   return [...porId.values()].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+}
+
+async function listarMatriculas(supabase: SupabaseClient, cliente: PortalClient) {
+  const consultar = (coluna: 'student_email' | 'student_phone', valor: string) =>
+    supabase
+      .from('SITE_Enrollments')
+      .select('id, status, created_at, SITE_Courses(title, date)')
+      .eq(coluna, valor)
+      .limit(MAX_PEDIDOS_POR_CONSULTA);
+
+  const resultados = await Promise.all([
+    ...(cliente.email ? [consultar('student_email', cliente.email)] : []),
+    ...(cliente.phone ? [consultar('student_phone', cliente.phone)] : []),
+  ]);
+
+  const porId = new Map<string, Record<string, unknown>>();
+  for (const { data, error } of resultados) {
+    if (error) throw error;
+    for (const linha of data ?? []) porId.set(linha.id as string, linha as Record<string, unknown>);
+  }
+  return [...porId.values()]
+    .sort((a, b) => Date.parse(String(b.created_at)) - Date.parse(String(a.created_at)))
+    .map(toPortalEnrollment);
 }
 
 async function itensDoCarrinho(supabase: SupabaseClient, bruto: unknown): Promise<PortalSaleItem[] | null> {
@@ -179,14 +213,25 @@ export default async function clientOrders(req: any, res: any) {
   const supabase = abrirRota(req, res, limitadorPortal);
   if (!supabase) return;
 
+  if (limitadorCodigoErrado.hasExceeded(req)) return res.status(429).json({ error: MUITAS_TENTATIVAS });
+
   const code = normalizeCode(req.body?.code);
   if (!code) return res.status(404).json({ error: CODIGO_INVALIDO });
 
   try {
     const cliente = await buscarCliente(supabase, code);
-    if (!cliente) return res.status(404).json({ error: CODIGO_INVALIDO });
+    if (!cliente) {
+      limitadorCodigoErrado.isLimited(req);
+      return res.status(404).json({ error: CODIGO_INVALIDO });
+    }
 
     const acao = req.body?.action;
+    if (acao === 'login') {
+      return res.status(200).json({ client: toPortalProfile(cliente) });
+    }
+    if (acao === 'enrollments') {
+      return res.status(200).json({ enrollments: await listarMatriculas(supabase, cliente) });
+    }
     if (acao === 'list') {
       return res.status(200).json({ orders: await listarPedidos(supabase, cliente) });
     }

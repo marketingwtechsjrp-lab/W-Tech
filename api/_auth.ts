@@ -524,6 +524,8 @@ export function clientIp(req: any): string {
 export interface RateLimiter {
   /** true = este IP já estourou o limite de tentativas na janela atual. */
   isLimited(req: any): boolean;
+  /** Mesma pergunta sem contar esta chamada: para limitar só as tentativas erradas. */
+  hasExceeded(req: any): boolean;
 }
 
 export function createIpRateLimiter(opts: { windowMs: number; maxAttempts: number; maxEntries?: number }): RateLimiter {
@@ -537,6 +539,10 @@ export function createIpRateLimiter(opts: { windowMs: number; maxAttempts: numbe
   }
 
   return {
+    hasExceeded(req: any): boolean {
+      const entry = attempts.get(sha256Hex(clientIp(req)));
+      return Boolean(entry && entry.resetAt > Date.now() && entry.count >= maxAttempts);
+    },
     isLimited(req: any): boolean {
       const key = sha256Hex(clientIp(req));
       const now = Date.now();

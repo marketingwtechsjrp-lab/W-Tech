@@ -1,17 +1,11 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { build } from 'esbuild';
+import { iniciarHarness, ORIGEM } from './_apiHarness.mjs';
 
 // Roda os handlers de verdade, com o supabase-js de verdade, contra um PostgREST
 // falso. A pergunta central destes testes: o que o banco devolve de dado pessoal
 // nunca pode chegar ao navegador, e o navegador não escolhe dono nem preço.
 
-const ORIGEM = 'https://w-techbrasil.com.br';
 const CPF_NAS_NOTAS = 'CPF 123.456.789-00';
 const CLIENTE = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -54,122 +48,36 @@ function linhaPedido(extra = {}) {
   };
 }
 
+let h;
+let modulo;
 let tabelas;
 let chamadas;
-let servidor;
-let modulo;
-let pastaTemporaria;
-let ipSeguinte = 1;
-
-function filtroDaUrl(url) {
-  const filtros = {};
-  for (const [chave, valor] of url.searchParams) {
-    if (!['select', 'order', 'limit', 'offset'].includes(chave)) filtros[chave] = valor;
-  }
-  return filtros;
-}
-
-function casa(linha, filtros) {
-  return Object.entries(filtros).every(([coluna, condicao]) => {
-    if (condicao.startsWith('eq.')) return String(linha[coluna]) === condicao.slice(3);
-    if (condicao.startsWith('in.(')) {
-      const valores = condicao.slice(4, -1).split(',').map((v) => v.replaceAll('"', ''));
-      return valores.includes(String(linha[coluna]));
-    }
-    return false;
-  });
-}
 
 before(async () => {
-  servidor = createServer((req, res) => {
-    let corpo = '';
-    req.on('data', (parte) => { corpo += parte; });
-    req.on('end', () => {
-      const url = new URL(req.url, 'http://local');
-      const tabela = decodeURIComponent(url.pathname.split('/').pop());
-      const filtros = filtroDaUrl(url);
-      chamadas.push({
-        metodo: req.method,
-        tabela,
-        filtros,
-        select: url.searchParams.get('select'),
-        corpo: corpo ? JSON.parse(corpo) : null,
-        chave: req.headers.apikey,
-      });
-      res.setHeader('Content-Type', 'application/json');
-      if (req.method === 'POST') {
-        res.statusCode = 201;
-        return res.end('[]');
-      }
-      const linhas = (tabelas[tabela] ?? []).filter((linha) => casa(linha, filtros));
-      const umaSo = String(req.headers.accept || '').includes('vnd.pgrst.object');
-      res.end(JSON.stringify(umaSo ? (linhas[0] ?? null) : linhas));
-    });
-  });
-  await new Promise((resolve) => servidor.listen(0, '127.0.0.1', resolve));
-
-  // Mesmo método dos outros *-unit.test.mjs (esbuild em memória), mas gravado em
-  // arquivo: as dependências CJS do supabase-js pedem o shim de require do build-server.
-  const { outputFiles } = await build({
-    // O ambiente entra no bundle, sem tocar em process.env: o Playwright também carrega
-    // este arquivo e divide o processo com outros specs, que olham essas variáveis.
-    define: {
-      'process.env.VITE_SUPABASE_URL': JSON.stringify(`http://127.0.0.1:${servidor.address().port}`),
-      'process.env.SUPABASE_SERVICE_ROLE_KEY': JSON.stringify('chave-service-role-de-teste'),
-      'process.env.STAFF_TRUSTED_ORIGINS': JSON.stringify(ORIGEM),
-    },
-    stdin: {
-      contents: "export { default as clientOrders, orderTracking } from './api/_clientOrders.ts'; export * from './lib/clientOrders.ts';",
-      resolveDir: fileURLToPath(new URL('..', import.meta.url)),
-      loader: 'ts',
-    },
-    bundle: true,
-    write: false,
-    format: 'esm',
-    platform: 'node',
-    logLevel: 'silent',
-    external: ['bufferutil', 'utf-8-validate'],
-    banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
-  });
-  pastaTemporaria = await mkdtemp(join(tmpdir(), 'client-orders-'));
-  const arquivo = join(pastaTemporaria, 'modulo.mjs');
-  await writeFile(arquivo, outputFiles[0].text);
-  modulo = await import(pathToFileURL(arquivo).href);
+  h = await iniciarHarness("export { default as clientOrders, orderTracking } from './api/_clientOrders.ts'; export * from './lib/clientOrders.ts';");
+  modulo = h.modulo;
 });
 
-after(async () => {
-  await new Promise((resolve) => servidor.close(resolve));
-  await rm(pastaTemporaria, { recursive: true, force: true });
-});
+after(() => h.fechar());
 
 function novaBase() {
-  tabelas = {
+  tabelas = h.estado.tabelas = {
     SITE_Sales: [linhaPedido()],
     SITE_Leads: [{ ...CLIENTE, client_code: 'CLI-12ABC' }],
     SITE_Mechanics: [],
     SITE_Products: [{ ...PRODUTO, type: 'product' }, { id: '44444444-4444-4444-8444-444444444444', name: 'Curso', sale_price: 1, type: 'course' }],
     SITE_Courses: [{ ...CURSO, status: 'Published' }, { id: '55555555-5555-4555-8555-555555555555', title: 'Rascunho', price: 1, status: 'Draft' }],
   };
-  chamadas = [];
+  SITE_Enrollments_padrao();
+  h.estado.chamadas.length = 0;
+  chamadas = h.estado.chamadas;
 }
 
-/** Cada chamada tem IP próprio: o limite por IP só entra no teste dele. */
-async function chamar(handler, corpo, { metodo = 'POST', origem = ORIGEM, ip } = {}) {
-  const resposta = { codigo: 0, corpo: null, cabecalhos: {} };
-  const res = {
-    setHeader(nome, valor) { resposta.cabecalhos[nome.toLowerCase()] = valor; },
-    status(codigo) { resposta.codigo = codigo; return this; },
-    json(dados) { resposta.corpo = dados; return this; },
-  };
-  const req = {
-    method: metodo,
-    body: corpo,
-    headers: { origin: origem, 'x-real-ip': ip ?? `10.0.${Math.floor(ipSeguinte / 250)}.${(ipSeguinte++ % 250) + 1}` },
-  };
-  await handler(req, res);
-  return resposta;
+function SITE_Enrollments_padrao() {
+  tabelas.SITE_Enrollments ??= [];
 }
 
+const chamar = (handler, corpo, opcoes) => h.chamar(handler, corpo, opcoes);
 const chamadasDe = (tabela, metodo = 'GET') => chamadas.filter((c) => c.tabela === tabela && c.metodo === metodo);
 
 function semDadoPessoal(valor) {
@@ -234,16 +142,80 @@ test('rotas públicas: só POST, só do próprio site, e entrada estranha não c
   }
 });
 
-test('rotas públicas: limite por IP segura tentativas de adivinhar código', async () => {
+test('portal: 20 códigos errados por hora travam o IP, mesmo para o código certo', async () => {
   novaBase();
   const ip = '10.9.9.9';
-  for (let i = 0; i < 15; i += 1) {
-    assert.equal((await chamar(modulo.clientOrders, { code: 'NAO-00AAA', action: 'list' }, { ip })).codigo, 404);
+  for (let i = 0; i < 20; i += 1) {
+    assert.equal((await chamar(modulo.clientOrders, { code: 'NAO-00AAA', action: 'login' }, { ip })).codigo, 404);
   }
-  assert.equal((await chamar(modulo.clientOrders, { code: 'NAO-00AAA', action: 'list' }, { ip })).codigo, 429);
+  assert.equal((await chamar(modulo.clientOrders, { code: 'NAO-00AAA', action: 'login' }, { ip })).codigo, 429);
+  assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'login' }, { ip })).codigo, 429);
   // O outro endpoint e o outro IP têm contas próprias.
   assert.equal((await chamar(modulo.orderTracking, { code: 'NAO-00AAA' }, { ip })).codigo, 404);
-  assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'list' })).codigo, 200);
+  assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'login' })).codigo, 200);
+});
+
+test('portal: quem acerta o código navega sem esbarrar no limite de erros', async () => {
+  novaBase();
+  const ip = '10.9.9.10';
+  for (let i = 0; i < 25; i += 1) {
+    assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'list' }, { ip })).codigo, 200);
+  }
+});
+
+test('login: devolve o perfil com documentos mascarados e sem o id', async () => {
+  novaBase();
+  tabelas.SITE_Leads[0] = {
+    ...tabelas.SITE_Leads[0],
+    type: 'Course_Registration',
+    cpf: '123.456.789-00',
+    rg: '12.345.678-9',
+    address: 'Rua A, 1',
+    completed_courses: [{ type: 'experience', date: '2026-01-01' }],
+    internal_notes: 'nota interna da equipe',
+    quiz_data: { respostas: true },
+    pricing_level: 'distribuidor',
+  };
+  const { codigo, corpo } = await chamar(modulo.clientOrders, { code: 'cli-12abc', action: 'login' });
+  assert.equal(codigo, 200);
+  assert.deepEqual(corpo.client, {
+    name: CLIENTE.name,
+    email: CLIENTE.email,
+    phone: CLIENTE.phone,
+    type: 'Course_Registration',
+    client_code: 'CLI-12ABC',
+    assigned_to: CLIENTE.assigned_to,
+    address: 'Rua A, 1',
+    delivery_address: null,
+    completed_courses: [{ type: 'experience', date: '2026-01-01' }],
+    cpf: '**********9-00',
+    rg: '********78-9',
+  });
+});
+
+test('matrículas: por e-mail ou telefone do dono, sem repetir e sem o id', async () => {
+  novaBase();
+  tabelas.SITE_Enrollments = [
+    { id: 'e1', student_email: CLIENTE.email, student_phone: CLIENTE.phone, status: 'Confirmed', created_at: '2026-10-01T00:00:00+00:00', student_cpf: '999', SITE_Courses: { title: 'Curso A', date: '2026-10-10' } },
+    { id: 'e2', student_email: 'outro@teste.com', student_phone: CLIENTE.phone, status: 'Pending', created_at: '2026-11-01T00:00:00+00:00', student_cpf: '999', SITE_Courses: { title: 'Curso B', date: '2026-11-10' } },
+    { id: 'e3', student_email: 'outro@teste.com', student_phone: '000', status: 'Confirmed', created_at: '2026-11-02T00:00:00+00:00', SITE_Courses: { title: 'Curso C', date: null } },
+  ];
+  const { corpo } = await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'enrollments', student_email: 'outro@teste.com' });
+  assert.deepEqual(corpo.enrollments, [
+    { status: 'Pending', SITE_Courses: { title: 'Curso B', date: '2026-11-10' } },
+    { status: 'Confirmed', SITE_Courses: { title: 'Curso A', date: '2026-10-10' } },
+  ]);
+  assert.doesNotMatch(chamadasDe('SITE_Enrollments')[0].select, /cpf|email|phone|address/);
+});
+
+test('portal: e-mail não verificado não puxa pedido que já tem outro dono', async () => {
+  novaBase();
+  tabelas.SITE_Sales = [
+    linhaPedido({ id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', client_id: null, client_email: CLIENTE.email }),
+    linhaPedido({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', client_id: 'outro-dono', client_email: CLIENTE.email }),
+  ];
+  const { corpo } = await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'list' });
+  assert.deepEqual(corpo.orders.map((o) => o.id), ['cccccccc-cccc-4ccc-8ccc-cccccccccccc']);
 });
 
 test('portal: dono vem do código, não do que o navegador manda', async () => {
@@ -257,7 +229,7 @@ test('portal: dono vem do código, não do que o navegador manda', async () => {
   });
   assert.equal(codigo, 200);
   const filtros = chamadasDe('SITE_Sales').map((c) => c.filtros);
-  assert.deepEqual(filtros, [{ client_id: `eq.${CLIENTE.id}` }, { client_email: `eq.${CLIENTE.email}` }]);
+  assert.deepEqual(filtros, [{ client_id: `eq.${CLIENTE.id}` }, { client_email: `eq.${CLIENTE.email}`, client_id: 'is.null' }]);
   assert.deepEqual(corpo.orders, []);
 });
 

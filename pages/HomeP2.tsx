@@ -59,7 +59,7 @@ const HomeP2: React.FC = () => {
     // Fetch Mechanics (Approved only)
     const { data: mechanicsData } = await supabase
       .from('SITE_Mechanics')
-      .select('*')
+      .select('id, name, workshop_name, city, state, phone, status, specialty, latitude, longitude')
       .eq('status', 'Approved');
 
     if (mechanicsData) {

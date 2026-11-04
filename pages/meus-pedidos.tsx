@@ -7,7 +7,7 @@ import {
     Sun, Moon, RefreshCcw
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { fetchPortalOrders, submitPortalEnrollment, submitPortalOrder, type PortalOrder } from '../lib/clientOrders';
+import { fetchPortalEnrollments, fetchPortalOrders, loginPortal, submitPortalEnrollment, submitPortalOrder, type PortalEnrollment, type PortalOrder } from '../lib/clientOrders';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateCertificatesPDF } from '../components/admin/Certificates/CertificateGenerator';
 
@@ -22,7 +22,7 @@ const ClientPortal = () => {
     // Data State
     const [orders, setOrders] = useState<PortalOrder[]>([]);
     const [activeTab, setActiveTab] = useState<'orders' | 'courses' | 'certificates' | 'profile' | 'new-order'>('orders');
-    const [enrollments, setEnrollments] = useState<any[]>([]);
+    const [enrollments, setEnrollments] = useState<PortalEnrollment[]>([]);
     const [availableCourses, setAvailableCourses] = useState<any[]>([]);
     const [courseSubTab, setCourseSubTab] = useState<'presencial' | 'online'>('presencial');
     const [certificateLayouts, setCertificateLayouts] = useState<any[]>([]);
@@ -74,25 +74,7 @@ const ClientPortal = () => {
 
         try {
             // 1. Find Client by Code
-            let clientResult = await supabase
-                .from('SITE_Leads')
-                .select('*')
-                .eq('client_code', code.trim().toUpperCase())
-                .single();
-            
-            if (clientResult.error || !clientResult.data) {
-                 clientResult = await supabase
-                    .from('SITE_Mechanics')
-                    .select('*')
-                    .eq('client_code', code.trim().toUpperCase())
-                    .single();
-            }
-
-            if (clientResult.error || !clientResult.data) {
-                throw new Error('Código de acesso inválido. Verifique e tente novamente.');
-            }
-
-            const clientData = clientResult.data;
+            const clientData = await loginPortal(code);
             setClient(clientData);
             setIsAuthenticated(true);
             localStorage.setItem('wtech_client_code', code.trim().toUpperCase());
@@ -132,13 +114,11 @@ const ClientPortal = () => {
     };
 
     const fetchEnrollments = async (clientData: any) => {
-        const { data } = await supabase
-            .from('SITE_Enrollments')
-            .select('*, SITE_Courses(*)')
-            .or(`student_email.eq.${clientData.email},student_phone.eq.${clientData.phone}`)
-            .order('created_at', { ascending: false });
-
-        if (data) setEnrollments(data);
+        try {
+            setEnrollments(await fetchPortalEnrollments(clientData.client_code));
+        } catch (err) {
+            console.error('Erro ao carregar matrículas:', err);
+        }
     };
 
     const fetchAvailableCourses = async () => {
@@ -581,8 +561,8 @@ const ClientPortal = () => {
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
-                                    {enrollments.map((enr) => (
-                                        <div key={enr.id} className={`${isDarkMode ? 'bg-[#111] border-white/5 hover:border-wtech-red/20' : 'bg-white border-gray-100 hover:border-wtech-red/10 shadow-sm'} rounded-3xl border p-6 transition-all flex flex-col md:flex-row justify-between items-center gap-6`}>
+                                    {enrollments.map((enr, idx) => (
+                                        <div key={idx} className={`${isDarkMode ? 'bg-[#111] border-white/5 hover:border-wtech-red/20' : 'bg-white border-gray-100 hover:border-wtech-red/10 shadow-sm'} rounded-3xl border p-6 transition-all flex flex-col md:flex-row justify-between items-center gap-6`}>
                                             <div className="flex items-center gap-5">
                                                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-wtech-red border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
                                                     <GraduationCap size={32} />

@@ -98,6 +98,73 @@ export async function findExistingLead<T = any>(
     return unique[0] as T;
 }
 
+/** Atribuição gravada no lead: UTMs, ids de clique e contexto da sessão (lib/tracking.ts). */
+const LEAD_TRACKING_KEYS = [
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+    'gclid', 'gbraid', 'wbraid', 'fbclid', 'gad_source', 'landing_page', 'referrer',
+];
+
+export interface LeadUpsertResult {
+    action: 'created' | 'updated';
+    id: string;
+    /** O que foi gravado, para o webhook de lead. Inclui tags e dono da ficha existente. */
+    written: Record<string, any>;
+}
+
+/**
+ * Recadastro: se a pessoa já existe, atualiza contexto/tags, MANTÉM 'assigned_to' e
+ * MANTÉM o status quando o lead já está ganho. Se é nova, insere.
+ * `supabase` é injetado: o painel usa o do navegador, as páginas públicas passam
+ * pelo servidor (api/_publicLeads.ts), porque a chave anônima não lê SITE_Leads.
+ */
+export async function upsertLead(
+    supabase: any,
+    payload: Record<string, any>,
+    tracking: Record<string, any>
+): Promise<LeadUpsertResult> {
+    const existing = await findExistingLead<any>(supabase, { email: payload.email, phone: payload.phone });
+
+    if (existing) {
+        // UTMs: preserva o first-touch — só grava as chaves que ainda não existem
+        // no lead. Recadastro não sobrescreve a atribuição original.
+        const trackingToFill: Record<string, any> = {};
+        for (const source of [tracking, payload]) {
+            for (const key of LEAD_TRACKING_KEYS) {
+                if (source[key] && !existing[key]) trackingToFill[key] = source[key];
+            }
+        }
+
+        const contactAndContext = Object.fromEntries(
+            Object.entries(payload).filter(([key]) => !LEAD_TRACKING_KEYS.includes(key))
+        );
+
+        const updatePayload: Record<string, any> = {
+            ...contactAndContext,
+            ...trackingToFill,
+            // Recadastro NÃO pode desfazer uma venda: quem já está ganho permanece
+            // ganho. Os demais voltam para 'Novo' para o atendente retrabalhar.
+            status: preserveWonStatus(existing.status, 'New'),
+            assigned_to: existing.assigned_to, // mantém o dono original
+            id: existing.id,
+            updated_at: new Date().toISOString(),
+        };
+
+        if (payload.tags && existing.tags) {
+            updatePayload.tags = Array.from(new Set([...existing.tags, ...payload.tags]));
+        }
+
+        const { error } = await supabase.from('SITE_Leads').update(updatePayload).eq('id', existing.id);
+        if (error) throw error;
+        return { action: 'updated', id: existing.id, written: updatePayload };
+    }
+
+    // UTMs do toque atual (last-touch) no lead novo.
+    const insertPayload = { ...tracking, ...payload };
+    const { data, error } = await supabase.from('SITE_Leads').insert([insertPayload]).select('id').single();
+    if (error) throw error;
+    return { action: 'created', id: data.id, written: { ...insertPayload, id: data.id } };
+}
+
 /**
  * Decide o status a gravar num lead existente, sem nunca rebaixar um ganho.
  * Use em TODO ponto que "reseta" status (recadastro em LP, abertura de

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, Calendar, MapPin, Download, ArrowRight, Loader2, Clock, Mail, User, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
+import { fetchEnrollmentView, submitQuestionnaire } from '../lib/publicEnrollments';
 import { formatDateLocal } from '../lib/utils';
 import { pushPurchase } from '../lib/dataLayer';
 
@@ -11,7 +11,8 @@ interface EnrollmentData {
     student_name: string;
     student_email: string;
     student_phone: string;
-    student_cpf?: string;
+    has_cpf: boolean;
+    client_code?: string | null;
     status: string;
     amount_paid: number;
     total_amount: number;
@@ -93,14 +94,7 @@ const InscricaoConfirmada: React.FC = () => {
         if (showLoading) setLoading(true);
 
         try {
-            const { data, error: fetchError } = await supabase
-                .from('SITE_Enrollments')
-                .select('id, student_name, student_email, student_phone, student_cpf, status, amount_paid, total_amount, payment_method, currency, zip_code, address, address_number, address_neighborhood, city, state, t_shirt_size, SITE_Courses(title, date, date_end, city, state, start_time, what_to_bring, currency, whatsapp_group_link)')
-                .eq('id', enrollmentId)
-                .single();
-
-            if (fetchError) throw fetchError;
-            const enrData = data as unknown as EnrollmentData;
+            const enrData = (await fetchEnrollmentView({ id: enrollmentId })) as unknown as EnrollmentData;
             setEnrollment(enrData);
 
             // Prefill do questionário
@@ -109,7 +103,6 @@ const InscricaoConfirmada: React.FC = () => {
                 fullName: enrData.student_name || '',
                 email: enrData.student_email || '',
                 phone: enrData.student_phone || '',
-                cpf: enrData.student_cpf || '',
                 tShirtSize: enrData.t_shirt_size || 'M',
                 zipCode: enrData.zip_code || '',
                 address: enrData.address || '',
@@ -119,7 +112,9 @@ const InscricaoConfirmada: React.FC = () => {
                 state: enrData.state || ''
             }));
 
-            if (enrData.t_shirt_size && enrData.student_cpf) {
+            if (enrData.client_code) setClientCode(enrData.client_code);
+
+            if (enrData.t_shirt_size && enrData.has_cpf) {
                 setQSubmitted(true);
             }
         } catch (err: any) {
@@ -182,29 +177,6 @@ const InscricaoConfirmada: React.FC = () => {
         }
     }, [enrollment?.status, paymentId]);
 
-    // Busca client_code na SITE_Leads quando o e-mail estiver disponível
-    useEffect(() => {
-        if (!enrollment?.student_email) return;
-
-        const fetchClientCode = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('SITE_Leads')
-                    .select('client_code')
-                    .eq('email', enrollment.student_email)
-                    .maybeSingle();
-
-                if (data?.client_code) {
-                    setClientCode(data.client_code);
-                }
-            } catch (err) {
-                console.error('Error fetching client code:', err);
-            }
-        };
-
-        fetchClientCode();
-    }, [enrollment?.student_email]);
-
     // Autocomplete do CEP via ViaCEP
     const handleCepBlur = async (cep: string) => {
         const cleanCep = cep.replace(/\D/g, '');
@@ -253,40 +225,9 @@ const InscricaoConfirmada: React.FC = () => {
                 experience_years: qForm.experienceYears
             };
 
-            // 1. Atualiza SITE_Enrollments
-            const { error: updateError } = await supabase
-                .from('SITE_Enrollments')
-                .update(payload)
-                .eq('id', enrollmentId);
-
-            if (updateError) throw updateError;
-
-            // 2. Sincroniza com a tabela de Leads no CRM
-            const { syncStudentToLeads } = await import('../lib/leads');
-            const updatedEnrollment = {
-                ...enrollment,
-                studentName: qForm.fullName,
-                studentEmail: qForm.email.trim().toLowerCase(),
-                studentPhone: qForm.phone.replace(/\D/g, ''),
-                tShirtSize: qForm.tShirtSize,
-                studentCpf: qForm.cpf,
-                zipCode: qForm.zipCode,
-                address: qForm.address,
-                addressNumber: qForm.addressNumber,
-                addressNeighborhood: qForm.addressNeighborhood,
-                city: qForm.city,
-                state: qForm.state,
-                isMechanic: qForm.isMechanic === 'yes',
-                hasWorkshop: qForm.hasWorkshop === 'yes',
-                workshopName: qForm.hasWorkshop === 'yes' ? qForm.workshopName : '',
-                workshopAddress: qForm.hasWorkshop === 'yes' ? qForm.workshopAddress : '',
-                worksWithSuspensions: qForm.worksWithSuspensions === 'yes',
-                tookWtechCourse: qForm.tookWtechCourse === 'yes',
-                tookSuspensionCourse: qForm.tookSuspensionCourse === 'yes',
-                experienceYears: qForm.experienceYears
-            };
-
-            await syncStudentToLeads(updatedEnrollment);
+            // Grava a matrícula e sincroniza o lead no CRM, tudo no servidor.
+            const { clientCode: codigo } = await submitQuestionnaire({ id: enrollmentId as string }, payload);
+            if (codigo) setClientCode(codigo);
 
             setQSubmitted(true);
             alert('Cadastro complementar concluído com sucesso!');

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { MessageCircle, Send, X } from 'lucide-react';
 import { distributeLead } from '../lib/leadDistribution';
-import { supabase } from '../lib/supabaseClient';
+import { createPublicLead } from '../lib/publicLeads';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { triggerWebhook } from '../lib/webhooks';
 import { trackEvent } from './AnalyticsTracker';
@@ -68,15 +68,14 @@ export const WhatsAppLeadCapture: React.FC<WhatsAppLeadCaptureProps> = ({
                 ...getLeadTrackingFields(),
             };
 
-            const { data: novoLead, error: insertError } = await supabase.from('SITE_Leads').insert([payload]).select('id').single();
-            if (insertError) throw insertError;
+            const novoLead = await createPublicLead(payload);
 
             // Conversão de lead para Google Ads/GA4 (via GTM), com dados para Enhanced Conversions.
             pushLead({
                 funnel: 'curso_online_piloto',
                 method: 'whatsapp',
                 item_name: 'Curso Online de Suspensão',
-                lead_id: novoLead?.id,
+                lead_id: novoLead.id,
                 user: { email: payload.email, phone, name: payload.name },
             });
 
