@@ -56,10 +56,11 @@ curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Sales?
 
 ## Atualização de 04/11/2026 — leads, matrículas e mecânicos
 
-**Status: pronto no código, NÃO aplicado.** Migrações validadas com `BEGIN; … ROLLBACK;`
-no banco da VPS. **"RLS ligada" não quer dizer fechada:** as três tabelas tinham RLS com
-policy `USING (true)`, e a `anon` lia 3.310 leads (166 com CPF), 258 matrículas e 390
-mecânicos, além de poder alterar e apagar. Publicar exatamente nesta ordem:
+**Status: aplicado em 04/11/2026** (v3.55.0). Conferido pelo PostgREST e com navegador nas
+páginas públicas, sem nenhuma consulta recusada. **"RLS ligada" não quer dizer fechada:** as
+três tabelas tinham RLS com policy `USING (true)`, e a `anon` lia 3.310 leads (166 com CPF),
+258 matrículas e 390 mecânicos, além de poder alterar e apagar. A ordem foi esta, e só
+funciona nela:
 
 1. `migrations/2026-11-04_contagem_matriculas_publica.sql` e reiniciar o PostgREST
    (`docker service update --force wtechdb_suparest`). O código novo pede o campo
@@ -86,13 +87,11 @@ O que muda para o visitante:
   cujo `client_id` aponta para um cadastro que não existe mais, deixam de aparecer no portal
   (seguem no painel). Para devolvê-los, corrigir o `client_id` desses pedidos.
 
-Para conferir depois de aplicar:
+Para conferir a qualquer momento (tem que responder 401):
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"
 ```
-
-Hoje responde 200; depois tem que responder 401.
 
 ### Ainda aberto para `anon` (medido em 04/11/2026)
 
