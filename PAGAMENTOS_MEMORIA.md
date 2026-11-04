@@ -62,6 +62,22 @@
 
 ---
 
+## VACUUM PUMP (Black Friday) — checkout transparente
+
+Página `/maquina-de-vacuo`, API `/api/vacuum-pump`, regras em `lib/vacuumOffer.ts`, núcleo em `api/_vacuumPump.ts`.
+
+- **Trocar datas, lote, preço, vídeo, frete ou CNPJ sem deploy:** editar o JSON de `SITE_Config.vacuum_pump_offer` (só as chaves que mudam: `starts_at`, `ends_at`, `lot_size`, `sold_offset`, `presale_price`, `regular_price`, `video_url`, `shipping_note`, `legal_line`, `whatsapp`, `bumps`). A página lê em até 15 s. Venda feita fora do site desconta do lote por `sold_offset`.
+- **Credenciais:** `SITE_Config.mercadopago_access_token` (servidor) e `SITE_Config.mercadopago_public_key` (vai para o navegador, é pública). Sem a chave pública o checkout mostra "chamar um vendedor".
+- **Identificação no webhook:** `external_reference = vacuum:<id do checkout>`. O `api/mercadopago-webhook.ts` desvia esses pagamentos antes do fluxo de matrícula.
+- **Venda:** vai para `SITE_Sales` (`campaign`, `mp_payment_id`, canal `Site`). O índice único de `mp_payment_id` impede venda duplicada. Os itens ficam no JSON `items` porque não existem em `SITE_Products`.
+- **Quem não comprou:** cada pessoa que começa o checkout fica em `SITE_CampaignCheckouts`. A varredura `GET /api/vacuum-pump?action=sweep` (Bearer `CRON_SECRET`, crontab da VPS a cada 10 min) entrega ao vendedor depois de 30 min (10 min se o cartão foi recusado): responsável no lead + tarefa em `SITE_Tasks` com a tag `vacuum_bf`. Quem compra depois tem a tarefa fechada automaticamente.
+- **Frete:** grátis no estado de SP (pelo CEP, 01000-000 a 19999-999). Fora de SP, cota na API do SGP (`POST sgpweb.com.br/novo/api/consulta-precos-prazos`, chave em `SITE_Config.sgp_api_key`, protegida pelo padrão `api_key`). Liga com `shipping.enabled` + peso e medidas em `vacuum_pump_offer`; sem isso, SGP fora do ar ou acima de 30 kg, o frete fica "a combinar" e a venda não trava. O servidor recalcula o frete no pagamento. Serviços do cartão 70255768: PAC 03298 e SEDEX 03220.
+- **Liberar venda antes da data:** `soft_open: true` em `vacuum_pump_offer`; o texto da campanha continua usando `starts_at`.
+- **Dados pessoais:** CPF e endereço do comprador ficam em `SITE_CampaignCheckouts` (fechada) e no pedido em `SITE_Sales`; nunca em `SITE_Leads`, que tem leitura pública. O pedido guarda o CPF nas notas para a nota fiscal, então **esta campanha só pode ir ao ar depois do fechamento de `SITE_Sales` para a chave pública**.
+- **Parcelas:** "10x sem juros" depende da configuração da conta no Mercado Pago. Conferir antes de anunciar: `GET /v1/payment_methods/installments?amount=7990&payment_method_id=visa` deve mostrar `installment_rate: 0` na parcela 10.
+
+---
+
 ## SCHEMA — verdades que já causaram bugs (NÃO esquecer)
 
 1. **`SITE_Enrollments` NÃO tem `updated_at`.** Incluir essa coluna num UPDATE faz o PostgREST rejeitar o write INTEIRO → inscrição nunca confirma (causa raiz do bug histórico do MP, v3.0.18).

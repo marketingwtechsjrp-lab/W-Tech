@@ -89,7 +89,7 @@ export function pushEvent(category: string, action: string, label?: string): voi
  * ──────────────────────────────────────────────────────────────────────────── */
 
 /** Qual funil de venda originou a conversão — vira dimensão nos relatórios. */
-export type ConversionFunnel = 'curso_online_piloto' | 'presencial_brasil' | 'presencial_lisboa';
+export type ConversionFunnel = 'curso_online_piloto' | 'presencial_brasil' | 'presencial_lisboa' | 'vacuum_pump_bf';
 
 export interface ConversionUser {
   email?: string | null;

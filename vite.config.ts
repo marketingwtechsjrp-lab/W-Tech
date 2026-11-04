@@ -54,6 +54,24 @@ function surveySharePages(): Plugin {
         fs.mkdirSync(outDir, { recursive: true });
         fs.writeFileSync(path.join(outDir, 'index.html'), html);
       }
+
+      // Página da Vacuum Pump: o link vai por WhatsApp, a prévia precisa mostrar a oferta.
+      const vacuumUrl = `${SITE_URL}/maquina-de-vacuo`;
+      const vacuumTitle = 'Vacuum Pump W-Tech: 10x de R$ 799 sem juros';
+      const vacuumDescription = 'Black Friday W-Tech. Pré-venda da máquina de vácuo por 7 dias: de R$ 9.990 por R$ 7.990 em 10x sem juros.';
+      let vacuumHtml = base
+        .replace(/<title>[^<]*<\/title>/, `<title>${vacuumTitle}</title>`)
+        .replace(/(<link[^>]+rel="canonical"[^>]+href=")[^"]*(")/, `$1${vacuumUrl}$2`)
+        .replace('</head>', '<meta name="robots" content="noindex, follow" />\n</head>');
+      for (const key of ['title', 'og:title', 'twitter:title']) vacuumHtml = setMeta(vacuumHtml, key, vacuumTitle);
+      for (const key of ['description', 'og:description', 'twitter:description']) vacuumHtml = setMeta(vacuumHtml, key, vacuumDescription);
+      for (const key of ['og:url', 'twitter:url']) vacuumHtml = setMeta(vacuumHtml, key, vacuumUrl);
+      for (const key of ['og:image', 'twitter:image']) vacuumHtml = setMeta(vacuumHtml, key, `${SITE_URL}/og/maquina-de-vacuo.jpg`);
+      vacuumHtml = setMeta(vacuumHtml, 'og:image:width', '1200');
+      vacuumHtml = setMeta(vacuumHtml, 'og:image:height', '630');
+      const vacuumDir = path.resolve(__dirname, 'dist/maquina-de-vacuo');
+      fs.mkdirSync(vacuumDir, { recursive: true });
+      fs.writeFileSync(path.join(vacuumDir, 'index.html'), vacuumHtml);
     },
   };
 }

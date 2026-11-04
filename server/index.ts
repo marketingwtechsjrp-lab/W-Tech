@@ -22,6 +22,7 @@ import mercadopagoBalanceLink from '../api/mercadopago-balance-link.js';
 import mercadopagoCheckout from '../api/mercadopago-checkout.js';
 import mercadopagoWebhook from '../api/mercadopago-webhook.js';
 import notifyStudents from '../api/notify-students.js';
+import vacuumPump from '../api/vacuum-pump.js';
 import whatsappCloudSend from '../api/whatsapp-cloud-send.js';
 import whatsappCloudWebhook from '../api/whatsapp-cloud-webhook.js';
 import whatsappSend from '../api/whatsapp-send.js';
@@ -231,6 +232,7 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'mercadopago-checkout': mercadopagoCheckout,
   'mercadopago-webhook': mercadopagoWebhook,
   'notify-students': notifyStudents,
+  'vacuum-pump': vacuumPump,
   'whatsapp-cloud-send': whatsappCloudSend,
   'whatsapp-cloud-webhook': whatsappCloudWebhook,
   'whatsapp-send': whatsappSend,
