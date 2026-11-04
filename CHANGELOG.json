@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.55.0",
+    "date": "2026-11-04",
+    "title": "Leads, matrículas e mecânicos fechados para visitantes (segurança)",
+    "changes": [
+      "Leads, matrículas e cadastro de mecânicos deixam de ser legíveis e alteráveis com a chave pública do site; formulários seguem gravando",
+      "Recadastro, quiz e checkout de lead passam por /api/public-leads; obrigado, confirmação e certificado por /api/public-enrollments",
+      "Portal do cliente: login pelo servidor, CPF e RG mascarados e limite de códigos errados por IP",
+      "Certificado público deixa de mostrar o e-mail do aluno; mapa de credenciados pede só as colunas que exibe",
+      "Banco: migrations/2026-11-04_contagem_matriculas_publica.sql antes de publicar e migrations/2026-11-04_fechar_leads_matriculas_mecanicos.sql depois"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.54.0",
     "date": "2026-11-04",
     "title": "Black Friday da Vacuum Pump com checkout transparente e frete",

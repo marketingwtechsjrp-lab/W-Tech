@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.55.0 (2026-11-04) - Leads, matrículas e mecânicos fechados para visitantes (segurança)
+- Leads, matrículas e cadastro de mecânicos deixam de ser legíveis e alteráveis com a chave pública do site; formulários seguem gravando
+- Recadastro, quiz e checkout de lead passam por /api/public-leads; obrigado, confirmação e certificado por /api/public-enrollments
+- Portal do cliente: login pelo servidor, CPF e RG mascarados e limite de códigos errados por IP
+- Certificado público deixa de mostrar o e-mail do aluno; mapa de credenciados pede só as colunas que exibe
+- Banco: migrations/2026-11-04_contagem_matriculas_publica.sql antes de publicar e migrations/2026-11-04_fechar_leads_matriculas_mecanicos.sql depois
+
 ## v3.54.0 (2026-11-04) - Black Friday da Vacuum Pump com checkout transparente e frete
 - Página /maquina-de-vacuo da pré-venda Black Friday da Vacuum Pump Standard: parcela em destaque (10x de R$ 799 sem juros, de R$ 9.990 por R$ 7.990), cronômetro e lote reais validados no servidor; zerou, o preço sobe sozinho para R$ 9.990, ainda em 10x
 - Checkout transparente do Mercado Pago (Payment Brick) com cartão em até 10x e Pix, em 3 etapas, com order bump da Câmara Borbulhadora (R$ 499 comprando junto) e do Kit Adaptador

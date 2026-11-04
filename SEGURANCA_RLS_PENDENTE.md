@@ -33,8 +33,9 @@ públicos de lead/matrícula/pedido passam por endpoint do servidor.
 
 ## Atualização de 04/11/2026 — pedidos (`SITE_Sales`, `SITE_SaleItems`)
 
-**Status: pronto no código, NÃO aplicado.** Migração validada com `BEGIN; … ROLLBACK;`
-no banco da VPS, aguardando o OK do dono. Publicar nesta ordem:
+**Status: aplicado em 04/11/2026** (site na v3.53.0, depois a migração). Conferido pelo
+PostgREST: visitante recebe 401 ao ler e ao gravar, painel e `/rastreio` seguem respondendo.
+A ordem foi:
 
 1. Site com `/api/order-tracking` e `/api/client-orders` (`api/_clientOrders.ts`).
    `/rastreio` e `/meus-pedidos` deixam de ler e gravar a tabela pelo navegador.
@@ -47,14 +48,11 @@ para não passar a ver 0 linhas sem erro (não leu vendas desde 23/10; se não p
 tire a policy e o GRANT). O rastreio não devolve mais endereço, e nenhum pedido em
 produção tinha `shipping_address` preenchido, então a tela não muda.
 
-Para conferir depois de aplicar:
+Para conferir a qualquer momento (tem que responder 401):
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Sales?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"
 ```
-
-Hoje responde 200; depois tem que responder 401 ou 403. Em seguida, abrir Pedidos no
-painel e fazer uma busca em `/rastreio`.
 
 ## Atualização de 04/11/2026 — leads, matrículas e mecânicos
 
@@ -84,8 +82,9 @@ O que muda para o visitante:
 - **Mecânicos:** leitura das colunas do mapa, só de aprovado. E-mail, endereço e foto saíram
   da consulta pública porque nenhuma tela os mostrava.
 - **Portal do cliente:** login pelo servidor, CPF e RG mascarados, 20 códigos errados por hora
-  travam o IP. Por e-mail só entra pedido sem dono, nunca o de outro cliente: 5 pedidos antigos,
-  cujo `client_id` aponta para um cadastro que não existe mais, deixam de aparecer no portal.
+  travam o IP. Por e-mail só entra pedido sem dono, nunca o de outro cliente: 8 pedidos antigos,
+  cujo `client_id` aponta para um cadastro que não existe mais, deixam de aparecer no portal
+  (seguem no painel). Para devolvê-los, corrigir o `client_id` desses pedidos.
 
 Para conferir depois de aplicar:
 
@@ -93,7 +92,7 @@ Para conferir depois de aplicar:
 curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"
 ```
 
-Hoje responde 200; depois tem que responder 401 ou 403.
+Hoje responde 200; depois tem que responder 401.
 
 ### Ainda aberto para `anon` (medido em 04/11/2026)
 
