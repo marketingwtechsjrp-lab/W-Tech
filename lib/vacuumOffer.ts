@@ -72,6 +72,7 @@ export interface VacuumOfferConfig {
     shipping_note: string;
     /** Razão social, CNPJ e endereço no rodapé (exigência do Decreto 7.962/2013). */
     legal_line: string | null;
+    shipping: VacuumShippingConfig;
     bumps: VacuumBumpConfig[];
 }
 
