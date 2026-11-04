@@ -1,54 +1,29 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { Search, Package, CheckCircle, Truck, MapPin, Clock } from 'lucide-react';
+import { trackOrder, type TrackedOrder } from '../lib/clientOrders';
+import { Search, Package } from 'lucide-react';
 import SEO from '../components/SEO';
 
 export default function OrderTracking() {
     const [code, setCode] = useState('');
-    const [order, setOrder] = useState<any>(null);
+    const [order, setOrder] = useState<TrackedOrder | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleTrack = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!code) return;
-        
+
         setLoading(true);
         setError('');
         setOrder(null);
-        
-        // Ensure you have a 'tracking_code' column in SITE_Sales, or use ID for now.
-        // Assuming migration added tracking_code.
-        // Also fallback to ID search if tracking_code fails for legacy
-        let query = supabase.from('SITE_Sales').select('*').eq('tracking_code', code).single();
-        let { data, error } = await query;
-        
-        if (error || !data) {
-             // Try ID text search if UUID format matches? Or just by ID if code is UUID
-             if (code.length > 20) {
-                 const { data: dataId, error: errorId } = await supabase.from('SITE_Sales').select('*').eq('id', code).single();
-                 if (dataId) {
-                     data = dataId;
-                     error = null;
-                 }
-             }
+
+        try {
+            setOrder(await trackOrder(code));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Pedido não encontrado. Verifique o código e tente novamente.');
         }
 
-        if (error || !data) {
-             setError('Pedido não encontrado. Verifique o código e tente novamente.');
-        } else {
-             setOrder(data);
-        }
-        
         setLoading(false);
-    };
-
-    // Helper to parse items if JSON string
-    const getItems = (items: any) => {
-        if (typeof items === 'string') {
-            try { return JSON.parse(items); } catch(e) { return []; }
-        }
-        return items || [];
     };
 
     return (
@@ -100,7 +75,7 @@ export default function OrderTracking() {
                     <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-gray-50">
                         <div>
                             <p className="text-xs font-bold text-gray-400 uppercase">Pedido</p>
-                            <p className="font-black text-xl text-gray-900">#{order.id.slice(0,8).toUpperCase()}</p>
+                            <p className="font-black text-xl text-gray-900">#{order.reference}</p>
                         </div>
                         <div className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${
                             order.status === 'completed' ? 'bg-green-100 text-green-700' :
@@ -151,33 +126,18 @@ export default function OrderTracking() {
                                 <Package size={18} className="text-gray-400" /> Itens do Pedido
                              </h4>
                              <ul className="space-y-3">
-                                {getItems(order.items).map((item: any, i:number) => (
+                                {order.items.map((item, i) => (
                                     <li key={i} className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-600 font-medium">{item.quantity}x {item.name || 'Produto'}</span>
-                                        <span className="font-bold text-gray-900">R$ {((item.price || 0) * (item.quantity || 1)).toLocaleString('pt-BR')}</span>
+                                        <span className="text-gray-600 font-medium">{item.quantity}x {item.name}</span>
+                                        <span className="font-bold text-gray-900">R$ {(item.price * item.quantity).toLocaleString('pt-BR')}</span>
                                     </li>
                                 ))}
                              </ul>
                              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                                  <span className="font-bold text-gray-900">Total</span>
-                                 <span className="font-black text-xl text-gray-900">R$ {order.total_value?.toLocaleString('pt-BR')}</span>
+                                 <span className="font-black text-xl text-gray-900">R$ {order.total_value.toLocaleString('pt-BR')}</span>
                              </div>
                         </div>
-
-                         {order.shipping_address && (
-                            <div className="bg-gray-50 p-4 rounded-xl">
-                                <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                    <MapPin size={16} className="text-gray-400" /> Endereço de Entrega
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                    {/* Mock Parse - assumes JSON structure */}
-                                    {typeof order.shipping_address === 'string' 
-                                        ? order.shipping_address 
-                                        : `${order.shipping_address.street}, ${order.shipping_address.number} - ${order.shipping_address.city}/${order.shipping_address.state}`
-                                    }
-                                </p>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}

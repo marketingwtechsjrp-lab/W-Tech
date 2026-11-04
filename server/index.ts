@@ -28,6 +28,7 @@ import whatsappCloudWebhook from '../api/whatsapp-cloud-webhook.js';
 import whatsappSend from '../api/whatsapp-send.js';
 import vslProgress from '../api/vsl-progress.js';
 import surveys from '../api/_surveys.js';
+import clientOrders, { orderTracking } from '../api/_clientOrders.js';
 import { getRequestClientIp, lookupCountryByIp } from '../api/_geoip.js';
 
 // ── Edge Functions do Supabase portadas para Express (Deno → Node) ───────────
@@ -238,6 +239,8 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'whatsapp-send': whatsappSend,
   'vsl-progress': vslProgress,
   'surveys': surveys,
+  'client-orders': clientOrders,
+  'order-tracking': orderTracking,
   // Edge Functions portadas (antes em <supabase>/functions/v1/<nome>)
   'kiwify-webhook': kiwifyWebhook,
   'hotmart-webhook': hotmartWebhook,
