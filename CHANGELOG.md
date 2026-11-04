@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.53.0 (2026-11-04) - Pedidos dos clientes fechados para visitantes (segurança)
+- Dados de pedido (nome, telefone, e-mail, endereço e notas) deixam de ser legíveis e graváveis com a chave pública do site
+- /rastreio e /meus-pedidos passam a usar /api/order-tracking e /api/client-orders, que devolvem só status, itens e valores, com limite por IP
+- Pedido novo pelo portal do cliente: dono e preços agora vêm do banco, nunca do navegador
+- Painel, loja, app e gestão seguem iguais. Banco: migrations/2026-11-04_fechar_vendas_anon.sql (aplicar depois de publicar o site)
+
 ## v3.52.0 (2026-11-02) - Avaliacao de curso pelos alunos (quiz Lisboa)
 - Quiz publico em /avaliacao/lisboa-outubro-2026 para a turma W-Tech Europa (Suspensao de Alta Performance, 2a edicao): curso, formador, local, LIQUI MOLY, materias do proximo curso e sugestoes
 - Previa propria no WhatsApp (titulo e imagem 1200x630) e pagina fora do indice (noindex)
