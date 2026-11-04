@@ -7,6 +7,7 @@ import {
     Sun, Moon, RefreshCcw
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { fetchPortalOrders, submitPortalEnrollment, submitPortalOrder, type PortalOrder } from '../lib/clientOrders';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateCertificatesPDF } from '../components/admin/Certificates/CertificateGenerator';
 
@@ -19,7 +20,7 @@ const ClientPortal = () => {
     const [error, setError] = useState('');
 
     // Data State
-    const [orders, setOrders] = useState<any[]>([]);
+    const [orders, setOrders] = useState<PortalOrder[]>([]);
     const [activeTab, setActiveTab] = useState<'orders' | 'courses' | 'certificates' | 'profile' | 'new-order'>('orders');
     const [enrollments, setEnrollments] = useState<any[]>([]);
     const [availableCourses, setAvailableCourses] = useState<any[]>([]);
@@ -123,13 +124,11 @@ const ClientPortal = () => {
     };
 
     const fetchOrders = async (clientData: any) => {
-        const { data } = await supabase
-            .from('SITE_Sales')
-            .select('*')
-            .or(`client_id.eq.${clientData.id},client_email.eq.${clientData.email}`)
-            .order('created_at', { ascending: false });
-
-        if (data) setOrders(data);
+        try {
+            setOrders(await fetchPortalOrders(clientData.client_code));
+        } catch (err) {
+            console.error('Erro ao carregar pedidos:', err);
+        }
     };
 
     const fetchEnrollments = async (clientData: any) => {
@@ -236,26 +235,7 @@ const ClientPortal = () => {
         if (cart.length === 0) return;
         setSubmittingOrder(true);
         try {
-            const total = cart.reduce((acc, i) => acc + (i.sale_price * i.quantity), 0);
-            const payload = {
-                client_id: client.id,
-                client_name: client.name,
-                client_email: client.email,
-                client_phone: client.phone,
-                channel: 'Admin', // Changed to avoid check constraint error (SITE_Sales_channel_check)
-                status: 'pending',
-                total_value: total,
-                seller_id: client.assigned_to,
-                items: JSON.stringify(cart.map(i => ({
-                    productId: i.id,
-                    name: i.name,
-                    quantity: i.quantity,
-                    price: i.sale_price
-                })))
-            };
-
-            const { error } = await supabase.from('SITE_Sales').insert([payload]);
-            if (error) throw error;
+            await submitPortalOrder(client.client_code, cart.map(i => ({ productId: i.id, quantity: i.quantity })));
 
             alert('Pedido enviado com sucesso! Nosso time irá analisar e entrar em contato.');
             setCart([]);
@@ -275,26 +255,7 @@ const ClientPortal = () => {
         setSubmittingOrder(true);
         try {
             // 1. Create a Pending Order in SITE_Sales
-            const salePayload = {
-                client_id: client.id,
-                client_name: client.name,
-                client_email: client.email,
-                client_phone: client.phone,
-                channel: 'Admin', // Canonical channel for portal requests
-                status: 'pending',
-                total_value: course.price || 0,
-                seller_id: client.assigned_to,
-                items: JSON.stringify([{
-                    productId: course.id,
-                    name: `Inscrição: ${course.title}`,
-                    quantity: 1,
-                    price: course.price || 0,
-                    type: 'course_enrollment'
-                }])
-            };
-
-            const { error: saleError } = await supabase.from('SITE_Sales').insert([salePayload]);
-            if (saleError) throw saleError;
+            await submitPortalEnrollment(client.client_code, course.id);
 
             // 2. Insert into CRM (SITE_Leads) as a pending enrollment request
             const crmPayload = {
@@ -512,8 +473,7 @@ const ClientPortal = () => {
                                 <div className="grid gap-6">
                                     {orders.map((order) => {
                                         const { color, label, icon: Icon } = getStatusInfo(order.status);
-                                        const items = order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : [];
-                                        
+
                                         return (
                                             <div key={order.id} className={`${isDarkMode ? 'bg-[#111] border-white/5 hover:border-white/10' : 'bg-white border-gray-100 hover:border-gray-200 shadow-sm'} rounded-3xl border p-6 transition-all group overflow-hidden relative`}>
                                                 <div className={`absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-10 rounded-full translate-x-12 -translate-y-12 ${color.split(' ')[1]}`}></div>
@@ -588,15 +548,15 @@ const ClientPortal = () => {
                                                 </div>
 
                                                 <div className="mt-8 grid md:grid-cols-2 gap-4">
-                                                    {items.map((item: any, idx: number) => (
+                                                    {order.items.map((item, idx) => (
                                                         <div key={idx} className={`${isDarkMode ? 'bg-black/30 border-white/5 hover:bg-white/5' : 'bg-gray-50 border-gray-100 hover:bg-white'} rounded-2xl p-4 border flex justify-between items-center group/item transition-colors`}>
                                                             <div className="flex items-center gap-3">
                                                                 <div className={`w-8 h-8 rounded-lg ${isDarkMode ? 'bg-white/5' : 'bg-white shadow-sm'} flex items-center justify-center text-[10px] font-black text-gray-500 italic uppercase`}>
                                                                     {item.quantity}x
                                                                 </div>
-                                                                <span className={`text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} italic uppercase tracking-tight`}>{item.name || item.product?.name}</span>
+                                                                <span className={`text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} italic uppercase tracking-tight`}>{item.name}</span>
                                                             </div>
-                                                            <span className={`text-[10px] font-black ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>R$ {(item.price || 0).toLocaleString('pt-BR')}</span>
+                                                            <span className={`text-[10px] font-black ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>R$ {item.price.toLocaleString('pt-BR')}</span>
                                                         </div>
                                                     ))}
                                                 </div>

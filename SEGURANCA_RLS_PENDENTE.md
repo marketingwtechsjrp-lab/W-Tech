@@ -31,6 +31,47 @@ Próximo: com o passe no ar, fechar para `anon` as tabelas só do painel e deixa
 (aparência, SEO, contato, pixel/GA, webhooks de lead). Depois, os formulários
 públicos de lead/matrícula/pedido passam por endpoint do servidor.
 
+## Atualização de 04/11/2026 — pedidos (`SITE_Sales`, `SITE_SaleItems`)
+
+**Status: pronto no código, NÃO aplicado.** Migração validada com `BEGIN; … ROLLBACK;`
+no banco da VPS, aguardando o OK do dono. Publicar nesta ordem:
+
+1. Site com `/api/order-tracking` e `/api/client-orders` (`api/_clientOrders.ts`).
+   `/rastreio` e `/meus-pedidos` deixam de ler e gravar a tabela pelo navegador.
+2. `migrations/2026-11-04_fechar_vendas_anon.sql` (o desfazer está no cabeçalho).
+
+O que muda: `anon` perde todo acesso às duas tabelas; RLS ligada; o painel segue pelo
+passe da equipe (`authenticated`). Loja e app usam `service_role`, o gestão usa
+`gestao_app`, e os dois têm BYPASSRLS. `hermes_ro` não tem: ganhou policy só de leitura
+para não passar a ver 0 linhas sem erro (não leu vendas desde 23/10; se não precisar,
+tire a policy e o GRANT). O rastreio não devolve mais endereço, e nenhum pedido em
+produção tinha `shipping_address` preenchido, então a tela não muda.
+
+Para conferir depois de aplicar:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Sales?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"
+```
+
+Hoje responde 200; depois tem que responder 401 ou 403. Em seguida, abrir Pedidos no
+painel e fazer uma busca em `/rastreio`.
+
+### Ainda aberto para `anon` (medido em 04/11/2026)
+
+**"RLS ligada" não quer dizer fechada:** estas tabelas têm RLS, mas com policy `USING (true)`.
+
+| Tabela | Leitura anônima | Observação |
+|---|---|---|
+| `SITE_Leads` | 3.309 linhas, **166 com CPF** | policy `Public Select`; `/meus-pedidos` faz o login lendo daqui |
+| `SITE_Enrollments` | 258 linhas | policy `Enable all for everyone`; tem `student_cpf` |
+| `SITE_Mechanics` | 390 linhas | policy `Enable all for everyone`; tem `cpf` e `cpf_cnpj` |
+| `SITE_Shipments`, `SITE_SupportTickets`, `SITE_Transactions` | sim | RLS desligada |
+
+O código do cliente do portal tem pouca entropia e sai junto com `SITE_Leads` hoje. Até
+o login do portal ir para o servidor e `SITE_Leads` fechar, quem lê a tabela pega o
+código de qualquer cliente e entra em `/api/client-orders` com ele. O portal também
+casa pedido por e-mail, e o e-mail do lead não é verificado: rever ao fechar `SITE_Leads`.
+
 ---
 
 ## 1. O que está exposto (verificado, não suposto)
