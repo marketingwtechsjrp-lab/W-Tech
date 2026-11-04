@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.54.0 (2026-11-04) - Black Friday da Vacuum Pump com checkout transparente e frete
+- Página /maquina-de-vacuo da pré-venda Black Friday da Vacuum Pump Standard: parcela em destaque (10x de R$ 799 sem juros, de R$ 9.990 por R$ 7.990), cronômetro e lote reais validados no servidor; zerou, o preço sobe sozinho para R$ 9.990, ainda em 10x
+- Checkout transparente do Mercado Pago (Payment Brick) com cartão em até 10x e Pix, em 3 etapas, com order bump da Câmara Borbulhadora (R$ 499 comprando junto) e do Kit Adaptador
+- Frete no próprio checkout: grátis no estado de São Paulo e cotação de PAC e SEDEX pela API do SGP nos outros estados; sem cotação, fica a combinar e a venda não trava
+- Quem não compra vai para o vendedor: o contato entra no CRM já na primeira etapa e, depois de 30 min (10 min se o cartão foi recusado), ganha responsável e tarefa de ligação; quem compra tem a tarefa fechada
+- Venda paga cai em Pedidos e no Financeiro, com trava contra duplicidade; estorno devolve a unidade ao lote. Datas, lote, preços e frete editáveis em SITE_Config.vacuum_pump_offer
+- Tabela SITE_CampaignCheckouts e colunas campaign/mp_payment_id em SITE_Sales: migrations/2026-11-04_vacuum_pump_bf.sql
+
 ## v3.53.0 (2026-11-04) - Pedidos dos clientes fechados para visitantes (segurança)
 - Dados de pedido (nome, telefone, e-mail, endereço e notas) deixam de ser legíveis e graváveis com a chave pública do site
 - /rastreio e /meus-pedidos passam a usar /api/order-tracking e /api/client-orders, que devolvem só status, itens e valores, com limite por IP

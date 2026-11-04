@@ -72,6 +72,8 @@ const MolasCalculator = lazy(() => import('./pages/MolasCalculator'));
 const SpringModel = lazy(() => import('./pages/SpringModel'));
 const CaptureCampaignPage = lazy(() => import('./pages/CaptureCampaign'));
 const OleoCalculator = lazy(() => import('./pages/OleoCalculator'));
+const LPVacuumPump = lazy(() => import('./pages/LPVacuumPump'));
+const VacuumPumpObrigado = lazy(() => import('./pages/VacuumPumpObrigado'));
 
 
 
@@ -167,6 +169,8 @@ const App = () => {
                     <Route path="/lp12/:slug" element={<LandingPageSignature template="v12" />} />
 
                     {/* Legal Pages */}
+                    <Route path="/maquina-de-vacuo" element={<LPVacuumPump />} />
+                    <Route path="/maquina-de-vacuo/obrigado" element={<VacuumPumpObrigado />} />
                     <Route path="/termos" element={<Termos />} />
                     <Route path="/privacidade" element={<Privacidade />} />
                     <Route path="/cancelamento" element={<Cancelamento />} />

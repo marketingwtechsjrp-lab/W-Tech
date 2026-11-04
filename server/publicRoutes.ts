@@ -70,6 +70,8 @@ const ROTAS_EXATAS = new Set<string>([
   '/meus-pedidos',
   '/rastreio',
   '/auth/google/callback',
+  '/maquina-de-vacuo',
+  '/maquina-de-vacuo/obrigado',
 ]);
 
 /**
