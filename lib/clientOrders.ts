@@ -50,7 +50,6 @@ export interface PortalProfile {
   phone: string | null;
   type: string | null;
   client_code: string;
-  assigned_to: string | null;
   address: string | null;
   delivery_address: unknown;
   completed_courses: unknown[];
@@ -151,7 +150,6 @@ export function toPortalProfile(row: SaleRow): PortalProfile {
     phone: toNullableText(row.phone),
     type: toNullableText(row.type),
     client_code: toText(row.client_code),
-    assigned_to: toNullableText(row.assigned_to),
     address: toNullableText(row.address),
     delivery_address: row.delivery_address ?? null,
     completed_courses: Array.isArray(row.completed_courses) ? row.completed_courses : [],

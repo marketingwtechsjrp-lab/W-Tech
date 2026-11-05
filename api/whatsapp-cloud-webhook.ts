@@ -7,6 +7,7 @@ import {
   previewFor,
   type CloudConfig,
 } from './_whatsappCloud.js';
+import { isOptOutRequest, registerOptOut } from './_whatsappOptout.js';
 import { runAIResponder } from './_aiReply.js';
 import { handleEvolutionWebhook } from './_aiGroupBot.js';
 
@@ -51,9 +52,15 @@ async function handleIncomingMessage(
   let mediaMime: string | null = null;
   let mediaFilename: string | null = null;
   let storedType = type;
+  let isButtonReply = false;
 
   if (type === 'text') {
     body = message.text?.body ?? '';
+  } else if (type === 'button') {
+    // Resposta rápida de template: chega com o texto do botão.
+    body = message.button?.text ?? '';
+    storedType = 'text';
+    isButtonReply = true;
   } else if (['image', 'audio', 'video', 'document', 'sticker'].includes(type)) {
     const node = message[type] || {};
     body = node.caption ?? null;
@@ -100,8 +107,30 @@ async function handleIncomingMessage(
 
   const isNewMessage = Array.isArray(inserted) && inserted.length > 0;
 
-  // IA de atendimento (best-effort). Só para texto e mensagem nova (não reentrega).
-  if (isNewMessage && conversationId && storedType === 'text' && body && body.trim()) {
+  // O disparo de campanha grava o template sem conversa para não encher o inbox.
+  // Quando a pessoa responde, ele entra no histórico que o vendedor e a IA leem.
+  if (isNewMessage && conversationId) {
+    await supabase
+      .from('SITE_WhatsAppCloudMessages')
+      .update({ conversation_id: conversationId })
+      .eq('wa_id', waId)
+      .is('conversation_id', null);
+  }
+
+  // Pedido de saída nunca passa pela IA, nem se a gravação falhar.
+  if (storedType === 'text' && isOptOutRequest(body)) {
+    if (isNewMessage && conversationId) {
+      try {
+        await registerOptOut(supabase, cfg, { conversationId, waId });
+      } catch (e: any) {
+        console.error('[WA Cloud Webhook] Pedido de saída falhou:', e?.message);
+      }
+    }
+    return;
+  }
+
+  // IA de atendimento (best-effort). Só para texto digitado e mensagem nova (não reentrega).
+  if (isNewMessage && conversationId && storedType === 'text' && !isButtonReply && body && body.trim()) {
     try {
       await runAIResponder(supabase, cfg, { conversationId, waId, incomingText: body, incomingMessageId: message.id });
     } catch (e: any) {

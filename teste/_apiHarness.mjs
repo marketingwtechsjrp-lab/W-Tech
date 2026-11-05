@@ -67,6 +67,11 @@ export async function iniciarHarness(exportacoes) {
       const corpo = corpoBruto ? JSON.parse(corpoBruto) : null;
       estado.chamadas.push({ metodo: req.method, tabela, filtros, select: url.searchParams.get('select'), corpo, chave: req.headers.apikey });
 
+      if (estado.falha === `${req.method} ${tabela}`) {
+        res.statusCode = 500;
+        return res.end(JSON.stringify({ message: 'falha simulada' }));
+      }
+
       const linhasDaTabela = (estado.tabelas[tabela] ??= []);
       const querRetorno = String(req.headers.prefer || '').includes('return=representation');
       const umaSo = String(req.headers.accept || '').includes('vnd.pgrst.object');

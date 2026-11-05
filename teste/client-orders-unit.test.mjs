@@ -69,6 +69,7 @@ function novaBase() {
     SITE_Courses: [{ ...CURSO, status: 'Published' }, { id: '55555555-5555-4555-8555-555555555555', title: 'Rascunho', price: 1, status: 'Draft' }],
   };
   SITE_Enrollments_padrao();
+  h.estado.falha = null;
   h.estado.chamadas.length = 0;
   chamadas = h.estado.chamadas;
 }
@@ -184,7 +185,6 @@ test('login: devolve o perfil com documentos mascarados e sem o id', async () =>
     phone: CLIENTE.phone,
     type: 'Course_Registration',
     client_code: 'CLI-12ABC',
-    assigned_to: CLIENTE.assigned_to,
     address: 'Rua A, 1',
     delivery_address: null,
     completed_courses: [{ type: 'experience', date: '2026-01-01' }],
@@ -334,7 +334,83 @@ test('portal: matrícula só em curso publicado, com o preço do curso', async (
     novaBase();
     assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'enroll', courseId })).codigo, 400);
     assert.equal(chamadasDe('SITE_Sales', 'POST').length, 0);
+    assert.equal(chamadasDe('SITE_Leads', 'PATCH').length, 0);
   }
+});
+
+const NOTA_DA_MATRICULA = 'PEDIDO DE MATRÍCULA VIA PORTAL: O cliente solicitou participação no curso "Curso de Suspensão". Um pedido pendente foi gerado automaticamente.';
+
+test('portal: matrícula avisa o CRM na ficha da pessoa, sem apagar o trabalho da equipe', async () => {
+  novaBase();
+  Object.assign(tabelas.SITE_Leads[0], { status: 'Contacted', internal_notes: 'Pediu retorno à tarde' });
+
+  assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'enroll', courseId: CURSO.id })).codigo, 201);
+
+  assert.equal(chamadasDe('SITE_Leads', 'POST').length, 0);
+  assert.equal(tabelas.SITE_Leads.length, 1);
+  const [ficha] = tabelas.SITE_Leads;
+  assert.equal(ficha.status, 'New');
+  assert.equal(ficha.context_id, 'Matrícula: Curso de Suspensão');
+  assert.equal(ficha.internal_notes, `Pediu retorno à tarde\n${NOTA_DA_MATRICULA}`);
+  assert.equal(ficha.assigned_to, CLIENTE.assigned_to);
+  assert.deepEqual([ficha.name, ficha.email, ficha.phone], [CLIENTE.name, CLIENTE.email, CLIENTE.phone]);
+});
+
+test('portal: matrícula não tira cliente ganho da coluna dele', async () => {
+  for (const status of ['Converted', 'Matriculated']) {
+    novaBase();
+    tabelas.SITE_Leads[0].status = status;
+
+    assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'enroll', courseId: CURSO.id })).codigo, 201);
+
+    assert.equal(tabelas.SITE_Leads[0].status, status);
+    assert.equal(tabelas.SITE_Leads[0].internal_notes, NOTA_DA_MATRICULA);
+  }
+});
+
+test('portal: mecânico sem ficha entra no CRM; com ficha, atualiza a dele sem trocar o contato', async () => {
+  novaBase();
+  tabelas.SITE_Leads = h.estado.tabelas.SITE_Leads = [];
+  tabelas.SITE_Mechanics = h.estado.tabelas.SITE_Mechanics = [{ ...CLIENTE, client_code: 'MEC-12ABC' }];
+
+  assert.equal((await chamar(modulo.clientOrders, { code: 'MEC-12ABC', action: 'enroll', courseId: CURSO.id })).codigo, 201);
+  assert.equal(tabelas.SITE_Leads.length, 1);
+  const { id: _id, updated_at: _quando, ...novaFicha } = tabelas.SITE_Leads[0];
+  assert.deepEqual(novaFicha, {
+    name: CLIENTE.name,
+    email: CLIENTE.email,
+    phone: CLIENTE.phone,
+    assigned_to: CLIENTE.assigned_to,
+    status: 'New',
+    context_id: 'Matrícula: Curso de Suspensão',
+    internal_notes: NOTA_DA_MATRICULA,
+  });
+
+  // Mesmo telefone em outro formato e outro e-mail: é a mesma pessoa, e a ficha fica como está.
+  novaBase();
+  tabelas.SITE_Mechanics = h.estado.tabelas.SITE_Mechanics = [{ ...CLIENTE, client_code: 'MEC-12ABC' }];
+  tabelas.SITE_Leads = h.estado.tabelas.SITE_Leads = [{ id: 'ficha-antiga', name: 'Nome Antigo', email: 'antigo@teste.com', phone: '(11) 99999-0000', status: 'Cold' }];
+
+  assert.equal((await chamar(modulo.clientOrders, { code: 'MEC-12ABC', action: 'enroll', courseId: CURSO.id })).codigo, 201);
+  assert.equal(tabelas.SITE_Leads.length, 1);
+  const [ficha] = tabelas.SITE_Leads;
+  assert.equal(ficha.status, 'New');
+  assert.deepEqual([ficha.name, ficha.email, ficha.phone], ['Nome Antigo', 'antigo@teste.com', '(11) 99999-0000']);
+});
+
+test('portal: falha no aviso ao CRM não derruba o pedido já gravado', async () => {
+  novaBase();
+  h.estado.falha = 'PATCH SITE_Leads';
+
+  // Erro aqui faria o cliente tentar de novo e duplicar o pedido.
+  assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'enroll', courseId: CURSO.id })).codigo, 201);
+  assert.equal(chamadasDe('SITE_Sales', 'POST').length, 1);
+});
+
+test('portal: pedido de produto não mexe no CRM', async () => {
+  novaBase();
+  assert.equal((await chamar(modulo.clientOrders, { code: 'CLI-12ABC', action: 'order', items: [{ productId: PRODUTO.id, quantity: 1 }] })).codigo, 201);
+  assert.equal(chamadasDe('SITE_Leads', 'PATCH').length + chamadasDe('SITE_Leads', 'POST').length, 0);
 });
 
 test('portal: ação desconhecida não faz nada', async () => {

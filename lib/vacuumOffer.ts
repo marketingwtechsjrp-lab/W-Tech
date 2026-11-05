@@ -26,6 +26,8 @@ export interface VacuumBumpConfig {
     id: string;
     name: string;
     tagline: string;
+    /** Ficha do acessório na página. O checkout mostra só a chamada. */
+    details: string[];
     price_presale: number;
     price_regular: number;
     /** Preço de referência riscado. `null` quando o item não tem desconto. */
@@ -91,7 +93,7 @@ export const VACUUM_DEFAULT_CONFIG: VacuumOfferConfig = {
     whatsapp: '551732312858',
     video_url: null,
     shipping_note: 'Frete grátis para o estado de São Paulo. Para os outros estados, o valor aparece no checkout.',
-    legal_line: null,
+    legal_line: 'W-TECH BRASIL LTDA. · CNPJ 04.545.824/0001-06 · Rua Zumbi dos Palmares, 410, Jardim Paulista, São José do Rio Preto/SP · CEP 15060-190',
     shipping: {
         enabled: false,
         origin_cep: '15060-190',
@@ -109,7 +111,12 @@ export const VACUUM_DEFAULT_CONFIG: VacuumOfferConfig = {
         {
             id: 'borbulhador',
             name: 'Câmara Borbulhadora W-Tech',
-            tagline: 'O cliente vê o ar saindo do óleo. É a peça que faz o serviço parecer o que ele vale.',
+            tagline: 'O cliente vê o ar saindo do óleo. Câmara em acrílico cristal e alumínio anodizado.',
+            details: [
+                'Câmara de desaceleração e desaeração ativa em acrílico cristal (PMMA), com 92% de transmissão de luz.',
+                'Reduz a velocidade do fluxo e elimina o cisalhamento turbulento. As microbolhas se expandem, se juntam na calota superior e são purgadas.',
+                'Construção em alumínio com superfície anodizada e tubo acrílico.',
+            ],
             price_presale: 499,
             price_regular: 799,
             anchor: 799,
@@ -120,7 +127,11 @@ export const VACUUM_DEFAULT_CONFIG: VacuumOfferConfig = {
         {
             id: 'kit_adaptador',
             name: 'Kit Adaptador + Engate Rápido',
-            tagline: 'Adaptadores de 48, 52 e 54 mm e os bicos para conectar o amortecedor na máquina.',
+            tagline: 'Adaptadores para reservatório de nitro de 48, 52 e 54 mm e adaptadores em inox com seis roscas.',
+            details: [
+                'Para reservatório de nitro de 48, 52 e 54 mm, em alumínio com superfície anodizada.',
+                'Adaptadores em aço inox 304 com rosca M4x0,7, M5x0,8, M6x1, M8x1,25, M10x0,9 e M10x1.',
+            ],
             price_presale: 1040,
             price_regular: 1040,
             anchor: null,
@@ -177,6 +188,7 @@ export function resolveVacuumConfig(raw: unknown): VacuumOfferConfig {
             ...bump,
             name: optionalText(o.name, bump.name) as string,
             tagline: optionalText(o.tagline, bump.tagline) as string,
+            details: Array.isArray(o.details) ? o.details.filter((line: unknown) => typeof line === 'string' && line.trim()) : bump.details,
             price_presale: positive(o.price_presale, bump.price_presale),
             price_regular: positive(o.price_regular, bump.price_regular),
             anchor: o.anchor === null ? null : positive(o.anchor, bump.anchor ?? 0) || null,
@@ -228,6 +240,7 @@ export interface VacuumBumpState {
     id: string;
     name: string;
     tagline: string;
+    details: string[];
     price: number;
     /** Só vem preenchido quando há desconto real em relação ao preço de referência. */
     anchor: number | null;
@@ -333,6 +346,7 @@ export function getVacuumOfferState(config: VacuumOfferConfig, paidCount: number
                 id: bump.id,
                 name: bump.name,
                 tagline: bump.tagline,
+                details: bump.details,
                 price: bumpPrice,
                 anchor: bump.anchor && bump.anchor > bumpPrice ? bump.anchor : null,
                 installment_value: roundCents(bumpPrice / config.installments),
