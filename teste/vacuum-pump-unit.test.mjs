@@ -871,12 +871,6 @@ test('frete a combinar: vende sem cobrar frete e registra no pedido', async () =
     assert.equal(db.tables.SITE_Sales[0].total_value, 7990);
 });
 
-test('realidade aumentada interativa só liberada quando a configuração pede', () => {
-    assert.equal(lib.getVacuumOfferState(lib.resolveVacuumConfig(liveConfig()), 0, Date.now()).ar_interactive, false);
-    assert.equal(lib.getVacuumOfferState(lib.resolveVacuumConfig(liveConfig({ ar_interactive: 'true' })), 0, Date.now()).ar_interactive, false);
-    assert.equal(lib.getVacuumOfferState(lib.resolveVacuumConfig(liveConfig({ ar_interactive: true })), 0, Date.now()).ar_interactive, true);
-});
-
 test('venda liberada antes da data: soft_open abre a compra e mantém o texto da campanha', async () => {
     const future = { starts_at: new Date(Date.now() + DAY).toISOString(), ends_at: new Date(Date.now() + 8 * DAY).toISOString() };
     assert.equal(lib.getVacuumOfferState(lib.resolveVacuumConfig(liveConfig(future)), 0, Date.now()).phase, 'soon');

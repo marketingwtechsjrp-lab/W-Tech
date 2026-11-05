@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.2 (2026-11-05) - Vacuum Pump: realidade aumentada direto na câmera e benefícios dos acessórios
+- Realidade aumentada volta a mostrar só a máquina e a abrir direto na câmera; a versão com comandos e tutorial saiu
+- Botão vermelho Veja na sua própria bancada fica abaixo da galeria e do bloco 3D
+- Compre junto mostra o que é cada acessório e o que a pessoa ganha com ele, sem precisar abrir nada
+- Link para ver o borbulhador funcionando no vídeo da página
+- Quem abre pelo navegador interno do Instagram ou do Facebook recebe a instrução de abrir no navegador
+
 ## v3.60.1 (2026-11-05) - Pix da Vacuum Pump com QR Code na tela e e-mail do pedido
 - Escolher Pix mostra o QR Code e o código copia e cola na própria tela de pagamento, sem pedir outro clique
 - Ao gerar o Pix, o cliente recebe por e-mail o pedido e o código para pagar; a confirmação continua indo quando o pagamento cai

@@ -4,7 +4,8 @@ import { pushEvent } from '../../lib/dataLayer';
 import { VACUUM_VIDEO } from './vacuumMedia';
 
 export interface VacuumVideoHandle {
-    watch: () => void;
+    /** Leva até o vídeo e toca com som; `at` começa nesse segundo, para mostrar uma cena. */
+    watch: (at?: number) => void;
 }
 
 interface Props {
@@ -95,12 +96,13 @@ const VacuumVideo = forwardRef<VacuumVideoHandle, Props>(({ hidden, ctaLabel, on
     }, []);
 
     useImperativeHandle(ref, () => ({
-        watch() {
+        watch(at) {
             const video = videoRef.current;
             if (!video) return;
             boxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setEnded(false);
             enableSound(video);
+            if (typeof at === 'number') video.currentTime = at;
         },
     }), [enableSound]);
 

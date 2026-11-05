@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { createMachineSim, type MachineGuide, type MachineSim, type MachineState, type SelectorPosition } from './vacuumMachineSim';
 
 /**
  * Cena 3D da Vacuum Pump, sem React: só é baixada quando a pessoa chega perto do bloco.
@@ -42,36 +41,16 @@ export interface VacuumSceneOptions {
     onReady?: () => void;
     onError?: (reason: string) => void;
     onUserInteract?: () => void;
-    /** Sem estes dois arquivos a cena fica só de exibição, sem a simulação de uso. */
-    dialUrl?: string;
-    bubblerUrl?: string;
-    onMachineChange?: (state: MachineState) => void;
-    onMachineReading?: (bar: number) => void;
 }
-
-export type VacuumArPhase = 'placing' | 'placed' | 'ended';
 
 export interface VacuumScene {
     focus: (view: VacuumView, partIds: string[]) => void;
     setOpen: (open: boolean) => void;
     renderNow: () => void;
     dispose: () => void;
-    setPower: (on: boolean) => void;
-    setSelector: (position: SelectorPosition) => void;
-    setBubbler: (on: boolean) => void;
-    setSound: (on: boolean) => void;
-    setGuide: (target: MachineGuide) => void;
-    /** Abre a realidade aumentada, onde a máquina funciona. Precisa partir de um toque. */
-    enterAR: (overlay: HTMLElement, onPhase: (phase: VacuumArPhase) => void) => Promise<void>;
-    exitAR: () => void;
-    repositionAR: () => void;
-    rotateAR: (degrees: number) => void;
 }
 
 const MM = 0.001;
-const CAMERA_FOV = 28;
-const CAMERA_NEAR = 0.05;
-const CAMERA_FAR = 12;
 const MARKER_RADIUS = 15;
 const MARKER_MARGIN = 20;
 const COVER_LIFT = 150;
@@ -151,7 +130,7 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
     back.position.set(0.5, 0.8, -1.1);
     scene.add(key, left, back);
 
-    const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, CAMERA_NEAR, CAMERA_FAR);
+    const camera = new THREE.PerspectiveCamera(28, 1, 0.05, 12);
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -169,10 +148,7 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.0135;
-    // Máquina e sombra andam juntas: é este grupo que vai para a bancada na realidade aumentada.
-    const stage = new THREE.Group();
-    stage.add(floor);
-    scene.add(stage);
+    scene.add(floor);
 
     const distanceScale = () => Math.max(1, 1.02 / Math.max(camera.aspect, 0.01));
 
@@ -216,18 +192,6 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
 
     let highlighted: StdMaterial[] = [];
     let highlightStart = 0;
-
-    let machine: MachineSim | null = null;
-    const raycaster = new THREE.Raycaster();
-    let arSession: XRSession | null = null;
-    let arPlaced = false;
-    let arHit: THREE.Vector3 | null = null;
-    const reticle = new THREE.Mesh(
-        new THREE.RingGeometry(0.15, 0.17, 48).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ color: '#ff1d10', transparent: true, opacity: 0.9 })
-    );
-    reticle.visible = false;
-    scene.add(reticle);
 
     function applyOpen(value: number) {
         openValue = value;
@@ -301,7 +265,7 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
 
     function step(time: number) {
         raf = 0;
-        if (disposed || !inView || document.hidden || arSession) return;
+        if (disposed || !inView || document.hidden) return;
         const delta = lastTime ? Math.min(0.1, (time - lastTime) / 1000) : 1 / 60;
         const frameMs = lastTime ? time - lastTime : 0;
         lastTime = time;
@@ -368,7 +332,6 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
     }
 
     function resize() {
-        if (arSession) return;
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         if (!width || !height) return;
@@ -392,7 +355,6 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
     viewObserver.observe(canvas);
 
     const onVisibility = () => {
-        if (arSession) machine?.setAudible(!document.hidden);
         if (!document.hidden) wake();
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -450,22 +412,7 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
                     if (mesh.isMesh) coverMaterials.push(...materialsOf(mesh));
                 });
             }
-            stage.add(model);
-            if (options.dialUrl && options.bubblerUrl) {
-                machine = createMachineSim({
-                    model,
-                    loader,
-                    dialUrl: options.dialUrl,
-                    bubblerUrl: options.bubblerUrl,
-                    reducedMotion,
-                    onChange: (state) => {
-                        options.onMachineChange?.(state);
-                        wake();
-                    },
-                    onReading: (bar) => options.onMachineReading?.(bar),
-                    onAssetReady: wake,
-                });
-            }
+            scene.add(model);
             options.onProgress?.(1);
             wake();
             options.onReady?.();
@@ -507,7 +454,6 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
 
     return {
         focus(view, partIds) {
-            if (arSession) return;
             stopSway();
             userFocused = partIds.length > 0;
             lastInteraction = performance.now();
@@ -542,124 +488,9 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
             wake();
         },
         renderNow,
-        setPower: (on) => machine?.setPower(on),
-        setSelector: (position) => machine?.setSelector(position),
-        setBubbler: (on) => machine?.setBubbler(on),
-        setSound: (on) => machine?.setSound(on),
-        setGuide: (target) => machine?.setGuide(target),
-        async enterAR(overlay, onPhase) {
-            if (!navigator.xr || !machine || arSession) throw new Error('ar_indisponivel');
-            const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: overlay },
-            });
-            arSession = session;
-            arPlaced = false;
-            arHit = null;
-            machine.setActive(true);
-            stopSway();
-            cameraTween = null;
-            controls.enabled = false;
-            floor.visible = false;
-            stage.visible = false;
-            renderer.xr.enabled = true;
-            renderer.xr.setReferenceSpaceType('local');
-            await renderer.xr.setSession(session);
-            const space = renderer.xr.getReferenceSpace();
-            const viewer = await session.requestReferenceSpace('viewer');
-            const hitSource = await session.requestHitTestSource?.({ space: viewer });
-            const hitMatrix = new THREE.Matrix4();
-            const cameraPosition = new THREE.Vector3();
-            onPhase('placing');
-
-            const onSelect = (event: XRInputSourceEvent) => {
-                if (!arPlaced) {
-                    if (!arHit) return;
-                    // De frente para quem está segurando o celular.
-                    cameraPosition.setFromMatrixPosition(renderer.xr.getCamera().matrixWorld);
-                    stage.position.set(arHit.x, arHit.y + 0.0135, arHit.z);
-                    stage.rotation.y = Math.atan2(cameraPosition.x - arHit.x, cameraPosition.z - arHit.z);
-                    stage.visible = true;
-                    floor.visible = true;
-                    reticle.visible = false;
-                    arPlaced = true;
-                    onPhase('placed');
-                    return;
-                }
-                const pose = space ? event.frame.getPose(event.inputSource.targetRaySpace, space) : null;
-                if (!pose || !machine) return;
-                hitMatrix.fromArray(pose.transform.matrix);
-                raycaster.ray.origin.setFromMatrixPosition(hitMatrix);
-                raycaster.ray.direction.set(0, 0, -1).transformDirection(hitMatrix);
-                machine.pick(raycaster);
-            };
-
-            let previous = 0;
-            renderer.setAnimationLoop((time, frame) => {
-                const delta = previous ? Math.min(0.1, (time - previous) / 1000) : 1 / 60;
-                previous = time;
-                if (frame && !arPlaced && hitSource && space) {
-                    const pose = frame.getHitTestResults(hitSource)[0]?.getPose(space);
-                    reticle.visible = !!pose;
-                    if (pose) {
-                        const { x, y, z } = pose.transform.position;
-                        arHit = (arHit ?? new THREE.Vector3()).set(x, y, z);
-                        reticle.position.copy(arHit);
-                    }
-                }
-                machine?.update(delta);
-                renderer.render(scene, camera);
-            });
-
-            const onEnd = () => {
-                session.removeEventListener('select', onSelect);
-                session.removeEventListener('end', onEnd);
-                hitSource?.cancel();
-                renderer.setAnimationLoop(null);
-                renderer.xr.enabled = false;
-                arSession = null;
-                arPlaced = false;
-                arHit = null;
-                machine?.setActive(false);
-                stage.position.set(0, 0, 0);
-                stage.rotation.y = 0;
-                stage.visible = true;
-                floor.visible = true;
-                reticle.visible = false;
-                controls.enabled = true;
-                // A sessão troca a lente e os limites da câmera: sem isto, a máquina volta miúda na página.
-                camera.fov = CAMERA_FOV;
-                camera.near = CAMERA_NEAR;
-                camera.far = CAMERA_FAR;
-                camera.zoom = 1;
-                camera.quaternion.identity();
-                camera.aspect = canvas.clientWidth / Math.max(canvas.clientHeight, 1) || 1;
-                camera.updateProjectionMatrix();
-                placeCamera(overview);
-                resize();
-                onPhase('ended');
-            };
-            session.addEventListener('select', onSelect);
-            session.addEventListener('end', onEnd);
-        },
-        exitAR() {
-            void arSession?.end();
-        },
-        repositionAR() {
-            if (!arSession) return;
-            arPlaced = false;
-            arHit = null;
-            stage.visible = false;
-        },
-        rotateAR(degrees) {
-            stage.rotation.y += THREE.MathUtils.degToRad(degrees);
-        },
         dispose() {
             disposed = true;
             if (raf) cancelAnimationFrame(raf);
-            void arSession?.end();
-            machine?.dispose();
             resizeObserver.disconnect();
             viewObserver.disconnect();
             document.removeEventListener('visibilitychange', onVisibility);

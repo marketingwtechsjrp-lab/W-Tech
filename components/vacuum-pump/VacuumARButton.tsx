@@ -4,7 +4,6 @@ import { Flame, X } from 'lucide-react';
 
 const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=2';
 const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=2';
-const AR_USDZ_INTERACTIVE_URL = '/models/vacuum-pump/maquina-interativa.usdz?v=1';
 const POSTER = '/images/vacuum-pump/machine-front.webp?v=2';
 
 type ArPlatform = 'ios' | 'android' | 'other';
@@ -21,69 +20,27 @@ function isInAppBrowser(): boolean {
     return typeof navigator !== 'undefined' && /FBAN|FBAV|FB_IAB|FBIOS|Instagram|TikTok|musical_ly|Snapchat|LinkedInApp|Pinterest|Line\//.test(navigator.userAgent);
 }
 
-/** Realidade aumentada nativa do Android, sem os comandos: é o caminho seguro quando a interativa falha. */
-export function sceneViewerHref(): string {
+function sceneViewerHref(): string {
     const file = encodeURIComponent(`${window.location.origin}${AR_GLB_URL}`);
     const title = encodeURIComponent('Vacuum Pump Standard W-Tech');
     const fallback = encodeURIComponent(window.location.href);
-    return `intent://arvr.google.com/scene-viewer/1.2?file=${file}&mode=ar_preferred&resizable=false&title=${title}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
+    return `intent://arvr.google.com/scene-viewer/1.2?file=${file}&mode=ar_preferred&title=${title}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
 }
 
-interface VacuumARButtonProps {
-    placement: 'hero' | 'stage';
-    /** A realidade aumentada com comandos está liberada para este visitante. */
-    interactive: boolean;
-    /** Abre a sessão interativa. Só existe no bloco 3D, onde o modelo já está na memória. */
-    onStartInteractive?: () => void;
-    interactiveBusy?: boolean;
-    /** Leva até o bloco 3D, que é de onde a sessão interativa parte. */
-    onGoToStage?: () => void;
-    /** Faixa de compra na realidade aumentada do iPhone. */
-    offerLine: string;
-    onBuy: () => void;
-}
-
-export const VacuumARButton: React.FC<VacuumARButtonProps> = ({ placement, interactive, onStartInteractive, interactiveBusy, onGoToStage, offerLine, onBuy }) => {
+/** Botão vermelho da realidade aumentada: abre a máquina na bancada, direto na câmera do celular. */
+export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ placement }) => {
     const [platform] = useState<ArPlatform>(detectPlatform);
     const [inApp] = useState(isInAppBrowser);
-    const [webxr, setWebxr] = useState(false);
     const [qr, setQr] = useState<string | null>(null);
     const [openInBrowser, setOpenInBrowser] = useState(false);
     const [copied, setCopied] = useState(false);
     const closeRef = useRef<HTMLButtonElement>(null);
-    const iosLink = useRef<HTMLAnchorElement>(null);
     const track = `vacuum_ar_cta_${placement}`;
     const dialogOpen = !!qr || openInBrowser;
 
-    // Toque em "Comprar" na faixa do Quick Look volta como mensagem para este link.
-    useEffect(() => {
-        const link = iosLink.current;
-        if (!link) return;
-        const onMessage = (event: Event) => {
-            if ((event as MessageEvent).data === '_apple_ar_quicklook_button_tapped') onBuy();
-        };
-        link.addEventListener('message', onMessage);
-        return () => link.removeEventListener('message', onMessage);
-    }, [onBuy]);
-
-    useEffect(() => {
-        if (platform !== 'android' || !interactive || !navigator.xr) return;
-        let active = true;
-        navigator.xr
-            .isSessionSupported('immersive-ar')
-            .then((supported) => {
-                if (active) setWebxr(supported);
-            })
-            .catch(() => undefined);
-        return () => {
-            active = false;
-        };
-    }, [platform, interactive]);
-
     const openQr = useCallback(async () => {
-        const flag = new URLSearchParams(window.location.search).get('ra') === 'interativa' ? '?ra=interativa' : '';
         const { default: QRCode } = await import('qrcode');
-        setQr(await QRCode.toDataURL(`${window.location.origin}/maquina-de-vacuo${flag}#maquina-3d`, { width: 320, margin: 1 }));
+        setQr(await QRCode.toDataURL(`${window.location.origin}/maquina-de-vacuo#maquina-3d`, { width: 320, margin: 1 }));
     }, []);
 
     const closeDialog = useCallback(() => {
@@ -131,14 +88,13 @@ export const VacuumARButton: React.FC<VacuumARButtonProps> = ({ placement, inter
             </span>
         </>
     );
-
-    const interactiveLine = 'Em tamanho real, com tutorial: ligue e use a máquina.';
+    const realLine = 'Como se fosse uma experiência real, em tamanho real.';
 
     if (inApp && platform !== 'other') {
         return (
             <>
                 <button type="button" className="vp-ar-cta" onClick={() => setOpenInBrowser(true)} data-track={`${track}_in_app`} data-track-category="Vacuum Pump">
-                    {label(interactive ? interactiveLine : 'Como se fosse uma experiência real, em tamanho real.')}
+                    {label(realLine)}
                 </button>
                 {openInBrowser && dialog('Abrir no navegador para ver na bancada', (
                     <>
@@ -151,35 +107,19 @@ export const VacuumARButton: React.FC<VacuumARButtonProps> = ({ placement, inter
     }
 
     if (platform === 'ios') {
-        const banner = `callToAction=${encodeURIComponent('Comprar')}&checkoutTitle=${encodeURIComponent('Vacuum Pump Standard')}&checkoutSubtitle=${encodeURIComponent(offerLine)}`;
         return (
-            <a ref={iosLink} className="vp-ar-cta" href={`${interactive ? AR_USDZ_INTERACTIVE_URL : AR_USDZ_URL}#allowsContentScaling=0&${banner}`} rel="ar" data-track={track} data-track-category="Vacuum Pump">
+            <a className="vp-ar-cta" href={AR_USDZ_URL} rel="ar" data-track={track} data-track-category="Vacuum Pump">
                 {/* O Safari só abre a realidade aumentada se o link começar por uma imagem. */}
                 <img src={POSTER} alt="" width={1} height={1} className="absolute h-px w-px opacity-0" />
-                {label(interactive ? interactiveLine : 'Como se fosse uma experiência real, em tamanho real.')}
+                {label(realLine)}
             </a>
         );
     }
 
     if (platform === 'android') {
-        if (interactive && webxr) {
-            const inStage = placement === 'stage';
-            return (
-                <button
-                    type="button"
-                    className="vp-ar-cta"
-                    disabled={inStage && interactiveBusy}
-                    onClick={inStage ? onStartInteractive : onGoToStage}
-                    data-track={track}
-                    data-track-category="Vacuum Pump"
-                >
-                    {label(inStage && interactiveBusy ? 'Preparando a máquina...' : interactiveLine)}
-                </button>
-            );
-        }
         return (
             <a className="vp-ar-cta" href={sceneViewerHref()} data-track={track} data-track-category="Vacuum Pump">
-                {label('Como se fosse uma experiência real, em tamanho real.')}
+                {label(realLine)}
             </a>
         );
     }

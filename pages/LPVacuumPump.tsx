@@ -186,26 +186,59 @@ const LeadForm: React.FC<{ offer: VacuumOffer; onDone?: () => void; compact?: bo
     );
 };
 
-const ComboCard: React.FC<{ offer: VacuumOffer; bumps: VacuumOffer['bumps']; title: string; onBuy: (bumpIds: string[]) => void }> = ({ offer, bumps, title, onBuy }) => {
+/** O que é cada acessório e o que a pessoa ganha com ele, em vez de só listar o que vem na caixa. */
+const ACCESSORY_INFO: Record<string, { what: string; gains: string[]; videoAt?: number }> = {
+    borbulhador: {
+        what: 'Câmara transparente em acrílico cristal e alumínio anodizado, que deixa à vista o ar saindo do óleo.',
+        gains: [
+            'O cliente vê o ar saindo do óleo, na frente dele.',
+            'O fluxo desacelera e as microbolhas se juntam no alto da câmara, onde são purgadas.',
+            'Acrílico com 92% de transmissão de luz, para acompanhar tudo.',
+        ],
+        videoAt: 42,
+    },
+    kit_adaptador: {
+        what: 'Conjunto de adaptadores com engate rápido, para ligar a máquina em amortecedores de medidas diferentes.',
+        gains: [
+            'Serve em reservatório de nitro de 48, 52 e 54 mm.',
+            'Adaptadores em inox 304 com seis roscas: M4x0,7, M5x0,8, M6x1, M8x1,25, M10x0,9 e M10x1.',
+            'Engate rápido para conectar e soltar sem perder tempo entre um serviço e outro.',
+        ],
+    },
+};
+
+const ComboCard: React.FC<{ offer: VacuumOffer; bumps: VacuumOffer['bumps']; title: string; onBuy: (bumpIds: string[]) => void; onWatch?: (at: number) => void }> = ({ offer, bumps, title, onBuy, onWatch }) => {
     const ids = bumps.map((bump) => bump.id);
     const cart = computeVacuumCart(offer, ids);
     const before = (offer.compare_at ?? offer.price) + bumps.reduce((sum, bump) => sum + (bump.anchor ?? bump.price), 0);
     const saving = before - cart.total;
-    const details = bumps.flatMap((bump) => bump.details ?? []);
+    const single = bumps.length === 1 ? ACCESSORY_INFO[bumps[0].id] : undefined;
 
     return (
         <article className="vp-plate flex flex-col p-3 sm:p-4">
             <ComboImage items={bumps} />
             <h3 className="mt-3 font-bold leading-snug">{title}</h3>
-            {details.length > 0 && (
-                <details className="vp-faq mt-1 text-sm">
-                    <summary className="flex items-center gap-1 font-semibold vp-muted">{bumps.length > 1 ? 'O que vem nos acessórios' : 'O que vem no acessório'} <ChevronDown className="vp-faq-icon" size={15} aria-hidden /></summary>
-                    <ul className="mt-2 space-y-1 vp-muted">
-                        {details.map((line) => (
-                            <li key={line} className="flex gap-1.5"><Check className="mt-0.5 shrink-0 vp-green" size={14} aria-hidden /><span>{line}</span></li>
+            {bumps.length === 1 ? (
+                <>
+                    <p className="mt-1 text-sm vp-muted">{single?.what ?? bumps[0].tagline}</p>
+                    <p className="mt-2.5 text-sm font-bold">O que você ganha</p>
+                    <ul className="mt-1 space-y-1 text-sm">
+                        {(single?.gains ?? bumps[0].details ?? []).map((line) => (
+                            <li key={line} className="flex gap-1.5"><Check className="mt-0.5 shrink-0 vp-green" size={15} aria-hidden /><span>{line}</span></li>
                         ))}
                     </ul>
-                </details>
+                    {single?.videoAt !== undefined && onWatch && (
+                        <button type="button" className="mt-2 inline-flex items-center gap-1.5 self-start text-sm font-semibold underline underline-offset-2" onClick={() => onWatch(single.videoAt as number)} data-track={`vacuum_watch_${bumps[0].id}`} data-track-category="Vacuum Pump">
+                            <Play size={14} fill="currentColor" aria-hidden /> Ver funcionando no vídeo
+                        </button>
+                    )}
+                </>
+            ) : (
+                <ul className="mt-1 space-y-2 text-sm">
+                    {bumps.map((bump) => (
+                        <li key={bump.id}><b>{bump.name}</b><span className="block vp-muted">{ACCESSORY_INFO[bump.id]?.what ?? bump.tagline}</span></li>
+                    ))}
+                </ul>
             )}
             <div className="mt-auto pt-3 vp-num">
                 {saving > 0 && <p className="text-xs vp-muted">De <s>{formatBRL(before)}</s> por</p>}
@@ -246,11 +279,6 @@ const LPVacuumPump: React.FC = () => {
     const saving = offer.compare_at ? offer.compare_at - offer.price : 0;
     const offPercent = offer.compare_at ? Math.round((saving / offer.compare_at) * 100) : 0;
     const currentPhoto = GALLERY.find((item) => item.id === photo) ?? GALLERY[0];
-
-    // A flag da oferta libera para todos; o parâmetro serve para testar em aparelho antes disso.
-    const arInteractive = offer.ar_interactive || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('ra') === 'interativa');
-
-    const arOfferLine = `${offer.installments}x de ${formatBRL(offer.installment_value).replace(',00', '')} sem juros ou ${formatBRL(offer.price).replace(',00', '')} à vista`;
 
     useVacuumPageChrome();
 
@@ -422,7 +450,7 @@ const LPVacuumPump: React.FC = () => {
                     </div>
                     <p className="mt-2 text-xs vp-muted">Fotos reais da máquina. Acessórios vendidos separadamente.</p>
                     <div className="mt-3">
-                        <VacuumARButton placement="hero" interactive={arInteractive} offerLine={arOfferLine} onBuy={() => openCheckout()} onGoToStage={() => experienceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+                        <VacuumARButton placement="hero" />
                     </div>
                 </section>
 
@@ -524,7 +552,7 @@ const LPVacuumPump: React.FC = () => {
                     <p className="mt-1 text-sm vp-muted">A máquina com os acessórios, na mesma parcela e sem juros. Acessórios vendidos separadamente.</p>
                     <div className="mt-3 grid gap-3 md:grid-cols-3">
                         {offer.bumps.map((bump) => (
-                            <ComboCard key={bump.id} offer={offer} bumps={[bump]} title={`Máquina + ${bump.name}`} onBuy={openCheckout} />
+                            <ComboCard key={bump.id} offer={offer} bumps={[bump]} title={`Máquina + ${bump.name}`} onBuy={openCheckout} onWatch={offer.video_url ? undefined : (at) => videoHandle.current?.watch(at)} />
                         ))}
                         {offer.bumps.length > 1 && <ComboCard offer={offer} bumps={offer.bumps} title="Máquina + os dois acessórios" onBuy={openCheckout} />}
                     </div>
@@ -567,7 +595,7 @@ const LPVacuumPump: React.FC = () => {
                 <div className="mx-auto max-w-[1180px]">
                     <h2 className="vp-display text-4xl sm:text-5xl">Conheça a máquina por dentro</h2>
                     <p className="mb-5 mt-1 vp-muted">Arraste para girar. Toque em uma peça para ir até ela.</p>
-                    <VacuumExperience3D arInteractive={arInteractive} offerLine={arOfferLine} buyLabel={soon ? 'Me avise quando abrir' : `Comprar por ${offer.installments}x de ${formatBRL(offer.installment_value).replace(',00', '')}`} onBuy={() => openCheckout()} />
+                    <VacuumExperience3D />
                     <p className="mt-3 text-xs vp-muted">Modelo 3D feito a partir do projeto da máquina. Cores e detalhes podem variar.</p>
                 </div>
             </section>
