@@ -24,7 +24,7 @@ ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium-browser
 
-ARG PRERENDER_ROUTES=/,/maquina-de-vacuo
+ARG PRERENDER_ROUTES=/
 RUN npm run build && PRERENDER_ROUTES="$PRERENDER_ROUTES" npm run prerender
 
 COPY --from=anterior /app/dist /anterior

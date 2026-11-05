@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.60.3",
+    "date": "2026-11-05",
+    "title": "Deploy rápido, que publica em minutos",
+    "changes": [
+      "Novo deploy que refaz só as rotas alteradas e reaproveita as demais, sem os 45 minutos de geração de páginas",
+      "O deploy completo continua igual, para quando o conteúdo de muitas páginas mudar"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.60.2",
     "date": "2026-11-05",
     "title": "Vacuum Pump: realidade aumentada direto na câmera e benefícios dos acessórios",

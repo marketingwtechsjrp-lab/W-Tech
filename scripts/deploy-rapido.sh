@@ -3,9 +3,12 @@
 #
 # Na VPS, rode uma cópia fora do repositório, porque o git pull pode alterar este arquivo no meio:
 #   cp /root/W-Tech/scripts/deploy-rapido.sh /root/deploy-rapido.sh
-#   bash /root/deploy-rapido.sh                                 # home e /maquina-de-vacuo
-#   bash /root/deploy-rapido.sh "/,/maquina-de-vacuo,/cursos"   # escolhendo as rotas
-#   SO_TESTE=1 bash /root/deploy-rapido.sh                      # só gera wtech-site:rapido-teste
+#   bash /root/deploy-rapido.sh                          # refaz só a home
+#   bash /root/deploy-rapido.sh "/,/cursos,/blog/um-post"  # home e as páginas cujo texto mudou
+#   SO_TESTE=1 bash /root/deploy-rapido.sh               # só gera wtech-site:rapido-teste
+#
+# Passe só rotas do sitemap. /maquina-de-vacuo fica de fora de propósito: ela não tem prerender
+# e sai da casca, então a mudança nela já vai ao ar sem refazer nenhuma página.
 #
 # As páginas reaproveitadas recebem o código novo, mas o HTML só se atualiza no próximo
 # deploy completo (/root/deploy-site.sh): rode um quando mudar conteúdo de muitas páginas.
@@ -22,7 +25,7 @@ if ! flock -n 9; then
   exit 1
 fi
 
-ROTAS="${1:-/,/maquina-de-vacuo}"
+ROTAS="${1:-/}"
 TAG=wtech-site:prod
 [ "${SO_TESTE:-}" = "1" ] && TAG=wtech-site:rapido-teste
 

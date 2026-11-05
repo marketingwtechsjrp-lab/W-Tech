@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.3 (2026-11-05) - Deploy rápido, que publica em minutos
+- Novo deploy que refaz só as rotas alteradas e reaproveita as demais, sem os 45 minutos de geração de páginas
+- O deploy completo continua igual, para quando o conteúdo de muitas páginas mudar
+
 ## v3.60.2 (2026-11-05) - Vacuum Pump: realidade aumentada direto na câmera e benefícios dos acessórios
 - Realidade aumentada volta a mostrar só a máquina e a abrir direto na câmera; a versão com comandos e tutorial saiu
 - Botão vermelho Veja na sua própria bancada fica abaixo da galeria e do bloco 3D
