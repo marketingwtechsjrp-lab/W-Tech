@@ -120,8 +120,10 @@ async function main() {
     }
   }
 
-  const routes = routesFromSitemap();
-  console.log(`▸ Prerender de ${routes.length} rotas do sitemap (locale ${PRERENDER_LOCALE})\n`);
+  // PRERENDER_ROUTES limita às rotas alteradas: é o que o deploy rápido usa (Dockerfile.rapido).
+  const onlyRoutes = (process.env.PRERENDER_ROUTES ?? '').split(',').map((route) => route.trim()).filter(Boolean);
+  const routes = onlyRoutes.length ? onlyRoutes : routesFromSitemap();
+  console.log(`▸ Prerender de ${routes.length} rotas ${onlyRoutes.length ? 'escolhidas' : 'do sitemap'} (locale ${PRERENDER_LOCALE})\n`);
 
   // A casca original precisa sobreviver: dist/index.html vira a HOME prerenderizada e
   // o fallback do Express não pode servir a home para toda rota desconhecida.
