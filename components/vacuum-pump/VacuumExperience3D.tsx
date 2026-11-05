@@ -1,16 +1,77 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Download, Move3d, RotateCcw, Scan } from 'lucide-react';
-import type { VacuumHotspot, VacuumScene, VacuumView } from './vacuumScene3D';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Box, Download, Move3d, RotateCcw, RotateCw, Scan, Volume2, VolumeX, X } from 'lucide-react';
+import type { MachineState } from './vacuumMachineSim';
+import type { VacuumArPhase, VacuumHotspot, VacuumScene, VacuumView } from './vacuumScene3D';
+import { VacuumARButton, sceneViewerHref } from './VacuumARButton';
 
 const MODEL_URL = '/models/vacuum-pump/maquina.glb?v=2';
-const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=2';
-const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=2';
+const DIAL_URL = '/images/vacuum-pump/mostrador-sem-ponteiro.webp';
+const BUBBLER_URL = '/models/vacuum-pump/borbulhador.glb';
 const POSTER = '/images/vacuum-pump/machine-front.webp?v=2';
 /** Antes disso o 3D não baixa: o bloco fica no meio da página e a maioria não chega nele. */
 const LOAD_MARGIN = '250px';
 
 const OVERVIEW: VacuumView = { azimuth: 26, polar: 76, distance: 1.32, target: [0, 140, 0] };
 const OPEN_VIEW: VacuumView = { azimuth: -52, polar: 58, distance: 1.32, target: [0, 130, -10] };
+
+type TutorialStep = 'power' | 'vacuum' | 'bubbler' | 'pressure' | 'done';
+
+/** A ordem segue a narração aprovada do vídeo: vácuo primeiro, e só depois o óleo entra. */
+const TUTORIAL: { id: Exclude<TutorialStep, 'done'>; title: string; text: string; action: string }[] = [
+    { id: 'power', title: 'Ligue a máquina', text: 'Toque na chave da máquina, ou no botão aqui embaixo.', action: 'Ligar' },
+    { id: 'vacuum', title: 'Puxe o vácuo', text: 'Gire o seletor para VACUUM. O ponteiro desce: o ar está saindo.', action: 'Girar para VACUUM' },
+    { id: 'bubbler', title: 'Encaixe o borbulhador', text: 'Toque no bico da máquina e veja o ar sair do óleo em bolhas. Vendido à parte.', action: 'Encaixar o borbulhador' },
+    { id: 'pressure', title: 'Deixe o óleo entrar', text: 'Com o ar fora, gire o seletor para PRESSURE.', action: 'Girar para PRESSURE' },
+];
+
+interface ArCoachProps {
+    step: TutorialStep;
+    machine: MachineState;
+    bar: number;
+    buyLabel: string;
+    onAction: (step: Exclude<TutorialStep, 'done'>) => void;
+    onSound: (on: boolean) => void;
+    onRestart: () => void;
+    onBuy: () => void;
+}
+
+/** Tutorial sobre a câmera: um passo de cada vez, para a máquina continuar à vista. */
+const ArCoach: React.FC<ArCoachProps> = ({ step, machine, bar, buyLabel, onAction, onSound, onRestart, onBuy }) => {
+    const psi = Math.round(bar * 14.5);
+    const index = TUTORIAL.findIndex((item) => item.id === step);
+    const current = index >= 0 ? TUTORIAL[index] : null;
+    return (
+        <div className="vp-coach" data-ar-control>
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0" role="status">
+                    <p className="vp-coach-step">{current ? `Passo ${index + 1} de ${TUTORIAL.length}` : 'Pronto'}</p>
+                    <h3 className="vp-display text-2xl leading-none">{current ? current.title : 'É assim na sua bancada'}</h3>
+                    <p className="mt-1 text-[.86rem] leading-snug">{current ? current.text : 'Toque na chave e no seletor da máquina sempre que quiser.'}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="vp-coach-reading vp-num" aria-label={`Leitura do relógio: ${psi} PSI`}>
+                        <b>{psi < 0 ? `−${Math.abs(psi)}` : psi}</b>
+                        <span>PSI</span>
+                    </div>
+                    <button type="button" className="vp-coach-icon" aria-pressed={machine.sound} aria-label={machine.sound ? 'Desligar o som da máquina' : 'Ligar o som da máquina'} onClick={() => onSound(!machine.sound)}>
+                        {machine.sound ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
+                    </button>
+                </div>
+            </div>
+            {current ? (
+                <button type="button" className="vp-coach-main" disabled={machine.bubbler === 'loading'} onClick={() => onAction(current.id)} data-track={`vacuum_ar_${current.id}`} data-track-category="Vacuum Pump">
+                    {machine.bubbler === 'loading' ? 'Encaixando...' : current.action}
+                </button>
+            ) : (
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                    <button type="button" className="vp-coach-main" onClick={onBuy} data-track="vacuum_ar_buy" data-track-category="Vacuum Pump">{buyLabel}</button>
+                    <button type="button" className="vp-coach-icon !h-auto !w-auto px-3 text-sm font-semibold" onClick={onRestart}>Repetir</button>
+                </div>
+            )}
+            <p className="text-[.66rem] opacity-70">Simulação ilustrativa.</p>
+        </div>
+    );
+};
 
 interface TourStop {
     id: string;
@@ -139,22 +200,16 @@ function prefersManualLoad(): boolean {
     return !!connection && (connection.saveData === true || /(^|-)2g$/.test(connection.effectiveType ?? ''));
 }
 
-function arLink(): { href: string; rel?: string } | null {
-    const agent = navigator.userAgent;
-    const isIos = /iPad|iPhone|iPod/.test(agent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIos) return { href: AR_USDZ_URL, rel: 'ar' };
-    if (/Android/.test(agent)) {
-        const file = encodeURIComponent(`${window.location.origin}${AR_GLB_URL}`);
-        const title = encodeURIComponent('Vacuum Pump Standard W-Tech');
-        const fallback = encodeURIComponent(window.location.href);
-        return {
-            href: `intent://arvr.google.com/scene-viewer/1.2?file=${file}&mode=ar_preferred&title=${title}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`,
-        };
-    }
-    return null;
+interface VacuumExperience3DProps {
+    arInteractive: boolean;
+    /** Linha da parcela na realidade aumentada, como "10x de R$ 799 sem juros". */
+    offerLine: string;
+    buyLabel: string;
+    onBuy: () => void;
 }
 
-const VacuumExperience3D: React.FC = () => {
+const VacuumExperience3D: React.FC<VacuumExperience3DProps> = ({ arInteractive, offerLine, buyLabel, onBuy }) => {
+    const overlayRef = useRef<HTMLDivElement>(null);
     const stageRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const sceneRef = useRef<VacuumScene | null>(null);
@@ -165,7 +220,10 @@ const VacuumExperience3D: React.FC = () => {
     const [open, setOpen] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [hintVisible, setHintVisible] = useState(true);
-    const ar = useMemo(() => (typeof navigator === 'undefined' ? null : arLink()), []);
+    const [machine, setMachine] = useState<MachineState>({ power: false, selector: 'stabilization', bubbler: 'off', sound: true });
+    const [bar, setBar] = useState(0);
+    const [arPhase, setArPhase] = useState<VacuumArPhase | 'starting' | null>(null);
+    const [tutorial, setTutorial] = useState<TutorialStep>('power');
 
     const start = useCallback(() => {
         setState((current) => (current === 'waiting' || current === 'manual' ? 'loading' : current));
@@ -212,6 +270,10 @@ const VacuumExperience3D: React.FC = () => {
                     onReady: () => setState('ready'),
                     onError: () => setState('failed'),
                     onUserInteract: () => setHintVisible(false),
+                    dialUrl: DIAL_URL,
+                    bubblerUrl: BUBBLER_URL,
+                    onMachineChange: setMachine,
+                    onMachineReading: setBar,
                 });
             })
             .catch(() => setState('failed'));
@@ -259,11 +321,81 @@ const VacuumExperience3D: React.FC = () => {
         sceneRef.current?.focus(OVERVIEW, []);
     }, []);
 
+    const onTutorialAction = useCallback((step: Exclude<TutorialStep, 'done'>) => {
+        const scene = sceneRef.current;
+        if (step === 'power') scene?.setPower(true);
+        if (step === 'vacuum') scene?.setSelector('vacuum');
+        if (step === 'bubbler') scene?.setBubbler(true);
+        if (step === 'pressure') scene?.setSelector('pressure');
+    }, []);
+
+    const onSound = useCallback((on: boolean) => sceneRef.current?.setSound(on), []);
+
+    const onRestartTutorial = useCallback(() => {
+        const scene = sceneRef.current;
+        scene?.setSelector('stabilization');
+        scene?.setBubbler(false);
+        scene?.setPower(false);
+        setTutorial('power');
+    }, []);
+
+    const onBuyFromAR = useCallback(() => {
+        sceneRef.current?.exitAR();
+        onBuy();
+    }, [onBuy]);
+
+    // O tutorial anda sozinho, tanto pelo botão quanto pelo toque na própria peça.
+    useEffect(() => {
+        setTutorial((step) => {
+            if (step === 'power' && machine.power) return 'vacuum';
+            if (step === 'vacuum' && machine.power && machine.selector === 'vacuum') return 'bubbler';
+            if (step === 'bubbler' && machine.bubbler === 'on') return 'pressure';
+            if (step === 'pressure' && machine.power && machine.selector === 'pressure') return 'done';
+            return step;
+        });
+    }, [machine]);
+
+    // O anel na máquina mostra onde tocar no passo atual.
+    useEffect(() => {
+        if (arPhase !== 'placed') {
+            sceneRef.current?.setGuide(null);
+            return;
+        }
+        sceneRef.current?.setGuide(tutorial === 'power' ? 'power' : tutorial === 'bubbler' ? 'bubbler' : tutorial === 'done' ? null : 'selector');
+    }, [arPhase, tutorial]);
+
+    const startAR = useCallback(async () => {
+        const scene = sceneRef.current;
+        const overlay = overlayRef.current;
+        if (!scene || !overlay) return;
+        setTutorial('power');
+        setArPhase('starting');
+        try {
+            await scene.enterAR(overlay, (phase) => setArPhase(phase === 'ended' ? null : phase));
+        } catch {
+            // Sem a sessão interativa, a pessoa ainda vê a máquina na bancada pelo visualizador do Android.
+            setArPhase(null);
+            window.location.href = sceneViewerHref();
+        }
+    }, []);
+
+    // Toque em botão da tela não pode virar toque na máquina dentro da realidade aumentada.
+    useEffect(() => {
+        const overlay = overlayRef.current;
+        if (!overlay) return;
+        const onBeforeSelect = (event: Event) => {
+            if ((event.target as Element | null)?.closest?.('[data-ar-control]')) event.preventDefault();
+        };
+        overlay.addEventListener('beforexrselect', onBeforeSelect);
+        return () => overlay.removeEventListener('beforexrselect', onBeforeSelect);
+    }, []);
+
     const ready = state === 'ready';
     const failed = state === 'failed';
 
     return (
         <div className="grid items-start gap-5 lg:grid-cols-[1.25fr_.75fr]">
+            <div className="min-w-0 space-y-3">
             <div ref={stageRef} className="vp-3d-stage vp-plate">
                 <img
                     src={POSTER}
@@ -321,14 +453,25 @@ const VacuumExperience3D: React.FC = () => {
                                 </button>
                             )}
                         </div>
-                        {ar && (
-                            <a className="vp-3d-tool" href={ar.href} rel={ar.rel} data-track="vacuum_3d_ar" data-track-category="Vacuum Pump">
-                                {ar.rel === 'ar' && <img src={POSTER} alt="" width={1} height={1} className="absolute h-px w-px opacity-0" />}
-                                <Scan size={17} aria-hidden /> Ver na sua bancada
-                            </a>
-                        )}
                     </div>
                 )}
+            </div>
+            <VacuumARButton placement="stage" interactive={arInteractive} onStartInteractive={startAR} interactiveBusy={!ready || arPhase === 'starting'} offerLine={offerLine} onBuy={onBuy} />
+            </div>
+
+            {/* Tela da realidade aumentada no Android: só aparece dentro da sessão (:xr-overlay). */}
+            <div ref={overlayRef} className="vp-ar-overlay">
+                <div className="vp-ar-tools" data-ar-control>
+                    <button type="button" className="vp-3d-tool" onClick={() => sceneRef.current?.exitAR()}><X size={17} aria-hidden /> Sair</button>
+                    {arPhase === 'placed' && (
+                        <>
+                            <button type="button" className="vp-3d-tool" onClick={() => { setArPhase('placing'); sceneRef.current?.repositionAR(); }}><Scan size={17} aria-hidden /> Mudar de lugar</button>
+                            <button type="button" className="vp-3d-tool" aria-label="Girar a máquina" onClick={() => sceneRef.current?.rotateAR(90)}><RotateCw size={17} aria-hidden /></button>
+                        </>
+                    )}
+                </div>
+                {arPhase !== 'placed' && <p className="vp-ar-hint">Aponte para a bancada e toque para colocar a máquina, em tamanho real.</p>}
+                {arPhase === 'placed' && <ArCoach step={tutorial} machine={machine} bar={bar} buyLabel={buyLabel} onAction={onTutorialAction} onSound={onSound} onRestart={onRestartTutorial} onBuy={onBuyFromAR} />}
             </div>
 
             <ol ref={tourRef} className="vp-3d-tour" aria-label="Peças da máquina">

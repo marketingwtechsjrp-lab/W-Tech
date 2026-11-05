@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.0 (2026-11-05) - Vacuum Pump em realidade aumentada, com botão em destaque e tutorial de uso
+- Botão piscante com chama, Veja na sua própria bancada, abaixo da galeria e no bloco 3D; no computador ele abre um código QR para continuar no celular
+- Na realidade aumentada a máquina funciona: chave, seletor, ponteiro, cooler, visor e encaixe do borbulhador com bolhas
+- Tutorial de 4 passos dentro da realidade aumentada, terminando em Comprar por 10x de R$ 799
+- No iPhone, os comandos e o tutorial vêm dentro do próprio arquivo, com a faixa de compra da Apple
+- Quem abre pelo navegador interno do Instagram ou do Facebook recebe a instrução de abrir no navegador, com botão para copiar o link
+- A liberação fica em ar_interactive na configuração da oferta, então dá para voltar à versão sem comandos sem novo deploy
+
 ## v3.59.0 (2026-11-05) - Painel de vendas ao vivo da Vacuum Pump
 - Nova tela Vendas ao vivo no painel: máquinas, faturamento, metas, visitas, cliques, funil, kits e acessórios, atualizados a cada 4 segundos
 - Cada venda abre a comemoração em tela cheia, com som, confete, cidade e valor; a meta batida ganha uma comemoração maior

@@ -61,6 +61,8 @@ export interface VacuumOfferConfig {
     ends_at: string;
     /** Libera a venda antes de starts_at, sem a tela de "Me avise". */
     soft_open: boolean;
+    /** Libera a realidade aumentada com os comandos da máquina, depois de testada em aparelho real. */
+    ar_interactive: boolean;
     lot_size: number;
     sold_offset: number;
     presale_price: number;
@@ -82,6 +84,7 @@ export const VACUUM_DEFAULT_CONFIG: VacuumOfferConfig = {
     starts_at: '2026-11-06T00:00:00-03:00',
     ends_at: '2026-11-13T23:59:59-03:00',
     soft_open: false,
+    ar_interactive: false,
     lot_size: 50,
     sold_offset: 0,
     presale_price: 7990,
@@ -219,6 +222,7 @@ export function resolveVacuumConfig(raw: unknown): VacuumOfferConfig {
         starts_at,
         ends_at,
         soft_open: source.soft_open === true,
+        ar_interactive: source.ar_interactive === true,
         lot_size: positive(source.lot_size, d.lot_size),
         sold_offset: notNegative(source.sold_offset, d.sold_offset),
         presale_price: positive(source.presale_price, d.presale_price),
@@ -272,6 +276,7 @@ export interface VacuumOfferState {
     video_url: string | null;
     shipping_note: string;
     legal_line: string | null;
+    ar_interactive: boolean;
     bumps: VacuumBumpState[];
 }
 
@@ -340,6 +345,7 @@ export function getVacuumOfferState(config: VacuumOfferConfig, paidCount: number
         video_url: config.video_url,
         shipping_note: config.shipping_note,
         legal_line: config.legal_line,
+        ar_interactive: config.ar_interactive,
         bumps: config.bumps.map((bump) => {
             const bumpPrice = discounted ? bump.price_presale : bump.price_regular;
             return {

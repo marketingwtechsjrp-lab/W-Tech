@@ -3,6 +3,7 @@ import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Play, Plus, Q
 import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
+import { VacuumARButton } from '../components/vacuum-pump/VacuumARButton';
 import VacuumVideo, { type VacuumVideoHandle } from '../components/vacuum-pump/VacuumVideo';
 import { ComboImage, VACUUM_DETAILS, VACUUM_IMAGES, VACUUM_VIDEO } from '../components/vacuum-pump/vacuumMedia';
 import { VP_CSS } from '../components/vacuum-pump/vacuumStyles';
@@ -246,7 +247,19 @@ const LPVacuumPump: React.FC = () => {
     const offPercent = offer.compare_at ? Math.round((saving / offer.compare_at) * 100) : 0;
     const currentPhoto = GALLERY.find((item) => item.id === photo) ?? GALLERY[0];
 
+    // A flag da oferta libera para todos; o parâmetro serve para testar em aparelho antes disso.
+    const arInteractive = offer.ar_interactive || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('ra') === 'interativa');
+
+    const arOfferLine = `${offer.installments}x de ${formatBRL(offer.installment_value).replace(',00', '')} sem juros ou ${formatBRL(offer.price).replace(',00', '')} à vista`;
+
     useVacuumPageChrome();
+
+    // O código QR do computador abre a página direto no bloco 3D.
+    useEffect(() => {
+        if (window.location.hash !== '#maquina-3d') return;
+        const timer = window.setTimeout(() => experienceRef.current?.scrollIntoView({ block: 'start' }), 400);
+        return () => window.clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         const node = heroCta.current;
@@ -408,6 +421,9 @@ const LPVacuumPump: React.FC = () => {
                         </button>
                     </div>
                     <p className="mt-2 text-xs vp-muted">Fotos reais da máquina. Acessórios vendidos separadamente.</p>
+                    <div className="mt-3">
+                        <VacuumARButton placement="hero" interactive={arInteractive} offerLine={arOfferLine} onBuy={() => openCheckout()} onGoToStage={() => experienceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+                    </div>
                 </section>
 
                 <section className="vp-plate p-4 sm:p-6" aria-label="Preço e compra">
@@ -551,7 +567,7 @@ const LPVacuumPump: React.FC = () => {
                 <div className="mx-auto max-w-[1180px]">
                     <h2 className="vp-display text-4xl sm:text-5xl">Conheça a máquina por dentro</h2>
                     <p className="mb-5 mt-1 vp-muted">Arraste para girar. Toque em uma peça para ir até ela.</p>
-                    <VacuumExperience3D />
+                    <VacuumExperience3D arInteractive={arInteractive} offerLine={arOfferLine} buyLabel={soon ? 'Me avise quando abrir' : `Comprar por ${offer.installments}x de ${formatBRL(offer.installment_value).replace(',00', '')}`} onBuy={() => openCheckout()} />
                     <p className="mt-3 text-xs vp-muted">Modelo 3D feito a partir do projeto da máquina. Cores e detalhes podem variar.</p>
                 </div>
             </section>

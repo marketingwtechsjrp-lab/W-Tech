@@ -230,6 +230,30 @@ export const VP_CSS = `
   background: var(--vp-ink); color: #fff; font-size: .88rem; font-weight: 600; cursor: pointer; transition: background .15s ease; }
 .vp-3d-tool:hover, .vp-3d-tool[aria-pressed="true"] { background: var(--vp-red); }
 .vp-3d-tool:focus-visible, .vp-3d-stop:focus-visible { outline: 2px solid var(--vp-ink); outline-offset: 2px; }
+
+/* Chamada da realidade aumentada: pisca devagar, abaixo do limite de 3 vezes por segundo */
+.vp-ar-cta { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 62px; padding: .6rem 1rem; border: 0; border-radius: 12px; background: var(--vp-red); color: #fff; text-align: left; text-decoration: none; cursor: pointer; animation: vp-ar-blink 1.3s ease-in-out infinite; }
+.vp-ar-cta:disabled { cursor: progress; opacity: .85; animation: none; }
+.vp-ar-cta:focus-visible { outline: 2px solid var(--vp-ink); outline-offset: 3px; }
+.vp-ar-flame { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 999px; background: rgba(0,0,0,.24); color: #ffcf3d; }
+.vp-ar-flame svg { transform-origin: 50% 90%; animation: vp-ar-flame .75s ease-in-out infinite; }
+@keyframes vp-ar-blink { 0%, 100% { background: #e60000; box-shadow: 0 0 0 0 rgba(230,0,0,.55); } 50% { background: #ff2d1c; box-shadow: 0 0 0 11px rgba(230,0,0,0); } }
+@keyframes vp-ar-flame { 0%, 100% { transform: scale(1) rotate(-4deg); } 50% { transform: scale(1.14) rotate(4deg); } }
+
+/* Tela sobre a câmera na realidade aumentada do Android */
+.vp-ar-overlay { display: none; }
+.vp-ar-overlay:xr-overlay { display: block; position: fixed; inset: 0; color: #fff; font-family: Inter, sans-serif; }
+.vp-ar-tools { position: absolute; left: 10px; right: 10px; top: calc(10px + env(safe-area-inset-top)); display: flex; flex-wrap: wrap; gap: .4rem; }
+.vp-ar-tools .vp-3d-tool { border-radius: 8px; background: rgba(12,12,15,.82); }
+.vp-ar-hint { position: absolute; left: 16px; right: 16px; bottom: calc(24px + env(safe-area-inset-bottom)); padding: .7rem .9rem; border-radius: 10px; background: rgba(12,12,15,.82); text-align: center; font-weight: 600; pointer-events: none; }
+.vp-coach { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); display: grid; gap: .45rem; padding: .65rem .7rem; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; background: rgba(12,12,15,.86); color: #fff; }
+.vp-coach-step { color: #ffcf3d; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.vp-coach-reading { display: grid; justify-items: center; min-width: 50px; padding: .25rem .4rem; border-radius: 8px; background: var(--vp-red); line-height: 1; }
+.vp-coach-reading b { font-size: 1.1rem; }
+.vp-coach-reading span { margin-top: .1rem; font-size: .58rem; letter-spacing: .06em; }
+.vp-coach-icon { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.3); border-radius: 8px; background: transparent; color: #fff; cursor: pointer; }
+.vp-coach-main { min-height: 46px; padding: .4rem .8rem; border: 0; border-radius: 8px; background: var(--vp-red); color: #fff; font-weight: 700; font-size: .95rem; cursor: pointer; }
+.vp-coach-main:disabled { cursor: progress; opacity: .6; }
 .vp-3d-tour { display: flex; gap: .6rem; margin: 0 -1rem; padding: 0 1rem .5rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .vp-3d-tour::-webkit-scrollbar { display: none; }
 .vp-3d-stop { flex: 0 0 min(78vw, 320px); display: flex; gap: .75rem; padding: .85rem 1rem; border: 0; scroll-snap-align: center; text-align: left; color: inherit;
@@ -246,7 +270,7 @@ export const VP_CSS = `
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vp-bubble, .vp-video-sound { animation: none; }
+  .vp-bubble, .vp-video-sound, .vp-ar-cta, .vp-ar-flame svg { animation: none; }
   [data-reveal] { opacity: 1; transform: none; transition: none; }
   .vp-tile img, .vp-zoom img { transition: none; }
   .vp-btn, .vp-3d-poster, .vp-3d-canvas { transition: none; }
