@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.59.0",
+    "date": "2026-11-05",
+    "title": "Painel de vendas ao vivo da Vacuum Pump",
+    "changes": [
+      "Nova tela Vendas ao vivo no painel: máquinas, faturamento, metas, visitas, cliques, funil, kits e acessórios, atualizados a cada 4 segundos",
+      "Cada venda abre a comemoração em tela cheia, com som, confete, cidade e valor; a meta batida ganha uma comemoração maior",
+      "Modo TV em tela cheia, que mantém a tela acesa, e metas editáveis no próprio painel",
+      "Bloco Para o time agir mostra Pix aguardando, cartão recusado e quem parou no carrinho",
+      "Novas permissões em Equipe & Acesso para liberar o painel e a edição das metas"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.58.1",
     "date": "2026-11-05",
     "title": "Vídeo da Vacuum Pump com animações suaves",

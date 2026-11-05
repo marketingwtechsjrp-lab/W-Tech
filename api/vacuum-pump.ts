@@ -10,6 +10,7 @@ import {
 } from '../lib/vacuumOffer.js';
 import { getServiceClient } from './_auth.js';
 import { denyCron, isCronAuthorized } from './_cron.js';
+import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js';
 import { getRequestClientIp } from './_geoip.js';
 import {
     assignFollowUp,
@@ -529,6 +530,7 @@ export default async function handler(req: any, res: any) {
         if (req.method === 'GET') {
             if (action === 'offer') return await handleOffer(supabase, res);
             if (action === 'status') return await handleStatus(supabase, req, res);
+            if (action === 'dashboard') return await handleVacuumDashboard(supabase, req, res);
             if (action === 'sweep') {
                 if (!isCronAuthorized(req)) return denyCron(res);
                 const result = await sweepVacuumAbandoned(supabase);
@@ -541,6 +543,7 @@ export default async function handler(req: any, res: any) {
             if (action === 'save') return await handleSave(supabase, req, res);
             if (action === 'shipping') return await handleShipping(supabase, req, res);
             if (action === 'pay') return await handlePay(supabase, req, res);
+            if (action === 'dashboard_goals') return await handleVacuumGoals(supabase, req, res);
         }
         return res.status(404).json({ error: 'Ação desconhecida' });
     } catch (err: any) {

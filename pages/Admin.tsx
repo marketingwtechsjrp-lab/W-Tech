@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import {
     Users, User, BookOpen, DollarSign, LayoutDashboard,
     KanbanSquare, FileText, Settings, Bell, Search,
@@ -72,6 +72,7 @@ import { AdminKeyboardProvider, useRegisterPage } from '../components/admin/keyb
 import CommandPalette from '../components/admin/keyboard/CommandPalette';
 import ShortcutsHelp from '../components/admin/keyboard/ShortcutsHelp';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
+const VacuumLivePanel = lazy(() => import('../components/admin/Campaign/VacuumLivePanel'));
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { formatDateLocal, cn } from '../lib/utils';
 import changelogData from '../CHANGELOG.json';
@@ -8276,6 +8277,11 @@ const Admin = () => {
                     >
                         {currentView === 'dashboard' && hasPermission('dashboard_view') && <DashboardView permissions={livePermissions} />}
                         {currentView === 'analytics' && hasPermission('analytics_view') && <AnalyticsView />}
+                        {currentView === 'vacuum_live' && hasPermission('campaign_live_view') && (
+                            <Suspense fallback={<p className="p-6 text-sm text-[var(--admin-text-secondary)]">Carregando o painel...</p>}>
+                                <VacuumLivePanel />
+                            </Suspense>
+                        )}
                         {currentView === 'whatsapp_inbox' && resolvePermission('whatsapp_inbox_view', 'crm_view') && <WhatsAppModule canTrainAI={hasPermission('whatsapp_ai_train')} canViewMetrics={hasPermission('whatsapp_view_metrics')} canViewAll={hasPermission('whatsapp_view_all')} />}
                         {currentView === 'crm' && hasPermission('crm_view') && <CRMView onConvertLead={(lead, conversionData: any) => {
                             if (conversionData?.type === 'course') {

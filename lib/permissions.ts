@@ -212,6 +212,8 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
       { key: 'dashboard_view', label: 'Visualizar Dashboard (Visão Geral)' },
       { key: 'dashboard_view_all', label: 'Visualizar Dados Globais (Dashboard/KPIs)' },
       { key: 'analytics_view', label: 'Visualizar Analytics' },
+      { key: 'campaign_live_view', label: 'Ver Painel de Vendas ao Vivo' },
+      { key: 'campaign_live_manage', label: 'Definir Metas do Painel de Vendas' },
       { key: 'intelligence_view', label: 'Visualizar Relatórios IA (W-Intelligence)' },
       { key: 'manage_users', label: 'Gerenciar Equipe' },
       { key: 'manage_settings', label: 'Acesso Configurações' },

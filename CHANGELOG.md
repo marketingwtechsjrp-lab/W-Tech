@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.59.0 (2026-11-05) - Painel de vendas ao vivo da Vacuum Pump
+- Nova tela Vendas ao vivo no painel: máquinas, faturamento, metas, visitas, cliques, funil, kits e acessórios, atualizados a cada 4 segundos
+- Cada venda abre a comemoração em tela cheia, com som, confete, cidade e valor; a meta batida ganha uma comemoração maior
+- Modo TV em tela cheia, que mantém a tela acesa, e metas editáveis no próprio painel
+- Bloco Para o time agir mostra Pix aguardando, cartão recusado e quem parou no carrinho
+- Novas permissões em Equipe & Acesso para liberar o painel e a edição das metas
+
 ## v3.58.1 (2026-11-05) - Vídeo da Vacuum Pump com animações suaves
 - Títulos, preço, seta do amortecedor e transições do vídeo entram aos poucos, sem aparecer de repente
 

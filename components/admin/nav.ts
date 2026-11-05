@@ -2,7 +2,7 @@ import {
     LayoutDashboard, KanbanSquare, CheckCircle, UserCheck, Wrench,
     ShoppingBag, GraduationCap, Package, FileText, DollarSign,
     Megaphone, Rocket, Sparkles, Users, Settings, BarChart3, ClipboardList,
-    ClipboardCheck, Droplets, Star, MessageCircle, Bot, BrainCircuit,
+    ClipboardCheck, Droplets, Star, MessageCircle, Bot, BrainCircuit, Trophy,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -51,6 +51,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     {
         label: 'Vendas',
         items: [
+            { icon: Trophy, label: 'Vendas ao vivo', view: 'vacuum_live', permission: 'campaign_live_view', keywords: 'vacuum pump black friday tv placar metas tempo real comemoração' },
             { icon: ShoppingBag, label: 'Pedidos', view: 'orders', permission: 'orders_view', goKey: 'p', keywords: 'vendas loja compras' },
             { icon: GraduationCap, label: 'Cursos & Alunos', view: 'courses_manager', permission: 'courses_view', goKey: 'a', keywords: 'turmas matriculas alunos academia' },
             { icon: Star, label: 'Avaliações de Curso', view: 'course_surveys', permission: 'courses_view', goKey: 'q', keywords: 'avaliacao feedback nps quiz satisfacao alunos turma formador liqui moly' },
