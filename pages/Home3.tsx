@@ -14,7 +14,7 @@ import { ORGANIZATION_ID } from '../lib/publicUrl';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 
-import { sanitizeHtml } from '../lib/utils';
+import { sanitizeHtml, getCourseLink } from '../lib/utils';
 import { resolveBlogImage } from '../lib/blogImages';
 // import { HeroSection } from '../components/ui/hero-section-5'; // Replaced by Animation
 import { HeroScrollAnimation } from '../components/HeroScrollAnimation';
@@ -86,7 +86,8 @@ const Home3 = () => {
                         registeredCount: c.registered_count,
                         hotelsInfo: c.hotels_info,
                         dateEnd: c.date_end,
-                        tags: c.tags || []
+                        tags: c.tags || [],
+                        customLink: c.custom_link
                     }));
 
                     setCourses(dbCourses);
@@ -368,12 +369,13 @@ const Home3 = () => {
 
                                         {/* Action */}
                                         <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                            <button
-                                                onClick={() => navigate(getCourseLink(course))}
+                                            {/* Link e não navigate(): alguns custom_link são URL absoluta */}
+                                            <Link
+                                                to={getCourseLink(course)}
                                                 className="w-full md:w-auto px-6 py-3 bg-white text-black text-sm font-bold rounded-lg hover:bg-wtech-gold transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
                                             >
                                                 Mais Detalhes <ArrowRight size={16} />
-                                            </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 ))
