@@ -13,6 +13,7 @@ import {
     formatBRL,
     getVacuumOfferState,
     isSaoPauloCep,
+    normalizeBrPhone,
     onlyDigits,
     resolveVacuumConfig,
     vacuumDeliveryDeadline,
@@ -347,12 +348,62 @@ export async function cancelPendingPix(token: string, paymentId: string): Promis
     }
 }
 
-async function convertLead(supabase: any, checkout: any, sale: { id: string; total: number; orderNumber: string }): Promise<void> {
+/** Em quem foi direto ao site não há vendedor nem comissão. */
+const DIRECT_SALE_LABEL = 'Compra direta online';
+/** Conversa com alguém da equipe neste intervalo antes da compra dá o crédito ao vendedor. */
+const SELLER_CONTACT_WINDOW_MS = 15 * 24 * 60 * 60 * 1000;
+
+/** O WhatsApp pode ter gravado o número brasileiro com ou sem o nono dígito. */
+function whatsappIdsOf(phone: unknown): string[] {
+    const digits = normalizeBrPhone(phone);
+    if (!digits) return [];
+    const ids = [`55${digits}`];
+    if (digits.length === 11 && digits[2] === '9') ids.push(`55${digits.slice(0, 2)}${digits.slice(3)}`);
+    if (digits.length === 10) ids.push(`55${digits.slice(0, 2)}9${digits.slice(2)}`);
+    return ids;
+}
+
+/**
+ * Quem leva o crédito da venda. Compra direta no site não tem vendedor, mesmo que a varredura
+ * já tenha entregado o carrinho a alguém: só conta se uma pessoa da equipe falou de verdade
+ * com o cliente no WhatsApp. Sem como saber quem foi, ou se a consulta falhar, a venda fica
+ * como direta: o gestor corrige no pedido, e a compra nunca trava por causa disso.
+ */
+async function findCreditedSeller(supabase: any, checkout: any, now: number): Promise<{ id: string; name: string } | null> {
+    const ids = whatsappIdsOf(checkout.phone);
+    if (!ids.length) return null;
+    try {
+        const { data: talks, error } = await supabase
+            .from('SITE_WhatsAppCloudMessages')
+            .select('wa_id')
+            .in('wa_id', ids)
+            .eq('sent_by', 'human')
+            .gte('created_at', new Date(now - SELLER_CONTACT_WINDOW_MS).toISOString())
+            .limit(1);
+        if (error) throw new Error(error.message);
+        if (!talks?.length) return null;
+
+        const { data: conversation } = await supabase
+            .from('SITE_WhatsAppCloudConversations')
+            .select('assigned_to, handoff_by')
+            .eq('wa_id', talks[0].wa_id)
+            .maybeSingle();
+        const sellerId = conversation?.assigned_to || conversation?.handoff_by || checkout.followup_assigned_to;
+        if (!isUuid(sellerId)) return null;
+        const { data: seller } = await supabase.from('SITE_Users').select('id, name').eq('id', sellerId).maybeSingle();
+        return seller?.name ? { id: seller.id, name: seller.name } : null;
+    } catch (err: any) {
+        console.error('[Vacuum] Falha ao apurar o vendedor (a venda fica como direta):', err?.message);
+        return null;
+    }
+}
+
+async function convertLead(supabase: any, checkout: any, sale: { id: string; total: number; orderNumber: string; fromSeller: boolean }): Promise<void> {
     const lead = checkout.lead_id
         ? (await supabase.from('SITE_Leads').select('*').eq('id', checkout.lead_id).maybeSingle()).data
         : await findExistingLead<any>(supabase, { email: checkout.email, phone: checkout.phone });
 
-    const fromSeller = !!checkout.followup_assigned_to;
+    const { fromSeller } = sale;
     const tags = Array.from(
         new Set([
             ...(lead?.tags || []),
@@ -417,11 +468,7 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
     const orderNumber = `WT-VP${String(now).slice(-6)}${Math.floor(Math.random() * 100)}`;
     const summary = items.map((item) => item.name).join(' + ') || 'Vacuum Pump Standard W-Tech';
 
-    let sellerName = 'Checkout Automático';
-    if (checkout.followup_assigned_to) {
-        const { data: seller } = await supabase.from('SITE_Users').select('name').eq('id', checkout.followup_assigned_to).maybeSingle();
-        if (seller?.name) sellerName = seller.name;
-    }
+    const seller = await findCreditedSeller(supabase, checkout, now);
 
     const { data: sale, error: saleError } = await supabase
         .from('SITE_Sales')
@@ -441,8 +488,8 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
                 customer_email: checkout.email,
                 customer_phone: checkout.phone,
                 lead_id: checkout.lead_id || null,
-                seller_id: checkout.followup_assigned_to || null,
-                seller_name: sellerName,
+                seller_id: seller?.id ?? null,
+                seller_name: seller?.name ?? DIRECT_SALE_LABEL,
                 sale_date: dateSP(new Date(now)),
                 sale_summary: summary,
                 // Sem linhas em SITE_SaleItems: estes itens ainda não existem no catálogo
@@ -502,7 +549,7 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
         ]);
         if (txError) console.error('[Vacuum] Falha no financeiro (não-fatal):', txError.message);
 
-        await convertLead(supabase, checkout, { id: sale.id, total, orderNumber: sale.order_number });
+        await convertLead(supabase, checkout, { id: sale.id, total, orderNumber: sale.order_number, fromSeller: !!seller });
     } catch (err: any) {
         console.error('[Vacuum] Erro em tarefa secundária (não-fatal):', err?.message);
     }

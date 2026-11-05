@@ -59,7 +59,7 @@ ck_open AS (
     WHERE campaign = p_campaign
 ),
 sales_all AS (
-    SELECT id, order_number, total_value, payment_method, items, customer_name, delivery_city, delivery_state, seller_name, created_at
+    SELECT id, order_number, total_value, payment_method, items, customer_name, delivery_city, delivery_state, seller_id, seller_name, created_at
     FROM "SITE_Sales"
     WHERE campaign = p_campaign AND status IN ('paid', 'approved', 'producing', 'shipped', 'delivered')
 ),
@@ -132,6 +132,7 @@ SELECT jsonb_build_object(
     'sales', jsonb_build_object(
         'count', (SELECT count(*) FROM sales),
         'revenue', (SELECT COALESCE(sum(total_value), 0) FROM sales),
+        'with_seller', (SELECT count(*) FROM sales WHERE seller_id IS NOT NULL),
         'with_accessory', (SELECT count(DISTINCT sale_id) FROM sale_items WHERE item_id IS DISTINCT FROM 'vacuum_pump_standard'),
         'by_method', COALESCE((
             SELECT jsonb_agg(row_to_json(m) ORDER BY m.sales DESC)
@@ -143,7 +144,7 @@ SELECT jsonb_build_object(
         ), '[]'::jsonb),
         'by_seller', COALESCE((
             SELECT jsonb_agg(row_to_json(v) ORDER BY v.sales DESC)
-            FROM (SELECT seller_name AS seller, count(*) AS sales, COALESCE(sum(total_value), 0) AS revenue FROM sales WHERE seller_name IS NOT NULL GROUP BY seller_name) v
+            FROM (SELECT seller_name AS seller, count(*) AS sales, COALESCE(sum(total_value), 0) AS revenue FROM sales WHERE seller_id IS NOT NULL GROUP BY seller_name) v
         ), '[]'::jsonb)
     ),
     'recent', COALESCE((
@@ -157,7 +158,7 @@ SELECT jsonb_build_object(
                 s.delivery_state AS state,
                 s.total_value AS total,
                 s.payment_method AS method,
-                s.seller_name AS seller,
+                CASE WHEN s.seller_id IS NOT NULL THEN s.seller_name END AS seller,
                 s.created_at,
                 (SELECT count(*) FROM sales_all earlier WHERE earlier.created_at <= s.created_at) AS position,
                 COALESCE((SELECT jsonb_agg(si.item_name) FROM sale_items si WHERE si.sale_id = s.id), '[]'::jsonb) AS items

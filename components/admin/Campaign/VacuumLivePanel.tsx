@@ -39,6 +39,7 @@ interface DashboardData {
         count: number;
         revenue: number;
         with_accessory: number;
+        with_seller: number;
         by_method: { method: string; sales: number; revenue: number }[];
         by_item: { id: string; name: string; units: number; revenue: number }[];
         by_seller: { seller: string; sales: number; revenue: number }[];
@@ -233,7 +234,7 @@ const SaleOverlay: React.FC<{ celebration: Celebration; goals: VacuumGoals; onCl
                 <p className="vl-alert-who">{sale.first_name}{place ? ` · ${place}` : ''}</p>
                 <p className="vl-alert-value">{brl(sale.total, true)}</p>
                 {extras.length > 0 && <p className="vl-alert-items">{extras.map((item) => <span key={item}>+ {item}</span>)}</p>}
-                {sale.seller && <p className="vl-alert-seller">Vendedor: {sale.seller}</p>}
+                <p className="vl-alert-seller">{sale.seller ? `Vendedor: ${sale.seller}` : 'Compra direta online'}</p>
                 <p className="vl-alert-goal">{left > 0 ? `Faltam ${left} para a meta de ${goals.machines}` : `Meta de ${goals.machines} batida. Rumo às ${goals.stretch}!`}</p>
             </div>
         </div>
@@ -540,7 +541,7 @@ const VacuumLivePanel: React.FC = () => {
                     <li className="vl-kpi"><span>Visitantes</span><b><Count value={data?.visits.visitors ?? 0} /></b><small>{int(data?.visits.views ?? 0)} visualizações</small></li>
                     <li className="vl-kpi"><span>Cliques em comprar</span><b><Count value={data?.clicks.buy ?? 0} /></b><small>{int(data?.clicks.total ?? 0)} cliques no total</small></li>
                     <li className="vl-kpi"><span>Carrinhos iniciados</span><b><Count value={funnel?.checkout ?? 0} /></b><small>deixaram nome e WhatsApp</small></li>
-                    <li className="vl-kpi"><span>Vendas no período</span><b><Count value={salesInRange} /></b><small>{brl(data?.sales.revenue ?? 0)}</small></li>
+                    <li className="vl-kpi"><span>Vendas no período</span><b><Count value={salesInRange} /></b><small>{int(salesInRange - (data?.sales.with_seller ?? 0))} direto no site · {int(data?.sales.with_seller ?? 0)} com vendedor</small></li>
                     <li className="vl-kpi"><span>Conversão</span><b>{percent(funnel?.paid ?? 0, funnel?.visitors ?? 0, 2)}</b><small>de visitante para venda</small></li>
                 </ul>
 
@@ -596,6 +597,7 @@ const VacuumLivePanel: React.FC = () => {
                                             {new Date(sale.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
                                             {sale.method ? ` · ${sale.method.replace('Mercado Pago - ', '')}` : ''}
                                             {sale.items.length > 1 ? ` · +${sale.items.length - 1} acessório${sale.items.length > 2 ? 's' : ''}` : ''}
+                                            {` · ${sale.seller ?? 'Direto no site'}`}
                                         </small>
                                     </div>
                                     <b className="vl-sale-value">{brl(sale.total)}</b>

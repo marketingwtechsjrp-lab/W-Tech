@@ -77,6 +77,7 @@ class FakeQuery {
     neq(column, value) { this.filters.push((r) => r[column] !== value); return this; }
     is(column, value) { this.filters.push((r) => (r[column] ?? null) === value); return this; }
     lt(column, value) { this.filters.push((r) => r[column] < value); return this; }
+    gte(column, value) { this.filters.push((r) => r[column] >= value); return this; }
     in(column, values) { this.filters.push((r) => values.includes(r[column])); return this; }
     contains(column, values) { this.filters.push((r) => values.every((v) => (r[column] || []).includes(v))); return this; }
     ilike(column, pattern) {
@@ -652,6 +653,69 @@ test('pediu contato: vai para o vendedor na hora', async () => {
     assert.equal(db.tables.SITE_Tasks[0].priority, 'URGENT');
 });
 
+test('vendedor recebeu a tarefa mas não falou com o cliente: compra direta, sem comissão', async () => {
+    const db = seed();
+    const payment = { id: 940, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' };
+    mockMercadoPago(() => ({ json: payment }));
+    const id = await startCheckout();
+    const checkout = db.tables.SITE_CampaignCheckouts[0];
+    checkout.updated_at = new Date(Date.now() - 31 * 60_000).toISOString();
+    await lib.sweepVacuumAbandoned(db);
+    assert.ok(checkout.followup_assigned_to, 'a varredura entregou o carrinho');
+
+    await pay(id);
+    const sale = db.tables.SITE_Sales[0];
+    assert.equal(sale.seller_id, null);
+    assert.equal(sale.seller_name, 'Compra direta online');
+    assert.equal(db.tables.SITE_Tasks[0].status, 'DONE', 'a tarefa fecha do mesmo jeito');
+    assert.ok(db.tables.SITE_Leads[0].tags.includes('checkout_automatico'));
+    assert.ok(!db.tables.SITE_Leads[0].tags.includes('recuperado_por_vendedor'));
+});
+
+test('compra direta sem nunca ter caído para vendedor: sem vendedor', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 941, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const id = await startCheckout();
+    await pay(id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, null);
+    assert.equal(db.tables.SITE_Sales[0].seller_name, 'Compra direta online');
+});
+
+test('robô e disparo no WhatsApp não contam como conversa com vendedor', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 942, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const id = await startCheckout();
+    const seller = db.tables.SITE_Users[0];
+    db.tables.SITE_WhatsAppCloudConversations = [{ id: 'c1', wa_id: '5517999990001', assigned_to: seller.id, handoff_by: seller.id }];
+    db.tables.SITE_WhatsAppCloudMessages = ['ai', 'system', 'customer'].map((sent_by) => ({ wa_id: '5517999990001', sent_by, created_at: new Date().toISOString() }));
+    await pay(id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, null);
+});
+
+test('conversa antiga, fora da janela de 15 dias, não dá comissão', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 943, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const id = await startCheckout();
+    const seller = db.tables.SITE_Users[0];
+    db.tables.SITE_WhatsAppCloudConversations = [{ id: 'c1', wa_id: '5517999990001', assigned_to: seller.id }];
+    db.tables.SITE_WhatsAppCloudMessages = [{ wa_id: '5517999990001', sent_by: 'human', created_at: new Date(Date.now() - 16 * 86_400_000).toISOString() }];
+    await pay(id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, null);
+});
+
+test('conversou com o vendedor antes de comprar, mesmo com o número sem o nono dígito: crédito é dele', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 944, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const id = await startCheckout();
+    const seller = db.tables.SITE_Users[0];
+    db.tables.SITE_WhatsAppCloudConversations = [{ id: 'c1', wa_id: '551799990001', assigned_to: seller.id }];
+    db.tables.SITE_WhatsAppCloudMessages = [{ wa_id: '551799990001', sent_by: 'human', created_at: new Date().toISOString() }];
+    await pay(id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, seller.id);
+    assert.equal(db.tables.SITE_Sales[0].seller_name, seller.name);
+    assert.ok(db.tables.SITE_Leads[0].tags.includes('recuperado_por_vendedor'));
+});
+
 test('comprou depois de ser chamado: tarefa fecha e a venda fica com o vendedor', async () => {
     const db = seed();
     const payment = { id: 905, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990 };
@@ -661,6 +725,7 @@ test('comprou depois de ser chamado: tarefa fecha e a venda fica com o vendedor'
     checkout.updated_at = new Date(Date.now() - 31 * 60_000).toISOString();
     await lib.sweepVacuumAbandoned(db);
     assert.equal(db.tables.SITE_Tasks[0].status, 'TODO');
+    db.tables.SITE_WhatsAppCloudMessages = [{ wa_id: '5517999990001', sent_by: 'human', created_at: new Date().toISOString() }];
 
     await pay(id);
     assert.equal(db.tables.SITE_Tasks[0].status, 'DONE');

@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.5 (2026-11-05) - Vendas diretas da Vacuum Pump sem vendedor
+- Compra direta no site fica sem vendedor e sem comissão, marcada como Compra direta online, mesmo que o carrinho já tenha sido entregue a alguém
+- Vendedor só leva o crédito se alguém da equipe conversou com o cliente no WhatsApp nos 15 dias antes da compra
+- Painel ao vivo separa vendas diretas e com vendedor, e mostra quem foi em cada venda
+- Carrinho avisa que a escolha de 1x a 10x aparece depois do número do cartão
+
 ## v3.60.4 (2026-11-05) - Realidade aumentada abre direto na câmera, com o relógio de volta
 - No iPhone, o botão vermelho volta a abrir a câmera direto, sem a tela branca do objeto 3D
 - Relógio da máquina volta a aparecer na realidade aumentada, com mostrador e ponteiro

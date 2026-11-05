@@ -797,6 +797,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
 
                                 {/* O cartão fica montado: voltar do Pix não apaga o que a pessoa já digitou. */}
                                 <div className={`mt-4 ${payMethod === 'card' ? '' : 'hidden'}`}>
+                                    <p className="mb-2 text-sm font-semibold">Digite o número do cartão para escolher em quantas vezes pagar: até {offer.installments}x sem juros.</p>
                                     {!offer.mp_public_key || brickState === 'failed' ? (
                                         <div className="border border-[var(--vp-line)] p-4 text-sm">
                                             <p className="mb-3">O pagamento com cartão não abriu agora. Você pode pagar no Pix ou chamar um vendedor, nas mesmas condições.</p>
