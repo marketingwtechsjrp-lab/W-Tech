@@ -123,15 +123,20 @@ export const VP_CSS = `
 .vp-option:hover { box-shadow: inset 0 0 0 1px var(--vp-ink); }
 .vp-option-on, .vp-option-on:hover { box-shadow: inset 0 0 0 2px var(--vp-red); background: #fff7f6; }
 
-.vp-bump { display: grid; grid-template-columns: 92px 1fr; gap: .9rem; padding: .9rem; background: var(--vp-plate); box-shadow: inset 0 0 0 1px var(--vp-line); cursor: pointer; transition: box-shadow .15s ease, background .15s ease; }
+.vp-combo { display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .55rem; background: var(--vp-plate-2); }
+.vp-combo-item { position: relative; display: grid; place-items: center; flex: 1 1 0; min-width: 0; max-width: 150px; aspect-ratio: 1 / 1; background: #fff; box-shadow: inset 0 0 0 1px var(--vp-line); overflow: hidden; color: var(--vp-text); }
+.vp-combo-item img { width: 100%; height: 100%; padding: 4px; object-fit: contain; }
+.vp-combo-plus { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--vp-red); color: #fff; }
+.vp-combo-sm .vp-combo-item { max-width: 86px; }
+.vp-combo-sm .vp-combo-plus { width: 22px; height: 22px; }
+
+.vp-bump { display: grid; grid-template-columns: 1fr; align-items: start; gap: .75rem; padding: .9rem; background: var(--vp-plate); box-shadow: inset 0 0 0 1px var(--vp-line); cursor: pointer; transition: box-shadow .15s ease, background .15s ease; }
 .vp-bump:hover { box-shadow: inset 0 0 0 1px var(--vp-ink); }
 .vp-bump-on, .vp-bump-on:hover { box-shadow: inset 0 0 0 2px var(--vp-red); background: #fff7f6; }
 .vp-bump:focus-within { outline: 2px solid var(--vp-ink); outline-offset: 2px; }
-.vp-bump-img { display: grid; place-items: center; width: 92px; height: 92px; background: var(--vp-plate-2); overflow: hidden; }
-.vp-bump-img img { width: 100%; height: 100%; object-fit: contain; }
 .vp-bump-toggle { display: inline-flex; align-items: center; gap: .4rem; padding: .4rem .75rem; background: var(--vp-ink); color: #fff; font-size: .84rem; font-weight: 700; }
 .vp-bump-on .vp-bump-toggle { background: var(--vp-green); }
-@media (min-width: 640px) { .vp-bump { grid-template-columns: 120px 1fr; } .vp-bump-img { width: 120px; height: 120px; } }
+@media (min-width: 640px) { .vp-bump { grid-template-columns: 210px 1fr; } }
 
 /* Experiência 3D: o pôster fica no lugar até o modelo chegar, sem pular o layout */
 .vp-3d-stage { --vp-cut: 18px; aspect-ratio: 1 / 1; overflow: hidden; }

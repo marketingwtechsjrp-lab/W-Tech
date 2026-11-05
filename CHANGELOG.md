@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.57.3 (2026-11-05) - Compre junto da Vacuum Pump com a máquina + a peça
+- Compre junto e order bump do carrinho mostram a foto da máquina, um + e a foto do acessório
+- Página ganha a oferta com os dois acessórios juntos, com total, parcela e economia em cada opção
+- Ficha dos acessórios recolhida para a página continuar leve
+
 ## v3.57.2 (2026-11-05) - Vídeo da Vacuum Pump na página e fotos da galeria sem corte na sombra
 - Vídeo de 1min27 logo abaixo do preço, com miniatura na galeria; o arquivo só baixa quando a pessoa dá o play
 - Sombra das fotos da galeria termina suave, sem corte reto nas laterais

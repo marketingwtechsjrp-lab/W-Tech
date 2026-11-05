@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.57.3",
+    "date": "2026-11-05",
+    "title": "Compre junto da Vacuum Pump com a máquina + a peça",
+    "changes": [
+      "Compre junto e order bump do carrinho mostram a foto da máquina, um + e a foto do acessório",
+      "Página ganha a oferta com os dois acessórios juntos, com total, parcela e economia em cada opção",
+      "Ficha dos acessórios recolhida para a página continuar leve"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.57.2",
     "date": "2026-11-05",
     "title": "Vídeo da Vacuum Pump na página e fotos da galeria sem corte na sombra",

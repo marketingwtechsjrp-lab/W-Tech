@@ -3,7 +3,7 @@ import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Play, Plus, Q
 import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
-import { BubbleChamber, VACUUM_IMAGES, VACUUM_VIDEO } from '../components/vacuum-pump/vacuumMedia';
+import { ComboImage, VACUUM_IMAGES, VACUUM_VIDEO } from '../components/vacuum-pump/vacuumMedia';
 import { VP_CSS } from '../components/vacuum-pump/vacuumStyles';
 import {
     dateLabel,
@@ -20,7 +20,7 @@ import {
 import { pushEvent, pushLead } from '../lib/dataLayer';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
-import { VACUUM_ITEM_NAME, brlParts, formatBRL, normalizeBrPhone, vacuumEndTimeLabel, vacuumUrgencyLabel } from '../lib/vacuumOffer';
+import { VACUUM_ITEM_NAME, brlParts, computeVacuumCart, formatBRL, normalizeBrPhone, vacuumEndTimeLabel, vacuumUrgencyLabel } from '../lib/vacuumOffer';
 
 const EXIT_KEY = 'vp_exit_shown';
 
@@ -163,6 +163,40 @@ const LeadForm: React.FC<{ offer: VacuumOffer; onDone?: () => void; compact?: bo
             {error && <p role="alert" className="text-sm vp-red sm:col-span-3">{error}</p>}
             <p className="text-xs vp-muted sm:col-span-3">Só usamos seu contato para falar sobre esta oferta. <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">Privacidade</a>.</p>
         </form>
+    );
+};
+
+const ComboCard: React.FC<{ offer: VacuumOffer; bumps: VacuumOffer['bumps']; title: string; onBuy: (bumpIds: string[]) => void }> = ({ offer, bumps, title, onBuy }) => {
+    const ids = bumps.map((bump) => bump.id);
+    const cart = computeVacuumCart(offer, ids);
+    const before = (offer.compare_at ?? offer.price) + bumps.reduce((sum, bump) => sum + (bump.anchor ?? bump.price), 0);
+    const saving = before - cart.total;
+    const details = bumps.flatMap((bump) => bump.details ?? []);
+
+    return (
+        <article className="vp-plate flex flex-col p-3 sm:p-4">
+            <ComboImage items={bumps} />
+            <h3 className="mt-3 font-bold leading-snug">{title}</h3>
+            {details.length > 0 && (
+                <details className="vp-faq mt-1 text-sm">
+                    <summary className="flex items-center gap-1 font-semibold vp-muted">{bumps.length > 1 ? 'O que vem nos acessórios' : 'O que vem no acessório'} <ChevronDown className="vp-faq-icon" size={15} aria-hidden /></summary>
+                    <ul className="mt-2 space-y-1 vp-muted">
+                        {details.map((line) => (
+                            <li key={line} className="flex gap-1.5"><Check className="mt-0.5 shrink-0 vp-green" size={14} aria-hidden /><span>{line}</span></li>
+                        ))}
+                    </ul>
+                </details>
+            )}
+            <div className="mt-auto pt-3 vp-num">
+                {saving > 0 && <p className="text-sm vp-muted">De <s>{formatBRL(before)}</s> por</p>}
+                <p className="vp-display text-4xl vp-red">{formatBRL(cart.total)}</p>
+                <p className="text-sm">ou <b>{offer.installments}x de {formatBRL(cart.installment_value)}</b> <span className="font-semibold vp-green">sem juros</span></p>
+                {saving > 0 && <p className="vp-save mt-1.5 text-xs">Você economiza {formatBRL(saving)}</p>}
+                <button type="button" className="vp-btn mt-3 w-full !min-h-[48px] !text-lg" onClick={() => onBuy(ids)} data-track={`vacuum_add_${ids.join('_')}`} data-track-category="Vacuum Pump">
+                    <Plus size={18} aria-hidden /> Comprar junto
+                </button>
+            </div>
+        </article>
     );
 };
 
@@ -395,33 +429,12 @@ const LPVacuumPump: React.FC = () => {
             <section className="px-4 pb-8" aria-labelledby="vp-junto">
                 <div className="mx-auto max-w-[1180px]">
                     <h2 id="vp-junto" className="vp-display text-3xl sm:text-4xl">Compre junto</h2>
-                    <p className="mt-1 text-sm vp-muted">Acessórios vendidos separadamente. Entram na mesma parcela.</p>
-                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                    <p className="mt-1 text-sm vp-muted">A máquina com os acessórios, na mesma parcela e sem juros. Acessórios vendidos separadamente.</p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-3">
                         {offer.bumps.map((bump) => (
-                            <article key={bump.id} className="vp-plate grid gap-4 p-4 sm:grid-cols-[140px_1fr]">
-                                <div className="vp-bump-img !h-[140px] !w-full sm:!w-[140px]">
-                                    {bump.image ? <img src={bump.image} alt={bump.name} width={280} height={280} loading="lazy" /> : <BubbleChamber />}
-                                </div>
-                                <div className="min-w-0">
-                                    <h3 className="text-lg font-bold leading-snug">{bump.name}</h3>
-                                    <ul className="mt-2 space-y-1 text-sm vp-muted">
-                                        {(bump.details ?? []).map((line) => (
-                                            <li key={line} className="flex gap-1.5"><Check className="mt-0.5 shrink-0 vp-green" size={14} aria-hidden /><span>{line}</span></li>
-                                        ))}
-                                    </ul>
-                                    <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-                                        <div className="vp-num">
-                                            {bump.anchor && <p className="text-sm vp-muted">De <s>{formatBRL(bump.anchor)}</s> <span className="font-semibold vp-green">comprando junto</span></p>}
-                                            <p className="vp-display text-3xl vp-red">{formatBRL(bump.price)}</p>
-                                            <p className="text-sm">+ {formatBRL(bump.installment_value)} na parcela</p>
-                                        </div>
-                                        <button type="button" className="vp-btn !min-h-[46px] !px-4 !text-base" onClick={() => openCheckout([bump.id])} data-track={`vacuum_add_${bump.id}`} data-track-category="Vacuum Pump">
-                                            <Plus size={17} aria-hidden /> Comprar junto
-                                        </button>
-                                    </div>
-                                </div>
-                            </article>
+                            <ComboCard key={bump.id} offer={offer} bumps={[bump]} title={`Máquina + ${bump.name}`} onBuy={openCheckout} />
                         ))}
+                        {offer.bumps.length > 1 && <ComboCard offer={offer} bumps={offer.bumps} title="Máquina + os dois acessórios" onBuy={openCheckout} />}
                     </div>
                 </div>
             </section>

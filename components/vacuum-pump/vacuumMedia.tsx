@@ -1,4 +1,5 @@
 import React from 'react';
+import { Plus } from 'lucide-react';
 
 const BASE = '/images/vacuum-pump';
 
@@ -30,4 +31,21 @@ export const BubbleChamber: React.FC = () => (
             <span key={b.d} className="vp-bubble" style={{ left: b.l, width: b.s, height: b.s, animationDelay: b.d }} />
         ))}
     </div>
+);
+
+/** Máquina + acessório, como no "compre junto" das lojas: mostra o que entra na compra. */
+export const ComboImage: React.FC<{ items: { name: string; image: string | null }[]; small?: boolean }> = ({ items, small }) => (
+    <span className={`vp-combo ${small ? 'vp-combo-sm' : ''}`}>
+        <span className="vp-combo-item">
+            <img src={VACUUM_IMAGES.frontSm} alt="Vacuum Pump Standard" width={160} height={160} loading="lazy" />
+        </span>
+        {items.map((item) => (
+            <React.Fragment key={item.name}>
+                <span className="vp-combo-plus" aria-label="mais"><Plus size={small ? 14 : 17} strokeWidth={3} aria-hidden /></span>
+                <span className="vp-combo-item">
+                    {item.image ? <img src={item.image} alt={item.name} width={160} height={160} loading="lazy" /> : <BubbleChamber />}
+                </span>
+            </React.Fragment>
+        ))}
+    </span>
 );

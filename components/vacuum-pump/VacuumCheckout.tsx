@@ -22,7 +22,7 @@ import {
     type VacuumPix,
     type VacuumShippingQuote,
 } from './vacuumApi';
-import { BubbleChamber, VACUUM_IMAGES } from './vacuumMedia';
+import { ComboImage, VACUUM_IMAGES } from './vacuumMedia';
 
 declare global {
     interface Window {
@@ -610,9 +610,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                         return (
                                             <label key={bump.id} className={`vp-bump ${selected ? 'vp-bump-on' : ''}`}>
                                                 <input type="checkbox" className="sr-only" checked={selected} onChange={() => toggleBump(bump.id)} data-track={`vacuum_bump_${bump.id}`} data-track-category="Vacuum Pump" />
-                                                <span className="vp-bump-img">
-                                                    {bump.image ? <img src={bump.image} alt="" width={120} height={120} loading="lazy" /> : <BubbleChamber />}
-                                                </span>
+                                                <ComboImage items={[bump]} small />
                                                 <span className="min-w-0">
                                                     <span className="block font-bold leading-snug">{bump.name}</span>
                                                     <span className="mt-0.5 block text-sm vp-muted">{bump.tagline}</span>
