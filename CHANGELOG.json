@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.60.4",
+    "date": "2026-11-05",
+    "title": "Realidade aumentada abre direto na câmera, com o relógio de volta",
+    "changes": [
+      "No iPhone, o botão vermelho volta a abrir a câmera direto, sem a tela branca do objeto 3D",
+      "Relógio da máquina volta a aparecer na realidade aumentada, com mostrador e ponteiro"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.60.3",
     "date": "2026-11-05",
     "title": "Deploy rápido, que publica em minutos",

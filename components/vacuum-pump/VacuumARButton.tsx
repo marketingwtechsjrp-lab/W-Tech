@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Flame, X } from 'lucide-react';
 
-const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=2';
-const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=2';
-const POSTER = '/images/vacuum-pump/machine-front.webp?v=2';
+const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=3';
+const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=3';
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 type ArPlatform = 'ios' | 'android' | 'other';
 
@@ -107,12 +107,15 @@ export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ plac
     }
 
     if (platform === 'ios') {
+        // O Safari só abre direto na câmera se o link tiver uma imagem como primeiro elemento e no
+        // máximo 2 elementos. Com mais, ele abre a tela branca do objeto. O link cobre o botão por cima.
         return (
-            <a className="vp-ar-cta" href={AR_USDZ_URL} rel="ar" data-track={track} data-track-category="Vacuum Pump">
-                {/* O Safari só abre a realidade aumentada se o link começar por uma imagem. */}
-                <img src={POSTER} alt="" width={1} height={1} className="absolute h-px w-px opacity-0" />
+            <div className="vp-ar-cta">
                 {label(realLine)}
-            </a>
+                <a className="vp-ar-link" href={AR_USDZ_URL} rel="ar" aria-label="Veja na sua própria bancada, em realidade aumentada" data-track={track} data-track-category="Vacuum Pump">
+                    <img src={TRANSPARENT_PIXEL} alt="" width={1} height={1} />
+                </a>
+            </div>
         );
     }
 

@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.4 (2026-11-05) - Realidade aumentada abre direto na câmera, com o relógio de volta
+- No iPhone, o botão vermelho volta a abrir a câmera direto, sem a tela branca do objeto 3D
+- Relógio da máquina volta a aparecer na realidade aumentada, com mostrador e ponteiro
+
 ## v3.60.3 (2026-11-05) - Deploy rápido, que publica em minutos
 - Novo deploy que refaz só as rotas alteradas e reaproveita as demais, sem os 45 minutos de geração de páginas
 - O deploy completo continua igual, para quando o conteúdo de muitas páginas mudar

@@ -234,6 +234,9 @@ export const VP_CSS = `
 /* Chamada da realidade aumentada: pisca devagar, abaixo do limite de 3 vezes por segundo */
 .vp-ar-cta { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 62px; padding: .6rem 1rem; border: 0; border-radius: 12px; background: var(--vp-red); color: #fff; text-align: left; text-decoration: none; cursor: pointer; animation: vp-ar-blink 1.3s ease-in-out infinite; }
 .vp-ar-cta:focus-visible { outline: 2px solid var(--vp-ink); outline-offset: 3px; }
+.vp-ar-link { position: absolute; inset: 0; border-radius: inherit; }
+.vp-ar-link img { display: block; width: 100%; height: 100%; opacity: 0; }
+.vp-ar-link:focus-visible { outline: 2px solid var(--vp-ink); outline-offset: 3px; }
 .vp-ar-flame { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 999px; background: rgba(0,0,0,.24); color: #ffcf3d; }
 .vp-ar-flame svg { transform-origin: 50% 90%; animation: vp-ar-flame .75s ease-in-out infinite; }
 @keyframes vp-ar-blink { 0%, 100% { background: #e60000; box-shadow: 0 0 0 0 rgba(230,0,0,.55); } 50% { background: #ff2d1c; box-shadow: 0 0 0 11px rgba(230,0,0,0); } }
