@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.56.1",
+    "date": "2026-11-05",
+    "title": "Página /home-p2 de volta e aviso de matrícula do portal no CRM",
+    "changes": [
+      "/home-p2 volta a abrir: carrega o mapa sob demanda e aceita curso sem tags",
+      "/home-p2 conta vagas pelas matrículas reais e mantém os cartões de credenciados ao mexer o mouse",
+      "Mapa da /home-p2 usa os blocos do OpenStreetMap, como a /mapa: os da CARTO passaram a sair carimbados pedindo chave",
+      "Portal do cliente: pedido de matrícula passa a avisar o CRM, pelo servidor e na ficha que a pessoa já tem",
+      "Perfil do portal deixa de devolver o responsável pela ficha"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.56.0",
     "date": "2026-11-05",
     "title": "Vacuum Pump: vitrine clara, carrinho em etapas e máquina em 3D",

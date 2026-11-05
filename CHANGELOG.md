@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.56.1 (2026-11-05) - Página /home-p2 de volta e aviso de matrícula do portal no CRM
+- /home-p2 volta a abrir: carrega o mapa sob demanda e aceita curso sem tags
+- /home-p2 conta vagas pelas matrículas reais e mantém os cartões de credenciados ao mexer o mouse
+- Mapa da /home-p2 usa os blocos do OpenStreetMap, como a /mapa: os da CARTO passaram a sair carimbados pedindo chave
+- Portal do cliente: pedido de matrícula passa a avisar o CRM, pelo servidor e na ficha que a pessoa já tem
+- Perfil do portal deixa de devolver o responsável pela ficha
+
 ## v3.56.0 (2026-11-05) - Vacuum Pump: vitrine clara, carrinho em etapas e máquina em 3D
 - Página /maquina-de-vacuo em formato de loja: de e por em evidência, economia, parcela, Pix, cálculo de frete e compre junto
 - Carrinho de tela cheia em etapas (Carrinho, Seus dados, Entrega, Pagamento, Concluir), com foto do produto, resumo fixo e order bump com imagem
