@@ -523,12 +523,12 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                     <div className="vp-plate p-4 sm:p-5">
                         <button type="button" className="flex w-full items-center justify-between gap-3 text-left lg:hidden" aria-expanded={summaryOpen} onClick={() => setSummaryOpen(!summaryOpen)}>
                             <span className="font-bold">Resumo do pedido</span>
-                            <span className="flex items-center gap-2 vp-num font-bold">{formatBRL(cart.total)} <ChevronDown size={18} className={summaryOpen ? 'rotate-180' : ''} aria-hidden /></span>
+                            <span className="flex items-center gap-2 vp-num font-bold">{offer.installments}x de {formatBRL(cart.installment_value)} <ChevronDown size={18} className={summaryOpen ? 'rotate-180' : ''} aria-hidden /></span>
                         </button>
                         <h2 className="hidden font-bold lg:block">Resumo do pedido</h2>
                         <div className={`${summaryOpen ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
                             <div className="flex items-center gap-3 border-b border-[var(--vp-line)] pb-3">
-                                <img src={VACUUM_IMAGES.frontSm} alt="" width={56} height={56} className="h-14 w-14 shrink-0 object-contain" />
+                                <img src={VACUUM_IMAGES.square} alt="" width={56} height={56} className="h-14 w-14 shrink-0 object-contain" />
                                 <p className="text-sm font-semibold leading-snug">{VACUUM_ITEM_NAME}<br /><span className="font-normal vp-muted">{offer.delivery_text}</span></p>
                             </div>
                             <dl className="mt-3 space-y-1.5 text-sm vp-num">
@@ -544,14 +544,15 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             </dl>
                         </div>
                         <div className="mt-3 border-t border-[var(--vp-line)] pt-3 vp-num">
-                            <div className="flex items-baseline justify-between gap-3">
-                                <span className="font-bold">Total</span>
+                            <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">{offer.installments}x de</span> <span className="text-4xl">{formatBRL(cart.installment_value)}</span></p>
+                            <p className="text-right text-sm font-semibold vp-green">sem juros</p>
+                            <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm">
+                                <span className="font-bold">Total à vista</span>
                                 <span className="text-right">
-                                    {saving > 0 && <s className="mr-2 text-sm vp-muted">{formatBRL(cart.total + saving)}</s>}
-                                    <span className="vp-display text-4xl vp-red">{formatBRL(cart.total)}</span>
+                                    {saving > 0 && <s className="mr-2 text-xs vp-muted">{formatBRL(cart.total + saving)}</s>}
+                                    <b>{formatBRL(cart.total)}</b>
                                 </span>
                             </div>
-                            <p className="text-right text-sm">ou <b>{offer.installments}x de {formatBRL(cart.installment_value)}</b> <span className="vp-green font-semibold">sem juros</span></p>
                             {saving > 0 && <p className="mt-1 text-right text-sm font-semibold vp-green">Você economiza {formatBRL(saving)}</p>}
                             {ending && ending.total > 0 && (
                                 <p className="mt-2 flex items-center justify-end gap-1.5 text-xs font-semibold vp-red" role="timer"><Timer size={14} aria-hidden /> Preço sobe em {ending.days}d {String(ending.hours).padStart(2, '0')}h {String(ending.minutes).padStart(2, '0')}m {String(ending.seconds).padStart(2, '0')}s</p>
@@ -585,7 +586,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                 <h1 className="vp-display text-3xl">Seu carrinho</h1>
                                 <div className="mt-3 flex gap-3 sm:gap-4">
                                     <div className="grid h-24 w-24 shrink-0 place-items-center bg-[var(--vp-plate-2)] sm:h-32 sm:w-32">
-                                        <img src={VACUUM_IMAGES.frontSm} alt="Vacuum Pump Standard" width={128} height={128} className="h-full w-full object-contain" />
+                                        <img src={VACUUM_IMAGES.square} alt="Vacuum Pump Standard" width={128} height={128} className="h-full w-full object-contain" />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         {offer.compare_at && <span className="vp-off">Black Friday</span>}
@@ -593,9 +594,9 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                         <p className="text-sm vp-muted">Máquina de vácuo · 220 V · 1 unidade</p>
                                         <p className="text-sm vp-muted">Vendido e entregue por W-Tech Brasil</p>
                                         <div className="mt-2 vp-num">
-                                            {offer.compare_at && <s className="mr-2 text-sm vp-muted">{formatBRL(offer.compare_at)}</s>}
-                                            <b className="vp-display text-3xl vp-red">{formatBRL(offer.price)}</b>
-                                            <p className="text-sm">ou <b>{offer.installments}x de {formatBRL(offer.installment_value)}</b> <span className="font-semibold vp-green">sem juros</span></p>
+                                            {offer.compare_at && <s className="block text-xs vp-muted">{formatBRL(offer.compare_at)}</s>}
+                                            <p className="vp-display vp-red"><span className="mr-1 text-lg">{offer.installments}x de</span> <span className="text-4xl">{formatBRL(offer.installment_value)}</span></p>
+                                            <p className="text-sm"><span className="font-semibold vp-green">sem juros</span> ou {formatBRL(offer.price)} à vista</p>
                                         </div>
                                     </div>
                                 </div>
@@ -616,9 +617,10 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                                     <span className="mt-0.5 block text-sm vp-muted">{bump.tagline}</span>
                                                     <span className="mt-2 flex flex-wrap items-center justify-between gap-2">
                                                         <span className="vp-num">
-                                                            {bump.anchor && <s className="mr-1.5 text-sm vp-muted">{formatBRL(bump.anchor)}</s>}
-                                                            <b className="vp-red">{formatBRL(bump.price)}</b>
-                                                            <span className="block text-xs">+ {formatBRL(bump.installment_value)} na parcela</span>
+                                                            <b className="block text-lg leading-tight vp-red">+ {offer.installments}x de {formatBRL(bump.installment_value)}</b>
+                                                            <span className="block text-xs">
+                                                                ou {bump.anchor && <s className="vp-muted">{formatBRL(bump.anchor)}</s>} {formatBRL(bump.price)} à vista
+                                                            </span>
                                                         </span>
                                                         <span className="vp-bump-toggle">
                                                             {selected ? <><Check size={15} strokeWidth={3} aria-hidden /> Adicionado</> : <><Plus size={15} strokeWidth={3} aria-hidden /> Adicionar</>}
@@ -782,7 +784,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                 <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--vp-line)] bg-white p-3 lg:hidden">
                     <div className="mb-2 flex items-baseline justify-between gap-3 vp-num">
                         <button type="button" className="vp-link text-sm" onClick={goBack}>Voltar</button>
-                        <span className="text-sm"><b>{formatBRL(cart.total)}</b> ou {offer.installments}x de <b>{formatBRL(cart.installment_value)}</b></span>
+                        <span className="text-right text-sm"><b className="text-base vp-red">{offer.installments}x de {formatBRL(cart.installment_value)}</b> ou {formatBRL(cart.total)}</span>
                     </div>
                     {primaryAction('!min-h-[52px]')}
                 </div>

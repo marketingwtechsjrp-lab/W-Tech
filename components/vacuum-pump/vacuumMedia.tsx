@@ -2,20 +2,39 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 
 const BASE = '/images/vacuum-pump';
+const FOTOS = `${BASE}/fotos`;
 
-/** Imagens tiradas do modelo 3D do projeto, até chegarem as fotos da máquina. */
+/** Fotos reais da máquina, com fundo de estúdio. Só a vista interna ainda vem do modelo 3D. */
 export const VACUUM_IMAGES = {
-    front: `${BASE}/machine-front.webp`,
-    frontSm: `${BASE}/machine-front-sm.webp`,
-    rear: `${BASE}/machine-rear.webp`,
-    rearSm: `${BASE}/machine-rear-sm.webp`,
-    inside: `${BASE}/machine-inside.webp`,
-    insideSm: `${BASE}/machine-inside-sm.webp`,
+    front: `${FOTOS}/frente.webp`,
+    frontSm: `${FOTOS}/frente-sm.webp`,
+    rear: `${FOTOS}/traseira.webp`,
+    rearSm: `${FOTOS}/traseira-sm.webp`,
+    sideAir: `${FOTOS}/lateral-ar.webp`,
+    sideAirSm: `${FOTOS}/lateral-ar-sm.webp`,
+    sideVent: `${FOTOS}/lateral-grade.webp`,
+    sideVentSm: `${FOTOS}/lateral-grade-sm.webp`,
+    inside: `${BASE}/machine-inside.webp?v=2`,
+    insideSm: `${BASE}/machine-inside-sm.webp?v=2`,
+    square: `${FOTOS}/quadrada.webp`,
+    band: `${FOTOS}/faixa.webp`,
+    bandMobile: `${FOTOS}/faixa-mobile.webp`,
 };
 
+/** Closes das fotos reais: `tall` ocupa duas linhas da grade. */
+export const VACUUM_DETAILS = [
+    { src: `${FOTOS}/visor.webp`, title: 'Visor de nível', text: 'MAX e MIN à vista, sem abrir o gabinete.', tall: true },
+    { src: `${FOTOS}/manometro.webp`, title: 'Medidor com glicerina', text: 'Pressão positiva e vácuo, com ponteiro estável.', tall: false },
+    { src: `${FOTOS}/seletor.webp`, title: 'Seletor de pressão e vácuo', text: 'Um comando só, com ajuste de estabilização.', tall: false },
+    { src: `${FOTOS}/filtro.webp`, title: 'Filtragem externa', text: 'O filtro fica por fora, na traseira.', tall: true },
+    { src: `${FOTOS}/cooler.webp`, title: 'Arrefecimento por cooler', text: 'Cooler na traseira para refrigerar a máquina.', tall: false },
+    { src: `${FOTOS}/medidor-ar.webp`, title: 'Medidor de entrada de ar', text: 'Na lateral, junto da entrada de ar.', tall: false },
+];
+
 export const VACUUM_VIDEO = {
-    src: '/videos/vacuum-pump/vacuum-pump-bf.mp4?v=1',
-    poster: '/videos/vacuum-pump/poster.webp?v=1',
+    src: '/videos/vacuum-pump/vacuum-pump-bf.mp4?v=2',
+    srcSm: '/videos/vacuum-pump/vacuum-pump-bf-720.mp4?v=2',
+    poster: '/videos/vacuum-pump/poster.webp?v=2',
 };
 
 /** Ilustração até chegar a foto real: não vamos publicar imagem fingindo ser o produto. */
@@ -36,8 +55,8 @@ export const BubbleChamber: React.FC = () => (
 /** Máquina + acessório, como no "compre junto" das lojas: mostra o que entra na compra. */
 export const ComboImage: React.FC<{ items: { name: string; image: string | null }[]; small?: boolean }> = ({ items, small }) => (
     <span className={`vp-combo ${small ? 'vp-combo-sm' : ''}`}>
-        <span className="vp-combo-item">
-            <img src={VACUUM_IMAGES.frontSm} alt="Vacuum Pump Standard" width={160} height={160} loading="lazy" />
+        <span className="vp-combo-item vp-combo-photo">
+            <img src={VACUUM_IMAGES.square} alt="Vacuum Pump Standard" width={240} height={240} loading="lazy" />
         </span>
         {items.map((item) => (
             <React.Fragment key={item.name}>

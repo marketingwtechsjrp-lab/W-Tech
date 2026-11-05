@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Download, Move3d, RotateCcw, Scan } from 'lucide-react';
 import type { VacuumHotspot, VacuumScene, VacuumView } from './vacuumScene3D';
 
-const MODEL_URL = '/models/vacuum-pump/maquina.glb?v=1';
-const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=1';
-const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=1';
-const POSTER = '/images/vacuum-pump/machine-front.webp';
+const MODEL_URL = '/models/vacuum-pump/maquina.glb?v=2';
+const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=2';
+const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=2';
+const POSTER = '/images/vacuum-pump/machine-front.webp?v=2';
 /** Antes disso o 3D não baixa: o bloco fica no meio da página e a maioria não chega nele. */
 const LOAD_MARGIN = '250px';
 
@@ -30,7 +30,7 @@ const TOUR: TourStop[] = [
         parts: ['manometro'],
         inside: false,
         view: { azimuth: 14, polar: 80, distance: 0.62, target: [70, 225, 140] },
-        hotspot: { position: [86, 241, 186], normal: [0, 0, 1] },
+        hotspot: { position: [122, 241, 184], label: [180, 262, 180], normal: [0, 0, 1] },
     },
     {
         id: 'seletor',
@@ -39,7 +39,7 @@ const TOUR: TourStop[] = [
         parts: ['seletor', 'seletor_base', 'seletor_ponta', 'seletor_inserto'],
         inside: false,
         view: { azimuth: 22, polar: 82, distance: 0.62, target: [70, 150, 150] },
-        hotspot: { position: [86, 150, 206], normal: [0, 0, 1] },
+        hotspot: { position: [110, 150, 198], label: [180, 165, 185], normal: [0, 0, 1] },
     },
     {
         id: 'visor',
@@ -48,7 +48,7 @@ const TOUR: TourStop[] = [
         parts: ['visor', 'visor_trava', 'visor_led'],
         inside: false,
         view: { azimuth: -20, polar: 84, distance: 0.7, target: [-85, 125, 150] },
-        hotspot: { position: [-110, 150, 188], normal: [0, 0, 1] },
+        hotspot: { position: [-128, 150, 186], label: [-182, 150, 185], normal: [0, 0, 1] },
     },
     {
         id: 'bomba',
@@ -57,7 +57,7 @@ const TOUR: TourStop[] = [
         parts: ['bomba'],
         inside: true,
         view: { azimuth: -118, polar: 58, distance: 0.92, target: [-40, 95, -60] },
-        hotspot: { position: [-49, 142, -86], normal: [-0.4, 1, -0.4] },
+        hotspot: { position: [-49, 142, -86], label: [-175, 170, -120], normal: [-0.4, 1, -0.4] },
     },
     {
         id: 'pulmao',
@@ -66,7 +66,7 @@ const TOUR: TourStop[] = [
         parts: ['pulmao', 'pulmao_tampa', 'pulmao_haste', 'pulmao_espacador'],
         inside: true,
         view: { azimuth: -62, polar: 62, distance: 0.92, target: [-50, 145, 50] },
-        hotspot: { position: [-50, 256, 63], normal: [-0.3, 1, 0.3] },
+        hotspot: { position: [-50, 256, 63], label: [-120, 320, 63], normal: [-0.3, 1, 0.3] },
     },
     {
         id: 'reservatorio',
@@ -75,7 +75,7 @@ const TOUR: TourStop[] = [
         parts: ['oleo'],
         inside: true,
         view: { azimuth: -78, polar: 70, distance: 0.82, target: [-50, 105, 60] },
-        hotspot: { position: [-128, 100, 63], normal: [-1, 0.2, 0] },
+        hotspot: { position: [-128, 100, 63], label: [-195, 100, 63], normal: [-1, 0.2, 0] },
     },
     {
         id: 'fonte',
@@ -84,7 +84,7 @@ const TOUR: TourStop[] = [
         parts: ['fonte', 'fonte_suporte'],
         inside: true,
         view: { azimuth: 68, polar: 60, distance: 0.82, target: [85, 50, 30] },
-        hotspot: { position: [95, 36, 37], normal: [0.6, 1, 0] },
+        hotspot: { position: [95, 36, 37], label: [180, 70, 37], normal: [0.6, 1, 0] },
     },
     {
         id: 'cooler',
@@ -93,7 +93,7 @@ const TOUR: TourStop[] = [
         parts: ['cooler'],
         inside: false,
         view: { azimuth: 172, polar: 78, distance: 0.82, target: [-30, 170, -170] },
-        hotspot: { position: [-55, 196, -180], normal: [0, 0, -1] },
+        hotspot: { position: [-108, 196, -180], label: [-180, 215, -178], normal: [0, 0, -1] },
     },
     {
         id: 'filtro',
@@ -102,7 +102,7 @@ const TOUR: TourStop[] = [
         parts: ['filtro'],
         inside: false,
         view: { azimuth: 200, polar: 80, distance: 0.82, target: [30, 120, -190] },
-        hotspot: { position: [40, 118, -226], normal: [0, 0, -1] },
+        hotspot: { position: [22, 118, -226], label: [-45, 100, -226], normal: [0, 0, -1] },
     },
     {
         id: 'medidor_ar',
@@ -111,7 +111,7 @@ const TOUR: TourStop[] = [
         parts: ['medidor_ar'],
         inside: false,
         view: { azimuth: 112, polar: 80, distance: 0.72, target: [120, 200, -140] },
-        hotspot: { position: [150, 201, -146], normal: [1, 0, 0] },
+        hotspot: { position: [150, 201, -122], label: [158, 215, -70], normal: [1, 0, 0] },
     },
 ];
 
@@ -288,6 +288,7 @@ const VacuumExperience3D: React.FC = () => {
                         className={`vp-3d-marker ${activeId === stop.id ? 'vp-3d-marker-on' : ''}`}
                         onClick={() => select(stop)}
                     >
+                        <span className="vp-3d-leader" aria-hidden />
                         {index + 1}
                     </button>
                 ))}

@@ -281,10 +281,10 @@ test('urgência: conta dias de calendário e usa o horário configurado', () => 
 test('carrinho: order bump soma na parcela; id desconhecido ou repetido é ignorado', () => {
     const state = lib.getVacuumOfferState(lib.resolveVacuumConfig(liveConfig()), 0, Date.now());
     const cart = lib.computeVacuumCart(state, ['borbulhador', 'borbulhador', 'nao-existe']);
-    assert.equal(cart.total, 8489);
-    assert.equal(cart.installment_value, 848.9);
+    assert.equal(cart.total, 8689);
+    assert.equal(cart.installment_value, 868.9);
     assert.deepEqual(cart.bump_ids, ['borbulhador']);
-    assert.equal(lib.computeVacuumCart(state, ['borbulhador', 'kit_adaptador']).total, 9529);
+    assert.equal(lib.computeVacuumCart(state, ['borbulhador', 'kit_adaptador']).total, 9729);
     assert.equal(lib.computeVacuumCart(state, 'qualquer coisa').total, 7990);
 });
 
@@ -346,10 +346,10 @@ test('pagamento: adulterar o total não passa, e o valor enviado ao Mercado Pago
     assert.equal(tampered.json.code, 'price_changed');
     assert.equal(calls.length, 0, 'nem chega ao Mercado Pago');
 
-    const ok = await pay(id, { bumps: ['borbulhador'], expected_total: 8489, form_data: { ...CARD_FORM, transaction_amount: 1 } });
+    const ok = await pay(id, { bumps: ['borbulhador'], expected_total: 8689, form_data: { ...CARD_FORM, transaction_amount: 1 } });
     assert.equal(ok.status, 200);
     const sent = calls.at(-1);
-    assert.equal(sent.body.transaction_amount, 8489, 'ignora o valor do navegador');
+    assert.equal(sent.body.transaction_amount, 8689, 'ignora o valor do navegador');
     assert.equal(sent.body.external_reference, `vacuum:${id}`);
     assert.equal(sent.body.notification_url, 'https://w-techbrasil.com.br/api/mercadopago-webhook');
     assert.ok(sent.headers['X-Idempotency-Key'].includes(id));

@@ -23,7 +23,10 @@ export interface VacuumView {
 
 export interface VacuumHotspot {
     id: string;
+    /** Ponto na borda da peça, onde o fio encosta. */
     position: Vec3;
+    /** Onde fica o número: ao lado da peça, para não cobrir o que a pessoa quer ver. */
+    label: Vec3;
     normal: Vec3;
     inside: boolean;
 }
@@ -48,6 +51,8 @@ export interface VacuumScene {
 }
 
 const MM = 0.001;
+const MARKER_RADIUS = 15;
+const MARKER_MARGIN = 20;
 const COVER_LIFT = 150;
 const COVER_MS = 1000;
 const CAMERA_MS = 1100;
@@ -221,17 +226,28 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
             // Peça de dentro só aparece com a tampa aberta, e a de fora só do lado em que está.
             const insideOk = !spot.inside || openValue > 0.6;
             const towardCamera = toCamera.dot(position.clone().sub(center).normalize()) > -0.5;
-            const visible = insideOk && facing > (spot.inside ? -0.35 : 0.12) && (!spot.inside || towardCamera);
+            const visible = insideOk && facing > (spot.inside ? -0.35 : 0.3) && (!spot.inside || towardCamera);
             projected.copy(position).project(camera);
             const onScreen = Math.abs(projected.x) < 0.98 && Math.abs(projected.y) < 0.98;
             if (visible && onScreen) {
-                const x = ((projected.x + 1) / 2) * width;
-                const y = ((1 - projected.y) / 2) * height;
-                marker.style.opacity = '1';
+                const partX = ((projected.x + 1) / 2) * width;
+                const partY = ((1 - projected.y) / 2) * height;
+                projected.copy(toVector(spot.label)).project(camera);
+                // O número não sai do quadro, nem quando a câmera chega perto da peça.
+                const x = Math.min(width - MARKER_MARGIN, Math.max(MARKER_MARGIN, ((projected.x + 1) / 2) * width));
+                const y = Math.min(height - MARKER_MARGIN, Math.max(MARKER_MARGIN, ((1 - projected.y) / 2) * height));
+                marker.dataset.show = '';
                 marker.style.pointerEvents = 'auto';
                 marker.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%)`;
+                const leader = marker.querySelector<HTMLElement>('.vp-3d-leader');
+                if (leader) {
+                    const dx = partX - x;
+                    const dy = partY - y;
+                    leader.style.width = `${Math.max(0, Math.hypot(dx, dy) - MARKER_RADIUS).toFixed(1)}px`;
+                    leader.style.transform = `rotate(${Math.atan2(dy, dx).toFixed(3)}rad) translateX(${MARKER_RADIUS}px)`;
+                }
             } else {
-                marker.style.opacity = '0';
+                delete marker.dataset.show;
                 marker.style.pointerEvents = 'none';
             }
         }
@@ -381,6 +397,10 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
                 if (!mesh.isMesh) return;
                 // Cada peça com o próprio material: o destaque e o sumiço da tampa não vazam para as outras.
                 mesh.material = Array.isArray(mesh.material) ? mesh.material.map((m) => m.clone()) : mesh.material.clone();
+            });
+            // A conexão de latão atrás do seletor fica fora da demonstração.
+            model.traverse((object) => {
+                if (object.name.startsWith('tres_vias')) object.visible = false;
             });
             tint(model, 'pulmao', '#dfe6ea', 0.2);
             tint(model, 'oleo', '#c8891c', 0.55);

@@ -3,7 +3,8 @@ import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Play, Plus, Q
 import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
-import { ComboImage, VACUUM_IMAGES, VACUUM_VIDEO } from '../components/vacuum-pump/vacuumMedia';
+import VacuumVideo, { type VacuumVideoHandle } from '../components/vacuum-pump/VacuumVideo';
+import { ComboImage, VACUUM_DETAILS, VACUUM_IMAGES, VACUUM_VIDEO } from '../components/vacuum-pump/vacuumMedia';
 import { VP_CSS } from '../components/vacuum-pump/vacuumStyles';
 import {
     dateLabel,
@@ -17,7 +18,7 @@ import {
     type VacuumOffer,
     type VacuumShippingQuote,
 } from '../components/vacuum-pump/vacuumApi';
-import { pushEvent, pushLead } from '../lib/dataLayer';
+import { pushLead } from '../lib/dataLayer';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { VACUUM_ITEM_NAME, brlParts, computeVacuumCart, formatBRL, normalizeBrPhone, vacuumEndTimeLabel, vacuumUrgencyLabel } from '../lib/vacuumOffer';
@@ -25,9 +26,11 @@ import { VACUUM_ITEM_NAME, brlParts, computeVacuumCart, formatBRL, normalizeBrPh
 const EXIT_KEY = 'vp_exit_shown';
 
 const GALLERY = [
-    { id: 'front', label: 'Frente', src: VACUUM_IMAGES.front, srcSm: VACUUM_IMAGES.frontSm, alt: 'Vacuum Pump Standard W-Tech de frente, com manômetro, seletor de pressão e vácuo e visor de nível' },
-    { id: 'rear', label: 'Traseira', src: VACUUM_IMAGES.rear, srcSm: VACUUM_IMAGES.rearSm, alt: 'Traseira da Vacuum Pump Standard, com cooler, filtro externo e tomada' },
-    { id: 'inside', label: 'Por dentro', src: VACUUM_IMAGES.inside, srcSm: VACUUM_IMAGES.insideSm, alt: 'Vacuum Pump Standard sem a tampa, mostrando a bomba e o pulmão' },
+    { id: 'front', label: 'Frente', src: VACUUM_IMAGES.front, srcSm: VACUUM_IMAGES.frontSm, alt: 'Foto da Vacuum Pump Standard W-Tech de frente, com manômetro, seletor de pressão e vácuo e visor de nível aceso' },
+    { id: 'rear', label: 'Traseira', src: VACUUM_IMAGES.rear, srcSm: VACUUM_IMAGES.rearSm, alt: 'Foto da traseira da Vacuum Pump Standard, com cooler, filtro externo e tomada' },
+    { id: 'side-air', label: 'Lateral com o medidor de ar', src: VACUUM_IMAGES.sideAir, srcSm: VACUUM_IMAGES.sideAirSm, alt: 'Foto da lateral da Vacuum Pump Standard com o medidor de entrada de ar' },
+    { id: 'side-vent', label: 'Lateral com a grade', src: VACUUM_IMAGES.sideVent, srcSm: VACUUM_IMAGES.sideVentSm, alt: 'Foto da outra lateral da Vacuum Pump Standard, com a grade de ventilação' },
+    { id: 'inside', label: 'Por dentro', src: VACUUM_IMAGES.inside, srcSm: VACUUM_IMAGES.insideSm, alt: 'Modelo 3D da Vacuum Pump Standard sem a tampa, mostrando a bomba e o pulmão' },
 ] as const;
 
 const SPECS: [string, string][] = [
@@ -67,15 +70,31 @@ const Timer: React.FC<{ target: string; now: number }> = ({ target, now }) => {
     );
 };
 
-const LotBar: React.FC<{ remaining: number; total: number }> = ({ remaining, total }) => {
-    const sold = total > 0 ? Math.min(100, ((total - remaining) / total) * 100) : 0;
-    return (
-        <div role="img" aria-label={`Restam ${remaining} de ${total} máquinas no lote`}>
-            <p className="mb-1 text-sm font-semibold">Restam <span className="vp-red vp-num">{remaining}</span> de <span className="vp-num">{total}</span> máquinas neste lote</p>
-            <div className="vp-lot-bar"><span style={{ width: `${sold}%` }} /></div>
-            <p className="mt-1 text-xs vp-muted">O contador é real: só desce quando alguém paga.</p>
-        </div>
-    );
+/** Conta do zero até o valor quando entra na tela. O número final já está no HTML, para quem não vê a animação. */
+const CountUp: React.FC<{ value: number }> = ({ value }) => {
+    const ref = useRef<HTMLSpanElement>(null);
+    useEffect(() => {
+        const node = ref.current;
+        if (!node || typeof IntersectionObserver === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        let raf = 0;
+        const observer = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting) return;
+            observer.disconnect();
+            const start = performance.now();
+            const step = (time: number) => {
+                const t = Math.min(1, (time - start) / 900);
+                node.textContent = String(Math.round(value * (1 - (1 - t) ** 3)));
+                if (t < 1) raf = requestAnimationFrame(step);
+            };
+            raf = requestAnimationFrame(step);
+        });
+        observer.observe(node);
+        return () => {
+            observer.disconnect();
+            cancelAnimationFrame(raf);
+        };
+    }, [value]);
+    return <span ref={ref}>{value}</span>;
 };
 
 /** Frete antes do carrinho, como nas grandes lojas: quem é de longe quer saber logo. */
@@ -188,9 +207,9 @@ const ComboCard: React.FC<{ offer: VacuumOffer; bumps: VacuumOffer['bumps']; tit
                 </details>
             )}
             <div className="mt-auto pt-3 vp-num">
-                {saving > 0 && <p className="text-sm vp-muted">De <s>{formatBRL(before)}</s> por</p>}
-                <p className="vp-display text-4xl vp-red">{formatBRL(cart.total)}</p>
-                <p className="text-sm">ou <b>{offer.installments}x de {formatBRL(cart.installment_value)}</b> <span className="font-semibold vp-green">sem juros</span></p>
+                {saving > 0 && <p className="text-xs vp-muted">De <s>{formatBRL(before)}</s> por</p>}
+                <p className="vp-display vp-red"><span className="mr-1 text-2xl">{offer.installments}x de</span> <span className="text-5xl">{formatBRL(cart.installment_value)}</span></p>
+                <p className="mt-0.5 text-sm"><span className="font-semibold vp-green">sem juros</span> ou {formatBRL(cart.total)} à vista</p>
                 {saving > 0 && <p className="vp-save mt-1.5 text-xs">Você economiza {formatBRL(saving)}</p>}
                 <button type="button" className="vp-btn mt-3 w-full !min-h-[48px] !text-lg" onClick={() => onBuy(ids)} data-track={`vacuum_add_${ids.join('_')}`} data-track-category="Vacuum Pump">
                     <Plus size={18} aria-hidden /> Comprar junto
@@ -212,19 +231,17 @@ const LPVacuumPump: React.FC = () => {
     const heroCta = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLElement>(null);
     const experienceRef = useRef<HTMLElement>(null);
-    const videoSectionRef = useRef<HTMLElement>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const videoTracked = useRef(false);
+    const videoHandle = useRef<VacuumVideoHandle>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
     const checkoutOpenRef = useRef(false);
     checkoutOpenRef.current = checkoutOpen;
 
-    const price = brlParts(offer.price);
+    const installment = brlParts(offer.installment_value);
     const presale = offer.phase === 'presale';
     const soon = offer.phase === 'soon';
     const discounted = presale || soon;
     const timerTarget = soon ? offer.starts_at : offer.ends_at;
     const servicesToPay = Math.ceil(offer.installment_value / servicePrice);
-    const parcelaGap = offer.regular_installment_value - offer.installment_value;
     const saving = offer.compare_at ? offer.compare_at - offer.price : 0;
     const offPercent = offer.compare_at ? Math.round((saving / offer.compare_at) * 100) : 0;
     const currentPhoto = GALLERY.find((item) => item.id === photo) ?? GALLERY[0];
@@ -233,10 +250,22 @@ const LPVacuumPump: React.FC = () => {
 
     useEffect(() => {
         const node = heroCta.current;
-        if (!node || typeof IntersectionObserver === 'undefined') return;
-        const observer = new IntersectionObserver(([entry]) => setShowSticky(!entry.isIntersecting && entry.boundingClientRect.top < 0));
-        observer.observe(node);
-        return () => observer.disconnect();
+        if (!node) return;
+        // Olha a posição a cada rolagem: um salto por link passa pelo botão sem ele "entrar" na tela.
+        let frame = 0;
+        const update = () => {
+            frame = 0;
+            setShowSticky(node.getBoundingClientRect().bottom < 0);
+        };
+        const onScroll = () => {
+            if (!frame) frame = window.requestAnimationFrame(update);
+        };
+        update();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            if (frame) window.cancelAnimationFrame(frame);
+        };
     }, []);
 
     // Saída no desktop: última chance de pegar o WhatsApp de quem não vai comprar agora.
@@ -265,33 +294,57 @@ const LPVacuumPump: React.FC = () => {
         setCheckoutOpen(true);
     }, [soon]);
 
-    const watchVideo = useCallback(() => {
-        videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        void videoRef.current?.play().catch(() => undefined);
+    // Blocos entram aos poucos na rolagem. Sem o observador, aparecem de uma vez.
+    useEffect(() => {
+        const root = rootRef.current;
+        if (!root) return;
+        const blocks = Array.from(root.querySelectorAll('[data-reveal]'));
+        if (typeof IntersectionObserver === 'undefined') {
+            blocks.forEach((block) => block.classList.add('vp-in'));
+            return;
+        }
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (!entry.isIntersecting) continue;
+                    entry.target.classList.add('vp-in');
+                    observer.unobserve(entry.target);
+                }
+            },
+            { rootMargin: '0px 0px -8% 0px' }
+        );
+        blocks.forEach((block) => observer.observe(block));
+        return () => observer.disconnect();
     }, []);
 
-    // Conta um play por visita: pausar e voltar não é outro interessado.
-    const trackVideoPlay = useCallback(() => {
-        if (videoTracked.current) return;
-        videoTracked.current = true;
-        pushEvent('Vacuum Pump', 'vacuum_video_play');
+    const zoomPhoto = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        const img = event.currentTarget.querySelector('img');
+        if (!img || !window.matchMedia('(hover: hover)').matches) return;
+        const box = event.currentTarget.getBoundingClientRect();
+        img.style.transformOrigin = `${((event.clientX - box.left) / box.width) * 100}% ${((event.clientY - box.top) / box.height) * 100}%`;
+        img.style.transform = 'scale(2)';
+    }, []);
+
+    const resetZoom = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        const img = event.currentTarget.querySelector('img');
+        if (img) img.style.transform = '';
     }, []);
 
     const statusBar = soon
         ? `A pré-venda abre em ${dateLabel(offer.starts_at)}`
         : presale
             ? vacuumUrgencyLabel(offer.ends_at, now)
-            : offer.end_reason === 'sold_out' ? 'Lote da pré-venda esgotado' : 'Pré-venda encerrada';
+            : offer.end_reason === 'sold_out' ? 'Estoque da pré-venda esgotado' : 'Pré-venda encerrada';
 
     const parts = timeParts(timerTarget, now);
     const whatsappHelp = whatsappLink(offer.whatsapp, 'Oi! Tenho uma dúvida sobre a Vacuum Pump Standard da Black Friday.');
 
     return (
-        <div className="vp-root min-h-screen">
+        <div ref={rootRef} className="vp-root min-h-screen">
             <style>{VP_CSS}</style>
             <SEO
-                title={discounted ? `Vacuum Pump W-Tech: de ${formatBRL(offer.regular_price)} por ${formatBRL(offer.price)}` : 'Vacuum Pump Standard W-Tech'}
-                description={`Máquina de vácuo W-Tech para amortecedores. Black Friday: de ${formatBRL(offer.regular_price)} por ${formatBRL(offer.price)} em ${offer.installments}x sem juros, só na pré-venda de 7 dias.`}
+                title={discounted ? `Vacuum Pump W-Tech: ${offer.installments}x de ${formatBRL(offer.installment_value)} sem juros` : 'Vacuum Pump Standard W-Tech'}
+                description={`Máquina de vácuo W-Tech para amortecedores. Black Friday: ${offer.installments}x de ${formatBRL(offer.installment_value)} sem juros (${formatBRL(offer.price)} à vista), só na pré-venda de 7 dias.`}
                 image={`${PUBLIC_BASE_URL}/og/maquina-de-vacuo.jpg`}
                 url={`${PUBLIC_BASE_URL}/maquina-de-vacuo`}
                 type="product"
@@ -324,36 +377,37 @@ const LPVacuumPump: React.FC = () => {
             <main className="mx-auto grid max-w-[1180px] gap-3 px-3 pb-8 pt-3 sm:px-4 lg:grid-cols-[1.08fr_.92fr] lg:items-start lg:gap-6 lg:pt-6">
                 <section className="vp-plate p-2.5 sm:p-4" aria-label="Fotos do produto">
                     <div className="relative">
-                        {offer.compare_at && <span className="vp-off absolute left-0 top-0 z-10 !text-base">-{offPercent}%</span>}
-                        <div className="aspect-[4/3] w-full sm:aspect-square">
+                        {offer.compare_at && <span className="vp-off absolute left-2 top-2 z-10 !text-base">-{offPercent}%</span>}
+                        {currentPhoto.id === 'inside' && <span className="vp-off absolute right-2 top-2 z-10 !bg-[var(--vp-ink)]">Modelo 3D</span>}
+                        <div className="vp-zoom aspect-[5/4] w-full" onMouseMove={zoomPhoto} onMouseLeave={resetZoom}>
                             <img
                                 key={currentPhoto.id}
                                 src={currentPhoto.src}
-                                srcSet={`${currentPhoto.srcSm} 620w, ${currentPhoto.src} 1100w`}
+                                srcSet={`${currentPhoto.srcSm} 640w, ${currentPhoto.src} 1300w`}
                                 sizes="(min-width: 1024px) 600px, 92vw"
-                                width={1100}
-                                height={1100}
+                                width={1300}
+                                height={1040}
                                 alt={currentPhoto.alt}
                                 className="h-full w-full object-contain"
                                 fetchPriority={currentPhoto.id === 'front' ? 'high' : undefined}
                             />
                         </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {GALLERY.map((item) => (
                             <button key={item.id} type="button" className="vp-thumb" aria-pressed={photo === item.id} aria-label={`Ver ${item.label}`} onClick={() => setPhoto(item.id)}>
-                                <img src={item.srcSm} alt="" width={60} height={60} loading="lazy" />
+                                <img src={item.srcSm} alt="" width={60} height={48} loading="lazy" />
                             </button>
                         ))}
-                        <button type="button" className="vp-thumb" aria-label="Assistir ao vídeo" onClick={watchVideo} data-track="vacuum_video_thumb" data-track-category="Vacuum Pump">
+                        <button type="button" className="vp-thumb" aria-label="Assistir ao vídeo" onClick={() => videoHandle.current?.watch()} data-track="vacuum_video_thumb" data-track-category="Vacuum Pump">
                             <img src={VACUUM_VIDEO.poster} alt="" width={50} height={28} loading="lazy" className="opacity-60" />
                             <span className="absolute inset-0 grid place-items-center"><span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--vp-red)] text-white"><Play size={14} fill="currentColor" aria-hidden /></span></span>
                         </button>
                         <button type="button" className="vp-thumb" aria-label="Ver a máquina em 3D" onClick={() => experienceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} data-track="vacuum_3d_thumb" data-track-category="Vacuum Pump">
                             <span className="grid place-items-center text-[.7rem] font-bold leading-tight"><Box size={24} aria-hidden /> 3D</span>
                         </button>
-                        <p className="ml-auto hidden text-xs vp-muted sm:block">Imagens do projeto 3D. Acessórios à parte.</p>
                     </div>
+                    <p className="mt-2 text-xs vp-muted">Fotos reais da máquina. Acessórios vendidos separadamente.</p>
                 </section>
 
                 <section className="vp-plate p-4 sm:p-6" aria-label="Preço e compra">
@@ -363,21 +417,22 @@ const LPVacuumPump: React.FC = () => {
 
                     <div className="mt-4 border-t border-[var(--vp-line)] pt-4">
                         {offer.compare_at && (
-                            <p className="flex items-center gap-2 text-lg vp-num">
-                                <span className="vp-muted">De</span> <s className="font-semibold vp-muted">{formatBRL(offer.compare_at)}</s>
+                            <p className="flex items-center gap-2 text-sm vp-num">
+                                <span className="vp-muted">De <s>{formatBRL(offer.compare_at)}</s> por</span>
                                 <span className="vp-off">{offPercent}% OFF</span>
                             </p>
                         )}
-                        <div className="mt-1 flex items-baseline gap-2">
-                            <span className="text-lg font-semibold">{offer.compare_at ? 'Por' : ''}</span>
-                            <div className="vp-display vp-num vp-price-now"><small>R$</small> {price.integer}<small>,{price.cents}</small></div>
+                        {/* A parcela é o número em destaque; o total à vista fica sempre legível logo abaixo. */}
+                        <div className="mt-2 flex flex-wrap items-baseline gap-x-2.5">
+                            <span className="vp-display vp-price-x">{offer.installments}x de</span>
+                            <div className="vp-display vp-num vp-price-now"><small>R$</small> {installment.integer}<small>,{installment.cents}</small></div>
                         </div>
-                        {saving > 0 && <p className="vp-save vp-num mt-2 text-sm">Você economiza {formatBRL(saving)}</p>}
 
-                        <div className="mt-3 space-y-2">
-                            <p className="vp-pay-line"><CreditCard className="mt-0.5 shrink-0" size={20} aria-hidden /><span className="vp-num"><b className="text-xl">{offer.installments}x de {formatBRL(offer.installment_value)}</b> <span className="font-semibold vp-green">sem juros</span> no cartão</span></p>
-                            <p className="vp-pay-line"><QrCode className="mt-0.5 shrink-0" size={20} aria-hidden /><span className="vp-num">ou <b>{formatBRL(offer.price)}</b> no Pix, com aprovação na hora</span></p>
+                        <div className="mt-2.5 space-y-1.5">
+                            <p className="vp-pay-line text-lg"><CreditCard className="mt-1 shrink-0" size={20} aria-hidden /><span><b className="vp-green">Sem juros</b> no cartão</span></p>
+                            <p className="vp-pay-line text-sm"><QrCode className="mt-0.5 shrink-0" size={18} aria-hidden /><span className="vp-num">ou <b>{formatBRL(offer.price)}</b> à vista no Pix, com aprovação na hora</span></p>
                         </div>
+                        {saving > 0 && <p className="vp-save vp-num mt-2.5 text-sm">Você economiza {formatBRL(saving)}</p>}
                     </div>
 
                     {offer.phase !== 'regular' && (
@@ -386,8 +441,8 @@ const LPVacuumPump: React.FC = () => {
                                 <p className="text-sm font-semibold">{soon ? 'A pré-venda abre em' : 'Esse preço acaba em'}</p>
                                 <Timer target={timerTarget} now={now} />
                             </div>
-                            {!soon && <p className="text-xs vp-muted vp-num">Depois, {offer.installments}x de {formatBRL(offer.regular_installment_value)}. Termina em {dateLabel(offer.ends_at)}, às {vacuumEndTimeLabel(offer.ends_at)}.</p>}
-                            <LotBar remaining={offer.remaining} total={offer.lot_size} />
+                            {!soon && <p className="text-xs vp-muted vp-num">Depois, {offer.installments}x de {formatBRL(offer.regular_installment_value)}.</p>}
+                            <p className="text-sm font-semibold vp-num">Promoção válida até {dateLabel(offer.ends_at)}, às {vacuumEndTimeLabel(offer.ends_at)}, ou enquanto durar o estoque.</p>
                         </div>
                     )}
 
@@ -409,18 +464,39 @@ const LPVacuumPump: React.FC = () => {
                 </section>
             </main>
 
-            {/* Vídeo: o arquivo só baixa quando a pessoa dá o play. Um link em video_url substitui este vídeo. */}
-            <section ref={videoSectionRef} className="scroll-mt-14 px-3 pb-8 sm:px-4" aria-labelledby="vp-video">
-                <div className="mx-auto max-w-[960px]">
-                    <h2 id="vp-video" className="vp-display text-3xl sm:text-4xl">Veja como funciona</h2>
-                    <p className="mt-1 text-sm vp-muted">Em 1min27, da pergunta da bancada até o que vem na compra.</p>
-                    <div className="mt-3 aspect-video bg-black">
-                        {offer.video_url ? (
-                            <iframe className="h-full w-full" src={offer.video_url} title="Vacuum Pump Standard em funcionamento" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-                        ) : (
-                            <video ref={videoRef} className="h-full w-full" src={VACUUM_VIDEO.src} poster={VACUUM_VIDEO.poster} preload="none" controls playsInline onPlay={trackVideoPlay} />
-                        )}
-                    </div>
+            {/* A máquina em números */}
+            <section className="vp-dark px-4 py-7" aria-label="Principais números da máquina">
+                <dl className="mx-auto grid max-w-[1180px] grid-cols-3 gap-x-3 gap-y-5 text-center lg:grid-cols-6">
+                    {[
+                        { value: 14, unit: 'PSI', label: 'de pressão negativa' },
+                        { value: 70, unit: 'PSI', label: 'de pressão positiva' },
+                        { value: 2, unit: 'litros', label: 'de reservatório' },
+                        { value: 220, unit: 'V', label: 'de voltagem' },
+                        { value: 15, unit: 'kg', label: 'de peso' },
+                        { value: offer.warranty_months, unit: 'meses', label: 'de garantia' },
+                    ].map((item) => (
+                        <div key={item.label}>
+                            <dd className="vp-display vp-num text-5xl sm:text-6xl"><CountUp value={item.value} /><span className="ml-1 text-xl vp-red sm:text-2xl">{item.unit}</span></dd>
+                            <dt className="mt-1 text-xs vp-muted sm:text-sm">{item.label}</dt>
+                        </div>
+                    ))}
+                </dl>
+            </section>
+
+            {/* Vídeo: toca sozinho ao chegar na tela. Um link em video_url substitui este vídeo. */}
+            <section className="scroll-mt-14 px-3 py-10 sm:px-4" aria-labelledby="vp-video">
+                <div className="mx-auto max-w-[960px]" data-reveal>
+                    <h2 id="vp-video" className="vp-display text-3xl sm:text-5xl">Veja como funciona</h2>
+                    <p className="mb-4 mt-1 text-sm vp-muted">Da pergunta da bancada até o que vem na compra.</p>
+                    {offer.video_url ? (
+                        <div className="vp-video-box">
+                            <div className="vp-video-frame">
+                                <iframe className="h-full w-full" src={offer.video_url} title="Vacuum Pump Standard em funcionamento" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                            </div>
+                        </div>
+                    ) : (
+                        <VacuumVideo ref={videoHandle} hidden={checkoutOpen} ctaLabel={soon ? 'Me avise quando abrir' : 'Comprar agora'} onBuy={openCheckout} />
+                    )}
                     <p className="mt-2 text-xs vp-muted">Imagens ilustrativas. Acessórios vendidos separadamente.</p>
                 </div>
             </section>
@@ -435,6 +511,37 @@ const LPVacuumPump: React.FC = () => {
                             <ComboCard key={bump.id} offer={offer} bumps={[bump]} title={`Máquina + ${bump.name}`} onBuy={openCheckout} />
                         ))}
                         {offer.bumps.length > 1 && <ComboCard offer={offer} bumps={offer.bumps} title="Máquina + os dois acessórios" onBuy={openCheckout} />}
+                    </div>
+                </div>
+            </section>
+
+            {/* Foto de ponta a ponta */}
+            <section className="vp-dark vp-band" aria-labelledby="vp-band">
+                <picture>
+                    <source media="(max-width: 767px)" srcSet={VACUUM_IMAGES.bandMobile} width={1080} height={1350} />
+                    <img src={VACUUM_IMAGES.band} alt="Vacuum Pump Standard com o visor de nível aceso" width={2400} height={1000} loading="lazy" className="vp-band-img" />
+                </picture>
+                <div className="vp-band-text mx-auto max-w-[1180px] px-4" data-reveal>
+                    <h2 id="vp-band" className="vp-display text-5xl sm:text-6xl lg:text-7xl">O ar sai antes<br />do óleo <span className="vp-red">entrar.</span></h2>
+                    <p className="mt-3 max-w-md text-lg">E o seu cliente vê isso acontecer, no painel, na frente dele.</p>
+                    <button type="button" className="vp-btn mt-5" onClick={() => openCheckout()} data-track="vacuum_cta_band" data-track-category="Vacuum Pump">{soon ? 'Me avise quando abrir' : `Comprar por ${offer.installments}x de ${formatBRL(offer.installment_value).replace(',00', '')}`}</button>
+                </div>
+            </section>
+
+            {/* Closes */}
+            <section className="px-4 py-10" aria-labelledby="vp-detalhes">
+                <div className="mx-auto max-w-[1180px]">
+                    <h2 id="vp-detalhes" className="vp-display text-4xl sm:text-5xl" data-reveal>Cada detalhe à vista</h2>
+                    <div className="vp-tiles mt-4">
+                        {VACUUM_DETAILS.map((tile) => (
+                            <figure key={tile.title} className={`vp-tile ${tile.tall ? 'vp-tile-tall' : ''}`} data-reveal>
+                                <img src={tile.src} alt={tile.title} width={860} height={640} loading="lazy" />
+                                <figcaption>
+                                    <b>{tile.title}</b>
+                                    <span>{tile.text}</span>
+                                </figcaption>
+                            </figure>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -518,19 +625,19 @@ const LPVacuumPump: React.FC = () => {
                 <div className="mx-auto max-w-[900px] text-center">
                     {discounted ? (
                         <>
-                            <h2 className="vp-display text-5xl sm:text-6xl">{formatBRL(parcelaGap).replace(',00', '')} a menos por parcela</h2>
-                            <div className="mt-5 grid gap-3 text-left sm:grid-cols-2">
-                                <div className="vp-plate p-5">
-                                    <div className="vp-label vp-red">Na pré-venda</div>
-                                    <div className="vp-display vp-num mt-1 text-5xl">{offer.installments}x {formatBRL(offer.installment_value).replace(',00', '')}</div>
-                                    <div className="mt-1 text-sm vp-num">Total {formatBRL(offer.price)}, sem juros</div>
-                                </div>
-                                <div className="vp-plate p-5">
-                                    <div className="vp-label vp-muted">Depois da pré-venda</div>
-                                    <div className="vp-display vp-num mt-1 text-5xl vp-muted">{offer.installments}x {formatBRL(offer.regular_installment_value).replace(',00', '')}</div>
-                                    <div className="mt-1 text-sm vp-muted vp-num">Total {formatBRL(offer.regular_price)}, sem juros</div>
-                                </div>
+                            <div className="vp-label vp-offer-kick">Super promoção Black Friday</div>
+                            <h2 className="mt-2">
+                                <span className="vp-display vp-num vp-offer-de">De <s>{formatBRL(offer.regular_price).replace(',00', '')}</s></span>
+                                <span className="vp-display vp-offer-x">por {offer.installments}x de</span>
+                                <span className="vp-display vp-num vp-offer-por">{formatBRL(offer.installment_value).replace(',00', '')}</span>
+                            </h2>
+                            <p className="vp-display vp-offer-mes">por mês, sem juros</p>
+                            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                                <span className="vp-display vp-num vp-offer-chip">Ou {formatBRL(offer.price).replace(',00', '')} no Pix</span>
+                                <span className="vp-display vp-num vp-offer-chip vp-offer-chip-eco">{formatBRL(offer.regular_price - offer.price).replace(',00', '')} a menos</span>
                             </div>
+                            <p className="mt-4 text-sm vp-muted vp-num">Depois da pré-venda: {offer.installments}x de {formatBRL(offer.regular_installment_value).replace(',00', '')} ({formatBRL(offer.regular_price).replace(',00', '')}).</p>
+                            <p className="mt-1 text-sm font-semibold vp-num">Promoção válida até {dateLabel(offer.ends_at)}, às {vacuumEndTimeLabel(offer.ends_at)}, ou enquanto durar o estoque.</p>
                         </>
                     ) : (
                         <h2 className="vp-display text-5xl sm:text-6xl">{offer.installments}x de {formatBRL(offer.installment_value).replace(',00', '')} sem juros</h2>
@@ -550,7 +657,7 @@ const LPVacuumPump: React.FC = () => {
                             ['O cartão não tem limite para tudo. E agora?', 'Chame um vendedor no WhatsApp: ele divide sua compra em mais de um cartão, nas mesmas condições da pré-venda.'],
                             ['Qual é a voltagem da máquina?', 'A Vacuum Pump Standard funciona em 220 V. Confira a tomada da sua oficina antes de comprar.'],
                             ['Quando recebo?', `${offer.delivery_text}. ${offer.shipping_note}`],
-                            ['E se o prazo ou o lote acabar?', `A condição de pré-venda encerra e o preço vai para ${formatBRL(offer.regular_price)}, ainda em ${offer.installments}x sem juros (${formatBRL(offer.regular_installment_value)} por mês).`],
+                            ['E se o prazo ou o estoque acabar?', `A condição de pré-venda encerra e o preço vai para ${formatBRL(offer.regular_price)}, ainda em ${offer.installments}x sem juros (${formatBRL(offer.regular_installment_value)} por mês).`],
                             ['O que vem junto com a máquina?', `Manual, vídeo de treinamento, garantia de ${offer.warranty_months} meses e suporte técnico. A câmara borbulhadora e o kit adaptador são vendidos separadamente, e você pode incluir no carrinho.`],
                             ['Posso desistir da compra?', 'Sim. Em compra pela internet, você tem até 7 dias depois de receber para desistir (art. 49 do Código de Defesa do Consumidor). Veja nossa política de cancelamento.'],
                         ].map(([question, answer]) => (
@@ -580,7 +687,7 @@ const LPVacuumPump: React.FC = () => {
                     <div className="max-w-2xl">
                         <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-7 w-auto" loading="lazy" />
                         {offer.legal_line && <p className="mt-2 text-xs vp-muted">{offer.legal_line}</p>}
-                        <p className="mt-1 text-xs vp-muted">Imagens ilustrativas.{discounted && ` Condições válidas até ${dateLabel(offer.ends_at)} ou enquanto durar o lote da pré-venda.`}</p>
+                        <p className="mt-1 text-xs vp-muted">Imagens do modelo 3D e do vídeo são ilustrativas.{discounted && ` Condições válidas até ${dateLabel(offer.ends_at)} ou enquanto durar o estoque.`}</p>
                     </div>
                     <nav className="flex gap-4" aria-label="Documentos">
                         <a className="underline" href="/termos" target="_blank" rel="noreferrer">Termos</a>
@@ -595,8 +702,8 @@ const LPVacuumPump: React.FC = () => {
                 <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-[var(--vp-line)] bg-white p-3 md:hidden">
                     <div className="min-w-0 flex-1 vp-num leading-tight">
                         {offer.compare_at && <s className="text-xs vp-muted">{formatBRL(offer.compare_at)}</s>}
-                        <div className="vp-display text-2xl vp-red">{formatBRL(offer.price)}</div>
-                        <div className="text-xs">{offer.installments}x de {formatBRL(offer.installment_value)}</div>
+                        <div className="vp-display vp-red"><span className="mr-0.5 text-base">{offer.installments}x de</span> <span className="text-2xl">{formatBRL(offer.installment_value)}</span></div>
+                        <div className="text-xs">sem juros ou {formatBRL(offer.price)}</div>
                     </div>
                     <button type="button" className="vp-btn !min-h-[52px] flex-1 !px-3 !text-lg" onClick={() => openCheckout()} data-track="vacuum_cta_sticky" data-track-category="Vacuum Pump">{soon ? 'Me avise' : 'Comprar'}</button>
                 </div>

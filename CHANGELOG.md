@@ -1,6 +1,15 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.58.0 (2026-11-05) - Vacuum Pump com vídeo automático, fotos reais e borbulhador a R$ 699
+- Parcela vira o número em destaque na página, no compre junto e no carrinho; preço cheio e valor à vista ficam em letras pequenas
+- Vídeo começa mudo ao chegar na tela e continua em um mini player quando a pessoa rola a página; no celular usa a versão em 720p
+- Galeria e carrinho passam a usar fotos reais da máquina, e a página ganha zoom na foto, faixa de números, faixa de oferta e o bloco Cada detalhe à vista
+- Contador de lote sai da página: a promoção vale até 13/11 ou enquanto durar o estoque, com o limite mantido no servidor
+- Câmara borbulhadora passa a custar R$ 699, sem desconto e com foto própria, no compre junto e no carrinho
+- 3D com indicadores ao lado das peças, sem a peça dourada e com o relógio frontal real; vídeo novo com os valores atualizados
+- Barra de compra do celular aparece também depois de um salto na página, e o mini player fica menor para não cobrir o botão de compra
+
 ## v3.57.3 (2026-11-05) - Compre junto da Vacuum Pump com a máquina + a peça
 - Compre junto e order bump do carrinho mostram a foto da máquina, um + e a foto do acessório
 - Página ganha a oferta com os dois acessórios juntos, com total, parcela e economia em cada opção
