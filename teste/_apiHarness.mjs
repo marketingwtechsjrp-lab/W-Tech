@@ -47,7 +47,8 @@ function casa(linha, filtros) {
 }
 
 export async function iniciarHarness(exportacoes) {
-  const estado = { tabelas: {}, chamadas: [], webhooks: [] };
+  // rpcs: resposta das funções ({ nome: (corpo) => linhas }). recusar: tabelas que respondem erro.
+  const estado = { tabelas: {}, chamadas: [], webhooks: [], rpcs: {}, recusar: new Set() };
   let proximoId = 1;
 
   const servidor = createServer((req, res) => {
@@ -66,6 +67,14 @@ export async function iniciarHarness(exportacoes) {
       const filtros = filtrosDaUrl(url);
       const corpo = corpoBruto ? JSON.parse(corpoBruto) : null;
       estado.chamadas.push({ metodo: req.method, tabela, filtros, select: url.searchParams.get('select'), corpo, chave: req.headers.apikey });
+
+      if (estado.recusar.has(tabela)) {
+        res.statusCode = 500;
+        return res.end(JSON.stringify({ code: 'XX000', message: 'falha simulada' }));
+      }
+      if (url.pathname.includes('/rpc/')) {
+        return res.end(JSON.stringify(estado.rpcs[tabela]?.(corpo) ?? null));
+      }
 
       const linhasDaTabela = (estado.tabelas[tabela] ??= []);
       const querRetorno = String(req.headers.prefer || '').includes('return=representation');

@@ -109,10 +109,11 @@ export const handleLeadUpsert = async (payload: LeadPayload, options: LeadUpsert
         // pessoa de volta precisa aparecer no Google Ads/GA4.
         publicarLead(payload, id, options);
 
-        if (action === 'created') {
+        if (naAreaDaEquipe && action === 'created') {
             // Automação: inscreve o lead NOVO nos fluxos de boas-vindas
             // (gatilho NovoCadastro). Não-fatal e fire-and-forget — nunca
             // atrapalha a criação do lead. Recadastros não entram de novo.
+            // Nas paginas publicas quem inscreve e o servidor (api/_publicLeads.ts).
             import('./flows')
                 .then(({ enrollContactInFlowsClient }) =>
                     enrollContactInFlowsClient({ email: payload.email, name: payload.name, triggerType: 'NovoCadastro' })

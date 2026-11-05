@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Check, CreditCard, Lock, Smartphone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
-import { createPublicLead } from '../lib/publicLeads';
+import { saveCheckoutLead } from '../lib/publicLeads';
 import { triggerWebhook } from '../lib/webhooks';
 import { trackEvent } from '../components/AnalyticsTracker';
 
@@ -31,53 +30,37 @@ const Checkout: React.FC = () => {
     try {
         trackEvent('Ecommerce', 'purchase_attempt', `Total: ${total}`);
 
-        // 1. Create Lead
-        const leadData = await createPublicLead({
+        // 1. Create Lead. Esta tela nunca cobrou nada: gravava em SITE_Orders um pedido "Paid"
+        // pelo navegador. O que existe de verdade é o interesse da pessoa, e ele fica na ficha.
+        const { id: leadId } = await saveCheckoutLead(null, {
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
             type: 'Course_Registration',
-            context_id: items.map(i => i.title).join(', ') // Store courses of interest
-        });
+            context_id: items.map(i => i.title).join(', '), // Store courses of interest
+            notes: `Carrinho de R$ ${total}, pagamento escolhido: ${formData.paymentMethod}`
+        }, formData.cpf);
 
-        // 2. Create Order
-        const { data: orderData, error: orderError } = await supabase
-            .from('SITE_Orders')
-            .insert([{
-                customer_name: formData.name,
-                customer_email: formData.email,
-                customer_cpf: formData.cpf,
-                customer_phone: formData.phone,
-                total: total,
-                payment_method: formData.paymentMethod,
-                status: 'Paid', // Simulating successful payment
-                items: items // JSONB
-            }])
-            .select()
-            .single();
-
-        if (orderError) throw orderError;
-
-        // 3. Trigger Webhooks
+        // 2. Trigger Webhooks
         await triggerWebhook('webhook_order', {
-             orderId: orderData.id,
+             orderId: leadId,
              customer: formData,
              items: items,
              total: total
         });
-        
+
         await triggerWebhook('webhook_lead', {
             name: formData.name,
             email: formData.email,
             phone: formData.phone,
             type: 'Course_Purchase',
             status: 'New',
-            context_id: `Order #${orderData.id.slice(0,8)}`
+            context_id: `Order #${leadId.slice(0,8)}`
         });
 
-        trackEvent('Ecommerce', 'purchase_success', `Order: ${orderData.id}`);
+        trackEvent('Ecommerce', 'purchase_success', `Order: ${leadId}`);
 
-        setOrderId(orderData.id.slice(0,8).toUpperCase());
+        setOrderId(leadId.slice(0,8).toUpperCase());
         setStep(3); // Success
         clearCart();
 

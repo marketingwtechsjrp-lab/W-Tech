@@ -16,7 +16,7 @@ async function bancoFechado(page: Page, respostas: Record<string, unknown> = {})
   await page.route('**/rest/v1/**', (route) => {
     const url = decodeURIComponent(route.request().url());
     pedidos.push(`${route.request().method()} ${url}`);
-    if (/rest\/v1\/SITE_(Leads|Enrollments)/.test(url) && route.request().method() !== 'POST') {
+    if (/rest\/v1\/SITE_(Leads|Enrollments|CaptureLeads|EmailFlows|FlowEnrollments)/.test(url) && route.request().method() !== 'POST') {
       return route.fulfill({ status: 401, json: { code: '42501', message: 'permission denied' } });
     }
     for (const [tabela, json] of Object.entries(respostas)) {
@@ -237,6 +237,10 @@ test('recadastro de página pública passa pelo servidor, com a atribuição jun
     utm_source: 'meta',
   });
   expect(pedidos.filter((p) => p.includes('rest/v1/SITE_Leads'))).toEqual([]);
+
+  // Lead novo entra no fluxo de boas-vindas pelo servidor: o navegador não lê os fluxos.
+  await page.waitForTimeout(300);
+  expect(pedidos.filter((p) => /rest\/v1\/SITE_(EmailFlows|FlowEnrollments)/.test(p))).toEqual([]);
 });
 
 test('checkout Lisboa grava o lead pelo servidor e reaproveita o id que já tinha', async ({ page }) => {
@@ -261,4 +265,49 @@ test('checkout Lisboa grava o lead pelo servidor e reaproveita o id que já tinh
   expect(enviados[0]).toMatchObject({ action: 'checkout', id: LEAD_ID, cpf: '123456789' });
   expect(enviados[0].lead).toMatchObject({ name: 'Fulano de Tal', email: 'fulano@teste.com', phone: '+351 962 030 640' });
   expect(pedidos.filter((p) => p.includes('rest/v1/SITE_Leads'))).toEqual([]);
+});
+
+test('campanha de captura vota e soma pelo servidor, sem tocar nos leads da campanha', async ({ page }) => {
+  const CAMPANHA_ID = '55555555-5555-4555-8555-555555555555';
+  const pedidos = await bancoFechado(page, {
+    SITE_CaptureCampaigns: [{
+      id: CAMPANHA_ID,
+      name: 'Etapa da pista',
+      slug: 'etapa-da-pista',
+      type: 'enquete',
+      template: 'ferramenta',
+      status: 'active',
+      ends_at: null,
+      config: { options: ['Interlagos', 'Goiania'], question: 'Onde correr?', cta: 'Registrar voto' },
+    }],
+  });
+  const enviados: Array<Record<string, any>> = [];
+  await page.route('**/api/public-capture', (route) => {
+    const corpo = route.request().postDataJSON();
+    enviados.push(corpo);
+    return route.fulfill({ json: corpo.action === 'results' ? { votes: { Interlagos: 3, Goiania: 1 } } : { ok: true } });
+  });
+
+  await page.goto('/captura/etapa-da-pista?utm_source=meta');
+  await page.getByRole('button', { name: /Interlagos/ }).click();
+  await page.getByPlaceholder('Seu nome').fill('Fulano de Tal');
+  await page.getByPlaceholder('WhatsApp com DDD').fill('11999998888');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Registrar voto' }).click();
+
+  await expect.poll(() => enviados.filter((e) => e.action === 'submit').length).toBe(1);
+  const envio = enviados.find((e) => e.action === 'submit')!;
+  expect(envio).toMatchObject({
+    campaignId: CAMPANHA_ID,
+    name: 'Fulano de Tal',
+    phone: '11999998888',
+    vote: 'Interlagos',
+    consent: true,
+  });
+  expect(envio.tracking.utm_source).toBe('meta');
+  expect(enviados[0]).toEqual({ action: 'results', campaignId: CAMPANHA_ID });
+
+  // Os percentuais vêm da contagem do servidor: 3 de 4 votos.
+  await expect(page.getByText('75%').first()).toBeVisible();
+  expect(pedidos.filter((p) => p.includes('rest/v1/SITE_CaptureLeads'))).toEqual([]);
 });
