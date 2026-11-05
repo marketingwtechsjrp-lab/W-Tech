@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.55.1 (2026-11-05) - Pedido de saída no WhatsApp oficial e histórico da campanha no inbox
+- Botão de resposta de template aparece como texto no inbox, em vez de "Tipo não suportado"
+- "Não quero receber" e frases como "SAIR" registram o pedido, marcam a ficha com whatsapp_optout, confirmam uma vez e não passam pela IA
+- Template de campanha gravado sem conversa entra no histórico quando a pessoa responde
+- Banco: migrations/2026-11-05_whatsapp_marketing_optout.sql antes de publicar (já aplicada)
+
 ## v3.55.0 (2026-11-04) - Leads, matrículas e mecânicos fechados para visitantes (segurança)
 - Leads, matrículas e cadastro de mecânicos deixam de ser legíveis e alteráveis com a chave pública do site; formulários seguem gravando
 - Recadastro, quiz e checkout de lead passam por /api/public-leads; obrigado, confirmação e certificado por /api/public-enrollments
