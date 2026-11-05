@@ -12,6 +12,11 @@ export const VACUUM_IMAGES = {
     insideSm: `${BASE}/machine-inside-sm.webp`,
 };
 
+export const VACUUM_VIDEO = {
+    src: '/videos/vacuum-pump/vacuum-pump-bf.mp4?v=1',
+    poster: '/videos/vacuum-pump/poster.webp?v=1',
+};
+
 /** Ilustração até chegar a foto real: não vamos publicar imagem fingindo ser o produto. */
 export const BubbleChamber: React.FC = () => (
     <div className="relative mx-auto h-full w-full max-w-[110px]" role="img" aria-label="Ilustração da câmara borbulhadora">

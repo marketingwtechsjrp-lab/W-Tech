@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Plus, QrCode, RotateCcw, ShieldCheck, Truck, X, Zap } from 'lucide-react';
+import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Play, Plus, QrCode, RotateCcw, ShieldCheck, Truck, X, Zap } from 'lucide-react';
 import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
-import { BubbleChamber, VACUUM_IMAGES } from '../components/vacuum-pump/vacuumMedia';
+import { BubbleChamber, VACUUM_IMAGES, VACUUM_VIDEO } from '../components/vacuum-pump/vacuumMedia';
 import { VP_CSS } from '../components/vacuum-pump/vacuumStyles';
 import {
     dateLabel,
@@ -17,7 +17,7 @@ import {
     type VacuumOffer,
     type VacuumShippingQuote,
 } from '../components/vacuum-pump/vacuumApi';
-import { pushLead } from '../lib/dataLayer';
+import { pushEvent, pushLead } from '../lib/dataLayer';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { VACUUM_ITEM_NAME, brlParts, formatBRL, normalizeBrPhone, vacuumEndTimeLabel, vacuumUrgencyLabel } from '../lib/vacuumOffer';
@@ -178,6 +178,9 @@ const LPVacuumPump: React.FC = () => {
     const heroCta = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLElement>(null);
     const experienceRef = useRef<HTMLElement>(null);
+    const videoSectionRef = useRef<HTMLElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const videoTracked = useRef(false);
     const checkoutOpenRef = useRef(false);
     checkoutOpenRef.current = checkoutOpen;
 
@@ -227,6 +230,18 @@ const LPVacuumPump: React.FC = () => {
         setCheckoutBumps(bumps);
         setCheckoutOpen(true);
     }, [soon]);
+
+    const watchVideo = useCallback(() => {
+        videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        void videoRef.current?.play().catch(() => undefined);
+    }, []);
+
+    // Conta um play por visita: pausar e voltar não é outro interessado.
+    const trackVideoPlay = useCallback(() => {
+        if (videoTracked.current) return;
+        videoTracked.current = true;
+        pushEvent('Vacuum Pump', 'vacuum_video_play');
+    }, []);
 
     const statusBar = soon
         ? `A pré-venda abre em ${dateLabel(offer.starts_at)}`
@@ -296,6 +311,10 @@ const LPVacuumPump: React.FC = () => {
                                 <img src={item.srcSm} alt="" width={60} height={60} loading="lazy" />
                             </button>
                         ))}
+                        <button type="button" className="vp-thumb" aria-label="Assistir ao vídeo" onClick={watchVideo} data-track="vacuum_video_thumb" data-track-category="Vacuum Pump">
+                            <img src={VACUUM_VIDEO.poster} alt="" width={50} height={28} loading="lazy" className="opacity-60" />
+                            <span className="absolute inset-0 grid place-items-center"><span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--vp-red)] text-white"><Play size={14} fill="currentColor" aria-hidden /></span></span>
+                        </button>
                         <button type="button" className="vp-thumb" aria-label="Ver a máquina em 3D" onClick={() => experienceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} data-track="vacuum_3d_thumb" data-track-category="Vacuum Pump">
                             <span className="grid place-items-center text-[.7rem] font-bold leading-tight"><Box size={24} aria-hidden /> 3D</span>
                         </button>
@@ -356,6 +375,22 @@ const LPVacuumPump: React.FC = () => {
                 </section>
             </main>
 
+            {/* Vídeo: o arquivo só baixa quando a pessoa dá o play. Um link em video_url substitui este vídeo. */}
+            <section ref={videoSectionRef} className="scroll-mt-14 px-3 pb-8 sm:px-4" aria-labelledby="vp-video">
+                <div className="mx-auto max-w-[960px]">
+                    <h2 id="vp-video" className="vp-display text-3xl sm:text-4xl">Veja como funciona</h2>
+                    <p className="mt-1 text-sm vp-muted">Em 1min27, da pergunta da bancada até o que vem na compra.</p>
+                    <div className="mt-3 aspect-video bg-black">
+                        {offer.video_url ? (
+                            <iframe className="h-full w-full" src={offer.video_url} title="Vacuum Pump Standard em funcionamento" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                        ) : (
+                            <video ref={videoRef} className="h-full w-full" src={VACUUM_VIDEO.src} poster={VACUUM_VIDEO.poster} preload="none" controls playsInline onPlay={trackVideoPlay} />
+                        )}
+                    </div>
+                    <p className="mt-2 text-xs vp-muted">Imagens ilustrativas. Acessórios vendidos separadamente.</p>
+                </div>
+            </section>
+
             {/* Compre junto */}
             <section className="px-4 pb-8" aria-labelledby="vp-junto">
                 <div className="mx-auto max-w-[1180px]">
@@ -390,18 +425,6 @@ const LPVacuumPump: React.FC = () => {
                     </div>
                 </div>
             </section>
-
-            {/* VSL: aparece sozinha quando o link entra na configuração da oferta */}
-            {offer.video_url && (
-                <section className="border-t border-[var(--vp-line)] px-4 py-10">
-                    <div className="mx-auto max-w-[960px]">
-                        <h2 className="vp-display text-4xl sm:text-5xl">Veja a máquina em ação</h2>
-                        <div className="mt-4 aspect-video bg-black">
-                            <iframe className="h-full w-full" src={offer.video_url} title="Vacuum Pump Standard em funcionamento" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-                        </div>
-                    </div>
-                </section>
-            )}
 
             {/* A máquina em 3D */}
             <section ref={experienceRef} id="maquina-3d" className="scroll-mt-14 border-t border-[var(--vp-line)] bg-white px-4 py-10">
