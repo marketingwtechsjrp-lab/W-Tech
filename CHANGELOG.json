@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.57.1",
+    "date": "2026-11-05",
+    "title": "Mapas de volta na home e no painel, e botão da agenda da home",
+    "changes": [
+      "Home volta a mostrar o mapa da rede com os credenciados reais, carregado só quando o bloco chega perto da tela",
+      "/home-legacy também volta a ter mapa, com os blocos do OpenStreetMap",
+      "Painel: abrir um credenciado com coordenadas não deixa mais a tela em branco, e o formulário mostra o mapa",
+      "Botão Mais Detalhes da agenda da home volta a abrir o curso, inclusive quando ele tem endereço próprio",
+      "Prerender deixa de gravar a Leaflet no HTML das páginas: a /mapa também passa a carregar o mapa só no navegador"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.57.0",
     "date": "2026-11-05",
     "title": "Captura, fluxos e auditoria pelo servidor, e segredos fechados para visitantes (segurança)",
