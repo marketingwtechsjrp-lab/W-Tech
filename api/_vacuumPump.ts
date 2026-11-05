@@ -299,8 +299,8 @@ async function convertLead(supabase: any, checkout: any, sale: { id: string; tot
             fromSeller ? 'recuperado_por_vendedor' : 'checkout_automatico',
         ])
     );
-    // CPF e endereço ficam fora da ficha de propósito: SITE_Leads tem leitura pública
-    // (política "Public Select"). Os dados da entrega vivem no pedido e no checkout.
+    // CPF e endereço ficam fora da ficha de propósito: os dados da entrega vivem no
+    // pedido e no checkout, e a ficha do CRM não precisa deles para o vendedor chamar.
     const payload: Record<string, unknown> = {
         status: 'Converted',
         tags,
