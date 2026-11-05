@@ -56,7 +56,7 @@ const VacuumPumpObrigado: React.FC = () => {
     const paid = result?.stage === 'paid';
 
     return (
-        <div className="vp-root vp-grid-bg min-h-screen px-4 py-12">
+        <div className="vp-root min-h-screen px-4 py-12">
             <style>{VP_CSS}</style>
             <SEO title="Pedido da Vacuum Pump" noindex />
             <main className="mx-auto max-w-[680px]">
@@ -78,7 +78,7 @@ const VacuumPumpObrigado: React.FC = () => {
 
                 {result && paid && (
                     <>
-                        <div className="flex h-14 w-14 items-center justify-center bg-[var(--vp-red)]"><Check size={32} strokeWidth={3} aria-hidden /></div>
+                        <div className="flex h-14 w-14 items-center justify-center bg-[var(--vp-green)] text-white"><Check size={32} strokeWidth={3} aria-hidden /></div>
                         <h1 className="vp-display mt-5 text-6xl sm:text-7xl">Máquina garantida{result.first_name ? `, ${result.first_name}` : ''}!</h1>
                         {result.order_number && <p className="mt-3 text-lg">Pedido <b className="vp-num">{result.order_number}</b>. A confirmação também foi para o seu e-mail.</p>}
 
@@ -96,7 +96,7 @@ const VacuumPumpObrigado: React.FC = () => {
                                     </li>
                                 )}
                             </ul>
-                            <div className="mt-3 flex justify-between border-t border-white/15 pt-3 font-bold">
+                            <div className="mt-3 flex justify-between border-t border-[var(--vp-line)] pt-3 font-bold">
                                 <span>Total{result.installments && result.installments > 1 ? ` em ${result.installments}x sem juros` : ''}</span>
                                 <span className="vp-num">{formatBRL(Number(result.amount) || 0)}</span>
                             </div>
