@@ -8,6 +8,11 @@
 - Lead novo de página pública entra no fluxo de boas-vindas pelo servidor; login e logout são auditados pelo servidor
 - Tela antiga de checkout não grava mais pedido marcado como pago sem cobrança: guarda o interesse na ficha do lead
 - Banco: fechar_segredos_e_dados_do_painel e conteudo_publico_somente_leitura antes, fechar_captura_pedidos_fluxos_auditoria depois de publicar (ver SEGURANCA_RLS_PENDENTE.md)
+## v3.55.1 (2026-11-05) - Pedido de saída no WhatsApp oficial e histórico da campanha no inbox
+- Botão de resposta de template aparece como texto no inbox, em vez de "Tipo não suportado"
+- "Não quero receber" e frases como "SAIR" registram o pedido, marcam a ficha com whatsapp_optout, confirmam uma vez e não passam pela IA
+- Template de campanha gravado sem conversa entra no histórico quando a pessoa responde
+- Banco: migrations/2026-11-05_whatsapp_marketing_optout.sql antes de publicar (já aplicada)
 
 ## v3.55.0 (2026-11-04) - Leads, matrículas e mecânicos fechados para visitantes (segurança)
 - Leads, matrículas e cadastro de mecânicos deixam de ser legíveis e alteráveis com a chave pública do site; formulários seguem gravando
