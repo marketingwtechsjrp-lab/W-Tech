@@ -467,6 +467,117 @@ test('Pix: devolve o QR, não gera outro à toa e confirma pelo webhook', async 
     assert.ok(!('pix' in status.json), 'não expõe QR depois de pago');
 });
 
+test('Pix: ao gerar, manda o pedido com o código por e-mail, uma vez só', async () => {
+    const db = seed();
+    db.tables.SITE_Config.push(
+        { key: 'brevo_enabled', value: 'true' },
+        { key: 'brevo_smtp_login', value: 'login' },
+        { key: 'brevo_smtp_key', value: 'chave' },
+        { key: 'brevo_sender_email', value: 'contato@w-tech.test' }
+    );
+    db.tables.SITE_EmailLogs = [];
+    mockMercadoPago(() => ({
+        json: {
+            id: 910,
+            status: 'pending',
+            status_detail: 'pending_waiting_transfer',
+            payment_method_id: 'pix',
+            date_of_expiration: new Date(Date.now() + 1_800_000).toISOString(),
+            point_of_interaction: { transaction_data: { qr_code: 'PIXCOPIAECOLA', qr_code_base64: 'QkFTRTY0' } },
+        },
+    }));
+    const id = await startCheckout();
+    const form = { payment_method_id: 'pix' };
+
+    await pay(id, { form_data: form });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const pixEmails = () => db.tables.SITE_EmailLogs.filter((row) => row.type === 'vacuum_pump_pix');
+    assert.equal(pixEmails().length, 1, 'pedido recebido vai por e-mail');
+    assert.match(pixEmails()[0].subject, /falta pagar o Pix/);
+    assert.equal(pixEmails()[0].status, 'Sent');
+
+    await pay(id, { form_data: form, attempt_key: 'k2' });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(pixEmails().length, 1, 'reaproveitar o código não reenvia o e-mail');
+});
+
+test('Pix: gerado sem e-mail do comprador não quebra o pagamento', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({
+        json: {
+            id: 911,
+            status: 'pending',
+            payment_method_id: 'pix',
+            date_of_expiration: new Date(Date.now() + 1_800_000).toISOString(),
+            point_of_interaction: { transaction_data: { qr_code: 'PIXCOPIAECOLA', qr_code_base64: 'QkFTRTY0' } },
+        },
+    }));
+    const id = await startCheckout();
+    db.tables.SITE_CampaignCheckouts.find((row) => row.id === id).email = null;
+    const result = await pay(id, { form_data: { payment_method_id: 'pix' } });
+    assert.equal(result.json.stage, 'pix_pending');
+});
+
+test('Pix aberto: trocar para o cartão cancela o código antigo antes de cobrar', async () => {
+    const db = seed();
+    const calls = mockMercadoPago((_url, body) => {
+        if (body?.status === 'cancelled') return { json: { id: 920, status: 'cancelled' } };
+        if (body?.payment_method_id === 'pix') {
+            return {
+                json: {
+                    id: 920,
+                    status: 'pending',
+                    payment_method_id: 'pix',
+                    date_of_expiration: new Date(Date.now() + 1_800_000).toISOString(),
+                    point_of_interaction: { transaction_data: { qr_code: 'PIXANTIGO', qr_code_base64: 'QkFTRTY0' } },
+                },
+            };
+        }
+        return { json: { id: 921, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } };
+    });
+    const id = await startCheckout();
+    await pay(id, { form_data: { payment_method_id: 'pix' } });
+    assert.equal(db.tables.SITE_CampaignCheckouts.find((row) => row.id === id).mp_payment_id, '920');
+
+    const result = await pay(id, { form_data: CARD_FORM, attempt_key: 'cartao' });
+    assert.equal(result.json.stage, 'paid');
+    const order = calls.map((call) => `${call.method} ${call.url.split('/v1/')[1]?.split('?')[0]}`);
+    const cancel = order.indexOf('PUT payments/920');
+    assert.ok(cancel > 0, 'cancelou o Pix antigo');
+    assert.ok(cancel < order.lastIndexOf('POST payments'), 'cancela antes de criar a cobrança nova');
+    assert.equal(calls[cancel].body.status, 'cancelled');
+    assert.equal(db.tables.SITE_Sales.length, 1, 'uma venda só');
+
+    // O aviso do Pix cancelado chega depois e não pode mexer na compra paga.
+    const late = await lib.handleVacuumPaymentEvent(db, { id: 920, status: 'cancelled', external_reference: `vacuum:${id}` });
+    assert.equal(db.tables.SITE_Sales.length, 1);
+    assert.equal(db.tables.SITE_CampaignCheckouts.find((row) => row.id === id).stage, 'paid', `continua pago: ${JSON.stringify(late)}`);
+});
+
+test('Pix aberto: falha ao cancelar o código antigo não impede a compra', async () => {
+    const db = seed();
+    mockMercadoPago((_url, body) => {
+        if (body?.status === 'cancelled') return { status: 500, json: { message: 'erro' } };
+        if (body?.payment_method_id === 'pix') {
+            return {
+                json: {
+                    id: 930,
+                    status: 'pending',
+                    payment_method_id: 'pix',
+                    date_of_expiration: new Date(Date.now() + 1_800_000).toISOString(),
+                    point_of_interaction: { transaction_data: { qr_code: 'PIXANTIGO', qr_code_base64: 'QkFTRTY0' } },
+                },
+            };
+        }
+        return { json: { id: 931, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } };
+    });
+    const id = await startCheckout();
+    await pay(id, { form_data: { payment_method_id: 'pix' } });
+    const result = await pay(id, { form_data: CARD_FORM, attempt_key: 'cartao' });
+    assert.equal(result.json.stage, 'paid');
+    assert.equal(db.tables.SITE_Sales.length, 1);
+});
+
 test('recusado: mensagem clara, sem venda, e vendedor recebe em 10 minutos', async () => {
     const db = seed();
     mockMercadoPago(() => ({ json: { id: 904, status: 'rejected', status_detail: 'cc_rejected_insufficient_amount' } }));

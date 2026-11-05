@@ -283,6 +283,70 @@ async function sendConfirmationEmail(checkout: any, orderNumber: string, deadlin
     });
 }
 
+/**
+ * Pedido recebido, ainda sem pagamento: a pessoa fica com o código Pix no e-mail e sabe
+ * que a compra só se confirma quando o pagamento cair. Best-effort, como a confirmação.
+ */
+export async function sendPixPendingEmail(checkout: any): Promise<void> {
+    if (!checkout.email || !checkout.pix_qr_code) return;
+    const items: VacuumCartItem[] = checkout.items || [];
+    const rows = items
+        .map(
+            (item) =>
+                `<tr><td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(item.name)}</td>` +
+                `<td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${formatBRL(item.price)}</td></tr>`
+        )
+        .join('');
+    const shipping = checkout.shipping;
+    const shippingRow = shipping
+        ? `<tr><td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(shipping.name)}</td>` +
+          `<td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">${shipping.cost > 0 ? formatBRL(shipping.cost) : escapeHtml(shipping.method === 'gratis_sp' ? 'Grátis' : 'A combinar')}</td></tr>`
+        : '';
+    const validade = checkout.pix_expires_at
+        ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(new Date(checkout.pix_expires_at))
+        : null;
+    const html = `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#111">
+          <h2 style="margin:0 0 8px">Recebemos seu pedido, ${escapeHtml(firstName(checkout.name))}!</h2>
+          <p style="margin:0 0 16px">Falta só pagar o Pix para garantir sua Vacuum Pump Standard${validade ? `. O código vale até as <b>${validade}</b> de hoje` : ''}.</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px">${rows}${shippingRow}
+            <tr><td style="padding:10px 0"><b>Total no Pix</b></td><td style="padding:10px 0;text-align:right"><b>${formatBRL(Number(checkout.amount) || 0)}</b></td></tr>
+          </table>
+          <p style="margin:16px 0 6px"><b>Pix copia e cola</b>: copie o código abaixo e cole no aplicativo do seu banco.</p>
+          <p style="margin:0;padding:12px;background:#f4f4f6;font-family:monospace;font-size:12px;word-break:break-all">${escapeHtml(checkout.pix_qr_code)}</p>
+          <p style="margin:16px 0 0">Assim que o pagamento cair, você recebe a confirmação com o número do pedido. Dúvidas? Responda este e-mail ou fale com o suporte W-Tech pelo WhatsApp.</p>
+        </div>`;
+    await sendEmail({
+        to: checkout.email,
+        subject: 'Recebemos seu pedido: falta pagar o Pix da Vacuum Pump Standard',
+        html,
+        type: 'vacuum_pump_pix',
+    });
+}
+
+/**
+ * Cancela o Pix ainda em aberto antes de criar outro pagamento: quem troca para o cartão,
+ * ou muda o pedido, não pode ficar com um código antigo que ainda cobra. Se o cancelamento
+ * falhar, o Pix vence sozinho em 30 minutos, então a compra segue.
+ */
+export async function cancelPendingPix(token: string, paymentId: string): Promise<void> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+        const res = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ status: 'cancelled' }),
+            signal: controller.signal,
+        });
+        if (!res.ok) console.warn(`[Vacuum] Pix ${paymentId} não foi cancelado (${res.status}).`);
+    } catch (err: any) {
+        console.warn(`[Vacuum] Falha ao cancelar o Pix ${paymentId}:`, err?.message);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 async function convertLead(supabase: any, checkout: any, sale: { id: string; total: number; orderNumber: string }): Promise<void> {
     const lead = checkout.lead_id
         ? (await supabase.from('SITE_Leads').select('*').eq('id', checkout.lead_id).maybeSingle()).data

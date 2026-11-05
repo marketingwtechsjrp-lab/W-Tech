@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.60.1",
+    "date": "2026-11-05",
+    "title": "Pix da Vacuum Pump com QR Code na tela e e-mail do pedido",
+    "changes": [
+      "Escolher Pix mostra o QR Code e o código copia e cola na própria tela de pagamento, sem pedir outro clique",
+      "Ao gerar o Pix, o cliente recebe por e-mail o pedido e o código para pagar; a confirmação continua indo quando o pagamento cai",
+      "Trocar de Pix para cartão, ou mudar o pedido, cancela o código anterior para ninguém pagar duas vezes",
+      "Formulário do cartão abre direto, sem o segundo clique em Cartão de crédito"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.60.0",
     "date": "2026-11-05",
     "title": "Vacuum Pump em realidade aumentada, com botão em destaque e tutorial de uso",

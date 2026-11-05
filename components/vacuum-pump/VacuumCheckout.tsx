@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, CheckCircle2, ChevronDown, Copy, CreditCard, Lock, Plus, RotateCcw, ShieldCheck, ShoppingCart, Timer, Truck, User, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Copy, CreditCard, Lock, Plus, QrCode, RotateCcw, ShieldCheck, ShoppingCart, Timer, Truck, User, X } from 'lucide-react';
 import { pushBeginCheckout, pushLead } from '../../lib/dataLayer';
 import { getLeadTrackingFields } from '../../lib/tracking';
 import {
@@ -62,7 +62,8 @@ interface Props {
 
 /** A ordem é a do menor esforço: escolher, deixar o contato e só então endereço e pagamento. */
 type Step = 0 | 1 | 2 | 3;
-type Screen = 'form' | 'pix' | 'review';
+type Screen = 'form' | 'review';
+type PayMethod = 'card' | 'pix';
 
 const STEPS = [
     { label: 'Carrinho', Icon: ShoppingCart },
@@ -99,7 +100,11 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const [doc, setDoc] = useState('');
     const [address, setAddress] = useState({ cep: initialCep, street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
     const [bumps, setBumps] = useState<string[]>(initialBumps);
+    const [payMethod, setPayMethod] = useState<PayMethod>('card');
     const [pix, setPix] = useState<VacuumPix | null>(null);
+    const [pixState, setPixState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
+    const [pixNonce, setPixNonce] = useState(0);
+    const pixIssued = useRef<{ total: number; nonce: number } | null>(null);
     const [copied, setCopied] = useState(false);
     const [brickState, setBrickState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
     const [quote, setQuote] = useState<VacuumShippingQuote | null>(null);
@@ -278,11 +283,6 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                 goToThanks(id);
                 return;
             }
-            if (result.stage === 'pix_pending' && result.pix) {
-                setPix(result.pix);
-                setScreen('pix');
-                return;
-            }
             if (result.stage === 'review') {
                 setScreen('review');
                 return;
@@ -296,6 +296,58 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         },
         [goToThanks, onOfferChanged]
     );
+
+    // Pix: escolheu, o QR Code aparece aqui mesmo. Só gera outro se o valor mudar ou o código vencer.
+    const wantsPix = step === 3 && screen === 'form' && payMethod === 'pix' && quote !== null;
+    useEffect(() => {
+        const id = checkoutIdRef.current;
+        if (!wantsPix || !id) return;
+        const total = cart.total;
+        const issued = pixIssued.current;
+        if (issued && issued.total === total && issued.nonce === pixNonce) return;
+        let cancelled = false;
+        setPixState('loading');
+        setError(null);
+        vacuumApi
+            .pay({
+                checkout_id: id,
+                bumps: cart.bump_ids,
+                shipping_service: shippingCodeRef.current,
+                expected_total: total,
+                attempt_key: `pix-${Math.round(total * 100)}-${pixNonce}`,
+                form_data: { payment_method_id: 'pix' },
+            })
+            .then((result) => {
+                if (cancelled) return;
+                if (result.stage === 'paid') {
+                    goToThanks(id);
+                } else if (result.stage === 'pix_pending' && result.pix) {
+                    pixIssued.current = { total, nonce: pixNonce };
+                    setPix(result.pix);
+                    setPixState('ready');
+                } else if (result.stage === 'review') {
+                    setScreen('review');
+                } else {
+                    if (result.code === 'price_changed') {
+                        onOfferChanged();
+                        setQuoteNonce((value) => value + 1);
+                    }
+                    setPix(null);
+                    setPixState('failed');
+                    setError(result.message || result.error || 'Não foi possível gerar o Pix. Tente de novo ou chame um vendedor.');
+                }
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setPix(null);
+                setPixState('failed');
+                setError('Não foi possível gerar o Pix. Tente de novo ou chame um vendedor.');
+            });
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wantsPix, cart.total, pixNonce]);
 
     // Frete: cotado assim que o CEP fecha, em qualquer etapa, e de novo se os adicionais mudarem o peso.
     useEffect(() => {
@@ -358,8 +410,12 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                 theme: 'default',
                                 customVariables: { baseColor: '#e60000', buttonTextColor: '#ffffff', borderRadiusMedium: '2px', borderRadiusLarge: '2px' },
                             },
+                            // A escolha entre cartão e Pix já foi feita acima: aqui o formulário abre direto.
+                            hideFormTitle: true,
+                            defaultPaymentOption: { creditCardForm: true },
                         },
-                        paymentMethods: { creditCard: 'all', bankTransfer: 'all', maxInstallments: offer.installments },
+                        // O Pix fica fora do Brick: lá ele pede e-mail e clique em Pagar antes de mostrar o QR Code.
+                        paymentMethods: { creditCard: 'all', maxInstallments: offer.installments },
                     },
                     callbacks: {
                         onReady: () => !cancelled && setBrickState('ready'),
@@ -390,9 +446,10 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         brickRef.current?.update?.({ amount: cart.total });
     }, [cart.total]);
 
-    // Pix e análise: acompanha até confirmar. A consulta também cobre webhook atrasado.
+    // Pix aberto e análise: acompanha até confirmar. A consulta também cobre webhook atrasado.
+    const watchingPayment = screen === 'review' || pix !== null;
     useEffect(() => {
-        if (screen === 'form' || !checkoutId) return;
+        if (!watchingPayment || !checkoutId) return;
         const timer = window.setInterval(async () => {
             const status = await vacuumApi.status(checkoutId).catch(() => null);
             if (!status) return;
@@ -402,11 +459,14 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             } else if (status.stage === 'rejected' || status.stage === 'expired') {
                 window.clearInterval(timer);
                 setScreen('form');
+                setPix(null);
+                setPixState('failed');
+                pixIssued.current = null;
                 setError(status.stage === 'expired' ? 'O Pix venceu. Gere um novo código para garantir sua máquina.' : status.message || 'O pagamento não foi aprovado.');
             }
         }, 5000);
         return () => window.clearInterval(timer);
-    }, [screen, checkoutId, goToThanks]);
+    }, [watchingPayment, checkoutId, goToThanks]);
 
     const copyPix = async () => {
         if (!pix?.qr_code) return;
@@ -722,50 +782,75 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             <section className="vp-plate p-4 sm:p-5">
                                 <h1 className="vp-display text-3xl">Forma de pagamento</h1>
                                 <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, ou Pix com aprovação na hora.</p>
-                                {!offer.mp_public_key || brickState === 'failed' ? (
-                                    <div className="border border-[var(--vp-line)] p-4 text-sm">
-                                        <p className="mb-3">O pagamento online não abriu agora. Um vendedor conclui sua compra nessas mesmas condições.</p>
-                                        <a className="vp-btn w-full" href={sellerLink} target="_blank" rel="noreferrer">Chamar um vendedor</a>
+                                <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Forma de pagamento">
+                                    <label className={`vp-option ${payMethod === 'card' ? 'vp-option-on' : ''}`}>
+                                        <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'card'} onChange={() => setPayMethod('card')} data-track="vacuum_pay_card" data-track-category="Vacuum Pump" />
+                                        <CreditCard size={20} className="shrink-0" aria-hidden />
+                                        <span className="flex-1 vp-num"><b>Cartão de crédito</b><span className="block text-sm vp-muted">{offer.installments}x de {formatBRL(cart.installment_value)} sem juros</span></span>
+                                    </label>
+                                    <label className={`vp-option ${payMethod === 'pix' ? 'vp-option-on' : ''}`}>
+                                        <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'pix'} onChange={() => setPayMethod('pix')} data-track="vacuum_pay_pix" data-track-category="Vacuum Pump" />
+                                        <QrCode size={20} className="shrink-0" aria-hidden />
+                                        <span className="flex-1 vp-num"><b>Pix</b><span className="block text-sm vp-muted">{formatBRL(cart.total)} à vista, QR Code aqui na tela</span></span>
+                                    </label>
+                                </div>
+
+                                {/* O cartão fica montado: voltar do Pix não apaga o que a pessoa já digitou. */}
+                                <div className={`mt-4 ${payMethod === 'card' ? '' : 'hidden'}`}>
+                                    {!offer.mp_public_key || brickState === 'failed' ? (
+                                        <div className="border border-[var(--vp-line)] p-4 text-sm">
+                                            <p className="mb-3">O pagamento com cartão não abriu agora. Você pode pagar no Pix ou chamar um vendedor, nas mesmas condições.</p>
+                                            <a className="vp-btn w-full" href={sellerLink} target="_blank" rel="noreferrer">Chamar um vendedor</a>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {(brickState === 'loading' || !quote) && <p className="text-sm vp-muted" role="status">Abrindo o pagamento seguro…</p>}
+                                            <div id={BRICK_CONTAINER} />
+                                        </>
+                                    )}
+                                </div>
+
+                                {payMethod === 'pix' && (
+                                    <div className="mt-4">
+                                        {pixState === 'loading' && <p className="p-6 text-center text-sm vp-muted" role="status">Gerando o seu QR Code do Pix…</p>}
+                                        {pixState === 'failed' && (
+                                            <div className="border border-[var(--vp-line)] p-4 text-sm">
+                                                <p className="mb-3">O código Pix não foi gerado. Tente de novo ou chame um vendedor, nas mesmas condições.</p>
+                                                <div className="grid gap-2 sm:grid-cols-2">
+                                                    <button type="button" className="vp-btn w-full" onClick={() => setPixNonce((value) => value + 1)}><RotateCcw size={18} aria-hidden /> Gerar novo código</button>
+                                                    <a className="vp-btn vp-btn-ghost w-full" href={sellerLink} target="_blank" rel="noreferrer">Chamar um vendedor</a>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {pixState === 'ready' && pix && (
+                                            <div className="grid items-center gap-5 border border-[var(--vp-line)] p-4 sm:grid-cols-[250px_1fr]">
+                                                {pix.qr_code_base64 && (
+                                                    <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="QR Code do Pix" width={250} height={250} className="mx-auto border border-[var(--vp-line)] bg-white p-2" />
+                                                )}
+                                                <div className="space-y-3">
+                                                    <p className="vp-num text-lg font-bold">Pague {formatBRL(cart.total)} no Pix</p>
+                                                    <p className="flex items-start gap-2 bg-[#fff1f0] p-3 text-sm font-semibold vp-red" role="status">
+                                                        <Timer size={18} className="shrink-0" aria-hidden />
+                                                        {pixLeft && pixLeft.total > 0 ? `O código vale por mais ${pixTimeLeft(pixLeft)}. Esta tela confirma sozinha quando o pagamento cair.` : 'Este código venceu.'}
+                                                    </p>
+                                                    <p className="text-sm vp-muted">Abra o aplicativo do seu banco e escaneie o QR Code, ou copie o código. Também enviamos o código para {contact.email}.</p>
+                                                    {pix.qr_code && (
+                                                        <>
+                                                            <textarea readOnly value={pix.qr_code} rows={2} aria-label="Código Pix copia e cola" className="vp-input !h-auto p-3 text-xs" />
+                                                            <button type="button" className="vp-btn w-full" onClick={copyPix}>
+                                                                {copied ? <><Check size={20} aria-hidden /> Código copiado</> : <><Copy size={20} aria-hidden /> Copiar código Pix</>}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <>
-                                        {(brickState === 'loading' || !quote) && <p className="text-sm vp-muted" role="status">Abrindo o pagamento seguro…</p>}
-                                        <div id={BRICK_CONTAINER} />
-                                    </>
                                 )}
                                 <p className="mt-3 text-xs vp-muted">Ao pagar, você concorda com os <a className="underline" href="/termos" target="_blank" rel="noreferrer">Termos</a> e a <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">Política de privacidade</a>. Os dados do cartão são digitados direto no Mercado Pago.</p>
                             </section>
                             <button type="button" className="vp-link text-sm lg:hidden" onClick={goBack}>Voltar</button>
                         </>
-                    )}
-
-                    {screen === 'pix' && pix && (
-                        <section className="vp-plate p-4 sm:p-6">
-                            <div className="text-center">
-                                <CheckCircle2 size={40} className="mx-auto vp-green" aria-hidden />
-                                <h1 className="vp-display mt-2 text-4xl">Pedido feito. Agora é só pagar o Pix.</h1>
-                            </div>
-                            <div className="mt-5 grid items-center gap-5 sm:grid-cols-[260px_1fr]">
-                                {pix.qr_code_base64 && (
-                                    <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="QR Code do Pix" width={260} height={260} className="mx-auto border border-[var(--vp-line)] bg-white p-2" />
-                                )}
-                                <div className="space-y-3">
-                                    <p className="flex items-start gap-2 bg-[#fff1f0] p-3 text-sm font-semibold vp-red" role="status">
-                                        <Timer size={18} className="shrink-0" aria-hidden />
-                                        {pixLeft && pixLeft.total > 0 ? `O código vale por mais ${pixTimeLeft(pixLeft)}. Esta tela confirma sozinha quando o pagamento cair.` : 'Este código venceu.'}
-                                    </p>
-                                    <p className="text-sm vp-muted">Abra o aplicativo do seu banco, escaneie o QR Code ou copie o código abaixo.</p>
-                                    {pix.qr_code && (
-                                        <>
-                                            <textarea readOnly value={pix.qr_code} rows={3} aria-label="Código Pix copia e cola" className="vp-input !h-auto p-3 text-xs" />
-                                            <button type="button" className="vp-btn w-full" onClick={copyPix}>
-                                                {copied ? <><Check size={20} aria-hidden /> Código copiado</> : <><Copy size={20} aria-hidden /> Copiar código Pix</>}
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </section>
                     )}
 
                     {screen === 'review' && (

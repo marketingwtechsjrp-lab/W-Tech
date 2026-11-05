@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.1 (2026-11-05) - Pix da Vacuum Pump com QR Code na tela e e-mail do pedido
+- Escolher Pix mostra o QR Code e o código copia e cola na própria tela de pagamento, sem pedir outro clique
+- Ao gerar o Pix, o cliente recebe por e-mail o pedido e o código para pagar; a confirmação continua indo quando o pagamento cai
+- Trocar de Pix para cartão, ou mudar o pedido, cancela o código anterior para ninguém pagar duas vezes
+- Formulário do cartão abre direto, sem o segundo clique em Cartão de crédito
+
 ## v3.60.0 (2026-11-05) - Vacuum Pump em realidade aumentada, com botão em destaque e tutorial de uso
 - Botão piscante com chama, Veja na sua própria bancada, abaixo da galeria e no bloco 3D; no computador ele abre um código QR para continuar no celular
 - Na realidade aumentada a máquina funciona: chave, seletor, ponteiro, cooler, visor e encaixe do borbulhador com bolhas

@@ -14,12 +14,14 @@ import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js'
 import { getRequestClientIp } from './_geoip.js';
 import {
     assignFollowUp,
+    cancelPendingPix,
     finalizeVacuumPayment,
     handleVacuumPaymentEvent,
     isUuid,
     loadVacuumOffer,
     quoteVacuumShipping,
     readMercadoPagoToken,
+    sendPixPendingEmail,
     sweepVacuumAbandoned,
     vacuumExternalReference,
 } from './_vacuumPump.js';
@@ -352,6 +354,10 @@ async function handlePay(supabase: any, req: any, res: any) {
         return res.status(500).json({ error: 'Pagamento indisponível. Chame um vendedor.' });
     }
 
+    if (checkout.stage === 'pix_pending' && checkout.mp_payment_id) {
+        await cancelPendingPix(token, checkout.mp_payment_id);
+    }
+
     const { first, last } = splitName(checkout.name);
     const address = checkout.address;
     const docType = documentType(checkout.document);
@@ -462,6 +468,10 @@ async function handlePay(supabase: any, req: any, res: any) {
         .single();
     if (updateError) console.error('[Vacuum] Falha ao gravar pagamento (o webhook confirma):', updateError.message);
     const current = updated || { ...checkout, ...baseUpdate, stage };
+
+    if (stage === 'pix_pending') {
+        void sendPixPendingEmail(current).catch((err) => console.error('[Vacuum] Falha no e-mail do Pix (não-fatal):', err?.message));
+    }
 
     if (status === 'approved') {
         try {
