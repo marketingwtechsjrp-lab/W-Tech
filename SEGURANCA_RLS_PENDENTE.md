@@ -95,9 +95,19 @@ curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?
 
 ## Atualização de 04/11/2026 — o resto do que a chave anônima alcançava
 
-**Status: escrito e validado em transação revertida. NADA aplicado em produção nem publicado.**
-Depende do OK do dono. Medido com `has_table_privilege` e `SET ROLE anon` (só contagens): eram
-**119 tabelas e visões com privilégio para `anon`**, não as 3 que este documento citava.
+**Status em 05/11/2026: etapas 1 e 2 APLICADAS em produção, com OK direto do dono. Etapas 3 (site
+v3.56.0) e 4 ainda não.** Até a etapa 4, a `anon` continua lendo e gravando `SITE_Orders` (3 CPFs),
+`SITE_AuditLogs`, `SITE_CaptureLeads`, `SITE_EmailFlows` e `SITE_FlowEnrollments`.
+
+Conferido depois de aplicar: PostgREST como visitante (401 ao ler o que fechou e ao gravar conteúdo, 200 no
+conteúdo público, 42 chaves de configuração e nenhum segredo); 19 páginas públicas no navegador, sem consulta
+recusada; log do banco sem erro de permissão além das sondas da própria conferência; deploy da v3.55.1, que
+rodava ao mesmo tempo, sem falha de prerender. **Falta ver o painel com alguém logado:** a madrugada não teve
+uso, e o acesso do `authenticated` só foi medido pela matriz. Os erros reais saem com
+`docker logs --since 1h <container wtechdb_supadb> 2>&1 | grep 'permission denied'`.
+
+Medido com `has_table_privilege` e `SET ROLE anon` (só contagens): eram **119 tabelas e visões com privilégio
+para `anon`**, não as 3 que este documento citava.
 
 ### Classificação
 
@@ -136,8 +146,8 @@ Duas armadilhas que a lista de tabelas sozinha não mostra:
 
 Só funciona nesta ordem. Etapas 1 e 2 não dependem do site e podem entrar antes dele.
 
-1. `migrations/2026-11-04_fechar_segredos_e_dados_do_painel.sql`
-2. `migrations/2026-11-04_conteudo_publico_somente_leitura.sql`
+1. `migrations/2026-11-04_fechar_segredos_e_dados_do_painel.sql` (**aplicada em 05/11/2026**)
+2. `migrations/2026-11-04_conteudo_publico_somente_leitura.sql` (**aplicada em 05/11/2026**)
 3. **Site v3.56.0**, com `/api/public-capture`, fluxos e auditoria pelo servidor. O código precisa estar
    no `main` antes: `ssh motocenter-vps 'nohup bash /root/deploy-site.sh > /root/deploy-site-3.56.0.log 2>&1 < /dev/null &'`
 4. Conferir `/captura/<slug>` no ar, e só então
@@ -175,7 +185,7 @@ gravar nada, e é só rodar de novo.
 | Lê | `SITE_BlogPosts`, `SITE_CaptureCampaigns` (sem rascunho), `SITE_CertificateLayouts`, `SITE_Config` (61 chaves), `SITE_Courses`, `SITE_GlossaryTerms` (publicados), `SITE_LandingPages`, `SITE_Mechanics` (colunas do mapa, aprovados), `SITE_Products`, `SITE_SpringModels`, `SITE_SpringRecommendations`, `SITE_SuspensionOil`, `SITE_SystemSettings` (42 chaves), `SITE_Users` (`id`, `role`, `receives_leads`) |
 | Só grava | `SITE_Leads` (colunas de formulário), `SITE_Mechanics` (candidatura), `SITE_Analytics_Events`, `SITE_Analytics_PageViews` |
 
-### Validação (BEGIN; ... ROLLBACK;)
+### Validação antes de aplicar (BEGIN; ... ROLLBACK;)
 
 `scripts/rls-matriz.sql` mede leitura e gravação de 138 objetos para `anon`, `authenticated`, `hermes_ro`,
 `service_role` e `gestao_app`, antes e depois. Resultado, com as três migrações juntas (2 s de transação):
