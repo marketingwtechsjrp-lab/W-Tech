@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.58.1 (2026-11-05) - Vídeo da Vacuum Pump com animações suaves
+- Títulos, preço, seta do amortecedor e transições do vídeo entram aos poucos, sem aparecer de repente
+
 ## v3.58.0 (2026-11-05) - Vacuum Pump com vídeo automático, fotos reais e borbulhador a R$ 699
 - Parcela vira o número em destaque na página, no compre junto e no carrinho; preço cheio e valor à vista ficam em letras pequenas
 - Vídeo começa mudo ao chegar na tela e continua em um mini player quando a pessoa rola a página; no celular usa a versão em 720p

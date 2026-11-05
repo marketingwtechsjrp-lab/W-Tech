@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.58.1",
+    "date": "2026-11-05",
+    "title": "Vídeo da Vacuum Pump com animações suaves",
+    "changes": [
+      "Títulos, preço, seta do amortecedor e transições do vídeo entram aos poucos, sem aparecer de repente"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.58.0",
     "date": "2026-11-05",
     "title": "Vacuum Pump com vídeo automático, fotos reais e borbulhador a R$ 699",

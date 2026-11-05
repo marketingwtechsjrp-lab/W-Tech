@@ -32,8 +32,8 @@ export const VACUUM_DETAILS = [
 ];
 
 export const VACUUM_VIDEO = {
-    src: '/videos/vacuum-pump/vacuum-pump-bf.mp4?v=2',
-    srcSm: '/videos/vacuum-pump/vacuum-pump-bf-720.mp4?v=2',
+    src: '/videos/vacuum-pump/vacuum-pump-bf.mp4?v=3',
+    srcSm: '/videos/vacuum-pump/vacuum-pump-bf-720.mp4?v=3',
     poster: '/videos/vacuum-pump/poster.webp?v=2',
 };
 
