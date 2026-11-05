@@ -1,7 +1,7 @@
 -- Fecha o que ainda tinha caminho público pelo navegador (04/11/2026).
 -- Etapa 4 de 4 (ver SEGURANCA_RLS_PENDENTE.md).
 --
--- ORDEM: publicar ANTES o site v3.56.0. O bundle anterior usa a chave anônima nestas tabelas e
+-- ORDEM: publicar ANTES o site v3.57.0. O bundle anterior usa a chave anônima nestas tabelas e
 -- para de funcionar assim que isto for aplicado:
 --   SITE_CaptureLeads                         /captura/:slug grava o lead e soma votos
 --   SITE_EmailFlows, SITE_FlowEnrollments     lead novo entra no fluxo de boas-vindas

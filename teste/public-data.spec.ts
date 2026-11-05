@@ -177,6 +177,66 @@ test('lista de cursos conta vagas pelo campo calculado', async ({ page }) => {
   expect(leituras(pedidos, 'SITE_Courses').join()).not.toContain('SITE_Enrollments');
 });
 
+test('home-p2 abre com curso sem tags e conta vagas pelo campo calculado', async ({ page }) => {
+  const erros: string[] = [];
+  page.on('pageerror', (erro) => erros.push(erro.message));
+  // registered_count está defasado no banco: vale o que enrollment_count disser.
+  const pedidos = await bancoFechado(page, {
+    SITE_Courses: [{
+      id: CURSO_ID,
+      title: 'Curso Sem Tags',
+      description: 'Descrição',
+      date: '2030-12-01T10:00:00+00:00',
+      location: 'São Paulo',
+      location_type: 'Presencial',
+      capacity: 35,
+      registered_count: 0,
+      enrollment_count: 26,
+      status: 'Published',
+      type: 'Course',
+      tags: null,
+      features: null,
+      image: '/logo.png',
+      custom_link: '/lp/curso-sem-tags',
+    }],
+    SITE_Mechanics: Array.from({ length: 8 }, (_, i) => ({
+      id: `m${i}`,
+      name: `Mecânico ${i}`,
+      workshop_name: `Oficina ${i}`,
+      city: 'São Paulo',
+      state: 'SP',
+      status: 'Approved',
+      latitude: -23.5,
+      longitude: -46.6,
+    })),
+  });
+  // Mesmo se a CDN do Leaflet cair, a página tem que continuar de pé, só sem o mapa.
+  let pediuLeaflet = false;
+  await page.route('**/leaflet.js', (route) => {
+    pediuLeaflet = true;
+    return route.abort();
+  });
+
+  await page.goto('/home-p2');
+
+  await expect(page.getByRole('heading', { name: 'Curso Sem Tags' })).toBeVisible();
+  await expect(page.getByText('9 VAGAS RESTANTES')).toBeVisible();
+  await expect(page.getByRole('link', { name: /CONHECER CURSO/ })).toHaveAttribute('href', /\/lp\/curso-sem-tags/);
+  await expect.poll(() => pediuLeaflet).toBe(true);
+  expect(erros).toEqual([]);
+
+  // A página guarda a posição do mouse em estado: mexer nele não pode sortear outros cartões.
+  const credenciados = page.locator('section', { hasText: 'Rede de Excelência' }).locator('h3');
+  await expect(credenciados).toHaveCount(5);
+  await page.waitForLoadState('networkidle');
+  const sorteados = await credenciados.allTextContents();
+  await page.mouse.move(200, 200);
+  await page.mouse.move(320, 280);
+  await page.waitForTimeout(150);
+  expect(await credenciados.allTextContents()).toEqual(sorteados);
+  expect(leituras(pedidos, 'SITE_Courses')[0]).toContain('enrollment_count');
+});
+
 test('obrigado pelo lead: nome vem do que a pessoa digitou, e o questionário segue pelo lead', async ({ page }) => {
   const pedidos = await bancoFechado(page);
   const enviados: Array<Record<string, any>> = [];

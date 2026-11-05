@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getVacuumOfferState, resolveVacuumConfig, type VacuumCartItem, type VacuumOfferState } from '../../lib/vacuumOffer';
-import { VP_FONTS_HREF } from './vacuumStyles';
+import { VP_FONTS_HREF, VP_PAGE_BG } from './vacuumStyles';
 
 /** Estado da oferta + o que só existe na resposta da API. */
 export interface VacuumOffer extends VacuumOfferState {
@@ -47,7 +47,7 @@ export interface VacuumPaymentResult {
 
 const API = '/api/vacuum-pump';
 
-/** Fonte da campanha e fundo escuro no body (no iPhone, a rolagem elástica mostra o body). */
+/** Fonte da campanha e o fundo da página no body (no iPhone, a rolagem elástica mostra o body). */
 export function useVacuumPageChrome(): void {
     useEffect(() => {
         if (!document.querySelector(`link[href="${VP_FONTS_HREF}"]`)) {
@@ -57,7 +57,7 @@ export function useVacuumPageChrome(): void {
             document.head.appendChild(link);
         }
         const previous = document.body.style.backgroundColor;
-        document.body.style.backgroundColor = '#0a0a0c';
+        document.body.style.backgroundColor = VP_PAGE_BG;
         return () => {
             document.body.style.backgroundColor = previous;
         };

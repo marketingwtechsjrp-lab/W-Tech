@@ -1,7 +1,7 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
-## v3.56.0 (2026-11-04) - Captura, fluxos e auditoria pelo servidor, e segredos fechados para visitantes (segurança)
+## v3.57.0 (2026-11-05) - Captura, fluxos e auditoria pelo servidor, e segredos fechados para visitantes (segurança)
 - Chaves de IA, SMTP e Mercado Livre deixam de ser legíveis com a chave pública do site; o visitante lê só as configurações públicas
 - Conversas de WhatsApp, listas de contato, campanhas, financeiro e tarefas fecham para visitantes; preços, cursos, posts e landing pages ficam só para leitura
 - Campanhas de captura votam e somam por /api/public-capture, sem devolver quem votou; envio não falha mais por coluna inexistente
@@ -9,6 +9,20 @@
 - Tela antiga de checkout não grava mais pedido marcado como pago sem cobrança: guarda o interesse na ficha do lead
 - Chaves de IA saem do navegador do painel: toda geração passa por /api/ai-generate e a tela de configurações só grava, mostrando se a chave está salva
 - Banco: fechar_segredos_e_dados_do_painel e conteudo_publico_somente_leitura antes; fechar_captura_pedidos_fluxos_auditoria e chaves_ia_so_no_servidor depois de publicar (ver SEGURANCA_RLS_PENDENTE.md)
+## v3.56.1 (2026-11-05) - Página /home-p2 de volta e aviso de matrícula do portal no CRM
+- /home-p2 volta a abrir: carrega o mapa sob demanda e aceita curso sem tags
+- /home-p2 conta vagas pelas matrículas reais e mantém os cartões de credenciados ao mexer o mouse
+- Mapa da /home-p2 usa os blocos do OpenStreetMap, como a /mapa: os da CARTO passaram a sair carimbados pedindo chave
+- Portal do cliente: pedido de matrícula passa a avisar o CRM, pelo servidor e na ficha que a pessoa já tem
+- Perfil do portal deixa de devolver o responsável pela ficha
+
+## v3.56.0 (2026-11-05) - Vacuum Pump: vitrine clara, carrinho em etapas e máquina em 3D
+- Página /maquina-de-vacuo em formato de loja: de e por em evidência, economia, parcela, Pix, cálculo de frete e compre junto
+- Carrinho de tela cheia em etapas (Carrinho, Seus dados, Entrega, Pagamento, Concluir), com foto do produto, resumo fixo e order bump com imagem
+- Máquina em 3D com tampa que abre e tour pelas peças, carregada só perto do bloco, e realidade aumentada no celular
+- Ficha técnica e dados dos acessórios conforme as informações do fabricante, com aviso de 220 V
+- Rodapé com razão social e CNPJ
+
 ## v3.55.1 (2026-11-05) - Pedido de saída no WhatsApp oficial e histórico da campanha no inbox
 - Botão de resposta de template aparece como texto no inbox, em vez de "Tipo não suportado"
 - "Não quero receber" e frases como "SAIR" registram o pedido, marcam a ficha com whatsapp_optout, confirmam uma vez e não passam pela IA

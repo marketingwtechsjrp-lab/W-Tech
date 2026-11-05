@@ -331,6 +331,9 @@ app.use(express.static(distDir, {
       res.setHeader('Cache-Control', 'public, max-age=86400');
     }
     if (ARQUIVOS_DE_BUILD.has(nome)) res.setHeader('X-Robots-Tag', 'noindex');
+    // O Safari só abre a realidade aumentada com o tipo certo, e a tabela do Express não tem o usdz.
+    if (nome.endsWith('.usdz')) res.setHeader('Content-Type', 'model/vnd.usdz+zip');
+    if (nome.endsWith('.glb')) res.setHeader('Content-Type', 'model/gltf-binary');
   },
 }));
 

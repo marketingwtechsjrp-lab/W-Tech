@@ -20,6 +20,7 @@ import {
   type PortalClient,
   type PortalSaleItem,
 } from '../lib/clientOrders.js';
+import { findExistingLead, preserveWonStatus } from '../lib/leadMatch.js';
 
 /**
  * Pedidos fora do painel — o navegador não lê nem grava SITE_Sales.
@@ -30,7 +31,7 @@ import {
  *   action 'list'   → pedidos do dono do código
  *   action 'enrollments' → matrículas do dono do código
  *   action 'order'  → novo pedido pendente { items: [{ productId, quantity }] }
- *   action 'enroll' → pedido pendente de matrícula { courseId }
+ *   action 'enroll' → pedido pendente de matrícula { courseId }, com aviso no CRM
  *
  * O dono, os preços e o que volta são decididos aqui (lib/clientOrders.ts): do
  * navegador só se aceita o código e o que ele quer comprar. O código tem pouca
@@ -52,6 +53,7 @@ const CODIGO_INVALIDO = 'Código de acesso inválido. Verifique e tente novament
 const MUITAS_TENTATIVAS = 'Muitas tentativas. Aguarde um minuto e tente novamente.';
 const ERRO_GENERICO = 'Não foi possível concluir agora. Tente novamente.';
 const MAX_PEDIDOS_POR_CONSULTA = 200;
+const PREFIXO_INSCRICAO = 'Inscrição: ';
 
 function abrirRota(req: any, res: any, limitador: RateLimiter): SupabaseClient | null {
   setNoStoreHeaders(res);
@@ -202,11 +204,36 @@ async function itemDaMatricula(supabase: SupabaseClient, bruto: unknown): Promis
 
   return [{
     productId: curso.id as string,
-    name: `Inscrição: ${curso.title}`,
+    name: `${PREFIXO_INSCRICAO}${curso.title}`,
     quantity: 1,
     price: Number(curso.price) || 0,
     type: 'course_enrollment',
   }];
+}
+
+/**
+ * Avisa o CRM na ficha que a pessoa já tem: ficha nova traria de volta a duplicata que
+ * lib/leadMatch.ts evita. Só muda contexto, status (quem está ganho continua ganho) e notas,
+ * somadas às da equipe. O pedido já foi gravado, então a falha aqui só fica no log: devolver
+ * erro faria o cliente tentar de novo e duplicar o pedido.
+ */
+async function avisarCrmDaMatricula(supabase: SupabaseClient, cliente: PortalClient, curso: string) {
+  const nota = `PEDIDO DE MATRÍCULA VIA PORTAL: O cliente solicitou participação no curso "${curso}". Um pedido pendente foi gerado automaticamente.`;
+  try {
+    const ficha = await findExistingLead<{ id: string; status: string | null; internal_notes: string | null }>(supabase, cliente);
+    const aviso = {
+      status: preserveWonStatus(ficha?.status, 'New'),
+      context_id: `Matrícula: ${curso}`,
+      internal_notes: ficha?.internal_notes ? `${ficha.internal_notes}\n${nota}` : nota,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = ficha
+      ? await supabase.from('SITE_Leads').update(aviso).eq('id', ficha.id)
+      : await supabase.from('SITE_Leads').insert([{ ...aviso, name: cliente.name, email: cliente.email, phone: cliente.phone, assigned_to: cliente.assigned_to }]);
+    if (error) throw error;
+  } catch (erro) {
+    console.error('[client-orders] Pedido de matrícula gravado, mas o aviso ao CRM falhou:', (erro as Error).message);
+  }
 }
 
 export default async function clientOrders(req: any, res: any) {
@@ -246,6 +273,7 @@ export default async function clientOrders(req: any, res: any) {
 
     const { error } = await supabase.from('SITE_Sales').insert([buildPortalSale(cliente, itens)]);
     if (error) throw error;
+    if (acao === 'enroll') await avisarCrmDaMatricula(supabase, cliente, itens[0].name.slice(PREFIXO_INSCRICAO.length));
     return res.status(201).json({ ok: true });
   } catch (erro) {
     console.error('[client-orders] Falha no portal do cliente:', (erro as Error).message);

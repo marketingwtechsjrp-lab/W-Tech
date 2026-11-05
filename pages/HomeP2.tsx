@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, Wrench, BookOpen, GraduationCap, Star, Shield, Users, Trophy, MapPin, ChevronRight, CheckCircle, Calendar, Clock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Course, Mechanic, BlogPost } from '../types';
 import CourseCard from '../components/CourseCard';
 import { resolveBlogImage } from '../lib/blogImages';
+import { loadLeaflet } from '../lib/loadLeaflet';
 
 declare const L: any; // Leaflet Global from CDN
 
@@ -43,7 +44,7 @@ const HomeP2: React.FC = () => {
     // Fetch Courses (Limit 3)
     const { data: coursesData } = await supabase
       .from('SITE_Courses')
-      .select('*')
+      .select('*, enrollment_count')
       .eq('status', 'Published')
       .order('date', { ascending: true })
       .limit(3);
@@ -52,7 +53,9 @@ const HomeP2: React.FC = () => {
       setCourses(coursesData.map((c: any) => ({
         ...c,
         locationType: c.location_type,
-        registeredCount: c.registered_count
+        registeredCount: c.enrollment_count || 0,
+        tags: c.tags || [],
+        customLink: c.custom_link
       })));
     }
 
@@ -91,35 +94,41 @@ const HomeP2: React.FC = () => {
   // Initialize Map after mechanics load
   useEffect(() => {
     if (!loading && mechanics.length > 0 && mapContainerRef.current && !mapRef.current) {
-        // Center on Brazil
-        mapRef.current = L.map(mapContainerRef.current).setView([-15.793889, -47.882778], 3);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(mapRef.current);
+        // Sem o Leaflet a página segue no ar, só sem o mapa
+        loadLeaflet().then(() => {
+            if (!mapContainerRef.current || mapRef.current) return;
+            // Center on Brazil
+            mapRef.current = L.map(mapContainerRef.current).setView([-15.793889, -47.882778], 3);
 
-        mechanics.forEach(mech => {
-            if (mech.latitude && mech.longitude) {
-                L.circleMarker([mech.latitude, mech.longitude], {
-                    radius: 6,
-                    fillColor: "#fbbf24", // wtech-gold
-                    color: "#000",
-                    weight: 1,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(mapRef.current)
-                .bindPopup(`<b>${mech.workshopName}</b><br>${mech.city} - ${mech.state}`);
-            }
-        });
+            // Mesmos blocos da /mapa: os da CARTO passaram a sair carimbados "API KEY REQUIRED"
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(mapRef.current);
+
+            mechanics.forEach(mech => {
+                if (mech.latitude && mech.longitude) {
+                    L.circleMarker([mech.latitude, mech.longitude], {
+                        radius: 6,
+                        fillColor: "#fbbf24", // wtech-gold
+                        color: "#000",
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(mapRef.current)
+                    .bindPopup(`<b>${mech.workshopName}</b><br>${mech.city} - ${mech.state}`);
+                }
+            });
+        }).catch((erro) => console.error(erro));
     }
   }, [loading, mechanics]);
 
-  // Get 5 random mechanics for display
-  const randomMechanics = mechanics
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 5);
+  // Get 5 random mechanics for display. Sorteia uma vez só: a posição do mouse fica em
+  // estado, e sortear a cada render trocava os cartões a cada movimento.
+  const randomMechanics = useMemo(
+    () => [...mechanics].sort(() => 0.5 - Math.random()).slice(0, 5),
+    [mechanics]
+  );
 
   return (
     <div style={{ 

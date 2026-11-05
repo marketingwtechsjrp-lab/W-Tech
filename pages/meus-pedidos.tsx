@@ -234,22 +234,8 @@ const ClientPortal = () => {
 
         setSubmittingOrder(true);
         try {
-            // 1. Create a Pending Order in SITE_Sales
+            // O servidor grava o pedido pendente e avisa o CRM (api/_clientOrders.ts)
             await submitPortalEnrollment(client.client_code, course.id);
-
-            // 2. Insert into CRM (SITE_Leads) as a pending enrollment request
-            const crmPayload = {
-                name: client.name,
-                email: client.email,
-                phone: client.phone,
-                status: 'New', // First column of the CRM
-                context_id: `Matrícula: ${course.title}`,
-                classification: 'Interesse em Curso',
-                assigned_to: client.assigned_to || null,
-                internal_notes: `PEDIDO DE MATRÍCULA VIA PORTAL: O cliente solicitou participação no curso "${course.title}". Um pedido pendente foi gerado automaticamente.`
-            };
-            
-            await supabase.from('SITE_Leads').insert([crmPayload]);
 
             alert('Seu pedido de matrícula foi recebido com sucesso! Um consultor entrará em contato para finalizar os detalhes e confirmar sua vaga.');
             

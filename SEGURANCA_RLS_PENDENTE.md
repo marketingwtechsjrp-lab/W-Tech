@@ -96,7 +96,7 @@ curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?
 ## Atualização de 04/11/2026 — o resto do que a chave anônima alcançava
 
 **Status em 05/11/2026: etapas 1 e 2 APLICADAS em produção, com OK direto do dono. Etapas 3 (site
-v3.56.0) e 4 ainda não.** Até a etapa 4, a `anon` continua lendo e gravando `SITE_Orders` (3 CPFs),
+v3.57.0) e 4 ainda não.** Até a etapa 4, a `anon` continua lendo e gravando `SITE_Orders` (3 CPFs),
 `SITE_AuditLogs`, `SITE_CaptureLeads`, `SITE_EmailFlows` e `SITE_FlowEnrollments`.
 
 Conferido depois de aplicar: PostgREST como visitante (401 ao ler o que fechou e ao gravar conteúdo, 200 no
@@ -148,8 +148,8 @@ Só funciona nesta ordem. Etapas 1 e 2 não dependem do site e podem entrar ante
 
 1. `migrations/2026-11-04_fechar_segredos_e_dados_do_painel.sql` (**aplicada em 05/11/2026**)
 2. `migrations/2026-11-04_conteudo_publico_somente_leitura.sql` (**aplicada em 05/11/2026**)
-3. **Site v3.56.0**, com `/api/public-capture`, fluxos e auditoria pelo servidor. O código precisa estar
-   no `main` antes: `ssh motocenter-vps 'nohup bash /root/deploy-site.sh > /root/deploy-site-3.56.0.log 2>&1 < /dev/null &'`
+3. **Site v3.57.0**, com `/api/public-capture`, fluxos e auditoria pelo servidor. O código precisa estar
+   no `main` antes: `ssh motocenter-vps 'nohup bash /root/deploy-site.sh > /root/deploy-site-3.57.0.log 2>&1 < /dev/null &'`
 4. Conferir `/captura/<slug>` no ar, e só então
    `migrations/2026-11-04_fechar_captura_pedidos_fluxos_auditoria.sql`. Antes do site novo ela quebra a
    captura, a inscrição em fluxo de lead novo e o registro de login fora de `/admin`.

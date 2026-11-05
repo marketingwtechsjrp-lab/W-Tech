@@ -73,6 +73,10 @@ export async function iniciarHarness(exportacoes, { define = {} } = {}) {
         res.statusCode = 500;
         return res.end(JSON.stringify({ code: 'XX000', message: 'falha simulada' }));
       }
+      if (estado.falha === `${req.method} ${tabela}`) {
+        res.statusCode = 500;
+        return res.end(JSON.stringify({ message: 'falha simulada' }));
+      }
       if (url.pathname.includes('/rpc/')) {
         return res.end(JSON.stringify(estado.rpcs[tabela]?.(corpo) ?? null));
       }
