@@ -1,9 +1,9 @@
 # ⚠️ Exposição do banco — diagnóstico e plano de correção
 
 **Levantado em:** 25/08/2026
-**Status:** NÃO corrigido. O dono optou por priorizar o Chat de IA da Gerência e
-tratar isto depois. Este documento existe para que a correção não dependa de
-refazer a investigação.
+**Status em 05/11/2026:** a chave anônima não alcança mais dados de pessoas, segredos nem financeiro, e não grava
+conteúdo. Falta trocar as chaves que vazaram. O que resta está na seção "o resto do que a chave anônima
+alcançava". As seções 1 a 6 ficam como histórico do diagnóstico de agosto.
 
 ## Atualização de 06/10/2026 — correção em andamento
 
@@ -95,18 +95,27 @@ curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?
 
 ## Atualização de 04/11/2026 — o resto do que a chave anônima alcançava
 
-**Status em 05/11/2026: etapas 1, 2 e 3 feitas, com OK direto do dono. Etapas 4, 5 e 6 ainda não.** O site
-v3.57.0 entrou no ar às 01h36, no mesmo deploy da v3.56.0, v3.56.1 e v3.57.1. Até a etapa 4, a `anon` continua lendo e
-gravando `SITE_Orders` (3 CPFs), `SITE_AuditLogs`, `SITE_CaptureLeads`, `SITE_EmailFlows` e `SITE_FlowEnrollments`.
+**Status em 05/11/2026: etapas 1 a 5 aplicadas em produção, com OK direto do dono. Falta a etapa 6, trocar as
+chaves.** O site v3.57.0 entrou no ar às 01h36, no mesmo deploy da v3.56.0, v3.56.1 e v3.57.1; as etapas 4 e 5
+entraram às 08h31.
 
-Conferido no ar: PostgREST como visitante (401 ao ler o que fechou e ao gravar conteúdo, 200 no conteúdo público, 42
-chaves de configuração e nenhum segredo); 19 páginas públicas no navegador, sem consulta recusada; `/captura` soma votos
-por `/api/public-capture` sem ler `SITE_CaptureLeads`; `/api/ai-generate` e `/api/staff/config/ai-keys` respondem 401
-sem sessão; nenhum bundle chama provedor de IA; log do banco sem erro de permissão além das sondas da conferência.
+Conferido depois das 5 etapas:
 
-**Falta ver o painel com alguém logado:** uma geração de IA de verdade (Blog ou SEO), a aba GPT & Gemini, e um login
-aparecendo em Logs de Atividade. O acesso do `authenticated` só foi medido pela matriz, e o `/api/ai-generate` só contra
-um provedor simulado. Os erros reais saem com
+- PostgREST como visitante: 401 ao ler o que fechou e ao gravar, 200 no conteúdo público, 42 chaves de configuração
+  e nenhum segredo.
+- Por papel: chave de IA só para `service_role` e `gestao_app`. O `authenticated` lê 55 das 58 configurações, grava as
+  outras e leva 42501 ao gravar chave de IA.
+- 19 páginas públicas no navegador, com escrita e rastreadores bloqueados, sem consulta recusada. `/captura` soma votos
+  por `/api/public-capture`, sem ler `SITE_CaptureLeads`.
+- `/api/ai-generate` e `/api/staff/config/ai-keys` respondem 401 sem sessão, e nenhum bundle chama provedor de IA.
+- Painel em uso real pela manhã: 4 pessoas, logins gravados pelo servidor, auditoria incluída pelo painel depois da
+  etapa 4 e nenhum erro de permissão de quem tinha sessão válida.
+
+**Falta ver no painel:** uma geração de IA de verdade (Blog ou SEO), porque `/api/ai-generate` só foi exercitado contra
+provedor simulado, e a aba GPT & Gemini. O log do banco mostrou uma única rajada de 6 consultas a `SITE_Tasks` recusadas
+como `anon`, às 08h51, sem repetir: é o painel de quem ficou sem passe (sessão expirada ou logout), que antes lia como
+visitante sem ninguém notar. Se aparecer com frequência, olhar `lib/staffDbToken.ts`, que cai para a chave anônima
+quando o passe falha. Os erros reais saem com
 `docker logs --since 1h <container wtechdb_supadb> 2>&1 | grep 'permission denied'`.
 
 Medido com `has_table_privilege` e `SET ROLE anon` (só contagens): eram **119 tabelas e visões com privilégio
@@ -153,10 +162,10 @@ Só funciona nesta ordem. Etapas 1 e 2 não dependem do site e podem entrar ante
 2. `migrations/2026-11-04_conteudo_publico_somente_leitura.sql` (**aplicada em 05/11/2026**)
 3. (**no ar desde 05/11/2026**) **Site v3.57.0**, com `/api/public-capture`, fluxos e auditoria pelo servidor. O código precisa estar
    no `main` antes: `ssh motocenter-vps 'nohup bash /root/deploy-site.sh > /root/deploy-site-3.57.0.log 2>&1 < /dev/null &'`
-4. Conferir `/captura/<slug>` no ar, e só então
+4. (**aplicada em 05/11/2026**) Conferir `/captura/<slug>` no ar, e só então
    `migrations/2026-11-04_fechar_captura_pedidos_fluxos_auditoria.sql`. Antes do site novo ela quebra a
    captura, a inscrição em fluxo de lead novo e o registro de login fora de `/admin`.
-5. Conferir uma tela de IA do painel e a aba Configurações > GPT & Gemini no ar, e só então
+5. (**aplicada em 05/11/2026**) Com o site novo no ar,
    `migrations/2026-11-05_chaves_ia_so_no_servidor.sql`. Antes do site novo ela deixa toda tela de IA do
    painel respondendo "API Key não configurada".
 6. Trocar as chaves de IA pela aba Configurações > GPT & Gemini. Só depois da etapa 5 a troca adianta: antes
@@ -192,7 +201,7 @@ gravar nada, e é só rodar de novo.
   atual. Para apagar uma chave, só direto no banco. A mensagem de erro do provedor não chega mais à tela:
   fica "sem saldo" ou "não respondeu", e o detalhe vai para o log do servidor, sem a chave.
 
-### O que a `anon` ainda alcança depois das 4 etapas
+### O que a `anon` ainda alcança hoje
 
 | Acesso | Tabelas |
 |---|---|
