@@ -8,24 +8,22 @@ import { Calendar as BentoCalendar } from '../components/ui/calendar';
 import { triggerWebhook } from '../lib/webhooks';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mechanic } from '../types';
 
 import SEO from '../components/SEO';
 import { ORGANIZATION_ID } from '../lib/publicUrl';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguage } from '../context/LanguageContext';
 
-import { sanitizeHtml } from '../lib/utils';
+import { sanitizeHtml, getCourseLink } from '../lib/utils';
 import { resolveBlogImage } from '../lib/blogImages';
 // import { HeroSection } from '../components/ui/hero-section-5'; // Replaced by Animation
 import { HeroScrollAnimation } from '../components/HeroScrollAnimation';
+import MapaCredenciados from '../components/MapaCredenciados';
 import { ContainerAnimated, ContainerInset, ContainerScroll, ContainerStagger } from '../components/ui/hero-video';
 
 
 const Home3 = () => {
     // State
-    const mapRef = useRef<HTMLDivElement>(null);
-    const [mechanics, setMechanics] = useState<Mechanic[]>([]);
     const [courses, setCourses] = useState<any[]>([]);
     const [posts, setPosts] = useState<any[]>([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -88,7 +86,8 @@ const Home3 = () => {
                         registeredCount: c.registered_count,
                         hotelsInfo: c.hotels_info,
                         dateEnd: c.date_end,
-                        tags: c.tags || []
+                        tags: c.tags || [],
+                        customLink: c.custom_link
                     }));
 
                     setCourses(dbCourses);
@@ -114,70 +113,6 @@ const Home3 = () => {
         };
         fetchContent();
     }, []);
-
-    // Fetch Mechanics
-    useEffect(() => {
-        const fetchMechanics = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('SITE_Mechanics')
-                    .select(`
-                        id,
-                        name,
-                        workshopName:workshop_name,
-                        city,
-                        state,
-                        phone,
-                        status,
-                        specialty,
-                        latitude,
-                        longitude
-                    `)
-                    .eq('status', 'Approved');
-
-                if (data) setMechanics(data as Mechanic[]);
-            } catch (e) {
-                console.error("Error fetching mechanics", e);
-            }
-        };
-        fetchMechanics();
-    }, []);
-
-    useEffect(() => {
-        // Initialize Map
-        if (mapRef.current && !mapRef.current.innerHTML) {
-            const L = (window as any).L;
-            if (L) {
-                const map = L.map(mapRef.current).setView([-15.793889, -47.882778], 4); // Center of Brazil
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                    subdomains: 'abcd',
-                    maxZoom: 20
-                }).addTo(map);
-
-                // Add Mechanics Pins
-                const locations = mechanics.length > 0 ? mechanics.map(m => ({
-                    lat: m.latitude || -23.550520 + (Math.random() - 0.5) * 10,
-                    lng: m.longitude || -46.633308 + (Math.random() - 0.5) * 10,
-                    name: m.workshopName || m.name
-                })) : [
-                    { lat: -23.550520, lng: -46.633308, name: "W-TECH SP" },
-                    { lat: -22.906847, lng: -43.1729, name: "Tech Center RJ" },
-                    { lat: -19.916681, lng: -43.934493, name: "Oficina Partner BH" }
-                ];
-
-                locations.forEach(loc => {
-                    const icon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background-color: #EF4444; width: 10px; height: 10px; border-radius: 50%; border: 1px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-                        iconSize: [10, 10],
-                        iconAnchor: [5, 5]
-                    });
-                    L.marker([loc.lat, loc.lng], { icon: icon }).addTo(map).bindPopup(`<b>${loc.name}</b>`);
-                });
-            }
-        }
-    }, [mechanics]);
 
     const downloadCourseList = async () => {
         const siteTitle = get('site_title', 'W-TECH BRASIL');
@@ -324,7 +259,7 @@ const Home3 = () => {
                     {/* Map Side */}
                     <div className="relative h-[500px] lg:h-auto bg-gray-900 border-l border-white/10">
                         {/* Map Container */}
-                        <div ref={mapRef} className="absolute inset-0 z-0"></div>
+                        <MapaCredenciados className="absolute inset-0 z-0" />
 
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none"></div>
                         <div className="absolute bottom-12 left-12 z-20 bg-black p-8 rounded-sm border-l-4 border-wtech-red max-w-sm shadow-2xl">
@@ -434,12 +369,13 @@ const Home3 = () => {
 
                                         {/* Action */}
                                         <div className="flex-shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                            <button
-                                                onClick={() => navigate(getCourseLink(course))}
+                                            {/* Link e não navigate(): alguns custom_link são URL absoluta */}
+                                            <Link
+                                                to={getCourseLink(course)}
                                                 className="w-full md:w-auto px-6 py-3 bg-white text-black text-sm font-bold rounded-lg hover:bg-wtech-gold transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
                                             >
                                                 Mais Detalhes <ArrowRight size={16} />
-                                            </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 ))

@@ -20,7 +20,11 @@ export const loadLeaflet = (): Promise<void> => {
     script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
     script.crossOrigin = '';
     script.async = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      // Sem isto a Leaflet deduz a pasta pelo CSS; se o script chega antes dele, o pino padrão quebra.
+      (window as any).L.Icon.Default.imagePath = 'https://unpkg.com/leaflet@1.9.4/dist/images/';
+      resolve();
+    };
     script.onerror = () => reject(new Error('Falha ao carregar Leaflet'));
     document.body.appendChild(script);
   });

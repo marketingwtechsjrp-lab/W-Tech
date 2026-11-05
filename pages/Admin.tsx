@@ -88,6 +88,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { fetchStaffDirectory } from '../lib/staffDirectory';
+import { loadLeaflet } from '../lib/loadLeaflet';
 
 
 // --- Staff Identity API (server-side, sessão httpOnly — ver api/_auth.ts) ---
@@ -148,8 +149,23 @@ declare const L: any;
 const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     const mapRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const [leafletPronto, setLeafletPronto] = useState(false);
+
+    // Sem o Leaflet o L.map derrubava o painel inteiro; agora o formulário segue, só sem o mapa
+    useEffect(() => {
+        let cancelado = false;
+        loadLeaflet().then(() => {
+            if (!cancelado) setLeafletPronto(true);
+        }).catch((erro) => console.error(erro));
+        return () => {
+            cancelado = true;
+            mapRef.current?.remove();
+            mapRef.current = null;
+        };
+    }, []);
 
     useEffect(() => {
+        if (!leafletPronto) return;
         if (containerRef.current && !mapRef.current) {
             mapRef.current = L.map(containerRef.current).setView([lat, lng], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapRef.current);
@@ -164,7 +180,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
             });
             L.marker([lat, lng]).addTo(mapRef.current);
         }
-    }, [lat, lng]);
+    }, [leafletPronto, lat, lng]);
 
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };

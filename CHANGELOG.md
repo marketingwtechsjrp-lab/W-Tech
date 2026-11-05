@@ -1,6 +1,17 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.57.2 (2026-11-05) - Vídeo da Vacuum Pump na página e fotos da galeria sem corte na sombra
+- Vídeo de 1min27 logo abaixo do preço, com miniatura na galeria; o arquivo só baixa quando a pessoa dá o play
+- Sombra das fotos da galeria termina suave, sem corte reto nas laterais
+
+## v3.57.1 (2026-11-05) - Mapas de volta na home e no painel, e botão da agenda da home
+- Home volta a mostrar o mapa da rede com os credenciados reais, carregado só quando o bloco chega perto da tela
+- /home-legacy também volta a ter mapa, com os blocos do OpenStreetMap
+- Painel: abrir um credenciado com coordenadas não deixa mais a tela em branco, e o formulário mostra o mapa
+- Botão Mais Detalhes da agenda da home volta a abrir o curso, inclusive quando ele tem endereço próprio
+- Prerender deixa de gravar a Leaflet no HTML das páginas: a /mapa também passa a carregar o mapa só no navegador
+
 ## v3.57.0 (2026-11-05) - Captura, fluxos e auditoria pelo servidor, e segredos fechados para visitantes (segurança)
 - Chaves de IA, SMTP e Mercado Livre deixam de ser legíveis com a chave pública do site; o visitante lê só as configurações públicas
 - Conversas de WhatsApp, listas de contato, campanhas, financeiro e tarefas fecham para visitantes; preços, cursos, posts e landing pages ficam só para leitura
