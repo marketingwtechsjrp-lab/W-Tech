@@ -11,10 +11,10 @@ const CLIENTE = {
   name: 'Cliente Teste',
   email: 'cliente@teste.com',
   phone: '11999990000',
-  assigned_to: null,
   client_code: 'CLI-12ABC',
 };
 const PRODUTO = { id: '22222222-2222-4222-8222-222222222222', name: 'Vacuum Pump', sku: 'VP-1', sale_price: 1500.5, type: 'product' };
+const CURSO_ID = '33333333-3333-4333-8333-333333333333';
 
 /** As tabelas fechadas falham e ficam registradas; o resto responde vazio. */
 async function bancoFechado(page: Page) {
@@ -135,6 +135,35 @@ test.describe('Meus pedidos', () => {
     await expect
       .poll(() => chamadas.slice(chamadas.findIndex((c) => c.action === 'order') + 1).map((c) => c.action))
       .toEqual(['list']);
+    expect(leiturasDiretas).toEqual([]);
+  });
+
+  test('pede matrícula pelo endpoint, sem gravar no CRM pelo navegador', async ({ page }) => {
+    const leiturasDiretas = await bancoFechado(page);
+    await page.route('**/rest/v1/SITE_Courses*', (route) => route.fulfill({
+      json: [{ id: CURSO_ID, title: 'Curso de Suspensão', date: '2030-12-01T10:00:00+00:00', location: 'São Paulo', location_type: 'Presencial', status: 'Published' }],
+    }));
+    const chamadas: Array<Record<string, unknown>> = [];
+    await page.route('**/api/client-orders', (route) => {
+      const corpo = route.request().postDataJSON();
+      chamadas.push(corpo);
+      if (corpo.action === 'login') return route.fulfill({ json: { client: CLIENTE } });
+      if (corpo.action === 'enrollments') return route.fulfill({ json: { enrollments: [] } });
+      if (corpo.action === 'list') return route.fulfill({ json: { orders: [] } });
+      return route.fulfill({ status: 201, json: { ok: true } });
+    });
+    const avisos: string[] = [];
+    page.on('dialog', (dialogo) => {
+      avisos.push(dialogo.message());
+      void dialogo.accept();
+    });
+
+    await page.goto('/meus-pedidos?code=CLI-12ABC');
+    await page.getByRole('button', { name: 'Cursos' }).first().click();
+    await page.getByRole('button', { name: 'MATRICULAR AGORA' }).click();
+
+    await expect.poll(() => avisos.at(-1)).toContain('pedido de matrícula foi recebido');
+    expect(chamadas.find((c) => c.action === 'enroll')).toEqual({ code: 'CLI-12ABC', action: 'enroll', courseId: CURSO_ID });
     expect(leiturasDiretas).toEqual([]);
   });
 });
