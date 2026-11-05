@@ -1,6 +1,19 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.56.0 (2026-11-05) - Vacuum Pump: vitrine clara, carrinho em etapas e máquina em 3D
+- Página /maquina-de-vacuo em formato de loja: de e por em evidência, economia, parcela, Pix, cálculo de frete e compre junto
+- Carrinho de tela cheia em etapas (Carrinho, Seus dados, Entrega, Pagamento, Concluir), com foto do produto, resumo fixo e order bump com imagem
+- Máquina em 3D com tampa que abre e tour pelas peças, carregada só perto do bloco, e realidade aumentada no celular
+- Ficha técnica e dados dos acessórios conforme as informações do fabricante, com aviso de 220 V
+- Rodapé com razão social e CNPJ
+
+## v3.55.1 (2026-11-05) - Pedido de saída no WhatsApp oficial e histórico da campanha no inbox
+- Botão de resposta de template aparece como texto no inbox, em vez de "Tipo não suportado"
+- "Não quero receber" e frases como "SAIR" registram o pedido, marcam a ficha com whatsapp_optout, confirmam uma vez e não passam pela IA
+- Template de campanha gravado sem conversa entra no histórico quando a pessoa responde
+- Banco: migrations/2026-11-05_whatsapp_marketing_optout.sql antes de publicar (já aplicada)
+
 ## v3.55.0 (2026-11-04) - Leads, matrículas e mecânicos fechados para visitantes (segurança)
 - Leads, matrículas e cadastro de mecânicos deixam de ser legíveis e alteráveis com a chave pública do site; formulários seguem gravando
 - Recadastro, quiz e checkout de lead passam por /api/public-leads; obrigado, confirmação e certificado por /api/public-enrollments

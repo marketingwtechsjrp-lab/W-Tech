@@ -263,6 +263,13 @@ test('oferta: JSON quebrado ou valor inválido cai no padrão, sem derrubar a p�
     assert.equal(invalid.ends_at, lib.VACUUM_DEFAULT_CONFIG.ends_at);
 });
 
+test('acessórios: a ficha chega até a página e a configuração pode trocar', () => {
+    const state = lib.getVacuumOfferState(lib.resolveVacuumConfig(liveConfig()), 0, Date.now());
+    assert.ok(state.bumps.every((bump) => bump.details.length > 0));
+    const changed = lib.resolveVacuumConfig(liveConfig({ bumps: [{ id: 'kit_adaptador', details: ['Só esta linha', 7, ' '] }] }));
+    assert.deepEqual(changed.bumps.find((bump) => bump.id === 'kit_adaptador').details, ['Só esta linha']);
+});
+
 test('urgência: conta dias de calendário e usa o horário configurado', () => {
     const ends = '2026-11-13T23:59:59-03:00';
     assert.equal(lib.vacuumUrgencyLabel(ends, Date.parse('2026-11-10T10:00:00-03:00')), 'Faltam 3 dias');
