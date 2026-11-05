@@ -65,6 +65,9 @@ type Step = 0 | 1 | 2 | 3;
 type Screen = 'form' | 'review';
 type PayMethod = 'card' | 'pix';
 
+/** O Mercado Pago pede parcela de pelo menos R$ 5: abaixo disso, menos opções. */
+const MIN_INSTALLMENT_VALUE = 5;
+
 const STEPS = [
     { label: 'Carrinho', Icon: ShoppingCart },
     { label: 'Seus dados', Icon: User },
@@ -101,6 +104,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const [address, setAddress] = useState({ cep: initialCep, street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
     const [bumps, setBumps] = useState<string[]>(initialBumps);
     const [payMethod, setPayMethod] = useState<PayMethod>('card');
+    const [chosenInstallments, setChosenInstallments] = useState<number | null>(null);
     const [pix, setPix] = useState<VacuumPix | null>(null);
     const [pixState, setPixState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
     const [pixNonce, setPixNonce] = useState(0);
@@ -116,6 +120,12 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const cart = useMemo(() => computeVacuumCart(offer, bumps, selectedOption?.price ?? 0), [offer, bumps, selectedOption?.price]);
     const cartRef = useRef(cart);
     cartRef.current = cart;
+    const maxInstallments = Math.max(1, Math.min(offer.installments, Math.floor(cart.total / MIN_INSTALLMENT_VALUE)));
+    const installmentsChoice = Math.min(chosenInstallments ?? maxInstallments, maxInstallments);
+    const installmentsRef = useRef(installmentsChoice);
+    installmentsRef.current = installmentsChoice;
+    const installmentValue = (count: number) => Math.round((cart.total / count) * 100) / 100;
+    const summaryInstallments = payMethod === 'card' ? installmentsChoice : maxInstallments;
     const shippingCodeRef = useRef<string | null>(null);
     shippingCodeRef.current = selectedOption?.code ?? null;
     const checkoutIdRef = useRef<string | null>(null);
@@ -415,12 +425,14 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             defaultPaymentOption: { creditCardForm: true },
                         },
                         // O Pix fica fora do Brick: lá ele pede e-mail e clique em Pagar antes de mostrar o QR Code.
-                        paymentMethods: { creditCard: 'all', maxInstallments: offer.installments },
+                        // As parcelas também: o seletor do Brick só aparece depois do número do cartão, então
+                        // a escolha é feita no nosso seletor, sempre visível, e entra no envio do pagamento.
+                        paymentMethods: { creditCard: 'all', maxInstallments: 1 },
                     },
                     callbacks: {
                         onReady: () => !cancelled && setBrickState('ready'),
                         onError: (brickError: unknown) => console.error('[Vacuum] Brick:', brickError),
-                        onSubmit: ({ formData }: { formData: unknown }) => handlePaySubmit(formData),
+                        onSubmit: ({ formData }: { formData: Record<string, unknown> }) => handlePaySubmit({ ...formData, installments: installmentsRef.current }),
                     },
                 });
                 if (cancelled) {
@@ -583,7 +595,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                     <div className="vp-plate p-4 sm:p-5">
                         <button type="button" className="flex w-full items-center justify-between gap-3 text-left lg:hidden" aria-expanded={summaryOpen} onClick={() => setSummaryOpen(!summaryOpen)}>
                             <span className="font-bold">Resumo do pedido</span>
-                            <span className="flex items-center gap-2 vp-num font-bold">{offer.installments}x de {formatBRL(cart.installment_value)} <ChevronDown size={18} className={summaryOpen ? 'rotate-180' : ''} aria-hidden /></span>
+                            <span className="flex items-center gap-2 vp-num font-bold">{summaryInstallments}x de {formatBRL(installmentValue(summaryInstallments))} <ChevronDown size={18} className={summaryOpen ? 'rotate-180' : ''} aria-hidden /></span>
                         </button>
                         <h2 className="hidden font-bold lg:block">Resumo do pedido</h2>
                         <div className={`${summaryOpen ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
@@ -604,8 +616,8 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             </dl>
                         </div>
                         <div className="mt-3 border-t border-[var(--vp-line)] pt-3 vp-num">
-                            <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">{offer.installments}x de</span> <span className="text-4xl">{formatBRL(cart.installment_value)}</span></p>
-                            <p className="text-right text-sm font-semibold vp-green">sem juros</p>
+                            <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">{summaryInstallments}x de</span> <span className="text-4xl">{formatBRL(installmentValue(summaryInstallments))}</span></p>
+                            {summaryInstallments > 1 && <p className="text-right text-sm font-semibold vp-green">sem juros</p>}
                             <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm">
                                 <span className="font-bold">Total à vista</span>
                                 <span className="text-right">
@@ -786,7 +798,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                     <label className={`vp-option ${payMethod === 'card' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'card'} onChange={() => setPayMethod('card')} data-track="vacuum_pay_card" data-track-category="Vacuum Pump" />
                                         <CreditCard size={20} className="shrink-0" aria-hidden />
-                                        <span className="flex-1 vp-num"><b>Cartão de crédito</b><span className="block text-sm vp-muted">{offer.installments}x de {formatBRL(cart.installment_value)} sem juros</span></span>
+                                        <span className="flex-1 vp-num"><b>Cartão de crédito</b><span className="block text-sm vp-muted">Em até {maxInstallments}x de {formatBRL(installmentValue(maxInstallments))}{maxInstallments > 1 ? ' sem juros' : ''}</span></span>
                                     </label>
                                     <label className={`vp-option ${payMethod === 'pix' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'pix'} onChange={() => setPayMethod('pix')} data-track="vacuum_pay_pix" data-track-category="Vacuum Pump" />
@@ -797,7 +809,22 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
 
                                 {/* O cartão fica montado: voltar do Pix não apaga o que a pessoa já digitou. */}
                                 <div className={`mt-4 ${payMethod === 'card' ? '' : 'hidden'}`}>
-                                    <p className="mb-2 text-sm font-semibold">Digite o número do cartão para escolher em quantas vezes pagar: até {offer.installments}x sem juros.</p>
+                                    <label className="mb-3 block">
+                                        <span className="vp-field-label">Em quantas vezes?</span>
+                                        <select
+                                            className="vp-input vp-num"
+                                            value={installmentsChoice}
+                                            onChange={(event) => setChosenInstallments(Number(event.target.value))}
+                                            data-track="vacuum_pay_installments"
+                                            data-track-category="Vacuum Pump"
+                                        >
+                                            {Array.from({ length: maxInstallments }, (_, index) => maxInstallments - index).map((count) => (
+                                                <option key={count} value={count}>
+                                                    {count === 1 ? `1x de ${formatBRL(cart.total)}` : `${count}x de ${formatBRL(installmentValue(count))} sem juros`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
                                     {!offer.mp_public_key || brickState === 'failed' ? (
                                         <div className="border border-[var(--vp-line)] p-4 text-sm">
                                             <p className="mb-3">O pagamento com cartão não abriu agora. Você pode pagar no Pix ou chamar um vendedor, nas mesmas condições.</p>

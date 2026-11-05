@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.60.6",
+    "date": "2026-11-05",
+    "title": "Seletor de parcelas sempre visível no cartão da Vacuum Pump",
+    "changes": [
+      "Seletor Em quantas vezes? sempre visível no cartão, de 1x a 10x sem juros, com o valor de cada parcela",
+      "Resumo do pedido acompanha a quantidade de parcelas escolhida",
+      "Mensagem clara quando o cartão não aceita a quantidade de parcelas"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.60.5",
     "date": "2026-11-05",
     "title": "Vendas diretas da Vacuum Pump sem vendedor",

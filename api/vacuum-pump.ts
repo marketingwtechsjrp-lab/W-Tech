@@ -48,6 +48,7 @@ const TRACKING_FIELDS = [
 ];
 
 const REJECTION_MESSAGES: Record<string, string> = {
+    cc_rejected_invalid_installments: 'Este cartão não aceita essa quantidade de parcelas. Escolha menos parcelas ou use outro cartão.',
     cc_rejected_insufficient_amount: 'O cartão não tem limite para este valor. Tente outro cartão ou pague no Pix.',
     cc_rejected_bad_filled_card_number: 'Confira o número do cartão.',
     cc_rejected_bad_filled_date: 'Confira a validade do cartão.',

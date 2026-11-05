@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.60.6 (2026-11-05) - Seletor de parcelas sempre visível no cartão da Vacuum Pump
+- Seletor Em quantas vezes? sempre visível no cartão, de 1x a 10x sem juros, com o valor de cada parcela
+- Resumo do pedido acompanha a quantidade de parcelas escolhida
+- Mensagem clara quando o cartão não aceita a quantidade de parcelas
+
 ## v3.60.5 (2026-11-05) - Vendas diretas da Vacuum Pump sem vendedor
 - Compra direta no site fica sem vendedor e sem comissão, marcada como Compra direta online, mesmo que o carrinho já tenha sido entregue a alguém
 - Vendedor só leva o crédito se alguém da equipe conversou com o cliente no WhatsApp nos 15 dias antes da compra
