@@ -7,7 +7,8 @@
 - Campanhas de captura votam e somam por /api/public-capture, sem devolver quem votou; envio não falha mais por coluna inexistente
 - Lead novo de página pública entra no fluxo de boas-vindas pelo servidor; login e logout são auditados pelo servidor
 - Tela antiga de checkout não grava mais pedido marcado como pago sem cobrança: guarda o interesse na ficha do lead
-- Banco: fechar_segredos_e_dados_do_painel e conteudo_publico_somente_leitura antes, fechar_captura_pedidos_fluxos_auditoria depois de publicar (ver SEGURANCA_RLS_PENDENTE.md)
+- Chaves de IA saem do navegador do painel: toda geração passa por /api/ai-generate e a tela de configurações só grava, mostrando se a chave está salva
+- Banco: fechar_segredos_e_dados_do_painel e conteudo_publico_somente_leitura antes; fechar_captura_pedidos_fluxos_auditoria e chaves_ia_so_no_servidor depois de publicar (ver SEGURANCA_RLS_PENDENTE.md)
 ## v3.55.1 (2026-11-05) - Pedido de saída no WhatsApp oficial e histórico da campanha no inbox
 - Botão de resposta de template aparece como texto no inbox, em vez de "Tipo não suportado"
 - "Não quero receber" e frases como "SAIR" registram o pedido, marcam a ficha com whatsapp_optout, confirmam uma vez e não passam pela IA

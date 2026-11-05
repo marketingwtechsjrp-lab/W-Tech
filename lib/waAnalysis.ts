@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { generateContent } from './ai';
+import { generateContent, generateEmbedding } from './ai';
 
 /**
  * Análise de bastidor + aprendizado (RAG) de uma conversa do WhatsApp.
@@ -11,39 +11,6 @@ import { generateContent } from './ai';
  * vector(768). Se não houver chave Gemini, grava a memória sem embedding (ainda
  * fica registrada; só não entra na busca por similaridade).
  */
-
-async function getGeminiKey(): Promise<string> {
-  try {
-    const { data } = await supabase
-      .from('SITE_SystemSettings')
-      .select('value')
-      .eq('key', 'gemini_api_key')
-      .maybeSingle();
-    return (data?.value || '').trim();
-  } catch {
-    return '';
-  }
-}
-
-async function embedClient(text: string): Promise<number[] | null> {
-  const key = await getGeminiKey();
-  if (!key) return null;
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: { parts: [{ text: text.slice(0, 8000) }] } }),
-      }
-    );
-    const d = await r.json();
-    const values = d?.embedding?.values;
-    return Array.isArray(values) ? values : null;
-  } catch {
-    return null;
-  }
-}
 
 export async function analyzeAndLearn(conversationId: string): Promise<void> {
   try {
@@ -94,7 +61,7 @@ export async function analyzeAndLearn(conversationId: string): Promise<void> {
     // Aprendizado: só guarda quando há uma resposta que resolveu.
     if (a.learned_question && a.learned_answer) {
       const content = `Pergunta: ${a.learned_question}\nResposta: ${a.learned_answer}`;
-      const embedding = await embedClient(content);
+      const embedding = await generateEmbedding(content);
       await supabase.from('SITE_WhatsAppAIMemory').insert({
         conversation_id: conversationId,
         intent: 'general',

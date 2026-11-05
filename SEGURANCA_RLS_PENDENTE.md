@@ -153,6 +153,11 @@ Só funciona nesta ordem. Etapas 1 e 2 não dependem do site e podem entrar ante
 4. Conferir `/captura/<slug>` no ar, e só então
    `migrations/2026-11-04_fechar_captura_pedidos_fluxos_auditoria.sql`. Antes do site novo ela quebra a
    captura, a inscrição em fluxo de lead novo e o registro de login fora de `/admin`.
+5. Conferir uma tela de IA do painel e a aba Configurações > GPT & Gemini no ar, e só então
+   `migrations/2026-11-05_chaves_ia_so_no_servidor.sql`. Antes do site novo ela deixa toda tela de IA do
+   painel respondendo "API Key não configurada".
+6. Trocar as chaves de IA pela aba Configurações > GPT & Gemini. Só depois da etapa 5 a troca adianta: antes
+   dela, a chave nova ainda chega ao navegador da equipe.
 
 Aplicar sempre com `psql -U supabase_admin` (o comando está no cabeçalho de cada arquivo, com o desfazer).
 Cada migração tem `lock_timeout` de 5 s: se alguma consulta segurar uma tabela, ela desiste inteira, sem
@@ -177,6 +182,12 @@ gravar nada, e é só rodar de novo.
   cobrar nada. Agora guarda o interesse e o CPF na ficha do lead por `/api/public-leads`. Ela já não tinha
   visita: 0 acessos em 90 dias, e o carrinho leva a `/checkout`, que dá 404. Os 3 pedidos antigos são de 05/12/2025.
 - **Conteúdo:** visitante só lê. As leituras não mudam, nem as da loja e do app com a chave pública.
+- **Chaves de IA (§3.2):** nenhuma tela do painel lê mais `openai_api_key`, `gemini_api_key` e
+  `openrouter_api_key`, nem chama o provedor pelo navegador. `lib/ai.ts` passa por `/api/ai-generate`
+  (`api/_aiGenerate.ts`), com os mesmos modelos, e exige sessão com permissão de alguma tela que usa IA. A aba
+  GPT & Gemini só grava, por `/api/staff/config/ai-keys`, e mostra se a chave existe; campo em branco mantém a
+  atual. Para apagar uma chave, só direto no banco. A mensagem de erro do provedor não chega mais à tela:
+  fica "sem saldo" ou "não respondeu", e o detalhe vai para o log do servidor, sem a chave.
 
 ### O que a `anon` ainda alcança depois das 4 etapas
 
@@ -226,7 +237,8 @@ guardam log de acesso. Tratar como possível acesso externo aos 3 CPFs de `SITE_
    não desfaz o que já vazou: `context/SettingsContext.tsx` faz `select('*')`, então os segredos foram para o
    navegador de todo visitante (59.786 leituras só desde 23/10). O dono tinha decidido não trocar em 06/10; com
    isso e as consultas acima, vale rever.
-2. **Tirar as chaves de IA do navegador do painel** (§3.2). Hoje qualquer pessoa da equipe as vê.
+2. **`email_smtp_pass` e `meli_secret`:** a aba de configurações ainda lê estes dois com o passe da equipe. O
+   mesmo caminho das chaves de IA resolve (`/api/staff/config`, campo só de gravação), depois de conferir quem os usa.
 3. **`SITE_Products`:** a `anon` ainda lê `average_cost`, `current_stock` e os preços de parceiro e distribuidor.
    Cortar depende de a loja e o app pararem de usar `select('*')` com a chave pública. O código deles não está neste repositório.
 4. **Tabela nova nasce aberta:** `pg_default_acl` dá `arwdDxtm` para `anon` em toda tabela criada por `postgres` e

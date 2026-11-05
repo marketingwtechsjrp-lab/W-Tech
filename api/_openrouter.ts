@@ -16,8 +16,7 @@
  *
  * Regra inegociável de segurança: a chave é lida SOMENTE no servidor (tabela
  * SITE_SystemSettings via service_role) e NUNCA pode aparecer em log, mensagem de
- * erro ou valor de retorno. Essa tabela tem leitura pública neste projeto
- * (ver SEGURANCA_RLS_PENDENTE.md), o que reforça — e não afrouxa — a regra.
+ * erro ou valor de retorno. Ver SEGURANCA_RLS_PENDENTE.md.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';

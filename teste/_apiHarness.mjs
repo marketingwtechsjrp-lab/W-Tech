@@ -46,7 +46,8 @@ function casa(linha, filtros) {
   });
 }
 
-export async function iniciarHarness(exportacoes) {
+/** `define` entra no bundle: serve para trocar o `fetch` do código testado sem mexer no global. */
+export async function iniciarHarness(exportacoes, { define = {} } = {}) {
   // rpcs: resposta das funções ({ nome: (corpo) => linhas }). recusar: tabelas que respondem erro.
   const estado = { tabelas: {}, chamadas: [], webhooks: [], rpcs: {}, recusar: new Set() };
   let proximoId = 1;
@@ -123,6 +124,7 @@ export async function iniciarHarness(exportacoes) {
       'process.env.VITE_SUPABASE_URL': JSON.stringify(urlBanco),
       'process.env.SUPABASE_SERVICE_ROLE_KEY': JSON.stringify(CHAVE_DE_SERVICO),
       'process.env.STAFF_TRUSTED_ORIGINS': JSON.stringify(ORIGEM),
+      ...define,
     },
     stdin: {
       contents: exportacoes,
@@ -145,7 +147,7 @@ export async function iniciarHarness(exportacoes) {
   let ipSeguinte = 1;
 
   /** Cada chamada tem IP próprio: o limite por IP só entra no teste dele. */
-  async function chamar(handler, corpo, { metodo = 'POST', origem = ORIGEM, ip } = {}) {
+  async function chamar(handler, corpo, { metodo = 'POST', origem = ORIGEM, ip, cookie } = {}) {
     const resposta = { codigo: 0, corpo: null, cabecalhos: {} };
     const res = {
       setHeader(nome, valor) { resposta.cabecalhos[nome.toLowerCase()] = valor; },
@@ -155,7 +157,11 @@ export async function iniciarHarness(exportacoes) {
     const req = {
       method: metodo,
       body: corpo,
-      headers: { origin: origem, 'x-real-ip': ip ?? `10.0.${Math.floor(ipSeguinte / 250)}.${(ipSeguinte++ % 250) + 1}` },
+      headers: {
+        origin: origem,
+        'x-real-ip': ip ?? `10.0.${Math.floor(ipSeguinte / 250)}.${(ipSeguinte++ % 250) + 1}`,
+        ...(cookie ? { cookie } : {}),
+      },
     };
     await handler(req, res);
     return resposta;

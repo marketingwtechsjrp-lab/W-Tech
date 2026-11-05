@@ -20,6 +20,7 @@ import { createHasPermission, createPermissionResolver, PAYMENT_LINK_PERMISSIONS
 import { describePaymentLinkError } from '../lib/paymentLinkErrors';
 import { generateSitemapXml } from '../lib/sitemapUtils';
 import { generateSEOContent } from '../lib/ai';
+import { fetchAiKeyStatus, saveAiKeys, type AiKeyName } from '../lib/staffConfig';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logUserActivity } from '../lib/auditLogger';
@@ -5352,8 +5353,14 @@ const AuditLogsTab = () => {
 
 // --- View: Settings (System Config & Roles) ---
 // --- View: Settings (System Config & Roles) ---
+const AI_KEY_NAMES: AiKeyName[] = ['openai_api_key', 'gemini_api_key', 'openrouter_api_key'];
+const AI_KEY_SALVA = 'Chave salva. Em branco, mantém a atual.';
+
 const SettingsView = () => {
     const [config, setConfig] = useState<SystemConfig | any>({});
+    // Chaves de IA são só de gravação: o campo começa vazio e a chave salva não volta ao navegador.
+    const [aiKeys, setAiKeys] = useState<Partial<Record<AiKeyName, string>>>({});
+    const [aiKeyStatus, setAiKeyStatus] = useState<Record<AiKeyName, boolean> | null>(null);
     const [activeTab, setActiveTab] = useState('Geral');
     const [roles, setRoles] = useState<Role[]>([]);
     const [editingRole, setEditingRole] = useState<Partial<Role> | null>(null);
@@ -5368,6 +5375,7 @@ const SettingsView = () => {
     useEffect(() => {
         fetchConfig();
         fetchRoles();
+        fetchAiKeyStatus().then(setAiKeyStatus).catch(() => setAiKeyStatus(null));
     }, []);
 
     const fetchConfig = async () => {
@@ -5377,6 +5385,8 @@ const SettingsView = () => {
             data.forEach((item: any) => {
                 configObj[item.key] = item.value;
             });
+            // Fora do formulário: o upsert abaixo grava tudo o que está em `config`.
+            AI_KEY_NAMES.forEach((key) => { delete configObj[key]; });
 
             // Parse webhooks if active
             if (configObj.system_webhooks) {
@@ -5420,6 +5430,16 @@ const SettingsView = () => {
         if (activeTab === 'WhatsApp API') {
             integrationsSaveRef.current?.();
             return;
+        }
+        if (Object.values(aiKeys).some((value) => value?.trim())) {
+            try {
+                await saveAiKeys(aiKeys);
+                setAiKeys({});
+                setAiKeyStatus(await fetchAiKeyStatus());
+            } catch (error: any) {
+                alert('Erro ao salvar as chaves de IA: ' + (error?.message || 'tente novamente.'));
+                return;
+            }
         }
         // Save webhooks to config
         const finalConfig = {
@@ -7114,9 +7134,10 @@ const SettingsView = () => {
                                             <input
                                                 type="password"
                                                 className="w-full border border-gray-200 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black focus:border-blue-500 outline-none transition-all"
-                                                value={config.openai_api_key || ''}
-                                                onChange={e => handleChange('openai_api_key', e.target.value)}
-                                                placeholder="sk-..."
+                                                value={aiKeys.openai_api_key || ''}
+                                                onChange={e => setAiKeys((prev) => ({ ...prev, openai_api_key: e.target.value }))}
+                                                autoComplete="new-password"
+                                                placeholder={aiKeyStatus?.openai_api_key ? AI_KEY_SALVA : 'sk-...'}
                                             />
                                         </div>
                                     </div>
@@ -7146,9 +7167,10 @@ const SettingsView = () => {
                                             <input
                                                 type="password"
                                                 className="w-full border border-gray-200 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black focus:border-wtech-gold outline-none transition-all"
-                                                value={config.gemini_api_key || ''}
-                                                onChange={e => handleChange('gemini_api_key', e.target.value)}
-                                                placeholder="..."
+                                                value={aiKeys.gemini_api_key || ''}
+                                                onChange={e => setAiKeys((prev) => ({ ...prev, gemini_api_key: e.target.value }))}
+                                                autoComplete="new-password"
+                                                placeholder={aiKeyStatus?.gemini_api_key ? AI_KEY_SALVA : '...'}
                                             />
                                         </div>
                                     </div>
@@ -7179,9 +7201,10 @@ const SettingsView = () => {
                                                 <input
                                                     type="password"
                                                     className="w-full border border-gray-200 p-4 pl-12 rounded-2xl text-sm font-mono dark:bg-black focus:border-purple-500 outline-none transition-all"
-                                                    value={config.openrouter_api_key || ''}
-                                                    onChange={e => handleChange('openrouter_api_key', e.target.value)}
-                                                    placeholder="sk-or-v1-..."
+                                                    value={aiKeys.openrouter_api_key || ''}
+                                                    onChange={e => setAiKeys((prev) => ({ ...prev, openrouter_api_key: e.target.value }))}
+                                                    autoComplete="new-password"
+                                                    placeholder={aiKeyStatus?.openrouter_api_key ? AI_KEY_SALVA : 'sk-or-v1-...'}
                                                 />
                                             </div>
                                         </div>
