@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.57.0 (2026-11-05) - Captura, fluxos e auditoria pelo servidor, e segredos fechados para visitantes (segurança)
+- Chaves de IA, SMTP e Mercado Livre deixam de ser legíveis com a chave pública do site; o visitante lê só as configurações públicas
+- Conversas de WhatsApp, listas de contato, campanhas, financeiro e tarefas fecham para visitantes; preços, cursos, posts e landing pages ficam só para leitura
+- Campanhas de captura votam e somam por /api/public-capture, sem devolver quem votou; envio não falha mais por coluna inexistente
+- Lead novo de página pública entra no fluxo de boas-vindas pelo servidor; login e logout são auditados pelo servidor
+- Tela antiga de checkout não grava mais pedido marcado como pago sem cobrança: guarda o interesse na ficha do lead
+- Chaves de IA saem do navegador do painel: toda geração passa por /api/ai-generate e a tela de configurações só grava, mostrando se a chave está salva
+- Banco: fechar_segredos_e_dados_do_painel e conteudo_publico_somente_leitura antes; fechar_captura_pedidos_fluxos_auditoria e chaves_ia_so_no_servidor depois de publicar (ver SEGURANCA_RLS_PENDENTE.md)
 ## v3.56.1 (2026-11-05) - Página /home-p2 de volta e aviso de matrícula do portal no CRM
 - /home-p2 volta a abrir: carrega o mapa sob demanda e aceita curso sem tags
 - /home-p2 conta vagas pelas matrículas reais e mantém os cartões de credenciados ao mexer o mouse

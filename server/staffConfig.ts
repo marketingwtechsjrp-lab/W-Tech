@@ -78,6 +78,17 @@ export const AI_GROUP_SITE_CONFIG_KEYS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Chaves de IA da aba de configurações. Vivem em SITE_SystemSettings e nenhum navegador as
+ * lê (migrations/2026-11-05_chaves_ia_so_no_servidor.sql): o painel só grava e pergunta
+ * se estão configuradas.
+ */
+export const AI_KEY_SETTINGS: ReadonlySet<string> = new Set([
+  'openai_api_key',
+  'gemini_api_key',
+  'openrouter_api_key',
+]);
+
+/**
  * Campo secreto vazio significa "preservar". Limpeza intencional deve ser
  * feita por uma operação administrativa explícita, não por um formulário que
  * nunca recebe de volta o valor atual.
@@ -96,6 +107,7 @@ const SECRET_SITE_CONFIG_KEYS: ReadonlySet<string> = new Set([
   'whatsapp_cloud_app_secret',
   'whatsapp_cloud_access_token',
   'whatsapp_cloud_webhook_verify_token',
+  ...AI_KEY_SETTINGS,
 ]);
 
 const MAX_BATCH_ENTRIES = 64;
@@ -168,7 +180,12 @@ function h(fn: (req: Request, res: Response) => Promise<unknown>) {
   };
 }
 
-async function saveBatch(req: Request, res: Response, allowedKeys: ReadonlySet<string>) {
+async function saveBatch(
+  req: Request,
+  res: Response,
+  allowedKeys: ReadonlySet<string>,
+  table: 'SITE_Config' | 'SITE_SystemSettings' = 'SITE_Config',
+) {
   const parsed = parseConfigBatch(req.body, allowedKeys);
   if ('error' in parsed) {
     return res.status(400).json({ success: false, error: parsed.error });
@@ -183,7 +200,7 @@ async function saveBatch(req: Request, res: Response, allowedKeys: ReadonlySet<s
     // Uma única operação atômica de UPSERT evita o ciclo SELECT-then-write e
     // mantém a service role exclusivamente no backend.
     const { error } = await supabase
-      .from('SITE_Config')
+      .from(table)
       .upsert(parsed.rows, { onConflict: 'key' });
     if (error) {
       // Nem valores nem a mensagem completa do PostgREST entram no log.
@@ -214,4 +231,37 @@ staffConfigRouter.put(
   '/ai-group',
   requireStaffPermissionMiddleware('whatsapp_ai_manage'),
   h(async (req, res) => saveBatch(req, res, AI_GROUP_SITE_CONFIG_KEYS)),
+);
+
+staffConfigRouter.put(
+  '/ai-keys',
+  requireStaffPermissionMiddleware('manage_settings'),
+  h(async (req, res) => saveBatch(req, res, AI_KEY_SETTINGS, 'SITE_SystemSettings')),
+);
+
+// Só diz se cada chave existe: o valor nunca volta ao navegador.
+staffConfigRouter.get(
+  '/ai-keys',
+  requireStaffPermissionMiddleware('manage_settings'),
+  h(async (_req, res) => {
+    const supabase = getServiceClient();
+    if (!supabase) {
+      return res.status(503).json({ success: false, error: 'supabase_unavailable' });
+    }
+    const { data, error } = await supabase
+      .from('SITE_SystemSettings')
+      .select('key, value')
+      .in('key', [...AI_KEY_SETTINGS]);
+    if (error) {
+      console.error('[staff-config] Falha ao ler chaves de IA:', error.code || 'database_error');
+      return res.status(500).json({ success: false, error: 'settings_read_failed' });
+    }
+    const configured = Object.fromEntries(
+      [...AI_KEY_SETTINGS].map((key) => [
+        key,
+        (data ?? []).some((row) => row.key === key && String(row.value ?? '').trim() !== ''),
+      ]),
+    );
+    return res.status(200).json({ success: true, configured });
+  }),
 );

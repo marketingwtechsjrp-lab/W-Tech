@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { User } from '../types';
-import { logUserActivity } from '../lib/auditLogger';
 import { resetStaffDbToken } from '../lib/supabaseClient';
 
 /**
@@ -96,12 +95,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // de reaproveitar o "sem sessão" de antes do login.
       resetStaffDbToken();
 
-      await logUserActivity({
-        action_type: 'ACCESS',
-        screen: 'login',
-        details: `Usuário efetuou login no sistema`,
-      }, { id: loggedUser.id, name: loggedUser.name });
-
       setUser(loggedUser);
       setShowLoginModal(false);
       return { success: true };
@@ -114,7 +107,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
-    const current = user;
     setUser(null);
     // Revoga a sessão no servidor e apaga o cookie — o redirect abaixo acontece
     // de qualquer forma (nenhum estado sensível fica no browser). Se o servidor
@@ -123,13 +115,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fetch('/api/staff/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store' })
       .then(res => { if (!res.ok) console.warn('Logout no servidor pode não ter revogado a sessão (HTTP', res.status, ')'); })
       .catch(() => {});
-    if (current) {
-      logUserActivity({
-        action_type: 'ACCESS',
-        screen: 'logout',
-        details: `Usuário efetuou logout do sistema`,
-      }, { id: current.id, name: current.name }).catch(err => console.error('Error logging logout:', err));
-    }
     window.location.href = '/';
   };
 

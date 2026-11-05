@@ -1,125 +1,28 @@
-import { supabase } from './supabaseClient';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { postPublicApi } from './publicLeads';
 
-export type AIProvider = 'openai' | 'gemini' | 'openrouter';
-
-interface AISettings {
-    preferred_ai_provider: AIProvider;
-    openai_api_key?: string;
-    gemini_api_key?: string;
-    openrouter_api_key?: string;
-    openrouter_model?: string;
-}
-
-export async function getAISettings(): Promise<AISettings> {
-    const { data } = await supabase.from('SITE_SystemSettings').select('*').in('key', [
-        'preferred_ai_provider',
-        'openai_api_key',
-        'gemini_api_key',
-        'openrouter_api_key',
-        'openrouter_model'
-    ]);
-
-    const settings: any = {
-        preferred_ai_provider: 'gemini' // Default fallback
-    };
-
-    data?.forEach(item => {
-        settings[item.key] = item.value;
-    });
-
-    return settings as AISettings;
-}
-
+/**
+ * IA do painel. Tudo passa por /api/ai-generate (api/_aiGenerate.ts): o servidor lê a chave
+ * e fala com o provedor, e nenhuma chave chega ao navegador.
+ */
 export async function generateContent(prompt: string, systemPrompt?: string): Promise<string> {
-    const settings = await getAISettings();
-    const provider = settings.preferred_ai_provider;
-
-    if (provider === 'openai') {
-        return generateOpenAI(prompt, settings.openai_api_key || '', systemPrompt);
-    } else if (provider === 'openrouter') {
-        return generateOpenRouter(prompt, settings.openrouter_api_key || '', settings.openrouter_model || 'google/gemini-2.0-flash-001', systemPrompt);
-    } else {
-        return generateGemini(prompt, settings.gemini_api_key || '', systemPrompt);
-    }
+    const { text } = await postPublicApi<{ text: string }>('/api/ai-generate', {
+        action: 'generate',
+        prompt,
+        systemPrompt,
+    });
+    return text;
 }
 
-async function generateOpenAI(prompt: string, apiKey: string, systemPrompt?: string): Promise<string> {
-    if (!apiKey) throw new Error('API Key da OpenAI não configurada.');
-
+/** Embedding da memória do WhatsApp. Sem chave do Gemini ou com falha, devolve null. */
+export async function generateEmbedding(text: string): Promise<number[] | null> {
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'gpt-4o',
-                messages: [
-                    ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-                    { role: 'user', content: prompt }
-                ],
-                temperature: 0.7
-            })
+        const { embedding } = await postPublicApi<{ embedding: number[] | null }>('/api/ai-generate', {
+            action: 'embed',
+            text,
         });
-
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
-        return data.choices[0].message.content;
-    } catch (error: any) {
-        console.error('OpenAI Error:', error);
-        throw error;
-    }
-}
-
-async function generateGemini(prompt: string, apiKey: string, systemPrompt?: string): Promise<string> {
-    if (!apiKey) throw new Error('API Key do Gemini não configurada.');
-
-    try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-pro",
-            systemInstruction: systemPrompt
-        });
-
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
-    } catch (error: any) {
-        console.error('Gemini Error:', error);
-        throw error;
-    }
-}
-
-async function generateOpenRouter(prompt: string, apiKey: string, model: string, systemPrompt?: string): Promise<string> {
-    if (!apiKey) throw new Error('API Key do OpenRouter não configurada.');
-
-    try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://w-techbrasil.com.br', // Optional, but recommended by OpenRouter
-                'X-Title': 'W-Tech Admin'
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: [
-                    ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-                    { role: 'user', content: prompt }
-                ],
-                temperature: 0.7
-            })
-        });
-
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message || 'Erro desconhecido no OpenRouter');
-        return data.choices[0].message.content;
-    } catch (error: any) {
-        console.error('OpenRouter Error:', error);
-        throw error;
+        return embedding;
+    } catch {
+        return null;
     }
 }
 

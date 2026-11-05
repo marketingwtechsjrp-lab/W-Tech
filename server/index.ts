@@ -31,6 +31,8 @@ import surveys from '../api/_surveys.js';
 import clientOrders, { orderTracking } from '../api/_clientOrders.js';
 import publicLeads from '../api/_publicLeads.js';
 import publicEnrollments from '../api/_publicEnrollments.js';
+import publicCapture from '../api/_publicCapture.js';
+import aiGenerate from '../api/_aiGenerate.js';
 import { getRequestClientIp, lookupCountryByIp } from '../api/_geoip.js';
 
 // ── Edge Functions do Supabase portadas para Express (Deno → Node) ───────────
@@ -245,6 +247,8 @@ const rotasApi: Record<string, VercelStyleHandler> = {
   'order-tracking': orderTracking,
   'public-leads': publicLeads,
   'public-enrollments': publicEnrollments,
+  'public-capture': publicCapture,
+  'ai-generate': aiGenerate,
   // Edge Functions portadas (antes em <supabase>/functions/v1/<nome>)
   'kiwify-webhook': kiwifyWebhook,
   'hotmart-webhook': hotmartWebhook,

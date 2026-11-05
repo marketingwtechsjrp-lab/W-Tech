@@ -174,6 +174,26 @@ staffAuthRouter.use((req, res, next) => {
 // site force o login da vítima na sessão do atacante.
 staffAuthRouter.use(requireSameOriginMiddleware);
 
+// Login e logout entram na auditoria pelo servidor: acontecem também fora de /admin, onde o
+// navegador não tem o passe da equipe e a chave anônima não grava em SITE_AuditLogs. Falha
+// aqui não pode impedir ninguém de entrar nem de sair.
+async function auditarAcesso(user: { id: string; name: string }, screen: 'login' | 'logout', details: string) {
+  try {
+    const supabase = getServiceClient();
+    if (!supabase) return;
+    const { error } = await supabase.from('SITE_AuditLogs').insert({
+      user_id: user.id,
+      user_name: user.name || 'Usuário',
+      action_type: 'ACCESS',
+      screen,
+      details,
+    });
+    if (error) console.error('[staff] auditoria de acesso falhou:', error.message);
+  } catch (err: any) {
+    console.error('[staff] auditoria de acesso lançou exceção:', err?.message || err);
+  }
+}
+
 // ─── POST /api/staff/login ───────────────────────────────────────────────────
 staffAuthRouter.post('/login', h(async (req, res) => {
   const supabase = requireSupabase(res);
@@ -215,6 +235,7 @@ staffAuthRouter.post('/login', h(async (req, res) => {
   const user = await enrichWithRole(supabase, row);
 
   setStaffSessionCookie(res, String(rawToken));
+  await auditarAcesso(user, 'login', 'Usuário efetuou login no sistema');
   return res.status(200).json({ success: true, user });
 }));
 
@@ -241,6 +262,8 @@ staffAuthRouter.get('/db-token', requireUser, h(async (req, res) => {
 // ─── POST /api/staff/logout ──────────────────────────────────────────────────
 staffAuthRouter.post('/logout', h(async (req, res) => {
   const digest = getStaffSessionDigest(req);
+  // Quem está saindo só dá para saber antes de revogar a sessão.
+  const staff = await requireStaffSession(req);
 
   // O cookie SEMPRE é limpo no browser do usuário atual — mas se a revogação
   // no banco falhar, um cookie roubado (cópia fora deste browser) continua
@@ -266,6 +289,8 @@ staffAuthRouter.post('/logout', h(async (req, res) => {
   }
 
   clearStaffSessionCookie(res);
+
+  if (staff) await auditarAcesso(staff, 'logout', 'Usuário efetuou logout do sistema');
 
   if (!revoked) {
     return res.status(503).json({ success: false, error: 'logout_incomplete' });

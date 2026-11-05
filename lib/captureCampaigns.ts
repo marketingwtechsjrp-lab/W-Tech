@@ -9,6 +9,7 @@
 import { supabase } from './supabaseClient';
 import { handleLeadUpsert } from './leadDistribution';
 import { getLeadTrackingFields } from './tracking';
+import { postPublicApi } from './publicLeads';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -162,8 +163,8 @@ export async function fetchCampaignLeadCounts(campaignIds: string[]): Promise<Re
 }
 
 /**
- * Captura pública: registra o lead + voto na campanha. Upsert por telefone —
- * revotar atualiza a resposta em vez de duplicar o lead na lista.
+ * Captura pública: registra o lead + voto na campanha, pelo servidor (api/_publicCapture.ts).
+ * Revotar atualiza a resposta em vez de duplicar o lead na lista.
  * Inclui UTMs do navegador (LEI 10) via getLeadTrackingFields().
  */
 export async function submitCaptureLead(params: {
@@ -173,44 +174,33 @@ export async function submitCaptureLead(params: {
     phone: string;
     vote?: string;
     consent: boolean;
-}): Promise<CaptureLead> {
-    const payload = {
-        campaign_id: params.campaignId,
-        name: params.name.trim(),
-        email: params.email?.trim() || null,
-        phone: params.phone.trim(),
-        answer: params.vote ? { vote: params.vote } : {},
+}): Promise<void> {
+    await postPublicApi('/api/public-capture', {
+        action: 'submit',
+        campaignId: params.campaignId,
+        name: params.name,
+        email: params.email,
+        phone: params.phone,
+        vote: params.vote,
         consent: params.consent,
-        ...getLeadTrackingFields(),
-    };
-    const { data, error } = await supabase
-        .from('SITE_CaptureLeads')
-        .upsert([payload], { onConflict: 'campaign_id,phone' })
-        .select()
-        .single();
-    if (error) throw error;
-    return data as CaptureLead;
+        tracking: getLeadTrackingFields(),
+    });
 }
 
-/** Resultados da enquete: contagem e porcentagem por opção. */
+/**
+ * Resultados da enquete: contagem e porcentagem por opção. Vem do servidor porque
+ * SITE_CaptureLeads guarda o contato de quem votou.
+ */
 export async function fetchPollResults(campaignId: string, options: string[]): Promise<PollResult[]> {
-    const { data, error } = await supabase
-        .from('SITE_CaptureLeads')
-        .select('answer')
-        .eq('campaign_id', campaignId);
-    if (error) throw error;
-
-    const counts: Record<string, number> = {};
-    for (const option of options) counts[option] = 0;
-    for (const row of data || []) {
-        const vote = (row.answer as { vote?: string })?.vote;
-        if (vote && vote in counts) counts[vote] += 1;
-    }
-    const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
+    const { votes } = await postPublicApi<{ votes: Record<string, number> }>('/api/public-capture', {
+        action: 'results',
+        campaignId,
+    });
+    const total = options.reduce((sum, option) => sum + (votes[option] ?? 0), 0);
     return options.map(option => ({
         option,
-        votes: counts[option],
-        percentage: total > 0 ? Math.round((counts[option] / total) * 100) : 0,
+        votes: votes[option] ?? 0,
+        percentage: total > 0 ? Math.round(((votes[option] ?? 0) / total) * 100) : 0,
     }));
 }
 

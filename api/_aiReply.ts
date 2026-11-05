@@ -90,7 +90,17 @@ export async function loadAIKeys(supabase: SupabaseClient, override?: string | n
 
 // ─── Chamada ao LLM (REST, sem SDK — leve no serverless) ─────────────────────
 
-export async function callLLM(keys: AIKeys, system: string, user: string, modelOverride?: string | null): Promise<string> {
+export async function callLLM(
+  keys: AIKeys,
+  system: string,
+  user: string,
+  modelOverride?: string | null,
+  opts: { temperature?: number; timeoutMs?: number; titulo?: string } = {},
+): Promise<string> {
+  const temperature = opts.temperature ?? 0.5;
+  const signal = opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined;
+  const messages = [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: user }];
+
   if (keys.provider === 'openai') {
     if (!keys.openai) throw new Error('OpenAI key ausente');
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -98,9 +108,10 @@ export async function callLLM(keys: AIKeys, system: string, user: string, modelO
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${keys.openai}` },
       body: JSON.stringify({
         model: modelOverride || 'gpt-4o-mini',
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        temperature: 0.5,
+        messages,
+        temperature,
       }),
+      signal,
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error.message);
@@ -111,12 +122,13 @@ export async function callLLM(keys: AIKeys, system: string, user: string, modelO
     if (!keys.openrouter) throw new Error('OpenRouter key ausente');
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${keys.openrouter}`, 'X-Title': 'W-Tech Atendimento' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${keys.openrouter}`, 'X-Title': opts.titulo || 'W-Tech Atendimento' },
       body: JSON.stringify({
         model: modelOverride || keys.openrouterModel,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        temperature: 0.5,
+        messages,
+        temperature,
       }),
+      signal,
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error.message || 'Erro OpenRouter');
@@ -132,10 +144,11 @@ export async function callLLM(keys: AIKeys, system: string, user: string, modelO
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: system }] },
+        ...(system ? { system_instruction: { parts: [{ text: system }] } } : {}),
         contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { temperature: 0.5 },
+        generationConfig: { temperature },
       }),
+      signal,
     }
   );
   const d = await r.json();

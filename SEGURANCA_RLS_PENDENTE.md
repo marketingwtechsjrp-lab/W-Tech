@@ -93,11 +93,163 @@ Para conferir a qualquer momento (tem que responder 401):
 curl -s -o /dev/null -w '%{http_code}\n' "$VITE_SUPABASE_URL/rest/v1/SITE_Leads?select=id&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"
 ```
 
-### Ainda aberto para `anon` (medido em 04/11/2026)
+## Atualização de 04/11/2026 — o resto do que a chave anônima alcançava
 
-`SITE_Shipments`, `SITE_SupportTickets` e `SITE_Transactions` seguem com RLS desligada.
-Os formulários simples ainda gravam lead direto com a chave anônima: fechar leitura não
-impede spam, só um endpoint com limite por IP resolve.
+**Status em 05/11/2026: etapas 1 e 2 APLICADAS em produção, com OK direto do dono. Etapas 3 (site
+v3.57.0) e 4 ainda não.** Até a etapa 4, a `anon` continua lendo e gravando `SITE_Orders` (3 CPFs),
+`SITE_AuditLogs`, `SITE_CaptureLeads`, `SITE_EmailFlows` e `SITE_FlowEnrollments`.
+
+Conferido depois de aplicar: PostgREST como visitante (401 ao ler o que fechou e ao gravar conteúdo, 200 no
+conteúdo público, 42 chaves de configuração e nenhum segredo); 19 páginas públicas no navegador, sem consulta
+recusada; log do banco sem erro de permissão além das sondas da própria conferência; deploy da v3.55.1, que
+rodava ao mesmo tempo, sem falha de prerender. **Falta ver o painel com alguém logado:** a madrugada não teve
+uso, e o acesso do `authenticated` só foi medido pela matriz. Os erros reais saem com
+`docker logs --since 1h <container wtechdb_supadb> 2>&1 | grep 'permission denied'`.
+
+Medido com `has_table_privilege` e `SET ROLE anon` (só contagens): eram **119 tabelas e visões com privilégio
+para `anon`**, não as 3 que este documento citava.
+
+### Classificação
+
+| Nível | O que é | Tabelas (linhas que a `anon` lia) |
+|---|---|---|
+| 1. Segredos | Permite tomar o site ou gastar em nome da empresa | `SITE_SystemSettings` (58, com `openai_api_key`, `openrouter_api_key`, `gemini_api_key`, `email_smtp_pass`, `meli_secret`, e `gtm_id` gravável), `SITE_Settings` (8, com `gemini_api_key`), `config_crm` (0, coluna `supabase_secretkey`) |
+| 2. Pessoas | Conversa e contato em massa | `SITE_WaAtendenteMensagens` (101.414, 64.739 com texto), `SITE_MarketingListMembers` (3.518), `SITE_LeadHistory` (2.759), `SITE_WhatsAppCloudMessages` (2.653), `SITE_CampaignQueue` (2.334), `SITE_EmailLogs` (959), `SITE_FlowEnrollments` (699), `SITE_Automacao_Fila` (353), `SITE_WhatsAppCloudConversations` (276), `chats` (112), `SITE_Pix_Recovery_Stats` (86), `SITE_WhatsAppAIMemory` (62), `n8n_chat_histories` (32), `SITE_CaptureLeads` (8), `SITE_Orders` (3, todos com CPF), `SITE_SupportMessages` (3), `SITE_SupportTickets` (1), `profiles` (1) |
+| 3. Empresa | Financeiro, auditoria e operação | `SITE_AuditLogs` (19.384, apagável por qualquer um), `SITE_StockMovements` (1.207), `SITE_Tasks` (374), `SITE_Transactions` (101), `view_sales_by_attendant` (12), `SITE_VSLRetention` (42), e as demais do painel |
+| 4. Integridade | Conteúdo público com escrita aberta | `SITE_Products` (trocar preço), `SITE_Courses` (preço e `custom_link` de checkout), `SITE_LandingPages` (pixel), `SITE_BlogPosts`, `SITE_SuspensionOil`, `SITE_CertificateLayouts` |
+| 5. Sobra | Sem dado hoje ou sem acesso real, só privilégio sobrando | `SITE_Customers` (`password_hash`, 0 linhas por RLS), `SITE_Graph*`, `SITE_Knowledge*`, `leads`, `tasks`, `workshop_*` e outras |
+
+Duas armadilhas que a lista de tabelas sozinha não mostra:
+
+- **Visão roda com os direitos do dono.** Fechar `SITE_Transactions` não fecha
+  `view_sales_by_attendant`, nem fechar `SITE_VSLProgress` fecha `SITE_VSLRetention`. As duas
+  precisam de `REVOKE` próprio. (`SITE_SpringModels` é `security_invoker` e segue a tabela.)
+- **Policy velha quebra o painel quando a RLS é ligada.** As policies de `SITE_MarketingCampaigns`,
+  `SITE_MarketingLists` e `SITE_CampaignQueue` leem `auth.users` e nunca rodaram, porque a RLS estava
+  desligada. Ligar sem apagá-las daria 42501 para o painel.
+
+### Quem usa (como foi conferido)
+
+- **Rotas públicas:** grafo de imports a partir de `App.tsx`, sem entrar em `pages/Admin.tsx`.
+  Único componente do painel em rota pública: `AffiliatesManagerView` em `/afiliados`, que só lê `SITE_Config`.
+- **Uso real:** `pg_stat_statements` por papel desde 23/10, com `dealloc = 0` (nada descartado).
+- **Loja e app:** usam `supabaseAdmin` em tudo que é sensível. O cliente com a chave pública (`supabase.from`)
+  só lê `SITE_Products` (loja e app) e `SITE_Courses` (app), inclusive com `select('*')`.
+- **Gestão:** `gestao_app` e `service_role`, sem chave anônima no ambiente.
+- **`hermes_ro`:** só leu `gestao.*` desde 23/10, e as skills citam `SITE_Enrollments`, `SITE_Courses` e
+  `SITE_Leads`. Ganhou policy para não passar a ver 0 linhas sem erro, menos nos segredos.
+- **Realtime:** não existe serviço na VPS, então os `.channel()` do painel não dependem de nada disto.
+- **Gatilhos:** o único que roda com o papel do visitante e lê tabela é `auto_distribute_lead`, em `SITE_Users`.
+  É por isso que as 3 colunas de `SITE_Users` ficam (ver a próxima leva).
+
+### Ordem de publicação
+
+Só funciona nesta ordem. Etapas 1 e 2 não dependem do site e podem entrar antes dele.
+
+1. `migrations/2026-11-04_fechar_segredos_e_dados_do_painel.sql` (**aplicada em 05/11/2026**)
+2. `migrations/2026-11-04_conteudo_publico_somente_leitura.sql` (**aplicada em 05/11/2026**)
+3. **Site v3.57.0**, com `/api/public-capture`, fluxos e auditoria pelo servidor. O código precisa estar
+   no `main` antes: `ssh motocenter-vps 'nohup bash /root/deploy-site.sh > /root/deploy-site-3.57.0.log 2>&1 < /dev/null &'`
+4. Conferir `/captura/<slug>` no ar, e só então
+   `migrations/2026-11-04_fechar_captura_pedidos_fluxos_auditoria.sql`. Antes do site novo ela quebra a
+   captura, a inscrição em fluxo de lead novo e o registro de login fora de `/admin`.
+5. Conferir uma tela de IA do painel e a aba Configurações > GPT & Gemini no ar, e só então
+   `migrations/2026-11-05_chaves_ia_so_no_servidor.sql`. Antes do site novo ela deixa toda tela de IA do
+   painel respondendo "API Key não configurada".
+6. Trocar as chaves de IA pela aba Configurações > GPT & Gemini. Só depois da etapa 5 a troca adianta: antes
+   dela, a chave nova ainda chega ao navegador da equipe.
+
+Aplicar sempre com `psql -U supabase_admin` (o comando está no cabeçalho de cada arquivo, com o desfazer).
+Cada migração tem `lock_timeout` de 5 s: se alguma consulta segurar uma tabela, ela desiste inteira, sem
+gravar nada, e é só rodar de novo.
+
+### O que muda
+
+- **Configurações:** a `anon` lê só as chaves públicas de `SITE_SystemSettings`, em lista de permissão.
+  **Chave nova que o site público precise ler tem de entrar na policy "Visitante le configuracoes publicas"**,
+  senão o visitante não a recebe. As chaves de IA, SMTP e Mercado Livre ficam só para o painel.
+  `webhook_lead` continua legível porque os formulários disparam o webhook pelo navegador.
+- **`SITE_Config`:** a `anon` deixa de ler `ai_last_report`, `ai_last_scan`, `push_send_log`,
+  `app_blocked_users` e `crm_roleta_pointer`, que só o servidor usa.
+- **Captura:** voto e soma passam por `/api/public-capture`, que não devolve quem votou. A campanha segue
+  legível, menos rascunho. De quebra, corrige o envio: desde 16/09 o navegador manda `landing_page`, coluna que
+  `SITE_CaptureLeads` não tem e que o PostgREST recusa. O último lead de captura é de 14/07.
+- **Fluxo de boas-vindas:** lead novo de página pública é inscrito pelo servidor (`api/_publicLeads.ts`).
+  Antes o navegador lia as inscrições com o e-mail da pessoa.
+- **Auditoria:** login e logout são registrados pelo servidor, com o nome que vem da sessão. O painel só lê e
+  inclui em `SITE_AuditLogs`: sem `UPDATE` e `DELETE`, nem a equipe altera a própria trilha.
+- **`pages/Checkout.tsx`:** não grava mais em `SITE_Orders`. Essa tela criava um pedido com status `Paid` sem
+  cobrar nada. Agora guarda o interesse e o CPF na ficha do lead por `/api/public-leads`. Ela já não tinha
+  visita: 0 acessos em 90 dias, e o carrinho leva a `/checkout`, que dá 404. Os 3 pedidos antigos são de 05/12/2025.
+- **Conteúdo:** visitante só lê. As leituras não mudam, nem as da loja e do app com a chave pública.
+- **Chaves de IA (§3.2):** nenhuma tela do painel lê mais `openai_api_key`, `gemini_api_key` e
+  `openrouter_api_key`, nem chama o provedor pelo navegador. `lib/ai.ts` passa por `/api/ai-generate`
+  (`api/_aiGenerate.ts`), com os mesmos modelos, e exige sessão com permissão de alguma tela que usa IA. A aba
+  GPT & Gemini só grava, por `/api/staff/config/ai-keys`, e mostra se a chave existe; campo em branco mantém a
+  atual. Para apagar uma chave, só direto no banco. A mensagem de erro do provedor não chega mais à tela:
+  fica "sem saldo" ou "não respondeu", e o detalhe vai para o log do servidor, sem a chave.
+
+### O que a `anon` ainda alcança depois das 4 etapas
+
+| Acesso | Tabelas |
+|---|---|
+| Lê | `SITE_BlogPosts`, `SITE_CaptureCampaigns` (sem rascunho), `SITE_CertificateLayouts`, `SITE_Config` (61 chaves), `SITE_Courses`, `SITE_GlossaryTerms` (publicados), `SITE_LandingPages`, `SITE_Mechanics` (colunas do mapa, aprovados), `SITE_Products`, `SITE_SpringModels`, `SITE_SpringRecommendations`, `SITE_SuspensionOil`, `SITE_SystemSettings` (42 chaves), `SITE_Users` (`id`, `role`, `receives_leads`) |
+| Só grava | `SITE_Leads` (colunas de formulário), `SITE_Mechanics` (candidatura), `SITE_Analytics_Events`, `SITE_Analytics_PageViews` |
+
+### Validação antes de aplicar (BEGIN; ... ROLLBACK;)
+
+`scripts/rls-matriz.sql` mede leitura e gravação de 138 objetos para `anon`, `authenticated`, `hermes_ro`,
+`service_role` e `gestao_app`, antes e depois. Resultado, com as três migrações juntas (2 s de transação):
+
+- `anon`: exatamente a tabela acima.
+- Outros papéis, só estas diferenças, todas de propósito: `authenticated` sai de `SITE_Settings` e `config_crm`
+  (ninguém usa), perde `UPDATE` e `DELETE` em `SITE_AuditLogs`; `hermes_ro` sai de `SITE_Settings` e vê 42 das 58
+  chaves de `SITE_SystemSettings`.
+- Nenhum erro novo para quem tem acesso. Os `ERRO` que a matriz mostra já existem hoje: `hermes_ro` sem
+  acesso a função de `auth` em policy antiga, e a sonda de `UPDATE` em coluna de identidade (428C9).
+- Aplicar e desfazer as três voltou ao efeito original nas 690 combinações de papel e tabela. As policies
+  novas ficam, sem abrir nada, e as antigas de tabelas sem RLS não voltam porque nunca valeram.
+
+O que **não** dá para validar sem aplicar: a resposta do PostgREST. Depois de cada etapa, conferir (tem que
+responder 401, e a última não pode listar `openai_api_key`):
+
+```bash
+for t in SITE_Transactions SITE_WaAtendenteMensagens SITE_MarketingListMembers SITE_Tasks; do curl -s -o /dev/null -w "$t %{http_code}\n" "$VITE_SUPABASE_URL/rest/v1/$t?select=*&limit=1" -H "apikey: $VITE_SUPABASE_ANON_KEY"; done
+```
+
+```bash
+curl -s "$VITE_SUPABASE_URL/rest/v1/SITE_SystemSettings?select=key" -H "apikey: $VITE_SUPABASE_ANON_KEY"
+```
+
+E abrir `/admin` logado nas telas de Configurações, WhatsApp, Marketing e Financeiro.
+
+### Consultas suspeitas que precisam de atenção do dono
+
+Entre 23/10 e 04/11, o `pg_stat_statements` registra como `anon`: `customer_cpf, customer_email` de
+`SITE_Orders` com filtro de CPF preenchido (2 vezes), `*` de `SITE_Orders` e de `SITE_GraphSecrets`,
+`details` de `SITE_AuditLogs` e `telefone` de `dados_cliente`. Nenhuma tela do site faz isso e nenhuma sessão
+local encontrada na busca fez essas consultas. **Não dá para saber quem foi:** nem o Traefik nem o PostgREST
+guardam log de acesso. Tratar como possível acesso externo aos 3 CPFs de `SITE_Orders`.
+
+### Próxima leva, nesta ordem
+
+1. **Trocar os 5 segredos de `SITE_SystemSettings` e o `gemini_api_key` de `SITE_Settings`.** Fechar a leitura
+   não desfaz o que já vazou: `context/SettingsContext.tsx` faz `select('*')`, então os segredos foram para o
+   navegador de todo visitante (59.786 leituras só desde 23/10). O dono tinha decidido não trocar em 06/10; com
+   isso e as consultas acima, vale rever.
+2. **`email_smtp_pass` e `meli_secret`:** a aba de configurações ainda lê estes dois com o passe da equipe. O
+   mesmo caminho das chaves de IA resolve (`/api/staff/config`, campo só de gravação), depois de conferir quem os usa.
+3. **`SITE_Products`:** a `anon` ainda lê `average_cost`, `current_stock` e os preços de parceiro e distribuidor.
+   Cortar depende de a loja e o app pararem de usar `select('*')` com a chave pública. O código deles não está neste repositório.
+4. **Tabela nova nasce aberta:** `pg_default_acl` dá `arwdDxtm` para `anon` em toda tabela criada por `postgres` e
+   `supabase_admin`. É a causa de tudo isto, e os `fix_*.sql` soltos na raiz com `GRANT ALL` podem reabrir o que
+   está só com `REVOKE`. Corrige com uma linha, depois de avisar quem cria tabela:
+   `ALTER DEFAULT PRIVILEGES FOR ROLE postgres, supabase_admin IN SCHEMA public REVOKE ALL ON TABLES FROM anon;`
+5. **Log de acesso no Traefik** para `supabase.w-techbrasil.com.br`: sem ele, a pergunta acima não tem resposta.
+6. **`SITE_Users`:** tornar `auto_distribute_lead` `SECURITY DEFINER` e tirar as 3 colunas da `anon`.
+7. **Spam de formulário:** os formulários simples ainda gravam lead e mecânico direto; só endpoint com limite por IP resolve.
+8. **Passe da equipe sem cargo:** qualquer pessoa logada no painel tem o mesmo acesso às tabelas, inclusive `gtm_id`.
+9. **Remover `pages/Checkout.tsx`** e a rota, que diz "Pedido Confirmado!" sem cobrar. E `increment_post_view` não existe no banco, então as views de post não contam.
 
 ---
 

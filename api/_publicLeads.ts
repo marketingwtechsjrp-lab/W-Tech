@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createIpRateLimiter, getServiceClient, requireSameOrigin, setNoStoreHeaders } from './_auth.js';
+import { enrollContactInFlows } from './_flows.js';
 import { findExistingLead, upsertLead } from '../lib/leadMatch.js';
 import { isUuid, sanitizeCpf, sanitizeLeadFields, sanitizeQuizResult } from '../lib/publicLeads.js';
 
@@ -41,12 +42,23 @@ async function dispararWebhookLead(supabase: SupabaseClient, dados: Record<strin
   }
 }
 
+/** Lead novo entra nos fluxos de boas-vindas. Falha aqui não atrapalha o cadastro. */
+async function inscreverNosFluxos(supabase: SupabaseClient, lead: { name: string; email?: string | null }): Promise<void> {
+  if (!lead.email) return;
+  try {
+    await enrollContactInFlows({ email: lead.email, name: lead.name, triggerType: 'NovoCadastro', client: supabase });
+  } catch (erro) {
+    console.error('[public-leads] Inscrição em fluxo falhou (não-fatal):', (erro as Error).message);
+  }
+}
+
 async function acaoUpsert(supabase: SupabaseClient, req: any, res: any) {
   const lead = sanitizeLeadFields(req.body?.lead);
   if (!lead) return res.status(400).json({ error: DADOS_INVALIDOS });
 
   const { action, id, written } = await upsertLead(supabase, { ...lead, status: 'New' }, {});
   void dispararWebhookLead(supabase, written);
+  if (action === 'created') void inscreverNosFluxos(supabase, lead);
   return res.status(200).json({ action, id });
 }
 

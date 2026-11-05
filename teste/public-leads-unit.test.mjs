@@ -1,6 +1,6 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { iniciarHarness } from './_apiHarness.mjs';
+import { CHAVE_DE_SERVICO, iniciarHarness } from './_apiHarness.mjs';
 
 // A chave anônima não lê mais SITE_Leads. O que estes testes seguram: mandar o e-mail de
 // outra pessoa não devolve nada da ficha dela, e campo que só a equipe define não passa.
@@ -74,6 +74,59 @@ test('upsert: pessoa nova entra só com campos de formulário e status New', asy
   for (const proibido of ['client_code', 'cpf', 'is_accredited', 'pricing_level', 'conversion_value', 'internal_notes', 'id']) {
     assert.equal(proibido in gravado, false, `${proibido} chegou ao banco`);
   }
+});
+
+const pausa = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+async function esperarInscricao(tentativas = 50) {
+  for (let i = 0; i < tentativas && h.chamadasDe('SITE_FlowEnrollments', 'POST').length === 0; i += 1) await pausa(20);
+  return h.chamadasDe('SITE_FlowEnrollments', 'POST');
+}
+
+/**
+ * A inscrição corre depois da resposta. Sem esperar a do teste anterior acabar, ela lê os
+ * fluxos deste teste e grava aqui.
+ */
+async function baseSemInscricaoPendente(leads) {
+  let antes;
+  do {
+    antes = h.estado.chamadas.length;
+    await pausa(40);
+  } while (h.estado.chamadas.length !== antes);
+  novaBase(leads);
+}
+
+test('upsert: lead novo entra no fluxo de boas-vindas pelo servidor', async () => {
+  await baseSemInscricaoPendente();
+  h.estado.tabelas.SITE_EmailFlows = [
+    { id: 'fluxo-boas-vindas', status: 'Active', trigger_type: 'NovoCadastro' },
+    { id: 'fluxo-perda', status: 'Active', trigger_type: 'Perda' },
+    { id: 'fluxo-parado', status: 'Paused', trigger_type: 'NovoCadastro' },
+  ];
+  await h.chamar(publicLeads, { action: 'upsert', lead: formulario({ email: 'NOVO@teste.com', phone: '11 90000-0000' }) });
+
+  const inscricoes = await esperarInscricao();
+  assert.equal(inscricoes.length, 1);
+  const [gravada] = inscricoes[0].corpo;
+  assert.equal(gravada.flow_id, 'fluxo-boas-vindas');
+  assert.equal(gravada.contact_email, 'novo@teste.com');
+  assert.equal(gravada.contact_name, 'Fulano Novo');
+  assert.equal(inscricoes[0].chave, CHAVE_DE_SERVICO);
+});
+
+test('upsert: quem já tem ficha não entra de novo no fluxo', async () => {
+  await baseSemInscricaoPendente([fichaExistente()]);
+  h.estado.tabelas.SITE_EmailFlows = [{ id: 'fluxo-boas-vindas', status: 'Active', trigger_type: 'NovoCadastro' }];
+  await h.chamar(publicLeads, { action: 'upsert', lead: formulario() });
+  assert.equal((await esperarInscricao(10)).length, 0);
+});
+
+test('upsert: lead só com telefone não tem o que inscrever', async () => {
+  await baseSemInscricaoPendente();
+  h.estado.tabelas.SITE_EmailFlows = [{ id: 'fluxo-boas-vindas', status: 'Active', trigger_type: 'NovoCadastro' }];
+  const { codigo } = await h.chamar(publicLeads, { action: 'upsert', lead: formulario({ email: undefined, phone: '11 90000-0000' }) });
+  assert.equal(codigo, 200);
+  assert.equal((await esperarInscricao(10)).length, 0);
 });
 
 test('upsert: e-mail de outra pessoa não devolve nada da ficha dela', async () => {
@@ -180,7 +233,8 @@ test('entradas inválidas: sem nome ou contato, ação estranha, origem de fora,
   const get = await h.chamar(publicLeads, null, { metodo: 'GET' });
   assert.equal(get.codigo, 405);
   assert.equal(get.cabecalhos.allow, 'POST');
-  assert.equal(h.estado.chamadas.length, 0);
+  // Só SITE_Leads: webhook e fluxos do teste anterior ainda podem estar terminando.
+  assert.deepEqual(h.estado.chamadas.filter((chamada) => chamada.tabela === 'SITE_Leads'), []);
 });
 
 test('limite por IP', async () => {
