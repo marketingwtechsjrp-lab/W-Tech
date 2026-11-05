@@ -165,7 +165,9 @@ async function main() {
 
   // Build nao e visita: nao envia eventos e nao incorpora SDKs injetados no HTML.
   // O snippet original do index.html permanece para o visitante real.
-  await context.route(/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|facebook\.com\/tr|\/rest\/v1\/SITE_Analytics_)/, route => route.abort());
+  // A Leaflet fica de fora pelo mesmo motivo: a rolagem aciona o mapa sob demanda, e o HTML
+  // gravado levaria o CSS bloqueante, o script e os blocos para toda visita (commit 284bb26b).
+  await context.route(/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|facebook\.com\/tr|\/rest\/v1\/SITE_Analytics_|unpkg\.com\/leaflet)/, route => route.abort());
 
   // Páginas em paralelo: em sequência eram ~6 s por rota (350 rotas = 36 min de
   // build). Com o glossário antigo de volta o sitemap passa de 900 rotas.
@@ -203,10 +205,11 @@ async function main() {
         // Mesmo bloqueado, o loader cria um <script src>. Nao o duplicar ao servir
         // o snapshot: o snippet original insere esse elemento no navegador real.
         for (const script of snapshot.querySelectorAll('script[src]')) {
-          if (/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net)/.test(script.src)) {
+          if (/(?:api\.w-techbrasil\.com\.br|googletagmanager\.com|google-analytics\.com|connect\.facebook\.net|unpkg\.com\/leaflet)/.test(script.src)) {
             script.remove();
           }
         }
+        snapshot.querySelector('link[data-leaflet]')?.remove();
         return `<!DOCTYPE html>\n${snapshot.outerHTML}`;
       });
       const h1 = await page.evaluate(() => document.querySelector('h1')?.textContent?.trim() ?? null);
