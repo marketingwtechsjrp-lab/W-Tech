@@ -1,7 +1,8 @@
 import { VACUUM_CAMPAIGN } from '../lib/vacuumOffer.js';
 import { VACUUM_GOALS_KEY, normalizeVacuumGoals, parseVacuumGoals } from '../lib/vacuumGoals.js';
 import { isPermissionGranted, requireStaffPermission } from './_auth.js';
-import { loadVacuumOffer } from './_vacuumPump.js';
+import { PUBLIC_BASE_URL } from '../lib/publicUrl.js';
+import { PAID_SALE_STATUSES, loadVacuumOffer, sellerRefCode } from './_vacuumPump.js';
 
 /**
  * Painel de vendas ao vivo: só a equipe com permissão lê. Várias telas podem ficar
@@ -10,6 +11,28 @@ import { loadVacuumOffer } from './_vacuumPump.js';
 
 const CACHE_MS = 3_000;
 const cache = new Map<string, { at: number; data: unknown; goals: unknown }>();
+
+const sellerCache = new Map<string, { at: number; summary: unknown }>();
+
+/** O link de quem está logado e o que já entrou por ele. */
+async function sellerSummary(supabase: any, staff: { id: string; name: string }, now: number) {
+    const cached = sellerCache.get(staff.id);
+    if (cached && now - cached.at <= CACHE_MS) return cached.summary;
+    const [sales, signups] = await Promise.all([
+        supabase.from('SITE_Sales').select('total_value').eq('campaign', VACUUM_CAMPAIGN).eq('seller_id', staff.id).in('status', PAID_SALE_STATUSES),
+        supabase.from('SITE_CampaignCheckouts').select('id', { count: 'exact', head: true }).eq('campaign', VACUUM_CAMPAIGN).eq('referred_by', staff.id),
+    ]);
+    const rows: { total_value: number }[] = sales.data || [];
+    const summary = {
+        name: staff.name,
+        link: `${PUBLIC_BASE_URL}/maquina-de-vacuo?ref=${sellerRefCode(staff.id)}&utm_source=vendedor`,
+        signups: signups.count ?? 0,
+        sales: rows.length,
+        revenue: rows.reduce((sum, row) => sum + Number(row.total_value || 0), 0),
+    };
+    sellerCache.set(staff.id, { at: now, summary });
+    return summary;
+}
 
 function startOfTodaySP(now: number): string {
     const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(now));
@@ -44,10 +67,13 @@ export async function handleVacuumDashboard(supabase: any, req: any, res: any) {
         cache.set(range, cached);
     }
 
+    const me = await sellerSummary(supabase, staff, now);
+
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
         now,
         range,
+        me,
         can_manage: isPermissionGranted(staff.permissions, 'campaign_live_manage'),
         goals: cached.goals,
         offline_sales: config.sold_offset,

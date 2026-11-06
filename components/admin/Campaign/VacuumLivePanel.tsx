@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize, Minimize, PartyPopper, Radio, ReceiptText, Settings2, Target, Volume2, VolumeX, X } from 'lucide-react';
+import { Check, Copy, Link2, Maximize, MessageCircle, Minimize, PartyPopper, Radio, ReceiptText, Settings2, Target, Volume2, VolumeX, X } from 'lucide-react';
 import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { VACUUM_DEFAULT_GOALS, type VacuumGoals } from '../../../lib/vacuumGoals';
 import { SaleSound, launchConfetti } from './vacuumLiveAlert';
@@ -49,8 +49,17 @@ interface DashboardData {
     sources: { source: string; visitors: number }[];
 }
 
+interface SellerSummary {
+    name: string;
+    link: string;
+    signups: number;
+    sales: number;
+    revenue: number;
+}
+
 interface Payload {
     now: number;
+    me: SellerSummary;
     range: 'campaign' | 'today';
     can_manage: boolean;
     goals: VacuumGoals;
@@ -106,6 +115,7 @@ function sourceLabel(source: string): string {
         'l.facebook.com': 'Facebook',
         'm.facebook.com': 'Facebook',
         whatsapp: 'WhatsApp',
+        vendedor: 'Link de vendedor',
         wa: 'WhatsApp',
         google: 'Google',
         google_ads: 'Google Ads',
@@ -211,6 +221,43 @@ const GoalsModal: React.FC<{ goals: VacuumGoals; onClose: () => void; onSaved: (
                 <button type="submit" className="vl-primary" disabled={saving}>{saving ? 'Salvando...' : 'Salvar metas'}</button>
             </form>
         </div>
+    );
+};
+
+/** O link de quem está logado. Não aparece em tela cheia: a TV não precisa mostrar o link de ninguém. */
+const SellerLink: React.FC<{ me: SellerSummary; offer: Payload['offer'] }> = ({ me, offer }) => {
+    const [copied, setCopied] = useState(false);
+    const copy = async () => {
+        try {
+            await navigator.clipboard.writeText(me.link);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2500);
+        } catch {
+            /* navegador sem permissão: o link continua visível para copiar à mão */
+        }
+    };
+    const message = `Oi! Segue o link da Vacuum Pump Standard W-Tech, em ${offer.installments}x de ${brl(offer.installment_value)} sem juros, na pré-venda da Black Friday: ${me.link}`;
+    return (
+        <section className="vl-card vl-mylink" aria-label="Meu link de venda">
+            <div>
+                <h2 className="vl-label"><Link2 size={16} aria-hidden /> Meu link de venda</h2>
+                <p className="vl-sub">Mande este link para quem você atendeu por ligação. Quem se cadastrar e comprar por ele fica no seu nome.</p>
+            </div>
+            <div className="vl-mylink-box">
+                <input readOnly value={me.link} aria-label="Link de venda" onFocus={(event) => event.target.select()} />
+                <button type="button" className="vl-primary vl-mylink-btn" onClick={() => void copy()} data-track="vacuum_seller_link_copy" data-track-category="Vacuum Pump">
+                    {copied ? <><Check size={18} aria-hidden /> Copiado</> : <><Copy size={18} aria-hidden /> Copiar link</>}
+                </button>
+                <a className="vl-icon vl-mylink-btn" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer" data-track="vacuum_seller_link_whatsapp" data-track-category="Vacuum Pump">
+                    <MessageCircle size={18} aria-hidden /> Enviar no WhatsApp
+                </a>
+            </div>
+            <ul className="vl-mylink-stats">
+                <li><b>{int(me.signups)}</b> cadastros</li>
+                <li><b>{int(me.sales)}</b> vendas</li>
+                <li><b>{brl(me.revenue)}</b></li>
+            </ul>
+        </section>
     );
 };
 
@@ -497,6 +544,8 @@ const VacuumLivePanel: React.FC<{ onOpenOrders?: () => void }> = ({ onOpenOrders
                     </button>
                 </div>
             </header>
+
+            {!fullscreen && payload?.me && <SellerLink me={payload.me} offer={payload.offer} />}
 
             <main className="vl-grid">
                 <section className="vl-card vl-goal" aria-label="Máquinas vendidas">

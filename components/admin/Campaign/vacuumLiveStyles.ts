@@ -61,6 +61,13 @@ export const VL_CSS = `
 .vl-big small { color: var(--vl-mute); font-size: .46em; font-weight: 700; }
 .vl-green { color: var(--vl-green); }
 
+.vl-mylink { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; align-items: center; gap: .6em 1.2em; border-color: rgba(37, 208, 125, .45); }
+.vl-mylink .vl-sub { margin-top: .2em !important; }
+.vl-mylink-box { display: flex; flex-wrap: wrap; gap: .45em; min-width: 0; }
+.vl-mylink-box input { flex: 1 1 15em; min-width: 0; min-height: 44px; padding: .4em .7em; border: 1px solid #3a3a45; border-radius: 8px; background: #0e0e12; color: #fff; font: inherit; font-size: .88em; }
+.vl-mylink-btn { display: inline-flex; align-items: center; justify-content: center; gap: .45em; min-height: 44px; padding: .4em .9em; font-size: .88em; text-decoration: none; white-space: nowrap; }
+.vl-mylink-stats { display: flex; flex-wrap: wrap; gap: .3em 1em; color: var(--vl-mute); font-size: .88em; }
+.vl-mylink-stats b { color: var(--vl-green); font-family: 'Barlow Condensed', sans-serif; font-size: 1.5em; font-weight: 800; }
 .vl-goal { grid-column: span 5; border-color: rgba(255, 26, 16, .4); background: linear-gradient(140deg, rgba(212, 0, 0, .3), rgba(20, 20, 24, .6) 58%), var(--vl-card); padding-bottom: 2.2em; }
 .vl-goal-count { display: flex; align-items: baseline; gap: .35em; font-family: 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
 .vl-goal-count b { font-size: 6.2em; font-weight: 800; line-height: .85; }
@@ -171,6 +178,7 @@ export const VL_CSS = `
 @keyframes vl-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1200px) {
+  .vl-mylink { grid-template-columns: 1fr; }
   .vl-goal, .vl-money, .vl-chart, .vl-funnel, .vl-feed { grid-column: span 6; }
   .vl-today, .vl-clock, .vl-card { grid-column: span 6; }
   .vl-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }

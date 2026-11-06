@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 /**
  * Núcleo da venda da Vacuum Pump na Black Friday: estado da oferta, confirmação
  * do pagamento e entrega de quem não comprou para os vendedores.
@@ -25,7 +26,7 @@ import { pickNextAttendant } from './_roleta.js';
 import { sendEmail } from './_email.js';
 
 const EXTERNAL_REFERENCE_PREFIX = 'vacuum:';
-const PAID_SALE_STATUSES = ['paid', 'approved', 'producing', 'shipped', 'delivered'];
+export const PAID_SALE_STATUSES = ['paid', 'approved', 'producing', 'shipped', 'delivered'];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHECKOUTS = 'SITE_CampaignCheckouts';
 
@@ -348,6 +349,22 @@ export async function cancelPendingPix(token: string, paymentId: string): Promis
     }
 }
 
+/** Código curto do link de cada vendedor: estável, e sem expor o id do usuário na URL. */
+export function sellerRefCode(userId: string): string {
+    return createHash('sha256').update(`vacuum-pump:${userId}`).digest('hex').slice(0, 8);
+}
+
+/** Dono do link. Código inválido, ou de quem saiu da equipe, não dá crédito a ninguém. */
+export async function resolveSellerRef(supabase: any, code: unknown): Promise<string | null> {
+    if (typeof code !== 'string' || !/^[a-f0-9]{8}$/.test(code)) return null;
+    const { data, error } = await supabase.from('SITE_Users').select('id').eq('status', 'Active');
+    if (error) {
+        console.error('[Vacuum] Falha ao apurar o link do vendedor:', error.message);
+        return null;
+    }
+    return (data || []).find((user: { id: string }) => sellerRefCode(user.id) === code)?.id ?? null;
+}
+
 /** Em quem foi direto ao site não há vendedor nem comissão. */
 const DIRECT_SALE_LABEL = 'Compra direta online';
 /** Conversa com alguém da equipe neste intervalo antes da compra dá o crédito ao vendedor. */
@@ -370,9 +387,14 @@ function whatsappIdsOf(phone: unknown): string[] {
  * como direta: o gestor corrige no pedido, e a compra nunca trava por causa disso.
  */
 async function findCreditedSeller(supabase: any, checkout: any, now: number): Promise<{ id: string; name: string } | null> {
-    const ids = whatsappIdsOf(checkout.phone);
-    if (!ids.length) return null;
     try {
+        // O link é a indicação mais clara: vem de quem fechou por ligação, sem rastro no WhatsApp.
+        if (isUuid(checkout.referred_by)) {
+            const { data: referrer } = await supabase.from('SITE_Users').select('id, name').eq('id', checkout.referred_by).maybeSingle();
+            if (referrer?.name) return { id: referrer.id, name: referrer.name };
+        }
+        const ids = whatsappIdsOf(checkout.phone);
+        if (!ids.length) return null;
         const { data: talks, error } = await supabase
             .from('SITE_WhatsAppCloudMessages')
             .select('wa_id')
@@ -673,9 +695,14 @@ export async function assignFollowUp(supabase: any, checkout: any): Promise<{ as
         ? (await supabase.from('SITE_Leads').select('*').eq('id', checkout.lead_id).maybeSingle()).data
         : await findExistingLead<any>(supabase, { email: checkout.email, phone: checkout.phone });
 
-    // O dono atual continua com o cliente dele, se ainda estiver ativo na roleta.
+    // Quem mandou o link fica com o cliente dele; se não houver link, vale o dono atual, se ainda
+    // estiver ativo na roleta.
     let attendantId: string | null = null;
-    if (isUuid(lead?.assigned_to)) {
+    if (isUuid(checkout.referred_by)) {
+        const { data: referrer } = await supabase.from('SITE_Users').select('id').eq('id', checkout.referred_by).eq('status', 'Active').maybeSingle();
+        if (referrer) attendantId = referrer.id;
+    }
+    if (!attendantId && isUuid(lead?.assigned_to)) {
         const { data: owner } = await supabase
             .from('SITE_Users')
             .select('id')

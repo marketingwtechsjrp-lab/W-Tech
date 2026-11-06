@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.62.0",
+    "date": "2026-11-06",
+    "title": "Link de venda de cada vendedor na Vacuum Pump",
+    "changes": [
+      "Cada vendedor tem o próprio link de venda da Vacuum Pump no painel Vendas ao vivo, para copiar ou enviar no WhatsApp",
+      "Venda feita por quem se cadastrou pelo link fica no nome do vendedor, inclusive quando o contato foi por ligação",
+      "Cliente que entrou pelo link e desistiu volta para o vendedor dono do link",
+      "Painel mostra cadastros, vendas e valor do link de cada vendedor, e a origem Link de vendedor",
+      "Atendentes e gerentes de atendimento passam a ter acesso ao painel Vendas ao vivo"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.61.3",
     "date": "2026-11-06",
     "title": "Relógio de volta no 3D do celular e máquina presa ao chão na realidade aumentada do Android",

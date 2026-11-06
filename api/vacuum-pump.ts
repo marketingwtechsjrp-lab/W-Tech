@@ -22,6 +22,7 @@ import {
     loadVacuumOffer,
     quoteVacuumShipping,
     readMercadoPagoToken,
+    resolveSellerRef,
     sendPixPendingEmail,
     sweepVacuumAbandoned,
     vacuumExternalReference,
@@ -203,7 +204,9 @@ async function handleLead(supabase: any, req: any, res: any) {
         .limit(1)
         .maybeSingle();
 
-    const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, updated_at: new Date().toISOString() };
+    // Entrou pelo link de um vendedor: a venda é dele. O link mais recente é o que vale.
+    const referredBy = await resolveSellerRef(supabase, body.seller_ref);
+    const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, ...(referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
     let checkout: any;
     if (open) {
         // Quem estava na lista de espera e entrou no checkout avança; o contrário não acontece.

@@ -653,6 +653,54 @@ test('pediu contato: vai para o vendedor na hora', async () => {
     assert.equal(db.tables.SITE_Tasks[0].priority, 'URGENT');
 });
 
+test('link do vendedor: quem se cadastra por ele fica no nome dele, sem precisar de WhatsApp', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 950, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const seller = db.tables.SITE_Users[0];
+    const code = lib.sellerRefCode(seller.id);
+    assert.match(code, /^[a-f0-9]{8}$/);
+    const lead = await call(lib.apiHandler, { method: 'POST', query: { action: 'lead' }, body: { name: 'Cliente Ligação', phone: '17 99999-0050', email: 'lig@oficina.com', source: 'checkout', seller_ref: code } });
+    const id = lead.json.checkout_id;
+    assert.equal(db.tables.SITE_CampaignCheckouts.find((row) => row.id === id).referred_by, seller.id);
+    await call(lib.apiHandler, { method: 'POST', query: { action: 'save' }, body: { checkout_id: id, stage: 'payment', document: '52998224725', address: VALID_ADDRESS } });
+    await pay(id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, seller.id);
+    assert.equal(db.tables.SITE_Sales[0].seller_name, seller.name);
+    assert.ok(db.tables.SITE_Leads[0].tags.includes('recuperado_por_vendedor'));
+});
+
+test('link do vendedor: código inválido, inventado ou de quem saiu da equipe não dá crédito', async () => {
+    const db = seed();
+    const seller = db.tables.SITE_Users[0];
+    const refOf = async (seller_ref, phone) => {
+        const lead = await call(lib.apiHandler, { method: 'POST', query: { action: 'lead' }, body: { name: 'Cliente', phone, email: 'c@oficina.com', source: 'checkout', seller_ref } });
+        return db.tables.SITE_CampaignCheckouts.find((row) => row.id === lead.json.checkout_id).referred_by ?? null;
+    };
+    assert.equal(await refOf('00000000', '17 99999-0051'), null);
+    assert.equal(await refOf("' or 1=1", '17 99999-0052'), null);
+    assert.equal(await refOf(null, '17 99999-0053'), null);
+    seller.status = 'Inactive';
+    assert.equal(await refOf(lib.sellerRefCode(seller.id), '17 99999-0054'), null);
+});
+
+test('link do vendedor: vale mais que a conversa no WhatsApp, e quem desiste volta para ele', async () => {
+    const db = seed();
+    const [first, second] = db.tables.SITE_Users;
+    mockMercadoPago(() => ({ json: { id: 951, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const lead = await call(lib.apiHandler, { method: 'POST', query: { action: 'lead' }, body: { name: 'Cliente Ligação', phone: '17 99999-0055', email: 'lig2@oficina.com', source: 'checkout', seller_ref: lib.sellerRefCode(second.id) } });
+    const id = lead.json.checkout_id;
+    const checkout = db.tables.SITE_CampaignCheckouts.find((row) => row.id === id);
+    checkout.updated_at = new Date(Date.now() - 31 * 60_000).toISOString();
+    await lib.sweepVacuumAbandoned(db);
+    assert.equal(checkout.followup_assigned_to, second.id, 'a tarefa de quem desistiu vai para o dono do link');
+
+    db.tables.SITE_WhatsAppCloudConversations = [{ id: 'c1', wa_id: '5517999990055', assigned_to: first.id }];
+    db.tables.SITE_WhatsAppCloudMessages = [{ wa_id: '5517999990055', sent_by: 'human', created_at: new Date().toISOString() }];
+    await call(lib.apiHandler, { method: 'POST', query: { action: 'save' }, body: { checkout_id: id, stage: 'payment', document: '52998224725', address: VALID_ADDRESS } });
+    await pay(id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, second.id);
+});
+
 test('vendedor recebeu a tarefa mas não falou com o cliente: compra direta, sem comissão', async () => {
     const db = seed();
     const payment = { id: 940, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' };

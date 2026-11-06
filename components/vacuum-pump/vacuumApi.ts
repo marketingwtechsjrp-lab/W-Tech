@@ -85,10 +85,32 @@ function post<T>(action: string, body: unknown) {
     });
 }
 
+const SELLER_REF_KEY = 'vp_seller_ref';
+
+/** Guarda o vendedor do link: a pessoa pode voltar depois, sem o endereço completo, e comprar. */
+function captureSellerRef() {
+    try {
+        const ref = new URLSearchParams(window.location.search).get('ref');
+        if (ref && /^[a-f0-9]{8}$/.test(ref)) window.localStorage.setItem(SELLER_REF_KEY, ref);
+    } catch {
+        /* navegador sem armazenamento: o crédito depende do endereço aberto agora */
+    }
+}
+
+function sellerRef(): string | null {
+    try {
+        return window.localStorage.getItem(SELLER_REF_KEY);
+    } catch {
+        return null;
+    }
+}
+
+if (typeof window !== 'undefined') captureSellerRef();
+
 export const vacuumApi = {
     offer: () => request<VacuumOffer>(`${API}?action=offer`),
     lead: (body: { name: string; phone: string; email?: string; source: 'checkout' | 'contact' | 'waitlist'; tracking?: Record<string, string> }) =>
-        post<{ ok: boolean; checkout_id: string; lead_id: string | null }>('lead', body),
+        post<{ ok: boolean; checkout_id: string; lead_id: string | null }>('lead', { ...body, seller_ref: sellerRef() }),
     save: (body: { checkout_id: string; stage?: string; bumps?: string[]; document?: string; address?: Record<string, string> }) =>
         post<{ ok: boolean }>('save', body),
     shipping: (body: { cep: string; bumps: string[] }) => post<VacuumShippingQuote>('shipping', body),

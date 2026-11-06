@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.0 (2026-11-06) - Link de venda de cada vendedor na Vacuum Pump
+- Cada vendedor tem o próprio link de venda da Vacuum Pump no painel Vendas ao vivo, para copiar ou enviar no WhatsApp
+- Venda feita por quem se cadastrou pelo link fica no nome do vendedor, inclusive quando o contato foi por ligação
+- Cliente que entrou pelo link e desistiu volta para o vendedor dono do link
+- Painel mostra cadastros, vendas e valor do link de cada vendedor, e a origem Link de vendedor
+- Atendentes e gerentes de atendimento passam a ter acesso ao painel Vendas ao vivo
+
 ## v3.61.3 (2026-11-06) - Relógio de volta no 3D do celular e máquina presa ao chão na realidade aumentada do Android
 - Relógio da máquina volta a aparecer no 3D da página no iPhone
 - Na câmera pelo navegador do Android, a máquina só aparece depois de achar o chão e tocar na tela, e fica presa àquele ponto
