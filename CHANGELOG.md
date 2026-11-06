@@ -6,6 +6,12 @@
 - Miniaturas das fotos em uma linha só no celular, para o botão de realidade aumentada caber inteiro acima da barra
 - Passamos a medir quantas pessoas chegam ao bloco de preço no celular, sem somar nos cliques do painel
 
+## v3.62.6 (2026-11-06) - Tela de aviso quando uma página quebra, em vez de página vazia
+- Um erro de tela em qualquer rota mostra um aviso com botão de recarregar e WhatsApp; trocar de rota volta ao normal
+- O erro fica registrado no painel como page_render_error, com a rota e a mensagem, e o rastreio continua funcionando
+- O botão de recarregar recupera a página também no Safari, onde um arquivo que falhou não era pedido de novo
+- O prerender não grava a tela de aviso como conteúdo da rota
+
 ## v3.62.5 (2026-11-06) - Botão Comprar aparece mais cedo na página da Vacuum Pump
 - A foto principal deixa de disputar a conexão com o código: medido em produção, isso atrasava o botão em 0,5 s sem trazer a foto antes
 

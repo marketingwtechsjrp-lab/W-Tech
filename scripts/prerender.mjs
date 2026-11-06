@@ -202,6 +202,13 @@ async function main() {
       await scrollThrough(page);
       await page.waitForTimeout(SETTLE_MS);
 
+      // Uma página que quebra durante a rolagem cai na tela de erro de
+      // components/PageErrorBoundary.tsx. Gravada, ela seria servida como o conteúdo da
+      // rota; falhando aqui, a rota continua no fallback SPA.
+      if (await page.locator('[data-page-error]').count()) {
+        throw new Error('a página caiu na tela de erro');
+      }
+
       const html = await page.evaluate(() => {
         const snapshot = document.documentElement.cloneNode(true);
         // Mesmo bloqueado, o loader cria um <script src>. Nao o duplicar ao servir

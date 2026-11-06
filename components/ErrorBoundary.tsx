@@ -6,6 +6,8 @@ interface ErrorBoundaryProps {
     fallback?: React.ReactNode;
     /** Callback opcional p/ logar/telemetria. */
     onError?: (error: Error, info: React.ErrorInfo) => void;
+    /** Quando muda, a área sai do estado de erro e os filhos são renderizados de novo. */
+    resetKey?: string;
 }
 
 interface ErrorBoundaryState {
@@ -30,6 +32,14 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     componentDidCatch(error: Error, info: React.ErrorInfo) {
         console.error('[ErrorBoundary]', error, info);
         this.props.onError?.(error, info);
+    }
+
+    componentDidUpdate(prevProps: ErrorBoundaryProps, prevState: ErrorBoundaryState) {
+        // `prevState.hasError` deixa passar o commit em que o erro apareceu: se a própria
+        // mudança da chave causou o erro, limpar aqui renderizaria de novo o que acabou de quebrar.
+        if (this.state.hasError && prevState.hasError && prevProps.resetKey !== this.props.resetKey) {
+            this.setState({ hasError: false });
+        }
     }
 
     render() {
