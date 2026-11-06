@@ -89,6 +89,7 @@ function actionLabel(action: string): string {
         vacuum_cta_sticky: 'Comprar: barra do celular',
         vacuum_cta_band: 'Comprar: faixa da foto',
         vacuum_cta_final: 'Comprar: oferta final',
+        vacuum_cta_video: 'Comprar: fim do vídeo',
         vacuum_whatsapp_hero: 'Falar com especialista',
         vacuum_3d_ar: 'Ver na bancada (RA)',
         vacuum_3d_thumb: 'Abrir o 3D',

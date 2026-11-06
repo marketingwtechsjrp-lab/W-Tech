@@ -138,7 +138,9 @@ function prefersManualLoad(): boolean {
     return !!connection && (connection.saveData === true || /(^|-)2g$/.test(connection.effectiveType ?? ''));
 }
 
-const VacuumExperience3D: React.FC = () => {
+const VacuumExperience3D: React.FC<{ paused?: boolean }> = ({ paused = false }) => {
+    const pausedRef = useRef(paused);
+    pausedRef.current = paused;
     const stageRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const sceneRef = useRef<VacuumScene | null>(null);
@@ -196,12 +198,18 @@ const VacuumExperience3D: React.FC = () => {
                     onError: () => setState('failed'),
                     onUserInteract: () => setHintVisible(false),
                 });
+                sceneRef.current.setPaused(pausedRef.current);
             })
             .catch(() => setState('failed'));
         return () => {
             cancelled = true;
         };
     }, [state]);
+
+    // Carrinho aberto cobre a tela: o observador de rolagem não percebe, então a cena para aqui.
+    useEffect(() => {
+        sceneRef.current?.setPaused(paused);
+    }, [paused]);
 
     useEffect(
         () => () => {

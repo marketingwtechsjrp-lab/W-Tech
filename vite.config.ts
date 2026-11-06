@@ -69,6 +69,23 @@ function surveySharePages(): Plugin {
       for (const key of ['og:image', 'twitter:image']) vacuumHtml = setMeta(vacuumHtml, key, `${SITE_URL}/og/maquina-de-vacuo.jpg`);
       vacuumHtml = setMeta(vacuumHtml, 'og:image:width', '1200');
       vacuumHtml = setMeta(vacuumHtml, 'og:image:height', '630');
+
+      // Quem chega pelo Instagram ou pelo WhatsApp abre esta página de frio. Sem isto, o navegador só
+      // descobre o código, o preço e a foto depois de baixar e rodar o bundle principal.
+      const assetsDir = path.resolve(__dirname, 'dist/assets');
+      const pageChunk = fs.readdirSync(assetsDir).find((name) => /^LPVacuumPump-[\w-]+\.js$/.test(name));
+      if (pageChunk) {
+        const code = fs.readFileSync(path.join(assetsDir, pageChunk), 'utf8');
+        const imports = [...code.matchAll(/(?:from|import)\s*"\.\/([\w.-]+\.js)"/g)].map((match) => match[1]);
+        const modules = [pageChunk, ...new Set(imports)].filter((name) => !base.includes(`/assets/${name}`));
+        const preloads = [
+          ...modules.map((name) => `<link rel="modulepreload" crossorigin href="/assets/${name}">`),
+          '<link rel="preload" as="fetch" crossorigin="anonymous" href="/api/vacuum-pump?action=offer">',
+          // Mesmo srcset e sizes da primeira foto em pages/LPVacuumPump.tsx: se mudar lá, muda aqui.
+          '<link rel="preload" as="image" fetchpriority="high" imagesrcset="/images/vacuum-pump/fotos/frente-sm.webp 640w, /images/vacuum-pump/fotos/frente.webp 1300w" imagesizes="(min-width: 1024px) 600px, 92vw">',
+        ].join('\n');
+        vacuumHtml = vacuumHtml.replace('</head>', `${preloads}\n</head>`);
+      }
       const vacuumDir = path.resolve(__dirname, 'dist/maquina-de-vacuo');
       fs.mkdirSync(vacuumDir, { recursive: true });
       fs.writeFileSync(path.join(vacuumDir, 'index.html'), vacuumHtml);

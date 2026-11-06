@@ -46,6 +46,8 @@ export interface VacuumSceneOptions {
 export interface VacuumScene {
     focus: (view: VacuumView, partIds: string[]) => void;
     setOpen: (open: boolean) => void;
+    /** Para de desenhar enquanto outra tela cobre a cena, sem perder o modelo carregado. */
+    setPaused: (paused: boolean) => void;
     renderNow: () => void;
     dispose: () => void;
 }
@@ -172,6 +174,7 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
     let coverRestY = 0;
     let disposed = false;
     let inView = true;
+    let paused = false;
     let raf = 0;
     let dirty = true;
     let lastTime = 0;
@@ -265,7 +268,7 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
 
     function step(time: number) {
         raf = 0;
-        if (disposed || !inView || document.hidden) return;
+        if (disposed || paused || !inView || document.hidden) return;
         const delta = lastTime ? Math.min(0.1, (time - lastTime) / 1000) : 1 / 60;
         const frameMs = lastTime ? time - lastTime : 0;
         lastTime = time;
@@ -486,6 +489,11 @@ export function createVacuumScene(options: VacuumSceneOptions): VacuumScene {
             openFrom = openValue;
             openStart = performance.now();
             wake();
+        },
+        setPaused(value) {
+            if (paused === value) return;
+            paused = value;
+            if (!paused) wake();
         },
         renderNow,
         dispose() {

@@ -1,6 +1,14 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.4 (2026-11-06) - Botão do fim do vídeo abre o carrinho e compra mais rápida
+- O botão Comprar agora do fim do vídeo deixava a tela branca em qualquer navegador; agora abre o carrinho
+- Erro dentro do carrinho mostra um aviso com o WhatsApp, em vez de apagar a página, e fica registrado no painel
+- O 3D para de rodar enquanto o carrinho está aberto
+- O Mercado Pago começa a carregar assim que a pessoa sai do carrinho, e o pagamento fica pronto mais rápido
+- A foto principal e o preço da página começam a carregar antes do código do site
+- O painel ao vivo conta o botão do fim do vídeo como clique de compra
+
 ## v3.62.3 (2026-11-06) - Venda lançada por vendedor fica aguardando o gerente
 - Venda manual lançada por vendedor entra sempre como Aguardando, fora do placar e do lote
 - Só o gerente confirma o pagamento, e a comemoração do painel acontece nessa hora
