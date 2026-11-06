@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.62.8",
+    "date": "2026-11-06",
+    "title": "Erro acima das rotas também mostra a tela de aviso",
+    "changes": [
+      "Um erro de tela nos providers do site mostra o aviso com recarregar e WhatsApp, em vez de página vazia, e fica registrado como app_render_error",
+      "Se o interceptor de WhatsApp ou o rastreio quebrar, a página continua no ar e o erro fica registrado como integration_render_error"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.62.7",
     "date": "2026-11-06",
     "title": "Parcela e botão Comprar na primeira tela do celular",

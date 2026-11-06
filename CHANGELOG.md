@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.8 (2026-11-06) - Erro acima das rotas também mostra a tela de aviso
+- Um erro de tela nos providers do site mostra o aviso com recarregar e WhatsApp, em vez de página vazia, e fica registrado como app_render_error
+- Se o interceptor de WhatsApp ou o rastreio quebrar, a página continua no ar e o erro fica registrado como integration_render_error
+
 ## v3.62.7 (2026-11-06) - Parcela e botão Comprar na primeira tela do celular
 - No celular, a barra com a parcela e o botão Comprar aparece desde a chegada, sem precisar rolar
 - Miniaturas das fotos em uma linha só no celular, para o botão de realidade aumentada caber inteiro acima da barra
