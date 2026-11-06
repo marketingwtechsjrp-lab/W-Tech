@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.2 (2026-11-06) - Carrinho sem erro falso e que continua de onde parou
+- Seus dados deixa de abrir com todos os campos em vermelho antes de a pessoa digitar: o botão Continuar enviava o formulário vazio
+- Quem sai para outro app ou recarrega no meio da compra volta para a mesma etapa, com os dados preenchidos, inclusive no navegador do Instagram
+- Pix pago no banco enquanto a pessoa estava fora leva direto à página de obrigado
+- O clique em Continuar do carrinho volta a ser registrado no painel
+- CPF e cartão nunca ficam guardados no aparelho
+
 ## v3.64.1 (2026-11-06) - Painel conta como pessoa quem clica nos primeiros segundos
 - Clique feito antes de a visita ser registrada ficava sem identificação e fora da contagem de pessoas; agora a pessoa recebe a identificação nesse momento
 - Falha que acontece antes de a página abrir aparece no painel como uma pessoa, e não como zero

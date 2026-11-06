@@ -296,7 +296,16 @@ const LPVacuumPump: React.FC = () => {
         return () => window.clearTimeout(timer);
     }, []);
 
-    useEffect(reportInterruptedCheckout, []);
+    // Saiu no meio da compra e voltou: o carrinho abre sozinho onde parou, assim que o preço chegar.
+    const [resumeCheckout, setResumeCheckout] = useState(false);
+    useEffect(() => {
+        setResumeCheckout(reportInterruptedCheckout());
+    }, []);
+    useEffect(() => {
+        if (!resumeCheckout || !ready) return;
+        setResumeCheckout(false);
+        if (offer.phase !== 'soon') setCheckoutOpen(true);
+    }, [resumeCheckout, ready, offer.phase]);
 
     // Espera o preço do servidor: antes disso, o valor enviado ao Meta poderia ser o padrão.
     useEffect(() => {

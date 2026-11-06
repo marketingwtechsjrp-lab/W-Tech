@@ -30,6 +30,7 @@ import {
     trackCheckoutStep,
     type CheckoutStepName,
 } from './vacuumCheckoutTracking';
+import { clearCheckoutDraft, readCheckoutDraft, saveCheckoutDraft } from './vacuumCheckoutDraft';
 import { identifyVacuumBuyer, trackVacuumAddPaymentInfo, trackVacuumInitiateCheckout, trackVacuumLead } from './vacuumMeta';
 
 declare global {
@@ -42,7 +43,6 @@ declare global {
     }
 }
 
-const STORAGE_KEY = 'vp_checkout_contact';
 const BRICK_CONTAINER = 'vp-payment-brick';
 const FUNNEL = 'vacuum_pump_bf' as const;
 const FORM_CONTACT = 'vp-form-dados';
@@ -127,19 +127,31 @@ function pixTimeLeft(parts: ReturnType<typeof timeParts>): string {
 
 const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initialCep = '', onClose, onOfferChanged }) => {
     const navigate = useNavigate();
-    const [step, setStep] = useState<Step>(0);
+    // Quem volta continua de onde parou. Só vale a etapa que os dados guardados sustentam, e escolher
+    // um combo na página recomeça pelo carrinho, para a pessoa ver o que mudou.
+    const [draft] = useState(readCheckoutDraft);
+    const resumeStep = (): Step => {
+        if (!draft || initialBumps.length) return 0;
+        if (!draft.checkoutId) return Math.min(draft.step, 1) as Step;
+        const { street, number, city, state, cep } = draft.address;
+        return draft.step === 3 && !(street && number && city && state && cep) ? 2 : draft.step;
+    };
+    const [step, setStep] = useState<Step>(resumeStep);
     const [screen, setScreen] = useState<Screen>('form');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [summaryOpen, setSummaryOpen] = useState(false);
 
-    const [checkoutId, setCheckoutId] = useState<string | null>(null);
-    const [contact, setContact] = useState({ name: '', phone: '', email: '' });
+    const [checkoutId, setCheckoutId] = useState<string | null>(draft?.checkoutId ?? null);
+    const [contact, setContact] = useState(draft?.contact ?? { name: '', phone: '', email: '' });
     const [doc, setDoc] = useState('');
-    const [address, setAddress] = useState({ cep: initialCep, street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
-    const [bumps, setBumps] = useState<string[]>(initialBumps);
-    const [payMethod, setPayMethod] = useState<PayMethod>('card');
+    const [address, setAddress] = useState({
+        ...(draft?.address ?? { street: '', number: '', complement: '', neighborhood: '', city: '', state: '' }),
+        cep: initialCep || draft?.address.cep || '',
+    });
+    const [bumps, setBumps] = useState<string[]>(initialBumps.length ? initialBumps : draft?.bumps ?? []);
+    const [payMethod, setPayMethod] = useState<PayMethod>(draft?.payMethod ?? 'card');
     const [chosenInstallments, setChosenInstallments] = useState<number | null>(null);
     const [pix, setPix] = useState<VacuumPix | null>(null);
     const [pixState, setPixState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
@@ -148,7 +160,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const [copied, setCopied] = useState(false);
     const [brickState, setBrickState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
     const [quote, setQuote] = useState<VacuumShippingQuote | null>(null);
-    const [shippingCode, setShippingCode] = useState<string | null>(null);
+    const [shippingCode, setShippingCode] = useState<string | null>(draft?.shippingCode ?? null);
     const [quoteNonce, setQuoteNonce] = useState(0);
 
     const cepDigits = address.cep.replace(/\D/g, '');
@@ -176,15 +188,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         else onClose();
     }, [onClose]);
 
-    // Volta para o mesmo checkout se a pessoa fechar e abrir de novo. Cartão e CPF nunca são guardados.
     useEffect(() => {
-        try {
-            const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-            if (saved?.contact) setContact(saved.contact);
-            if (saved?.checkoutId) setCheckoutId(saved.checkoutId);
-        } catch {
-            /* sessão bloqueada: segue com o formulário vazio */
-        }
         pushBeginCheckout({ funnel: FUNNEL, item_name: VACUUM_ITEM_NAME, value: offer.price, currency: 'BRL', provider: 'mercadopago' });
         trackVacuumInitiateCheckout(cartRef.current.total, cartRef.current.bump_ids);
         window.history.pushState({ ...window.history.state, vpCheckout: true }, '');
@@ -221,10 +225,47 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     }, [step, screen]);
     useEffect(() => clearCheckoutInProgress, []);
 
+    useEffect(() => {
+        if (screen === 'form') saveCheckoutDraft({ checkoutId, contact, address, bumps, step, shippingCode, payMethod });
+    }, [checkoutId, contact, address, bumps, step, shippingCode, payMethod, screen]);
+
     const goToThanks = useCallback(
-        (id: string) => navigate(`/maquina-de-vacuo/obrigado?c=${encodeURIComponent(id)}`, { replace: true }),
+        (id: string) => {
+            clearCheckoutDraft();
+            navigate(`/maquina-de-vacuo/obrigado?c=${encodeURIComponent(id)}`, { replace: true });
+        },
         [navigate]
     );
+
+    // O que aconteceu com o checkout enquanto a pessoa estava fora: o Pix pode ter sido pago no banco.
+    useEffect(() => {
+        const id = draft?.checkoutId;
+        if (!id) return;
+        let cancelled = false;
+        vacuumApi
+            .status(id)
+            .then((status) => {
+                if (cancelled) return;
+                if (status.httpStatus === 404) {
+                    setCheckoutId(null);
+                    setStep(1);
+                } else if (status.stage === 'paid') {
+                    goToThanks(id);
+                } else if (status.stage === 'pix_pending') {
+                    setPayMethod('pix');
+                    setStep(3);
+                } else if (status.stage === 'review') {
+                    setScreen('review');
+                }
+            })
+            .catch(() => {
+                /* sem rede agora: segue com o que estava guardado */
+            });
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const submitContact = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -244,11 +285,6 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             const result = await vacuumApi.lead({ ...contact, source: 'checkout', tracking: { ...getLeadTrackingFields(), ...getMetaBrowserIds() } as Record<string, string> });
             if (!result.checkout_id) throw new Error(result.error || 'Não foi possível continuar.');
             setCheckoutId(result.checkout_id);
-            try {
-                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ contact, checkoutId: result.checkout_id }));
-            } catch {
-                /* sem storage: só não lembra na próxima abertura */
-            }
             // Os adicionais foram escolhidos no carrinho, antes de existir o checkout: o vendedor precisa vê-los.
             if (bumps.length) void vacuumApi.save({ checkout_id: result.checkout_id, bumps }).catch(() => undefined);
             identifyVacuumBuyer(contact);
@@ -617,9 +653,12 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const primaryAction = (className = '') => {
         if (screen !== 'form') return null;
         const shared = { className: `vp-btn w-full ${className}`, disabled: busy };
-        if (step === 0) return <button type="button" {...shared} onClick={() => setStep(1)} data-track="vacuum_cart_continue" data-track-category="Vacuum Pump">Continuar</button>;
-        if (step === 1) return <button type="submit" form={FORM_CONTACT} {...shared}>{busy ? 'Salvando…' : 'Continuar para a entrega'}</button>;
-        if (step === 2) return <button type="submit" form={FORM_DELIVERY} {...shared}>{busy ? 'Salvando…' : 'Continuar para o pagamento'}</button>;
+        // `key` própria em cada etapa: sem ela, o React reaproveita o mesmo botão e o transforma em
+        // "submit" no meio do clique. O navegador então enviava o formulário vazio da etapa seguinte,
+        // que já abria com todos os campos em vermelho.
+        if (step === 0) return <button key="cart" type="button" {...shared} onClick={() => setStep(1)} data-track="vacuum_cart_continue" data-track-category="Vacuum Pump">Continuar</button>;
+        if (step === 1) return <button key="contact" type="submit" form={FORM_CONTACT} {...shared}>{busy ? 'Salvando…' : 'Continuar para a entrega'}</button>;
+        if (step === 2) return <button key="delivery" type="submit" form={FORM_DELIVERY} {...shared}>{busy ? 'Salvando…' : 'Continuar para o pagamento'}</button>;
         return null;
     };
 

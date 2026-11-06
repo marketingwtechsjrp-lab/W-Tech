@@ -55,14 +55,17 @@ export function clearCheckoutInProgress(): void {
     }
 }
 
-/** Ao abrir a página: se o carrinho ficou aberto, a pessoa saiu ou recarregou no meio da compra e o perdeu. */
-export function reportInterruptedCheckout(): void {
+/** Ao abrir a página: diz se o carrinho ficou aberto, porque a pessoa saiu ou recarregou no meio da compra. */
+export function reportInterruptedCheckout(): boolean {
     try {
         const saved = JSON.parse(localStorage.getItem(IN_PROGRESS_KEY) || 'null') as { step?: string; at?: number } | null;
-        if (!saved) return;
+        if (!saved) return false;
         localStorage.removeItem(IN_PROGRESS_KEY);
-        if (Date.now() - Number(saved.at) <= IN_PROGRESS_MAX_AGE_MS) trackCheckoutProblem('interrupted', saved.step);
+        if (Date.now() - Number(saved.at) > IN_PROGRESS_MAX_AGE_MS) return false;
+        trackCheckoutProblem('interrupted', saved.step);
+        return true;
     } catch {
         /* sem storage ou dado inválido: só deixa de medir a interrupção */
+        return false;
     }
 }
