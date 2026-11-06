@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.61.3 (2026-11-06) - Relógio de volta no 3D do celular e máquina presa ao chão na realidade aumentada do Android
+- Relógio da máquina volta a aparecer no 3D da página no iPhone
+- Na câmera pelo navegador do Android, a máquina só aparece depois de achar o chão e tocar na tela, e fica presa àquele ponto
+- Se a câmera perder a referência, a máquina some e a tela avisa, em vez de sair andando
+- Botões Mudar de lugar e Sair da câmera
+
 ## v3.61.2 (2026-11-06) - Realidade aumentada mais leve para celulares Android fracos
 - Modelo da máquina na realidade aumentada do Android com um terço dos triângulos, sem as peças internas que não aparecem de fora
 - Arquivo de 2,4 MB para 0,9 MB e texturas menores, para abrir mais rápido e travar menos

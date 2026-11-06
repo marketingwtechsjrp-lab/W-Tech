@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.61.3",
+    "date": "2026-11-06",
+    "title": "Relógio de volta no 3D do celular e máquina presa ao chão na realidade aumentada do Android",
+    "changes": [
+      "Relógio da máquina volta a aparecer no 3D da página no iPhone",
+      "Na câmera pelo navegador do Android, a máquina só aparece depois de achar o chão e tocar na tela, e fica presa àquele ponto",
+      "Se a câmera perder a referência, a máquina some e a tela avisa, em vez de sair andando",
+      "Botões Mudar de lugar e Sair da câmera"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.61.2",
     "date": "2026-11-06",
     "title": "Realidade aumentada mais leve para celulares Android fracos",

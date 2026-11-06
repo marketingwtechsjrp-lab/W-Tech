@@ -4,7 +4,7 @@ import { Flame, X } from 'lucide-react';
 import { VacuumARFallback } from './VacuumARFallback';
 import { trackEvent } from '../AnalyticsTracker';
 
-const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=5';
+const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=6';
 const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=3';
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
@@ -154,8 +154,8 @@ export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ plac
 
     // Fora da moldura da galeria: o recorte dela cortaria uma janela sobre a página.
     const dialog = (label: string, content: React.ReactNode) => createPortal(
-        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={label} onClick={closeDialog}>
-            <div className="vp-plate relative w-full max-w-sm p-6 text-center" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={label} onClick={(event) => { if (event.target === event.currentTarget) closeDialog(); }}>
+            <div className="vp-plate relative w-full max-w-sm p-6 text-center">
                 <button ref={closeRef} type="button" className="absolute right-3 top-3 grid h-10 w-10 place-items-center hover:bg-black/5" onClick={closeDialog} aria-label="Fechar"><X size={20} aria-hidden /></button>
                 <h2 className="vp-display pr-8 text-3xl">Veja na sua própria bancada</h2>
                 {content}

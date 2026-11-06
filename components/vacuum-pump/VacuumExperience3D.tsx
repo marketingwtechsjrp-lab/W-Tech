@@ -3,7 +3,7 @@ import { Box, Download, Move3d, RotateCcw } from 'lucide-react';
 import type { VacuumHotspot, VacuumScene, VacuumView } from './vacuumScene3D';
 import { VacuumARButton } from './VacuumARButton';
 
-const MODEL_URL = '/models/vacuum-pump/maquina.glb?v=2';
+const MODEL_URL = '/models/vacuum-pump/maquina.glb?v=3';
 const POSTER = '/images/vacuum-pump/machine-front.webp?v=2';
 /** Antes disso o 3D não baixa: o bloco fica no meio da página e a maioria não chega nele. */
 const LOAD_MARGIN = '250px';
