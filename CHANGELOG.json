@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.62.5",
+    "date": "2026-11-06",
+    "title": "Botão Comprar aparece mais cedo na página da Vacuum Pump",
+    "changes": [
+      "A foto principal deixa de disputar a conexão com o código: medido em produção, isso atrasava o botão em 0,5 s sem trazer a foto antes"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.62.4",
     "date": "2026-11-06",
     "title": "Botão do fim do vídeo abre o carrinho e compra mais rápida",

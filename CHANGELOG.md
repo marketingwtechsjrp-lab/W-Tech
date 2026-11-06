@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.5 (2026-11-06) - Botão Comprar aparece mais cedo na página da Vacuum Pump
+- A foto principal deixa de disputar a conexão com o código: medido em produção, isso atrasava o botão em 0,5 s sem trazer a foto antes
+
 ## v3.62.4 (2026-11-06) - Botão do fim do vídeo abre o carrinho e compra mais rápida
 - O botão Comprar agora do fim do vídeo deixava a tela branca em qualquer navegador; agora abre o carrinho
 - Erro dentro do carrinho mostra um aviso com o WhatsApp, em vez de apagar a página, e fica registrado no painel
