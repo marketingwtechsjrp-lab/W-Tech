@@ -1,5 +1,5 @@
 import React from 'react';
-import { trackEvent } from '../AnalyticsTracker';
+import { trackCheckoutProblem } from './vacuumCheckoutTracking';
 
 interface Props {
     sellerHref: string;
@@ -21,7 +21,7 @@ class VacuumCheckoutBoundary extends React.Component<Props, { failed: boolean }>
 
     componentDidCatch(error: Error) {
         console.error('[Vacuum] Erro no carrinho:', error);
-        void trackEvent('Vacuum Pump', 'vacuum_checkout_error', String(error?.message).slice(0, 200));
+        trackCheckoutProblem('screen_error', error?.message);
     }
 
     render() {

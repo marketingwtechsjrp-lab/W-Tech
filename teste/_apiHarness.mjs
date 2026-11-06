@@ -30,12 +30,14 @@ function casaIlike(valor, padrao) {
     else if (c === '_') regex += '.';
     else regex += c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
-  return new RegExp(`^${regex}$`, 'i').test(String(valor ?? ''));
+  // `s`: como no PostgreSQL, o % também atravessa quebra de linha.
+  return new RegExp(`^${regex}$`, 'is').test(String(valor ?? ''));
 }
 
 function casa(linha, filtros) {
   return Object.entries(filtros).every(([coluna, condicao]) => {
     if (condicao.startsWith('eq.')) return String(linha[coluna]) === condicao.slice(3);
+    if (condicao.startsWith('neq.')) return String(linha[coluna]) !== condicao.slice(4);
     if (condicao === 'is.null') return linha[coluna] === null || linha[coluna] === undefined;
     if (condicao.startsWith('ilike.')) return casaIlike(linha[coluna], condicao.slice(6));
     if (condicao.startsWith('in.(')) {

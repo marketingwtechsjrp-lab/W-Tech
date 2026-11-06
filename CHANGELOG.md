@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.63.0 (2026-11-06) - Confirmação de compra pelo WhatsApp e acompanhamento do checkout no painel
+- Compra confirmada, no site ou pelo gerente, manda uma mensagem automática pelo WhatsApp oficial, uma vez por pedido
+- Painel ao vivo mostra por qual etapa do checkout as pessoas passam, de quem clicou em comprar até quem comprou
+- Painel lista as falhas no caminho até pagar: cartão que não abre, Pix não gerado, frete, erro de tela e página que não abriu
+- Painel mostra quem saiu e voltou no meio da compra, o que faz a pessoa perder o carrinho no navegador do Instagram
+- Etapa de entrega deixa de travar sem aviso quando o contato se perde: a pessoa volta para os dados
+
 ## v3.62.9 (2026-11-06) - Arquivo de página que não chega: o site tenta de novo sozinho
 - Quando o arquivo da página não chega, o site recarrega sozinho uma vez por rota e a pessoa só vê o carregamento; o aviso aparece se falhar de novo
 - Novo evento page_load_retry no painel; page_render_error passa a significar que a pessoa viu o aviso

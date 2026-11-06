@@ -29,6 +29,7 @@ const { outputFiles } = await build({
             export { default as apiHandler } from './api/vacuum-pump.ts';
             export { default as webhookHandler } from './api/mercadopago-webhook.ts';
             export * from './api/_vacuumPump.ts';
+            export { brDate } from './api/_vacuumWhatsApp.ts';
             export * from './lib/vacuumOffer.ts';
         `,
         resolveDir: fileURLToPath(new URL('..', import.meta.url)),
@@ -81,7 +82,7 @@ class FakeQuery {
     in(column, values) { this.filters.push((r) => values.includes(r[column])); return this; }
     contains(column, values) { this.filters.push((r) => values.every((v) => (r[column] || []).includes(v))); return this; }
     ilike(column, pattern) {
-        const regex = new RegExp(`^${pattern.replace(/\\/g, '').replace(/%/g, '.*')}$`, 'i');
+        const regex = new RegExp(`^${pattern.replace(/\\/g, '').replace(/%/g, '.*')}$`, 'is');
         this.filters.push((r) => regex.test(String(r[column] ?? '')));
         return this;
     }
@@ -420,6 +421,99 @@ test('aprovado: grava uma venda só, mesmo com o webhook chegando depois, e desc
     const offer = await call(lib.apiHandler, { query: { action: 'offer' } });
     assert.equal(offer.json.sold, 1);
     assert.equal(offer.json.remaining, 49);
+});
+
+const CONFIG_WHATSAPP = [
+    { key: 'whatsapp_cloud_access_token', value: 'token-wa' },
+    { key: 'whatsapp_cloud_phone_number_id', value: '555' },
+    { key: 'whatsapp_cloud_api_version', value: 'v21.0' },
+];
+const PAGAMENTO_APROVADO = { id: 950, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990 };
+const esperarEnvios = () => new Promise((resolve) => setTimeout(resolve, 30));
+
+/** Mercado Pago aprova; o WhatsApp oficial responde como o Meta, sem envio de verdade. */
+function mockCompra(db, whatsapp = { json: { contacts: [{ wa_id: '5517999990001' }], messages: [{ id: 'wamid.teste' }] } }) {
+    db.tables.SITE_Config.push(...CONFIG_WHATSAPP);
+    return mockMercadoPago((url) => {
+        if (url.includes('graph.facebook.com')) return whatsapp;
+        if (url.includes('/v1/payments/950')) return { json: { ...PAGAMENTO_APROVADO, external_reference: `vacuum:${db.tables.SITE_CampaignCheckouts[0].id}` } };
+        return { json: PAGAMENTO_APROVADO };
+    });
+}
+
+test('WhatsApp: compra aprovada manda a confirmação uma vez, mesmo com o webhook chegando depois', async () => {
+    const db = seed();
+    const calls = mockCompra(db);
+    db.tables.SITE_WhatsAppCloudConversations = [{ id: 'conversa-1', wa_id: '5517999990001' }];
+    const res = await pay(await startCheckout());
+    await esperarEnvios();
+
+    const envios = () => calls.filter((c) => c.url.includes('graph.facebook.com'));
+    assert.equal(envios().length, 1);
+    assert.match(envios()[0].url, /\/v21\.0\/555\/messages$/);
+    assert.equal(envios()[0].headers.Authorization, 'Bearer token-wa');
+    const { to, type, template } = envios()[0].body;
+    assert.equal(to, '5517999990001');
+    assert.equal(type, 'template');
+    assert.equal(template.name, 'vp_pedido_confirmado');
+    assert.equal(template.language.code, 'pt_BR');
+    const params = template.components[0].parameters.map((p) => p.text);
+    assert.equal(params[0], 'João');
+    assert.equal(params[1], res.json.order_number);
+    assert.equal(params[2], 'R$ 7.990,00', 'sem o espaço especial do formato em reais, que o Meta recusa');
+    assert.match(params[3], /^\d{2}\/\d{2}\/\d{4}$/);
+
+    const [mensagem] = db.tables.SITE_WhatsAppCloudMessages;
+    assert.equal(mensagem.sent_by, 'system', 'não pode contar como conversa de vendedor no crédito da venda');
+    assert.equal(mensagem.status, 'sent');
+    assert.equal(mensagem.wa_message_id, 'wamid.teste');
+    assert.equal(mensagem.conversation_id, 'conversa-1');
+    assert.ok(mensagem.body.includes(res.json.order_number), 'a equipe lê o pedido na conversa');
+    assert.ok(!mensagem.body.includes('{{'), 'nenhum campo do modelo fica por preencher');
+
+    await call(lib.webhookHandler, { method: 'POST', query: {}, body: { action: 'payment.updated', data: { id: '950' } } });
+    await esperarEnvios();
+    assert.equal(envios().length, 1, 'webhook repetido não manda de novo');
+    assert.equal(db.tables.SITE_Sales.length, 1);
+});
+
+test('WhatsApp: a mensagem automática não dá o crédito da venda a nenhum vendedor', async () => {
+    const db = seed();
+    const calls = mockCompra(db);
+    db.tables.SITE_WhatsAppCloudMessages = [{ wa_id: '5517999990001', sent_by: 'system', status: 'sent', body: 'Pedido antigo', created_at: new Date().toISOString() }];
+    await pay(await startCheckout());
+    await esperarEnvios();
+    assert.equal(db.tables.SITE_Sales[0].seller_id ?? null, null);
+    assert.equal(calls.filter((c) => c.url.includes('graph.facebook.com')).length, 1, 'outro pedido do mesmo número não trava a confirmação');
+});
+
+test('WhatsApp: recusa do Meta não derruba a venda e fica registrada como falha', async () => {
+    const db = seed();
+    mockCompra(db, { status: 404, json: { error: { code: 132001, message: 'Template name does not exist in the translation' } } });
+    const res = await pay(await startCheckout());
+    await esperarEnvios();
+    assert.equal(res.json.stage, 'paid', 'a compra segue confirmada');
+    assert.equal(db.tables.SITE_Sales[0].status, 'paid');
+    const [mensagem] = db.tables.SITE_WhatsAppCloudMessages;
+    assert.equal(mensagem.status, 'failed');
+    assert.match(mensagem.error, /Template name/);
+    assert.equal(mensagem.wa_message_id, null);
+});
+
+test('WhatsApp: sem a configuração do oficial, a venda sai normal e nada é enviado', async () => {
+    const db = seed();
+    const calls = mockMercadoPago(() => ({ json: PAGAMENTO_APROVADO }));
+    const res = await pay(await startCheckout());
+    await esperarEnvios();
+    assert.equal(res.json.stage, 'paid');
+    assert.equal(calls.filter((c) => c.url.includes('graph.facebook.com')).length, 0);
+    assert.equal((db.tables.SITE_WhatsAppCloudMessages || []).length, 0);
+});
+
+test('WhatsApp: datas do prazo saem em dd/mm/aaaa, sem cair no dia anterior', () => {
+    assert.equal(lib.brDate('2026-12-23'), '23/12/2026');
+    assert.equal(lib.brDate(new Date('2026-12-23T02:00:00Z')), '22/12/2026', 'vale o dia em Brasília');
+    assert.equal(lib.brDate(null), 'a confirmar');
 });
 
 test('corrida: duas confirmações simultâneas do mesmo pagamento geram uma venda só', async () => {

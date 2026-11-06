@@ -50,7 +50,7 @@ export const VL_CSS = `
 .vl-seg button[aria-pressed="true"] { background: var(--vl-red-deep); color: #fff; }
 
 .vl-grid { flex: 1; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; gap: .8em; }
-.vl-full .vl-grid { min-height: 0; grid-template-rows: auto auto minmax(0, 1.2fr) minmax(0, 1fr); }
+.vl-full .vl-grid { min-height: 0; grid-template-rows: auto auto minmax(0, 1.2fr) minmax(0, 1fr) auto; }
 .vl-full .vl-card { min-height: 0; overflow: hidden; }
 .vl-full .vl-chart-box { min-height: 0; }
 .vl-full .vl-sound-bar { position: absolute; left: 1.25em; right: 1.25em; bottom: 1em; width: auto; }
@@ -103,6 +103,28 @@ export const VL_CSS = `
 .vl-legend .vl-key-green::before { background: var(--vl-green); }
 .vl-chart-box { flex: 1; min-height: 190px; }
 .vl-funnel { grid-column: span 3; }
+.vl-checkout { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: .55em 1.4em; align-items: start; }
+.vl-checkout-alert { border-color: rgba(230, 40, 40, .7); }
+.vl-checkout .vl-label { grid-column: 1 / -1; flex-wrap: wrap; }
+.vl-checkout-since { color: #8b8b97; font-size: .9em; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.vl-steps { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .4em; margin: 0; padding: 0; list-style: none; }
+.vl-steps li { display: flex; flex-direction: column; min-width: 0; padding: .42em .55em; border-radius: 9px; background: var(--vl-card-2); }
+.vl-steps b { font-family: 'Barlow Condensed', sans-serif; font-size: 2.05em; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.vl-steps span { font-size: .76em; font-weight: 600; line-height: 1.15; }
+.vl-steps small { margin-top: .15em; color: var(--vl-mute); font-size: .7em; }
+.vl-problems-alert { margin: 0 0 .3em; color: #ff6b6b; font-size: .86em; font-weight: 700; }
+.vl-problems ul { display: flex; flex-direction: column; gap: .22em; margin: 0; padding: 0; list-style: none; }
+.vl-problems li { display: flex; align-items: baseline; gap: .5em; font-size: .86em; }
+.vl-problems li b { min-width: 1.5em; color: var(--vl-amber); font-variant-numeric: tabular-nums; text-align: right; }
+.vl-problems li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vl-problems li small { flex-shrink: 0; color: var(--vl-mute); font-size: .86em; }
+.vl-problem-tech b, .vl-problem-tech span { color: #ff6b6b; }
+.vl-problems-recent { grid-column: 1 / -1; display: flex; flex-direction: column; gap: .2em; margin: .2em 0 0; padding: .5em 0 0; border-top: 1px solid var(--vl-line); list-style: none; font-size: .8em; }
+.vl-problems-recent time { color: var(--vl-mute); font-variant-numeric: tabular-nums; }
+.vl-problems-recent em { color: var(--vl-amber); font-style: normal; }
+.vl-problems-recent small { color: var(--vl-mute); }
+.vl-full .vl-problems-recent { display: none; }
+.vl-full .vl-problems li:nth-child(n+4) { display: none; }
 .vl-feed { grid-column: span 4; overflow: hidden; }
 
 .vl-rows { display: flex; flex-direction: column; gap: .6em; }
@@ -179,6 +201,8 @@ export const VL_CSS = `
 
 @media (max-width: 1200px) {
   .vl-mylink { grid-template-columns: 1fr; }
+  .vl-checkout { grid-template-columns: 1fr; }
+  .vl-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .vl-goal, .vl-money, .vl-chart, .vl-funnel, .vl-feed { grid-column: span 6; }
   .vl-today, .vl-clock, .vl-card { grid-column: span 6; }
   .vl-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }

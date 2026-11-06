@@ -17,12 +17,27 @@ const CAMPANHA = 'vacuum_pump_bf_2026';
 let h;
 let permissoes;
 
+/** Só o WhatsApp oficial é falso: as consultas ao banco de mentira do harness seguem normais. */
+const enviosWhatsApp = [];
+globalThis.__vendasFetch = async (url, init = {}) => {
+  if (!String(url).includes('graph.facebook.com')) return fetch(url, init);
+  enviosWhatsApp.push(JSON.parse(init.body));
+  return { ok: true, status: 200, json: async () => ({ contacts: [{ wa_id: '5517999991234' }], messages: [{ id: `wamid.${enviosWhatsApp.length}` }] }) };
+};
+const pausa = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/** O envio não trava a venda: espera ele terminar sem depender da velocidade da máquina. */
+const esperarEnvios = async () => {
+  await pausa(150);
+  for (let i = 0; i < 150 && (h.estado.tabelas.SITE_WhatsAppCloudMessages?.length ?? 0) < enviosWhatsApp.length; i += 1) await pausa(20);
+};
+
 before(async () => {
   h = await iniciarHarness(`
     export { handleVacuumSalesList, handleVacuumSaleCreate, handleVacuumSaleUpdate, handleVacuumSaleStatus } from './api/_vacuumSales.ts';
+    export { handleVacuumDashboard } from './api/_vacuumDashboard.ts';
     export { getServiceClient } from './api/_auth.ts';
     export { buildVacuumReport, vacuumManualPaymentLabel, vacuumPaymentShort, vacuumItemsShort } from './lib/vacuumSales.ts';
-  `);
+  `, { define: { fetch: 'globalThis.__vendasFetch' } });
 });
 after(async () => { await h.fechar(); });
 
@@ -35,6 +50,11 @@ beforeEach(() => {
       { id: '55555555-5555-4555-8555-555555555555', name: 'Noemi', status: 'Active' },
     ],
   };
+  h.estado.tabelas.SITE_Config = [
+    { key: 'whatsapp_cloud_access_token', value: 'token-wa' },
+    { key: 'whatsapp_cloud_phone_number_id', value: '555' },
+  ];
+  enviosWhatsApp.length = 0;
   h.estado.chamadas.length = 0;
   h.estado.rpcs = {
     site_staff_session_validar: () => [{ ...GERENTE, permissions: permissoes }],
@@ -66,6 +86,25 @@ const venda = (extra = {}) => ({
 });
 
 const vendasGravadas = () => h.estado.tabelas.SITE_Sales ?? [];
+
+test('painel traz a saúde do checkout e continua no ar se ela falhar', async () => {
+  permissoes = { campaign_live_view: true };
+  h.estado.rpcs.site_vacuum_dashboard = () => ({ funnel: { visitors: 10 } });
+  h.estado.rpcs.site_vacuum_checkout_health = () => ({ since: '2026-11-06T22:00:00Z', problems: [] });
+  const banco = h.modulo.getServiceClient();
+  const abrir = (range) => h.chamar((req, res) => h.modulo.handleVacuumDashboard(banco, { ...req, query: { range } }, res), undefined, { cookie: COOKIE, metodo: 'GET' });
+
+  const comSaude = await abrir('campaign');
+  assert.equal(comSaude.codigo, 200);
+  assert.equal(comSaude.corpo.checkout.since, '2026-11-06T22:00:00Z');
+
+  h.estado.falha = 'POST site_vacuum_checkout_health';
+  const semSaude = await abrir('today');
+  h.estado.falha = null;
+  assert.equal(semSaude.codigo, 200, 'o painel de vendas não pode cair junto');
+  assert.equal(semSaude.corpo.data.funnel.visitors, 10);
+  assert.equal(semSaude.corpo.checkout, null);
+});
 
 test('sem sessão ou sem permissão não entra', async () => {
   h.estado.rpcs.site_staff_session_validar = () => [];
@@ -212,6 +251,41 @@ test('marcar como pago depois fecha o carrinho e converte', async () => {
   assert.equal(vendasGravadas()[0].status, 'paid');
   assert.equal(vendasGravadas()[0].payment_status, 'paid');
   assert.equal(h.estado.tabelas.SITE_CampaignCheckouts[0].stage, 'paid');
+});
+
+test('venda lançada já paga confirma ao cliente pelo WhatsApp', async () => {
+  await chamar('handleVacuumSaleCreate', venda());
+  await esperarEnvios();
+  assert.equal(enviosWhatsApp.length, 1);
+  assert.equal(enviosWhatsApp[0].to, '5517999991234');
+  assert.equal(enviosWhatsApp[0].template.name, 'vp_pedido_confirmado');
+  const params = enviosWhatsApp[0].template.components[0].parameters.map((p) => p.text);
+  assert.equal(params[0], 'Cliente');
+  assert.equal(params[1], vendasGravadas()[0].order_number);
+  assert.match(params[3], /^\d{2}\/\d{2}\/\d{4}$/);
+});
+
+test('venda aguardando não avisa o cliente; o aviso sai quando o gerente confirma, uma vez só', async () => {
+  await chamar('handleVacuumSaleCreate', venda({ status: 'pending' }));
+  await esperarEnvios();
+  assert.equal(enviosWhatsApp.length, 0, 'ainda não está paga');
+
+  await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'paid' });
+  await esperarEnvios();
+  assert.equal(enviosWhatsApp.length, 1);
+
+  await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'cancelled' });
+  await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'paid' });
+  await esperarEnvios();
+  assert.equal(enviosWhatsApp.length, 1, 'cancelar e confirmar de novo não repete a mensagem');
+});
+
+test('editar uma venda aguardando para paga confirma ao cliente', async () => {
+  await chamar('handleVacuumSaleCreate', venda({ status: 'pending' }));
+  await chamar('handleVacuumSaleUpdate', venda({ status: 'paid', name: 'Maria Souza' }));
+  await esperarEnvios();
+  assert.equal(enviosWhatsApp.length, 1);
+  assert.equal(enviosWhatsApp[0].template.components[0].parameters[0].text, 'Maria');
 });
 
 test('cancelar muda a situação, sem apagar o pedido', async () => {

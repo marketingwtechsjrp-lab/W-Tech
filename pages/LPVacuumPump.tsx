@@ -3,6 +3,7 @@ import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Play, Plus, Q
 import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
 import VacuumCheckoutBoundary from '../components/vacuum-pump/VacuumCheckoutBoundary';
+import { reportInterruptedCheckout } from '../components/vacuum-pump/vacuumCheckoutTracking';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
 import { VacuumARButton } from '../components/vacuum-pump/VacuumARButton';
 import VacuumVideo, { type VacuumVideoHandle } from '../components/vacuum-pump/VacuumVideo';
@@ -291,6 +292,8 @@ const LPVacuumPump: React.FC = () => {
         const timer = window.setTimeout(() => experienceRef.current?.scrollIntoView({ block: 'start' }), 400);
         return () => window.clearTimeout(timer);
     }, []);
+
+    useEffect(reportInterruptedCheckout, []);
 
     // No celular, o bloco de preço fica abaixo da primeira tela: mede quantos chegam até ele. Não é
     // clique, por isso usa outra categoria e fica fora da contagem de cliques do painel ao vivo.

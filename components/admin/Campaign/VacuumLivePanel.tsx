@@ -49,6 +49,17 @@ interface DashboardData {
     sources: { source: string; visitors: number }[];
 }
 
+interface CheckoutHealth {
+    since: string | null;
+    buy_click: number;
+    steps: { cart: number; contact: number; delivery: number; payment: number };
+    attempted: number;
+    pix_expired: number;
+    paid: number;
+    problems: { problem: string; total: number; visitors: number; last_at: string }[];
+    recent: { problem: string; detail: string | null; at: string; device: string | null }[];
+}
+
 interface SellerSummary {
     name: string;
     link: string;
@@ -66,6 +77,7 @@ interface Payload {
     offline_sales: number;
     offer: { phase: string; starts_at: string; ends_at: string; price: number; installment_value: number; installments: number; lot_size: number; remaining: number };
     data: DashboardData;
+    checkout: CheckoutHealth | null;
 }
 
 interface Celebration {
@@ -172,6 +184,92 @@ function useCountdown(target: string | undefined, offset: number) {
         seconds: Math.floor(left / 1000) % 60,
     };
 }
+
+/** Técnico é falha nossa ou do caminho até pagar; o resto é o que a pessoa fez e pode ser normal. */
+const CHECKOUT_PROBLEMS: Record<string, { label: string; technical: boolean }> = {
+    page_not_opened: { label: 'A página não abriu', technical: true },
+    screen_error: { label: 'Carrinho deu erro de tela', technical: true },
+    brick_failed: { label: 'Formulário do cartão não abriu', technical: true },
+    brick_error: { label: 'Erro no formulário do cartão', technical: true },
+    brick_slow: { label: 'Cartão levou mais de 20 s para abrir', technical: true },
+    pix_failed: { label: 'Pix não foi gerado', technical: true },
+    card_failed: { label: 'Pagamento não foi enviado', technical: true },
+    contact_failed: { label: 'Erro ao salvar o contato', technical: true },
+    save_failed: { label: 'Erro ao salvar o endereço', technical: true },
+    shipping_failed: { label: 'Frete não calculou', technical: true },
+    address_no_checkout: { label: 'Entrega sem checkout aberto', technical: true },
+    card_rejected: { label: 'Cartão recusado', technical: false },
+    interrupted: { label: 'Saiu e voltou no meio da compra', technical: false },
+    contact_invalid: { label: 'Errou os dados de contato', technical: false },
+    address_invalid: { label: 'Errou o endereço ou o CPF', technical: false },
+};
+
+const problemInfo = (problem: string) => CHECKOUT_PROBLEMS[problem] ?? { label: problem, technical: true };
+
+const dateTimeSP = (iso: string) =>
+    new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)).replace(',', '');
+
+/** Onde as pessoas param e o que deu errado no caminho até pagar. */
+const CheckoutHealthCard: React.FC<{ health: CheckoutHealth }> = ({ health }) => {
+    const steps = [
+        { label: 'Clicaram em comprar', value: health.buy_click },
+        { label: 'Abriram o carrinho', value: health.steps.cart },
+        { label: 'Seus dados', value: health.steps.contact },
+        { label: 'Entrega', value: health.steps.delivery },
+        { label: 'Pagamento', value: health.steps.payment },
+        { label: 'Tentaram pagar', value: health.attempted },
+        { label: 'Compraram no site', value: health.paid },
+    ];
+    // Falha técnica vem primeiro: na TV só cabem as três de cima.
+    const problems = [...health.problems].sort((a, b) => Number(problemInfo(b.problem).technical) - Number(problemInfo(a.problem).technical));
+    const technical = problems.filter((row) => problemInfo(row.problem).technical).reduce((sum, row) => sum + row.visitors, 0);
+    return (
+        <section className={`vl-card vl-checkout ${technical > 0 ? 'vl-checkout-alert' : ''}`} aria-label="Checkout por etapa e problemas">
+            <h2 className="vl-label">
+                Checkout: onde as pessoas param
+                {health.since && <small className="vl-checkout-since">medindo desde {dateTimeSP(health.since)}</small>}
+            </h2>
+            <div>
+                <ol className="vl-steps">
+                    {steps.map((step, index) => (
+                        <li key={step.label}>
+                            <b>{int(step.value)}</b>
+                            <span>{step.label}</span>
+                            {index > 0 && <small>{percent(step.value, steps[index - 1].value, 0)} seguiram</small>}
+                        </li>
+                    ))}
+                </ol>
+                {health.pix_expired > 0 && <p className="vl-sub">{health.pix_expired === 1 ? '1 Pix gerado venceu' : `${int(health.pix_expired)} Pix gerados venceram`} sem pagamento.</p>}
+            </div>
+            <div className="vl-problems">
+                {technical > 0 && <p className="vl-problems-alert">{technical === 1 ? '1 pessoa' : `${int(technical)} pessoas`} com falha técnica</p>}
+                {problems.length ? (
+                    <ul>
+                        {problems.slice(0, 5).map((row) => (
+                            <li key={row.problem} className={problemInfo(row.problem).technical ? 'vl-problem-tech' : ''}>
+                                <b>{int(row.visitors)}</b>
+                                <span>{problemInfo(row.problem).label}</span>
+                                <small>{dateTimeSP(row.last_at)}</small>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="vl-empty">{health.since ? 'Nenhum problema registrado no período.' : 'A medição começa na próxima visita ao carrinho.'}</p>
+                )}
+            </div>
+            {health.recent.length > 0 && (
+                <ul className="vl-problems-recent">
+                    {health.recent.map((row) => (
+                        <li key={`${row.at}-${row.problem}`}>
+                            <time>{dateTimeSP(row.at)}</time> {row.device && <em>{row.device}</em>} {problemInfo(row.problem).label}
+                            {row.detail && <small> · {row.detail}</small>}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    );
+};
 
 const BarRow: React.FC<{ label: string; value: string; share: number; tone?: 'red' | 'green' | 'amber' | 'mute' }> = ({ label, value, share, tone = 'red' }) => (
     <li className="vl-row">
@@ -709,6 +807,8 @@ const VacuumLivePanel: React.FC<{ onOpenOrders?: () => void }> = ({ onOpenOrders
                         </p>
                     )}
                 </section>
+
+                {payload?.checkout && <CheckoutHealthCard health={payload.checkout} />}
             </main>
 
             {soundWanted && !soundReady && payload && (

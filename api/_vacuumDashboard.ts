@@ -10,7 +10,7 @@ import { PAID_SALE_STATUSES, loadVacuumOffer, sellerRefCode } from './_vacuumPum
  */
 
 const CACHE_MS = 3_000;
-const cache = new Map<string, { at: number; data: unknown; goals: unknown }>();
+const cache = new Map<string, { at: number; data: unknown; checkout: unknown; goals: unknown }>();
 
 const sellerCache = new Map<string, { at: number; summary: unknown }>();
 
@@ -50,20 +50,25 @@ export async function handleVacuumDashboard(supabase: any, req: any, res: any) {
     let cached = cache.get(range);
     if (!cached || now - cached.at > CACHE_MS) {
         const today = startOfTodaySP(now);
-        const [dashboard, goals] = await Promise.all([
+        const from = range === 'today' ? today : config.starts_at;
+        const to = new Date(now + 60_000).toISOString();
+        const [dashboard, checkout, goals] = await Promise.all([
             supabase.rpc('site_vacuum_dashboard', {
                 p_campaign: VACUUM_CAMPAIGN,
-                p_from: range === 'today' ? today : config.starts_at,
-                p_to: new Date(now + 60_000).toISOString(),
+                p_from: from,
+                p_to: to,
                 p_sales_from: range === 'today' ? today : null,
             }),
+            supabase.rpc('site_vacuum_checkout_health', { p_campaign: VACUUM_CAMPAIGN, p_from: from, p_to: to }),
             supabase.from('SITE_Config').select('value').eq('key', VACUUM_GOALS_KEY).maybeSingle(),
         ]);
         if (dashboard.error) {
             console.error('[Vacuum] Falha ao montar o painel:', dashboard.error.message);
             return res.status(500).json({ error: 'Não foi possível carregar o painel agora.' });
         }
-        cached = { at: now, data: dashboard.data, goals: parseVacuumGoals(goals.data?.value) };
+        // O acompanhamento do checkout é um extra: sem ele, o painel de vendas continua no ar.
+        if (checkout.error) console.error('[Vacuum] Falha ao montar a saúde do checkout:', checkout.error.message);
+        cached = { at: now, data: dashboard.data, checkout: checkout.data ?? null, goals: parseVacuumGoals(goals.data?.value) };
         cache.set(range, cached);
     }
 
@@ -88,6 +93,7 @@ export async function handleVacuumDashboard(supabase: any, req: any, res: any) {
             remaining: state.remaining,
         },
         data: cached.data,
+        checkout: cached.checkout,
     });
 }
 

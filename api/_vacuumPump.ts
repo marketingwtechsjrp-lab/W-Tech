@@ -24,6 +24,7 @@ import {
 } from '../lib/vacuumOffer.js';
 import { pickNextAttendant } from './_roleta.js';
 import { sendEmail } from './_email.js';
+import { brDate, sendVacuumOrderWhatsApp } from './_vacuumWhatsApp.js';
 
 const EXTERNAL_REFERENCE_PREFIX = 'vacuum:';
 export const PAID_SALE_STATUSES = ['paid', 'approved', 'producing', 'shipped', 'delivered'];
@@ -228,7 +229,7 @@ export async function quoteVacuumShipping(supabase: any, config: VacuumOfferConf
     }
 }
 
-function firstName(name?: string | null): string {
+export function firstName(name?: string | null): string {
     return String(name || '').trim().split(/\s+/)[0] || 'Cliente';
 }
 
@@ -584,6 +585,13 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
     void sendConfirmationEmail({ ...checkout, items, amount: total }, sale.order_number, deadline, shippingNote).catch((err) =>
         console.error('[Vacuum] Falha no e-mail (não-fatal):', err?.message)
     );
+    void sendVacuumOrderWhatsApp(supabase, {
+        orderNumber: sale.order_number,
+        firstName: firstName(checkout.name),
+        phone: checkout.phone,
+        total,
+        deadline: brDate(deadline),
+    });
 
     return { saleId: sale.id, orderNumber: sale.order_number };
 }

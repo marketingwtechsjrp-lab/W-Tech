@@ -23,6 +23,13 @@ import {
     type VacuumShippingQuote,
 } from './vacuumApi';
 import { ComboImage, VACUUM_IMAGES } from './vacuumMedia';
+import {
+    clearCheckoutInProgress,
+    markCheckoutInProgress,
+    trackCheckoutProblem,
+    trackCheckoutStep,
+    type CheckoutStepName,
+} from './vacuumCheckoutTracking';
 
 declare global {
     interface Window {
@@ -39,6 +46,9 @@ const BRICK_CONTAINER = 'vp-payment-brick';
 const FUNNEL = 'vacuum_pump_bf' as const;
 const FORM_CONTACT = 'vp-form-dados';
 const FORM_DELIVERY = 'vp-form-entrega';
+const STEP_NAMES: CheckoutStepName[] = ['cart', 'contact', 'delivery', 'payment'];
+/** Sem o formulário do cartão depois disso, a pessoa provavelmente desiste: o painel precisa saber. */
+const BRICK_SLOW_MS = 20_000;
 
 let sdkLoading: Promise<void> | null = null;
 let mercadoPagoWarmed = false;
@@ -200,6 +210,14 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, screen]);
 
+    // Toda etapa vista e a última em que a pessoa estava: é o que o painel usa para saber onde ela parou.
+    useEffect(() => {
+        if (screen !== 'form') return;
+        trackCheckoutStep(STEP_NAMES[step]);
+        markCheckoutInProgress(STEP_NAMES[step]);
+    }, [step, screen]);
+    useEffect(() => clearCheckoutInProgress, []);
+
     const goToThanks = useCallback(
         (id: string) => navigate(`/maquina-de-vacuo/obrigado?c=${encodeURIComponent(id)}`, { replace: true }),
         [navigate]
@@ -212,7 +230,10 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         if (!normalizeBrPhone(contact.phone)) errors.phone = 'WhatsApp com DDD, por favor.';
         if (!isValidEmail(contact.email)) errors.email = 'Confira o e-mail.';
         setFieldErrors(errors);
-        if (Object.keys(errors).length) return;
+        if (Object.keys(errors).length) {
+            trackCheckoutProblem('contact_invalid', Object.keys(errors).join(','));
+            return;
+        }
 
         setBusy(true);
         setError(null);
@@ -238,6 +259,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             });
             setStep(2);
         } catch (err) {
+            trackCheckoutProblem('contact_failed', err instanceof Error ? err.message : undefined);
             setError(err instanceof Error ? err.message : 'Não foi possível continuar.');
         } finally {
             setBusy(false);
@@ -278,13 +300,24 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         if (!address.city.trim()) errors.city = 'Informe a cidade.';
         if (address.state.trim().length !== 2) errors.state = 'UF com 2 letras.';
         setFieldErrors(errors);
-        if (Object.keys(errors).length || !checkoutId) return;
+        if (Object.keys(errors).length) {
+            trackCheckoutProblem('address_invalid', Object.keys(errors).join(','));
+            return;
+        }
+        if (!checkoutId) {
+            // Antes o botão não fazia nada aqui, e a pessoa ficava presa sem saber por quê.
+            trackCheckoutProblem('address_no_checkout');
+            setError('Confira seus dados para continuar.');
+            setStep(1);
+            return;
+        }
 
         setBusy(true);
         setError(null);
         const saved = await vacuumApi.save({ checkout_id: checkoutId, stage: 'payment', document: doc, address }).catch(() => null);
         setBusy(false);
         if (!saved?.ok) {
+            trackCheckoutProblem('save_failed', saved?.error);
             setError(saved?.error || 'Não foi possível salvar. Tente de novo.');
             return;
         }
@@ -305,14 +338,19 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             if (!id) throw new Error('Checkout não encontrado.');
             setError(null);
             const current = cartRef.current;
-            const result = await vacuumApi.pay({
-                checkout_id: id,
-                bumps: current.bump_ids,
-                shipping_service: shippingCodeRef.current,
-                expected_total: current.total,
-                attempt_key: crypto.randomUUID(),
-                form_data: formData,
-            });
+            const result = await vacuumApi
+                .pay({
+                    checkout_id: id,
+                    bumps: current.bump_ids,
+                    shipping_service: shippingCodeRef.current,
+                    expected_total: current.total,
+                    attempt_key: crypto.randomUUID(),
+                    form_data: formData,
+                })
+                .catch((err) => {
+                    trackCheckoutProblem('card_failed', err instanceof Error ? err.message : undefined);
+                    throw err;
+                });
 
             if (result.stage === 'paid') {
                 goToThanks(id);
@@ -326,6 +364,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                 onOfferChanged();
                 setQuoteNonce((value) => value + 1);
             }
+            trackCheckoutProblem('card_rejected', result.code || result.message || result.error);
             setError(result.message || result.error || 'O pagamento não foi aprovado. Tente de novo ou chame um vendedor.');
             throw new Error('rejected');
         },
@@ -367,13 +406,15 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                         onOfferChanged();
                         setQuoteNonce((value) => value + 1);
                     }
+                    trackCheckoutProblem('pix_failed', result.code || result.message || result.error);
                     setPix(null);
                     setPixState('failed');
                     setError(result.message || result.error || 'Não foi possível gerar o Pix. Tente de novo ou chame um vendedor.');
                 }
             })
-            .catch(() => {
+            .catch((err) => {
                 if (cancelled) return;
+                trackCheckoutProblem('pix_failed', err instanceof Error ? err.message : undefined);
                 setPix(null);
                 setPixState('failed');
                 setError('Não foi possível gerar o Pix. Tente de novo ou chame um vendedor.');
@@ -396,6 +437,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             .shipping({ cep: cepDigits, bumps })
             .then((result) => {
                 if (cancelled) return;
+                if (!result.mode) trackCheckoutProblem('shipping_failed', result.error);
                 const next: VacuumShippingQuote = result.mode ? { mode: result.mode, options: result.options || [] } : { mode: 'combine', options: [] };
                 setQuote(next);
                 // Mantém a escolha da pessoa; sem escolha válida, entra a opção mais barata.
@@ -403,8 +445,9 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                     next.mode !== 'quoted' ? null : next.options.some((item) => item.code === current) ? current : next.options[0].code
                 );
             })
-            .catch(() => {
+            .catch((err) => {
                 if (!cancelled) {
+                    trackCheckoutProblem('shipping_failed', err instanceof Error ? err.message : undefined);
                     setQuote({ mode: 'combine', options: [] });
                     setShippingCode(null);
                 }
@@ -424,9 +467,14 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     // Só abre com o frete resolvido, para o total já nascer certo.
     const showBrick = step === 3 && screen === 'form' && quote !== null;
     useEffect(() => {
-        if (!showBrick || !offer.mp_public_key) return;
+        if (!showBrick) return;
+        if (!offer.mp_public_key) {
+            trackCheckoutProblem('brick_failed', 'sem chave do Mercado Pago');
+            return;
+        }
         let cancelled = false;
         setBrickState('loading');
+        const slowTimer = window.setTimeout(() => trackCheckoutProblem('brick_slow'), BRICK_SLOW_MS);
         (async () => {
             try {
                 await loadMercadoPagoSdk();
@@ -461,8 +509,14 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                         paymentMethods: { creditCard: 'all', maxInstallments: 1 },
                     },
                     callbacks: {
-                        onReady: () => !cancelled && setBrickState('ready'),
-                        onError: (brickError: unknown) => console.error('[Vacuum] Brick:', brickError),
+                        onReady: () => {
+                            window.clearTimeout(slowTimer);
+                            if (!cancelled) setBrickState('ready');
+                        },
+                        onError: (brickError: { cause?: unknown; message?: unknown } | undefined) => {
+                            console.error('[Vacuum] Brick:', brickError);
+                            trackCheckoutProblem('brick_error', brickError?.cause ?? brickError?.message);
+                        },
                         onSubmit: ({ formData }: { formData: Record<string, unknown> }) => handlePaySubmit({ ...formData, installments: installmentsRef.current }),
                     },
                 });
@@ -473,11 +527,14 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                 brickRef.current = controller;
             } catch (err) {
                 console.error('[Vacuum] Não foi possível abrir o pagamento:', err);
+                window.clearTimeout(slowTimer);
+                trackCheckoutProblem('brick_failed', err instanceof Error ? err.message : undefined);
                 if (!cancelled) setBrickState('failed');
             }
         })();
         return () => {
             cancelled = true;
+            window.clearTimeout(slowTimer);
             brickRef.current?.unmount();
             brickRef.current = null;
         };

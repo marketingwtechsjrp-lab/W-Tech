@@ -21,7 +21,8 @@ import {
     type VacuumSeller,
 } from '../lib/vacuumSales.js';
 import { isPermissionGranted, requireSameOrigin, requireStaffAnyPermission, requireStaffPermission, type StaffSessionUser } from './_auth.js';
-import { clearVacuumOfferCache, dateSP, isUuid, loadVacuumOffer } from './_vacuumPump.js';
+import { clearVacuumOfferCache, dateSP, firstName, isUuid, loadVacuumOffer } from './_vacuumPump.js';
+import { brDate, sendVacuumOrderWhatsApp } from './_vacuumWhatsApp.js';
 
 // Vendedor lança venda nova; alterar o que já foi lançado é só do gerente.
 const LAUNCH_PERMISSIONS = ['campaign_sales_launch', 'campaign_sales_manage'] as const;
@@ -355,6 +356,7 @@ export async function handleVacuumSaleCreate(supabase: any, req: any, res: any) 
         launched_at: nowIso,
     };
 
+    const deliveryDate = dateSP(vacuumDeliveryDeadline(config, state.phase, now));
     const { data: sale, error } = await supabase
         .from(SALES)
         .insert([{
@@ -365,7 +367,7 @@ export async function handleVacuumSaleCreate(supabase: any, req: any, res: any) 
             client_id: lead?.id || null,
             lead_id: lead?.id || null,
             order_number: orderNumber,
-            estimated_delivery_date: dateSP(vacuumDeliveryDeadline(config, state.phase, now)),
+            estimated_delivery_date: deliveryDate,
             campaign: VACUUM_CAMPAIGN,
             manual_sale: manualSale,
             // Venda de outro dia entra no dia certo do placar; a de hoje fica com a hora real.
@@ -385,6 +387,7 @@ export async function handleVacuumSaleCreate(supabase: any, req: any, res: any) 
     clearVacuumOfferCache();
     if (input.status === 'paid') {
         await closeCustomerFollowUps(supabase, { id: sale.id, total: input.total, orderNumber: sale.order_number, phone: input.phone, sellerId: input.seller.id }, lead, nowIso);
+        void sendVacuumOrderWhatsApp(supabase, { orderNumber: sale.order_number, firstName: firstName(input.name), phone: input.phone, total: input.total, deadline: brDate(deliveryDate) });
     }
     await audit(supabase, staff, `Lançou a venda manual ${sale.order_number} para ${input.seller.name}, ${input.total.toFixed(2)} (${input.status}).`);
     console.log(`[Vacuum] Venda manual ${sale.order_number} lançada por ${staff.name}.`);
@@ -454,6 +457,7 @@ export async function handleVacuumSaleUpdate(supabase: any, req: any, res: any) 
     if (becamePaid) {
         const lead = await ensureLead(supabase, input, nowIso);
         await closeCustomerFollowUps(supabase, { id: current.id, total: input.total, orderNumber: current.order_number, phone: input.phone, sellerId: input.seller.id }, lead, nowIso);
+        void sendVacuumOrderWhatsApp(supabase, { orderNumber: current.order_number, firstName: firstName(input.name), phone: input.phone, total: input.total, deadline: brDate(current.estimated_delivery_date) });
     }
     await audit(supabase, staff, `Editou a venda manual ${current.order_number}: ${input.seller.name}, ${input.total.toFixed(2)} (${input.status}).`);
     return res.status(200).json({ ok: true, sale_id: current.id, order_number: current.order_number });
@@ -491,6 +495,13 @@ export async function handleVacuumSaleStatus(supabase: any, req: any, res: any) 
                 nowIso
             );
         }
+        void sendVacuumOrderWhatsApp(supabase, {
+            orderNumber: current.order_number,
+            firstName: firstName(current.customer_name),
+            phone: current.customer_phone,
+            total: Number(current.total_value) || 0,
+            deadline: brDate(current.estimated_delivery_date),
+        });
     }
     await audit(supabase, staff, `Mudou a venda manual ${current.order_number} de ${current.status} para ${body.status}.`);
     return res.status(200).json({ ok: true });
