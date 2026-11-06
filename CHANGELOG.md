@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.61.2 (2026-11-06) - Realidade aumentada mais leve para celulares Android fracos
+- Modelo da máquina na realidade aumentada do Android com um terço dos triângulos, sem as peças internas que não aparecem de fora
+- Arquivo de 2,4 MB para 0,9 MB e texturas menores, para abrir mais rápido e travar menos
+- Aparência igual à anterior; o iPhone não muda
+
 ## v3.61.1 (2026-11-06) - Realidade aumentada da Vacuum Pump com plano B no Android
 - No Android, a página não recarrega mais quando a câmera não abre
 - Se a câmera não abrir ou fechar sozinha, abre uma janela com a máquina em 3D e a opção de abrir a câmera pelo próprio navegador

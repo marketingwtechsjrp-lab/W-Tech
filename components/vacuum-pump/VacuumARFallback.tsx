@@ -64,6 +64,9 @@ export const VacuumARFallback: React.FC<{ glbUrl: string }> = ({ glbUrl }) => {
                     'ar-modes': 'webxr',
                     'camera-controls': true,
                     'touch-action': 'pan-y',
+                    // Celular fraco: sem sombra e sem animação de dica, o aparelho sobra para a câmera.
+                    'shadow-intensity': 0,
+                    'interaction-prompt': 'none',
                     style: { width: '100%', height: '46vh', minHeight: 240, background: '#f1f2f4' },
                 },
                 <button slot="ar-button" type="button" className="vp-btn" style={{ position: 'absolute', left: 12, right: 12, bottom: 12 }} data-track="vacuum_ar_android_webxr" data-track-category="Vacuum Pump">

@@ -4,7 +4,7 @@ import { Flame, X } from 'lucide-react';
 import { VacuumARFallback } from './VacuumARFallback';
 import { trackEvent } from '../AnalyticsTracker';
 
-const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=4';
+const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=5';
 const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=3';
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
