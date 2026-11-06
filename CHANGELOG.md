@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.9 (2026-11-06) - Arquivo de página que não chega: o site tenta de novo sozinho
+- Quando o arquivo da página não chega, o site recarrega sozinho uma vez por rota e a pessoa só vê o carregamento; o aviso aparece se falhar de novo
+- Novo evento page_load_retry no painel; page_render_error passa a significar que a pessoa viu o aviso
+
 ## v3.62.8 (2026-11-06) - Erro acima das rotas também mostra a tela de aviso
 - Um erro de tela nos providers do site mostra o aviso com recarregar e WhatsApp, em vez de página vazia, e fica registrado como app_render_error
 - Se o interceptor de WhatsApp ou o rastreio quebrar, a página continua no ar e o erro fica registrado como integration_render_error

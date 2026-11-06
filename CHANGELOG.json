@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.62.9",
+    "date": "2026-11-06",
+    "title": "Arquivo de página que não chega: o site tenta de novo sozinho",
+    "changes": [
+      "Quando o arquivo da página não chega, o site recarrega sozinho uma vez por rota e a pessoa só vê o carregamento; o aviso aparece se falhar de novo",
+      "Novo evento page_load_retry no painel; page_render_error passa a significar que a pessoa viu o aviso"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.62.8",
     "date": "2026-11-06",
     "title": "Erro acima das rotas também mostra a tela de aviso",
