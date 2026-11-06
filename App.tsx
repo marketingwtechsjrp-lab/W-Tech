@@ -88,10 +88,11 @@ import { ThemeProvider } from 'next-themes';
 
 import { LanguageProvider } from './context/LanguageContext';
 import { AnalyticsTracker } from './components/AnalyticsTracker';
+import { PageErrorBoundary, isPreviewRoute } from './components/PageErrorBoundary';
 
 const PublicIntegrations = () => {
   const location = useLocation();
-  if (location.pathname === '/lp-preview' || new URLSearchParams(location.search).get('preview') === '1') return null;
+  if (isPreviewRoute(location.pathname, location.search)) return null;
   return <><WhatsAppInterceptor /><AnalyticsTracker /></>;
 };
 
@@ -105,7 +106,9 @@ const App = () => {
           <AuthProvider>
             <CartProvider>
               <div className="flex flex-col min-h-screen bg-white dark:bg-[#111] transition-colors duration-300">
+                {/* As integrações ficam fora do boundary: o rastreio não pode cair junto com a página. */}
                 <PublicIntegrations />
+                <PageErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     <Route path="/" element={<Layout><Home3 /></Layout>} />
@@ -199,6 +202,7 @@ const App = () => {
 
                   </Routes>
                 </Suspense>
+                </PageErrorBoundary>
               </div>
             </CartProvider>
           </AuthProvider>
