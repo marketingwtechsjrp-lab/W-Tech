@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { expect as baseExpect, test as base, type Page } from '@playwright/test';
 
-// Tela de aviso de components/PageErrorBoundary.tsx.
+// Tela de aviso e boundaries de components/PageErrorBoundary.tsx.
 //
 // O erro é forçado de fora: o arquivo da página é trocado, na rede, por um módulo que lança
-// ao renderizar. O site não precisa de gancho de teste e o bundle exercitado é o real.
+// ao renderizar. Acima das rotas não há arquivo próprio para trocar, então o código do provider
+// é alterado na resposta. O site não precisa de gancho de teste e o bundle exercitado é o real.
 //
 // Nada sai da máquina: toda requisição ao banco é respondida aqui, em qualquer host, e todo
 // outro host é abortado, GTM incluído. SITE_Analytics nunca é alcançado.
@@ -39,6 +40,26 @@ const TELEFONE_CONFIGURADO = '55 (11) 98888-7777';
 /** Arquivo da página no build (assets/Nome-hash.js) ou no modo dev (Nome.tsx). */
 const arquivoDaPagina = (nome: string) => new RegExp(`/(?:assets/${nome}-[\\w-]+\\.js|${nome}\\.tsx)(?:\\?|$)`);
 
+type TrocaNoCodigo = { alvo: RegExp; novo: (trecho: string) => string };
+
+/** Onde ficam os providers e as integrações, no build e no modo dev. */
+const ARQUIVOS_DE_CODIGO = /\/assets\/index-[\w-]+\.js$|\/(?:context|components)\/\w+\.tsx$/;
+const MENSAGEM_ACIMA = 'Erro forçado acima das rotas';
+const LANCA = `(()=>{throw new Error(${JSON.stringify(MENSAGEM_ACIMA)})})()`;
+
+/** Acha o `value` do provider, minificado ou não. O erro sai ao montar o objeto, durante o render. */
+const noValorDoProvider = (...campos: string[]): TrocaNoCodigo => ({
+  alvo: new RegExp(campos.map((campo) => `${campo}(?:: ?[\\w$]+)?`).join(', ?')),
+  novo: (trecho) => `${trecho},_erroForcado:${LANCA}`,
+});
+
+const PROVIDERS = {
+  LanguageProvider: noValorDoProvider('currentLang', 'setLanguage', 't', 'currency', 'formatPrice'),
+  SettingsProvider: noValorDoProvider('settings', 'loading', 'get'),
+  AuthProvider: noValorDoProvider('setShowLoginModal', 'refreshUser'),
+  CartProvider: noValorDoProvider('clearCart', 'total', 'isOpen', 'toggleCart'),
+};
+
 /** Rotas de App.tsx com o arquivo de cada página, para que rota nova já entre no teste. */
 function rotasDoSite() {
   const app = readFileSync('App.tsx', 'utf8');
@@ -55,17 +76,19 @@ function rotasDoSite() {
   });
 }
 
-async function isolar(page: Page, baseURL: string | undefined, { bancoNoAr = true } = {}) {
+async function isolar(page: Page, baseURL: string | undefined, { bancoNoAr = true, whatsappAtivo = false } = {}) {
   const rede = {
     eventos: [] as Evento[],
     pageViews: [] as string[],
     externos: [] as string[],
     quebrada: null as RegExp | null,
     indisponivel: null as RegExp | null,
+    trocaNoCodigo: null as TrocaNoCodigo | null,
+    trocas: 0,
   };
   const origem = new URL(baseURL as string).origin;
 
-  await page.route('**/*', (route) => {
+  await page.route('**/*', async (route) => {
     const pedido = route.request();
     const url = new URL(pedido.url());
 
@@ -80,7 +103,12 @@ async function isolar(page: Page, baseURL: string | undefined, { bancoNoAr = tru
       }
       if (!bancoNoAr) return route.fulfill({ status: 500, json: { message: 'fora do ar' } });
       if (url.pathname.endsWith('/SITE_SystemSettings')) {
-        return route.fulfill({ json: [{ key: 'whatsapp_phone', value: TELEFONE_CONFIGURADO }] });
+        return route.fulfill({
+          json: [
+            { key: 'whatsapp_phone', value: TELEFONE_CONFIGURADO },
+            ...(whatsappAtivo ? [{ key: 'whatsapp_enabled', value: 'true' }] : []),
+          ],
+        });
       }
       return route.fulfill({ json: [] });
     }
@@ -93,13 +121,20 @@ async function isolar(page: Page, baseURL: string | undefined, { bancoNoAr = tru
       return route.fulfill({ contentType: 'text/javascript', body: MODULO_QUE_QUEBRA });
     }
     if (rede.indisponivel?.test(url.pathname)) return route.abort();
+    if (rede.trocaNoCodigo && ARQUIVOS_DE_CODIGO.test(url.pathname)) {
+      const corpo = await (await route.fetch()).text();
+      const { alvo, novo } = rede.trocaNoCodigo;
+      if (alvo.test(corpo)) rede.trocas += 1;
+      return route.fulfill({ contentType: 'text/javascript', body: corpo.replace(alvo, novo) });
+    }
     return route.continue();
   });
 
   return rede;
 }
 
-const errosDeTela = (eventos: Evento[]) => eventos.filter((evento) => evento.action === 'page_render_error');
+const eventosDe = (eventos: Evento[], acao: string) => eventos.filter((evento) => evento.action === acao);
+const errosDeTela = (eventos: Evento[]) => eventosDe(eventos, 'page_render_error');
 const tela = (page: Page) => page.getByRole('heading', { name: 'Não conseguimos abrir esta página' });
 const linkVisivel = (page: Page, href: string) => page.locator(`a[href="${href}"]:visible`).first();
 
@@ -283,6 +318,87 @@ test('o aviso aparece na tela mesmo com a página rolada até o fim', async ({ p
 
   await expect(tela(page)).toBeInViewport();
   await expect(page.getByRole('button', { name: 'Recarregar a página' })).toBeInViewport();
+});
+
+for (const [provider, troca] of Object.entries(PROVIDERS)) {
+  test(`erro no ${provider} mostra a tela de aviso e recarregar resolve`, async ({ page, baseURL }) => {
+    const rede = await isolar(page, baseURL);
+    rede.trocaNoCodigo = troca;
+
+    await page.goto('/cursos?utm_source=instagram');
+
+    await expect(tela(page)).toBeVisible();
+    expect(rede.trocas).toBeGreaterThan(0);
+    await expect.poll(() => eventosDe(rede.eventos, 'app_render_error').map((evento) => evento.label))
+      .toEqual([`/cursos | ${MENSAGEM_ACIMA}`]);
+    // Fora do SettingsProvider, que caiu junto, o link usa o número de reserva.
+    await expect(page.getByRole('link', { name: 'Falar no WhatsApp' })).toHaveAttribute('href', /^https:\/\/wa\.me\/551732312858\?/);
+
+    rede.trocaNoCodigo = null;
+    await page.getByRole('button', { name: 'Recarregar a página' }).click();
+
+    await expect(page.locator('header').first()).toBeVisible();
+    await expect(tela(page)).toBeHidden();
+  });
+}
+
+test('erro acima das rotas na prévia do painel mostra o aviso sem registrar', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.trocaNoCodigo = PROVIDERS.CartProvider;
+
+  await page.goto('/cursos?preview=1');
+
+  await expect(tela(page)).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(eventosDe(rede.eventos, 'app_render_error')).toEqual([]);
+});
+
+test('erro no WhatsAppInterceptor não derruba a página nem o rastreio', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL, { whatsappAtivo: true });
+  rede.trocaNoCodigo = { alvo: /"aria-label": ?"Falar no WhatsApp"/, novo: () => `"aria-label":${LANCA}` };
+
+  await page.goto('/');
+
+  await expect.poll(() => eventosDe(rede.eventos, 'integration_render_error').map((evento) => evento.label))
+    .toEqual([`/ | WhatsAppInterceptor | ${MENSAGEM_ACIMA}`]);
+  await expect(linkVisivel(page, '/cursos')).toBeVisible();
+  await expect(tela(page)).toBeHidden();
+  expect(eventosDe(rede.eventos, 'app_render_error')).toEqual([]);
+
+  await expect.poll(() => rede.pageViews, { timeout: 8_000 }).toContain('/');
+  await page.evaluate(() => {
+    const botao = document.createElement('button');
+    botao.dataset.track = 'clique_depois_do_erro';
+    document.body.append(botao);
+    botao.click();
+  });
+  await expect.poll(() => rede.eventos.map((evento) => evento.action)).toContain('clique_depois_do_erro');
+});
+
+test('erro no AnalyticsTracker não derruba a página e cada rota tenta de novo', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  await page.addInitScript(() => {
+    const original = document.addEventListener;
+    document.addEventListener = function (this: Document, tipo: string, ouvinte: EventListenerOrEventListenerObject, opcoes?: boolean | AddEventListenerOptions) {
+      if (tipo === 'click' && String(ouvinte).includes('data-track')) throw new Error('Erro forçado no AnalyticsTracker');
+      return original.call(this, tipo, ouvinte, opcoes);
+    } as typeof document.addEventListener;
+  });
+
+  await page.goto('/contato');
+
+  await expect.poll(() => eventosDe(rede.eventos, 'integration_render_error').map((evento) => evento.label))
+    .toContain('/contato | AnalyticsTracker | Erro forçado no AnalyticsTracker');
+  await expect(page.locator('h1:visible').first()).toBeVisible();
+  await expect(tela(page)).toBeHidden();
+
+  await trocarDeRota(page, '/cursos');
+
+  await expect.poll(() => eventosDe(rede.eventos, 'integration_render_error').map((evento) => evento.label))
+    .toContain('/cursos | AnalyticsTracker | Erro forçado no AnalyticsTracker');
+  await expect(page.locator('header').first()).toBeVisible();
+  await expect(tela(page)).toBeHidden();
+  expect(eventosDe(rede.eventos, 'app_render_error')).toEqual([]);
 });
 
 test('navegação sem erro não remonta o Layout', async ({ page, baseURL }) => {

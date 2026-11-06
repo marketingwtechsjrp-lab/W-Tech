@@ -6,21 +6,22 @@ import { trackEvent } from './AnalyticsTracker';
 import { useSettings } from '../context/SettingsContext';
 
 // Mesmo número de reserva de pages/CourseCheckout.tsx. Sem banco a configuração não chega,
-// e é justamente nessa hora que a pessoa mais precisa do contato.
+// e é justamente nessa hora que a pessoa mais precisa do contato. O mesmo vale quando o erro
+// derruba o próprio SettingsProvider: fora dele, `get` devolve vazio.
 const TELEFONE_RESERVA = '551732312858';
 
 /** Prévia do painel: não tem integrações públicas nem conta como visita. */
 export const isPreviewRoute = (pathname: string, search: string): boolean =>
     pathname === '/lp-preview' || new URLSearchParams(search).get('preview') === '1';
 
-const registrarErro = (error: unknown) => {
+const registrarErro = (acao: string, error: unknown, origem?: string) => {
     // Só o pathname: a query pode trazer dados de quem está navegando.
     const { pathname, search } = window.location;
     if (isPreviewRoute(pathname, search)) return;
 
     const mensagem = (error instanceof Error ? error.message : String(error)).slice(0, 200);
     // A rota vai no label porque é o único campo que chega ao GA4; a coluna `path` fica só no painel.
-    void trackEvent('Erro de tela', 'page_render_error', `${pathname} | ${mensagem}`);
+    void trackEvent('Erro de tela', acao, [pathname, origem, mensagem].filter(Boolean).join(' | '));
 };
 
 /**
@@ -46,7 +47,7 @@ const PageErrorScreen = () => {
 
     return (
         // `data-page-error` é o sinal para o prerender não gravar esta tela (scripts/prerender.mjs).
-        <main data-page-error className="flex flex-1 items-center justify-center bg-white px-4 py-16 dark:bg-[#111]">
+        <main data-page-error className="flex min-h-screen items-center justify-center bg-white px-4 py-16 dark:bg-[#111]">
             <div role="alert" className="w-full max-w-md text-center">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                     Não conseguimos abrir esta página
@@ -94,8 +95,33 @@ export const PageErrorBoundary = ({ children }: { children: React.ReactNode }) =
     const { pathname } = useLocation();
 
     return (
-        <ErrorBoundary resetKey={pathname} onError={registrarErro} fallback={<PageErrorScreen />}>
+        <ErrorBoundary
+            resetKey={pathname}
+            onError={(error) => registrarErro('page_render_error', error)}
+            fallback={<PageErrorScreen />}
+        >
             {children}
         </ErrorBoundary>
     );
 };
+
+/** Integração que quebra sai de cena sozinha: a página segue no ar e o erro fica registrado. */
+export const IntegrationErrorBoundary = ({ nome, children }: { nome: string; children: React.ReactNode }) => {
+    const { pathname } = useLocation();
+
+    return (
+        <ErrorBoundary resetKey={pathname} onError={(error) => registrarErro('integration_render_error', error, nome)}>
+            {children}
+        </ErrorBoundary>
+    );
+};
+
+/**
+ * Cobre o que fica acima das rotas: providers e Router. Como o erro derruba o Router, a tela
+ * só sai com o reload. O registro não depende do AnalyticsTracker, que cai junto aqui.
+ */
+export const AppErrorBoundary = ({ children }: { children: React.ReactNode }) => (
+    <ErrorBoundary onError={(error) => registrarErro('app_render_error', error)} fallback={<PageErrorScreen />}>
+        {children}
+    </ErrorBoundary>
+);
