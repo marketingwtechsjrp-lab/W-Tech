@@ -1,10 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Flame, X } from 'lucide-react';
+import { VacuumARFallback } from './VacuumARFallback';
+import { trackEvent } from '../AnalyticsTracker';
 
-const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=3';
+const AR_GLB_URL = '/models/vacuum-pump/maquina-ar.glb?v=4';
 const AR_USDZ_URL = '/models/vacuum-pump/maquina.usdz?v=3';
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
+/** Marca no endereço de volta: o navegador só troca o hash, em vez de recarregar a página. */
+const AR_FAILED_HASH = '#ra-nao-abriu';
+/** Tocou e a página continua na frente: o Android não abriu nada. */
+const NOT_OPENED_MS = 3500;
+/** Saiu e voltou em menos que isto: é a piscada preta, a câmera fechou sozinha. */
+const QUICK_RETURN_MS = 8000;
+
+type ArFailure = 'not_opened' | 'quick_return' | 'no_app';
+
+/** Sem o app, tentar de novo só faria o toque parecer quebrado. A piscada pode ter sido a pessoa saindo. */
+let sceneViewerUnavailable = false;
 
 type ArPlatform = 'ios' | 'android' | 'other';
 
@@ -23,8 +37,10 @@ function isInAppBrowser(): boolean {
 function sceneViewerHref(): string {
     const file = encodeURIComponent(`${window.location.origin}${AR_GLB_URL}`);
     const title = encodeURIComponent('Vacuum Pump Standard W-Tech');
-    const fallback = encodeURIComponent(window.location.href);
-    return `intent://arvr.google.com/scene-viewer/1.2?file=${file}&mode=ar_preferred&title=${title}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
+    // Voltar para o mesmo endereço recarregava a página: era o "carrega, pisca e volta" no Android.
+    const { origin, pathname, search } = window.location;
+    const fallback = encodeURIComponent(`${origin}${pathname}${search}${AR_FAILED_HASH}`);
+    return `intent://arvr.google.com/scene-viewer/1.2?file=${file}&mode=ar_preferred&disable_occlusion=true&title=${title}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
 }
 
 /** Botão vermelho da realidade aumentada: abre a máquina na bancada, direto na câmera do celular. */
@@ -34,9 +50,11 @@ export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ plac
     const [qr, setQr] = useState<string | null>(null);
     const [openInBrowser, setOpenInBrowser] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [arFallback, setArFallback] = useState(false);
+    const stopWatching = useRef<(() => void) | null>(null);
     const closeRef = useRef<HTMLButtonElement>(null);
     const track = `vacuum_ar_cta_${placement}`;
-    const dialogOpen = !!qr || openInBrowser;
+    const dialogOpen = !!qr || openInBrowser || arFallback;
 
     const openQr = useCallback(async () => {
         const { default: QRCode } = await import('qrcode');
@@ -46,7 +64,74 @@ export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ plac
     const closeDialog = useCallback(() => {
         setQr(null);
         setOpenInBrowser(false);
+        setArFallback(false);
     }, []);
+
+    const showArFallback = useCallback((reason: ArFailure) => {
+        if (reason !== 'quick_return') sceneViewerUnavailable = true;
+        trackEvent('Vacuum Pump', `vacuum_ar_android_${reason}`, navigator.userAgent.slice(0, 120));
+        setArFallback(true);
+    }, []);
+
+    const clearFailedHash = useCallback(() => {
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}`);
+    }, []);
+
+    /** O Android não avisa se a câmera abriu: a pista é a página sair da frente, e por quanto tempo. */
+    const watchSceneViewer = useCallback(() => {
+        stopWatching.current?.();
+        let hiddenAt = 0;
+        let timer = 0;
+        const stop = () => {
+            window.clearTimeout(timer);
+            document.removeEventListener('visibilitychange', onVisibility);
+            window.removeEventListener('hashchange', onHash);
+            window.removeEventListener('blur', onBlur);
+            window.removeEventListener('focus', onFocus);
+            stopWatching.current = null;
+        };
+        const fail = (reason: ArFailure) => {
+            stop();
+            showArFallback(reason);
+        };
+        function onVisibility() {
+            if (document.hidden) {
+                hiddenAt = Date.now();
+                window.clearTimeout(timer);
+                return;
+            }
+            const quick = Date.now() - hiddenAt < QUICK_RETURN_MS;
+            stop();
+            if (quick) showArFallback('quick_return');
+        }
+        function onHash() {
+            if (window.location.hash !== AR_FAILED_HASH) return;
+            clearFailedHash();
+            fail('no_app');
+        }
+        // Janela "abrir com qual app?": o tempo só conta de novo se a pessoa voltar sem escolher.
+        function onBlur() {
+            window.clearTimeout(timer);
+        }
+        function onFocus() {
+            if (!hiddenAt) timer = window.setTimeout(() => fail('not_opened'), 600);
+        }
+        document.addEventListener('visibilitychange', onVisibility);
+        window.addEventListener('hashchange', onHash);
+        window.addEventListener('blur', onBlur);
+        window.addEventListener('focus', onFocus);
+        timer = window.setTimeout(() => fail('not_opened'), NOT_OPENED_MS);
+        stopWatching.current = stop;
+    }, [clearFailedHash, showArFallback]);
+
+    useEffect(() => () => stopWatching.current?.(), []);
+
+    // Navegador que recarregou mesmo assim: um botão só cuida disso, ou abririam duas janelas.
+    useEffect(() => {
+        if (placement !== 'hero' || platform !== 'android' || window.location.hash !== AR_FAILED_HASH) return;
+        clearFailedHash();
+        showArFallback('no_app');
+    }, [placement, platform, clearFailedHash, showArFallback]);
 
     useEffect(() => {
         if (!dialogOpen) return;
@@ -121,9 +206,25 @@ export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ plac
 
     if (platform === 'android') {
         return (
-            <a className="vp-ar-cta" href={sceneViewerHref()} data-track={track} data-track-category="Vacuum Pump">
-                {label(realLine)}
-            </a>
+            <>
+                <a
+                    className="vp-ar-cta"
+                    href={sceneViewerHref()}
+                    data-track={track}
+                    data-track-category="Vacuum Pump"
+                    onClick={(event) => {
+                        if (sceneViewerUnavailable) {
+                            event.preventDefault();
+                            setArFallback(true);
+                        } else {
+                            watchSceneViewer();
+                        }
+                    }}
+                >
+                    {label(realLine)}
+                </a>
+                {arFallback && dialog('Ver a máquina na sua bancada', <VacuumARFallback glbUrl={AR_GLB_URL} />)}
+            </>
         );
     }
 

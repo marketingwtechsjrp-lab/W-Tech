@@ -334,6 +334,11 @@ app.use(express.static(distDir, {
     // O Safari só abre a realidade aumentada com o tipo certo, e a tabela do Express não tem o usdz.
     if (nome.endsWith('.usdz')) res.setHeader('Content-Type', 'model/vnd.usdz+zip');
     if (nome.endsWith('.glb')) res.setHeader('Content-Type', 'model/gltf-binary');
+    // Quem baixa o modelo é o app de realidade aumentada do Android, de fora do site.
+    if (/\.(glb|usdz)$/.test(nome)) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    }
   },
 }));
 

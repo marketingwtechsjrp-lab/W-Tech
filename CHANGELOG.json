@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.61.1",
+    "date": "2026-11-06",
+    "title": "Realidade aumentada da Vacuum Pump com plano B no Android",
+    "changes": [
+      "No Android, a página não recarrega mais quando a câmera não abre",
+      "Se a câmera não abrir ou fechar sozinha, abre uma janela com a máquina em 3D e a opção de abrir a câmera pelo próprio navegador",
+      "Sem suporte a realidade aumentada no aparelho, a pessoa gira a máquina em 3D e recebe o caminho para instalar o que falta"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.61.0",
     "date": "2026-11-06",
     "title": "Vendas manuais da promoção, lista de pedidos e relatório em PDF",

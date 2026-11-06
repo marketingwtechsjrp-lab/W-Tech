@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.61.1 (2026-11-06) - Realidade aumentada da Vacuum Pump com plano B no Android
+- No Android, a página não recarrega mais quando a câmera não abre
+- Se a câmera não abrir ou fechar sozinha, abre uma janela com a máquina em 3D e a opção de abrir a câmera pelo próprio navegador
+- Sem suporte a realidade aumentada no aparelho, a pessoa gira a máquina em 3D e recebe o caminho para instalar o que falta
+
 ## v3.61.0 (2026-11-06) - Vendas manuais da promoção, lista de pedidos e relatório em PDF
 - Nova tela Pedidos da promoção, com botão no painel de vendas ao vivo, para lançar a venda quando o vendedor fecha fora do site
 - Venda manual paga entra no placar e no lote e dispara a comemoração do painel, mas fica fora do funil e da conversão do site
