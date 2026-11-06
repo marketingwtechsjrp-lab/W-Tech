@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.7 (2026-11-06) - Parcela e botão Comprar na primeira tela do celular
+- No celular, a barra com a parcela e o botão Comprar aparece desde a chegada, sem precisar rolar
+- Miniaturas das fotos em uma linha só no celular, para o botão de realidade aumentada caber inteiro acima da barra
+- Passamos a medir quantas pessoas chegam ao bloco de preço no celular, sem somar nos cliques do painel
+
 ## v3.62.5 (2026-11-06) - Botão Comprar aparece mais cedo na página da Vacuum Pump
 - A foto principal deixa de disputar a conexão com o código: medido em produção, isso atrasava o botão em 0,5 s sem trazer a foto antes
 

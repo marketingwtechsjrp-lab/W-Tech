@@ -20,12 +20,15 @@ import {
     type VacuumOffer,
     type VacuumShippingQuote,
 } from '../components/vacuum-pump/vacuumApi';
+import { trackEvent } from '../components/AnalyticsTracker';
 import { pushLead } from '../lib/dataLayer';
 import { getLeadTrackingFields } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { VACUUM_ITEM_NAME, brlParts, computeVacuumCart, formatBRL, normalizeBrPhone, vacuumEndTimeLabel, vacuumUrgencyLabel } from '../lib/vacuumOffer';
 
 const EXIT_KEY = 'vp_exit_shown';
+/** Altura aproximada da barra de compra do celular: o que fica atrás dela ainda não foi visto. */
+const STICKY_BAR_HEIGHT = 90;
 
 const GALLERY = [
     { id: 'front', label: 'Frente', src: VACUUM_IMAGES.front, srcSm: VACUUM_IMAGES.frontSm, alt: 'Foto da Vacuum Pump Standard W-Tech de frente, com manômetro, seletor de pressão e vácuo e visor de nível aceso' },
@@ -260,10 +263,9 @@ const LPVacuumPump: React.FC = () => {
     const [checkoutBumps, setCheckoutBumps] = useState<string[]>([]);
     const [exitOpen, setExitOpen] = useState(false);
     const [servicePrice, setServicePrice] = useState(350);
-    const [showSticky, setShowSticky] = useState(false);
     const [photo, setPhoto] = useState<(typeof GALLERY)[number]['id']>('front');
     const [cep, setCep] = useState('');
-    const heroCta = useRef<HTMLDivElement>(null);
+    const priceBlock = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLElement>(null);
     const experienceRef = useRef<HTMLElement>(null);
     const videoHandle = useRef<VacuumVideoHandle>(null);
@@ -290,24 +292,21 @@ const LPVacuumPump: React.FC = () => {
         return () => window.clearTimeout(timer);
     }, []);
 
+    // No celular, o bloco de preço fica abaixo da primeira tela: mede quantos chegam até ele. Não é
+    // clique, por isso usa outra categoria e fica fora da contagem de cliques do painel ao vivo.
     useEffect(() => {
-        const node = heroCta.current;
-        if (!node) return;
-        // Olha a posição a cada rolagem: um salto por link passa pelo botão sem ele "entrar" na tela.
-        let frame = 0;
-        const update = () => {
-            frame = 0;
-            setShowSticky(node.getBoundingClientRect().bottom < 0);
-        };
-        const onScroll = () => {
-            if (!frame) frame = window.requestAnimationFrame(update);
-        };
-        update();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => {
-            window.removeEventListener('scroll', onScroll);
-            if (frame) window.cancelAnimationFrame(frame);
-        };
+        const node = priceBlock.current;
+        if (!node || typeof IntersectionObserver === 'undefined' || !window.matchMedia('(max-width: 767px)').matches) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry.isIntersecting) return;
+                observer.disconnect();
+                void trackEvent('Vacuum Pump Leitura', 'vacuum_view_price');
+            },
+            { threshold: 0.5, rootMargin: `0px 0px -${STICKY_BAR_HEIGHT}px 0px` }
+        );
+        observer.observe(node);
+        return () => observer.disconnect();
     }, []);
 
     // Saída no desktop: última chance de pegar o WhatsApp de quem não vai comprar agora.
@@ -435,7 +434,7 @@ const LPVacuumPump: React.FC = () => {
                             />
                         </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <div className="mt-2 grid grid-cols-7 gap-1 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
                         {GALLERY.map((item) => (
                             <button key={item.id} type="button" className="vp-thumb" aria-pressed={photo === item.id} aria-label={`Ver ${item.label}`} onClick={() => setPhoto(item.id)}>
                                 <img src={item.srcSm} alt="" width={60} height={48} loading="lazy" />
@@ -460,7 +459,7 @@ const LPVacuumPump: React.FC = () => {
                     <h1 className="vp-display mt-1 text-[clamp(2.05rem,9.3vw,3.2rem)]">Vacuum Pump Standard</h1>
                     <p className="mt-1 text-sm vp-muted sm:text-base">Máquina de vácuo para amortecedores. O ar sai antes do óleo entrar, e o seu cliente vê isso acontecer.</p>
 
-                    <div className="mt-4 border-t border-[var(--vp-line)] pt-4">
+                    <div ref={priceBlock} className="mt-4 border-t border-[var(--vp-line)] pt-4">
                         {offer.compare_at && (
                             <p className="flex items-center gap-2 text-sm vp-num">
                                 <span className="vp-muted">De <s>{formatBRL(offer.compare_at)}</s> por</span>
@@ -491,7 +490,7 @@ const LPVacuumPump: React.FC = () => {
                         </div>
                     )}
 
-                    <div ref={heroCta} className="mt-4 space-y-2">
+                    <div className="mt-4 space-y-2">
                         <button type="button" className="vp-btn w-full" onClick={() => openCheckout()} data-track="vacuum_cta_hero" data-track-category="Vacuum Pump">{soon ? 'Me avise quando abrir' : 'Comprar agora'}</button>
                         <a className="vp-btn vp-btn-ghost w-full !text-lg" href={whatsappHelp} target="_blank" rel="noreferrer" data-track="vacuum_whatsapp_hero" data-track-category="Vacuum Pump"><MessageCircle size={18} aria-hidden /> Falar com um especialista</a>
                     </div>
@@ -727,7 +726,7 @@ const LPVacuumPump: React.FC = () => {
                 </div>
             </section>
 
-            <footer className={`vp-dark px-4 py-7 text-sm ${showSticky ? 'pb-28 md:pb-7' : ''}`}>
+            <footer className="vp-dark px-4 py-7 pb-28 text-sm md:pb-7">
                 <div className="mx-auto flex max-w-[1180px] flex-wrap items-start justify-between gap-4">
                     <div className="max-w-2xl">
                         <img src="/logo-wtech-branca.webp" alt="W-Tech" className="h-7 w-auto" loading="lazy" />
@@ -743,7 +742,8 @@ const LPVacuumPump: React.FC = () => {
             </footer>
 
             {/* Compra fixa no celular */}
-            {showSticky && !checkoutOpen && (
+            {/* No celular, a parcela e o Comprar ficam à vista desde a chegada: a foto ocupa a primeira tela inteira. */}
+            {!checkoutOpen && (
                 <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-[var(--vp-line)] bg-white p-3 md:hidden">
                     <div className="min-w-0 flex-1 vp-num leading-tight">
                         {offer.compare_at && <s className="text-xs vp-muted">{formatBRL(offer.compare_at)}</s>}

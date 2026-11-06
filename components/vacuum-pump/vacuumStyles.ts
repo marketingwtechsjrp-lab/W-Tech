@@ -85,6 +85,8 @@ export const VP_CSS = `
 .vp-thumb:hover { box-shadow: inset 0 0 0 1px var(--vp-ink); }
 .vp-thumb[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--vp-red); }
 .vp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+/* No celular, todas em uma linha só: a barra de compra ocupa o fim da primeira tela. */
+@media (max-width: 639px) { .vp-thumb { width: 100%; height: auto; aspect-ratio: 1; padding: 3px; } }
 .vp-thumb:focus-visible { outline: 2px solid var(--vp-ink); outline-offset: 2px; }
 
 

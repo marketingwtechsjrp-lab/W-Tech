@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.62.7",
+    "date": "2026-11-06",
+    "title": "Parcela e botão Comprar na primeira tela do celular",
+    "changes": [
+      "No celular, a barra com a parcela e o botão Comprar aparece desde a chegada, sem precisar rolar",
+      "Miniaturas das fotos em uma linha só no celular, para o botão de realidade aumentada caber inteiro acima da barra",
+      "Passamos a medir quantas pessoas chegam ao bloco de preço no celular, sem somar nos cliques do painel"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.62.5",
     "date": "2026-11-06",
     "title": "Botão Comprar aparece mais cedo na página da Vacuum Pump",
