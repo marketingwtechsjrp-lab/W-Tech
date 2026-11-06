@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.1 (2026-11-06) - Máquina sempre aparece na realidade aumentada do Android
+- Na câmera pelo navegador do Android, a máquina aparece em até 2 segundos, mesmo se o celular não achar o chão
+- Ao achar uma superfície virada para cima, a máquina assenta ali sozinha, sem precisar tocar na tela
+- Janela da câmera ganha o link Abrir pelo Google Play para RA, caso o navegador não dê conta
+- Cada abertura da câmera registra até onde chegou, para diagnosticar sem ter o aparelho na mão
+
 ## v3.62.0 (2026-11-06) - Link de venda de cada vendedor na Vacuum Pump
 - Cada vendedor tem o próprio link de venda da Vacuum Pump no painel Vendas ao vivo, para copiar ou enviar no WhatsApp
 - Venda feita por quem se cadastrou pelo link fica no nome do vendedor, inclusive quando o contato foi por ligação

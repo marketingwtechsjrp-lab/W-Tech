@@ -1,24 +1,26 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { arStageOf, estimatedSpot, isUpFacing, type ArPlacement, type ArStage } from './vacuumArPlacement';
 
 /**
  * Realidade aumentada dentro do navegador, para o Android que não abre o app do Google.
  *
- * Três regras para a máquina nunca "fugir" em celular com rastreamento fraco:
- *  - ela só aparece depois que o celular achou o chão e a pessoa tocou na tela;
- *  - fica presa a uma âncora do ARCore, que acompanha as correções do mapa do ambiente;
+ * Regras para celular com rastreamento fraco:
+ *  - a máquina sempre aparece: sem superfície em 2 s, ela surge em frente à câmera;
+ *  - ao achar uma superfície virada para cima, ela assenta ali uma vez, sem pedir toque, e fica presa
+ *    a uma âncora do ARCore, que acompanha as correções do mapa do ambiente;
  *  - se a câmera perde a referência, ela some e a tela avisa, em vez de sair andando.
  * Sem suavização de posição: qualquer movimento aqui pareceria a máquina se mexendo sozinha.
  */
 
-export type ArStage = 'searching' | 'ready' | 'placed' | 'lost';
+/** Tempo procurando superfície antes de mostrar a máquina assim mesmo. */
+const SURFACE_WAIT_MS = 2000;
+/** Raio abaixo do centro da tela: com o celular quase em pé, ele ainda alcança o chão. Igual ao model-viewer. */
+const HIT_RAY_TILT = (20 * Math.PI) / 180;
 
-export function arStageOf(state: { tracking: boolean; placed: boolean; surface: boolean }): ArStage {
-    if (!state.tracking) return 'lost';
-    if (state.placed) return 'placed';
-    return state.surface ? 'ready' : 'searching';
-}
+/** Só o necessário para saber, sem o aparelho na mão, onde a câmera parou. */
+export type ArReport = (event: 'opened' | 'placed' | 'end' | 'error', detail: string) => void;
 
 export interface VacuumArSession {
     /** Tira a máquina do lugar para a pessoa escolher outro ponto. */
@@ -28,7 +30,7 @@ export interface VacuumArSession {
 
 export interface PreparedVacuumAr {
     /** Precisa ser chamada direto do toque no botão: o navegador exige o gesto. */
-    start: (overlay: HTMLElement, onStage: (stage: ArStage) => void, onEnd: () => void) => Promise<VacuumArSession>;
+    start: (overlay: HTMLElement, onStage: (stage: ArStage) => void, onEnd: () => void, report: ArReport) => Promise<VacuumArSession>;
 }
 
 function makeReticle(): THREE.Mesh {
@@ -69,7 +71,7 @@ export async function prepareVacuumAr(glbUrl: string): Promise<PreparedVacuumAr>
     machine.position.set(-center.x, -box.min.y, -center.z);
     const size = box.getSize(new THREE.Vector3());
 
-    const start: PreparedVacuumAr['start'] = async (overlay, onStage, onEnd) => {
+    const start: PreparedVacuumAr['start'] = async (overlay, onStage, onEnd, report) => {
         const session = await (navigator as Navigator & { xr: XRSystem }).xr.requestSession('immersive-ar', {
             requiredFeatures: ['hit-test'],
             optionalFeatures: ['anchors', 'dom-overlay'],
@@ -101,15 +103,30 @@ export async function prepareVacuumAr(glbUrl: string): Promise<PreparedVacuumAr>
         await renderer.xr.setSession(session);
         const localSpace = renderer.xr.getReferenceSpace() as XRReferenceSpace;
         const viewerSpace = await session.requestReferenceSpace('viewer');
-        const hitSource = await (session.requestHitTestSource as NonNullable<XRSession['requestHitTestSource']>)({ space: viewerSpace });
+        const hitSource = await session.requestHitTestSource?.({
+            space: viewerSpace,
+            offsetRay: new XRRay(new DOMPoint(0, 0, 0), { x: 0, y: -Math.sin(HIT_RAY_TILT), z: -Math.cos(HIT_RAY_TILT) }),
+        });
         if (!hitSource) throw new Error('hit-test indisponível');
+        report('opened', (session.enabledFeatures ?? []).join('+'));
 
-        let lastHit: XRHitTestResult | null = null;
+        let placement: ArPlacement = 'none';
+        /** Depois de "Mudar de lugar", quem escolhe o ponto é o toque na tela. */
+        let choosing = false;
+        let tapPending = false;
         let anchor: XRAnchor | null = null;
-        let placed = false;
-        let tracking = true;
+        let tracking = false;
+        let everTracked = false;
+        let waitingSince = 0;
+        let lastFrameAt = 0;
         let placeToken = 0;
         let stage: ArStage | null = null;
+        let frames = 0;
+        let trackedFrames = 0;
+        let surfaceFrames = 0;
+        let firstFrameAt = 0;
+        let errorReported = false;
+        const reportedPlacements = new Set<ArPlacement>();
         const viewerPosition = new THREE.Vector3();
 
         const setMachinePosition = (x: number, y: number, z: number) => {
@@ -118,53 +135,105 @@ export async function prepareVacuumAr(glbUrl: string): Promise<PreparedVacuumAr>
             placedRoot.rotation.set(0, Math.atan2(viewerPosition.x - x, viewerPosition.z - z), 0);
         };
 
-        const onSelect = () => {
-            if (placed || !tracking || !lastHit) return;
-            const hit = lastHit;
-            const pose = hit.getPose(localSpace);
-            if (!pose) return;
-            const { x, y, z } = pose.transform.position;
-            setMachinePosition(x, y, z);
-            placed = true;
+        /** Sem âncora, a máquina fica no ponto medido; com ela, acompanha as correções do mapa. */
+        const holdWith = (created: Promise<XRAnchor> | undefined) => {
             const token = ++placeToken;
-            // Sem âncora, a máquina fica no ponto medido; com ela, acompanha as correções do mapa.
-            hit.createAnchor?.()
-                ?.then((created) => {
-                    if (token === placeToken) anchor = created;
-                    else created.delete();
+            anchor?.delete();
+            anchor = null;
+            created
+                ?.then((value) => {
+                    if (token === placeToken) anchor = value;
+                    else value.delete();
                 })
                 .catch(() => undefined);
         };
+
+        const markPlaced = (kind: ArPlacement, time: number) => {
+            placement = kind;
+            choosing = false;
+            if (reportedPlacements.has(kind)) return;
+            reportedPlacements.add(kind);
+            report('placed', `${kind} ${Math.round(time - firstFrameAt)}ms`);
+        };
+
+        // Só marca: a posição do toque precisa vir do quadro atual, com a medição ainda válida.
+        const onSelect = () => { tapPending = true; };
         session.addEventListener('select', onSelect);
 
-        const onFrame = (_time: number, frame?: XRFrame) => {
-            if (!frame) return;
+        const drawFrame = (time: number, frame: XRFrame) => {
+            frames += 1;
+            if (!firstFrameAt) firstFrameAt = time;
+            lastFrameAt = time;
             const viewerPose = frame.getViewerPose(localSpace);
             tracking = !!viewerPose && !viewerPose.emulatedPosition;
             if (viewerPose) viewerPosition.set(viewerPose.transform.position.x, viewerPose.transform.position.y, viewerPose.transform.position.z);
+            if (tracking) {
+                trackedFrames += 1;
+                if (!everTracked) waitingSince = time;
+                everTracked = true;
+            }
 
-            const hits = tracking && !placed ? frame.getHitTestResults(hitSource) : [];
-            lastHit = hits[0] ?? null;
-            const hitPose = lastHit?.getPose(localSpace);
-            reticle.visible = !placed && !!hitPose;
-            if (hitPose) reticle.matrix.fromArray(hitPose.transform.matrix);
+            let surfaceHit: XRHitTestResult | null = null;
+            let surfacePose: XRPose | null = null;
+            if (tracking && placement !== 'surface') {
+                for (const hit of frame.getHitTestResults(hitSource)) {
+                    const pose = hit.getPose(localSpace);
+                    if (pose && isUpFacing(pose.transform.matrix)) {
+                        surfaceHit = hit;
+                        surfacePose = pose;
+                        break;
+                    }
+                }
+            }
+            if (surfacePose) {
+                surfaceFrames += 1;
+                waitingSince = time;
+            }
 
-            if (placed && anchor && tracking && frame.trackedAnchors?.has(anchor)) {
+            if (surfaceHit && surfacePose && (!choosing || tapPending)) {
+                const { x, y, z } = surfacePose.transform.position;
+                setMachinePosition(x, y, z);
+                markPlaced('surface', time);
+                holdWith(surfaceHit.createAnchor?.());
+            } else if (viewerPose && tracking && placement === 'none' && time - waitingSince >= SURFACE_WAIT_MS) {
+                const spot = estimatedSpot(viewerPose.transform.matrix, size.y);
+                setMachinePosition(spot.x, spot.y, spot.z);
+                markPlaced('estimated', time);
+                holdWith(frame.createAnchor?.(new XRRigidTransform(spot), localSpace));
+            }
+            tapPending = false;
+
+            reticle.visible = choosing && !!surfacePose;
+            if (surfacePose) reticle.matrix.fromArray(surfacePose.transform.matrix);
+
+            if (placement !== 'none' && anchor && tracking && frame.trackedAnchors?.has(anchor)) {
                 const anchorPose = frame.getPose(anchor.anchorSpace, localSpace);
                 if (anchorPose) placedRoot.position.set(anchorPose.transform.position.x, anchorPose.transform.position.y, anchorPose.transform.position.z);
             }
-            placedRoot.visible = placed && tracking;
+            placedRoot.visible = placement !== 'none' && tracking;
 
-            const next = arStageOf({ tracking, placed, surface: !!hitPose });
+            const next = arStageOf({ tracking, everTracked, placement, surface: !!surfacePose });
             if (next !== stage) {
                 stage = next;
                 onStage(next);
             }
             renderer.render(scene, camera);
         };
+
+        const onFrame = (time: number, frame?: XRFrame) => {
+            if (!frame) return;
+            // Um erro aqui pararia a câmera em silêncio: o laço do three não se refaz depois de uma exceção.
+            try {
+                drawFrame(time, frame);
+            } catch (err) {
+                if (!errorReported) report('error', err instanceof Error ? err.message.slice(0, 120) : 'erro no quadro');
+                errorReported = true;
+            }
+        };
         renderer.setAnimationLoop(onFrame);
 
         session.addEventListener('end', () => {
+            report('end', `quadros=${frames} rastreados=${trackedFrames} superficie=${surfaceFrames} posicao=${placement} ${Math.round((lastFrameAt - firstFrameAt) / 1000)}s`);
             renderer.setAnimationLoop(null);
             session.removeEventListener('select', onSelect);
             hitSource.cancel();
@@ -178,10 +247,11 @@ export async function prepareVacuumAr(glbUrl: string): Promise<PreparedVacuumAr>
 
         return {
             replace: () => {
-                placeToken += 1;
-                anchor?.delete();
-                anchor = null;
-                placed = false;
+                holdWith(undefined);
+                placement = 'none';
+                choosing = true;
+                tapPending = false;
+                waitingSince = lastFrameAt;
             },
             end: () => { void session.end().catch(() => undefined); },
         };

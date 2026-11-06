@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { ArStage, PreparedVacuumAr, VacuumArSession } from './vacuumWebAR';
+import { trackEvent } from '../AnalyticsTracker';
+import type { ArStage } from './vacuumArPlacement';
+import type { ArReport, PreparedVacuumAr, VacuumArSession } from './vacuumWebAR';
 
 /**
  * Plano B da realidade aumentada no Android, quando o app do Google não abriu a câmera ou fechou
@@ -12,12 +14,17 @@ import type { ArStage, PreparedVacuumAr, VacuumArSession } from './vacuumWebAR';
 // Aqui, e não em vacuumWebAR.ts: importar de lá puxaria o three para todo visitante da página.
 const AR_HINTS: Record<ArStage, string> = {
     searching: 'Aponte para o chão e mova o celular devagar.',
+    estimated: 'Mova o celular devagar para a máquina assentar no chão ou na bancada.',
     ready: 'Toque na tela para colocar a máquina.',
     placed: 'Pronto. Ande em volta da máquina.',
     lost: 'A câmera perdeu a referência. Mova o celular devagar, com boa luz.',
 };
 
 const ARCORE_STORE = 'https://play.google.com/store/apps/details?id=com.google.ar.core';
+
+const reportAr: ArReport = (event, detail) => {
+    void trackEvent('Vacuum Pump', `vacuum_ar_webxr_${event}`, detail);
+};
 
 interface XrNavigator {
     xr?: { isSessionSupported: (mode: string) => Promise<boolean> };
@@ -61,6 +68,7 @@ export const VacuumARFallback: React.FC<{ glbUrl: string }> = ({ glbUrl }) => {
                             .then((ready) => { if (active) setPrepared(ready); })
                             .catch((err) => {
                                 console.error('[Vacuum] Falha ao preparar a câmera:', err);
+                                reportAr('error', `preparar: ${String(err).slice(0, 110)}`);
                                 if (active) setWebxrFailed(true);
                             });
                     }
@@ -79,10 +87,11 @@ export const VacuumARFallback: React.FC<{ glbUrl: string }> = ({ glbUrl }) => {
         prepared.start(overlayRef.current, setStage, () => {
             sessionRef.current = null;
             setStage(null);
-        })
+        }, reportAr)
             .then((session) => { sessionRef.current = session; })
             .catch((err) => {
                 console.error('[Vacuum] A câmera não abriu pelo navegador:', err);
+                reportAr('error', `abrir: ${String(err).slice(0, 110)}`);
                 setStage(null);
                 setWebxrFailed(true);
             });
@@ -118,6 +127,11 @@ export const VacuumARFallback: React.FC<{ glbUrl: string }> = ({ glbUrl }) => {
                     {prepared ? 'Abrir na câmera' : 'Preparando a câmera...'}
                 </button>
             )}
+            {canOpenHere && (
+                <a className="mt-3 block text-center text-sm underline vp-muted" href={arCoreHref(`${window.location.origin}${glbUrl}`)} data-track="vacuum_ar_android_arcore" data-track-category="Vacuum Pump">
+                    Não funcionou? Abrir pelo Google Play para RA
+                </a>
+            )}
             {webxrFailed && <p role="alert" className="mt-3 text-sm vp-muted">A câmera não abriu por este navegador. Tente pelo botão abaixo.</p>}
             {!canOpenHere && webxr !== null && (
                 <a className="vp-btn mt-3 w-full" href={arCoreHref(`${window.location.origin}${glbUrl}`)} data-track="vacuum_ar_android_arcore" data-track-category="Vacuum Pump">
@@ -135,7 +149,7 @@ export const VacuumARFallback: React.FC<{ glbUrl: string }> = ({ glbUrl }) => {
                         ref={(element) => { element?.addEventListener('beforexrselect', (event) => event.preventDefault()); }}
                         style={{ display: 'flex', gap: 8, padding: 16, pointerEvents: 'auto' }}
                     >
-                        {stage === 'placed' && (
+                        {(stage === 'placed' || stage === 'estimated') && (
                             <button type="button" className={overlayButton} style={{ background: '#fff', color: '#111' }} onClick={() => sessionRef.current?.replace()}>
                                 Mudar de lugar
                             </button>

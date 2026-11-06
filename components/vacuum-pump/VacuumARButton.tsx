@@ -15,6 +15,9 @@ const NOT_OPENED_MS = 3500;
 /** Saiu e voltou em menos que isto: é a piscada preta, a câmera fechou sozinha. */
 const QUICK_RETURN_MS = 8000;
 
+/** Por quanto tempo ainda vale perceber que o app do Google abriu depois do aviso. */
+const LATE_OPEN_WATCH_MS = 30000;
+
 type ArFailure = 'not_opened' | 'quick_return' | 'no_app';
 
 /** Sem o app, tentar de novo só faria o toque parecer quebrado. A piscada pode ter sido a pessoa saindo. */
@@ -41,6 +44,22 @@ function sceneViewerHref(): string {
     const { origin, pathname, search } = window.location;
     const fallback = encodeURIComponent(`${origin}${pathname}${search}${AR_FAILED_HASH}`);
     return `intent://arvr.google.com/scene-viewer/1.2?file=${file}&mode=ar_preferred&disable_occlusion=true&title=${title}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${fallback};end;`;
+}
+
+/** O app do Google pode só estar lento: se a página sair da frente depois do aviso, foi alarme falso. */
+function reportLateOpen() {
+    const startedAt = Date.now();
+    const onVisibility = () => {
+        if (!document.hidden) return;
+        stop();
+        void trackEvent('Vacuum Pump', 'vacuum_ar_android_opened_late', `${Date.now() - startedAt}ms`);
+    };
+    const timer = window.setTimeout(() => stop(), LATE_OPEN_WATCH_MS);
+    function stop() {
+        window.clearTimeout(timer);
+        document.removeEventListener('visibilitychange', onVisibility);
+    }
+    document.addEventListener('visibilitychange', onVisibility);
 }
 
 /** Botão vermelho da realidade aumentada: abre a máquina na bancada, direto na câmera do celular. */
@@ -70,6 +89,7 @@ export const VacuumARButton: React.FC<{ placement: 'hero' | 'stage' }> = ({ plac
     const showArFallback = useCallback((reason: ArFailure) => {
         if (reason !== 'quick_return') sceneViewerUnavailable = true;
         trackEvent('Vacuum Pump', `vacuum_ar_android_${reason}`, navigator.userAgent.slice(0, 120));
+        if (reason === 'not_opened') reportLateOpen();
         setArFallback(true);
     }, []);
 

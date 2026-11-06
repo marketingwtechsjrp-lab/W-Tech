@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.62.1",
+    "date": "2026-11-06",
+    "title": "Máquina sempre aparece na realidade aumentada do Android",
+    "changes": [
+      "Na câmera pelo navegador do Android, a máquina aparece em até 2 segundos, mesmo se o celular não achar o chão",
+      "Ao achar uma superfície virada para cima, a máquina assenta ali sozinha, sem precisar tocar na tela",
+      "Janela da câmera ganha o link Abrir pelo Google Play para RA, caso o navegador não dê conta",
+      "Cada abertura da câmera registra até onde chegou, para diagnosticar sem ter o aparelho na mão"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.62.0",
     "date": "2026-11-06",
     "title": "Link de venda de cada vendedor na Vacuum Pump",
