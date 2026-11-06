@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.1 (2026-11-06) - Painel conta como pessoa quem clica nos primeiros segundos
+- Clique feito antes de a visita ser registrada ficava sem identificação e fora da contagem de pessoas; agora a pessoa recebe a identificação nesse momento
+- Falha que acontece antes de a página abrir aparece no painel como uma pessoa, e não como zero
+
 ## v3.64.0 (2026-11-06) - Pixel da loja recebe o funil e as compras da Vacuum Pump
 - O pixel 1109519607249858 passa a receber visualização, início de checkout, contato, pagamento e compra, com valor e produto
 - A compra leva os dados de quem comprou, em hash, para o Meta reconhecer a pessoa e otimizar os anúncios

@@ -74,7 +74,8 @@ SELECT jsonb_build_object(
     'problems', COALESCE((
         SELECT jsonb_agg(row_to_json(a) ORDER BY a.visitors DESC, a.last_at DESC)
         FROM (
-            SELECT problem, count(*) AS total, count(DISTINCT visitor_id) AS visitors, max(created_at) AS last_at
+            -- Erro antes de a pessoa ter identificação ainda é uma pessoa: conta o evento como uma.
+            SELECT problem, count(*) AS total, count(DISTINCT COALESCE(visitor_id, created_at::text)) AS visitors, max(created_at) AS last_at
             FROM problems GROUP BY problem
         ) a
     ), '[]'::jsonb),

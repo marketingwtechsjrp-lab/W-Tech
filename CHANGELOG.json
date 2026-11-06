@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.64.1",
+    "date": "2026-11-06",
+    "title": "Painel conta como pessoa quem clica nos primeiros segundos",
+    "changes": [
+      "Clique feito antes de a visita ser registrada ficava sem identificação e fora da contagem de pessoas; agora a pessoa recebe a identificação nesse momento",
+      "Falha que acontece antes de a página abrir aparece no painel como uma pessoa, e não como zero"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.64.0",
     "date": "2026-11-06",
     "title": "Pixel da loja recebe o funil e as compras da Vacuum Pump",

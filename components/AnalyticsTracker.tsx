@@ -159,8 +159,18 @@ export const trackEvent = async (category: string, action: string, label?: strin
     // Independente do banco: atraso/falha no painel nao deve perder o evento GA4.
     trackGoogleEvent(action, { event_category: category, event_label: label });
     try {
-        const visitorId = localStorage.getItem('wtech_visitor_id');
-        const sessionId = sessionStorage.getItem('wtech_session_id');
+        // O registro da visita espera o navegador ficar ocioso: quem clica antes disso ainda não tem
+        // identificação, e o evento ficava sem dono, fora de toda contagem por pessoa.
+        let visitorId = localStorage.getItem('wtech_visitor_id');
+        if (!visitorId) {
+            visitorId = generateId();
+            localStorage.setItem('wtech_visitor_id', visitorId);
+        }
+        let sessionId = sessionStorage.getItem('wtech_session_id');
+        if (!sessionId) {
+            sessionId = generateId();
+            sessionStorage.setItem('wtech_session_id', sessionId);
+        }
 
         // 1. Send to Supabase
         await supabase.from('SITE_Analytics_Events').insert({
