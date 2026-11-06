@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.2 (2026-11-06) - Só o gerente altera vendas da Vacuum Pump
+- Vendedor continua lançando venda nova, mas não edita, não marca como pago e não cancela
+- Na tela geral de Pedidos, a venda da promoção fica só para consulta para o vendedor, sem arrastar nem mudar de etapa
+- O banco recusa a alteração de quem não é gerente ou Super Admin, mesmo fora das telas
+- O editor geral de Pedidos não salva mais venda da promoção, porque trocava o vendedor e regravava os itens
+- Nova permissão em Equipe & Acesso: Lançar Venda Manual da Promoção
+
 ## v3.62.1 (2026-11-06) - Máquina sempre aparece na realidade aumentada do Android
 - Na câmera pelo navegador do Android, a máquina aparece em até 2 segundos, mesmo se o celular não achar o chão
 - Ao achar uma superfície virada para cima, a máquina assenta ali sozinha, sem precisar tocar na tela

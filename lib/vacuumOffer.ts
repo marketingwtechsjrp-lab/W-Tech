@@ -16,6 +16,7 @@
  */
 
 export const VACUUM_CAMPAIGN = 'vacuum_pump_bf_2026';
+export const isVacuumSale = (sale?: { campaign?: string | null } | null) => sale?.campaign === VACUUM_CAMPAIGN;
 export const VACUUM_CONFIG_KEY = 'vacuum_pump_offer';
 export const VACUUM_ITEM_NAME = 'Vacuum Pump Standard W-Tech';
 

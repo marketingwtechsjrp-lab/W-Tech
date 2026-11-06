@@ -597,6 +597,7 @@ export interface Sale {
     pricing_level?: 'retail' | 'partner' | 'distributor' | 'mechanic';
     items?: any | string; // JSONB or stringified JSON
     order_number?: string;
+    campaign?: string | null;
 }
 
 export interface SaleItem {

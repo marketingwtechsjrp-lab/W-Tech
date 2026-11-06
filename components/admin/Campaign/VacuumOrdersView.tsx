@@ -302,7 +302,7 @@ const VacuumOrdersView: React.FC<{ onOpenPanel?: () => void }> = ({ onOpenPanel 
                 <button type="button" onClick={() => void load()} disabled={loading} aria-label="Atualizar" className="rounded-xl border border-[var(--admin-border)] bg-[var(--admin-surface-1)] p-2.5 text-[var(--admin-text-secondary)] disabled:opacity-60">
                     <RefreshCcw size={18} aria-hidden className={loading ? 'animate-spin' : ''} />
                 </button>
-                {payload.can_manage && (
+                {payload.can_launch && (
                     <button type="button" onClick={() => setForm({ sale: null })} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-wtech-gold to-yellow-600 px-4 py-2.5 text-sm font-black text-black shadow-md shadow-yellow-500/20">
                         <Plus size={16} strokeWidth={3} aria-hidden /> Lançar venda
                     </button>

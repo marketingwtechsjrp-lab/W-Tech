@@ -9,6 +9,7 @@ interface OrdersKanbanProps {
     onUpdateStatus: (saleId: string, status: string, trackingCode?: string) => void;
     onEditSale: (saleId: string) => void;
     onDeleteSale?: (saleId: string) => void;
+    isReadOnly?: (sale: Sale) => boolean;
 }
 
 // ── Column config ──────────────────────────────────────────────────────────
@@ -35,12 +36,13 @@ const OrderCard: React.FC<{
     onStatusChange: (id: string, status: string) => void;
     nextStatus?: string | null;
     prevStatus?: string | null;
-}> = ({ sale, draggedId, handleDragStart, onEditSale, onStatusChange, nextStatus, prevStatus }) => {
+    readOnly?: boolean;
+}> = ({ sale, draggedId, handleDragStart, onEditSale, onStatusChange, nextStatus, prevStatus, readOnly }) => {
     const pointerStart = React.useRef({ x: 0, y: 0 });
 
     return (
         <div
-            draggable
+            draggable={!readOnly}
             onDragStart={e => handleDragStart(e, sale.id)}
             onPointerDown={e => { pointerStart.current = { x: e.clientX, y: e.clientY }; }}
             onPointerUp={e => {
@@ -85,7 +87,7 @@ const OrderCard: React.FC<{
                 onPointerUp={e => e.stopPropagation()}
                 onClick={e => e.stopPropagation()}
             >
-                {nextStatus && (
+                {nextStatus && !readOnly && (
                     <button
                         onClick={() => onStatusChange(sale.id, nextStatus)}
                         className="p-1 rounded hover:bg-emerald-500/10 text-emerald-500 transition-colors"
@@ -94,7 +96,7 @@ const OrderCard: React.FC<{
                         <ChevronRight size={12} />
                     </button>
                 )}
-                {prevStatus && (
+                {prevStatus && !readOnly && (
                     <button
                         onClick={() => onStatusChange(sale.id, prevStatus)}
                         className="p-1 rounded hover:bg-[var(--admin-surface-3)] text-[var(--admin-text-tertiary)] transition-colors"
@@ -110,7 +112,7 @@ const OrderCard: React.FC<{
 
 // ── Main Board ─────────────────────────────────────────────────────────────
 
-export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdateStatus, onEditSale }) => {
+export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdateStatus, onEditSale, isReadOnly }) => {
     const [draggedId, setDraggedId]       = React.useState<string | null>(null);
     const [dragOverCol, setDragOverCol]   = React.useState<string | null>(null);
     const [trackingModal, setTrackingModal] = React.useState<{ saleId: string; status: string } | null>(null);
@@ -197,6 +199,7 @@ export const OrdersKanbanBoard: React.FC<OrdersKanbanProps> = ({ sales, onUpdate
                                     onStatusChange={handleStatusChange}
                                     nextStatus={getNextStatus(col.id)}
                                     prevStatus={getPrevStatus(col.id)}
+                                    readOnly={isReadOnly?.(sale)}
                                 />
                             ))}
                             {colSales.length === 0 && (

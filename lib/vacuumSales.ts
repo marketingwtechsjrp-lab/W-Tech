@@ -108,6 +108,7 @@ export interface VacuumSaleRow {
 export interface VacuumSalesPayload {
     now: number;
     can_manage: boolean;
+    can_launch: boolean;
     offer: {
         phase: string;
         price: number;

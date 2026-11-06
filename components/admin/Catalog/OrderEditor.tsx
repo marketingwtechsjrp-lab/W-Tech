@@ -9,6 +9,7 @@ import { FileDown, Printer, Receipt, Zap, Loader2, CheckCircle2, Copy, ExternalL
 import { useSettings } from '../../../context/SettingsContext';
 import { createStripePaymentLink } from '../../../lib/stripe';
 import { createHasPermission, PAYMENT_LINK_PERMISSIONS } from '../../../lib/permissions';
+import { isVacuumSale } from '../../../lib/vacuumOffer';
 import { describePaymentLinkError } from '../../../lib/paymentLinkErrors';
 import { getExchangeRates, convertBRLTo, ExchangeRates } from '../../../lib/currency';
 import { TrendingUp } from 'lucide-react';
@@ -176,11 +177,14 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
 
     // Permissões granulares do módulo de pedidos
     const can = createHasPermission(user, permissions);
-    const canManageOrders = can('manage_orders');
+    // Venda da promoção não se salva por aqui, nem pelo gerente: este editor troca o vendedor
+    // pelo usuário logado e regrava os itens em outro formato. Ela se altera em Pedidos da promoção.
+    const isPromoSale = isVacuumSale(currentSale);
+    const canManageOrders = can('manage_orders') && !isPromoSale;
     const canDeleteOrders = can('orders_delete');
     // Espelha o gate do backend (PAYMENT_LINK_PERMISSIONS) — sem isso o botão
     // aparece pra quem o endpoint vai negar com 403.
-    const canGeneratePaymentLink = PAYMENT_LINK_PERMISSIONS.some((key) => can(key));
+    const canGeneratePaymentLink = !isPromoSale && PAYMENT_LINK_PERMISSIONS.some((key) => can(key));
 
     useEffect(() => {
         if (isOpen) {
@@ -332,7 +336,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
     };
 
     // Helper for Disabled State
-    const isDisabled = isLocked && !canBypassLock;
+    const isDisabled = isPromoSale || (isLocked && !canBypassLock);
 
     const handleUpdateQuantity = (index: number, delta: number) => {
         const newItems = [...saleItems];
@@ -756,6 +760,12 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                 </div>
             </div>
 
+            {isPromoSale && (
+                <p role="status" className="flex items-center gap-2 border-b border-[var(--admin-border)] bg-[var(--admin-warning-muted)] px-8 py-2 text-xs font-bold text-[var(--admin-warning)]">
+                    <Lock size={14} aria-hidden /> Venda da Vacuum Pump: aqui é só consulta. Quem altera é o gerente, em Pedidos da promoção.
+                </p>
+            )}
+
             {/* Step Indicator */}
             <div className="bg-[var(--admin-surface-1)] px-8 py-3 border-b border-[var(--admin-border)] flex items-center justify-center gap-8 shrink-0">
                 <button 
@@ -1116,7 +1126,7 @@ export const NewOrderModal: React.FC<NewOrderModalProps> = ({ isOpen, onClose, o
                                                     <h3 className="text-xl md:text-2xl font-black text-[var(--admin-text-primary)] tracking-tight italic uppercase">Carrinho do Cliente</h3>
                                                     <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Gerencie a lista de produtos selecionados</p>
                                                 </div>
-                                                {saleItems.length > 0 && (
+                                                {saleItems.length > 0 && !isPromoSale && (
                                                     <button onClick={() => setSaleItems([])} className="text-[10px] font-black text-red-500 uppercase hover:underline">Limpar Tudo</button>
                                                 )}
                                             </div>

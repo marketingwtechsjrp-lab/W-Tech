@@ -82,7 +82,27 @@ test('quem só vê a lista não lança venda', async () => {
   const lista = await chamar('handleVacuumSalesList', null, { metodo: 'GET' });
   assert.equal(lista.codigo, 200);
   assert.equal(lista.corpo.can_manage, false);
+  assert.equal(lista.corpo.can_launch, false);
   assert.equal((await chamar('handleVacuumSaleCreate', venda())).codigo, 403);
+});
+
+test('vendedor lança venda nova, mas só o gerente altera o que foi lançado', async () => {
+  permissoes = { campaign_sales_view: true, campaign_sales_launch: true };
+  const lista = await chamar('handleVacuumSalesList', null, { metodo: 'GET' });
+  assert.equal(lista.corpo.can_launch, true);
+  assert.equal(lista.corpo.can_manage, false);
+  assert.equal((await chamar('handleVacuumSaleCreate', venda({ status: 'pending' }))).codigo, 201);
+
+  assert.equal((await chamar('handleVacuumSaleUpdate', venda({ machine_price: 1 }))).codigo, 403);
+  assert.equal((await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'paid' })).codigo, 403);
+  assert.equal((await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'cancelled' })).codigo, 403);
+  assert.equal(vendasGravadas()[0].status, 'pending');
+  assert.equal(vendasGravadas()[0].total_value, 7990 + 699 + 100);
+
+  permissoes = { campaign_sales_view: true, campaign_sales_manage: true };
+  assert.equal((await chamar('handleVacuumSalesList', null, { metodo: 'GET' })).corpo.can_launch, true);
+  assert.equal((await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'paid' })).codigo, 200);
+  assert.equal(vendasGravadas()[0].status, 'paid');
 });
 
 test('pedido vindo de outro site é recusado', async () => {

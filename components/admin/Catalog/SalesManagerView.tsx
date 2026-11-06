@@ -7,6 +7,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Sale, SaleItem, Product } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { createHasPermission } from '../../../lib/permissions';
+import { isVacuumSale } from '../../../lib/vacuumOffer';
 import { fetchStaffDirectory } from '../../../lib/staffDirectory';
 import { OrdersKanbanBoard } from './OrdersKanbanBoard';
 import { NewOrderModal } from './OrderEditor';
@@ -108,7 +109,7 @@ const SalesManagerView: React.FC<{
                 clientEmail: s.client_email, clientPhone: s.client_phone,
                 channel: s.channel, status: s.status, totalValue: s.total_value,
                 paymentMethod: s.payment_method, itemsJson: s.items, notes: s.notes,
-                seller_id: s.seller_id, createdAt: s.created_at
+                seller_id: s.seller_id, createdAt: s.created_at, campaign: s.campaign
             })));
         }
         setLoading(false);
@@ -137,7 +138,7 @@ const SalesManagerView: React.FC<{
 
             if (saleData) {
                 setEditingSale({
-                    id: saleData.id, clientId: saleData.client_id,
+                    id: saleData.id, campaign: saleData.campaign, clientId: saleData.client_id,
                     clientName: saleData.client_name, clientEmail: saleData.client_email,
                     clientPhone: saleData.client_phone, channel: saleData.channel,
                     status: saleData.status, totalValue: saleData.total_value,
@@ -416,6 +417,7 @@ const SalesManagerView: React.FC<{
                             onEditSale={handleEditSale}
                             onUpdateStatus={handleUpdateStatus}
                             onDeleteSale={handleDeleteSale}
+                            isReadOnly={sale => isVacuumSale(sale) && !can('campaign_sales_manage')}
                         />
                     ) : (
                         <div className="bg-[var(--admin-surface-1)] border border-[var(--admin-border)] rounded-2xl overflow-hidden">

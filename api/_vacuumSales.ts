@@ -20,8 +20,11 @@ import {
     type VacuumPaymentId,
     type VacuumSeller,
 } from '../lib/vacuumSales.js';
-import { isPermissionGranted, requireSameOrigin, requireStaffPermission, type StaffSessionUser } from './_auth.js';
+import { isPermissionGranted, requireSameOrigin, requireStaffAnyPermission, requireStaffPermission, type StaffSessionUser } from './_auth.js';
 import { clearVacuumOfferCache, dateSP, isUuid, loadVacuumOffer } from './_vacuumPump.js';
+
+// Vendedor lança venda nova; alterar o que já foi lançado é só do gerente.
+const LAUNCH_PERMISSIONS = ['campaign_sales_launch', 'campaign_sales_manage'] as const;
 
 /**
  * Pedidos da promoção da Vacuum Pump e lançamento manual, quando o vendedor fecha fora do site.
@@ -301,6 +304,7 @@ export async function handleVacuumSalesList(supabase: any, req: any, res: any) {
     return res.status(200).json({
         now: Date.now(),
         can_manage: isPermissionGranted(staff.permissions, 'campaign_sales_manage'),
+        can_launch: LAUNCH_PERMISSIONS.some((key) => isPermissionGranted(staff.permissions, key)),
         offer: {
             phase: state.phase,
             price: state.price,
@@ -320,7 +324,7 @@ export async function handleVacuumSalesList(supabase: any, req: any, res: any) {
 
 export async function handleVacuumSaleCreate(supabase: any, req: any, res: any) {
     if (!requireSameOrigin(req, res)) return;
-    const staff = await requireStaffPermission(req, res, 'campaign_sales_manage');
+    const staff = await requireStaffAnyPermission(req, res, LAUNCH_PERMISSIONS);
     if (!staff) return;
 
     const body = req.body || {};
