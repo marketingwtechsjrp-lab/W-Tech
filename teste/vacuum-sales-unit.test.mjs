@@ -91,7 +91,10 @@ test('vendedor lança venda nova, mas só o gerente altera o que foi lançado', 
   const lista = await chamar('handleVacuumSalesList', null, { metodo: 'GET' });
   assert.equal(lista.corpo.can_launch, true);
   assert.equal(lista.corpo.can_manage, false);
-  assert.equal((await chamar('handleVacuumSaleCreate', venda({ status: 'pending' }))).codigo, 201);
+  // Mesmo pedindo "pago", a venda do vendedor fica aguardando até o gerente confirmar.
+  assert.equal((await chamar('handleVacuumSaleCreate', venda({ status: 'paid' }))).codigo, 201);
+  assert.equal(vendasGravadas()[0].payment_status, 'pending');
+  assert.deepEqual(h.estado.tabelas.SITE_Leads?.map((lead) => lead.status), ['New']);
 
   assert.equal((await chamar('handleVacuumSaleUpdate', venda({ machine_price: 1 }))).codigo, 403);
   assert.equal((await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'paid' })).codigo, 403);

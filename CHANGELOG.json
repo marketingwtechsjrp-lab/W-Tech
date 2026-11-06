@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.62.3",
+    "date": "2026-11-06",
+    "title": "Venda lançada por vendedor fica aguardando o gerente",
+    "changes": [
+      "Venda manual lançada por vendedor entra sempre como Aguardando, fora do placar e do lote",
+      "Só o gerente confirma o pagamento, e a comemoração do painel acontece nessa hora",
+      "Formulário do vendedor mostra a situação fixa e avisa que o gerente confirma",
+      "O banco também recusa venda da promoção criada fora do sistema por quem não é gerente"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.62.2",
     "date": "2026-11-06",
     "title": "Só o gerente altera vendas da Vacuum Pump",

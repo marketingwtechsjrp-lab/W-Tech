@@ -339,7 +339,9 @@ export async function handleVacuumSaleCreate(supabase: any, req: any, res: any) 
     const { config, state } = await loadVacuumOffer(supabase, { fresh: true });
     const parsed = parseSale(body, config.bumps, await loadSellers(supabase), now);
     if ('error' in parsed) return res.status(400).json({ error: parsed.error });
-    const input = parsed.value;
+    // Só o gerente confirma pagamento: o que o vendedor lança fica aguardando, fora do placar e do lote.
+    const canConfirmPayment = isPermissionGranted(staff.permissions, 'campaign_sales_manage');
+    const input: typeof parsed.value = canConfirmPayment ? parsed.value : { ...parsed.value, status: 'pending' };
 
     const lead = await ensureLead(supabase, input, nowIso);
     const orderNumber = `WT-VM${String(now).slice(-7)}${Math.floor(Math.random() * 100)}`;

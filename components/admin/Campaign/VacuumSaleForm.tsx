@@ -38,7 +38,7 @@ interface FormState {
     address: { cep: string; street: string; number: string; complement: string; neighborhood: string; city: string; state: string };
 }
 
-function initialForm(offer: VacuumSalesPayload['offer'], sale: VacuumSaleRow | null): FormState {
+function initialForm(offer: VacuumSalesPayload['offer'], sale: VacuumSaleRow | null, canConfirmPayment: boolean): FormState {
     const itemOf = (id: string) => sale?.items.find((item) => item.id === id);
     const bumps = Object.fromEntries(
         offer.bumps.map((bump) => {
@@ -59,7 +59,7 @@ function initialForm(offer: VacuumSalesPayload['offer'], sale: VacuumSaleRow | n
         shipping_cost: String(sale?.shipping_cost ?? 0),
         payment: sale?.manual_sale?.payment ?? 'pix',
         installments: sale?.manual_sale?.installments ?? 1,
-        status: sale && sale.status === 'pending' ? 'pending' : 'paid',
+        status: (sale ? sale.status === 'pending' : !canConfirmPayment) ? 'pending' : 'paid',
         sale_date: sale?.sale_date?.slice(0, 10) ?? todaySP(),
         note: sale?.manual_sale?.note ?? '',
         address: {
@@ -95,8 +95,8 @@ const VacuumSaleForm: React.FC<{
     onClose: () => void;
     onSaved: (message: string) => void;
 }> = ({ payload, sale, onClose, onSaved }) => {
-    const { offer, sellers } = payload;
-    const [form, setForm] = useState<FormState>(() => initialForm(offer, sale));
+    const { offer, sellers, can_manage: canConfirmPayment } = payload;
+    const [form, setForm] = useState<FormState>(() => initialForm(offer, sale, canConfirmPayment));
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
     const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -163,7 +163,13 @@ const VacuumSaleForm: React.FC<{
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(result.error || 'Não foi possível salvar. Tente de novo.');
-            onSaved(sale ? `Pedido ${result.order_number} atualizado.` : `Venda ${result.order_number} lançada. Ela já entra no painel ao vivo${form.status === 'paid' ? '' : ' assim que for paga'}.`);
+            onSaved(
+                sale
+                    ? `Pedido ${result.order_number} atualizado.`
+                    : canConfirmPayment
+                      ? `Venda ${result.order_number} lançada. Ela já entra no painel ao vivo${form.status === 'paid' ? '' : ' assim que for paga'}.`
+                      : `Venda ${result.order_number} lançada. Ela entra no painel ao vivo quando o gerente confirmar o pagamento.`
+            );
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Não foi possível salvar. Tente de novo.');
             setSaving(false);
@@ -270,12 +276,18 @@ const VacuumSaleForm: React.FC<{
                                 </select>
                             </Field>
                         ) : <div className="hidden sm:block" />}
-                        <Field label="Situação" hint={form.status === 'paid' ? 'Conta no placar, no lote e no relatório.' : 'Fica na lista, sem contar no placar, até marcar como paga.'}>
-                            <select className={vacuumInputCls} value={form.status} onChange={(e) => set('status', e.target.value as FormState['status'])}>
-                                <option value="paid">Pago</option>
-                                <option value="pending">Aguardando pagamento</option>
-                            </select>
-                        </Field>
+                        {canConfirmPayment ? (
+                            <Field label="Situação" hint={form.status === 'paid' ? 'Conta no placar, no lote e no relatório.' : 'Fica na lista, sem contar no placar, até marcar como paga.'}>
+                                <select className={vacuumInputCls} value={form.status} onChange={(e) => set('status', e.target.value as FormState['status'])}>
+                                    <option value="paid">Pago</option>
+                                    <option value="pending">Aguardando pagamento</option>
+                                </select>
+                            </Field>
+                        ) : (
+                            <Field label="Situação" hint="O gerente confirma o pagamento. Até lá, a venda fica na lista, sem contar no placar.">
+                                <input className={`${vacuumInputCls} cursor-default opacity-70`} readOnly value="Aguardando pagamento" />
+                            </Field>
+                        )}
                         <Field label="Data da venda">
                             <input className={vacuumInputCls} type="date" required max={todaySP()} value={form.sale_date} onChange={(e) => set('sale_date', e.target.value)} />
                         </Field>

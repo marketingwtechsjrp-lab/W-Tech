@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.62.3 (2026-11-06) - Venda lançada por vendedor fica aguardando o gerente
+- Venda manual lançada por vendedor entra sempre como Aguardando, fora do placar e do lote
+- Só o gerente confirma o pagamento, e a comemoração do painel acontece nessa hora
+- Formulário do vendedor mostra a situação fixa e avisa que o gerente confirma
+- O banco também recusa venda da promoção criada fora do sistema por quem não é gerente
+
 ## v3.62.2 (2026-11-06) - Só o gerente altera vendas da Vacuum Pump
 - Vendedor continua lançando venda nova, mas não edita, não marca como pago e não cancela
 - Na tela geral de Pedidos, a venda da promoção fica só para consulta para o vendedor, sem arrastar nem mudar de etapa
