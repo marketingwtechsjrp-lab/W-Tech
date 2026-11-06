@@ -83,6 +83,9 @@ async function isolar(page: Page, baseURL: string | undefined, { bancoNoAr = tru
     externos: [] as string[],
     quebrada: null as RegExp | null,
     indisponivel: null as RegExp | null,
+    arquivoFalhando: null as RegExp | null,
+    voltaNaRenovacao: false,
+    carregamentos: 0,
     trocaNoCodigo: null as TrocaNoCodigo | null,
     trocas: 0,
   };
@@ -117,10 +120,17 @@ async function isolar(page: Page, baseURL: string | undefined, { bancoNoAr = tru
       rede.externos.push(url.host);
       return route.abort();
     }
+    if (pedido.isNavigationRequest()) rede.carregamentos += 1;
     if (rede.quebrada?.test(url.pathname)) {
       return route.fulfill({ contentType: 'text/javascript', body: MODULO_QUE_QUEBRA });
     }
     if (rede.indisponivel?.test(url.pathname)) return route.abort();
+    if (rede.arquivoFalhando?.test(url.pathname)) {
+      // Módulo e modulepreload falham. O `fetch` é a renovação feita antes do reload.
+      if (pedido.resourceType() !== 'fetch') return route.abort();
+      if (rede.voltaNaRenovacao) rede.arquivoFalhando = null;
+      return route.continue();
+    }
     if (rede.trocaNoCodigo && ARQUIVOS_DE_CODIGO.test(url.pathname)) {
       const corpo = await (await route.fetch()).text();
       const { alvo, novo } = rede.trocaNoCodigo;
@@ -261,7 +271,106 @@ test('a limpeza da query não refaz a página que quebrou', async ({ page, baseU
   expect(errosDeTela(rede.eventos).length).toBe(1);
 });
 
-// No WebKit, um reload simples não sai daqui: ver recarregarPagina em PageErrorBoundary.tsx.
+test('falha passageira do arquivo: o site recarrega sozinho e a pessoa não vê o aviso', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.arquivoFalhando = arquivoDaPagina('Courses');
+  rede.voltaNaRenovacao = true;
+  // Segura a renovação para dar tempo de olhar o que aparece durante a tentativa.
+  await page.route(arquivoDaPagina('Courses'), async (route) => {
+    if (route.request().resourceType() === 'fetch') await new Promise((pronto) => setTimeout(pronto, 1_500));
+    return route.fallback();
+  });
+
+  await page.goto('/cursos');
+
+  await expect(page.getByRole('status', { name: 'Carregando' })).toBeVisible();
+  await expect(tela(page)).toBeHidden();
+
+  await expect(page.locator('header').first()).toBeVisible();
+  await expect(tela(page)).toBeHidden();
+  expect(rede.carregamentos).toBe(2);
+  expect(eventosDe(rede.eventos, 'page_load_retry').map((evento) => evento.label.split(' | ')[0])).toEqual(['/cursos']);
+  expect(errosDeTela(rede.eventos)).toEqual([]);
+});
+
+test('falha que continua: tenta uma vez só e mostra o aviso', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.arquivoFalhando = arquivoDaPagina('Courses');
+
+  await page.goto('/cursos');
+
+  await expect(tela(page)).toBeVisible();
+  await expect.poll(() => errosDeTela(rede.eventos).length).toBe(1);
+  await page.waitForTimeout(1_500);
+  expect(rede.carregamentos).toBe(2);
+  expect(eventosDe(rede.eventos, 'page_load_retry').length).toBe(1);
+  await expect(tela(page)).toBeVisible();
+});
+
+test('erro de programação não recarrega sozinho', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.quebrada = arquivoDaPagina('Courses');
+
+  await page.goto('/cursos');
+
+  await expect(tela(page)).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(rede.carregamentos).toBe(1);
+  expect(eventosDe(rede.eventos, 'page_load_retry')).toEqual([]);
+});
+
+test('sem como ler a marca da tentativa, não recarrega sozinho', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.arquivoFalhando = arquivoDaPagina('Courses');
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'sessionStorage', { get() { throw new Error('Armazenamento bloqueado'); } });
+  });
+
+  await page.goto('/cursos');
+
+  await expect(tela(page)).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(rede.carregamentos).toBe(1);
+  // O trackEvent lê o sessionStorage antes de gravar: sem ele, nenhum evento chega ao painel.
+  expect(eventosDe(rede.eventos, 'page_load_retry')).toEqual([]);
+});
+
+test('sem como gravar a marca da tentativa, não recarrega sozinho', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.arquivoFalhando = arquivoDaPagina('Courses');
+  await page.addInitScript(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (this: Storage, chave: string, valor: string) {
+      if (chave.startsWith('wtech_nova_tentativa')) throw new Error('Armazenamento cheio');
+      return original.call(this, chave, valor);
+    };
+  });
+
+  await page.goto('/cursos');
+
+  await expect(tela(page)).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(rede.carregamentos).toBe(1);
+  await expect.poll(() => errosDeTela(rede.eventos).length).toBe(1);
+});
+
+test('sem conexão, mostra o aviso em vez de cair na página de erro do navegador', async ({ page, baseURL }) => {
+  const rede = await isolar(page, baseURL);
+  rede.arquivoFalhando = arquivoDaPagina('Courses');
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'onLine', { get: () => false });
+  });
+
+  await page.goto('/cursos');
+
+  await expect(tela(page)).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(rede.carregamentos).toBe(1);
+  expect(errosDeTela(rede.eventos).length).toBe(1);
+});
+
+// Com a rede recusando também a renovação, não recarrega sozinho: fica no aviso até a pessoa clicar.
+// No WebKit, um reload simples não sairia daqui: ver renovarArquivos em PageErrorBoundary.tsx.
 test('arquivo da página indisponível mostra o aviso e recarregar resolve', async ({ page, baseURL }) => {
   const rede = await isolar(page, baseURL);
   rede.indisponivel = arquivoDaPagina('Courses');
@@ -269,6 +378,8 @@ test('arquivo da página indisponível mostra o aviso e recarregar resolve', asy
   await page.goto('/cursos');
   await expect(tela(page)).toBeVisible();
   await expect.poll(() => errosDeTela(rede.eventos).length).toBe(1);
+  expect(rede.carregamentos).toBe(1);
+  expect(eventosDe(rede.eventos, 'page_load_retry').length).toBe(1);
 
   rede.indisponivel = null;
   await page.getByRole('button', { name: 'Recarregar a página' }).click();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MessageCircle, RefreshCw } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
@@ -14,29 +14,66 @@ const TELEFONE_RESERVA = '551732312858';
 export const isPreviewRoute = (pathname: string, search: string): boolean =>
     pathname === '/lp-preview' || new URLSearchParams(search).get('preview') === '1';
 
-const registrarErro = (acao: string, error: unknown, origem?: string) => {
+const mensagemDoErro = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+const registrarErro = async (acao: string, error: unknown, origem?: string) => {
     // Só o pathname: a query pode trazer dados de quem está navegando.
     const { pathname, search } = window.location;
     if (isPreviewRoute(pathname, search)) return;
 
-    const mensagem = (error instanceof Error ? error.message : String(error)).slice(0, 200);
+    const mensagem = mensagemDoErro(error).slice(0, 200);
     // A rota vai no label porque é o único campo que chega ao GA4; a coluna `path` fica só no painel.
-    void trackEvent('Erro de tela', acao, [pathname, origem, mensagem].filter(Boolean).join(' | '));
+    await trackEvent('Erro de tela', acao, [pathname, origem, mensagem].filter(Boolean).join(' | '));
 };
+
+/** Devolve o resultado, ou nulo se a rede passar de 3 s: nada aqui pode segurar o reload. */
+const comLimite = <T,>(promessa: Promise<T>): Promise<T | null> =>
+    Promise.race([promessa, new Promise<null>((pronto) => setTimeout(() => pronto(null), 3000))]);
 
 /**
  * No WebKit, um <link rel="modulepreload"> que falhou fica preso na memória: o arquivo não é
  * pedido de novo nem depois de recarregar, e a tela de aviso voltaria sempre (WebKit bug 270357;
  * medido em 06/11/2026 no WebKit 26.4 do Playwright). O Vite injeta esse link em toda página
- * sob demanda. Baixar os arquivos antes renova essa entrada. O limite garante o reload sem rede.
+ * sob demanda. Baixar os arquivos antes renova essa entrada.
+ *
+ * Devolve falso se a rede recusou algum arquivo. Rede lenta conta como viva.
  */
-const recarregarPagina = async () => {
+const renovarArquivos = async (): Promise<boolean> => {
     const arquivos = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"]'));
-    await Promise.race([
+    const resultado = await comLimite(
         Promise.allSettled(arquivos.map((link) => fetch(link.href, { cache: 'reload' }).then((resposta) => resposta.blob()))),
-        new Promise((pronto) => setTimeout(pronto, 3000)),
-    ]);
+    );
+    return !resultado?.some((item) => item.status === 'rejected');
+};
+
+/** O botão recarrega de qualquer jeito: quem clicou já decidiu tentar. */
+const recarregarPagina = async () => {
+    await renovarArquivos();
     window.location.reload();
+};
+
+// A mensagem de arquivo que não chegou muda de navegador para navegador.
+const FALHA_DE_ARQUIVO = /dynamically imported module|importing a module script failed|unable to preload css|not a valid javascript mime type/i;
+
+const chaveDaTentativa = () => `wtech_nova_tentativa:${window.location.pathname}`;
+
+/** Só para arquivo que não chegou: um erro de programação voltaria igual depois do reload. */
+const podeTentarDeNovo = (error: unknown): boolean => {
+    if (!FALHA_DE_ARQUIVO.test(mensagemDoErro(error)) || navigator.onLine === false) return false;
+    try {
+        return sessionStorage.getItem(chaveDaTentativa()) === null;
+    } catch {
+        return false;
+    }
+};
+
+const marcarTentativa = (): boolean => {
+    try {
+        sessionStorage.setItem(chaveDaTentativa(), '1');
+        return true;
+    } catch {
+        return false;
+    }
 };
 
 const PageErrorScreen = () => {
@@ -84,6 +121,42 @@ const PageErrorScreen = () => {
 };
 
 /**
+ * Quando o arquivo da página não chega, o site recarrega sozinho, uma vez por rota em cada sessão,
+ * e a pessoa só vê o carregamento. Sem a marca ou sem rede não recarrega: a marca é o que impede a
+ * repetição infinita, e o reload sem rede cairia na página de erro do navegador, sem o WhatsApp.
+ */
+const PageErrorFallback = ({ error }: { error: unknown }) => {
+    const [tentando, setTentando] = useState(() => podeTentarDeNovo(error));
+
+    useEffect(() => {
+        if (!tentando) return;
+        void (async () => {
+            if (marcarTentativa()) {
+                // Espera o registro: a navegação cancelaria o envio, e o painel não veria a tentativa.
+                const [redeRespondeu] = await Promise.all([
+                    renovarArquivos(),
+                    comLimite(registrarErro('page_load_retry', error)),
+                ]);
+                if (redeRespondeu) {
+                    window.location.reload();
+                    return;
+                }
+            }
+            void registrarErro('page_render_error', error);
+            setTentando(false);
+        })();
+    }, [error, tentando]);
+
+    if (!tentando) return <PageErrorScreen />;
+
+    return (
+        <main data-page-error role="status" aria-label="Carregando" className="flex items-center justify-center min-h-screen bg-gray-50">
+            <div className="w-10 h-10 border-4 border-wtech-gold border-t-transparent rounded-full animate-spin" />
+        </main>
+    );
+};
+
+/**
  * Última proteção das rotas: um erro de render mostra um aviso em vez de página vazia.
  *
  * O reinício usa `resetKey` e não `key={pathname}`: a key remontaria a árvore a cada
@@ -97,8 +170,11 @@ export const PageErrorBoundary = ({ children }: { children: React.ReactNode }) =
     return (
         <ErrorBoundary
             resetKey={pathname}
-            onError={(error) => registrarErro('page_render_error', error)}
-            fallback={<PageErrorScreen />}
+            // Na nova tentativa, quem registra é o PageErrorFallback: `page_render_error` é só de quem viu o aviso.
+            onError={(error) => {
+                if (!podeTentarDeNovo(error)) void registrarErro('page_render_error', error);
+            }}
+            fallback={(error) => <PageErrorFallback error={error} />}
         >
             {children}
         </ErrorBoundary>
