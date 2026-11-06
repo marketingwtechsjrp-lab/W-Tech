@@ -182,6 +182,15 @@ export type LeadTrackingFields = Partial<Record<(typeof LEAD_UTM_KEYS)[number] |
  * Só inclui chaves preenchidas — leads sem UTM ficam com as colunas NULL e
  * aparecem como "Não informado" no filtro do CRM. Defensivo: nunca lança.
  */
+/** Cookies do Meta, para reconhecer a pessoa na compra enviada pelo servidor. */
+export function getMetaBrowserIds(): { fbp?: string; fbc?: string } {
+  if (typeof window === 'undefined') return {};
+  const fbp = readCookie('_fbp');
+  const fbclid = ({ ...readStored(), ...readUrlParams() } as TrackingParams).fbclid;
+  const fbc = readCookie('_fbc') || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : null);
+  return { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) };
+}
+
 export function getLeadTrackingFields(): LeadTrackingFields {
   if (typeof window === 'undefined') return {};
   const collected: TrackingParams = { ...readStored(), ...readUrlParams() };

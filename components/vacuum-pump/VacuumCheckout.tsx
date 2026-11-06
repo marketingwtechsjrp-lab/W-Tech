@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Check, CheckCircle2, ChevronDown, Copy, CreditCard, Lock, Plus, QrCode, RotateCcw, ShieldCheck, ShoppingCart, Timer, Truck, User, X } from 'lucide-react';
 import { pushBeginCheckout, pushLead } from '../../lib/dataLayer';
-import { getLeadTrackingFields } from '../../lib/tracking';
+import { getLeadTrackingFields, getMetaBrowserIds } from '../../lib/tracking';
 import {
     VACUUM_ITEM_NAME,
     computeVacuumCart,
@@ -30,6 +30,7 @@ import {
     trackCheckoutStep,
     type CheckoutStepName,
 } from './vacuumCheckoutTracking';
+import { identifyVacuumBuyer, trackVacuumAddPaymentInfo, trackVacuumInitiateCheckout, trackVacuumLead } from './vacuumMeta';
 
 declare global {
     interface Window {
@@ -185,6 +186,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             /* sessão bloqueada: segue com o formulário vazio */
         }
         pushBeginCheckout({ funnel: FUNNEL, item_name: VACUUM_ITEM_NAME, value: offer.price, currency: 'BRL', provider: 'mercadopago' });
+        trackVacuumInitiateCheckout(cartRef.current.total, cartRef.current.bump_ids);
         window.history.pushState({ ...window.history.state, vpCheckout: true }, '');
         const previous = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
@@ -215,6 +217,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         if (screen !== 'form') return;
         trackCheckoutStep(STEP_NAMES[step]);
         markCheckoutInProgress(STEP_NAMES[step]);
+        if (step === 3) trackVacuumAddPaymentInfo(cartRef.current.total, cartRef.current.bump_ids);
     }, [step, screen]);
     useEffect(() => clearCheckoutInProgress, []);
 
@@ -238,7 +241,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         setBusy(true);
         setError(null);
         try {
-            const result = await vacuumApi.lead({ ...contact, source: 'checkout', tracking: getLeadTrackingFields() as Record<string, string> });
+            const result = await vacuumApi.lead({ ...contact, source: 'checkout', tracking: { ...getLeadTrackingFields(), ...getMetaBrowserIds() } as Record<string, string> });
             if (!result.checkout_id) throw new Error(result.error || 'Não foi possível continuar.');
             setCheckoutId(result.checkout_id);
             try {
@@ -248,6 +251,8 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             }
             // Os adicionais foram escolhidos no carrinho, antes de existir o checkout: o vendedor precisa vê-los.
             if (bumps.length) void vacuumApi.save({ checkout_id: result.checkout_id, bumps }).catch(() => undefined);
+            identifyVacuumBuyer(contact);
+            trackVacuumLead(offer.price);
             pushLead({
                 funnel: FUNNEL,
                 item_name: VACUUM_ITEM_NAME,
@@ -321,6 +326,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             setError(saved?.error || 'Não foi possível salvar. Tente de novo.');
             return;
         }
+        identifyVacuumBuyer({ ...contact, city: address.city, state: address.state, cep: address.cep });
         setStep(3);
     };
 

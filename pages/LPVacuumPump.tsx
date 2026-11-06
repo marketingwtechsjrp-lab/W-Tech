@@ -4,6 +4,7 @@ import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
 import VacuumCheckoutBoundary from '../components/vacuum-pump/VacuumCheckoutBoundary';
 import { reportInterruptedCheckout } from '../components/vacuum-pump/vacuumCheckoutTracking';
+import { identifyVacuumBuyer, trackVacuumLead, trackVacuumViewContent } from '../components/vacuum-pump/vacuumMeta';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
 import { VacuumARButton } from '../components/vacuum-pump/VacuumARButton';
 import VacuumVideo, { type VacuumVideoHandle } from '../components/vacuum-pump/VacuumVideo';
@@ -23,7 +24,7 @@ import {
 } from '../components/vacuum-pump/vacuumApi';
 import { trackEvent } from '../components/AnalyticsTracker';
 import { pushLead } from '../lib/dataLayer';
-import { getLeadTrackingFields } from '../lib/tracking';
+import { getLeadTrackingFields, getMetaBrowserIds } from '../lib/tracking';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl';
 import { VACUUM_ITEM_NAME, brlParts, computeVacuumCart, formatBRL, normalizeBrPhone, vacuumEndTimeLabel, vacuumUrgencyLabel } from '../lib/vacuumOffer';
 
@@ -153,12 +154,14 @@ const LeadForm: React.FC<{ offer: VacuumOffer; onDone?: () => void; compact?: bo
         if (!normalizeBrPhone(phone)) return setError('Informe o WhatsApp com DDD.');
         setState('sending');
         setError(null);
-        const result = await vacuumApi.lead({ name, phone, source, tracking: getLeadTrackingFields() as Record<string, string> }).catch(() => null);
+        const result = await vacuumApi.lead({ name, phone, source, tracking: { ...getLeadTrackingFields(), ...getMetaBrowserIds() } as Record<string, string> }).catch(() => null);
         if (!result?.checkout_id) {
             setState('idle');
             return setError(result?.error || 'Não foi possível enviar. Tente de novo.');
         }
         pushLead({ funnel: 'vacuum_pump_bf', item_name: VACUUM_ITEM_NAME, method: 'form', lead_id: result.lead_id, user: { name, phone } });
+        identifyVacuumBuyer({ name, phone });
+        trackVacuumLead(offer.price);
         setState('done');
         onDone?.();
     };
@@ -259,7 +262,7 @@ const ComboCard: React.FC<{ offer: VacuumOffer; bumps: VacuumOffer['bumps']; tit
 };
 
 const LPVacuumPump: React.FC = () => {
-    const { offer, now, refresh } = useVacuumOffer();
+    const { offer, ready, now, refresh } = useVacuumOffer();
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [checkoutBumps, setCheckoutBumps] = useState<string[]>([]);
     const [exitOpen, setExitOpen] = useState(false);
@@ -294,6 +297,11 @@ const LPVacuumPump: React.FC = () => {
     }, []);
 
     useEffect(reportInterruptedCheckout, []);
+
+    // Espera o preço do servidor: antes disso, o valor enviado ao Meta poderia ser o padrão.
+    useEffect(() => {
+        if (ready) trackVacuumViewContent(offer.price);
+    }, [ready, offer.price]);
 
     // No celular, o bloco de preço fica abaixo da primeira tela: mede quantos chegam até ele. Não é
     // clique, por isso usa outra categoria e fica fora da contagem de cliques do painel ao vivo.

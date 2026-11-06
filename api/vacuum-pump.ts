@@ -206,7 +206,14 @@ async function handleLead(supabase: any, req: any, res: any) {
 
     // Entrou pelo link de um vendedor: a venda é dele. O link mais recente é o que vale.
     const referredBy = await resolveSellerRef(supabase, body.seller_ref);
-    const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, ...(referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
+    // A compra pode ser confirmada depois, sem a pessoa na página: é daqui que o Meta a reconhece.
+    const browserContext = {
+        fbp: typeof body.tracking?.fbp === 'string' ? body.tracking.fbp.slice(0, 200) : null,
+        fbc: typeof body.tracking?.fbc === 'string' ? body.tracking.fbc.slice(0, 300) : null,
+        ip: getRequestClientIp(req) || null,
+        ua: String(req.headers?.['user-agent'] || '').slice(0, 400) || null,
+    };
+    const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, browser_context: browserContext, ...(referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
     let checkout: any;
     if (open) {
         // Quem estava na lista de espera e entrou no checkout avança; o contrário não acontece.

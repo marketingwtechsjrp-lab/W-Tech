@@ -24,6 +24,7 @@ import {
 } from '../lib/vacuumOffer.js';
 import { pickNextAttendant } from './_roleta.js';
 import { sendEmail } from './_email.js';
+import { sendVacuumPurchaseToMeta } from './_vacuumMeta.js';
 import { brDate, sendVacuumOrderWhatsApp } from './_vacuumWhatsApp.js';
 
 const EXTERNAL_REFERENCE_PREFIX = 'vacuum:';
@@ -591,6 +592,19 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
         phone: checkout.phone,
         total,
         deadline: brDate(deadline),
+    });
+    void sendVacuumPurchaseToMeta(supabase, {
+        orderNumber: sale.order_number,
+        total,
+        contentIds: items.map((item) => item.id).filter(Boolean),
+        name: checkout.name,
+        phone: checkout.phone,
+        email: checkout.email,
+        city: address.city,
+        state: address.state,
+        cep: address.cep,
+        actionSource: 'website',
+        browser: checkout.browser_context,
     });
 
     return { saleId: sale.id, orderNumber: sale.order_number };

@@ -19,6 +19,11 @@ export const VACUUM_CAMPAIGN = 'vacuum_pump_bf_2026';
 export const isVacuumSale = (sale?: { campaign?: string | null } | null) => sale?.campaign === VACUUM_CAMPAIGN;
 export const VACUUM_CONFIG_KEY = 'vacuum_pump_offer';
 export const VACUUM_ITEM_NAME = 'Vacuum Pump Standard W-Tech';
+/** Pixel da loja, usado nos anúncios da máquina. O do curso online é outro: não misturar. */
+export const VACUUM_META_PIXEL_ID = '1109519607249858';
+export const VACUUM_META_CONTENT_ID = 'vacuum_pump_standard';
+/** Mesmo id no navegador e no servidor: é assim que o Meta conta a compra uma vez só. */
+export const vacuumPurchaseEventId = (orderNumber: string) => `vp_purchase_${orderNumber}`;
 
 export type VacuumPhase = 'soon' | 'presale' | 'regular';
 export type VacuumEndReason = 'expired' | 'sold_out' | null;

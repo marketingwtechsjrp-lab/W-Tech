@@ -13,7 +13,10 @@ export type MetaStandardEvent =
   | 'PageView'
   | 'ViewContent'
   | 'Lead'
-  | 'CompleteRegistration';
+  | 'CompleteRegistration'
+  | 'InitiateCheckout'
+  | 'AddPaymentInfo'
+  | 'Purchase';
 
 type MetaEventValue = string | number | boolean | string[];
 export type MetaEventParams = Record<string, MetaEventValue | undefined>;
@@ -23,6 +26,8 @@ interface MetaEventOptions {
   pixelId?: string | null;
   /** Impede repeticao causada por remount/effects do React. */
   onceKey?: string;
+  /** Id fixo, quando o mesmo evento tambem sai pelo servidor e o Meta precisa contar uma vez so. */
+  eventId?: string;
 }
 
 interface PendingMetaEvent {
@@ -159,7 +164,7 @@ const trackMetaEvent = (
   if (onceKey && emittedOnceKeys.has(onceKey)) return null;
 
   if (onceKey) emittedOnceKeys.add(onceKey);
-  const eventId = createEventId(eventName);
+  const eventId = options.eventId || createEventId(eventName);
   enqueueOrDeliver({
     command,
     eventId,
@@ -169,6 +174,21 @@ const trackMetaEvent = (
     onceKey,
   });
   return eventId;
+};
+
+/**
+ * Dados de quem comprou, para o Meta reconhecer a pessoa. Eles so chegam depois de o pixel iniciar,
+ * e o SDK aceita um segundo `init` para atualizar. O proprio SDK aplica o hash antes de enviar.
+ */
+export const setMetaUserData = (pixelId: string, data: Record<string, string | undefined>): void => {
+  const fbq = getFbq();
+  if (!fbq) return;
+  try {
+    fbq('init', pixelId, Object.fromEntries(Object.entries(data).filter(([, value]) => value)));
+    initializedPixels.add(pixelId);
+  } catch {
+    // Rastreamento nunca deve interromper um formulario ou checkout.
+  }
 };
 
 export const trackMetaStandardEvent = (

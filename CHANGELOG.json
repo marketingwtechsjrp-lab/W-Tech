@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.64.0",
+    "date": "2026-11-06",
+    "title": "Pixel da loja recebe o funil e as compras da Vacuum Pump",
+    "changes": [
+      "O pixel 1109519607249858 passa a receber visualização, início de checkout, contato, pagamento e compra, com valor e produto",
+      "A compra leva os dados de quem comprou, em hash, para o Meta reconhecer a pessoa e otimizar os anúncios",
+      "Compra também sai pelo servidor, com o mesmo id, para contar uma vez só e chegar mesmo se a pessoa não voltar do app do banco; liga quando a chave for configurada",
+      "Venda fechada pelo vendedor vai ao Meta quando o gerente confirma, identificada como venda por telefone"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.63.0",
     "date": "2026-11-06",
     "title": "Confirmação de compra pelo WhatsApp e acompanhamento do checkout no painel",

@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.0 (2026-11-06) - Pixel da loja recebe o funil e as compras da Vacuum Pump
+- O pixel 1109519607249858 passa a receber visualização, início de checkout, contato, pagamento e compra, com valor e produto
+- A compra leva os dados de quem comprou, em hash, para o Meta reconhecer a pessoa e otimizar os anúncios
+- Compra também sai pelo servidor, com o mesmo id, para contar uma vez só e chegar mesmo se a pessoa não voltar do app do banco; liga quando a chave for configurada
+- Venda fechada pelo vendedor vai ao Meta quando o gerente confirma, identificada como venda por telefone
+
 ## v3.63.0 (2026-11-06) - Confirmação de compra pelo WhatsApp e acompanhamento do checkout no painel
 - Compra confirmada, no site ou pelo gerente, manda uma mensagem automática pelo WhatsApp oficial, uma vez por pedido
 - Painel ao vivo mostra por qual etapa do checkout as pessoas passam, de quem clicou em comprar até quem comprou

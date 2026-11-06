@@ -19,8 +19,13 @@ let permissoes;
 
 /** Só o WhatsApp oficial é falso: as consultas ao banco de mentira do harness seguem normais. */
 const enviosWhatsApp = [];
+const enviosMeta = [];
 globalThis.__vendasFetch = async (url, init = {}) => {
   if (!String(url).includes('graph.facebook.com')) return fetch(url, init);
+  if (String(url).includes('/events')) {
+    enviosMeta.push(JSON.parse(init.body));
+    return { ok: true, status: 200, json: async () => ({ events_received: 1 }) };
+  }
   enviosWhatsApp.push(JSON.parse(init.body));
   return { ok: true, status: 200, json: async () => ({ contacts: [{ wa_id: '5517999991234' }], messages: [{ id: `wamid.${enviosWhatsApp.length}` }] }) };
 };
@@ -41,7 +46,9 @@ before(async () => {
 });
 after(async () => { await h.fechar(); });
 
-beforeEach(() => {
+beforeEach(async () => {
+  // O envio não trava a venda: deixa o do teste anterior terminar, para não contar neste.
+  await pausa(120);
   permissoes = { campaign_sales_view: true, campaign_sales_manage: true };
   h.estado.tabelas = {
     SITE_Users: [
@@ -55,6 +62,7 @@ beforeEach(() => {
     { key: 'whatsapp_cloud_phone_number_id', value: '555' },
   ];
   enviosWhatsApp.length = 0;
+  enviosMeta.length = 0;
   h.estado.chamadas.length = 0;
   h.estado.rpcs = {
     site_staff_session_validar: () => [{ ...GERENTE, permissions: permissoes }],
@@ -286,6 +294,24 @@ test('editar uma venda aguardando para paga confirma ao cliente', async () => {
   await esperarEnvios();
   assert.equal(enviosWhatsApp.length, 1);
   assert.equal(enviosWhatsApp[0].template.components[0].parameters[0].text, 'Maria');
+});
+
+test('venda do vendedor vai ao Meta só quando paga, marcada como venda por telefone', async () => {
+  h.estado.tabelas.SITE_Config.push({ key: 'meta_config', value: JSON.stringify({ capiToken: 'token-meta' }) });
+  await chamar('handleVacuumSaleCreate', venda({ status: 'pending' }));
+  await esperarEnvios();
+  assert.equal(enviosMeta.length, 0, 'ainda não está paga');
+
+  await chamar('handleVacuumSaleStatus', { id: ID_1, status: 'paid' });
+  await esperarEnvios();
+  assert.equal(enviosMeta.length, 1);
+  const [evento] = enviosMeta[0].data;
+  assert.equal(evento.action_source, 'phone_call');
+  assert.equal(evento.event_id, `vp_purchase_${vendasGravadas()[0].order_number}`);
+  assert.equal(evento.event_source_url, undefined);
+  assert.equal(evento.custom_data.value, vendasGravadas()[0].total_value);
+  assert.ok(evento.custom_data.content_ids.length >= 1);
+  assert.ok(evento.user_data.ph?.length === 1);
 });
 
 test('cancelar muda a situação, sem apagar o pedido', async () => {

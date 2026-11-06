@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -197,11 +198,12 @@ function mockMercadoPago(respond) {
 const CARD_FORM = { payment_method_id: 'visa', token: 'tok_123', installments: 10, issuer_id: '25', payer: { email: 'a@b.com', identification: { type: 'CPF', number: '52998224725' } } };
 const VALID_ADDRESS = { cep: '15000-000', street: 'Rua A', number: '10', neighborhood: 'Centro', city: 'Rio Preto', state: 'SP' };
 
-async function startCheckout({ phone = '17 99999-0001', email = 'cliente@oficina.com' } = {}) {
+async function startCheckout({ phone = '17 99999-0001', email = 'cliente@oficina.com', tracking = {} } = {}) {
     const lead = await call(lib.apiHandler, {
         method: 'POST',
         query: { action: 'lead' },
-        body: { name: 'João da Silva', phone, email, source: 'checkout', tracking: { utm_source: 'whatsapp', hacker: 'x' } },
+        headers: { 'user-agent': 'Navegador de teste' },
+        body: { name: 'João da Silva', phone, email, source: 'checkout', tracking: { utm_source: 'whatsapp', hacker: 'x', ...tracking } },
     });
     assert.equal(lead.status, 200);
     const save = await call(lib.apiHandler, {
@@ -514,6 +516,86 @@ test('WhatsApp: datas do prazo saem em dd/mm/aaaa, sem cair no dia anterior', ()
     assert.equal(lib.brDate('2026-12-23'), '23/12/2026');
     assert.equal(lib.brDate(new Date('2026-12-23T02:00:00Z')), '22/12/2026', 'vale o dia em Brasília');
     assert.equal(lib.brDate(null), 'a confirmar');
+});
+
+const sha256 = (value) => createHash('sha256').update(value).digest('hex');
+
+test('Meta: compra aprovada vai ao pixel da loja pelo servidor, com o id do navegador e sem dado aberto', async () => {
+    const db = seed();
+    db.tables.SITE_Config.push({ key: 'meta_config', value: JSON.stringify({ capiToken: 'token-meta', testEventCode: 'TESTE1' }) });
+    const calls = mockMercadoPago((url) => {
+        if (url.includes('/events')) return { json: { events_received: 1 } };
+        return { json: PAGAMENTO_APROVADO };
+    });
+    const res = await pay(await startCheckout({ tracking: { fbp: 'fb.1.1.abc', fbc: 'fb.1.1.xyz' } }));
+    await esperarEnvios();
+
+    const envios = calls.filter((c) => c.url.includes('/events'));
+    assert.equal(envios.length, 1);
+    assert.match(envios[0].url, /\/1109519607249858\/events$/, 'é o pixel da loja, não o do curso');
+    assert.equal(envios[0].headers.Authorization, 'Bearer token-meta');
+    assert.equal(envios[0].body.test_event_code, 'TESTE1');
+
+    const [evento] = envios[0].body.data;
+    assert.equal(evento.event_name, 'Purchase');
+    assert.equal(evento.event_id, `vp_purchase_${res.json.order_number}`, 'mesmo id do navegador, para contar uma vez só');
+    assert.equal(evento.action_source, 'website');
+    assert.equal(evento.custom_data.value, 7990);
+    assert.equal(evento.custom_data.currency, 'BRL');
+    assert.equal(evento.custom_data.order_id, res.json.order_number);
+    assert.ok(evento.custom_data.content_ids.includes('vacuum_pump_standard'));
+
+    const { user_data: pessoa } = evento;
+    assert.deepEqual(pessoa.em, [sha256('cliente@oficina.com')]);
+    assert.deepEqual(pessoa.ph, [sha256('5517999990001')]);
+    assert.deepEqual(pessoa.fn, [sha256('joão')]);
+    assert.deepEqual(pessoa.ln, [sha256('da silva')]);
+    assert.deepEqual(pessoa.ct, [sha256('riopreto')]);
+    assert.deepEqual(pessoa.st, [sha256('sp')]);
+    assert.deepEqual(pessoa.country, [sha256('br')]);
+    assert.equal(pessoa.fbp, 'fb.1.1.abc');
+    assert.equal(pessoa.fbc, 'fb.1.1.xyz');
+    assert.equal(pessoa.client_user_agent, 'Navegador de teste');
+    assert.ok(pessoa.client_ip_address);
+
+    const texto = JSON.stringify(envios[0].body);
+    for (const aberto of ['cliente@oficina.com', '17999990001', 'João', '52998224725', 'Rua A']) assert.ok(!texto.includes(aberto), `${aberto} não pode ir aberto`);
+});
+
+test('Meta: Pix confirmado só pelo webhook também chega, mesmo sem a pessoa na página', async () => {
+    const db = seed();
+    db.tables.SITE_Config.push({ key: 'meta_config', value: JSON.stringify({ capiToken: 'token-meta' }) });
+    const pago = { id: 951, status: 'approved', status_detail: 'accredited', installments: 1, payment_method_id: 'pix', transaction_amount: 7990 };
+    const calls = mockMercadoPago((url) => {
+        if (url.includes('/events')) return { json: { events_received: 1 } };
+        if (url.includes('/v1/payments/951')) return { json: { ...pago, external_reference: `vacuum:${db.tables.SITE_CampaignCheckouts[0].id}` } };
+        return { json: {} };
+    });
+    const id = await startCheckout();
+    Object.assign(db.tables.SITE_CampaignCheckouts.find((c) => c.id === id), { items: [{ id: 'vacuum_pump_standard', name: 'Vacuum', price: 7990 }], amount: 7990 });
+    await call(lib.webhookHandler, { method: 'POST', query: {}, body: { action: 'payment.updated', data: { id: '951' } } });
+    await esperarEnvios();
+    assert.equal(db.tables.SITE_Sales.length, 1);
+    assert.equal(calls.filter((c) => c.url.includes('/events')).length, 1);
+    assert.equal(calls.find((c) => c.url.includes('/events')).body.test_event_code, undefined, 'sem código de teste, é evento real');
+});
+
+test('Meta: sem a chave nada é enviado, e recusa do Meta não derruba a venda', async () => {
+    let db = seed();
+    let calls = mockMercadoPago(() => ({ json: PAGAMENTO_APROVADO }));
+    let res = await pay(await startCheckout());
+    await esperarEnvios();
+    assert.equal(res.json.stage, 'paid');
+    assert.equal(calls.filter((c) => c.url.includes('/events')).length, 0);
+
+    db = seed();
+    db.tables.SITE_Config.push({ key: 'meta_config', value: JSON.stringify({ capiToken: 'chave-velha' }) });
+    calls = mockMercadoPago((url) => (url.includes('/events') ? { status: 400, json: { error: { message: 'Invalid token' } } } : { json: PAGAMENTO_APROVADO }));
+    res = await pay(await startCheckout());
+    await esperarEnvios();
+    assert.equal(res.json.stage, 'paid');
+    assert.equal(db.tables.SITE_Sales.length, 1);
+    assert.equal(calls.filter((c) => c.url.includes('/events')).length, 1);
 });
 
 test('corrida: duas confirmações simultâneas do mesmo pagamento geram uma venda só', async () => {

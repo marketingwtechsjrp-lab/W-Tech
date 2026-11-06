@@ -5,6 +5,7 @@ import SEO from '../components/SEO';
 import { VP_CSS } from '../components/vacuum-pump/vacuumStyles';
 import { useVacuumPageChrome, vacuumApi, whatsappLink, type VacuumPaymentResult } from '../components/vacuum-pump/vacuumApi';
 import { pushPurchase } from '../lib/dataLayer';
+import { trackVacuumPurchase } from '../components/vacuum-pump/vacuumMeta';
 import { VACUUM_ITEM_NAME, formatBRL } from '../lib/vacuumOffer';
 
 const VacuumPumpObrigado: React.FC = () => {
@@ -42,14 +43,17 @@ const VacuumPumpObrigado: React.FC = () => {
     useEffect(() => {
         // Idempotente por transaction_id: recarregar a página não conta a venda de novo.
         if (result?.stage === 'paid') {
-            pushPurchase({
+            const orderNumber = result.order_number || checkoutId;
+            const total = Number(result.amount) || 0;
+            const firstTime = pushPurchase({
                 funnel: 'vacuum_pump_bf',
                 item_name: VACUUM_ITEM_NAME,
-                value: Number(result.amount) || 0,
+                value: total,
                 currency: 'BRL',
-                transaction_id: result.order_number || checkoutId,
+                transaction_id: orderNumber,
                 provider: 'mercadopago',
             });
+            if (firstTime) trackVacuumPurchase({ orderNumber, total, ids: (result.items || []).map((item) => item.id).filter(Boolean) });
         }
     }, [result, checkoutId]);
 

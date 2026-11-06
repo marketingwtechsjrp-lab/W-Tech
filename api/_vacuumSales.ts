@@ -22,6 +22,7 @@ import {
 } from '../lib/vacuumSales.js';
 import { isPermissionGranted, requireSameOrigin, requireStaffAnyPermission, requireStaffPermission, type StaffSessionUser } from './_auth.js';
 import { clearVacuumOfferCache, dateSP, firstName, isUuid, loadVacuumOffer } from './_vacuumPump.js';
+import { sendVacuumPurchaseToMeta } from './_vacuumMeta.js';
 import { brDate, sendVacuumOrderWhatsApp } from './_vacuumWhatsApp.js';
 
 // Vendedor lança venda nova; alterar o que já foi lançado é só do gerente.
@@ -387,11 +388,48 @@ export async function handleVacuumSaleCreate(supabase: any, req: any, res: any) 
     clearVacuumOfferCache();
     if (input.status === 'paid') {
         await closeCustomerFollowUps(supabase, { id: sale.id, total: input.total, orderNumber: sale.order_number, phone: input.phone, sellerId: input.seller.id }, lead, nowIso);
-        void sendVacuumOrderWhatsApp(supabase, { orderNumber: sale.order_number, firstName: firstName(input.name), phone: input.phone, total: input.total, deadline: brDate(deliveryDate) });
+        announcePaidSale(supabase, { orderNumber: sale.order_number, name: input.name, phone: input.phone, email: input.email, total: input.total, deliveryDate, items: input.items, city: input.address.city, state: input.address.state, cep: input.address.cep });
     }
     await audit(supabase, staff, `Lançou a venda manual ${sale.order_number} para ${input.seller.name}, ${input.total.toFixed(2)} (${input.status}).`);
     console.log(`[Vacuum] Venda manual ${sale.order_number} lançada por ${staff.name}.`);
     return res.status(201).json({ ok: true, sale_id: sale.id, order_number: sale.order_number });
+}
+
+/** Venda paga: confirma ao cliente e avisa o Meta. Nenhum dos dois pode derrubar a venda. */
+function announcePaidSale(
+    supabase: any,
+    sale: {
+        orderNumber: string;
+        name?: string | null;
+        phone: unknown;
+        email?: string | null;
+        total: number;
+        deliveryDate?: string | null;
+        items?: { id?: string }[] | null;
+        city?: string | null;
+        state?: string | null;
+        cep?: string | null;
+    }
+): void {
+    void sendVacuumOrderWhatsApp(supabase, {
+        orderNumber: sale.orderNumber,
+        firstName: firstName(sale.name),
+        phone: sale.phone,
+        total: sale.total,
+        deadline: brDate(sale.deliveryDate),
+    });
+    void sendVacuumPurchaseToMeta(supabase, {
+        orderNumber: sale.orderNumber,
+        total: sale.total,
+        contentIds: (Array.isArray(sale.items) ? sale.items : []).map((item) => String(item?.id || '')).filter(Boolean),
+        name: sale.name,
+        phone: sale.phone,
+        email: sale.email,
+        city: sale.city,
+        state: sale.state,
+        cep: sale.cep,
+        actionSource: 'phone_call',
+    });
 }
 
 /** Carrega a venda e recusa o que não foi lançado à mão. Responde sozinho quando recusa. */
@@ -457,7 +495,7 @@ export async function handleVacuumSaleUpdate(supabase: any, req: any, res: any) 
     if (becamePaid) {
         const lead = await ensureLead(supabase, input, nowIso);
         await closeCustomerFollowUps(supabase, { id: current.id, total: input.total, orderNumber: current.order_number, phone: input.phone, sellerId: input.seller.id }, lead, nowIso);
-        void sendVacuumOrderWhatsApp(supabase, { orderNumber: current.order_number, firstName: firstName(input.name), phone: input.phone, total: input.total, deadline: brDate(current.estimated_delivery_date) });
+        announcePaidSale(supabase, { orderNumber: current.order_number, name: input.name, phone: input.phone, email: input.email, total: input.total, deliveryDate: current.estimated_delivery_date, items: input.items, city: input.address.city, state: input.address.state, cep: input.address.cep });
     }
     await audit(supabase, staff, `Editou a venda manual ${current.order_number}: ${input.seller.name}, ${input.total.toFixed(2)} (${input.status}).`);
     return res.status(200).json({ ok: true, sale_id: current.id, order_number: current.order_number });
@@ -495,12 +533,17 @@ export async function handleVacuumSaleStatus(supabase: any, req: any, res: any) 
                 nowIso
             );
         }
-        void sendVacuumOrderWhatsApp(supabase, {
+        announcePaidSale(supabase, {
             orderNumber: current.order_number,
-            firstName: firstName(current.customer_name),
+            name: current.customer_name,
             phone: current.customer_phone,
+            email: current.customer_email,
             total: Number(current.total_value) || 0,
-            deadline: brDate(current.estimated_delivery_date),
+            deliveryDate: current.estimated_delivery_date,
+            items: current.items,
+            city: current.delivery_city,
+            state: current.delivery_state,
+            cep: current.delivery_cep,
         });
     }
     await audit(supabase, staff, `Mudou a venda manual ${current.order_number} de ${current.status} para ${body.status}.`);
