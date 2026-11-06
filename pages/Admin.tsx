@@ -73,6 +73,7 @@ import CommandPalette from '../components/admin/keyboard/CommandPalette';
 import ShortcutsHelp from '../components/admin/keyboard/ShortcutsHelp';
 import AnalyticsView from '../components/admin/Analytics/AnalyticsView';
 const VacuumLivePanel = lazy(() => import('../components/admin/Campaign/VacuumLivePanel'));
+const VacuumOrdersView = lazy(() => import('../components/admin/Campaign/VacuumOrdersView'));
 import { sendWhatsAppMessage, sendWhatsAppMedia } from '../lib/whatsapp';
 import { formatDateLocal, cn } from '../lib/utils';
 import changelogData from '../CHANGELOG.json';
@@ -186,7 +187,7 @@ const MapPreview = ({ lat, lng }: { lat: number, lng: number }) => {
     return <div ref={containerRef} className="w-full h-48 rounded-lg border border-gray-300 mt-2" />;
 };
 
-type View = 'dashboard' | 'course_surveys' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing' | 'manager_chat';
+type View = 'dashboard' | 'course_surveys' | 'analytics' | 'crm' | 'ai_generator' | 'blog_manager' | 'settings' | 'students' | 'mechanics' | 'finance' | 'orders' | 'team' | 'courses_manager' | 'lp_builder' | 'email_marketing' | 'tasks' | 'catalog_manager' | 'springs_manager' | 'suspension_oil_manager' | 'clients' | 'invoices' | 'intelligence' | 'cashflow' | 'sales_recovery' | 'affiliates_manager' | 'system_logs' | 'whatsapp_inbox' | 'ai_assistants' | 'pop_marketing' | 'manager_chat' | 'vacuum_live' | 'vacuum_orders';
 
 // SidebarItem moved to AdminSidebar.tsx
 
@@ -7808,7 +7809,7 @@ const KNOWN_ADMIN_VIEWS = new Set([
     'mechanics', 'courses_manager', 'certificates', 'lp_builder', 'blog_manager',
     'email_marketing', 'marketing_hub', 'pop_marketing', 'intelligence', 'tasks',
     'settings', 'system_logs', 'clients', 'invoices', 'sales_recovery',
-    'affiliates_manager', 'ai_assistants', 'manager_chat', 'course_surveys',
+    'affiliates_manager', 'ai_assistants', 'manager_chat', 'course_surveys', 'vacuum_live', 'vacuum_orders',
 ]);
 
 const Admin = () => {
@@ -8279,7 +8280,12 @@ const Admin = () => {
                         {currentView === 'analytics' && hasPermission('analytics_view') && <AnalyticsView />}
                         {currentView === 'vacuum_live' && hasPermission('campaign_live_view') && (
                             <Suspense fallback={<p className="p-6 text-sm text-[var(--admin-text-secondary)]">Carregando o painel...</p>}>
-                                <VacuumLivePanel />
+                                <VacuumLivePanel onOpenOrders={hasPermission('campaign_sales_view') ? () => setCurrentView('vacuum_orders') : undefined} />
+                            </Suspense>
+                        )}
+                        {currentView === 'vacuum_orders' && hasPermission('campaign_sales_view') && (
+                            <Suspense fallback={<p className="p-6 text-sm text-[var(--admin-text-secondary)]">Carregando os pedidos...</p>}>
+                                <VacuumOrdersView onOpenPanel={hasPermission('campaign_live_view') ? () => setCurrentView('vacuum_live') : undefined} />
                             </Suspense>
                         )}
                         {currentView === 'whatsapp_inbox' && resolvePermission('whatsapp_inbox_view', 'crm_view') && <WhatsAppModule canTrainAI={hasPermission('whatsapp_ai_train')} canViewMetrics={hasPermission('whatsapp_view_metrics')} canViewAll={hasPermission('whatsapp_view_all')} />}

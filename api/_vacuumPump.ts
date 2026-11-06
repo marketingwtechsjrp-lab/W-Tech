@@ -245,7 +245,7 @@ function paymentMethodLabel(payment: any): string {
     return `Mercado Pago - Cartão ${installments}x`;
 }
 
-function dateSP(date: Date): string {
+export function dateSP(date: Date): string {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(date);
 }
 

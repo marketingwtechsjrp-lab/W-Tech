@@ -1,6 +1,13 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.61.0 (2026-11-06) - Vendas manuais da promoção, lista de pedidos e relatório em PDF
+- Nova tela Pedidos da promoção, com botão no painel de vendas ao vivo, para lançar a venda quando o vendedor fecha fora do site
+- Venda manual paga entra no placar e no lote e dispara a comemoração do painel, mas fica fora do funil e da conversão do site
+- Lista com as vendas do site e as manuais, com busca e filtros; a venda manual pode ser editada, marcada como paga ou cancelada
+- Relatório por vendedor, por período, com download em PDF e impressão
+- Permissões novas em Equipe & Acesso: Ver Pedidos e Relatório da Promoção e Lançar e Editar Vendas Manuais da Promoção
+
 ## v3.60.6 (2026-11-05) - Seletor de parcelas sempre visível no cartão da Vacuum Pump
 - Seletor Em quantas vezes? sempre visível no cartão, de 1x a 10x sem juros, com o valor de cada parcela
 - Resumo do pedido acompanha a quantidade de parcelas escolhida

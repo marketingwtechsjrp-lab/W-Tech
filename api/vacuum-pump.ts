@@ -11,6 +11,7 @@ import {
 import { getServiceClient } from './_auth.js';
 import { denyCron, isCronAuthorized } from './_cron.js';
 import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js';
+import { handleVacuumSaleCreate, handleVacuumSaleStatus, handleVacuumSaleUpdate, handleVacuumSalesList } from './_vacuumSales.js';
 import { getRequestClientIp } from './_geoip.js';
 import {
     assignFollowUp,
@@ -37,6 +38,8 @@ import {
  *   POST pay      → cria o pagamento. O total é calculado aqui, o navegador não informa preço
  *   GET  status   → situação do pedido (página de Pix e de obrigado)
  *   GET  sweep    → cron: entrega aos vendedores quem não comprou
+ *   GET  sales    → equipe: pedidos da promoção, vendedores e oferta atual
+ *   POST sale_create / sale_update / sale_status → equipe: venda manual
  */
 
 const CHECKOUTS = 'SITE_CampaignCheckouts';
@@ -542,6 +545,7 @@ export default async function handler(req: any, res: any) {
             if (action === 'offer') return await handleOffer(supabase, res);
             if (action === 'status') return await handleStatus(supabase, req, res);
             if (action === 'dashboard') return await handleVacuumDashboard(supabase, req, res);
+            if (action === 'sales') return await handleVacuumSalesList(supabase, req, res);
             if (action === 'sweep') {
                 if (!isCronAuthorized(req)) return denyCron(res);
                 const result = await sweepVacuumAbandoned(supabase);
@@ -555,6 +559,9 @@ export default async function handler(req: any, res: any) {
             if (action === 'shipping') return await handleShipping(supabase, req, res);
             if (action === 'pay') return await handlePay(supabase, req, res);
             if (action === 'dashboard_goals') return await handleVacuumGoals(supabase, req, res);
+            if (action === 'sale_create') return await handleVacuumSaleCreate(supabase, req, res);
+            if (action === 'sale_update') return await handleVacuumSaleUpdate(supabase, req, res);
+            if (action === 'sale_status') return await handleVacuumSaleStatus(supabase, req, res);
         }
         return res.status(404).json({ error: 'Ação desconhecida' });
     } catch (err: any) {

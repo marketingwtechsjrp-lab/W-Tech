@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize, Minimize, PartyPopper, Radio, Settings2, Target, Volume2, VolumeX, X } from 'lucide-react';
+import { Maximize, Minimize, PartyPopper, Radio, ReceiptText, Settings2, Target, Volume2, VolumeX, X } from 'lucide-react';
 import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { VACUUM_DEFAULT_GOALS, type VacuumGoals } from '../../../lib/vacuumGoals';
 import { SaleSound, launchConfetti } from './vacuumLiveAlert';
@@ -241,7 +241,7 @@ const SaleOverlay: React.FC<{ celebration: Celebration; goals: VacuumGoals; onCl
     );
 };
 
-const VacuumLivePanel: React.FC = () => {
+const VacuumLivePanel: React.FC<{ onOpenOrders?: () => void }> = ({ onOpenOrders }) => {
     const rootRef = useRef<HTMLDivElement>(null);
     const [payload, setPayload] = useState<Payload | null>(null);
     const [range, setRange] = useState<'campaign' | 'today' | null>(null);
@@ -489,6 +489,7 @@ const VacuumLivePanel: React.FC = () => {
                         {soundWanted ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
                         {soundWanted && !soundReady ? 'Ativar som' : soundWanted ? 'Som ligado' : 'Sem som'}
                     </button>
+                    {onOpenOrders && !fullscreen && <button type="button" className="vl-icon" onClick={onOpenOrders}><ReceiptText size={18} aria-hidden /> Pedidos e lançamento</button>}
                     <button type="button" className="vl-icon" onClick={testAlert}><PartyPopper size={18} aria-hidden /> Testar alerta</button>
                     {payload?.can_manage && <button type="button" className="vl-icon" onClick={() => setGoalsOpen(true)}><Settings2 size={18} aria-hidden /> Metas</button>}
                     <button type="button" className="vl-icon" onClick={toggleFullscreen}>

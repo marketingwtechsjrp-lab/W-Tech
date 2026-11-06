@@ -214,6 +214,8 @@ export const PERMISSION_CATALOG: PermissionModule[] = [
       { key: 'analytics_view', label: 'Visualizar Analytics' },
       { key: 'campaign_live_view', label: 'Ver Painel de Vendas ao Vivo' },
       { key: 'campaign_live_manage', label: 'Definir Metas do Painel de Vendas' },
+      { key: 'campaign_sales_view', label: 'Ver Pedidos e Relatório da Promoção', note: 'Mostra nome, WhatsApp e endereço de quem comprou.' },
+      { key: 'campaign_sales_manage', label: 'Lançar e Editar Vendas Manuais da Promoção' },
       { key: 'intelligence_view', label: 'Visualizar Relatórios IA (W-Intelligence)' },
       { key: 'manage_users', label: 'Gerenciar Equipe' },
       { key: 'manage_settings', label: 'Acesso Configurações' },
