@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Check, ChevronDown, CreditCard, Lock, MessageCircle, Play, Plus, QrCode, RotateCcw, ShieldCheck, Truck, X, Zap } from 'lucide-react';
 import SEO from '../components/SEO';
 import VacuumCheckout from '../components/vacuum-pump/VacuumCheckout';
+import VacuumCheckoutBoundary from '../components/vacuum-pump/VacuumCheckoutBoundary';
 import VacuumExperience3D from '../components/vacuum-pump/VacuumExperience3D';
 import { VacuumARButton } from '../components/vacuum-pump/VacuumARButton';
 import VacuumVideo, { type VacuumVideoHandle } from '../components/vacuum-pump/VacuumVideo';
@@ -595,7 +596,7 @@ const LPVacuumPump: React.FC = () => {
                 <div className="mx-auto max-w-[1180px]">
                     <h2 className="vp-display text-4xl sm:text-5xl">Conheça a máquina por dentro</h2>
                     <p className="mb-5 mt-1 vp-muted">Arraste para girar. Toque em uma peça para ir até ela.</p>
-                    <VacuumExperience3D />
+                    <VacuumExperience3D paused={checkoutOpen} />
                     <p className="mt-3 text-xs vp-muted">Modelo 3D feito a partir do projeto da máquina. Cores e detalhes podem variar.</p>
                 </div>
             </section>
@@ -766,7 +767,11 @@ const LPVacuumPump: React.FC = () => {
                 </div>
             )}
 
-            {checkoutOpen && <VacuumCheckout offer={offer} now={now} initialBumps={checkoutBumps} initialCep={cep} onClose={() => setCheckoutOpen(false)} onOfferChanged={refresh} />}
+            {checkoutOpen && (
+                <VacuumCheckoutBoundary sellerHref={whatsappLink(offer.whatsapp, 'Oi! Quero comprar a Vacuum Pump Standard da Black Friday, mas o carrinho não abriu no site.')} onClose={() => setCheckoutOpen(false)}>
+                    <VacuumCheckout offer={offer} now={now} initialBumps={checkoutBumps} initialCep={cep} onClose={() => setCheckoutOpen(false)} onOfferChanged={refresh} />
+                </VacuumCheckoutBoundary>
+            )}
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -1002,4 +1002,11 @@ test('venda liberada antes da data: soft_open abre a compra e mantém o texto da
 test('isolamento: nenhum teste de frete alterou o ambiente nem o fetch do processo', () => {
     assert.deepEqual({ ...process.env }, envAntes);
     assert.equal(globalThis.fetch, fetchAntes);
+});
+
+// Em 06/11/2026 o botão do fim do vídeo passava o evento do clique no lugar da lista de acessórios,
+// e o carrinho apagava a página inteira. O TypeScript aceita esse erro, por isso a trava fica aqui.
+test('botão do fim do vídeo não passa o evento do clique para o carrinho', () => {
+    const fonte = readFileSync(new URL('../components/vacuum-pump/VacuumVideo.tsx', import.meta.url), 'utf8');
+    assert.doesNotMatch(fonte, /onClick=\{onBuy\}/);
 });

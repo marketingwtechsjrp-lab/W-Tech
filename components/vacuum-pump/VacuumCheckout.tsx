@@ -40,15 +40,40 @@ const FUNNEL = 'vacuum_pump_bf' as const;
 const FORM_CONTACT = 'vp-form-dados';
 const FORM_DELIVERY = 'vp-form-entrega';
 
+let sdkLoading: Promise<void> | null = null;
+let mercadoPagoWarmed = false;
+
 function loadMercadoPagoSdk(): Promise<void> {
     if (window.MercadoPago) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://sdk.mercadopago.com/js/v2';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Falha ao carregar o Mercado Pago.'));
-        document.head.appendChild(script);
-    });
+    if (!sdkLoading) {
+        sdkLoading = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://sdk.mercadopago.com/js/v2';
+            script.onload = () => resolve();
+            script.onerror = () => {
+                // Falhou: a próxima chamada tenta de novo, em vez de repetir a mesma falha.
+                sdkLoading = null;
+                script.remove();
+                reject(new Error('Falha ao carregar o Mercado Pago.'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+    return sdkLoading;
+}
+
+/** O pagamento é a etapa mais lenta: já abre as conexões e baixa o SDK antes de a pessoa chegar nela. */
+function warmUpMercadoPago(): void {
+    if (mercadoPagoWarmed) return;
+    mercadoPagoWarmed = true;
+    for (const [href, crossOrigin] of [['https://http2.mlstatic.com', null], ['https://api.mercadopago.com', 'anonymous']] as const) {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = href;
+        if (crossOrigin) link.crossOrigin = crossOrigin;
+        document.head.appendChild(link);
+    }
+    void loadMercadoPagoSdk().catch(() => undefined);
 }
 
 interface Props {
@@ -388,6 +413,12 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             cancelled = true;
         };
     }, [cepDigits, bumps, quoteNonce]);
+
+    // Saiu do carrinho é quem pretende pagar: só então vale gastar dados com o Mercado Pago.
+    const leftCart = step > 0;
+    useEffect(() => {
+        if (leftCart && offer.mp_public_key) warmUpMercadoPago();
+    }, [leftCart, offer.mp_public_key]);
 
     // Payment Brick: o cartão é digitado nos campos do Mercado Pago, nunca passa pelo nosso servidor.
     // Só abre com o frete resolvido, para o total já nascer certo.

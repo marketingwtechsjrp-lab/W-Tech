@@ -190,7 +190,7 @@ const VacuumVideo = forwardRef<VacuumVideoHandle, Props>(({ hidden, ctaLabel, on
 
                 {ended && (
                     <div className="vp-video-end">
-                        <button type="button" className="vp-btn !min-h-[50px] !text-lg" onClick={onBuy} data-track="vacuum_video_cta" data-track-category="Vacuum Pump">{ctaLabel}</button>
+                        <button type="button" className="vp-btn !min-h-[50px] !text-lg" onClick={() => onBuy()} data-track="vacuum_cta_video" data-track-category="Vacuum Pump">{ctaLabel}</button>
                         <button type="button" className="vp-link text-sm" onClick={replay}><RotateCcw size={14} className="mr-1 inline" aria-hidden />Ver de novo</button>
                     </div>
                 )}

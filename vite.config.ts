@@ -69,6 +69,22 @@ function surveySharePages(): Plugin {
       for (const key of ['og:image', 'twitter:image']) vacuumHtml = setMeta(vacuumHtml, key, `${SITE_URL}/og/maquina-de-vacuo.jpg`);
       vacuumHtml = setMeta(vacuumHtml, 'og:image:width', '1200');
       vacuumHtml = setMeta(vacuumHtml, 'og:image:height', '630');
+
+      // Quem chega pelo Instagram ou pelo WhatsApp abre esta página de frio. Sem isto, o navegador só
+      // descobre o código e o preço depois de baixar e rodar o bundle principal. A primeira foto fica
+      // de fora de propósito: medido em produção, adiantá-la atrasa o código em 0,5 s sem chegar antes.
+      const assetsDir = path.resolve(__dirname, 'dist/assets');
+      const pageChunk = fs.readdirSync(assetsDir).find((name) => /^LPVacuumPump-[\w-]+\.js$/.test(name));
+      if (pageChunk) {
+        const code = fs.readFileSync(path.join(assetsDir, pageChunk), 'utf8');
+        const imports = [...code.matchAll(/(?:from|import)\s*"\.\/([\w.-]+\.js)"/g)].map((match) => match[1]);
+        const modules = [pageChunk, ...new Set(imports)].filter((name) => !base.includes(`/assets/${name}`));
+        const preloads = [
+          ...modules.map((name) => `<link rel="modulepreload" crossorigin href="/assets/${name}">`),
+          '<link rel="preload" as="fetch" crossorigin="anonymous" href="/api/vacuum-pump?action=offer">',
+        ].join('\n');
+        vacuumHtml = vacuumHtml.replace('</head>', `${preloads}\n</head>`);
+      }
       const vacuumDir = path.resolve(__dirname, 'dist/maquina-de-vacuo');
       fs.mkdirSync(vacuumDir, { recursive: true });
       fs.writeFileSync(path.join(vacuumDir, 'index.html'), vacuumHtml);
