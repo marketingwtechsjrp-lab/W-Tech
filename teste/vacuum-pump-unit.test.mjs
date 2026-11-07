@@ -1019,6 +1019,20 @@ test('link do disparo: voltar sem o link não desfaz, e só o link de um vendedo
     assert.equal(db.tables.SITE_Sales[0].seller_id, seller.id);
 });
 
+test('saída do carrinho: só o nome dos campos completos, nunca o conteúdo', () => {
+    const vazio = { name: '', phone: '', email: '', cep: '', street: '', number: '', doc: '', payMethod: 'card' };
+    assert.deepEqual(lib.vacuumFilledFields('cart', vazio), []);
+    assert.deepEqual(lib.vacuumFilledFields('contact', vazio), []);
+    assert.deepEqual(lib.vacuumFilledFields('contact', { ...vazio, name: ' Ana ', phone: '11 98765', email: 'ana@' }), ['nome']);
+    assert.deepEqual(lib.vacuumFilledFields('contact', { ...vazio, name: 'Ana', phone: '(11) 98765-4321', email: 'ana@oficina.com' }), ['nome', 'whatsapp', 'email']);
+    assert.deepEqual(lib.vacuumFilledFields('delivery', { ...vazio, cep: '01310', street: '  ', number: '10', doc: '111' }), ['numero']);
+    assert.deepEqual(lib.vacuumFilledFields('delivery', { ...vazio, cep: '01310-100', street: 'Av. Paulista', number: '10', doc: '529.982.247-25' }), ['cep', 'rua', 'numero', 'cpf']);
+    assert.deepEqual(lib.vacuumFilledFields('payment', { ...vazio, payMethod: 'pix' }), ['pix']);
+    assert.deepEqual(lib.vacuumFilledFields('payment', vazio), ['cartao']);
+    const tudo = JSON.stringify(lib.vacuumFilledFields('delivery', { ...vazio, cep: '01310-100', street: 'Av. Paulista', number: '10', doc: '529.982.247-25' }));
+    assert.ok(!/Paulista|529|01310/.test(tudo), 'nada digitado pode sair');
+});
+
 test('conversa antiga, fora da janela de 15 dias, não dá comissão', async () => {
     const db = seed();
     mockMercadoPago(() => ({ json: { id: 943, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));

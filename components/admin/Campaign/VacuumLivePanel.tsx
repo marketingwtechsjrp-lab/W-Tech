@@ -58,6 +58,14 @@ interface CheckoutHealth {
     paid: number;
     problems: { problem: string; total: number; visitors: number; last_at: string }[];
     recent: { problem: string; detail: string | null; at: string; device: string | null }[];
+    /** Ausente até a função do banco ser atualizada. */
+    exits?: CheckoutExits;
+}
+
+interface CheckoutExits {
+    by_step: { step: string; visitors: number; closed: number; hidden: number }[];
+    fields: { step: string; field: string; visitors: number }[];
+    recent: { how: string; step: string; filled: string; shipping: string; at: string; device: string | null }[];
 }
 
 interface SellerSummary {
@@ -210,6 +218,60 @@ const problemInfo = (problem: string) => CHECKOUT_PROBLEMS[problem] ?? { label: 
 const dateTimeSP = (iso: string) =>
     new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)).replace(',', '');
 
+const EXIT_STEPS = [
+    { id: 'cart', label: 'Carrinho', fields: [] as string[] },
+    { id: 'contact', label: 'Seus dados', fields: ['nome', 'whatsapp', 'email'] },
+    { id: 'delivery', label: 'Entrega', fields: ['cep', 'rua', 'numero', 'cpf'] },
+    { id: 'payment', label: 'Pagamento', fields: ['pix', 'cartao'] },
+];
+const EXIT_FIELD_LABEL: Record<string, string> = { nome: 'nome', whatsapp: 'WhatsApp', email: 'e-mail', cep: 'CEP', rua: 'rua', numero: 'número', cpf: 'CPF ou CNPJ', pix: 'Pix', cartao: 'cartão' };
+
+function exitShippingLabel(shipping: string): string {
+    if (shipping === 'gratis') return 'frete grátis';
+    if (shipping === 'combinar') return 'frete a combinar';
+    return shipping.startsWith('cotado:') ? `frete ${brl(Number(shipping.slice(7)))}` : '';
+}
+
+/** Quem saiu do carrinho e não voltou, em que etapa e até onde preencheu. */
+const CheckoutExitsList: React.FC<{ exits: CheckoutExits }> = ({ exits }) => {
+    if (!exits.by_step.length) return null;
+    const stepLabel = (id: string) => EXIT_STEPS.find((step) => step.id === id)?.label ?? id;
+    const summary = (step: (typeof EXIT_STEPS)[number], row: CheckoutExits['by_step'][number]) => {
+        const how = [
+            row.closed > 0 && `${int(row.closed)} ${row.closed === 1 ? 'fechou o carrinho' : 'fecharam o carrinho'}`,
+            row.hidden > 0 && `${int(row.hidden)} ${row.hidden === 1 ? 'saiu da página' : 'saíram da página'}`,
+        ].filter(Boolean);
+        const fields = step.fields.map((field) => `${EXIT_FIELD_LABEL[field]} ${int(exits.fields.find((item) => item.step === step.id && item.field === field)?.visitors ?? 0)}`);
+        return [...how, ...fields].join(' · ');
+    };
+    return (
+        <div className="vl-exits">
+            <h3>Saíram do carrinho e não voltaram</h3>
+            <ul>
+                {EXIT_STEPS.flatMap((step) => {
+                    const row = exits.by_step.find((item) => item.step === step.id);
+                    return row
+                        ? [<li key={step.id}><b>{int(row.visitors)}</b><span>{step.label}</span><small>{summary(step, row)}</small></li>]
+                        : [];
+                })}
+            </ul>
+            <ul className="vl-problems-recent">
+                {exits.recent.map((row) => {
+                    const names = row.filled.split(',').filter(Boolean).map((field) => EXIT_FIELD_LABEL[field] ?? field).join(', ');
+                    const filled = names ? `${row.step === 'payment' ? 'escolheu' : 'preencheu'} ${names}` : row.step === 'cart' ? '' : 'nada preenchido';
+                    const detail = [filled, exitShippingLabel(row.shipping)].filter(Boolean).join(' · ');
+                    return (
+                        <li key={`${row.at}-${row.step}`}>
+                            <time>{dateTimeSP(row.at)}</time> {row.device && <em>{row.device}</em>} {row.how === 'closed' ? 'Fechou o carrinho' : 'Saiu da página'} na etapa {stepLabel(row.step)}
+                            {detail && <small> · {detail}</small>}
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+};
+
 /** Onde as pessoas param e o que deu errado no caminho até pagar. */
 const CheckoutHealthCard: React.FC<{ health: CheckoutHealth }> = ({ health }) => {
     const steps = [
@@ -268,6 +330,7 @@ const CheckoutHealthCard: React.FC<{ health: CheckoutHealth }> = ({ health }) =>
                     ))}
                 </ul>
             )}
+            {health.exits && <CheckoutExitsList exits={health.exits} />}
         </section>
     );
 };

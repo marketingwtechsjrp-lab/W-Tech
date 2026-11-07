@@ -38,6 +38,22 @@ export function trackCheckoutProblem(problem: CheckoutProblem, detail?: unknown)
     void trackEvent(CATEGORY, `vacuum_problem_${problem}`, detail ? String(detail).slice(0, 180) : undefined);
 }
 
+/** Como a pessoa saiu: fechou o carrinho, saiu da página (outro aplicativo, aba fechada) ou voltou para ela. */
+export type CheckoutExit = 'closed' | 'hidden' | 'back';
+
+export interface CheckoutExitInfo {
+    step: CheckoutStepName;
+    /** Só o nome dos campos completos: quem manda a lista é `vacuumFilledFields`. */
+    filled: string[];
+    /** O frete que a pessoa viu: gratis, combinar, cotado:350 ou vazio. */
+    shipping: string;
+}
+
+/** O painel separa o rótulo por `|`, em `site_vacuum_checkout_health`. */
+export function trackCheckoutExit(how: CheckoutExit, info: CheckoutExitInfo): void {
+    void trackEvent(CATEGORY, `vacuum_exit_${how}`, [info.step, info.filled.join(','), info.shipping].join('|'));
+}
+
 /** Guarda a etapa fora da sessão: o navegador do Instagram abre uma sessão nova quando a pessoa sai e volta. */
 export function markCheckoutInProgress(step: CheckoutStepName): void {
     try {

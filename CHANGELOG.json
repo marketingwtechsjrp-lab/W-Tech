@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.64.5",
+    "date": "2026-11-07",
+    "title": "Painel mostra quem saiu do carrinho e até onde preencheu",
+    "changes": [
+      "Vendas ao vivo mostra quem saiu do carrinho e não voltou, em qual etapa, se fechou ou saiu da página, e quais campos preencheu",
+      "Só o nome dos campos é registrado, nunca o que a pessoa digitou",
+      "Quem voltou, reabriu o carrinho ou comprou não conta como saída"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.64.4",
     "date": "2026-11-06",
     "title": "Venda dos disparos do WhatsApp conta como venda direta",

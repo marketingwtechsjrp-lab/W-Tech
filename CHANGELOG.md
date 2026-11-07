@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.5 (2026-11-07) - Painel mostra quem saiu do carrinho e até onde preencheu
+- Vendas ao vivo mostra quem saiu do carrinho e não voltou, em qual etapa, se fechou ou saiu da página, e quais campos preencheu
+- Só o nome dos campos é registrado, nunca o que a pessoa digitou
+- Quem voltou, reabriu o carrinho ou comprou não conta como saída
+
 ## v3.64.4 (2026-11-06) - Venda dos disparos do WhatsApp conta como venda direta
 - Quem compra pelo link dos disparos do WhatsApp fica como compra direta, sem vendedor nem comissão, mesmo que já tenha falado com alguém da equipe
 - Só o link de um vendedor, aberto depois, troca o crédito

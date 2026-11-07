@@ -124,6 +124,15 @@ export const VL_CSS = `
 .vl-problems-recent em { color: var(--vl-amber); font-style: normal; }
 .vl-problems-recent small { color: var(--vl-mute); }
 .vl-full .vl-problems-recent { display: none; }
+.vl-exits { grid-column: 1 / -1; margin-top: .2em; padding-top: .5em; border-top: 1px solid var(--vl-line); }
+.vl-exits h3 { margin: 0 0 .3em; font-size: .86em; font-weight: 700; }
+.vl-exits > ul:first-of-type { display: flex; flex-direction: column; gap: .22em; margin: 0; padding: 0; list-style: none; }
+.vl-exits > ul:first-of-type li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .5em; font-size: .86em; }
+.vl-exits > ul:first-of-type b { min-width: 1.5em; color: var(--vl-amber); font-variant-numeric: tabular-nums; text-align: right; }
+.vl-exits > ul:first-of-type span { font-weight: 600; }
+.vl-exits > ul:first-of-type small { color: var(--vl-mute); font-size: .92em; }
+.vl-exits .vl-problems-recent { margin-top: .3em; padding-top: .3em; border-top: 0; }
+.vl-full .vl-exits { display: none; }
 .vl-full .vl-problems li:nth-child(n+4) { display: none; }
 .vl-feed { grid-column: span 4; overflow: hidden; }
 

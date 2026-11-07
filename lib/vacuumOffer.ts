@@ -488,3 +488,18 @@ export function vacuumUrgencyLabel(endsAt: string, now: number): string {
     if (days === 1) return 'Termina amanhã';
     return `Faltam ${days} dias`;
 }
+
+/**
+ * Nome dos campos completos na etapa em que a pessoa saiu do carrinho. Nunca o conteúdo:
+ * é só o que o painel precisa para mostrar até onde ela preencheu.
+ */
+export function vacuumFilledFields(
+    step: 'cart' | 'contact' | 'delivery' | 'payment',
+    data: { name: string; phone: string; email: string; cep: string; street: string; number: string; doc: string; payMethod: 'card' | 'pix' }
+): string[] {
+    const pick = (fields: [boolean, string][]) => fields.filter(([done]) => done).map(([, field]) => field);
+    if (step === 'contact') return pick([[Boolean(data.name.trim()), 'nome'], [Boolean(normalizeBrPhone(data.phone)), 'whatsapp'], [isValidEmail(data.email), 'email']]);
+    if (step === 'delivery') return pick([[onlyDigits(data.cep).length === 8, 'cep'], [Boolean(data.street.trim()), 'rua'], [Boolean(data.number.trim()), 'numero'], [Boolean(documentType(data.doc)), 'cpf']]);
+    if (step === 'payment') return [data.payMethod === 'pix' ? 'pix' : 'cartao'];
+    return [];
+}

@@ -10,6 +10,7 @@ import {
     formatBRL,
     isValidEmail,
     normalizeBrPhone,
+    vacuumFilledFields,
 } from '../../lib/vacuumOffer';
 import {
     maskCep,
@@ -26,8 +27,11 @@ import { ComboImage, VACUUM_IMAGES } from './vacuumMedia';
 import {
     clearCheckoutInProgress,
     markCheckoutInProgress,
+    trackCheckoutExit,
     trackCheckoutProblem,
     trackCheckoutStep,
+    type CheckoutExit,
+    type CheckoutExitInfo,
     type CheckoutStepName,
 } from './vacuumCheckoutTracking';
 import { clearCheckoutDraft, readCheckoutDraft, saveCheckoutDraft } from './vacuumCheckoutDraft';
@@ -182,11 +186,28 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const firstField = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // Os ouvintes abaixo só são ligados uma vez: é daqui que leem como o carrinho está agora.
+    const exitInfoRef = useRef<CheckoutExitInfo | null>(null);
+    exitInfoRef.current = screen === 'form'
+        ? {
+              step: STEP_NAMES[step],
+              filled: vacuumFilledFields(STEP_NAMES[step], { ...contact, ...address, doc, payMethod }),
+              shipping: quote?.mode === 'free' ? 'gratis' : quote?.mode === 'combine' ? 'combinar' : selectedOption ? `cotado:${Math.round(selectedOption.price)}` : '',
+          }
+        : null;
+    const reportExit = useCallback((how: CheckoutExit) => {
+        if (exitInfoRef.current) trackCheckoutExit(how, exitInfoRef.current);
+    }, []);
+
     const closeCheckout = useCallback(() => {
         // O carrinho é uma tela cheia: o Voltar do celular precisa fechar ele, não sair da página.
-        if ((window.history.state as { vpCheckout?: boolean } | null)?.vpCheckout) window.history.back();
-        else onClose();
-    }, [onClose]);
+        if ((window.history.state as { vpCheckout?: boolean } | null)?.vpCheckout) {
+            window.history.back();
+            return;
+        }
+        reportExit('closed');
+        onClose();
+    }, [onClose, reportExit]);
 
     useEffect(() => {
         pushBeginCheckout({ funnel: FUNNEL, item_name: VACUUM_ITEM_NAME, value: offer.price, currency: 'BRL', provider: 'mercadopago' });
@@ -197,13 +218,19 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') closeCheckout();
         };
-        const onPop = () => onClose();
+        const onPop = () => {
+            reportExit('closed');
+            onClose();
+        };
+        const onVisibility = () => reportExit(document.hidden ? 'hidden' : 'back');
         window.addEventListener('keydown', onKey);
         window.addEventListener('popstate', onPop);
+        document.addEventListener('visibilitychange', onVisibility);
         return () => {
             document.body.style.overflow = previous;
             window.removeEventListener('keydown', onKey);
             window.removeEventListener('popstate', onPop);
+            document.removeEventListener('visibilitychange', onVisibility);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
