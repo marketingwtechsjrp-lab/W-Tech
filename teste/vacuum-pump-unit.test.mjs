@@ -30,7 +30,7 @@ const { outputFiles } = await build({
             export { default as apiHandler } from './api/vacuum-pump.ts';
             export { default as webhookHandler } from './api/mercadopago-webhook.ts';
             export * from './api/_vacuumPump.ts';
-            export { brDate } from './api/_vacuumWhatsApp.ts';
+            export { brDate, retryVacuumOrderWhatsApp } from './api/_vacuumWhatsApp.ts';
             export * from './lib/vacuumOffer.ts';
         `,
         resolveDir: fileURLToPath(new URL('..', import.meta.url)),
@@ -516,6 +516,72 @@ test('WhatsApp: datas do prazo saem em dd/mm/aaaa, sem cair no dia anterior', ()
     assert.equal(lib.brDate('2026-12-23'), '23/12/2026');
     assert.equal(lib.brDate(new Date('2026-12-23T02:00:00Z')), '22/12/2026', 'vale o dia em Brasília');
     assert.equal(lib.brDate(null), 'a confirmar');
+});
+
+const CONFIG_ANDRE = [
+    { key: 'evolution_api_url', value: 'https://evo.teste' },
+    { key: 'evolution_api_key', value: 'chave-evo' },
+    { key: 'evolution_instance_name', value: 'padrao' },
+    { key: 'wa_instance_vacuum_order', value: 'w-tech-atendente-3' },
+];
+
+test('WhatsApp: com a instância do André, a confirmação sai por ela, e não pelo oficial', async () => {
+    const db = seed();
+    db.tables.SITE_Config.push(...CONFIG_WHATSAPP, ...CONFIG_ANDRE);
+    const calls = mockMercadoPago((url) => (url.includes('/message/sendText/') ? { json: { key: { id: 'x' } } } : { json: PAGAMENTO_APROVADO }));
+    const res = await pay(await startCheckout());
+    await esperarEnvios();
+
+    assert.equal(calls.filter((c) => c.url.includes('graph.facebook.com')).length, 0, 'não passa pelo oficial');
+    const envios = calls.filter((c) => c.url.includes('/message/sendText/'));
+    assert.equal(envios.length, 1);
+    assert.match(envios[0].url, /\/message\/sendText\/w-tech-atendente-3$/);
+    assert.equal(envios[0].body.number, '5517999990001');
+    assert.ok(envios[0].body.text.includes(res.json.order_number));
+    assert.ok(envios[0].body.text.includes('R$ 7.990,00'));
+    assert.ok(!envios[0].body.text.includes('{{'));
+    assert.match(envios[0].body.text, /W-Tech Brasil$/);
+    assert.equal(db.tables.SITE_WhatsAppCloudMessages[0].status, 'sent');
+    assert.equal(db.tables.SITE_WhatsAppCloudMessages[0].sent_by, 'system');
+});
+
+test('WhatsApp: instância desconectada não derruba a venda, e a varredura reenvia uma vez quando ela volta', async () => {
+    const db = seed();
+    db.tables.SITE_Config.push(...CONFIG_ANDRE);
+    let conectada = false;
+    const calls = mockMercadoPago((url) => {
+        if (url.includes('/message/sendText/')) return conectada ? { json: { key: { id: 'x' } } } : { status: 400, json: { message: 'Connection Closed' } };
+        return { json: PAGAMENTO_APROVADO };
+    });
+    const res = await pay(await startCheckout());
+    await esperarEnvios();
+    assert.equal(res.json.stage, 'paid');
+    assert.equal(db.tables.SITE_WhatsAppCloudMessages.length, 1);
+    assert.equal(db.tables.SITE_WhatsAppCloudMessages[0].status, 'failed');
+
+    const envios = () => calls.filter((c) => c.url.includes('/message/sendText/')).length;
+    await lib.retryVacuumOrderWhatsApp(db);
+    assert.equal(envios(), 2, 'tentou de novo');
+    assert.equal(db.tables.SITE_WhatsAppCloudMessages.length, 1, 'ainda fora do ar: não enche a conversa de falhas');
+
+    conectada = true;
+    await lib.retryVacuumOrderWhatsApp(db);
+    assert.equal(envios(), 3);
+    assert.equal(db.tables.SITE_WhatsAppCloudMessages.filter((m) => m.status === 'sent').length, 1);
+
+    await lib.retryVacuumOrderWhatsApp(db);
+    assert.equal(envios(), 3, 'depois de entregue, não manda de novo');
+});
+
+test('WhatsApp: varredura não reenvia venda cancelada nem age sem a instância configurada', async () => {
+    const db = seed();
+    db.tables.SITE_WhatsAppCloudMessages = [{ sent_by: 'system', status: 'failed', body: 'Olá, Ana! Confirmamos o seu pagamento, e o pedido WT-VP1 da Vacuum Pump Standard está garantido.\n\nValor', created_at: new Date().toISOString() }];
+    db.tables.SITE_Sales = [{ order_number: 'WT-VP1', status: 'cancelled', customer_name: 'Ana', customer_phone: '17999990001', total_value: 7990 }];
+    const calls = mockMercadoPago(() => ({ json: {} }));
+    assert.equal(await lib.retryVacuumOrderWhatsApp(db), 0, 'sem instância, não age');
+    db.tables.SITE_Config.push(...CONFIG_ANDRE);
+    assert.equal(await lib.retryVacuumOrderWhatsApp(db), 0, 'venda cancelada não recebe');
+    assert.equal(calls.length, 0);
 });
 
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');

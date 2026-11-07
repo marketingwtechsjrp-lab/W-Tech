@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.3 (2026-11-06) - Confirmação de compra pelo WhatsApp do André
+- Enquanto a conta oficial estiver sem método de pagamento, a confirmação de compra sai pelo WhatsApp do André
+- Quem teve a confirmação recusada recebe sozinho quando o número voltar a conectar, uma vez por pedido
+
 ## v3.64.2 (2026-11-06) - Carrinho sem erro falso e que continua de onde parou
 - Seus dados deixa de abrir com todos os campos em vermelho antes de a pessoa digitar: o botão Continuar enviava o formulário vazio
 - Quem sai para outro app ou recarrega no meio da compra volta para a mesma etapa, com os dados preenchidos, inclusive no navegador do Instagram

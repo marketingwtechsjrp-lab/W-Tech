@@ -13,6 +13,7 @@ import { denyCron, isCronAuthorized } from './_cron.js';
 import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js';
 import { handleVacuumSaleCreate, handleVacuumSaleStatus, handleVacuumSaleUpdate, handleVacuumSalesList } from './_vacuumSales.js';
 import { getRequestClientIp } from './_geoip.js';
+import { retryVacuumOrderWhatsApp } from './_vacuumWhatsApp.js';
 import {
     assignFollowUp,
     cancelPendingPix,
@@ -559,6 +560,7 @@ export default async function handler(req: any, res: any) {
             if (action === 'sweep') {
                 if (!isCronAuthorized(req)) return denyCron(res);
                 const result = await sweepVacuumAbandoned(supabase);
+                await retryVacuumOrderWhatsApp(supabase).catch((err) => console.error('[Vacuum] Reenvio de confirmações falhou:', err?.message));
                 console.log(`[Vacuum] Varredura: ${result.analyzed} analisados, ${result.assigned} entregues aos vendedores.`);
                 return res.status(200).json({ ok: true, ...result });
             }
