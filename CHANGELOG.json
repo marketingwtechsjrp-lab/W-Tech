@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.64.4",
+    "date": "2026-11-06",
+    "title": "Venda dos disparos do WhatsApp conta como venda direta",
+    "changes": [
+      "Quem compra pelo link dos disparos do WhatsApp fica como compra direta, sem vendedor nem comissão, mesmo que já tenha falado com alguém da equipe",
+      "Só o link de um vendedor, aberto depois, troca o crédito",
+      "O painel de vendas ao vivo mostra essa origem como Disparo WhatsApp"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.64.3",
     "date": "2026-11-06",
     "title": "Confirmação de compra pelo WhatsApp do André",

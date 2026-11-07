@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getVacuumOfferState, resolveVacuumConfig, type VacuumCartItem, type VacuumOfferState } from '../../lib/vacuumOffer';
+import { VACUUM_DIRECT_REF, getVacuumOfferState, resolveVacuumConfig, type VacuumCartItem, type VacuumOfferState } from '../../lib/vacuumOffer';
 import { VP_FONTS_HREF, VP_PAGE_BG } from './vacuumStyles';
 
 /** Estado da oferta + o que só existe na resposta da API. */
@@ -87,11 +87,11 @@ function post<T>(action: string, body: unknown) {
 
 const SELLER_REF_KEY = 'vp_seller_ref';
 
-/** Guarda o vendedor do link: a pessoa pode voltar depois, sem o endereço completo, e comprar. */
+/** Guarda de quem é o link (vendedor ou disparo): a pessoa pode voltar depois, sem o endereço completo, e comprar. */
 function captureSellerRef() {
     try {
         const ref = new URLSearchParams(window.location.search).get('ref');
-        if (ref && /^[a-f0-9]{8}$/.test(ref)) window.localStorage.setItem(SELLER_REF_KEY, ref);
+        if (ref && (ref === VACUUM_DIRECT_REF || /^[a-f0-9]{8}$/.test(ref))) window.localStorage.setItem(SELLER_REF_KEY, ref);
     } catch {
         /* navegador sem armazenamento: o crédito depende do endereço aberto agora */
     }

@@ -389,6 +389,8 @@ function whatsappIdsOf(phone: unknown): string[] {
  * como direta: o gestor corrige no pedido, e a compra nunca trava por causa disso.
  */
 async function findCreditedSeller(supabase: any, checkout: any, now: number): Promise<{ id: string; name: string } | null> {
+    // Entrou pelo link dos disparos em massa: decisão do dono, a venda é direta.
+    if (checkout.browser_context?.direct_sale === true) return null;
     try {
         // O link é a indicação mais clara: vem de quem fechou por ligação, sem rastro no WhatsApp.
         if (isUuid(checkout.referred_by)) {

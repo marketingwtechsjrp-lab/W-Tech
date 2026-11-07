@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.4 (2026-11-06) - Venda dos disparos do WhatsApp conta como venda direta
+- Quem compra pelo link dos disparos do WhatsApp fica como compra direta, sem vendedor nem comissão, mesmo que já tenha falado com alguém da equipe
+- Só o link de um vendedor, aberto depois, troca o crédito
+- O painel de vendas ao vivo mostra essa origem como Disparo WhatsApp
+
 ## v3.64.3 (2026-11-06) - Confirmação de compra pelo WhatsApp do André
 - Enquanto a conta oficial estiver sem método de pagamento, a confirmação de compra sai pelo WhatsApp do André
 - Quem teve a confirmação recusada recebe sozinho quando o número voltar a conectar, uma vez por pedido

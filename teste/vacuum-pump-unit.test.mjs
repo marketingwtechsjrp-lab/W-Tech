@@ -982,6 +982,43 @@ test('robô e disparo no WhatsApp não contam como conversa com vendedor', async
     assert.equal(db.tables.SITE_Sales[0].seller_id, null);
 });
 
+const leadWithRef = (seller_ref, phone = '17 99999-0001') =>
+    call(lib.apiHandler, { method: 'POST', query: { action: 'lead' }, body: { name: 'Cliente Disparo', phone, email: 'disparo@oficina.com', source: 'checkout', seller_ref } });
+const saveForPayment = (checkout_id) =>
+    call(lib.apiHandler, { method: 'POST', query: { action: 'save' }, body: { checkout_id, stage: 'payment', document: '529.982.247-25', address: VALID_ADDRESS } });
+
+test('link do disparo: venda direta, mesmo com link antigo e conversa recente com vendedor', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 944, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const seller = db.tables.SITE_Users[0];
+    await leadWithRef(lib.sellerRefCode(seller.id));
+    const { json } = await leadWithRef('direto');
+    assert.equal(db.tables.SITE_CampaignCheckouts.find((row) => row.id === json.checkout_id).referred_by, null);
+
+    db.tables.SITE_WhatsAppCloudConversations = [{ id: 'c1', wa_id: '5517999990001', assigned_to: seller.id }];
+    db.tables.SITE_WhatsAppCloudMessages = [{ wa_id: '5517999990001', sent_by: 'human', created_at: new Date().toISOString() }];
+    await saveForPayment(json.checkout_id);
+    await pay(json.checkout_id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, null);
+    assert.equal(db.tables.SITE_Sales[0].seller_name, 'Compra direta online');
+});
+
+test('link do disparo: voltar sem o link não desfaz, e só o link de um vendedor troca o crédito', async () => {
+    const db = seed();
+    mockMercadoPago(() => ({ json: { id: 945, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));
+    const seller = db.tables.SITE_Users[0];
+    const { json } = await leadWithRef('direto');
+    const checkout = () => db.tables.SITE_CampaignCheckouts.find((row) => row.id === json.checkout_id);
+    await leadWithRef(null);
+    assert.equal(checkout().browser_context.direct_sale, true);
+
+    await leadWithRef(lib.sellerRefCode(seller.id));
+    assert.equal(checkout().browser_context.direct_sale, false);
+    await saveForPayment(json.checkout_id);
+    await pay(json.checkout_id);
+    assert.equal(db.tables.SITE_Sales[0].seller_id, seller.id);
+});
+
 test('conversa antiga, fora da janela de 15 dias, não dá comissão', async () => {
     const db = seed();
     mockMercadoPago(() => ({ json: { id: 943, status: 'approved', status_detail: 'accredited', installments: 10, payment_method_id: 'visa', transaction_amount: 7990, external_reference: 'x' } }));

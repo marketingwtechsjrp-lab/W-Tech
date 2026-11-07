@@ -24,6 +24,8 @@ export const VACUUM_META_PIXEL_ID = '1109519607249858';
 export const VACUUM_META_CONTENT_ID = 'vacuum_pump_standard';
 /** Mesmo id no navegador e no servidor: é assim que o Meta conta a compra uma vez só. */
 export const vacuumPurchaseEventId = (orderNumber: string) => `vp_purchase_${orderNumber}`;
+/** `?ref=` dos disparos em massa pelo WhatsApp: a venda é direta, sem vendedor nem comissão. */
+export const VACUUM_DIRECT_REF = 'direto';
 
 export type VacuumPhase = 'soon' | 'presale' | 'regular';
 export type VacuumEndReason = 'expired' | 'sold_out' | null;

@@ -129,6 +129,7 @@ function sourceLabel(source: string): string {
         'm.facebook.com': 'Facebook',
         whatsapp: 'WhatsApp',
         vendedor: 'Link de vendedor',
+        disparo: 'Disparo WhatsApp',
         wa: 'WhatsApp',
         google: 'Google',
         google_ads: 'Google Ads',

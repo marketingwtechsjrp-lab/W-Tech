@@ -2,6 +2,7 @@ import { findExistingLead, isWonStatus } from '../lib/leadMatch.js';
 import { PUBLIC_BASE_URL } from '../lib/publicUrl.js';
 import {
     VACUUM_CAMPAIGN,
+    VACUUM_DIRECT_REF,
     computeVacuumCart,
     documentType,
     isValidEmail,
@@ -206,15 +207,20 @@ async function handleLead(supabase: any, req: any, res: any) {
         .maybeSingle();
 
     // Entrou pelo link de um vendedor: a venda é dele. O link mais recente é o que vale.
-    const referredBy = await resolveSellerRef(supabase, body.seller_ref);
+    // O link dos disparos não é de ninguém: a venda é direta, mesmo que alguém já tenha falado com a pessoa.
+    const fromDispatch = body.seller_ref === VACUUM_DIRECT_REF;
+    const referredBy = fromDispatch ? null : await resolveSellerRef(supabase, body.seller_ref);
+    // Voltar sem o link, em outro aparelho, não desfaz: só o link de um vendedor troca o crédito.
+    const directSale = fromDispatch || (!referredBy && open?.browser_context?.direct_sale === true);
     // A compra pode ser confirmada depois, sem a pessoa na página: é daqui que o Meta a reconhece.
     const browserContext = {
         fbp: typeof body.tracking?.fbp === 'string' ? body.tracking.fbp.slice(0, 200) : null,
         fbc: typeof body.tracking?.fbc === 'string' ? body.tracking.fbc.slice(0, 300) : null,
         ip: getRequestClientIp(req) || null,
         ua: String(req.headers?.['user-agent'] || '').slice(0, 400) || null,
+        direct_sale: directSale,
     };
-    const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, browser_context: browserContext, ...(referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
+    const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, browser_context: browserContext, ...(fromDispatch ? { referred_by: null } : referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
     let checkout: any;
     if (open) {
         // Quem estava na lista de espera e entrou no checkout avança; o contrário não acontece.
