@@ -59,6 +59,7 @@ import AdminIntegrations from '../components/admin/AdminIntegrations';
 import { TaskCategoryList } from '../components/admin/TaskCategoryList';
 import MessageTemplateManager from '../components/admin/WhatsApp/MessageTemplateManager';
 import UserWhatsAppConnection from '../components/admin/WhatsApp/UserWhatsAppConnection';
+import WhatsAppDesconectadoAlerta from '../components/admin/WhatsApp/WhatsAppDesconectadoAlerta';
 import AtendentesWhatsApp from '../components/admin/WhatsApp/Atendentes/AtendentesWhatsApp';
 import SalesRecoveryView from '../components/admin/WhatsApp/SalesRecoveryView';
 import WhatsAppModule from '../components/admin/WhatsApp/WhatsAppModule';
@@ -8410,6 +8411,9 @@ const Admin = () => {
             <SplashedPushNotifications ref={notificationRef} />
 
             <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+
+            {/* Vendedor com o WhatsApp de atendimento desconectado: aviso urgente com QR Code */}
+            <WhatsAppDesconectadoAlerta />
 
             {/* Controle por teclado: paleta de comandos (⌘K) + ajuda de atalhos (?) */}
             <CommandPalette />

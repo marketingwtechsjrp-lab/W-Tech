@@ -5,7 +5,7 @@
  * funcoes abaixo correspondem exatamente as operacoes permitidas pelo servidor.
  */
 
-export type EvolutionStaffScope = 'admin' | 'attendant' | 'ai' | 'self';
+export type EvolutionStaffScope = 'admin' | 'attendant' | 'ai' | 'self' | 'attendant_self';
 export type EvolutionLifecycleScope = 'admin' | 'attendant' | 'self';
 export type EvolutionStatusScope = EvolutionLifecycleScope;
 export type EvolutionGroupsScope = 'admin' | 'attendant' | 'ai';
@@ -251,4 +251,27 @@ export async function evolutionRegisterAiWebhook(
 ): Promise<EvolutionWebhookResult> {
   const data = await requestEvolution('register_ai_webhook', 'ai', instance);
   return { success: true, pointsHere: data.pointsHere === true };
+}
+
+/**
+ * Numero de atendimento do proprio usuario logado (SITE_WaAtendentes.user_id).
+ * `state` volta `none` para quem nao tem numero de atendimento.
+ */
+export async function evolutionMyAttendantStatus(): Promise<EvolutionStateResult> {
+  const data = await requestEvolution('status', 'attendant_self');
+  const resolvedInstance = safeInstance(data.instance);
+  return { success: true, state: safeState(data.state), ...(resolvedInstance ? { instance: resolvedInstance } : {}) };
+}
+
+/** Pede o QR Code para reconectar o proprio numero de atendimento. */
+export async function evolutionMyAttendantConnect(): Promise<EvolutionQrResult> {
+  const data = await requestEvolution('connect', 'attendant_self');
+  const qr = safeQr(data.qr);
+  const resolvedInstance = safeInstance(data.instance);
+  return {
+    success: true,
+    state: safeState(data.state),
+    ...(resolvedInstance ? { instance: resolvedInstance } : {}),
+    ...(qr ? { qr } : {}),
+  };
 }

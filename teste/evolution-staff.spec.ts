@@ -90,6 +90,37 @@ test.describe('Boundary seguro da Evolution — autenticação HTTP', () => {
     expect(body.apiKey).toBeUndefined();
   });
 
+  test('vendedor não desconecta nem apaga o próprio número pelo aviso', async () => {
+    for (const action of ['logout', 'delete', 'create', 'groups']) {
+      const response = await fetch(`${baseUrl}/api/staff/evolution`, {
+        method: 'POST',
+        headers: { Origin: baseUrl, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, scope: 'attendant_self' }),
+      });
+      const body = await response.json();
+      expect(response.status).toBe(403);
+      expect(body.error).toBe('action_not_allowed_for_scope');
+    }
+  });
+
+  test('sem sessão válida o aviso não lê estado nem gera QR', async () => {
+    for (const action of ['status', 'connect']) {
+      const response = await fetch(`${baseUrl}/api/staff/evolution`, {
+        method: 'POST',
+        headers: {
+          Cookie: 'wtech_staff_session=forged-plausible-token-0000000000',
+          Origin: baseUrl,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, scope: 'attendant_self' }),
+      });
+      const body = await response.json();
+      expect(response.status).toBe(401);
+      expect(body.qr).toBeUndefined();
+      expect(body.state).toBeUndefined();
+    }
+  });
+
   test('origem externa é bloqueada antes da sessão', async () => {
     const response = await fetch(`${baseUrl}/api/staff/evolution`, {
       method: 'POST',

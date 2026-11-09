@@ -38,10 +38,10 @@ export const EVOLUTION_STAFF_ACTIONS = [
 ] as const;
 
 export type EvolutionStaffAction = (typeof EVOLUTION_STAFF_ACTIONS)[number];
-export type EvolutionStaffScope = 'admin' | 'attendant' | 'ai' | 'self';
+export type EvolutionStaffScope = 'admin' | 'attendant' | 'ai' | 'self' | 'attendant_self';
 
 const ACTIONS = new Set<string>(EVOLUTION_STAFF_ACTIONS);
-const SCOPES = new Set<EvolutionStaffScope>(['admin', 'attendant', 'ai', 'self']);
+const SCOPES = new Set<EvolutionStaffScope>(['admin', 'attendant', 'ai', 'self', 'attendant_self']);
 const INSTANCE_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const GROUP_JID_RE = /^[A-Za-z0-9._:-]{1,128}@g\.us$/;
 const MAX_UPSTREAM_BODY_BYTES = 2 * 1024 * 1024;
@@ -74,6 +74,9 @@ const SCOPE_ACTIONS: Record<EvolutionStaffScope, ReadonlySet<EvolutionStaffActio
   ]),
   ai: new Set(['groups', 'register_ai_webhook']),
   self: new Set(['status', 'create', 'connect', 'delete', 'logout', 'instance_info']),
+  // O vendedor so confere e reconecta o proprio numero de atendimento
+  // (SITE_WaAtendentes.user_id). Nao cria outra, nao desconecta, nao apaga.
+  attendant_self: new Set(['status', 'connect']),
 };
 
 interface EvolutionConfig {
@@ -350,6 +353,97 @@ async function resolveSelfInstance(
   return { instance, linked: Boolean(linkedName) };
 }
 
+/**
+ * Numero de atendimento do usuario logado, pela ligacao em SITE_WaAtendentes.
+ * Quem nao tem numero recebe null, e a tela nao mostra aviso nenhum.
+ */
+async function resolveAttendantSelf(
+  supabase: SupabaseClient,
+  staff: StaffSessionUser,
+): Promise<{ id: string; instance: string } | null | 'error'> {
+  const { data, error } = await supabase
+    .from('SITE_WaAtendentes')
+    .select('id, instance_name')
+    .eq('user_id', staff.id)
+    .not('instance_name', 'is', null)
+    .order('slot', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) return 'error';
+  const instance = typeof data?.instance_name === 'string' ? data.instance_name.trim() : '';
+  if (!data?.id || !isValidEvolutionInstance(instance)) return null;
+  return { id: String(data.id), instance };
+}
+
+async function updateAttendantStatus(
+  supabase: SupabaseClient,
+  attendantId: string,
+  state: string,
+): Promise<void> {
+  // Estado desconhecido nao apaga o ultimo estado bom gravado no monitor.
+  if (state === 'unknown') return;
+  const { error } = await supabase
+    .from('SITE_WaAtendentes')
+    .update({ status: state, updated_at: new Date().toISOString() })
+    .eq('id', attendantId);
+  if (error) console.error('[evolution] Falha ao gravar o estado do atendente:', error.message);
+}
+
+async function handleAttendantSelf(
+  res: Response,
+  supabase: SupabaseClient,
+  staff: StaffSessionUser,
+  action: EvolutionStaffAction,
+  requestedInstance: string,
+): Promise<unknown> {
+  const target = await resolveAttendantSelf(supabase, staff);
+  if (target === 'error') {
+    return res.status(500).json({ success: false, error: 'attendant_read_failed' });
+  }
+  // Sem numero de atendimento: nada a cobrar deste usuario.
+  if (!target) return res.status(200).json({ success: true, state: 'none' });
+  if (requestedInstance && requestedInstance !== target.instance) {
+    return res.status(403).json({ success: false, error: 'self_instance_not_allowed' });
+  }
+
+  const config = await loadEvolutionConfig(supabase);
+  if (!config) {
+    return res.status(503).json({ success: false, error: 'evolution_not_configured' });
+  }
+  const instance = target.instance;
+  const path = encodeURIComponent(instance);
+
+  if (action === 'status') {
+    const result = await evolutionRequest(config, `/instance/connectionState/${path}`);
+    // Instancia apagada na Evolution e numero desconectado para o vendedor.
+    if (!result.ok && result.status === 404) {
+      await updateAttendantStatus(supabase, target.id, 'disconnected');
+      return res.status(200).json({ success: true, state: 'disconnected', instance });
+    }
+    if (!result.ok) return upstreamFailure(res, result);
+    const state = extractState(result.data);
+    await updateAttendantStatus(supabase, target.id, state);
+    return res.status(200).json({ success: true, state, instance });
+  }
+
+  // connect: o webhook do espelho vai antes, para a conversa ja chegar ao
+  // monitor assim que o QR for lido (melhor esforco, como na tela do gestor).
+  await registerAttendantWebhook(supabase, config, instance);
+  let result = await evolutionRequest(config, `/instance/connect/${path}`);
+  if (!result.ok && result.status === 404) {
+    result = await evolutionRequest(config, '/instance/create', {
+      method: 'POST',
+      body: { instanceName: instance, qrcode: true, integration: 'WHATSAPP-BAILEYS' },
+    });
+    if (result.ok) await registerAttendantWebhook(supabase, config, instance);
+  }
+  if (!result.ok) return upstreamFailure(res, result);
+  const qr = extractQr(result.data);
+  const state = qr ? 'connecting' : extractState(result.data);
+  await updateAttendantStatus(supabase, target.id, state);
+  return res.status(200).json({ success: true, state, instance, ...(qr ? { qr } : {}) });
+}
+
 async function listLinkedInstances(supabase: SupabaseClient): Promise<string[] | null> {
   const { data, error } = await supabase
     .from('SITE_UserIntegrations')
@@ -427,7 +521,7 @@ async function authorizeScope(
   res: Response,
   scope: EvolutionStaffScope,
 ): Promise<StaffSessionUser | null> {
-  if (scope === 'self') {
+  if (scope === 'self' || scope === 'attendant_self') {
     const staff = await requireStaffSession(req);
     if (!staff) denyAuth(res);
     return staff;
@@ -667,6 +761,10 @@ evolutionStaffRouter.post('/', h(async (req, res) => {
   const requestedInstance = rawInstance.trim();
   if (requestedInstance && !isValidEvolutionInstance(requestedInstance)) {
     return res.status(400).json({ success: false, error: 'invalid_instance' });
+  }
+
+  if (typedScope === 'attendant_self') {
+    return handleAttendantSelf(res, supabase, staff, typedAction, requestedInstance);
   }
 
   let instance = requestedInstance;

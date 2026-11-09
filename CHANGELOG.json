@@ -1,5 +1,16 @@
 [
   {
+    "version": "3.64.6",
+    "date": "2026-11-09",
+    "title": "Aviso urgente para reconectar o WhatsApp de atendimento",
+    "changes": [
+      "Quem está com o WhatsApp de atendimento desconectado vê um aviso urgente ao abrir o painel",
+      "O botão Conectar agora gera o QR Code na hora, acompanha a leitura e fecha o aviso quando o número volta",
+      "Cada um só confere e reconecta o próprio número, sem poder desconectar nem apagar"
+    ],
+    "author": "saldanhaClaw"
+  },
+  {
     "version": "3.64.5",
     "date": "2026-11-07",
     "title": "Painel mostra quem saiu do carrinho e até onde preencheu",

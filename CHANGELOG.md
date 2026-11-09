@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.64.6 (2026-11-09) - Aviso urgente para reconectar o WhatsApp de atendimento
+- Quem está com o WhatsApp de atendimento desconectado vê um aviso urgente ao abrir o painel
+- O botão Conectar agora gera o QR Code na hora, acompanha a leitura e fecha o aviso quando o número volta
+- Cada um só confere e reconecta o próprio número, sem poder desconectar nem apagar
+
 ## v3.64.5 (2026-11-07) - Painel mostra quem saiu do carrinho e até onde preencheu
 - Vendas ao vivo mostra quem saiu do carrinho e não voltou, em qual etapa, se fechou ou saiu da página, e quais campos preencheu
 - Só o nome dos campos é registrado, nunca o que a pessoa digitou
