@@ -1,6 +1,11 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.65.0 (2026-11-10) - Desconto de 10% no Pix da Vacuum Pump
+- No Pix, a máquina e os acessórios saem com 10% de desconto (o frete não entra no desconto)
+- A página e o checkout mostram o preço do Pix, a linha de desconto no resumo e o selo -10% na opção Pix
+- O servidor calcula e cobra o valor com desconto; o percentual muda sem deploy em pix_discount_pct (0 desliga)
+
 ## v3.64.6 (2026-11-09) - Aviso urgente para reconectar o WhatsApp de atendimento
 - Quem está com o WhatsApp de atendimento desconectado vê um aviso urgente ao abrir o painel
 - O botão Conectar agora gera o QR Code na hora, acompanha a leitura e fecha o aviso quando o número volta

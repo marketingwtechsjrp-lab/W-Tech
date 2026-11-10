@@ -251,7 +251,7 @@ const ComboCard: React.FC<{ offer: VacuumOffer; bumps: VacuumOffer['bumps']; tit
             <div className="mt-auto pt-3 vp-num">
                 {saving > 0 && <p className="text-xs vp-muted">De <s>{formatBRL(before)}</s> por</p>}
                 <p className="vp-display vp-red"><span className="mr-1 text-2xl">{offer.installments}x de</span> <span className="text-5xl">{formatBRL(cart.installment_value)}</span></p>
-                <p className="mt-0.5 text-sm"><span className="font-semibold vp-green">sem juros</span> ou {formatBRL(cart.total)} à vista</p>
+                <p className="mt-0.5 text-sm"><span className="font-semibold vp-green">sem juros</span> ou {formatBRL(cart.pix_total)} à vista{cart.pix_discount > 0 ? ' no Pix' : ''}</p>
                 {saving > 0 && <p className="vp-save mt-1.5 text-xs">Você economiza {formatBRL(saving)}</p>}
                 <button type="button" className="vp-btn mt-3 w-full !min-h-[48px] !text-lg" onClick={() => onBuy(ids)} data-track={`vacuum_add_${ids.join('_')}`} data-track-category="Vacuum Pump">
                     <Plus size={18} aria-hidden /> Comprar junto
@@ -494,7 +494,7 @@ const LPVacuumPump: React.FC = () => {
 
                         <div className="mt-2.5 space-y-1.5">
                             <p className="vp-pay-line text-lg"><CreditCard className="mt-1 shrink-0" size={20} aria-hidden /><span><b className="vp-green">Sem juros</b> no cartão</span></p>
-                            <p className="vp-pay-line text-sm"><QrCode className="mt-0.5 shrink-0" size={18} aria-hidden /><span className="vp-num">ou <b>{formatBRL(offer.price)}</b> à vista no Pix, com aprovação na hora</span></p>
+                            <p className="vp-pay-line text-sm"><QrCode className="mt-0.5 shrink-0" size={18} aria-hidden /><span className="vp-num">ou <b>{formatBRL(offer.pix_price)}</b> à vista no Pix{offer.pix_discount_pct > 0 ? ` (${offer.pix_discount_pct}% off)` : ''}, com aprovação na hora</span></p>
                         </div>
                         {saving > 0 && <p className="vp-save vp-num mt-2.5 text-sm">Você economiza {formatBRL(saving)}</p>}
                     </div>
@@ -697,7 +697,7 @@ const LPVacuumPump: React.FC = () => {
                             </h2>
                             <p className="vp-display vp-offer-mes">por mês, sem juros</p>
                             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                                <span className="vp-display vp-num vp-offer-chip">Ou {formatBRL(offer.price).replace(',00', '')} no Pix</span>
+                                <span className="vp-display vp-num vp-offer-chip">Ou {formatBRL(offer.pix_price).replace(',00', '')} no Pix</span>
                                 <span className="vp-display vp-num vp-offer-chip vp-offer-chip-eco">{formatBRL(offer.regular_price - offer.price).replace(',00', '')} a menos</span>
                             </div>
                             <p className="mt-4 text-sm vp-muted vp-num">Depois da pré-venda: {offer.installments}x de {formatBRL(offer.regular_installment_value).replace(',00', '')} ({formatBRL(offer.regular_price).replace(',00', '')}).</p>
@@ -717,7 +717,7 @@ const LPVacuumPump: React.FC = () => {
                     <div className="mt-3 divide-y divide-[var(--vp-line)] border-y border-[var(--vp-line)]">
                         {[
                             ['É mesmo 10x sem juros?', `Sim. No cartão de crédito, em até ${offer.installments}x de ${formatBRL(offer.installment_value)}, sem juros. O total é ${formatBRL(offer.price)}.`],
-                            ['Posso pagar no Pix?', `Pode. No Pix o valor é ${formatBRL(offer.price)} à vista, e a confirmação sai na hora.`],
+                            ['Posso pagar no Pix?', offer.pix_discount_pct > 0 ? `Pode, e com ${offer.pix_discount_pct}% de desconto: no Pix a máquina sai por ${formatBRL(offer.pix_price)} à vista (os acessórios também têm o desconto), e a confirmação sai na hora.` : `Pode. No Pix o valor é ${formatBRL(offer.price)} à vista, e a confirmação sai na hora.`],
                             ['O cartão não tem limite para tudo. E agora?', 'Chame um vendedor no WhatsApp: ele divide sua compra em mais de um cartão, nas mesmas condições da pré-venda.'],
                             ['Qual é a voltagem da máquina?', 'A Vacuum Pump Standard funciona em 220 V. Confira a tomada da sua oficina antes de comprar.'],
                             ['Quando recebo?', `${offer.delivery_text}. ${offer.shipping_note}`],

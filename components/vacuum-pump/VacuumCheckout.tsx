@@ -177,6 +177,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const installmentsRef = useRef(installmentsChoice);
     installmentsRef.current = installmentsChoice;
     const installmentValue = (count: number) => Math.round((cart.total / count) * 100) / 100;
+    const payingPix = payMethod === 'pix' && cart.pix_discount > 0;
     const summaryInstallments = payMethod === 'card' ? installmentsChoice : maxInstallments;
     const shippingCodeRef = useRef<string | null>(null);
     shippingCodeRef.current = selectedOption?.code ?? null;
@@ -445,7 +446,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     useEffect(() => {
         const id = checkoutIdRef.current;
         if (!wantsPix || !id) return;
-        const total = cart.total;
+        const total = cart.pix_total;
         const issued = pixIssued.current;
         if (issued && issued.total === total && issued.nonce === pixNonce) return;
         let cancelled = false;
@@ -492,7 +493,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [wantsPix, cart.total, pixNonce]);
+    }, [wantsPix, cart.pix_total, pixNonce]);
 
     // Frete: cotado assim que o CEP fecha, em qualquer etapa, e de novo se os adicionais mudarem o peso.
     useEffect(() => {
@@ -772,20 +773,27 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                         <dd className="shrink-0">{formatBRL(bump.price)}</dd>
                                     </div>
                                 ))}
+                                {payingPix && <div className="flex justify-between gap-3 vp-green"><dt>Desconto Pix ({offer.pix_discount_pct}%)</dt><dd className="font-semibold">- {formatBRL(cart.pix_discount)}</dd></div>}
                                 <div className="flex justify-between gap-3"><dt className="vp-muted">Frete</dt><dd className={quote?.mode === 'free' ? 'font-semibold vp-green' : ''}>{shippingLabel}</dd></div>
                             </dl>
                         </div>
                         <div className="mt-3 border-t border-[var(--vp-line)] pt-3 vp-num">
-                            <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">{summaryInstallments}x de</span> <span className="text-4xl">{formatBRL(installmentValue(summaryInstallments))}</span></p>
-                            {summaryInstallments > 1 && <p className="text-right text-sm font-semibold vp-green">sem juros</p>}
+                            {payingPix ? (
+                                <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">Pix</span> <span className="text-4xl">{formatBRL(cart.pix_total)}</span></p>
+                            ) : (
+                                <>
+                                    <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">{summaryInstallments}x de</span> <span className="text-4xl">{formatBRL(installmentValue(summaryInstallments))}</span></p>
+                                    {summaryInstallments > 1 && <p className="text-right text-sm font-semibold vp-green">sem juros</p>}
+                                </>
+                            )}
                             <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm">
                                 <span className="font-bold">Total à vista</span>
                                 <span className="text-right">
-                                    {saving > 0 && <s className="mr-2 text-xs vp-muted">{formatBRL(cart.total + saving)}</s>}
-                                    <b>{formatBRL(cart.total)}</b>
+                                    {(saving > 0 || payingPix) && <s className="mr-2 text-xs vp-muted">{formatBRL(cart.total + saving)}</s>}
+                                    <b>{formatBRL(payingPix ? cart.pix_total : cart.total)}</b>
                                 </span>
                             </div>
-                            {saving > 0 && <p className="mt-1 text-right text-sm font-semibold vp-green">Você economiza {formatBRL(saving)}</p>}
+                            {(saving > 0 || payingPix) && <p className="mt-1 text-right text-sm font-semibold vp-green">Você economiza {formatBRL(saving + (payingPix ? cart.pix_discount : 0))}</p>}
                             {ending && ending.total > 0 && (
                                 <p className="mt-2 flex items-center justify-end gap-1.5 text-xs font-semibold vp-red" role="timer"><Timer size={14} aria-hidden /> Preço sobe em {ending.days}d {String(ending.hours).padStart(2, '0')}h {String(ending.minutes).padStart(2, '0')}m {String(ending.seconds).padStart(2, '0')}s</p>
                             )}
@@ -953,7 +961,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             </section>
                             <section className="vp-plate p-4 sm:p-5">
                                 <h1 className="vp-display text-3xl">Forma de pagamento</h1>
-                                <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, ou Pix com aprovação na hora.</p>
+                                <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, ou Pix{cart.pix_discount > 0 ? ` com ${offer.pix_discount_pct}% de desconto` : ''} e aprovação na hora.</p>
                                 <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Forma de pagamento">
                                     <label className={`vp-option ${payMethod === 'card' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'card'} onChange={() => setPayMethod('card')} data-track="vacuum_pay_card" data-track-category="Vacuum Pump" />
@@ -963,7 +971,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                     <label className={`vp-option ${payMethod === 'pix' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'pix'} onChange={() => setPayMethod('pix')} data-track="vacuum_pay_pix" data-track-category="Vacuum Pump" />
                                         <QrCode size={20} className="shrink-0" aria-hidden />
-                                        <span className="flex-1 vp-num"><b>Pix</b><span className="block text-sm vp-muted">{formatBRL(cart.total)} à vista, QR Code aqui na tela</span></span>
+                                        <span className="flex-1 vp-num"><b>Pix</b>{cart.pix_discount > 0 && <span className="vp-off ml-1.5 !text-xs">-{offer.pix_discount_pct}%</span>}<span className="block text-sm vp-muted">{formatBRL(cart.pix_total)} à vista, QR Code aqui na tela</span></span>
                                     </label>
                                 </div>
 
@@ -1016,7 +1024,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                                     <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="QR Code do Pix" width={250} height={250} className="mx-auto border border-[var(--vp-line)] bg-white p-2" />
                                                 )}
                                                 <div className="space-y-3">
-                                                    <p className="vp-num text-lg font-bold">Pague {formatBRL(cart.total)} no Pix</p>
+                                                    <p className="vp-num text-lg font-bold">Pague {formatBRL(cart.pix_total)} no Pix</p>
                                                     <p className="flex items-start gap-2 bg-[#fff1f0] p-3 text-sm font-semibold vp-red" role="status">
                                                         <Timer size={18} className="shrink-0" aria-hidden />
                                                         {pixLeft && pixLeft.total > 0 ? `O código vale por mais ${pixTimeLeft(pixLeft)}. Esta tela confirma sozinha quando o pagamento cair.` : 'Este código venceu.'}
@@ -1057,7 +1065,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                 <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--vp-line)] bg-white p-3 lg:hidden">
                     <div className="mb-2 flex items-baseline justify-between gap-3 vp-num">
                         <button type="button" className="vp-link text-sm" onClick={goBack}>Voltar</button>
-                        <span className="text-right text-sm"><b className="text-base vp-red">{offer.installments}x de {formatBRL(cart.installment_value)}</b> ou {formatBRL(cart.total)}</span>
+                        <span className="text-right text-sm"><b className="text-base vp-red">{offer.installments}x de {formatBRL(cart.installment_value)}</b> ou {formatBRL(cart.pix_total)}{cart.pix_discount > 0 ? ' no Pix' : ''}</span>
                     </div>
                     {primaryAction('!min-h-[52px]')}
                 </div>

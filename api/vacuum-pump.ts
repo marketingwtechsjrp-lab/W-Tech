@@ -347,15 +347,17 @@ async function handlePay(supabase: any, req: any, res: any) {
     }
 
     const cart = computeVacuumCart(state, body.bumps, shipping.cost);
-    // O preço pode ter mudado com a página aberta (prazo ou lote acabaram). Nunca
-    // cobrar valor diferente do que a pessoa viu: devolve para ela confirmar.
-    if (Math.abs(cart.total - Number(body.expected_total)) > 0.009) {
-        return res.status(409).json({ error: 'O valor da oferta mudou. Confira o novo total antes de pagar.', code: 'price_changed', total: cart.total });
-    }
-
     const form = body.form_data || {};
     const paymentMethodId = String(form.payment_method_id || '');
     const isPix = paymentMethodId === 'pix';
+    // Pix tem desconto: o valor cobrado depende da forma de pagamento.
+    const chargeTotal = isPix ? cart.pix_total : cart.total;
+    // O preço pode ter mudado com a página aberta (prazo ou lote acabaram). Nunca
+    // cobrar valor diferente do que a pessoa viu: devolve para ela confirmar.
+    if (Math.abs(chargeTotal - Number(body.expected_total)) > 0.009) {
+        return res.status(409).json({ error: 'O valor da oferta mudou. Confira o novo total antes de pagar.', code: 'price_changed', total: chargeTotal });
+    }
+
     if (!paymentMethodId) return res.status(400).json({ error: 'Escolha a forma de pagamento.' });
     if (!isPix && !form.token) return res.status(400).json({ error: 'Dados do cartão incompletos.' });
 
@@ -365,7 +367,7 @@ async function handlePay(supabase: any, req: any, res: any) {
     }
 
     // Pix ainda válido do mesmo valor: devolve o mesmo código em vez de gerar outro.
-    if (isPix && checkout.stage === 'pix_pending' && Number(checkout.amount) === cart.total && Date.parse(checkout.pix_expires_at) > Date.now()) {
+    if (isPix && checkout.stage === 'pix_pending' && Number(checkout.amount) === chargeTotal && Date.parse(checkout.pix_expires_at) > Date.now()) {
         return res.status(200).json(publicPaymentResult(checkout));
     }
 
@@ -388,7 +390,7 @@ async function handlePay(supabase: any, req: any, res: any) {
         : { type: docType, number: checkout.document };
 
     const payload: Record<string, unknown> = {
-        transaction_amount: cart.total,
+        transaction_amount: chargeTotal,
         description: 'Vacuum Pump Standard W-Tech - Black Friday',
         installments,
         payment_method_id: paymentMethodId,
@@ -399,7 +401,7 @@ async function handlePay(supabase: any, req: any, res: any) {
         external_reference: vacuumExternalReference(checkout.id),
         notification_url: `${PUBLIC_BASE_URL}/api/mercadopago-webhook`,
         statement_descriptor: 'WTECH',
-        metadata: { campaign: VACUUM_CAMPAIGN, checkout_id: checkout.id, lead_id: checkout.lead_id, bumps: cart.bump_ids },
+        metadata: { campaign: VACUUM_CAMPAIGN, checkout_id: checkout.id, lead_id: checkout.lead_id, bumps: cart.bump_ids, pix_discount: isPix ? cart.pix_discount : 0 },
         additional_info: {
             items: [
                 ...cart.items.map((item) => ({ id: item.id, title: item.name, quantity: 1, unit_price: item.price, category_id: 'others' })),
@@ -450,7 +452,7 @@ async function handlePay(supabase: any, req: any, res: any) {
         items: cart.items,
         shipping,
         bumps: cart.bump_ids,
-        amount: cart.total,
+        amount: chargeTotal,
         installments,
         payment_attempts: (checkout.payment_attempts || 0) + 1,
         updated_at: new Date().toISOString(),

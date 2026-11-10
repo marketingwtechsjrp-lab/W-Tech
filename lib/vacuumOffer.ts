@@ -74,6 +74,8 @@ export interface VacuumOfferConfig {
     presale_price: number;
     regular_price: number;
     installments: number;
+    /** Desconto em % sobre os produtos quando o pagamento é no Pix (frete fora). 0 desliga. */
+    pix_discount_pct: number;
     delivery_days: number;
     regular_delivery_days: number;
     warranty_months: number;
@@ -95,6 +97,7 @@ export const VACUUM_DEFAULT_CONFIG: VacuumOfferConfig = {
     presale_price: 7990,
     regular_price: 9990,
     installments: 10,
+    pix_discount_pct: 10,
     delivery_days: 40,
     regular_delivery_days: 45,
     warranty_months: 3,
@@ -149,6 +152,9 @@ export const VACUUM_DEFAULT_CONFIG: VacuumOfferConfig = {
         },
     ],
 };
+
+/** Trava contra erro de digitação na SITE_Config (ex.: 100 em vez de 10). */
+const MAX_PIX_DISCOUNT_PCT = 30;
 
 function positive(value: unknown, fallback: number): number {
     const n = Number(value);
@@ -232,6 +238,7 @@ export function resolveVacuumConfig(raw: unknown): VacuumOfferConfig {
         presale_price: positive(source.presale_price, d.presale_price),
         regular_price: positive(source.regular_price, d.regular_price),
         installments: Math.floor(positive(source.installments, d.installments)),
+        pix_discount_pct: Math.min(MAX_PIX_DISCOUNT_PCT, notNegativeDecimal(source.pix_discount_pct, d.pix_discount_pct)),
         delivery_days: Math.floor(positive(source.delivery_days, d.delivery_days)),
         regular_delivery_days: Math.floor(positive(source.regular_delivery_days, d.regular_delivery_days)),
         warranty_months: Math.floor(positive(source.warranty_months, d.warranty_months)),
@@ -268,6 +275,9 @@ export interface VacuumOfferState {
     installments: number;
     installment_value: number;
     regular_installment_value: number;
+    pix_discount_pct: number;
+    /** Preço da máquina sozinha no Pix, já com o desconto. */
+    pix_price: number;
     lot_size: number;
     sold: number;
     remaining: number;
@@ -285,6 +295,10 @@ export interface VacuumOfferState {
 
 export function roundCents(value: number): number {
     return Math.round(value * 100) / 100;
+}
+
+export function applyPixDiscount(value: number, pct: number): number {
+    return roundCents(value * (1 - pct / 100));
 }
 
 function addDays(iso: string, days: number): Date {
@@ -334,6 +348,8 @@ export function getVacuumOfferState(config: VacuumOfferConfig, paidCount: number
         installments: config.installments,
         installment_value: roundCents(price / config.installments),
         regular_installment_value: roundCents(config.regular_price / config.installments),
+        pix_discount_pct: config.pix_discount_pct,
+        pix_price: applyPixDiscount(price, config.pix_discount_pct),
         lot_size: config.lot_size,
         sold,
         remaining,
@@ -376,6 +392,10 @@ export interface VacuumCart {
     shipping_cost: number;
     total: number;
     installment_value: number;
+    /** Desconto do Pix em reais, só sobre os produtos. */
+    pix_discount: number;
+    /** O que se paga no Pix: produtos com desconto + frete cheio. */
+    pix_total: number;
     /** Ids realmente aplicados: id desconhecido ou repetido é descartado. */
     bump_ids: string[];
 }
@@ -389,12 +409,16 @@ export function computeVacuumCart(state: VacuumOfferState, bumpIds: unknown, shi
         ...bumps.map((bump) => ({ id: bump.id, name: bump.name, price: bump.price })),
     ];
     const shipping_cost = roundCents(Math.max(0, shippingCost));
-    const total = roundCents(items.reduce((sum, item) => sum + item.price, 0) + shipping_cost);
+    const subtotal = roundCents(items.reduce((sum, item) => sum + item.price, 0));
+    const total = roundCents(subtotal + shipping_cost);
+    const pix_discount = roundCents(subtotal - applyPixDiscount(subtotal, state.pix_discount_pct));
     return {
         items,
         shipping_cost,
         total,
         installment_value: roundCents(total / state.installments),
+        pix_discount,
+        pix_total: roundCents(total - pix_discount),
         bump_ids: bumps.map((bump) => bump.id),
     };
 }
