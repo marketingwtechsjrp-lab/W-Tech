@@ -43,6 +43,8 @@ export interface VacuumPaymentResult {
     code?: string;
     error?: string;
     total?: number;
+    /** Pix de uma combinação em aberto: valor só desta parte. */
+    combo_pix_amount?: number;
 }
 
 const API = '/api/vacuum-pump';
@@ -116,6 +118,15 @@ export const vacuumApi = {
     shipping: (body: { cep: string; bumps: string[] }) => post<VacuumShippingQuote>('shipping', body),
     pay: (body: { checkout_id: string; bumps: string[]; shipping_service: string | null; expected_total: number; attempt_key: string; form_data: unknown }) =>
         post<VacuumPaymentResult>('pay', body),
+    payCombo: (body: {
+        checkout_id: string;
+        bumps: string[];
+        shipping_service: string | null;
+        expected_total: number;
+        attempt_key: string;
+        pix_value: number;
+        cards: { amount: number; installments: number; form_data: unknown }[];
+    }) => post<VacuumPaymentResult>('pay_combo', body),
     status: (id: string) => request<VacuumPaymentResult>(`${API}?action=status&id=${encodeURIComponent(id)}`),
 };
 

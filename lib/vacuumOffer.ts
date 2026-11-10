@@ -519,11 +519,11 @@ export function vacuumUrgencyLabel(endsAt: string, now: number): string {
  */
 export function vacuumFilledFields(
     step: 'cart' | 'contact' | 'delivery' | 'payment',
-    data: { name: string; phone: string; email: string; cep: string; street: string; number: string; doc: string; payMethod: 'card' | 'pix' }
+    data: { name: string; phone: string; email: string; cep: string; street: string; number: string; doc: string; payMethod: 'card' | 'pix' | 'combo' }
 ): string[] {
     const pick = (fields: [boolean, string][]) => fields.filter(([done]) => done).map(([, field]) => field);
     if (step === 'contact') return pick([[Boolean(data.name.trim()), 'nome'], [Boolean(normalizeBrPhone(data.phone)), 'whatsapp'], [isValidEmail(data.email), 'email']]);
     if (step === 'delivery') return pick([[onlyDigits(data.cep).length === 8, 'cep'], [Boolean(data.street.trim()), 'rua'], [Boolean(data.number.trim()), 'numero'], [Boolean(documentType(data.doc)), 'cpf']]);
-    if (step === 'payment') return [data.payMethod === 'pix' ? 'pix' : 'cartao'];
+    if (step === 'payment') return [data.payMethod === 'pix' ? 'pix' : data.payMethod === 'combo' ? 'combinado' : 'cartao'];
     return [];
 }

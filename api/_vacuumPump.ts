@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
  */
 
 import { findExistingLead, isWonStatus } from '../lib/leadMatch.js';
+import { describeComboParts } from '../lib/vacuumCombo.js';
 import {
     VACUUM_CAMPAIGN,
     VACUUM_CONFIG_KEY,
@@ -244,6 +245,11 @@ function appendNote(existing: string | null | undefined, note: string): string {
 
 function paymentMethodLabel(payment: any): string {
     if (payment?.payment_method_id === 'pix') return 'Mercado Pago - Pix';
+    if (payment?.combo) {
+        const cards = (payment.combo.cards || []).map((card: any) => `${Number(card.installments) || 1}x`);
+        const parts = [...(payment.combo.pix ? ['Pix'] : []), `${cards.length} ${cards.length === 1 ? 'cartão' : 'cartões'} (${cards.join(' + ')})`];
+        return `Mercado Pago - ${parts.join(' + ')}`;
+    }
     const installments = Number(payment?.installments) || 1;
     return `Mercado Pago - Cartão ${installments}x`;
 }
@@ -495,6 +501,8 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
     const summary = items.map((item) => item.name).join(' + ') || 'Vacuum Pump Standard W-Tech';
 
     const seller = await findCreditedSeller(supabase, checkout, now);
+    // Pagamento combinado: cada parte tem seu id no Mercado Pago, e o estorno é por parte.
+    const paymentText = payment.combo ? `Pagamento combinado MP: ${describeComboParts(payment.combo)}` : `Pagamento MP ${paymentId}`;
 
     const { data: sale, error: saleError } = await supabase
         .from('SITE_Sales')
@@ -534,7 +542,7 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
                 delivery_address: [address.street, address.number, address.complement, address.neighborhood, address.city, address.state]
                     .filter(Boolean)
                     .join(', ') || null,
-                notes: `Black Friday Vacuum Pump. CPF/CNPJ: ${checkout.document || 'não informado'}. Pagamento MP ${paymentId}.`,
+                notes: `Black Friday Vacuum Pump. CPF/CNPJ: ${checkout.document || 'não informado'}. ${paymentText}.`,
                 campaign: VACUUM_CAMPAIGN,
                 mp_payment_id: paymentId,
             },
@@ -562,7 +570,7 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
     try {
         const { error: txError } = await supabase.from('SITE_Transactions').insert([
             {
-                description: `Vacuum Pump Black Friday ${sale.order_number} (MP ${paymentId})`,
+                description: `Vacuum Pump Black Friday ${sale.order_number} (${payment.combo ? paymentText : `MP ${paymentId}`})`,
                 amount: total,
                 type: 'Income',
                 category: 'Sales',

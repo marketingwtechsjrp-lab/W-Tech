@@ -15,7 +15,7 @@ export interface CheckoutDraft {
     bumps: string[];
     step: 0 | 1 | 2 | 3;
     shippingCode: string | null;
-    payMethod: 'card' | 'pix';
+    payMethod: 'card' | 'pix' | 'combo';
 }
 
 export function readCheckoutDraft(): CheckoutDraft | null {

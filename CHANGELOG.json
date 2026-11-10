@@ -1,5 +1,17 @@
 [
   {
+    "version": "3.66.0",
+    "date": "2026-11-10",
+    "title": "Pagamento combinado na Vacuum Pump (Pix + até 3 cartões)",
+    "changes": [
+      "Nova opção no checkout da Vacuum Pump: parte no Pix com desconto proporcional e o resto em 1 a 3 cartões, ou 2 a 3 cartões sem Pix",
+      "Cartões só são cobrados quando todas as partes estão garantidas (reserva e captura no Mercado Pago), com desfazimento automático em recusa, Pix vencido ou troca de forma de pagamento",
+      "Webhook, consulta de status e varredura retomam combinações interrompidas e criam tarefa urgente quando um estorno precisa ser feito à mão",
+      "Nova coluna SITE_CampaignCheckouts.split_payments (migration 2026-11-10_vacuum_combo_payments.sql)"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.65.1",
     "date": "2026-11-10",
     "title": "Certificados voltam a sair com a arte de cada modelo",

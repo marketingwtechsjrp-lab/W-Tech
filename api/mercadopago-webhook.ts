@@ -4,7 +4,8 @@ import { recoverLeadToRoulette } from './_roleta.js';
 import { sendTemplate, alreadySent } from './_email.js';
 import { enrollContactInFlows } from './_flows.js';
 import { sendTransactional } from './_waDispatch.js';
-import { handleVacuumPaymentEvent, isVacuumPayment } from './_vacuumPump.js';
+import { isVacuumPayment } from './_vacuumPump.js';
+import { handleVacuumPaymentNotice } from './_vacuumCombo.js';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.
@@ -191,7 +192,7 @@ export default async function handler(req: any, res: any) {
 
     // Pagamento da Vacuum Pump: não é matrícula, tem fluxo próprio.
     if (isVacuumPayment(payment)) {
-      const result = await handleVacuumPaymentEvent(supabase, payment);
+      const result = await handleVacuumPaymentNotice(supabase, payment);
       return res.status(200).json({ received: true, ...result });
     }
 

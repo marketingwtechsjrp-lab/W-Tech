@@ -27,6 +27,9 @@ export type CheckoutProblem =
     | 'brick_error'
     | 'brick_slow'
     | 'pix_failed'
+    | 'combo_failed'
+    | 'combo_brick_error'
+    | 'combo_brick_failed'
     | 'card_rejected'
     | 'card_failed';
 

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, CheckCircle2, ChevronDown, Copy, CreditCard, Lock, Plus, QrCode, RotateCcw, ShieldCheck, ShoppingCart, Timer, Truck, User, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Copy, CreditCard, Layers, Lock, Plus, QrCode, RotateCcw, ShieldCheck, ShoppingCart, Timer, Truck, User, X } from 'lucide-react';
 import { pushBeginCheckout, pushLead } from '../../lib/dataLayer';
 import { getLeadTrackingFields, getMetaBrowserIds } from '../../lib/tracking';
 import {
@@ -36,16 +36,8 @@ import {
 } from './vacuumCheckoutTracking';
 import { clearCheckoutDraft, readCheckoutDraft, saveCheckoutDraft } from './vacuumCheckoutDraft';
 import { identifyVacuumBuyer, trackVacuumAddPaymentInfo, trackVacuumInitiateCheckout, trackVacuumLead } from './vacuumMeta';
-
-declare global {
-    interface Window {
-        MercadoPago?: new (publicKey: string, options?: { locale: string }) => {
-            bricks: () => {
-                create: (type: 'payment', containerId: string, settings: unknown) => Promise<{ unmount: () => void; update?: (data: { amount: number }) => boolean }>;
-            };
-        };
-    }
-}
+import { loadMercadoPagoSdk, warmUpMercadoPago } from './mercadoPagoSdk';
+import VacuumComboPayment from './VacuumComboPayment';
 
 const BRICK_CONTAINER = 'vp-payment-brick';
 const FUNNEL = 'vacuum_pump_bf' as const;
@@ -54,42 +46,6 @@ const FORM_DELIVERY = 'vp-form-entrega';
 const STEP_NAMES: CheckoutStepName[] = ['cart', 'contact', 'delivery', 'payment'];
 /** Sem o formulário do cartão depois disso, a pessoa provavelmente desiste: o painel precisa saber. */
 const BRICK_SLOW_MS = 20_000;
-
-let sdkLoading: Promise<void> | null = null;
-let mercadoPagoWarmed = false;
-
-function loadMercadoPagoSdk(): Promise<void> {
-    if (window.MercadoPago) return Promise.resolve();
-    if (!sdkLoading) {
-        sdkLoading = new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = 'https://sdk.mercadopago.com/js/v2';
-            script.onload = () => resolve();
-            script.onerror = () => {
-                // Falhou: a próxima chamada tenta de novo, em vez de repetir a mesma falha.
-                sdkLoading = null;
-                script.remove();
-                reject(new Error('Falha ao carregar o Mercado Pago.'));
-            };
-            document.head.appendChild(script);
-        });
-    }
-    return sdkLoading;
-}
-
-/** O pagamento é a etapa mais lenta: já abre as conexões e baixa o SDK antes de a pessoa chegar nela. */
-function warmUpMercadoPago(): void {
-    if (mercadoPagoWarmed) return;
-    mercadoPagoWarmed = true;
-    for (const [href, crossOrigin] of [['https://http2.mlstatic.com', null], ['https://api.mercadopago.com', 'anonymous']] as const) {
-        const link = document.createElement('link');
-        link.rel = 'preconnect';
-        link.href = href;
-        if (crossOrigin) link.crossOrigin = crossOrigin;
-        document.head.appendChild(link);
-    }
-    void loadMercadoPagoSdk().catch(() => undefined);
-}
 
 interface Props {
     offer: VacuumOffer;
@@ -103,7 +59,7 @@ interface Props {
 /** A ordem é a do menor esforço: escolher, deixar o contato e só então endereço e pagamento. */
 type Step = 0 | 1 | 2 | 3;
 type Screen = 'form' | 'review';
-type PayMethod = 'card' | 'pix';
+type PayMethod = 'card' | 'pix' | 'combo';
 
 /** O Mercado Pago pede parcela de pelo menos R$ 5: abaixo disso, menos opções. */
 const MIN_INSTALLMENT_VALUE = 5;
@@ -158,6 +114,9 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     const [payMethod, setPayMethod] = useState<PayMethod>(draft?.payMethod ?? 'card');
     const [chosenInstallments, setChosenInstallments] = useState<number | null>(null);
     const [pix, setPix] = useState<VacuumPix | null>(null);
+    /** Pagamento combinado: total com a divisão atual e, depois dos cartões reservados, o valor do Pix da parte. */
+    const [comboTotal, setComboTotal] = useState<number | null>(null);
+    const [comboPixAmount, setComboPixAmount] = useState<number | null>(null);
     const [pixState, setPixState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
     const [pixNonce, setPixNonce] = useState(0);
     const pixIssued = useRef<{ total: number; nonce: number } | null>(null);
@@ -178,6 +137,8 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     installmentsRef.current = installmentsChoice;
     const installmentValue = (count: number) => Math.round((cart.total / count) * 100) / 100;
     const payingPix = payMethod === 'pix' && cart.pix_discount > 0;
+    const payingCombo = payMethod === 'combo';
+    const comboDiscount = payingCombo && comboTotal !== null ? Math.max(0, Math.round((cart.total - comboTotal) * 100) / 100) : 0;
     const summaryInstallments = payMethod === 'card' ? installmentsChoice : maxInstallments;
     const shippingCodeRef = useRef<string | null>(null);
     shippingCodeRef.current = selectedOption?.code ?? null;
@@ -279,6 +240,13 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                     setStep(1);
                 } else if (status.stage === 'paid') {
                     goToThanks(id);
+                } else if (status.stage === 'pix_pending' && status.combo_pix_amount && status.pix) {
+                    // Cartões já reservados, falta o Pix da parte: volta direto para o QR Code.
+                    setPayMethod('combo');
+                    setComboPixAmount(status.combo_pix_amount);
+                    setPix(status.pix);
+                    setPixState('ready');
+                    setStep(3);
                 } else if (status.stage === 'pix_pending') {
                     setPayMethod('pix');
                     setStep(3);
@@ -535,7 +503,8 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
 
     // Payment Brick: o cartão é digitado nos campos do Mercado Pago, nunca passa pelo nosso servidor.
     // Só abre com o frete resolvido, para o total já nascer certo.
-    const showBrick = step === 3 && screen === 'form' && quote !== null;
+    // No pagamento combinado o formulário é outro, um cartão por vez: dois formulários do Mercado Pago abertos se atrapalham.
+    const showBrick = step === 3 && screen === 'form' && quote !== null && payMethod !== 'combo';
     useEffect(() => {
         if (!showBrick) return;
         if (!offer.mp_public_key) {
@@ -631,8 +600,9 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                 setScreen('form');
                 setPix(null);
                 setPixState('failed');
+                setComboPixAmount(null);
                 pixIssued.current = null;
-                setError(status.stage === 'expired' ? 'O Pix venceu. Gere um novo código para garantir sua máquina.' : status.message || 'O pagamento não foi aprovado.');
+                setError(status.stage === 'expired' ? 'O Pix venceu e nada foi cobrado. Escolha a forma de pagamento de novo para garantir sua máquina.' : status.message || 'O pagamento não foi aprovado.');
             }
         }, 5000);
         return () => window.clearInterval(timer);
@@ -648,6 +618,59 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             /* navegador sem permissão: o código continua visível para copiar à mão */
         }
     };
+
+
+    const onComboPaid = useCallback(() => {
+        if (checkoutIdRef.current) goToThanks(checkoutIdRef.current);
+    }, [goToThanks]);
+    const onComboReview = useCallback(() => setScreen('review'), []);
+    const onComboPix = useCallback((nextPix: VacuumPix, amount: number) => {
+        setError(null);
+        pixIssued.current = null;
+        setComboPixAmount(amount);
+        setPix(nextPix);
+        setPixState('ready');
+    }, []);
+    const onComboFailed = useCallback(
+        (message: string, code?: string) => {
+            trackCheckoutProblem('combo_failed', code || message);
+            if (code === 'price_changed') {
+                onOfferChanged();
+                setQuoteNonce((value) => value + 1);
+            }
+            setError(message);
+            scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        [onOfferChanged]
+    );
+
+    /** QR Code do Pix pronto: do pedido inteiro ou da parte de uma combinação. */
+    const renderPixReady = (amount: number, note?: React.ReactNode) =>
+        pix && (
+
+                                            <div className="grid items-center gap-5 border border-[var(--vp-line)] p-4 sm:grid-cols-[250px_1fr]">
+                                                {pix.qr_code_base64 && (
+                                                    <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="QR Code do Pix" width={250} height={250} className="mx-auto border border-[var(--vp-line)] bg-white p-2" />
+                                                )}
+                                                <div className="space-y-3">
+                                                    <p className="vp-num text-lg font-bold">Pague {formatBRL(amount)} no Pix</p>
+{note}
+                                                    <p className="flex items-start gap-2 bg-[#fff1f0] p-3 text-sm font-semibold vp-red" role="status">
+                                                        <Timer size={18} className="shrink-0" aria-hidden />
+                                                        {pixLeft && pixLeft.total > 0 ? `O código vale por mais ${pixTimeLeft(pixLeft)}. Esta tela confirma sozinha quando o pagamento cair.` : 'Este código venceu.'}
+                                                    </p>
+                                                    <p className="text-sm vp-muted">Abra o aplicativo do seu banco e escaneie o QR Code, ou copie o código. Também enviamos o código para {contact.email}.</p>
+                                                    {pix?.qr_code && (
+                                                        <>
+                                                            <textarea readOnly value={pix?.qr_code} rows={2} aria-label="Código Pix copia e cola" className="vp-input !h-auto p-3 text-xs" />
+                                                            <button type="button" className="vp-btn w-full" onClick={copyPix}>
+                                                                {copied ? <><Check size={20} aria-hidden /> Código copiado</> : <><Copy size={20} aria-hidden /> Copiar código Pix</>}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+        );
 
     const sellerLink = whatsappLink(
         offer.whatsapp,
@@ -756,7 +779,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                     <div className="vp-plate p-4 sm:p-5">
                         <button type="button" className="flex w-full items-center justify-between gap-3 text-left lg:hidden" aria-expanded={summaryOpen} onClick={() => setSummaryOpen(!summaryOpen)}>
                             <span className="font-bold">Resumo do pedido</span>
-                            <span className="flex items-center gap-2 vp-num font-bold">{summaryInstallments}x de {formatBRL(installmentValue(summaryInstallments))} <ChevronDown size={18} className={summaryOpen ? 'rotate-180' : ''} aria-hidden /></span>
+                            <span className="flex items-center gap-2 vp-num font-bold">{payingCombo ? formatBRL(comboTotal ?? cart.total) : `${summaryInstallments}x de ${formatBRL(installmentValue(summaryInstallments))}`} <ChevronDown size={18} className={summaryOpen ? 'rotate-180' : ''} aria-hidden /></span>
                         </button>
                         <h2 className="hidden font-bold lg:block">Resumo do pedido</h2>
                         <div className={`${summaryOpen ? 'mt-3 block' : 'hidden'} lg:mt-3 lg:block`}>
@@ -774,12 +797,15 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                     </div>
                                 ))}
                                 {payingPix && <div className="flex justify-between gap-3 vp-green"><dt>Desconto Pix ({offer.pix_discount_pct}%)</dt><dd className="font-semibold">- {formatBRL(cart.pix_discount)}</dd></div>}
+                                {comboDiscount > 0 && <div className="flex justify-between gap-3 vp-green"><dt>Desconto na parte em Pix</dt><dd className="font-semibold">- {formatBRL(comboDiscount)}</dd></div>}
                                 <div className="flex justify-between gap-3"><dt className="vp-muted">Frete</dt><dd className={quote?.mode === 'free' ? 'font-semibold vp-green' : ''}>{shippingLabel}</dd></div>
                             </dl>
                         </div>
                         <div className="mt-3 border-t border-[var(--vp-line)] pt-3 vp-num">
                             {payingPix ? (
                                 <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">Pix</span> <span className="text-4xl">{formatBRL(cart.pix_total)}</span></p>
+                            ) : payingCombo ? (
+                                <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">Combinado</span> <span className="text-4xl">{formatBRL(comboTotal ?? cart.total)}</span></p>
                             ) : (
                                 <>
                                     <p className="vp-display text-right vp-red"><span className="mr-1 text-xl">{summaryInstallments}x de</span> <span className="text-4xl">{formatBRL(installmentValue(summaryInstallments))}</span></p>
@@ -789,11 +815,11 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             <div className="mt-1.5 flex items-baseline justify-between gap-3 text-sm">
                                 <span className="font-bold">Total à vista</span>
                                 <span className="text-right">
-                                    {(saving > 0 || payingPix) && <s className="mr-2 text-xs vp-muted">{formatBRL(cart.total + saving)}</s>}
-                                    <b>{formatBRL(payingPix ? cart.pix_total : cart.total)}</b>
+                                    {(saving > 0 || payingPix || comboDiscount > 0) && <s className="mr-2 text-xs vp-muted">{formatBRL(cart.total + saving)}</s>}
+                                    <b>{formatBRL(payingPix ? cart.pix_total : cart.total - comboDiscount)}</b>
                                 </span>
                             </div>
-                            {(saving > 0 || payingPix) && <p className="mt-1 text-right text-sm font-semibold vp-green">Você economiza {formatBRL(saving + (payingPix ? cart.pix_discount : 0))}</p>}
+                            {(saving > 0 || payingPix || comboDiscount > 0) && <p className="mt-1 text-right text-sm font-semibold vp-green">Você economiza {formatBRL(saving + (payingPix ? cart.pix_discount : comboDiscount))}</p>}
                             {ending && ending.total > 0 && (
                                 <p className="mt-2 flex items-center justify-end gap-1.5 text-xs font-semibold vp-red" role="timer"><Timer size={14} aria-hidden /> Preço sobe em {ending.days}d {String(ending.hours).padStart(2, '0')}h {String(ending.minutes).padStart(2, '0')}m {String(ending.seconds).padStart(2, '0')}s</p>
                             )}
@@ -815,7 +841,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                         <div role="alert" className="border-l-4 border-[var(--vp-red)] bg-[#fff1f0] p-3 text-sm">
                             <p>{error}</p>
                             <a href={sellerLink} target="_blank" rel="noreferrer" className="mt-1 inline-block font-semibold underline">
-                                Sem limite no cartão? Um vendedor pode dividir em mais de um cartão.
+                                Sem limite em um cartão? Escolha "Vários cartões" acima ou chame um vendedor.
                             </a>
                         </div>
                     )}
@@ -961,7 +987,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             </section>
                             <section className="vp-plate p-4 sm:p-5">
                                 <h1 className="vp-display text-3xl">Forma de pagamento</h1>
-                                <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, ou Pix{cart.pix_discount > 0 ? ` com ${offer.pix_discount_pct}% de desconto` : ''} e aprovação na hora.</p>
+                                <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, Pix{cart.pix_discount > 0 ? ` com ${offer.pix_discount_pct}% de desconto` : ''}, ou dividido entre Pix e até 3 cartões.</p>
                                 <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Forma de pagamento">
                                     <label className={`vp-option ${payMethod === 'card' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'card'} onChange={() => setPayMethod('card')} data-track="vacuum_pay_card" data-track-category="Vacuum Pump" />
@@ -972,6 +998,11 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'pix'} onChange={() => setPayMethod('pix')} data-track="vacuum_pay_pix" data-track-category="Vacuum Pump" />
                                         <QrCode size={20} className="shrink-0" aria-hidden />
                                         <span className="flex-1 vp-num"><b>Pix</b>{cart.pix_discount > 0 && <span className="vp-off ml-1.5 !text-xs">-{offer.pix_discount_pct}%</span>}<span className="block text-sm vp-muted">{formatBRL(cart.pix_total)} à vista, QR Code aqui na tela</span></span>
+                                    </label>
+                                    <label className={`vp-option sm:col-span-2 ${payMethod === 'combo' ? 'vp-option-on' : ''}`}>
+                                        <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'combo'} onChange={() => setPayMethod('combo')} data-track="vacuum_pay_combo" data-track-category="Vacuum Pump" />
+                                        <Layers size={20} className="shrink-0" aria-hidden />
+                                        <span className="flex-1"><b>Vários cartões ou Pix + cartão</b><span className="block text-sm vp-muted">Divida entre até 3 cartões, com ou sem uma parte no Pix (com desconto)</span></span>
                                     </label>
                                 </div>
 
@@ -1018,30 +1049,32 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                                 </div>
                                             </div>
                                         )}
-                                        {pixState === 'ready' && pix && (
-                                            <div className="grid items-center gap-5 border border-[var(--vp-line)] p-4 sm:grid-cols-[250px_1fr]">
-                                                {pix.qr_code_base64 && (
-                                                    <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="QR Code do Pix" width={250} height={250} className="mx-auto border border-[var(--vp-line)] bg-white p-2" />
-                                                )}
-                                                <div className="space-y-3">
-                                                    <p className="vp-num text-lg font-bold">Pague {formatBRL(cart.pix_total)} no Pix</p>
-                                                    <p className="flex items-start gap-2 bg-[#fff1f0] p-3 text-sm font-semibold vp-red" role="status">
-                                                        <Timer size={18} className="shrink-0" aria-hidden />
-                                                        {pixLeft && pixLeft.total > 0 ? `O código vale por mais ${pixTimeLeft(pixLeft)}. Esta tela confirma sozinha quando o pagamento cair.` : 'Este código venceu.'}
-                                                    </p>
-                                                    <p className="text-sm vp-muted">Abra o aplicativo do seu banco e escaneie o QR Code, ou copie o código. Também enviamos o código para {contact.email}.</p>
-                                                    {pix.qr_code && (
-                                                        <>
-                                                            <textarea readOnly value={pix.qr_code} rows={2} aria-label="Código Pix copia e cola" className="vp-input !h-auto p-3 text-xs" />
-                                                            <button type="button" className="vp-btn w-full" onClick={copyPix}>
-                                                                {copied ? <><Check size={20} aria-hidden /> Código copiado</> : <><Copy size={20} aria-hidden /> Copiar código Pix</>}
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
+                                        {pixState === 'ready' && pix && renderPixReady(cart.pix_total)}
                                     </div>
+                                )}
+                                {payMethod === 'combo' && (
+                                    pix && comboPixAmount ? (
+                                        <div className="mt-4">
+                                            {renderPixReady(
+                                                comboPixAmount,
+                                                <p className="flex items-start gap-2 text-sm"><Lock size={16} className="mt-0.5 shrink-0 vp-green" aria-hidden /> Seus cartões estão reservados. A cobrança deles só sai quando este Pix for pago; se o Pix vencer, as reservas são desfeitas e nada fica cobrado.</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <VacuumComboPayment
+                                            offer={offer}
+                                            cart={cart}
+                                            contact={contact}
+                                            doc={doc}
+                                            checkoutId={checkoutId}
+                                            shippingCode={selectedOption?.code ?? null}
+                                            onPaid={onComboPaid}
+                                            onReview={onComboReview}
+                                            onPix={onComboPix}
+                                            onFailed={onComboFailed}
+                                            onTotalChange={setComboTotal}
+                                        />
+                                    )
                                 )}
                                 <p className="mt-3 text-xs vp-muted">Ao pagar, você concorda com os <a className="underline" href="/termos" target="_blank" rel="noreferrer">Termos</a> e a <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">Política de privacidade</a>. Os dados do cartão são digitados direto no Mercado Pago.</p>
                             </section>

@@ -19,7 +19,6 @@ import {
     assignFollowUp,
     cancelPendingPix,
     finalizeVacuumPayment,
-    handleVacuumPaymentEvent,
     isUuid,
     loadVacuumOffer,
     quoteVacuumShipping,
@@ -27,8 +26,17 @@ import {
     resolveSellerRef,
     sendPixPendingEmail,
     sweepVacuumAbandoned,
-    vacuumExternalReference,
 } from './_vacuumPump.js';
+import {
+    PIX_EXPIRATION_MS,
+    REJECTION_FALLBACK,
+    buildPaymentPayload,
+    createMpPayment,
+    fetchMpPayment,
+    rejectionMessage,
+    type VacuumShippingCharge,
+} from './_vacuumMp.js';
+import { comboInFlight, handleVacuumPaymentNotice, hasOpenCombo, openComboState, payVacuumCombo, releaseVacuumCombo, sweepVacuumCombos, type PreparedCharge } from './_vacuumCombo.js';
 
 /**
  * API da página da Vacuum Pump (Black Friday) — checkout transparente do Mercado Pago.
@@ -39,6 +47,7 @@ import {
  *   POST save     → avança a etapa (endereço, pagamento) e os adicionais escolhidos
  *   POST shipping → cotação de frete pelo CEP: grátis em SP, SGP nos outros estados
  *   POST pay      → cria o pagamento. O total é calculado aqui, o navegador não informa preço
+ *   POST pay_combo → pagamento combinado: parte no Pix e/ou de 1 a 3 cartões (ver _vacuumCombo.ts)
  *   GET  status   → situação do pedido (página de Pix e de obrigado)
  *   GET  sweep    → cron: entrega aos vendedores quem não comprou
  *   GET  sales    → equipe: pedidos da promoção, vendedores e oferta atual
@@ -47,27 +56,10 @@ import {
 
 const CHECKOUTS = 'SITE_CampaignCheckouts';
 const MAX_PAYMENT_ATTEMPTS = 8;
-const PIX_EXPIRATION_MS = 30 * 60 * 1000;
 const TRACKING_FIELDS = [
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
     'gclid', 'gbraid', 'wbraid', 'fbclid', 'gad_source', 'landing_page', 'referrer',
 ];
-
-const REJECTION_MESSAGES: Record<string, string> = {
-    cc_rejected_invalid_installments: 'Este cartão não aceita essa quantidade de parcelas. Escolha menos parcelas ou use outro cartão.',
-    cc_rejected_insufficient_amount: 'O cartão não tem limite para este valor. Tente outro cartão ou pague no Pix.',
-    cc_rejected_bad_filled_card_number: 'Confira o número do cartão.',
-    cc_rejected_bad_filled_date: 'Confira a validade do cartão.',
-    cc_rejected_bad_filled_security_code: 'Confira o código de segurança do cartão.',
-    cc_rejected_bad_filled_other: 'Confira os dados do cartão.',
-    cc_rejected_call_for_authorize: 'Seu banco pediu autorização. Ligue para o banco, libere a compra e tente de novo.',
-    cc_rejected_blacklist: 'O cartão não foi aceito. Tente outro cartão ou pague no Pix.',
-    cc_rejected_card_disabled: 'O cartão está desativado. Ligue para o banco ou use outro cartão.',
-    cc_rejected_duplicated_payment: 'Já existe um pagamento igual a este. Confira seu extrato antes de tentar de novo.',
-    cc_rejected_high_risk: 'O pagamento foi recusado pela análise de segurança. Tente outro cartão ou pague no Pix.',
-    cc_rejected_max_attempts: 'Limite de tentativas do cartão atingido. Use outro cartão ou pague no Pix.',
-};
-const REJECTION_FALLBACK = 'O pagamento não foi aprovado. Tente outro cartão, pague no Pix ou chame um vendedor.';
 
 // Barreira contra teste de cartão roubado: o endpoint de pagamento é público.
 // Em memória porque há um processo só na VPS; reiniciar zera, o que não atrapalha.
@@ -103,16 +95,6 @@ function sanitizeAddress(raw: any) {
 
 function isCompleteAddress(address: ReturnType<typeof sanitizeAddress>): boolean {
     return address.cep.length === 8 && !!address.street && !!address.number && !!address.city && address.state.length === 2;
-}
-
-function splitName(name: string) {
-    const [first, ...rest] = name.trim().split(/\s+/);
-    return { first, last: rest.join(' ') || first };
-}
-
-/** Horário de Brasília no formato que o Mercado Pago aceita em date_of_expiration. */
-function isoBrasilia(ms: number): string {
-    return new Date(ms - 3 * 3_600_000).toISOString().replace('Z', '-03:00');
 }
 
 async function handleOffer(supabase: any, res: any) {
@@ -294,59 +276,104 @@ function publicPaymentResult(checkout: any, extra: Record<string, unknown> = {})
         ...(pending
             ? { pix: { qr_code: checkout.pix_qr_code, qr_code_base64: checkout.pix_qr_code_base64, expires_at: checkout.pix_expires_at } }
             : {}),
+        ...(pending && hasOpenCombo(checkout) && checkout.split_payments?.pix ? { combo_pix_amount: Number(checkout.split_payments.pix.amount) } : {}),
         ...extra,
     };
 }
 
-async function fetchPayment(token: string, paymentId: string) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
-    try {
-        const res = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: controller.signal,
-        });
-        return res.ok ? await res.json() : null;
-    } finally {
-        clearTimeout(timer);
-    }
-}
-
-async function handlePay(supabase: any, req: any, res: any) {
+/**
+ * Tudo que o pagamento simples e o combinado conferem antes de cobrar: checkout, oferta,
+ * frete e carrinho, sempre calculados aqui. Quando não dá para seguir, já respondeu e devolve null.
+ */
+async function prepareCharge(supabase: any, req: any, res: any): Promise<PreparedCharge | null> {
     if (!allow(req, 'pay', 10, 10 * 60 * 1000)) {
-        return res.status(429).json({ error: 'Muitas tentativas de pagamento. Aguarde alguns minutos ou chame um vendedor.' });
+        res.status(429).json({ error: 'Muitas tentativas de pagamento. Aguarde alguns minutos ou chame um vendedor.' });
+        return null;
     }
     const body = req.body || {};
-    if (!isUuid(body.checkout_id)) return res.status(400).json({ error: 'Checkout inválido.' });
+    if (!isUuid(body.checkout_id)) {
+        res.status(400).json({ error: 'Checkout inválido.' });
+        return null;
+    }
 
     const { data: checkout, error: loadError } = await supabase.from(CHECKOUTS).select('*').eq('id', body.checkout_id).maybeSingle();
     if (loadError) throw new Error(loadError.message);
-    if (!checkout) return res.status(404).json({ error: 'Checkout não encontrado.' });
-    if (checkout.stage === 'paid') return res.status(200).json(publicPaymentResult(checkout));
+    if (!checkout) {
+        res.status(404).json({ error: 'Checkout não encontrado.' });
+        return null;
+    }
+    if (checkout.stage === 'paid') {
+        res.status(200).json(publicPaymentResult(checkout));
+        return null;
+    }
+    if (comboInFlight(checkout)) {
+        res.status(409).json(IN_FLIGHT_REPLY);
+        return null;
+    }
     if (checkout.payment_attempts >= MAX_PAYMENT_ATTEMPTS) {
-        return res.status(429).json({ error: 'Limite de tentativas atingido. Chame um vendedor para concluir sua compra.' });
+        res.status(429).json({ error: 'Limite de tentativas atingido. Chame um vendedor para concluir sua compra.' });
+        return null;
     }
     if (!checkout.document || !checkout.address) {
-        return res.status(400).json({ error: 'Preencha os dados de entrega antes de pagar.' });
+        res.status(400).json({ error: 'Preencha os dados de entrega antes de pagar.' });
+        return null;
     }
 
     const { config, state } = await loadVacuumOffer(supabase, { fresh: true });
-    if (state.phase === 'soon') return res.status(409).json({ error: 'A pré-venda ainda não abriu.', code: 'not_open' });
+    if (state.phase === 'soon') {
+        res.status(409).json({ error: 'A pré-venda ainda não abriu.', code: 'not_open' });
+        return null;
+    }
 
     // O frete também é decidido aqui, pelo CEP gravado no checkout. O navegador só diz qual opção escolheu.
     const quote = await quoteVacuumShipping(supabase, config, checkout.address.cep, body.bumps);
-    let shipping: { method: string; name: string; cost: number; days?: number };
+    let shipping: VacuumShippingCharge;
     if (quote.mode === 'free') {
         shipping = { method: 'gratis_sp', name: 'Frete grátis (SP)', cost: 0 };
     } else if (quote.mode === 'combine') {
         shipping = { method: 'a_combinar', name: 'Frete a combinar', cost: 0 };
     } else {
         const option = quote.options.find((item) => item.code === String(body.shipping_service));
-        if (!option) return res.status(409).json({ error: 'Escolha a forma de envio.', code: 'price_changed' });
+        if (!option) {
+            res.status(409).json({ error: 'Escolha a forma de envio.', code: 'price_changed' });
+            return null;
+        }
         shipping = { method: option.name.toLowerCase(), name: `Frete ${option.name}`, cost: option.price, days: option.days };
     }
 
     const cart = computeVacuumCart(state, body.bumps, shipping.cost);
+    const token = await readMercadoPagoToken(supabase);
+    if (!token) {
+        console.error('[Vacuum] mercadopago_access_token ausente em SITE_Config');
+        res.status(500).json({ error: 'Pagamento indisponível. Chame um vendedor.' });
+        return null;
+    }
+    return { checkout, state, cart, shipping, token };
+}
+
+/**
+ * Pagamento antes de outro: Pix em aberto ou combinação com cartões reservados não podem continuar
+ * valendo. Devolve false se outro processo tomou a combinação primeiro (o Pix caiu e os cartões
+ * estão sendo cobrados): aí um pagamento novo cobraria duas vezes.
+ */
+async function releaseOpenPayment(supabase: any, token: string, checkout: any): Promise<boolean> {
+    const comboState = openComboState(checkout);
+    if (comboState) {
+        return (await releaseVacuumCombo(supabase, token, checkout, 'expired', null, { from: [comboState] })) !== null;
+    }
+    if (checkout.stage === 'pix_pending' && checkout.mp_payment_id) {
+        await cancelPendingPix(token, checkout.mp_payment_id);
+    }
+    return true;
+}
+
+const IN_FLIGHT_REPLY = { error: 'Seu pagamento está sendo confirmado. Aguarde alguns segundos.', code: 'in_flight' };
+
+async function handlePay(supabase: any, req: any, res: any) {
+    const prepared = await prepareCharge(supabase, req, res);
+    if (!prepared) return;
+    const { checkout, state, cart, shipping, token } = prepared;
+    const body = req.body || {};
     const form = body.form_data || {};
     const paymentMethodId = String(form.payment_method_id || '');
     const isPix = paymentMethodId === 'pix';
@@ -367,86 +394,30 @@ async function handlePay(supabase: any, req: any, res: any) {
     }
 
     // Pix ainda válido do mesmo valor: devolve o mesmo código em vez de gerar outro.
-    if (isPix && checkout.stage === 'pix_pending' && Number(checkout.amount) === chargeTotal && Date.parse(checkout.pix_expires_at) > Date.now()) {
+    if (
+        isPix &&
+        !hasOpenCombo(checkout) &&
+        checkout.stage === 'pix_pending' &&
+        Number(checkout.amount) === chargeTotal &&
+        Date.parse(checkout.pix_expires_at) > Date.now()
+    ) {
         return res.status(200).json(publicPaymentResult(checkout));
     }
 
-    const token = await readMercadoPagoToken(supabase);
-    if (!token) {
-        console.error('[Vacuum] mercadopago_access_token ausente em SITE_Config');
-        return res.status(500).json({ error: 'Pagamento indisponível. Chame um vendedor.' });
-    }
+    if (!(await releaseOpenPayment(supabase, token, checkout))) return res.status(409).json(IN_FLIGHT_REPLY);
 
-    if (checkout.stage === 'pix_pending' && checkout.mp_payment_id) {
-        await cancelPendingPix(token, checkout.mp_payment_id);
-    }
-
-    const { first, last } = splitName(checkout.name);
-    const address = checkout.address;
-    const docType = documentType(checkout.document);
-    const formIdentification = form.payer?.identification;
-    const identification = formIdentification?.number
-        ? { type: String(formIdentification.type || docType), number: onlyDigits(formIdentification.number) }
-        : { type: docType, number: checkout.document };
-
-    const payload: Record<string, unknown> = {
-        transaction_amount: chargeTotal,
-        description: 'Vacuum Pump Standard W-Tech - Black Friday',
+    const payload = buildPaymentPayload(checkout, cart, shipping, {
+        amount: chargeTotal,
         installments,
-        payment_method_id: paymentMethodId,
-        ...(isPix
-            ? { date_of_expiration: isoBrasilia(Date.now() + PIX_EXPIRATION_MS) }
-            : { token: String(form.token), ...(form.issuer_id ? { issuer_id: form.issuer_id } : {}) }),
-        payer: { email: checkout.email, first_name: first, last_name: last, identification },
-        external_reference: vacuumExternalReference(checkout.id),
-        notification_url: `${PUBLIC_BASE_URL}/api/mercadopago-webhook`,
-        statement_descriptor: 'WTECH',
-        metadata: { campaign: VACUUM_CAMPAIGN, checkout_id: checkout.id, lead_id: checkout.lead_id, bumps: cart.bump_ids, pix_discount: isPix ? cart.pix_discount : 0 },
-        additional_info: {
-            items: [
-                ...cart.items.map((item) => ({ id: item.id, title: item.name, quantity: 1, unit_price: item.price, category_id: 'others' })),
-                ...(shipping.cost > 0 ? [{ id: 'frete', title: shipping.name, quantity: 1, unit_price: shipping.cost, category_id: 'others' }] : []),
-            ],
-            payer: {
-                first_name: first,
-                last_name: last,
-                phone: { area_code: checkout.phone.slice(0, 2), number: checkout.phone.slice(2) },
-                address: { zip_code: address.cep, street_name: address.street, street_number: address.number },
-            },
-            shipments: {
-                receiver_address: {
-                    zip_code: address.cep,
-                    state_name: address.state,
-                    city_name: address.city,
-                    street_name: address.street,
-                    street_number: address.number,
-                },
-            },
-        },
-    };
+        isPix,
+        form,
+        metadata: { pix_discount: isPix ? cart.pix_discount : 0 },
+    });
 
     // A chave vem do navegador a cada envio: clique duplo não vira cobrança dupla.
     const attemptKey = String(body.attempt_key || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 60) || String(Date.now());
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25000);
-    let payment: any;
-    let httpOk = false;
-    try {
-        const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-                'X-Idempotency-Key': `${checkout.id}:${attemptKey}`,
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal,
-        });
-        httpOk = mpRes.ok;
-        payment = await mpRes.json().catch(() => null);
-    } finally {
-        clearTimeout(timer);
-    }
+    const created = await createMpPayment(token, payload, `${checkout.id}:${attemptKey}`);
+    const payment = created.data;
 
     const baseUpdate = {
         items: cart.items,
@@ -454,11 +425,12 @@ async function handlePay(supabase: any, req: any, res: any) {
         bumps: cart.bump_ids,
         amount: chargeTotal,
         installments,
+        split_payments: null,
         payment_attempts: (checkout.payment_attempts || 0) + 1,
         updated_at: new Date().toISOString(),
     };
 
-    if (!httpOk || !payment?.id) {
+    if (!created.ok || !payment?.id) {
         console.error('[Vacuum] Mercado Pago recusou a criação:', payment?.message || payment?.error || 'sem detalhe');
         await supabase.from(CHECKOUTS).update({ ...baseUpdate, stage: 'rejected', payment_status: 'error', payment_status_detail: String(payment?.message || '').slice(0, 200) }).eq('id', checkout.id);
         return res.status(402).json({ stage: 'rejected', message: REJECTION_FALLBACK });
@@ -507,9 +479,24 @@ async function handlePay(supabase: any, req: any, res: any) {
         }
     }
     if (stage === 'rejected') {
-        return res.status(200).json(publicPaymentResult(current, { message: REJECTION_MESSAGES[payment.status_detail] || REJECTION_FALLBACK }));
+        return res.status(200).json(publicPaymentResult(current, { message: rejectionMessage(payment.status_detail) }));
     }
     return res.status(200).json(publicPaymentResult(current));
+}
+
+async function handlePayCombo(supabase: any, req: any, res: any) {
+    const prepared = await prepareCharge(supabase, req, res);
+    if (!prepared) return;
+    if (!(await releaseOpenPayment(supabase, prepared.token, prepared.checkout))) return res.status(409).json(IN_FLIGHT_REPLY);
+    const result = await payVacuumCombo(supabase, prepared, req.body || {});
+    if (result.httpStatus !== 200) return res.status(result.httpStatus).json(result.body);
+    const checkout = result.checkout;
+    let orderNumber: string | undefined;
+    if (checkout.stage === 'paid' && checkout.sale_id) {
+        const { data: sale } = await supabase.from('SITE_Sales').select('order_number').eq('id', checkout.sale_id).maybeSingle();
+        orderNumber = sale?.order_number;
+    }
+    return res.status(200).json(publicPaymentResult(checkout, { ...(orderNumber ? { order_number: orderNumber } : {}), ...(result.message ? { message: result.message } : {}) }));
 }
 
 async function handleStatus(supabase: any, req: any, res: any) {
@@ -524,9 +511,9 @@ async function handleStatus(supabase: any, req: any, res: any) {
     // Webhook pode atrasar: quem está olhando a tela do Pix consulta direto no Mercado Pago.
     if (['pix_pending', 'review'].includes(checkout.stage) && checkout.mp_payment_id) {
         const token = await readMercadoPagoToken(supabase);
-        const payment = token ? await fetchPayment(token, checkout.mp_payment_id).catch(() => null) : null;
+        const payment = token ? await fetchMpPayment(token, checkout.mp_payment_id) : null;
         if (payment && (payment.status !== checkout.payment_status || payment.status === 'approved')) {
-            await handleVacuumPaymentEvent(supabase, payment);
+            await handleVacuumPaymentNotice(supabase, payment);
             const { data: fresh } = await supabase.from(CHECKOUTS).select('*').eq('id', id).maybeSingle();
             if (fresh) checkout = fresh;
         }
@@ -546,7 +533,7 @@ async function handleStatus(supabase: any, req: any, res: any) {
             delivery_text: state.delivery_text,
             shipping_note: state.shipping_note,
             whatsapp: state.whatsapp,
-            message: checkout.stage === 'rejected' ? REJECTION_MESSAGES[checkout.payment_status_detail] || REJECTION_FALLBACK : undefined,
+            message: checkout.stage === 'rejected' ? rejectionMessage(checkout.payment_status_detail) : undefined,
         })
     );
 }
@@ -567,6 +554,11 @@ export default async function handler(req: any, res: any) {
             if (action === 'sales') return await handleVacuumSalesList(supabase, req, res);
             if (action === 'sweep') {
                 if (!isCronAuthorized(req)) return denyCron(res);
+                const combos = await sweepVacuumCombos(supabase).catch((err) => {
+                    console.error('[Vacuum] Varredura de combinações falhou:', err?.message);
+                    return null;
+                });
+                if (combos && (combos.released || combos.completed)) console.log(`[Vacuum] Combinações: ${combos.released} desfeitas, ${combos.completed} concluídas.`);
                 const result = await sweepVacuumAbandoned(supabase);
                 await retryVacuumOrderWhatsApp(supabase).catch((err) => console.error('[Vacuum] Reenvio de confirmações falhou:', err?.message));
                 console.log(`[Vacuum] Varredura: ${result.analyzed} analisados, ${result.assigned} entregues aos vendedores.`);
@@ -578,6 +570,7 @@ export default async function handler(req: any, res: any) {
             if (action === 'save') return await handleSave(supabase, req, res);
             if (action === 'shipping') return await handleShipping(supabase, req, res);
             if (action === 'pay') return await handlePay(supabase, req, res);
+            if (action === 'pay_combo') return await handlePayCombo(supabase, req, res);
             if (action === 'dashboard_goals') return await handleVacuumGoals(supabase, req, res);
             if (action === 'sale_create') return await handleVacuumSaleCreate(supabase, req, res);
             if (action === 'sale_update') return await handleVacuumSaleUpdate(supabase, req, res);

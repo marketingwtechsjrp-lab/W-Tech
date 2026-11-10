@@ -1,6 +1,12 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.66.0 (2026-11-10) - Pagamento combinado na Vacuum Pump (Pix + até 3 cartões)
+- Nova opção no checkout da Vacuum Pump: parte no Pix com desconto proporcional e o resto em 1 a 3 cartões, ou 2 a 3 cartões sem Pix
+- Cartões só são cobrados quando todas as partes estão garantidas (reserva e captura no Mercado Pago), com desfazimento automático em recusa, Pix vencido ou troca de forma de pagamento
+- Webhook, consulta de status e varredura retomam combinações interrompidas e criam tarefa urgente quando um estorno precisa ser feito à mão
+- Nova coluna SITE_CampaignCheckouts.split_payments (migration 2026-11-10_vacuum_combo_payments.sql)
+
 ## v3.65.1 (2026-11-10) - Certificados voltam a sair com a arte de cada modelo
 - O certificado do Experience volta a sair com a arte do Experience, e não com a do Certificado de Excelência
 - Cada layout (certificado ou crachá) usa a própria imagem de fundo; a arte padrão só entra se a do layout não carregar
