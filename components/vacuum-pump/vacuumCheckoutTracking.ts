@@ -1,4 +1,5 @@
 import { trackEvent } from '../AnalyticsTracker';
+import { isVacuumTest } from './vacuumTestMode';
 
 /**
  * Acompanhamento do checkout da Vacuum Pump, lido no painel ao vivo (`site_vacuum_checkout_health`).
@@ -34,10 +35,12 @@ export type CheckoutProblem =
     | 'card_failed';
 
 export function trackCheckoutStep(step: CheckoutStepName): void {
+    if (isVacuumTest()) return;
     void trackEvent(CATEGORY, `vacuum_step_${step}`);
 }
 
 export function trackCheckoutProblem(problem: CheckoutProblem, detail?: unknown): void {
+    if (isVacuumTest()) return;
     void trackEvent(CATEGORY, `vacuum_problem_${problem}`, detail ? String(detail).slice(0, 180) : undefined);
 }
 
@@ -54,6 +57,7 @@ export interface CheckoutExitInfo {
 
 /** O painel separa o rótulo por `|`, em `site_vacuum_checkout_health`. */
 export function trackCheckoutExit(how: CheckoutExit, info: CheckoutExitInfo): void {
+    if (isVacuumTest()) return;
     void trackEvent(CATEGORY, `vacuum_exit_${how}`, [info.step, info.filled.join(','), info.shipping].join('|'));
 }
 

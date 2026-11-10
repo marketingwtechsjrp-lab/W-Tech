@@ -73,7 +73,8 @@ const VacuumComboPayment: React.FC<Props> = ({ offer, cart, contact, doc, checko
             return { amount, installments: Math.min(chosen[index] ?? max, max) };
         });
     }, [amountsText, count, cart.total, pixValue, chosen, offer.installments]);
-    const check = useMemo(() => checkComboPlan(cart, offer.installments, pixValue, cards), [cart, offer.installments, pixValue, cards]);
+    const minPart = offer.combo_min_part ?? COMBO_MIN_PART;
+    const check = useMemo(() => checkComboPlan(cart, offer.installments, pixValue, cards, minPart), [cart, offer.installments, pixValue, cards, minPart]);
     const plan = check.plan;
 
     useEffect(() => {
@@ -347,7 +348,7 @@ const VacuumComboPayment: React.FC<Props> = ({ offer, cart, contact, doc, checko
             ) : (
                 plan && <p className="text-sm vp-num">Total: <b>{formatBRL(plan.total)}</b>{plan.pixDiscount > 0 && <span className="vp-green"> (com {formatBRL(plan.pixDiscount)} de desconto no Pix)</span>}</p>
             )}
-            <p className="text-xs vp-muted">Cada parte precisa ser de pelo menos {formatBRL(COMBO_MIN_PART)}. Só cartão de crédito.</p>
+            <p className="text-xs vp-muted">Cada parte precisa ser de pelo menos {formatBRL(minPart)}. Só cartão de crédito.</p>
 
             <button
                 type="button"

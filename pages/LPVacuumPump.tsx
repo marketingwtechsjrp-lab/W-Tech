@@ -402,6 +402,11 @@ const LPVacuumPump: React.FC = () => {
 
     return (
         <div ref={rootRef} className="vp-root min-h-screen">
+            {offer.test && (
+                <div role="status" className="fixed inset-x-0 top-0 z-[200] bg-[#ffd400] px-3 py-1 text-center text-xs font-bold text-black">
+                    MODO TESTE: máquina a R$ 10, sem frete. Não conta como venda.
+                </div>
+            )}
             <style>{VP_CSS}</style>
             <SEO
                 title={discounted ? `Vacuum Pump W-Tech: ${offer.installments}x de ${formatBRL(offer.installment_value)} sem juros` : 'Vacuum Pump Standard W-Tech'}

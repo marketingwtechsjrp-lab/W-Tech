@@ -68,6 +68,8 @@ export interface PreparedCharge {
     cart: VacuumCart;
     shipping: VacuumShippingCharge;
     token: string;
+    /** Parte mínima de cada forma de pagamento (menor no link de teste). */
+    minPart: number;
 }
 
 export interface ComboResult {
@@ -270,7 +272,7 @@ function sanitizeKey(value: unknown): string {
 /** POST pay_combo: valida o plano, reserva os cartões e, se houver, gera o Pix da parte. */
 export async function payVacuumCombo(supabase: any, prepared: PreparedCharge, body: any): Promise<ComboResult> {
     const { checkout, state, cart, shipping, token } = prepared;
-    const check = checkComboPlan(cart, state.installments, body.pix_value, body.cards);
+    const check = checkComboPlan(cart, state.installments, body.pix_value, body.cards, prepared.minPart);
     if (!check.plan) return { httpStatus: 400, body: { error: check.error } };
     const plan: ComboPlan = check.plan;
     if (Math.abs(plan.total - Number(body.expected_total)) > 0.009) {

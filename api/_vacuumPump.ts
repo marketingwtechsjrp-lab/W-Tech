@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 /**
  * Núcleo da venda da Vacuum Pump na Black Friday: estado da oferta, confirmação
  * do pagamento e entrega de quem não comprou para os vendedores.
@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto';
 
 import { findExistingLead, isWonStatus } from '../lib/leadMatch.js';
 import { describeComboParts } from '../lib/vacuumCombo.js';
+import { isVacuumTestCampaign } from '../lib/vacuumTest.js';
 import {
     VACUUM_CAMPAIGN,
     VACUUM_CONFIG_KEY,
@@ -117,6 +118,16 @@ export async function loadVacuumOffer(
         state: getVacuumOfferState(offerCache.config, offerCache.paidCount, now),
         publicKey: offerCache.publicKey,
     };
+}
+
+/** Token do link de teste (ver lib/vacuumTest.ts). Sem token configurado, o modo de teste fica desligado. */
+export async function isVacuumTestToken(supabase: any, token: unknown): Promise<boolean> {
+    if (typeof token !== 'string' || token.length < 16 || token.length > 128) return false;
+    const expected = (await readConfigValue(supabase, 'vacuum_test_token'))?.trim();
+    if (!expected) return false;
+    const a = createHash('sha256').update(token).digest();
+    const b = createHash('sha256').update(expected).digest();
+    return timingSafeEqual(a, b);
 }
 
 export function clearVacuumOfferCache(): void {
@@ -500,7 +511,9 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
     const orderNumber = `WT-VP${String(now).slice(-6)}${Math.floor(Math.random() * 100)}`;
     const summary = items.map((item) => item.name).join(' + ') || 'Vacuum Pump Standard W-Tech';
 
-    const seller = await findCreditedSeller(supabase, checkout, now);
+    // Venda do link de teste: fica fora do placar, do lote e de qualquer aviso para fora.
+    const isTest = isVacuumTestCampaign(checkout.campaign);
+    const seller = isTest ? null : await findCreditedSeller(supabase, checkout, now);
     // Pagamento combinado: cada parte tem seu id no Mercado Pago, e o estorno é por parte.
     const paymentText = payment.combo ? `Pagamento combinado MP: ${describeComboParts(payment.combo)}` : `Pagamento MP ${paymentId}`;
 
@@ -525,7 +538,7 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
                 seller_id: seller?.id ?? null,
                 seller_name: seller?.name ?? DIRECT_SALE_LABEL,
                 sale_date: dateSP(new Date(now)),
-                sale_summary: summary,
+                sale_summary: isTest ? `[TESTE] ${summary}` : summary,
                 // Sem linhas em SITE_SaleItems: estes itens ainda não existem no catálogo
                 // (SITE_Products), e o editor de pedidos lê este JSON quando não há linhas.
                 items: items.map((item) => ({ id: item.id, name: item.name, price: item.price, quantity: 1 })),
@@ -542,8 +555,8 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
                 delivery_address: [address.street, address.number, address.complement, address.neighborhood, address.city, address.state]
                     .filter(Boolean)
                     .join(', ') || null,
-                notes: `Black Friday Vacuum Pump. CPF/CNPJ: ${checkout.document || 'não informado'}. ${paymentText}.`,
-                campaign: VACUUM_CAMPAIGN,
+                notes: `${isTest ? '[TESTE, não é venda] ' : ''}Black Friday Vacuum Pump. CPF/CNPJ: ${checkout.document || 'não informado'}. ${paymentText}.`,
+                campaign: isTest ? checkout.campaign : VACUUM_CAMPAIGN,
                 mp_payment_id: paymentId,
             },
         ])
@@ -565,6 +578,11 @@ export async function finalizeVacuumPayment(supabase: any, checkout: any, paymen
     await markCheckoutPaid(supabase, checkout.id, sale.id, payment);
     clearVacuumOfferCache();
     console.log(`[Vacuum] Venda ${sale.order_number} confirmada (pagamento ${paymentId}) ✓`);
+
+    if (isTest) {
+        console.log(`[Vacuum] Venda de TESTE ${sale.order_number}: sem financeiro, CRM, WhatsApp e Meta.`);
+        return { saleId: sale.id, orderNumber: sale.order_number };
+    }
 
     // A venda já está segura. Daqui em diante nada pode derrubar a confirmação.
     try {

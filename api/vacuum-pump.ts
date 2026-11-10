@@ -9,6 +9,8 @@ import {
     normalizeBrPhone,
     onlyDigits,
 } from '../lib/vacuumOffer.js';
+import { VACUUM_TEST_CAMPAIGN, VACUUM_TEST_MIN_PART, isVacuumTestCampaign, vacuumTestOfferState } from '../lib/vacuumTest.js';
+import { COMBO_MIN_PART } from '../lib/vacuumCombo.js';
 import { getServiceClient } from './_auth.js';
 import { denyCron, isCronAuthorized } from './_cron.js';
 import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js';
@@ -20,6 +22,7 @@ import {
     cancelPendingPix,
     finalizeVacuumPayment,
     isUuid,
+    isVacuumTestToken,
     loadVacuumOffer,
     quoteVacuumShipping,
     readMercadoPagoToken,
@@ -97,10 +100,14 @@ function isCompleteAddress(address: ReturnType<typeof sanitizeAddress>): boolean
     return address.cep.length === 8 && !!address.street && !!address.number && !!address.city && address.state.length === 2;
 }
 
-async function handleOffer(supabase: any, res: any) {
+async function handleOffer(supabase: any, req: any, res: any) {
     const { state, publicKey } = await loadVacuumOffer(supabase);
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ ...state, mp_public_key: publicKey, server_now: Date.now() });
+    // Link de teste: mesma oferta a R$ 10, sem adicionais (lib/vacuumTest.ts).
+    if (req.query?.teste && (await isVacuumTestToken(supabase, req.query.teste))) {
+        return res.status(200).json({ ...vacuumTestOfferState(state), mp_public_key: publicKey, server_now: Date.now(), test: true, combo_min_part: VACUUM_TEST_MIN_PART });
+    }
+    return res.status(200).json({ ...state, mp_public_key: publicKey, server_now: Date.now(), combo_min_part: COMBO_MIN_PART });
 }
 
 /** Cria ou atualiza a ficha no CRM sem rebaixar status e sem apagar o que já existe. */
@@ -173,15 +180,18 @@ async function handleLead(supabase: any, req: any, res: any) {
         if (typeof value === 'string' && value) tracking[field] = value.slice(0, 500);
     }
 
+    // Teste: checkout em outra campanha e nada no CRM, para não virar lead nem tarefa de vendedor.
+    const isTest = !!body.test_token && (await isVacuumTestToken(supabase, body.test_token));
+    const campaign = isTest ? VACUUM_TEST_CAMPAIGN : VACUUM_CAMPAIGN;
     const tag = source === 'contact' ? 'vacuum_bf_quer_contato' : source === 'waitlist' ? 'vacuum_bf_lista_espera' : 'vacuum_bf_checkout';
-    const leadId = await upsertLead(supabase, { name, phone, email: email || null, tracking, tag });
+    const leadId = isTest ? null : await upsertLead(supabase, { name, phone, email: email || null, tracking, tag });
     const stage = source === 'contact' ? 'contact' : source === 'waitlist' ? 'waitlist' : 'lead';
 
     // Uma pessoa, um checkout em aberto: voltar à página não gera outra tarefa de ligação.
     const { data: open } = await supabase
         .from(CHECKOUTS)
         .select('*')
-        .eq('campaign', VACUUM_CAMPAIGN)
+        .eq('campaign', campaign)
         .eq('phone', phone)
         .neq('stage', 'paid')
         .order('created_at', { ascending: false })
@@ -190,7 +200,7 @@ async function handleLead(supabase: any, req: any, res: any) {
 
     // Entrou pelo link de um vendedor: a venda é dele. O link mais recente é o que vale.
     // O link dos disparos não é de ninguém: a venda é direta, mesmo que alguém já tenha falado com a pessoa.
-    const fromDispatch = body.seller_ref === VACUUM_DIRECT_REF;
+    const fromDispatch = isTest || body.seller_ref === VACUUM_DIRECT_REF;
     const referredBy = fromDispatch ? null : await resolveSellerRef(supabase, body.seller_ref);
     // Voltar sem o link, em outro aparelho, não desfaz: só o link de um vendedor troca o crédito.
     const directSale = fromDispatch || (!referredBy && open?.browser_context?.direct_sale === true);
@@ -211,13 +221,13 @@ async function handleLead(supabase: any, req: any, res: any) {
         if (error) throw new Error(error.message);
         checkout = data;
     } else {
-        const { data, error } = await supabase.from(CHECKOUTS).insert([{ ...fields, campaign: VACUUM_CAMPAIGN, stage }]).select('*').single();
+        const { data, error } = await supabase.from(CHECKOUTS).insert([{ ...fields, campaign, stage }]).select('*').single();
         if (error) throw new Error(error.message);
         checkout = data;
     }
 
     // Pediu para ser chamado: vai para o vendedor agora, sem esperar a varredura.
-    if (stage === 'contact') {
+    if (stage === 'contact' && !isTest) {
         await assignFollowUp(supabase, checkout).catch((err) => console.error('[Vacuum] Follow-up imediato falhou:', err?.message));
     }
 
@@ -319,16 +329,21 @@ async function prepareCharge(supabase: any, req: any, res: any): Promise<Prepare
         return null;
     }
 
-    const { config, state } = await loadVacuumOffer(supabase, { fresh: true });
+    const isTest = isVacuumTestCampaign(checkout.campaign);
+    const loaded = await loadVacuumOffer(supabase, { fresh: true });
+    const config = loaded.config;
+    const state = isTest ? vacuumTestOfferState(loaded.state) : loaded.state;
     if (state.phase === 'soon') {
         res.status(409).json({ error: 'A pré-venda ainda não abriu.', code: 'not_open' });
         return null;
     }
 
     // O frete também é decidido aqui, pelo CEP gravado no checkout. O navegador só diz qual opção escolheu.
-    const quote = await quoteVacuumShipping(supabase, config, checkout.address.cep, body.bumps);
+    const quote = isTest ? { mode: 'free' as const, options: [] } : await quoteVacuumShipping(supabase, config, checkout.address.cep, body.bumps);
     let shipping: VacuumShippingCharge;
-    if (quote.mode === 'free') {
+    if (isTest) {
+        shipping = { method: 'teste', name: 'Sem frete (teste)', cost: 0 };
+    } else if (quote.mode === 'free') {
         shipping = { method: 'gratis_sp', name: 'Frete grátis (SP)', cost: 0 };
     } else if (quote.mode === 'combine') {
         shipping = { method: 'a_combinar', name: 'Frete a combinar', cost: 0 };
@@ -348,7 +363,7 @@ async function prepareCharge(supabase: any, req: any, res: any): Promise<Prepare
         res.status(500).json({ error: 'Pagamento indisponível. Chame um vendedor.' });
         return null;
     }
-    return { checkout, state, cart, shipping, token };
+    return { checkout, state, cart, shipping, token, minPart: isTest ? VACUUM_TEST_MIN_PART : COMBO_MIN_PART };
 }
 
 /**
@@ -548,7 +563,7 @@ export default async function handler(req: any, res: any) {
     const action = String(req.query?.action || '');
     try {
         if (req.method === 'GET') {
-            if (action === 'offer') return await handleOffer(supabase, res);
+            if (action === 'offer') return await handleOffer(supabase, req, res);
             if (action === 'status') return await handleStatus(supabase, req, res);
             if (action === 'dashboard') return await handleVacuumDashboard(supabase, req, res);
             if (action === 'sales') return await handleVacuumSalesList(supabase, req, res);

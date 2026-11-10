@@ -6,6 +6,7 @@ import {
     normalizeBrPhone,
     vacuumPurchaseEventId,
 } from '../../lib/vacuumOffer';
+import { isVacuumTest } from './vacuumTestMode';
 
 /**
  * Funil da Vacuum Pump no pixel da loja. O contêiner do GTM só conhece o pixel do curso online,
@@ -23,22 +24,27 @@ const product = (value: number, ids?: string[]) => ({
 });
 
 export function trackVacuumViewContent(price: number): void {
+    if (isVacuumTest()) return;
     trackMetaStandardEvent('ViewContent', product(price), { pixelId, onceKey: 'vacuum-view-content' });
 }
 
 export function trackVacuumInitiateCheckout(total: number, bumpIds: string[]): void {
+    if (isVacuumTest()) return;
     trackMetaStandardEvent('InitiateCheckout', product(total, [VACUUM_META_CONTENT_ID, ...bumpIds]), { pixelId, onceKey: 'vacuum-initiate-checkout' });
 }
 
 export function trackVacuumAddPaymentInfo(total: number, bumpIds: string[]): void {
+    if (isVacuumTest()) return;
     trackMetaStandardEvent('AddPaymentInfo', product(total, [VACUUM_META_CONTENT_ID, ...bumpIds]), { pixelId, onceKey: 'vacuum-add-payment-info' });
 }
 
 export function trackVacuumLead(value: number): void {
+    if (isVacuumTest()) return;
     trackMetaStandardEvent('Lead', product(value), { pixelId, onceKey: 'vacuum-lead' });
 }
 
 export function trackVacuumPurchase(order: { orderNumber: string; total: number; ids: string[] }): void {
+    if (isVacuumTest()) return;
     trackMetaStandardEvent(
         'Purchase',
         { ...product(order.total, order.ids), num_items: order.ids.length || 1, order_id: order.orderNumber },
@@ -48,6 +54,7 @@ export function trackVacuumPurchase(order: { orderNumber: string; total: number;
 
 /** Ajuda o Meta a reconhecer quem comprou. O próprio script do Meta aplica o hash antes de enviar. */
 export function identifyVacuumBuyer(buyer: { name?: string; email?: string; phone?: string; city?: string; state?: string; cep?: string }): void {
+    if (isVacuumTest()) return;
     const [first, ...rest] = String(buyer.name || '').trim().toLowerCase().split(/\s+/);
     const phone = normalizeBrPhone(buyer.phone);
     setMetaUserData(pixelId, {

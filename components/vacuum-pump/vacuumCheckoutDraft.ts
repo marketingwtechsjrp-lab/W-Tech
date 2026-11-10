@@ -1,3 +1,4 @@
+import { isVacuumTest } from './vacuumTestMode';
 /**
  * Rascunho do carrinho, para a pessoa continuar de onde parou.
  *
@@ -5,7 +6,8 @@
  * para outro app e volta: quem foi buscar o cartão perdia tudo o que tinha preenchido. Cartão e
  * CPF nunca são guardados aqui. Some na compra e depois de um dia.
  */
-const DRAFT_KEY = 'vp_checkout_draft';
+// O teste guarda o carrinho à parte: um checkout de teste não pode ser retomado no preço normal.
+const DRAFT_KEY = isVacuumTest() ? 'vp_checkout_draft_teste' : 'vp_checkout_draft';
 const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export interface CheckoutDraft {

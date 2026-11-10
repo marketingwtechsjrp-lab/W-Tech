@@ -45,7 +45,7 @@ export function comboPixDiscount(cart: VacuumCart, pixValue: number): number {
     return roundCents((cart.pix_discount * pixValue) / cart.total);
 }
 
-export function checkComboPlan(cart: VacuumCart, offerInstallments: number, pixValueRaw: unknown, cardsRaw: unknown): ComboCheck {
+export function checkComboPlan(cart: VacuumCart, offerInstallments: number, pixValueRaw: unknown, cardsRaw: unknown, minPart = COMBO_MIN_PART): ComboCheck {
     const pixValue = roundCents(Math.max(0, Number(pixValueRaw) || 0));
     if (!Array.isArray(cardsRaw) || cardsRaw.length < 1 || cardsRaw.length > COMBO_MAX_CARDS) {
         return { plan: null, error: `Use de 1 a ${COMBO_MAX_CARDS} cartões.` };
@@ -57,12 +57,12 @@ export function checkComboPlan(cart: VacuumCart, offerInstallments: number, pixV
     if (pixValue > 0 ? cards.length < 1 : cards.length < 2) {
         return { plan: null, error: 'Com um cartão só, escolha "Cartão de crédito". Aqui são 2 ou 3 cartões, ou Pix + cartão.' };
     }
-    if (pixValue > 0 && pixValue < COMBO_MIN_PART) {
-        return { plan: null, error: `A parte no Pix precisa ser de pelo menos R$ ${COMBO_MIN_PART}.` };
+    if (pixValue > 0 && pixValue < minPart) {
+        return { plan: null, error: `A parte no Pix precisa ser de pelo menos ${formatBRL(minPart)}.` };
     }
     for (const [index, card] of cards.entries()) {
         const label = `Cartão ${index + 1}`;
-        if (card.amount < COMBO_MIN_PART) return { plan: null, error: `${label}: o valor mínimo é R$ ${COMBO_MIN_PART}.` };
+        if (card.amount < minPart) return { plan: null, error: `${label}: o valor mínimo é ${formatBRL(minPart)}.` };
         const max = maxInstallmentsFor(card.amount, offerInstallments);
         if (card.installments < 1 || card.installments > max) return { plan: null, error: `${label}: até ${max}x para este valor.` };
     }

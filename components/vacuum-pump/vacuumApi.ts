@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VACUUM_DIRECT_REF, getVacuumOfferState, resolveVacuumConfig, type VacuumCartItem, type VacuumOfferState } from '../../lib/vacuumOffer';
 import { VP_FONTS_HREF, VP_PAGE_BG } from './vacuumStyles';
+import { vacuumTestToken } from './vacuumTestMode';
 
 /** Estado da oferta + o que só existe na resposta da API. */
 export interface VacuumOffer extends VacuumOfferState {
     mp_public_key: string | null;
     server_now?: number;
+    /** Link privado de teste: preço de R$ 10 (lib/vacuumTest.ts). */
+    test?: boolean;
+    /** Valor mínimo de cada parte no pagamento combinado. */
+    combo_min_part?: number;
 }
 
 export interface VacuumPix {
@@ -110,12 +115,17 @@ function sellerRef(): string | null {
 if (typeof window !== 'undefined') captureSellerRef();
 
 export const vacuumApi = {
-    offer: () => request<VacuumOffer>(`${API}?action=offer`),
+    offer: () => {
+        const test = vacuumTestToken();
+        return request<VacuumOffer>(`${API}?action=offer${test ? `&teste=${encodeURIComponent(test)}` : ''}`);
+    },
     lead: (body: { name: string; phone: string; email?: string; source: 'checkout' | 'contact' | 'waitlist'; tracking?: Record<string, string> }) =>
-        post<{ ok: boolean; checkout_id: string; lead_id: string | null }>('lead', { ...body, seller_ref: sellerRef() }),
+        post<{ ok: boolean; checkout_id: string; lead_id: string | null }>('lead', { ...body, seller_ref: sellerRef(), test_token: vacuumTestToken() }),
     save: (body: { checkout_id: string; stage?: string; bumps?: string[]; document?: string; address?: Record<string, string> }) =>
         post<{ ok: boolean }>('save', body),
-    shipping: (body: { cep: string; bumps: string[] }) => post<VacuumShippingQuote>('shipping', body),
+    // No teste não há frete: o servidor cobra sem frete, e a tela mostra o mesmo.
+    shipping: (body: { cep: string; bumps: string[] }) =>
+        vacuumTestToken() ? Promise.resolve({ httpStatus: 200, mode: 'free' as const, options: [] }) : post<VacuumShippingQuote>('shipping', body),
     pay: (body: { checkout_id: string; bumps: string[]; shipping_service: string | null; expected_total: number; attempt_key: string; form_data: unknown }) =>
         post<VacuumPaymentResult>('pay', body),
     payCombo: (body: {

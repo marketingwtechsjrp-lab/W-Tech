@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.66.1 (2026-11-10) - Link privado de teste da Vacuum Pump (R$ 10)
+- Link secreto ?teste
+
 ## v3.66.0 (2026-11-10) - Pagamento combinado na Vacuum Pump (Pix + até 3 cartões)
 - Nova opção no checkout da Vacuum Pump: parte no Pix com desconto proporcional e o resto em 1 a 3 cartões, ou 2 a 3 cartões sem Pix
 - Cartões só são cobrados quando todas as partes estão garantidas (reserva e captura no Mercado Pago), com desfazimento automático em recusa, Pix vencido ou troca de forma de pagamento

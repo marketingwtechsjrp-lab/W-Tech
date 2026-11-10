@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.66.1",
+    "date": "2026-11-10",
+    "title": "Link privado de teste da Vacuum Pump (R$ 10)",
+    "changes": [
+      "Link secreto ?teste"
+    ],
+    "author": "daniel"
+  },
+  {
     "version": "3.66.0",
     "date": "2026-11-10",
     "title": "Pagamento combinado na Vacuum Pump (Pix + até 3 cartões)",

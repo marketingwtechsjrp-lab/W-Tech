@@ -38,6 +38,7 @@ import { clearCheckoutDraft, readCheckoutDraft, saveCheckoutDraft } from './vacu
 import { identifyVacuumBuyer, trackVacuumAddPaymentInfo, trackVacuumInitiateCheckout, trackVacuumLead } from './vacuumMeta';
 import { loadMercadoPagoSdk, warmUpMercadoPago } from './mercadoPagoSdk';
 import VacuumComboPayment from './VacuumComboPayment';
+import { isVacuumTest } from './vacuumTestMode';
 
 const BRICK_CONTAINER = 'vp-payment-brick';
 const FUNNEL = 'vacuum_pump_bf' as const;
@@ -172,7 +173,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
     }, [onClose, reportExit]);
 
     useEffect(() => {
-        pushBeginCheckout({ funnel: FUNNEL, item_name: VACUUM_ITEM_NAME, value: offer.price, currency: 'BRL', provider: 'mercadopago' });
+        if (!isVacuumTest()) pushBeginCheckout({ funnel: FUNNEL, item_name: VACUUM_ITEM_NAME, value: offer.price, currency: 'BRL', provider: 'mercadopago' });
         trackVacuumInitiateCheckout(cartRef.current.total, cartRef.current.bump_ids);
         window.history.pushState({ ...window.history.state, vpCheckout: true }, '');
         const previous = document.body.style.overflow;
@@ -285,7 +286,7 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
             if (bumps.length) void vacuumApi.save({ checkout_id: result.checkout_id, bumps }).catch(() => undefined);
             identifyVacuumBuyer(contact);
             trackVacuumLead(offer.price);
-            pushLead({
+            if (!isVacuumTest()) pushLead({
                 funnel: FUNNEL,
                 item_name: VACUUM_ITEM_NAME,
                 method: 'checkout',

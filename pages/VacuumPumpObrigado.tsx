@@ -6,6 +6,7 @@ import { VP_CSS } from '../components/vacuum-pump/vacuumStyles';
 import { useVacuumPageChrome, vacuumApi, whatsappLink, type VacuumPaymentResult } from '../components/vacuum-pump/vacuumApi';
 import { pushPurchase } from '../lib/dataLayer';
 import { trackVacuumPurchase } from '../components/vacuum-pump/vacuumMeta';
+import { isVacuumTest } from '../components/vacuum-pump/vacuumTestMode';
 import { clearCheckoutDraft } from '../components/vacuum-pump/vacuumCheckoutDraft';
 import { VACUUM_ITEM_NAME, formatBRL } from '../lib/vacuumOffer';
 
@@ -47,6 +48,8 @@ const VacuumPumpObrigado: React.FC = () => {
             clearCheckoutDraft();
             const orderNumber = result.order_number || checkoutId;
             const total = Number(result.amount) || 0;
+            // Compra do link de teste não vai para o GTM nem para o Pixel.
+            if (isVacuumTest()) return;
             const firstTime = pushPurchase({
                 funnel: 'vacuum_pump_bf',
                 item_name: VACUUM_ITEM_NAME,
