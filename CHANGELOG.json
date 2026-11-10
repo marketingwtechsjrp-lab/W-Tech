@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.65.1",
+    "date": "2026-11-10",
+    "title": "Certificados voltam a sair com a arte de cada modelo",
+    "changes": [
+      "O certificado do Experience volta a sair com a arte do Experience, e não com a do Certificado de Excelência",
+      "Cada layout (certificado ou crachá) usa a própria imagem de fundo; a arte padrão só entra se a do layout não carregar"
+    ],
+    "author": "Daniel Marques"
+  },
+  {
     "version": "3.65.0",
     "date": "2026-11-10",
     "title": "Desconto de 10% no Pix da Vacuum Pump",

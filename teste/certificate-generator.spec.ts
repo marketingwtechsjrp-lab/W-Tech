@@ -41,6 +41,40 @@ test('incorpora uma imagem PNG remota no PDF do certificado', async ({ page }, t
     expect(pdf.toString('latin1')).toContain('/Subtype /Image');
 });
 
+test('usa a arte do layout em vez do fundo padrão', async ({ page }) => {
+    const backgroundUrl = 'https://certificate.test/experience.png';
+    const background = fs.readFileSync('public/backgound-alex-crepaldi.png');
+    const requested: string[] = [];
+
+    await page.route(backgroundUrl, route => route.fulfill({ status: 200, contentType: 'image/png', body: background }));
+    page.on('request', request => requested.push(request.url()));
+    await page.goto('/');
+    requested.length = 0;
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.evaluate(async ({ backgroundUrl }) => {
+        const generatorPath = '/components/admin/Certificates/CertificateGenerator.ts';
+        const { generateCertificatesPDF } = await import(/* @vite-ignore */ generatorPath);
+        await generateCertificatesPDF(
+            {
+                id: 'layout-experience',
+                name: 'Experience',
+                type: 'Certificate',
+                backgroundUrl,
+                elements: [],
+                dimensions: { width: 842, height: 595, bgSize: 'cover', bgPosition: 'center' },
+                createdAt: new Date().toISOString()
+            },
+            { title: 'Experience', date: '2026-11-19' },
+            [{ id: 'enrollment-test', studentName: 'Aluno Teste' }]
+        );
+    }, { backgroundUrl });
+    await downloadPromise;
+
+    expect(requested).toContain(backgroundUrl);
+    expect(requested.some(url => url.includes('certificado-em-branco-2026'))).toBe(false);
+});
+
 test('não salva um certificado em branco quando o fundo falha', async ({ page }) => {
     const backgroundUrl = 'https://certificate.test/missing.png';
     await page.route(backgroundUrl, route => route.fulfill({ status: 404, body: 'not found' }));
@@ -57,5 +91,5 @@ test('não salva um certificado em branco quando o fundo falha', async ({ page }
         }
     }, { backgroundUrl });
 
-    expect(message).toContain('HTTP 404');
+    expect(message).toContain('Não foi possível baixar a imagem de fundo do certificado');
 });

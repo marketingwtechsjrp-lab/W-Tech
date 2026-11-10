@@ -261,7 +261,13 @@ export const generateCertificatesPDF = async (
     let backgroundImage: PdfBackgroundImage | null = null;
     let backgroundError: string | null = null;
 
-    for (const candidate of GLOBAL_CERTIFICATE_BACKGROUND_URLS) {
+    // A arte do layout (Experience, Suspensão, crachás...) vem primeiro. O fundo
+    // padrão "Certificado de Excelência" só entra se a arte do layout falhar —
+    // antes ele era forçado em todos e o Experience saía com o modelo errado.
+    const backgroundCandidates = [layout.backgroundUrl?.trim(), ...GLOBAL_CERTIFICATE_BACKGROUND_URLS]
+        .filter((value): value is string => Boolean(value));
+
+    for (const candidate of backgroundCandidates) {
         try {
             backgroundImage = await loadCertificateBackgroundForPdf(candidate);
             break;

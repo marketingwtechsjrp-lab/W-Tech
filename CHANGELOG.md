@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.65.1 (2026-11-10) - Certificados voltam a sair com a arte de cada modelo
+- O certificado do Experience volta a sair com a arte do Experience, e não com a do Certificado de Excelência
+- Cada layout (certificado ou crachá) usa a própria imagem de fundo; a arte padrão só entra se a do layout não carregar
+
 ## v3.65.0 (2026-11-10) - Desconto de 10% no Pix da Vacuum Pump
 - No Pix, a máquina e os acessórios saem com 10% de desconto (o frete não entra no desconto)
 - A página e o checkout mostram o preço do Pix, a linha de desconto no resumo e o selo -10% na opção Pix
