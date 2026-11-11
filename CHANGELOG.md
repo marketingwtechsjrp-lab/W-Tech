@@ -1,6 +1,10 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.66.2 (2026-11-11) - Link privado da Vacuum Pump em 12x com os dois acessórios
+- Link secreto ?condicao=<token> (chave vacuum_condicao_12x_token): máquina + kit adaptador + câmara borbulhadora por R$ 9.328,80 em até 12x sem juros, sem desconto no Pix
+- O site continua em 10x; a venda do link é real e segue a campanha normal
+
 ## v3.66.1 (2026-11-10) - Link privado de teste da Vacuum Pump (R$ 10)
 - Link secreto ?teste
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VACUUM_DIRECT_REF, getVacuumOfferState, resolveVacuumConfig, type VacuumCartItem, type VacuumOfferState } from '../../lib/vacuumOffer';
 import { VP_FONTS_HREF, VP_PAGE_BG } from './vacuumStyles';
 import { vacuumTestToken } from './vacuumTestMode';
+import { vacuumPrivateToken } from './vacuumPrivateMode';
 
 /** Estado da oferta + o que só existe na resposta da API. */
 export interface VacuumOffer extends VacuumOfferState {
@@ -9,6 +10,8 @@ export interface VacuumOffer extends VacuumOfferState {
     server_now?: number;
     /** Link privado de teste: preço de R$ 10 (lib/vacuumTest.ts). */
     test?: boolean;
+    /** Link da condição privada em 12x (lib/vacuumPrivateOffer.ts). */
+    private_offer?: boolean;
     /** Valor mínimo de cada parte no pagamento combinado. */
     combo_min_part?: number;
 }
@@ -117,10 +120,12 @@ if (typeof window !== 'undefined') captureSellerRef();
 export const vacuumApi = {
     offer: () => {
         const test = vacuumTestToken();
-        return request<VacuumOffer>(`${API}?action=offer${test ? `&teste=${encodeURIComponent(test)}` : ''}`);
+        const condicao = test ? null : vacuumPrivateToken();
+        const extra = test ? `&teste=${encodeURIComponent(test)}` : condicao ? `&condicao=${encodeURIComponent(condicao)}` : '';
+        return request<VacuumOffer>(`${API}?action=offer${extra}`);
     },
     lead: (body: { name: string; phone: string; email?: string; source: 'checkout' | 'contact' | 'waitlist'; tracking?: Record<string, string> }) =>
-        post<{ ok: boolean; checkout_id: string; lead_id: string | null }>('lead', { ...body, seller_ref: sellerRef(), test_token: vacuumTestToken() }),
+        post<{ ok: boolean; checkout_id: string; lead_id: string | null }>('lead', { ...body, seller_ref: sellerRef(), test_token: vacuumTestToken(), private_token: vacuumPrivateToken() }),
     save: (body: { checkout_id: string; stage?: string; bumps?: string[]; document?: string; address?: Record<string, string> }) =>
         post<{ ok: boolean }>('save', body),
     // No teste não há frete: o servidor cobra sem frete, e a tela mostra o mesmo.

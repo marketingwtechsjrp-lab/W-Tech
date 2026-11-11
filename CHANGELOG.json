@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.66.2",
+    "date": "2026-11-11",
+    "title": "Link privado da Vacuum Pump em 12x com os dois acessórios",
+    "changes": [
+      "Link secreto ?condicao=<token> (chave vacuum_condicao_12x_token): máquina + kit adaptador + câmara borbulhadora por R$ 9.328,80 em até 12x sem juros, sem desconto no Pix",
+      "O site continua em 10x; a venda do link é real e segue a campanha normal"
+    ],
+    "author": "claude"
+  },
+  {
     "version": "3.66.1",
     "date": "2026-11-10",
     "title": "Link privado de teste da Vacuum Pump (R$ 10)",

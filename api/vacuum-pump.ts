@@ -11,6 +11,7 @@ import {
 } from '../lib/vacuumOffer.js';
 import { VACUUM_TEST_CAMPAIGN, VACUUM_TEST_MIN_PART, isVacuumTestCampaign, vacuumTestOfferState } from '../lib/vacuumTest.js';
 import { COMBO_MIN_PART } from '../lib/vacuumCombo.js';
+import { VACUUM_PRIVATE_OFFER, isVacuumPrivateOffer, vacuumPrivateOfferState } from '../lib/vacuumPrivateOffer.js';
 import { getServiceClient } from './_auth.js';
 import { denyCron, isCronAuthorized } from './_cron.js';
 import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js';
@@ -22,6 +23,7 @@ import {
     cancelPendingPix,
     finalizeVacuumPayment,
     isUuid,
+    isVacuumPrivateToken,
     isVacuumTestToken,
     loadVacuumOffer,
     quoteVacuumShipping,
@@ -107,6 +109,10 @@ async function handleOffer(supabase: any, req: any, res: any) {
     if (req.query?.teste && (await isVacuumTestToken(supabase, req.query.teste))) {
         return res.status(200).json({ ...vacuumTestOfferState(state), mp_public_key: publicKey, server_now: Date.now(), test: true, combo_min_part: VACUUM_TEST_MIN_PART });
     }
+    // Condição privada em 12x: conjunto completo a preço fechado (lib/vacuumPrivateOffer.ts).
+    if (req.query?.condicao && (await isVacuumPrivateToken(supabase, req.query.condicao))) {
+        return res.status(200).json({ ...vacuumPrivateOfferState(state), mp_public_key: publicKey, server_now: Date.now(), private_offer: true, combo_min_part: COMBO_MIN_PART });
+    }
     return res.status(200).json({ ...state, mp_public_key: publicKey, server_now: Date.now(), combo_min_part: COMBO_MIN_PART });
 }
 
@@ -183,6 +189,8 @@ async function handleLead(supabase: any, req: any, res: any) {
     // Teste: checkout em outra campanha e nada no CRM, para não virar lead nem tarefa de vendedor.
     const isTest = !!body.test_token && (await isVacuumTestToken(supabase, body.test_token));
     const campaign = isTest ? VACUUM_TEST_CAMPAIGN : VACUUM_CAMPAIGN;
+    // Condição em 12x: fica marcada no checkout, e é o servidor que aplica o preço na hora de cobrar.
+    const privateOffer = !isTest && !!body.private_token && (await isVacuumPrivateToken(supabase, body.private_token));
     const tag = source === 'contact' ? 'vacuum_bf_quer_contato' : source === 'waitlist' ? 'vacuum_bf_lista_espera' : 'vacuum_bf_checkout';
     const leadId = isTest ? null : await upsertLead(supabase, { name, phone, email: email || null, tracking, tag });
     const stage = source === 'contact' ? 'contact' : source === 'waitlist' ? 'waitlist' : 'lead';
@@ -211,6 +219,7 @@ async function handleLead(supabase: any, req: any, res: any) {
         ip: getRequestClientIp(req) || null,
         ua: String(req.headers?.['user-agent'] || '').slice(0, 400) || null,
         direct_sale: directSale,
+        ...(privateOffer ? { private_offer: VACUUM_PRIVATE_OFFER } : {}),
     };
     const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, browser_context: browserContext, ...(fromDispatch ? { referred_by: null } : referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
     let checkout: any;
@@ -332,7 +341,7 @@ async function prepareCharge(supabase: any, req: any, res: any): Promise<Prepare
     const isTest = isVacuumTestCampaign(checkout.campaign);
     const loaded = await loadVacuumOffer(supabase, { fresh: true });
     const config = loaded.config;
-    const state = isTest ? vacuumTestOfferState(loaded.state) : loaded.state;
+    const state = isTest ? vacuumTestOfferState(loaded.state) : isVacuumPrivateOffer(checkout) ? vacuumPrivateOfferState(loaded.state) : loaded.state;
     if (state.phase === 'soon') {
         res.status(409).json({ error: 'A pré-venda ainda não abriu.', code: 'not_open' });
         return null;

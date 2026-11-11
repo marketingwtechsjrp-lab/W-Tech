@@ -266,6 +266,8 @@ export interface VacuumBumpState {
 
 export interface VacuumOfferState {
     campaign: string;
+    /** Nome do item principal quando não é a máquina sozinha (condição privada em 12x). */
+    item_name?: string;
     phase: VacuumPhase;
     end_reason: VacuumEndReason;
     price: number;
@@ -405,7 +407,7 @@ export function computeVacuumCart(state: VacuumOfferState, bumpIds: unknown, shi
     const wanted = new Set(Array.isArray(bumpIds) ? bumpIds.map(String) : []);
     const bumps = state.bumps.filter((bump) => wanted.has(bump.id));
     const items: VacuumCartItem[] = [
-        { id: 'vacuum_pump_standard', name: VACUUM_ITEM_NAME, price: state.price },
+        { id: 'vacuum_pump_standard', name: state.item_name ?? VACUUM_ITEM_NAME, price: state.price },
         ...bumps.map((bump) => ({ id: bump.id, name: bump.name, price: bump.price })),
     ];
     const shipping_cost = roundCents(Math.max(0, shippingCost));

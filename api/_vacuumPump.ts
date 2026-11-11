@@ -10,6 +10,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { findExistingLead, isWonStatus } from '../lib/leadMatch.js';
 import { describeComboParts } from '../lib/vacuumCombo.js';
 import { isVacuumTestCampaign } from '../lib/vacuumTest.js';
+import { VACUUM_PRIVATE_TOKEN_KEY } from '../lib/vacuumPrivateOffer.js';
 import {
     VACUUM_CAMPAIGN,
     VACUUM_CONFIG_KEY,
@@ -122,8 +123,17 @@ export async function loadVacuumOffer(
 
 /** Token do link de teste (ver lib/vacuumTest.ts). Sem token configurado, o modo de teste fica desligado. */
 export async function isVacuumTestToken(supabase: any, token: unknown): Promise<boolean> {
+    return tokenMatches(supabase, 'vacuum_test_token', token);
+}
+
+/** Token do link da condição em 12x (ver lib/vacuumPrivateOffer.ts). Sem chave, o link fica desligado. */
+export async function isVacuumPrivateToken(supabase: any, token: unknown): Promise<boolean> {
+    return tokenMatches(supabase, VACUUM_PRIVATE_TOKEN_KEY, token);
+}
+
+async function tokenMatches(supabase: any, key: string, token: unknown): Promise<boolean> {
     if (typeof token !== 'string' || token.length < 16 || token.length > 128) return false;
-    const expected = (await readConfigValue(supabase, 'vacuum_test_token'))?.trim();
+    const expected = (await readConfigValue(supabase, key))?.trim();
     if (!expected) return false;
     const a = createHash('sha256').update(token).digest();
     const b = createHash('sha256').update(expected).digest();
