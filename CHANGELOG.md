@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.66.3 (2026-11-12) - Link de 12x da Vacuum Pump funciona em carrinho já começado
+- O pagamento manda o token do link; o servidor aplica a condição de 12x mesmo quando o carrinho salvo no aparelho foi aberto antes na página normal (antes dava "o valor da oferta mudou")
+
 ## v3.66.2 (2026-11-11) - Link privado da Vacuum Pump em 12x com os dois acessórios
 - Link secreto ?condicao=<token> (chave vacuum_condicao_12x_token): máquina + kit adaptador + câmara borbulhadora por R$ 9.328,80 em até 12x sem juros, sem desconto no Pix
 - O site continua em 10x; a venda do link é real e segue a campanha normal

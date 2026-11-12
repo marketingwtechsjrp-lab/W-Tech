@@ -132,7 +132,7 @@ export const vacuumApi = {
     shipping: (body: { cep: string; bumps: string[] }) =>
         vacuumTestToken() ? Promise.resolve({ httpStatus: 200, mode: 'free' as const, options: [] }) : post<VacuumShippingQuote>('shipping', body),
     pay: (body: { checkout_id: string; bumps: string[]; shipping_service: string | null; expected_total: number; attempt_key: string; form_data: unknown }) =>
-        post<VacuumPaymentResult>('pay', body),
+        post<VacuumPaymentResult>('pay', { ...body, private_token: vacuumPrivateToken() }),
     payCombo: (body: {
         checkout_id: string;
         bumps: string[];
@@ -141,7 +141,7 @@ export const vacuumApi = {
         attempt_key: string;
         pix_value: number;
         cards: { amount: number; installments: number; form_data: unknown }[];
-    }) => post<VacuumPaymentResult>('pay_combo', body),
+    }) => post<VacuumPaymentResult>('pay_combo', { ...body, private_token: vacuumPrivateToken() }),
     status: (id: string) => request<VacuumPaymentResult>(`${API}?action=status&id=${encodeURIComponent(id)}`),
 };
 

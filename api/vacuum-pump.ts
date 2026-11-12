@@ -339,6 +339,13 @@ async function prepareCharge(supabase: any, req: any, res: any): Promise<Prepare
     }
 
     const isTest = isVacuumTestCampaign(checkout.campaign);
+    // Condição em 12x também pelo link na hora de pagar: o carrinho salvo no aparelho pode ter sido
+    // aberto antes na página normal, e aí o checkout ainda não tem a marca (caso do Emerson, 12/11).
+    if (!isTest && !isVacuumPrivateOffer(checkout) && body.private_token && (await isVacuumPrivateToken(supabase, body.private_token))) {
+        checkout.browser_context = { ...(checkout.browser_context || {}), private_offer: VACUUM_PRIVATE_OFFER };
+        const { error: markError } = await supabase.from(CHECKOUTS).update({ browser_context: checkout.browser_context }).eq('id', checkout.id);
+        if (markError) throw new Error(markError.message);
+    }
     const loaded = await loadVacuumOffer(supabase, { fresh: true });
     const config = loaded.config;
     const state = isTest ? vacuumTestOfferState(loaded.state) : isVacuumPrivateOffer(checkout) ? vacuumPrivateOfferState(loaded.state) : loaded.state;

@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.66.3",
+    "date": "2026-11-12",
+    "title": "Link de 12x da Vacuum Pump funciona em carrinho já começado",
+    "changes": [
+      "O pagamento manda o token do link; o servidor aplica a condição de 12x mesmo quando o carrinho salvo no aparelho foi aberto antes na página normal (antes dava \"o valor da oferta mudou\")"
+    ],
+    "author": "claude"
+  },
+  {
     "version": "3.66.2",
     "date": "2026-11-11",
     "title": "Link privado da Vacuum Pump em 12x com os dois acessórios",
