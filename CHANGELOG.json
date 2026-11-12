@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.66.4",
+    "date": "2026-11-12",
+    "title": "Pagamento combinado da Vacuum Pump sem desconto no Pix",
+    "changes": [
+      "Na opção de vários cartões ou Pix + cartão, a parte no Pix não tem mais desconto: os 10% valem só com o pedido inteiro no Pix"
+    ],
+    "author": "claude"
+  },
+  {
     "version": "3.66.3",
     "date": "2026-11-12",
     "title": "Link de 12x da Vacuum Pump funciona em carrinho já começado",

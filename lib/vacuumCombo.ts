@@ -4,9 +4,9 @@ import { formatBRL, roundCents, type VacuumCart } from './vacuumOffer.js';
  * Pagamento combinado da Vacuum Pump: parte no Pix (opcional) e de 1 a 3 cartões.
  * Mesma regra no navegador e no servidor, que recalcula tudo antes de cobrar.
  *
- * A pessoa escolhe quanto do pedido o Pix cobre (`pixValue`, em preço de cartão). Essa parte
- * ganha o desconto do Pix proporcional: cobrir o pedido inteiro no Pix dá exatamente o
- * `pix_total` do carrinho. Os cartões cobrem o resto, sem desconto.
+ * A pessoa escolhe quanto do pedido o Pix cobre (`pixValue`) e os cartões cobrem o resto.
+ * Sem desconto em nenhuma parte: o desconto do Pix vale só quando o pedido inteiro é pago no Pix,
+ * pela opção Pix do checkout (regra do dono, 12/11/2026).
  */
 
 export const COMBO_MAX_CARDS = 3;
@@ -40,9 +40,9 @@ export function maxInstallmentsFor(amount: number, offerInstallments: number): n
 }
 
 /** Desconto do Pix na parte que ele cobre. */
-export function comboPixDiscount(cart: VacuumCart, pixValue: number): number {
-    if (pixValue <= 0 || cart.total <= 0) return 0;
-    return roundCents((cart.pix_discount * pixValue) / cart.total);
+/** Sempre zero desde 12/11/2026: o desconto do Pix é só para o pedido inteiro no Pix. */
+export function comboPixDiscount(_cart: VacuumCart, _pixValue: number): number {
+    return 0;
 }
 
 export function checkComboPlan(cart: VacuumCart, offerInstallments: number, pixValueRaw: unknown, cardsRaw: unknown, minPart = COMBO_MIN_PART): ComboCheck {

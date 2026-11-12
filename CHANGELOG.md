@@ -1,6 +1,9 @@
 # Histórico de Atualizações - W-Tech Platform
 
 
+## v3.66.4 (2026-11-12) - Pagamento combinado da Vacuum Pump sem desconto no Pix
+- Na opção de vários cartões ou Pix + cartão, a parte no Pix não tem mais desconto: os 10% valem só com o pedido inteiro no Pix
+
 ## v3.66.3 (2026-11-12) - Link de 12x da Vacuum Pump funciona em carrinho já começado
 - O pagamento manda o token do link; o servidor aplica a condição de 12x mesmo quando o carrinho salvo no aparelho foi aberto antes na página normal (antes dava "o valor da oferta mudou")
 

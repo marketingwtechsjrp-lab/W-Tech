@@ -263,7 +263,7 @@ const VacuumComboPayment: React.FC<Props> = ({ offer, cart, contact, doc, checko
                     data-track-category="Vacuum Pump"
                 />
                 <QrCode size={20} className="shrink-0" aria-hidden />
-                <span className="flex-1"><b>Pagar uma parte no Pix</b>{pct > 0 && <span className="block text-sm vp-muted">{pct}% de desconto na parte paga no Pix</span>}</span>
+                <span className="flex-1"><b>Pagar uma parte no Pix</b>{pct > 0 && <span className="block text-sm vp-muted">Sem desconto: os {pct}% valem só com o pedido inteiro no Pix</span>}</span>
             </label>
 
             {usePix && (
