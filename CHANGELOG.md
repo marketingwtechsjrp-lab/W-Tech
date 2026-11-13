@@ -1,3 +1,8 @@
+## v3.67.2 (2026-11-13) - Cartão da Vacuum Pump com Device ID e IP para o antifraude
+- Os pagamentos com cartão (único e combinado) agora enviam o Device ID do aparelho ao Mercado Pago no header X-meli-session-id
+- O IP do comprador vai em additional_info.ip_address, com o IP salvo na abertura do checkout como reserva
+- Sem esses sinais, compras altas parceladas caíam em cc_rejected_high_risk
+
 ## v3.67.1 (2026-11-13) - Link de saldo da Vacuum Pump sem a linha do Pix
 - Na condição só no cartão, a página não mostra mais o preço à vista no Pix
 

@@ -1,6 +1,7 @@
 import { PUBLIC_BASE_URL } from '../lib/publicUrl.js';
 import { VACUUM_CAMPAIGN, documentType, onlyDigits, type VacuumCart } from '../lib/vacuumOffer.js';
 import { vacuumExternalReference } from './_vacuumPump.js';
+import { getRequestClientIp } from './_geoip.js';
 
 /** Chamadas ao Mercado Pago da Vacuum Pump: montar, criar, capturar e desfazer pagamentos. */
 
@@ -21,6 +22,22 @@ const REJECTION_MESSAGES: Record<string, string> = {
     cc_rejected_max_attempts: 'Limite de tentativas do cartão atingido. Use outro cartão ou pague no Pix.',
 };
 export const REJECTION_FALLBACK = 'O pagamento não foi aprovado. Tente outro cartão, pague no Pix ou chame um vendedor.';
+
+/**
+ * Sinais do aparelho que o antifraude do Mercado Pago pesa: sem eles, compra alta parcelada
+ * tende a cair em cc_rejected_high_risk. O Device ID nasce no navegador (SDK v2) e vai no
+ * header X-meli-session-id; o IP vai em additional_info.ip_address.
+ */
+export interface MpAntifraud {
+    deviceId: string | null;
+    ip: string | null;
+}
+
+export function readAntifraud(req: any, body: any): MpAntifraud {
+    const raw = typeof body?.device_id === 'string' ? body.device_id.trim() : '';
+    const deviceId = /^[A-Za-z0-9._:-]{8,400}$/.test(raw) ? raw : null;
+    return { deviceId, ip: getRequestClientIp(req) || null };
+}
 
 export function rejectionMessage(detail: unknown): string {
     return REJECTION_MESSAGES[String(detail || '')] || REJECTION_FALLBACK;
@@ -52,10 +69,13 @@ export interface PaymentPayloadInput {
     /** false reserva o valor no cartão sem cobrar: a cobrança sai na captura. */
     capture?: boolean;
     metadata?: Record<string, unknown>;
+    /** IP de quem está pagando; sem ele, cai no IP salvo quando a pessoa abriu o checkout. */
+    ip?: string | null;
 }
 
 export function buildPaymentPayload(checkout: any, cart: VacuumCart, shipping: VacuumShippingCharge, input: PaymentPayloadInput): Record<string, unknown> {
     const { first, last } = splitName(checkout.name);
+    const ip = input.ip || checkout.browser_context?.ip || null;
     const address = checkout.address;
     const form = input.form || {};
     const docType = documentType(checkout.document);
@@ -79,6 +99,7 @@ export function buildPaymentPayload(checkout: any, cart: VacuumCart, shipping: V
         statement_descriptor: 'WTECH',
         metadata: { campaign: VACUUM_CAMPAIGN, checkout_id: checkout.id, lead_id: checkout.lead_id, bumps: cart.bump_ids, ...input.metadata },
         additional_info: {
+            ...(ip ? { ip_address: ip } : {}),
             items: [
                 ...cart.items.map((item) => ({ id: item.id, title: item.name, quantity: 1, unit_price: item.price, category_id: 'others' })),
                 ...(shipping.cost > 0 ? [{ id: 'frete', title: shipping.name, quantity: 1, unit_price: shipping.cost, category_id: 'others' }] : []),
@@ -108,7 +129,15 @@ export interface MpResponse {
     data: any;
 }
 
-export async function mpRequest(token: string, method: string, path: string, body?: unknown, idempotencyKey?: string, timeoutMs = 25000): Promise<MpResponse> {
+export async function mpRequest(
+    token: string,
+    method: string,
+    path: string,
+    body?: unknown,
+    idempotencyKey?: string,
+    timeoutMs = 25000,
+    deviceId?: string | null,
+): Promise<MpResponse> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -118,6 +147,7 @@ export async function mpRequest(token: string, method: string, path: string, bod
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
                 ...(idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : {}),
+                ...(deviceId ? { 'X-meli-session-id': deviceId } : {}),
             },
             ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
             signal: controller.signal,
@@ -128,8 +158,8 @@ export async function mpRequest(token: string, method: string, path: string, bod
     }
 }
 
-export function createMpPayment(token: string, payload: Record<string, unknown>, idempotencyKey: string): Promise<MpResponse> {
-    return mpRequest(token, 'POST', '/v1/payments', payload, idempotencyKey);
+export function createMpPayment(token: string, payload: Record<string, unknown>, idempotencyKey: string, deviceId?: string | null): Promise<MpResponse> {
+    return mpRequest(token, 'POST', '/v1/payments', payload, idempotencyKey, 25000, deviceId);
 }
 
 export async function fetchMpPayment(token: string, paymentId: string): Promise<any | null> {

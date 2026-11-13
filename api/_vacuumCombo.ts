@@ -8,6 +8,7 @@ import {
     fetchMpPayment,
     rejectionMessage,
     releaseMpPayment,
+    type MpAntifraud,
     type VacuumShippingCharge,
 } from './_vacuumMp.js';
 import { clearVacuumOfferCache, finalizeVacuumPayment, handleVacuumPaymentEvent, isUuid, readMercadoPagoToken } from './_vacuumPump.js';
@@ -270,7 +271,7 @@ function sanitizeKey(value: unknown): string {
 }
 
 /** POST pay_combo: valida o plano, reserva os cartões e, se houver, gera o Pix da parte. */
-export async function payVacuumCombo(supabase: any, prepared: PreparedCharge, body: any): Promise<ComboResult> {
+export async function payVacuumCombo(supabase: any, prepared: PreparedCharge, body: any, antifraud: MpAntifraud): Promise<ComboResult> {
     const { checkout, state, cart, shipping, token } = prepared;
     const check = checkComboPlan(cart, state.installments, body.pix_value, body.cards, prepared.minPart);
     if (!check.plan) return { httpStatus: 400, body: { error: check.error } };
@@ -345,10 +346,11 @@ export async function payVacuumCombo(supabase: any, prepared: PreparedCharge, bo
             isPix: false,
             form: forms[index],
             capture: false,
+            ip: antifraud.ip,
             description: `Vacuum Pump Standard W-Tech - Black Friday (cartão ${index + 1} de ${total})`,
             metadata: { combo_attempt: attempt, combo_part: `card${index + 1}` },
         });
-        const created = await createMpPayment(token, payload, `${checkout.id}:${attempt}:c${index + 1}`).catch((err) => {
+        const created = await createMpPayment(token, payload, `${checkout.id}:${attempt}:c${index + 1}`, antifraud.deviceId).catch((err) => {
             console.error(`[Vacuum] Cartão ${index + 1} da combinação sem resposta:`, err?.message);
             return null;
         });
@@ -377,6 +379,7 @@ export async function payVacuumCombo(supabase: any, prepared: PreparedCharge, bo
         installments: 1,
         isPix: true,
         form: {},
+        ip: antifraud.ip,
         description: 'Vacuum Pump Standard W-Tech - Black Friday (parte no Pix)',
         metadata: { combo_attempt: attempt, combo_part: 'pix', pix_discount: pixPart.discount },
     });

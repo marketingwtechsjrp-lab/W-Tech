@@ -7,6 +7,8 @@ export interface MercadoPagoBrick {
 
 declare global {
     interface Window {
+        /** Device ID do antifraude: o SDK v2 cria ao instanciar o MercadoPago. */
+        MP_DEVICE_SESSION_ID?: string;
         MercadoPago?: new (publicKey: string, options?: { locale: string }) => {
             bricks: () => {
                 create: (type: 'payment' | 'cardPayment', containerId: string, settings: unknown) => Promise<MercadoPagoBrick>;
@@ -49,4 +51,10 @@ export function warmUpMercadoPago(): void {
         document.head.appendChild(link);
     }
     void loadMercadoPagoSdk().catch(() => undefined);
+}
+
+/** Device ID do aparelho para o antifraude do Mercado Pago (vai no header X-meli-session-id). */
+export function mercadoPagoDeviceId(): string | undefined {
+    const id = window.MP_DEVICE_SESSION_ID;
+    return typeof id === 'string' && id ? id : undefined;
 }

@@ -37,6 +37,7 @@ import {
     REJECTION_FALLBACK,
     buildPaymentPayload,
     createMpPayment,
+    readAntifraud,
     fetchMpPayment,
     rejectionMessage,
     type VacuumShippingCharge,
@@ -444,17 +445,19 @@ async function handlePay(supabase: any, req: any, res: any) {
 
     if (!(await releaseOpenPayment(supabase, token, checkout))) return res.status(409).json(IN_FLIGHT_REPLY);
 
+    const antifraud = readAntifraud(req, body);
     const payload = buildPaymentPayload(checkout, cart, shipping, {
         amount: chargeTotal,
         installments,
         isPix,
         form,
+        ip: antifraud.ip,
         metadata: { pix_discount: isPix ? cart.pix_discount : 0 },
     });
 
     // A chave vem do navegador a cada envio: clique duplo não vira cobrança dupla.
     const attemptKey = String(body.attempt_key || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 60) || String(Date.now());
-    const created = await createMpPayment(token, payload, `${checkout.id}:${attemptKey}`);
+    const created = await createMpPayment(token, payload, `${checkout.id}:${attemptKey}`, isPix ? null : antifraud.deviceId);
     const payment = created.data;
 
     const baseUpdate = {
@@ -529,7 +532,7 @@ async function handlePayCombo(supabase: any, req: any, res: any) {
         return res.status(400).json({ error: 'Esta condição é paga só no cartão de crédito, em uma vez ou parcelado.' });
     }
     if (!(await releaseOpenPayment(supabase, prepared.token, prepared.checkout))) return res.status(409).json(IN_FLIGHT_REPLY);
-    const result = await payVacuumCombo(supabase, prepared, req.body || {});
+    const result = await payVacuumCombo(supabase, prepared, req.body || {}, readAntifraud(req, req.body));
     if (result.httpStatus !== 200) return res.status(result.httpStatus).json(result.body);
     const checkout = result.checkout;
     let orderNumber: string | undefined;

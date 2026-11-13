@@ -3,6 +3,7 @@ import { VACUUM_DIRECT_REF, getVacuumOfferState, resolveVacuumConfig, type Vacuu
 import { VP_FONTS_HREF, VP_PAGE_BG } from './vacuumStyles';
 import { vacuumTestToken } from './vacuumTestMode';
 import { vacuumPrivateToken } from './vacuumPrivateMode';
+import { mercadoPagoDeviceId } from './mercadoPagoSdk';
 
 /** Estado da oferta + o que só existe na resposta da API. */
 export interface VacuumOffer extends VacuumOfferState {
@@ -137,7 +138,7 @@ export const vacuumApi = {
     shipping: (body: { cep: string; bumps: string[] }) =>
         vacuumTestToken() ? Promise.resolve({ httpStatus: 200, mode: 'free' as const, options: [] }) : post<VacuumShippingQuote>('shipping', body),
     pay: (body: { checkout_id: string; bumps: string[]; shipping_service: string | null; expected_total: number; attempt_key: string; form_data: unknown }) =>
-        post<VacuumPaymentResult>('pay', { ...body, private_token: vacuumPrivateToken() }),
+        post<VacuumPaymentResult>('pay', { ...body, private_token: vacuumPrivateToken(), device_id: mercadoPagoDeviceId() }),
     payCombo: (body: {
         checkout_id: string;
         bumps: string[];
@@ -146,7 +147,7 @@ export const vacuumApi = {
         attempt_key: string;
         pix_value: number;
         cards: { amount: number; installments: number; form_data: unknown }[];
-    }) => post<VacuumPaymentResult>('pay_combo', { ...body, private_token: vacuumPrivateToken() }),
+    }) => post<VacuumPaymentResult>('pay_combo', { ...body, private_token: vacuumPrivateToken(), device_id: mercadoPagoDeviceId() }),
     status: (id: string) => request<VacuumPaymentResult>(`${API}?action=status&id=${encodeURIComponent(id)}`),
 };
 
