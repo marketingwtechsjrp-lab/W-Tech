@@ -1,3 +1,6 @@
+## v3.67.1 (2026-11-13) - Link de saldo da Vacuum Pump sem a linha do Pix
+- Na condição só no cartão, a página não mostra mais o preço à vista no Pix
+
 ## v3.67.0 (2026-11-13) - Link privado da Vacuum Pump para saldo após entrada no Pix
 - Os links ?condicao= agora aceitam mais de uma condição, cada uma com sua chave em SITE_Config
 - Nova condição (chave vacuum_saldo_entrada_token): máquina + 2 kits por R$ 9.729,00, entrada de R$ 1.945,80 já paga no Pix e saldo de R$ 7.783,20 em até 10x, só no cartão

@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.67.1",
+    "date": "2026-11-13",
+    "title": "Link de saldo da Vacuum Pump sem a linha do Pix",
+    "changes": [
+      "Na condição só no cartão, a página não mostra mais o preço à vista no Pix"
+    ],
+    "author": "claude"
+  },
+  {
     "version": "3.67.0",
     "date": "2026-11-13",
     "title": "Link privado da Vacuum Pump para saldo após entrada no Pix",

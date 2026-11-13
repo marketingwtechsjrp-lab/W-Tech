@@ -503,7 +503,9 @@ const LPVacuumPump: React.FC = () => {
 
                         <div className="mt-2.5 space-y-1.5">
                             <p className="vp-pay-line text-lg"><CreditCard className="mt-1 shrink-0" size={20} aria-hidden /><span><b className="vp-green">Sem juros</b> no cartão</span></p>
-                            <p className="vp-pay-line text-sm"><QrCode className="mt-0.5 shrink-0" size={18} aria-hidden /><span className="vp-num">ou <b>{formatBRL(offer.pix_price)}</b> à vista no Pix{offer.pix_discount_pct > 0 ? ` (${offer.pix_discount_pct}% off)` : ''}, com aprovação na hora</span></p>
+                            {!offer.card_only && (
+                                <p className="vp-pay-line text-sm"><QrCode className="mt-0.5 shrink-0" size={18} aria-hidden /><span className="vp-num">ou <b>{formatBRL(offer.pix_price)}</b> à vista no Pix{offer.pix_discount_pct > 0 ? ` (${offer.pix_discount_pct}% off)` : ''}, com aprovação na hora</span></p>
+                            )}
                         </div>
                         {saving > 0 && <p className="vp-save vp-num mt-2.5 text-sm">Você economiza {formatBRL(saving)}</p>}
                     </div>
