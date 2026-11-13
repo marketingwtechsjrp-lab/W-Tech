@@ -483,9 +483,9 @@ const LPVacuumPump: React.FC = () => {
                     <p className="vp-label vp-muted">Lançamento W-Tech</p>
                     <h1 className="vp-display mt-1 text-[clamp(2.05rem,9.3vw,3.2rem)]">Vacuum Pump Standard</h1>
                     <p className="mt-1 text-sm vp-muted sm:text-base">Máquina de vácuo para amortecedores. O ar sai antes do óleo entrar, e o seu cliente vê isso acontecer.</p>
-                    {/* Link da condição privada em 12x (lib/vacuumPrivateOffer.ts): o preço já inclui os dois acessórios. */}
-                    {offer.private_offer && (
-                        <p className="vp-save mt-3 text-sm font-semibold">Condição especial para você: máquina + Kit Adaptador com Engate Rápido + Câmara Borbulhadora, em até {offer.installments}x sem juros.</p>
+                    {/* Link de condição privada (lib/vacuumPrivateOffer.ts): o preço já inclui os dois acessórios. */}
+                    {offer.private_offer && offer.private_headline && (
+                        <p className="vp-save mt-3 text-sm font-semibold">{offer.private_headline}</p>
                     )}
 
                     <div ref={priceBlock} className="mt-4 border-t border-[var(--vp-line)] pt-4">

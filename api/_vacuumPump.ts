@@ -10,7 +10,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { findExistingLead, isWonStatus } from '../lib/leadMatch.js';
 import { describeComboParts } from '../lib/vacuumCombo.js';
 import { isVacuumTestCampaign } from '../lib/vacuumTest.js';
-import { VACUUM_PRIVATE_TOKEN_KEY } from '../lib/vacuumPrivateOffer.js';
+import { VACUUM_PRIVATE_OFFERS, type VacuumPrivateOffer } from '../lib/vacuumPrivateOffer.js';
 import {
     VACUUM_CAMPAIGN,
     VACUUM_CONFIG_KEY,
@@ -126,9 +126,13 @@ export async function isVacuumTestToken(supabase: any, token: unknown): Promise<
     return tokenMatches(supabase, 'vacuum_test_token', token);
 }
 
-/** Token do link da condição em 12x (ver lib/vacuumPrivateOffer.ts). Sem chave, o link fica desligado. */
-export async function isVacuumPrivateToken(supabase: any, token: unknown): Promise<boolean> {
-    return tokenMatches(supabase, VACUUM_PRIVATE_TOKEN_KEY, token);
+/** Condição privada do link `?condicao=` (ver lib/vacuumPrivateOffer.ts). Sem chave, aquele link fica desligado. */
+export async function resolveVacuumPrivateOffer(supabase: any, token: unknown): Promise<VacuumPrivateOffer | null> {
+    if (typeof token !== 'string' || !token) return null;
+    for (const offer of VACUUM_PRIVATE_OFFERS) {
+        if (await tokenMatches(supabase, offer.token_key, token)) return offer;
+    }
+    return null;
 }
 
 async function tokenMatches(supabase: any, key: string, token: unknown): Promise<boolean> {

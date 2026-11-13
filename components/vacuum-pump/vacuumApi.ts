@@ -10,8 +10,13 @@ export interface VacuumOffer extends VacuumOfferState {
     server_now?: number;
     /** Link privado de teste: preço de R$ 10 (lib/vacuumTest.ts). */
     test?: boolean;
-    /** Link da condição privada em 12x (lib/vacuumPrivateOffer.ts). */
+    /** Link de condição privada (lib/vacuumPrivateOffer.ts). */
     private_offer?: boolean;
+    private_headline?: string;
+    /** Condição paga só no cartão: sem Pix e sem pagamento combinado. */
+    card_only?: boolean;
+    /** Entrada já paga por fora, descontada do valor fechado. */
+    prepaid?: number;
     /** Valor mínimo de cada parte no pagamento combinado. */
     combo_min_part?: number;
 }

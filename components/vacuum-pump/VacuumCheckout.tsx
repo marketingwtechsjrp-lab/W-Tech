@@ -112,7 +112,9 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
         cep: initialCep || draft?.address.cep || '',
     });
     const [bumps, setBumps] = useState<string[]>(initialBumps.length ? initialBumps : draft?.bumps ?? []);
-    const [payMethod, setPayMethod] = useState<PayMethod>(draft?.payMethod ?? 'card');
+    const [payMethodState, setPayMethod] = useState<PayMethod>(draft?.payMethod ?? 'card');
+    // Condição só no cartão (lib/vacuumPrivateOffer.ts): Pix e combinado nem aparecem.
+    const payMethod: PayMethod = offer.card_only ? 'card' : payMethodState;
     const [chosenInstallments, setChosenInstallments] = useState<number | null>(null);
     const [pix, setPix] = useState<VacuumPix | null>(null);
     /** Pagamento combinado: total com a divisão atual e, depois dos cartões reservados, o valor do Pix da parte. */
@@ -789,8 +791,18 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                 <p className="text-sm font-semibold leading-snug">{VACUUM_ITEM_NAME}<br /><span className="font-normal vp-muted">{offer.delivery_text}</span></p>
                             </div>
                             <dl className="mt-3 space-y-1.5 text-sm vp-num">
-                                <div className="flex justify-between gap-3"><dt className="vp-muted">Produto</dt><dd>{formatBRL(offer.compare_at ?? offer.price)}</dd></div>
-                                {machineSaving > 0 && <div className="flex justify-between gap-3 vp-green"><dt>Desconto Black Friday</dt><dd className="font-semibold">- {formatBRL(machineSaving)}</dd></div>}
+                                {offer.prepaid ? (
+                                    <>
+                                        {/* Condição com entrada no Pix: valor fechado do conjunto, menos a entrada já recebida. */}
+                                        <div className="flex justify-between gap-3"><dt className="vp-muted">Máquina + 2 kits</dt><dd>{formatBRL(Math.round((offer.price + offer.prepaid) * 100) / 100)}</dd></div>
+                                        <div className="flex justify-between gap-3 vp-green"><dt>Entrada no Pix (já paga)</dt><dd className="font-semibold">- {formatBRL(offer.prepaid)}</dd></div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between gap-3"><dt className="vp-muted">Produto</dt><dd>{formatBRL(offer.compare_at ?? offer.price)}</dd></div>
+                                        {machineSaving > 0 && <div className="flex justify-between gap-3 vp-green"><dt>Desconto Black Friday</dt><dd className="font-semibold">- {formatBRL(machineSaving)}</dd></div>}
+                                    </>
+                                )}
                                 {selectedBumps.map((bump) => (
                                     <div key={bump.id} className="flex justify-between gap-3">
                                         <dt className="min-w-0 vp-muted">{bump.name} <button type="button" className="vp-link text-xs" onClick={() => toggleBump(bump.id)} aria-label={`Remover ${bump.name}`}>remover</button></dt>
@@ -988,13 +1000,19 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                             </section>
                             <section className="vp-plate p-4 sm:p-5">
                                 <h1 className="vp-display text-3xl">Forma de pagamento</h1>
-                                <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, Pix{cart.pix_discount > 0 ? ` com ${offer.pix_discount_pct}% de desconto` : ''}, ou dividido entre Pix e até 3 cartões.</p>
+                                {offer.card_only ? (
+                                    <p className="mb-3 text-sm vp-muted">{offer.prepaid ? `Entrada de ${formatBRL(offer.prepaid)} no Pix já recebida. ` : ''}Saldo no cartão de crédito em até {offer.installments}x sem juros.</p>
+                                ) : (
+                                    <p className="mb-3 text-sm vp-muted">Cartão em até {offer.installments}x sem juros, Pix{cart.pix_discount > 0 ? ` com ${offer.pix_discount_pct}% de desconto` : ''}, ou dividido entre Pix e até 3 cartões.</p>
+                                )}
                                 <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Forma de pagamento">
                                     <label className={`vp-option ${payMethod === 'card' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'card'} onChange={() => setPayMethod('card')} data-track="vacuum_pay_card" data-track-category="Vacuum Pump" />
                                         <CreditCard size={20} className="shrink-0" aria-hidden />
                                         <span className="flex-1 vp-num"><b>Cartão de crédito</b><span className="block text-sm vp-muted">Em até {maxInstallments}x de {formatBRL(installmentValue(maxInstallments))}{maxInstallments > 1 ? ' sem juros' : ''}</span></span>
                                     </label>
+                                    {!offer.card_only && (
+                                    <>
                                     <label className={`vp-option ${payMethod === 'pix' ? 'vp-option-on' : ''}`}>
                                         <input type="radio" name="vp-pay" className="h-5 w-5 accent-[var(--vp-red)]" checked={payMethod === 'pix'} onChange={() => setPayMethod('pix')} data-track="vacuum_pay_pix" data-track-category="Vacuum Pump" />
                                         <QrCode size={20} className="shrink-0" aria-hidden />
@@ -1005,6 +1023,8 @@ const VacuumCheckout: React.FC<Props> = ({ offer, now, initialBumps = [], initia
                                         <Layers size={20} className="shrink-0" aria-hidden />
                                         <span className="flex-1"><b>Vários cartões ou Pix + cartão</b><span className="block text-sm vp-muted">Divida entre até 3 cartões, com ou sem uma parte no Pix (com desconto)</span></span>
                                     </label>
+                                    </>
+                                    )}
                                 </div>
 
                                 {/* O cartão fica montado: voltar do Pix não apaga o que a pessoa já digitou. */}

@@ -11,7 +11,7 @@ import {
 } from '../lib/vacuumOffer.js';
 import { VACUUM_TEST_CAMPAIGN, VACUUM_TEST_MIN_PART, isVacuumTestCampaign, vacuumTestOfferState } from '../lib/vacuumTest.js';
 import { COMBO_MIN_PART } from '../lib/vacuumCombo.js';
-import { VACUUM_PRIVATE_OFFER, isVacuumPrivateOffer, vacuumPrivateOfferState } from '../lib/vacuumPrivateOffer.js';
+import { checkoutPrivateOffer, vacuumPrivateOfferState } from '../lib/vacuumPrivateOffer.js';
 import { getServiceClient } from './_auth.js';
 import { denyCron, isCronAuthorized } from './_cron.js';
 import { handleVacuumDashboard, handleVacuumGoals } from './_vacuumDashboard.js';
@@ -23,7 +23,7 @@ import {
     cancelPendingPix,
     finalizeVacuumPayment,
     isUuid,
-    isVacuumPrivateToken,
+    resolveVacuumPrivateOffer,
     isVacuumTestToken,
     loadVacuumOffer,
     quoteVacuumShipping,
@@ -109,9 +109,10 @@ async function handleOffer(supabase: any, req: any, res: any) {
     if (req.query?.teste && (await isVacuumTestToken(supabase, req.query.teste))) {
         return res.status(200).json({ ...vacuumTestOfferState(state), mp_public_key: publicKey, server_now: Date.now(), test: true, combo_min_part: VACUUM_TEST_MIN_PART });
     }
-    // Condição privada em 12x: conjunto completo a preço fechado (lib/vacuumPrivateOffer.ts).
-    if (req.query?.condicao && (await isVacuumPrivateToken(supabase, req.query.condicao))) {
-        return res.status(200).json({ ...vacuumPrivateOfferState(state), mp_public_key: publicKey, server_now: Date.now(), private_offer: true, combo_min_part: COMBO_MIN_PART });
+    // Condição privada: conjunto completo a preço fechado (lib/vacuumPrivateOffer.ts).
+    const privateOffer = req.query?.condicao ? await resolveVacuumPrivateOffer(supabase, req.query.condicao) : null;
+    if (privateOffer) {
+        return res.status(200).json({ ...vacuumPrivateOfferState(state, privateOffer), mp_public_key: publicKey, server_now: Date.now(), combo_min_part: COMBO_MIN_PART });
     }
     return res.status(200).json({ ...state, mp_public_key: publicKey, server_now: Date.now(), combo_min_part: COMBO_MIN_PART });
 }
@@ -189,8 +190,8 @@ async function handleLead(supabase: any, req: any, res: any) {
     // Teste: checkout em outra campanha e nada no CRM, para não virar lead nem tarefa de vendedor.
     const isTest = !!body.test_token && (await isVacuumTestToken(supabase, body.test_token));
     const campaign = isTest ? VACUUM_TEST_CAMPAIGN : VACUUM_CAMPAIGN;
-    // Condição em 12x: fica marcada no checkout, e é o servidor que aplica o preço na hora de cobrar.
-    const privateOffer = !isTest && !!body.private_token && (await isVacuumPrivateToken(supabase, body.private_token));
+    // Condição privada: fica marcada no checkout, e é o servidor que aplica o preço na hora de cobrar.
+    const privateOffer = isTest ? null : await resolveVacuumPrivateOffer(supabase, body.private_token);
     const tag = source === 'contact' ? 'vacuum_bf_quer_contato' : source === 'waitlist' ? 'vacuum_bf_lista_espera' : 'vacuum_bf_checkout';
     const leadId = isTest ? null : await upsertLead(supabase, { name, phone, email: email || null, tracking, tag });
     const stage = source === 'contact' ? 'contact' : source === 'waitlist' ? 'waitlist' : 'lead';
@@ -219,7 +220,7 @@ async function handleLead(supabase: any, req: any, res: any) {
         ip: getRequestClientIp(req) || null,
         ua: String(req.headers?.['user-agent'] || '').slice(0, 400) || null,
         direct_sale: directSale,
-        ...(privateOffer ? { private_offer: VACUUM_PRIVATE_OFFER } : {}),
+        ...(privateOffer ? { private_offer: privateOffer.id } : {}),
     };
     const fields = { lead_id: leadId, name, phone, email: email || open?.email || null, browser_context: browserContext, ...(fromDispatch ? { referred_by: null } : referredBy ? { referred_by: referredBy } : {}), updated_at: new Date().toISOString() };
     let checkout: any;
@@ -341,14 +342,16 @@ async function prepareCharge(supabase: any, req: any, res: any): Promise<Prepare
     const isTest = isVacuumTestCampaign(checkout.campaign);
     // Condição em 12x também pelo link na hora de pagar: o carrinho salvo no aparelho pode ter sido
     // aberto antes na página normal, e aí o checkout ainda não tem a marca (caso do Emerson, 12/11).
-    if (!isTest && !isVacuumPrivateOffer(checkout) && body.private_token && (await isVacuumPrivateToken(supabase, body.private_token))) {
-        checkout.browser_context = { ...(checkout.browser_context || {}), private_offer: VACUUM_PRIVATE_OFFER };
+    const linkOffer = isTest ? null : await resolveVacuumPrivateOffer(supabase, body.private_token);
+    if (linkOffer && checkoutPrivateOffer(checkout)?.id !== linkOffer.id) {
+        checkout.browser_context = { ...(checkout.browser_context || {}), private_offer: linkOffer.id };
         const { error: markError } = await supabase.from(CHECKOUTS).update({ browser_context: checkout.browser_context }).eq('id', checkout.id);
         if (markError) throw new Error(markError.message);
     }
     const loaded = await loadVacuumOffer(supabase, { fresh: true });
     const config = loaded.config;
-    const state = isTest ? vacuumTestOfferState(loaded.state) : isVacuumPrivateOffer(checkout) ? vacuumPrivateOfferState(loaded.state) : loaded.state;
+    const privateOffer = isTest ? null : checkoutPrivateOffer(checkout);
+    const state = isTest ? vacuumTestOfferState(loaded.state) : privateOffer ? vacuumPrivateOfferState(loaded.state, privateOffer) : loaded.state;
     if (state.phase === 'soon') {
         res.status(409).json({ error: 'A pré-venda ainda não abriu.', code: 'not_open' });
         return null;
@@ -408,6 +411,10 @@ async function handlePay(supabase: any, req: any, res: any) {
     const form = body.form_data || {};
     const paymentMethodId = String(form.payment_method_id || '');
     const isPix = paymentMethodId === 'pix';
+    // Condição só no cartão (ex.: saldo depois da entrada no Pix): o servidor não aceita Pix.
+    if (isPix && checkoutPrivateOffer(checkout)?.card_only) {
+        return res.status(400).json({ error: 'Esta condição é paga só no cartão de crédito.' });
+    }
     // Pix tem desconto: o valor cobrado depende da forma de pagamento.
     const chargeTotal = isPix ? cart.pix_total : cart.total;
     // O preço pode ter mudado com a página aberta (prazo ou lote acabaram). Nunca
@@ -518,6 +525,9 @@ async function handlePay(supabase: any, req: any, res: any) {
 async function handlePayCombo(supabase: any, req: any, res: any) {
     const prepared = await prepareCharge(supabase, req, res);
     if (!prepared) return;
+    if (checkoutPrivateOffer(prepared.checkout)?.card_only) {
+        return res.status(400).json({ error: 'Esta condição é paga só no cartão de crédito, em uma vez ou parcelado.' });
+    }
     if (!(await releaseOpenPayment(supabase, prepared.token, prepared.checkout))) return res.status(409).json(IN_FLIGHT_REPLY);
     const result = await payVacuumCombo(supabase, prepared, req.body || {});
     if (result.httpStatus !== 200) return res.status(result.httpStatus).json(result.body);

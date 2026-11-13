@@ -1,3 +1,8 @@
+## v3.67.0 (2026-11-13) - Link privado da Vacuum Pump para saldo após entrada no Pix
+- Os links ?condicao= agora aceitam mais de uma condição, cada uma com sua chave em SITE_Config
+- Nova condição (chave vacuum_saldo_entrada_token): máquina + 2 kits por R$ 9.729,00, entrada de R$ 1.945,80 já paga no Pix e saldo de R$ 7.783,20 em até 10x, só no cartão
+- Nessa condição o checkout esconde Pix e pagamento combinado, e o servidor recusa os dois
+
 # Histórico de Atualizações - W-Tech Platform
 
 
